@@ -7,5 +7,8 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.7", features = ["derive"] }
+regex = "1.10.2"
 reqwest = { version = "0.11.22", features = ["blocking"] }
+serde = { version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.108"
 url = "2.4.1"

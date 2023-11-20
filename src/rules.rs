@@ -1,14 +1,20 @@
 use url::{Url, ParseError};
 use reqwest;
 // use glob;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Condition {
     All(Vec<Condition>),
     Any(Vec<Condition>),
     UnqualifiedHost(String),
     QualifiedHost(String),
-    Path(String)
+    // DomainRegex(Regex),
+    AnyTld(String),
+    Path(String),
+    QueryHasParam(String)
+    // QueryParamIs(String, String)
     // PathGlob(glob::Pattern)
 }
 
@@ -26,7 +32,21 @@ impl Condition {
                 Some(domain) => domain==parts,
                 None => return false
             },
-            Self::Path(path) => path==url.path()
+            // Self::DomainRegex(regex) => {
+            //     match url.domain() {
+            //         Some(domain) => regex.is_match(domain),
+            //         None => false
+            //     }
+            // },
+            Self::AnyTld(name) => {
+                match url.domain() {
+                    Some(domain) => Regex::new(&format!(r"(?:^|.+\.){name}(\.\w+(\.\w\w)?)")).unwrap().is_match(domain),
+                    None => false
+                }
+            }
+            Self::Path(path) => path==url.path(),
+            Self::QueryHasParam(name) => url.query_pairs().into_owned().any(|(ref name2, _)| name2==name)
+            // Self::QueryParamIs(name, value) => url.query_pairs().into_owned().any(|(name2, value2)| name2==name && value2==value)
             // Self::PathGlob(pattern) => pattern.matches(url.path())
         };
         dbg!(format!("Condition is {res}"));
@@ -34,7 +54,7 @@ impl Condition {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Mapping {
     Multiple(Vec<Mapping>),
     RemoveAllQueryParams,
@@ -42,7 +62,9 @@ pub enum Mapping {
     AllowSomeQueryParams(Vec<String>),
     GetUrlFromQueryParam(String),
     SwapHost(String),
-    Expand301
+    Expand301,
+    PathFromQueryParam(String),
+    RemoveSubdomain
 }
 
 #[derive(Debug)]
@@ -59,10 +81,18 @@ impl Mapping {
         match self {
             Self::Multiple(mappings) => {
                 for mapping in mappings.iter() {
-                    mapping.apply(url);
+                    match mapping.apply(url) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            dbg!(format!("{e:?}"));
+                            Err(e)?
+                        }
+                    }
                 }
-            }
-            Self::RemoveAllQueryParams => url.set_query(None),
+            },
+            Self::RemoveAllQueryParams => {
+                url.set_query(None);
+            },
             Self::RemoveSomeQueryParams(names) => {
                 let new_query=url.query_pairs().into_owned().filter(|(name, _)| names.iter().all(|blocked_name| blocked_name!=name)).collect::<Vec<_>>();
                 url.query_pairs_mut().clear().extend_pairs(new_query);
@@ -77,8 +107,14 @@ impl Mapping {
                     None => Err(MappingError::CannotFindQueryParam)?
                 }
             },
+            Self::PathFromQueryParam(name) => {
+                match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
+                    Some((_, new_path)) => {url.set_path(&new_path);},
+                    None => Err(MappingError::CannotFindQueryParam)?
+                }
+            },
             Self::SwapHost(new_host) => {
-                url.set_host(Some(new_host)).map_err(|err| MappingError::UrlParseError(err))?
+                url.set_host(Some(new_host)).map_err(|err| MappingError::UrlParseError(err))?;
             },
             Self::Expand301 => {
                 dbg!(format!("Expanding {url:?}"));
@@ -109,6 +145,9 @@ impl Mapping {
                     Err(e) => {println!("Expanding url failed: {e:?}"); Err(MappingError::RequestError(e))?;}
                 }
                 dbg!(format!("Expanded url is now {url:?}"));
+            },
+            Self::RemoveSubdomain => {
+                todo!()
             }
         };
         Ok(())
@@ -121,7 +160,7 @@ impl Mapping {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Rule {
     pub condition: Condition,
     pub mapping: Mapping
