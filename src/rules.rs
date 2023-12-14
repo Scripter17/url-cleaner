@@ -1,8 +1,14 @@
 use url::{Url, ParseError};
-use reqwest;
-// use glob;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use reqwest;
+
+#[cfg(feature = "cache-301s")]
+use std::{
+    io::{self, BufRead, Write},
+    fs::{OpenOptions, File},
+    path::Path
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum Condition {
@@ -10,17 +16,13 @@ pub enum Condition {
     Any(Vec<Condition>),
     UnqualifiedHost(String),
     QualifiedHost(String),
-    // DomainRegex(Regex),
     AnyTld(String),
     Path(String),
     QueryHasParam(String)
-    // QueryParamIs(String, String)
-    // PathGlob(glob::Pattern)
 }
 
 impl Condition {
     pub fn satisfied_by(&self, url: &Url) -> bool {
-        dbg!(format!("Checking {self:?} for {url:?}"));
         let res=match self {
             Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(url)),
             Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(url)),
@@ -32,12 +34,6 @@ impl Condition {
                 Some(domain) => domain==parts,
                 None => return false
             },
-            // Self::DomainRegex(regex) => {
-            //     match url.domain() {
-            //         Some(domain) => regex.is_match(domain),
-            //         None => false
-            //     }
-            // },
             Self::AnyTld(name) => {
                 match url.domain() {
                     Some(domain) => Regex::new(&format!(r"(?:^|.+\.){name}(\.\w+(\.\w\w)?)")).unwrap().is_match(domain),
@@ -46,10 +42,7 @@ impl Condition {
             }
             Self::Path(path) => path==url.path(),
             Self::QueryHasParam(name) => url.query_pairs().into_owned().any(|(ref name2, _)| name2==name)
-            // Self::QueryParamIs(name, value) => url.query_pairs().into_owned().any(|(name2, value2)| name2==name && value2==value)
-            // Self::PathGlob(pattern) => pattern.matches(url.path())
         };
-        dbg!(format!("Condition is {res}"));
         res
     }
 }
@@ -71,9 +64,33 @@ pub enum Mapping {
 pub enum MappingError {
     CannotFindQueryParam,
     UrlParseError(ParseError),
-    RequestError(reqwest::Error),
-    RedirectHeaderNotFound,
-    HeaderStringError(reqwest::header::ToStrError),
+    ReqwestError(reqwest::Error),
+    IoError(io::Error)
+}
+
+impl From<reqwest::Error> for MappingError {
+    fn from(value: reqwest::Error) -> Self {
+        Self::ReqwestError(value)
+    }
+}
+
+impl From<ParseError> for MappingError {
+    fn from(value: ParseError) -> Self {
+        Self::UrlParseError(value)
+    }
+}
+
+impl From<io::Error> for MappingError {
+    fn from(value: io::Error) -> Self {
+        Self::IoError(value)
+    }
+}
+
+#[cfg(feature = "cache-301s")]
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where P: AsRef<Path>, {
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
 }
 
 impl Mapping {
@@ -81,13 +98,7 @@ impl Mapping {
         match self {
             Self::Multiple(mappings) => {
                 for mapping in mappings.iter() {
-                    match mapping.apply(url) {
-                        Ok(_) => {},
-                        Err(e) => {
-                            dbg!(format!("{e:?}"));
-                            Err(e)?
-                        }
-                    }
+                    mapping.apply(url)?;
                 }
             },
             Self::RemoveAllQueryParams => {
@@ -103,7 +114,7 @@ impl Mapping {
             },
             Self::GetUrlFromQueryParam(name) => {
                 match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
-                    Some((_, new_url)) => {*url=Url::parse(&new_url).map_err(|err| MappingError::UrlParseError(err))?;},
+                    Some((_, new_url)) => {*url=Url::parse(&new_url)?},
                     None => Err(MappingError::CannotFindQueryParam)?
                 }
             },
@@ -114,49 +125,44 @@ impl Mapping {
                 }
             },
             Self::SwapHost(new_host) => {
-                url.set_host(Some(new_host)).map_err(|err| MappingError::UrlParseError(err))?;
+                url.set_host(Some(new_host))?;
             },
             Self::Expand301 => {
-                dbg!(format!("Expanding {url:?}"));
-                let client=reqwest::blocking::Client::builder().redirect(reqwest::redirect::Policy::none()).build().unwrap();
-                match client.get(url.to_string()).send() {
-                    Ok(response) => {
-                        dbg!(format!("{:?}", response.headers()));
-                        match response.headers().get("location") {
-                            Some(location_header) => match location_header.to_str() {
-                                Ok(location_str) => match Url::parse(location_str) {
-                                    Ok(new_url) => {*url=new_url;},
-                                    Err(e) => {
-                                        dbg!(format!("Failed to parse location header URL: {e:?}"));
-                                        Err(MappingError::UrlParseError(e))?
-                                    }
-                                },
-                                Err(e) => {
-                                    dbg!(format!("Failed to stringify location header: {e:?}"));
-                                    Err(MappingError::HeaderStringError(e))?
+                #[cfg(feature = "cache-301s")]
+                {
+                    if let Ok(lines) = read_lines("301-cache.txt") {
+                        for line in lines.filter_map(Result::ok) {
+                            if let Some((short, long)) = line.split_once('\t') {
+                                if url.as_str()==short {
+                                    *url=Url::parse(&long)?;
+                                    return Ok(());
                                 }
-                            },
-                            None => {
-                                dbg!(format!("Location header not found"));
-                                Err(MappingError::RedirectHeaderNotFound)?
                             }
-                        };
+                        }
                     }
-                    Err(e) => {println!("Expanding url failed: {e:?}"); Err(MappingError::RequestError(e))?;}
                 }
-                dbg!(format!("Expanded url is now {url:?}"));
+                #[cfg(not(target_family = "wasm"))]
+                {
+                    let client=reqwest::blocking::Client::new();
+                    match client.get(url.to_string()).send() {
+                        Ok(response) => {
+                            let new_url=response.url();
+                            OpenOptions::new().append(true).open("301-cache.txt")?.write(format!("{}\t{}", url.as_str(), new_url.as_str()).as_bytes())?;
+                            *url=new_url.clone();
+                        },
+                        Err(e) => {println!("Expanding url failed: {e:?}"); Err(e)?;}
+                    }
+                }
+                #[cfg(target_family = "wasm")]
+                {
+                    todo!();
+                }
             },
             Self::RemoveSubdomain => {
-                todo!()
+                todo!();
             }
         };
         Ok(())
-    }
-
-    pub fn mapped_url_from(&self, url: &Url) -> Result<Url, MappingError> {
-        let mut url=url.clone();
-        self.apply(&mut url)?;
-        Ok(url)
     }
 }
 
@@ -168,22 +174,19 @@ pub struct Rule {
 
 #[derive(Debug)]
 pub enum RuleError {
-    FailedCondition
+    FailedCondition,
+    MappingError(MappingError)
 }
 
 impl Rule {
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         if self.condition.satisfied_by(url) {
-            self.mapping.apply(url);
-            Ok(())
+            match self.mapping.apply(url) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(RuleError::MappingError(e))
+            }
         } else {
             Err(RuleError::FailedCondition)
         }
-    }
-
-    pub fn mapped_url_from(&self, url: &Url) -> Result<Url, RuleError> {
-        let mut url=url.clone();
-        self.apply(&mut url)?;
-        Ok(url)
     }
 }

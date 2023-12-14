@@ -1,0 +1,83 @@
+[
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedHost": "deviantart.com"},
+				{"Path": "/users/outgoing"}
+			]
+		},
+		"mapping": {
+			"GetUrlFromQueryParam": "url"
+		}
+	},
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedHost": "tumblr.com"},
+				{"QueryHasParam": "redirect_to"}
+			]
+		},
+		"mapping": {
+			"Multiple": [
+				{"PathFromQueryParam": "redirect_to"},
+				"RemoveAllQueryParams"
+			]
+		}
+	},
+	{
+		"condition": {
+			"Any": [
+				{"UnqualifiedHost": "t.co"},
+				{"UnqualifiedHost": "bit.ly"},
+				{"UnqualifiedHost": "pixiv.me"},
+				{
+					"All": [
+						{"UnqualifiedHost": "pawoo.net"},
+						{"Path": "/oauth_authentications"}
+					]
+				},
+				{"UnqualifiedHost": "tr.ee"}
+			]
+		},
+		"mapping": "Expand301"
+	},
+	{
+		"condition": {"AnyTld": "google"},
+		"mapping": {
+			"AllowSomeQueryParams": ["hl", "q", "tbm"]
+		}
+	},
+	{
+		"condition": {"UnqualifiedHost": "youtube.com"},
+		"mapping": {
+			"RemoveSomeQueryParams": ["si"]
+		}
+	},
+	{
+		"condition": {
+			"Any": [
+				{"UnqualifiedHost": "twitter.com"},
+				{"UnqualifiedHost": "vxtwitter.com"},
+				{"UnqualifiedHost": "fxtwitter.com"},
+				{"UnqualifiedHost": "x.com"}
+			]
+		},
+		"mapping": {
+			"SwapHost": "twitter.com"
+		}
+	},
+	{
+		"condition": {
+			"Any": [
+				{"UnqualifiedHost": "twitter.com"},
+				{"UnqualifiedHost": "reddit.com"},
+				{"UnqualifiedHost": "theonion.com"},
+				{"UnqualifiedHost": "teespring.com"},
+				{"UnqualifiedHost": "donmai.com"},
+				{"UnqualifiedHost": "tumblr.com"},
+				{"UnqualifiedHost": "instagram.com"}
+			]
+		},
+		"mapping": "RemoveAllQueryParams"
+	}
+]
