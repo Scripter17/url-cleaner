@@ -3,7 +3,7 @@
 		"condition": {
 			"All": [
 				{"UnqualifiedHost": "deviantart.com"},
-				{"Path": "/users/outgoing"}
+				{"PathIs": "/users/outgoing"}
 			]
 		},
 		"mapping": {
@@ -19,7 +19,7 @@
 		},
 		"mapping": {
 			"Multiple": [
-				{"PathFromQueryParam": "redirect_to"},
+				{"GetPathFromQueryParam": "redirect_to"},
 				"RemoveAllQueryParams"
 			]
 		}
@@ -33,7 +33,7 @@
 				{
 					"All": [
 						{"UnqualifiedHost": "pawoo.net"},
-						{"Path": "/oauth_authentications"}
+						{"PathIs": "/oauth_authentications"}
 					]
 				},
 				{"UnqualifiedHost": "tr.ee"}
@@ -42,7 +42,7 @@
 		"mapping": "Expand301"
 	},
 	{
-		"condition": {"AnyTld": "google"},
+		"condition": {"UnqualifiedAnyTld": "google"},
 		"mapping": {
 			"AllowSomeQueryParams": ["hl", "q", "tbm"]
 		}

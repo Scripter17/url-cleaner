@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::fs::read_to_string;
 
 #[cfg(feature = "stdin")]
 use std::io;
@@ -7,10 +6,10 @@ use std::io;
 use atty;
 
 use clap::Parser;
-use serde_json;
+use url::Url;
 
 mod rules;
-mod cleaner;
+mod glue;
 
 #[derive(Parser)]
 struct Args {
@@ -21,11 +20,12 @@ struct Args {
 
 fn main() {
     let args=Args::parse();
-    let rules=args.rules.map(|path| serde_json::from_str::<Vec<rules::Rule>>(&read_to_string(path).unwrap()).unwrap());
+    let rules=rules::get_rules(args.rules.as_deref()).unwrap();
     if let Some(url) = args.url {
-        match cleaner::clean_url_str(&url, rules.as_deref()) {
-            Ok(url) => {println!("{url}");},
-            Err(_) => {println!();}
+        let mut url=Url::parse(&url).unwrap();
+        match rules.apply(&mut url) {
+            Ok(_) => {println!("{url}");},
+            Err(e) => {println!("{e:?}");}
         }
     }
 
@@ -33,8 +33,9 @@ fn main() {
     {
         if atty::isnt(atty::Stream::Stdin) {
             for line in io::stdin().lines() {
-                match cleaner::clean_url_str(&line.unwrap(), rules.as_deref()) {
-                    Ok(url) => {println!("{url}");},
+                let mut url=Url::parse(&line.unwrap()).unwrap();
+                match rules.apply(&mut url) {
+                    Ok(_) => {println!("{url}");},
                     Err(_) => {println!();}
                 }
             }
