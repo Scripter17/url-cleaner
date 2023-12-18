@@ -2,6 +2,7 @@ use serde::Deserialize;
 use thiserror::Error;
 use url::{Url, ParseError};
 use std::path::Path;
+use std::borrow::Cow;
 
 #[cfg(feature = "http")]
 use reqwest;
@@ -11,6 +12,9 @@ use std::{
     io::{self, BufRead, Write},
     fs::{OpenOptions, File}
 };
+
+use crate::glue;
+use crate::types;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum Mapping {
@@ -24,14 +28,22 @@ pub enum Mapping {
     GetUrlFromQueryParam(String),
     GetPathFromQueryParam(String),
     SwapHost(String),
-    Expand301
+    Expand301,
+    RegexSubUrlPart {
+        part_name: types::UrlPartName,
+        none_to_empty_string: bool,
+        regex: glue::Regex,
+        replace: String
+    }
 }
 
 #[derive(Error, Debug)]
 pub enum MappingError {
     #[allow(dead_code)]
-    #[error("This binary was compiled without support for this mapper")]
+    #[error("Url-cleaner was compiled without support for this mapper")]
     MapperDisabled,
+    #[error("Provided URL does not have the requested part")]
+    UrlPartNotFound,
     #[error("The URL provided does not contain the query paramater required")]
     CannotFindQueryParam,
     #[error("Coult not parse the would-be new URL")]
@@ -41,7 +53,9 @@ pub enum MappingError {
     ReqwestError(#[from] reqwest::Error),
     #[cfg(feature = "cache-redirects")]
     #[error("IO Error")]
-    IoError(#[from] io::Error)
+    IoError(#[from] io::Error),
+    #[error("Could not convert result of replacement as a URL")]
+    PartReplace(#[from] types::PartReplaceError)
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -126,6 +140,18 @@ impl Mapping {
                     }
                     #[cfg(target_family = "wasm")]
                     todo!();
+                }
+            },
+            Self::RegexSubUrlPart {part_name, none_to_empty_string, regex, replace} => {
+                if cfg!(feature = "regex") {
+                    let old_part_value=part_name
+                        .get_from(url)
+                        .ok_or(MappingError::UrlPartNotFound)
+                        .or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(MappingError::UrlPartNotFound)})?
+                        .into_owned();
+                    part_name.replace_with(url, regex.replace(&old_part_value, replace).as_ref())?;
+                } else {
+                    Err(MappingError::MapperDisabled)?;
                 }
             }
         };

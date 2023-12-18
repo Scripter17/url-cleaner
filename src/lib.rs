@@ -3,11 +3,12 @@ use url::Url;
 
 mod rules;
 mod glue;
+mod types;
 
 #[wasm_bindgen]
 pub fn main(url: &str, rules: wasm_bindgen::JsValue) -> Result<String, JsValue> {
     let rules = if rules.is_null() {
-        rules::get_default_rules().ok_or(JsValue::from_str("No default rules in binary"))?
+        rules::get_rules(None).or(Err(JsValue::from_str("No default rules in binary")))?
     } else {
         serde_wasm_bindgen::from_value(rules)?
     };

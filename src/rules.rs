@@ -41,13 +41,14 @@ const RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace
 static RULES: OnceLock<Rules>=OnceLock::new();
 
 pub fn get_default_rules() -> Option<Rules> {
-    if cfg!(feature = "default-rules") { // Apparently this gets optimized out at compile time
+    #[cfg(feature = "default-rules")]
+    {
         Some(RULES.get_or_init(|| {
             serde_json::from_str(RULES_STR).unwrap()
         }).clone())
-    } else {
-        None
     }
+    #[cfg(not(feature = "default-rules"))]
+    None
 }
 
 #[derive(Debug, Clone, Deserialize)]

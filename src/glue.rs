@@ -1,5 +1,5 @@
 mod regex;
 mod glob;
 
-pub use regex::{Regex, deserialize_regex};
+pub use regex::Regex;
 pub use glob::Glob;

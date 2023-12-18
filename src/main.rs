@@ -10,6 +10,7 @@ use url::Url;
 
 mod rules;
 mod glue;
+mod types;
 
 #[derive(Parser)]
 struct Args {
