@@ -1,0 +1,15 @@
+[
+  {
+    "condition": "Always",
+    "mapping": {
+      "RegexSubUrlPart": {
+        "part_name": "Host",
+        "none_to_empty_string": true,
+        "regex": {
+          "pattern": "a"
+        },
+        "replace": "b"
+      }
+    }
+  }
+]

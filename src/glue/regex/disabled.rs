@@ -3,9 +3,12 @@ use std::borrow::Cow;
 use serde::{de::Error, Deserialize, Deserializer};
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Regex;
+pub struct Regex {
+    #[serde(flatten, deserialize_with = "deserialize_regex")]
+    inner: ()
+}
 
-pub fn deserialize_regex<'de, D>(_deserializer: D) -> Result<Regex, D::Error>
+pub fn deserialize_regex<'de, D>(_deserializer: D) -> Result<(), D::Error>
 where
     D: Deserializer<'de>
 {

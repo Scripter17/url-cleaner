@@ -9,6 +9,8 @@ use crate::types::UrlPartName;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum Condition {
+    Always,
+    Never,
     All(Vec<Condition>),
     Any(Vec<Condition>),
     Not(Box<Condition>),
@@ -56,6 +58,8 @@ pub enum ConditionError {
 impl Condition {
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
         Ok(match self {
+            Self::Always => true,
+            Self::Never => false,
             Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(url)==Ok(true)),
             Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(url)==Ok(true)),
             Self::Not(condition) => !condition.satisfied_by(url)?,

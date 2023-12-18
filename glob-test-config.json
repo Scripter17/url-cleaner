@@ -1,0 +1,14 @@
+[
+  {
+    "condition": {
+      "UrlPartMatchesGlob": {
+        "part_name": "Host",
+        "none_to_empty_string": false,
+        "glob": {
+          "pattern": "a"
+        }
+      }
+    },
+    "mapping": "None"
+  }
+]

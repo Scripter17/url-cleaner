@@ -3,7 +3,7 @@ pub use glob::{Pattern, MatchOptions};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Glob {
-    #[serde(deserialize_with = "deserialize_pattern")]
+    #[serde(flatten, deserialize_with = "deserialize_pattern")]
     inner: Pattern,
     #[serde(flatten, with = "DeMatchOptions")]
     options: MatchOptions
@@ -18,10 +18,16 @@ struct PatternParts {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(remote = "MatchOptions")]
 struct DeMatchOptions {
+    #[serde(default = "get_true")]
     case_sensitive: bool,
+    #[serde(default = "get_false")]
     require_literal_separator: bool,
+    #[serde(default = "get_true")]
     require_literal_leading_dot: bool,
 }
+
+fn get_true() -> bool {true}
+fn get_false() -> bool {false}
 
 pub fn deserialize_pattern<'de, D>(deserializer: D) -> Result<Pattern, D::Error>
 where

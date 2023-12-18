@@ -18,6 +18,7 @@ use crate::types;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum Mapping {
+    None,
     IgnoreError(Box<Mapping>),
     Multiple(Vec<Mapping>),
     MultipleAbortOnError(Vec<Mapping>),
@@ -68,6 +69,7 @@ where P: AsRef<Path>, {
 impl Mapping {
     pub fn apply(&self, url: &mut Url) -> Result<(), MappingError> {
         match self {
+            Self::None => {},
             Self::IgnoreError(mapping) => {
                 let _=mapping.apply(url);
             },

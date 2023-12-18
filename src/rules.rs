@@ -1,10 +1,12 @@
 use url::Url;
-use serde::Deserialize;
-use thiserror::Error;
 #[cfg(feature = "default-rules")]
 use std::sync::OnceLock;
 use std::fs::read_to_string;
 use std::path::Path;
+
+use serde::Deserialize;
+use serde_json;
+use thiserror::Error;
 
 mod conditions;
 mod mappings;
@@ -36,7 +38,7 @@ impl Rule {
 }
 
 #[cfg(feature = "default-rules")]
-const RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../config.json"), ' ', ""), '\t', ""), '\n', "");
+const RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-config.json"), ' ', ""), '\t', ""), '\n', "");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
 
@@ -84,14 +86,14 @@ pub enum GetRulesError {
     #[error("Can't load file")]
     CantLoadFile,
     #[error("Can't parse file")]
-    CantParseFile,
+    CantParseFile(#[from] serde_json::Error),
     #[error("No default rules")]
     NoDefaultRules
 }
 
 pub fn get_rules(path: Option<&Path>) -> Result<Rules, GetRulesError> {
     Ok(match path {
-        Some(path) => Rules(serde_json::from_str::<Vec<Rule>>(&read_to_string(path).or(Err(GetRulesError::CantLoadFile))?).or(Err(GetRulesError::CantParseFile))?),
+        Some(path) => serde_json::from_str::<Rules>(&read_to_string(path).or(Err(GetRulesError::CantLoadFile))?)?,
         None => get_default_rules().ok_or(GetRulesError::NoDefaultRules)?
     })
 }

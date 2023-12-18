@@ -5,20 +5,24 @@ pub use regex::{Regex as InnerRegex, RegexBuilder, Replacer};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Regex {
-    #[serde(deserialize_with = "deserialize_regex")]
+    #[serde(flatten, deserialize_with = "deserialize_regex")]
     inner: InnerRegex
 }
 
 #[derive(Debug, Deserialize)]
 struct RegexParts {
     pattern: String,
-    dot_all: bool,
-    ignore_whitespace: bool,
-    line_terminator: u8,
-    multi_line: bool,
-    octal: bool,
-    swap_greed: bool,
-    unicode: bool
+    #[serde(default)]                dot_all: bool,
+    #[serde(default)]                ignore_whitespace: bool,
+    #[serde(default = "newline_u8")] line_terminator: u8,
+    #[serde(default)]                multi_line: bool,
+    #[serde(default)]                octal: bool,
+    #[serde(default)]                swap_greed: bool,
+    #[serde(default)]                unicode: bool
+}
+
+fn newline_u8() -> u8 {
+    '\n' as u8
 }
 
 pub fn deserialize_regex<'de, D>(deserializer: D) -> Result<InnerRegex, D::Error>
@@ -40,10 +44,10 @@ where
 
 impl Regex {
     pub fn is_match(&self, str: &str) -> bool {
-        self.is_match(str)
+        self.inner.is_match(str)
     }
 
-    pub fn replace<'h, R: Replacer>(&self, haystack: &str, rep: R) -> Cow<'h, str> {
-        self.replace(haystack, rep)
+    pub fn replace<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
+        self.inner.replace(haystack, rep)
     }
 }
