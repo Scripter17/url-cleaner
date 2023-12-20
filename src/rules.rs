@@ -3,13 +3,14 @@ use url::Url;
 use std::sync::OnceLock;
 use std::fs::read_to_string;
 use std::path::Path;
+use std::ops::{Deref, DerefMut};
 
 use serde::Deserialize;
 use serde_json;
 use thiserror::Error;
 
-mod conditions;
-mod mappers;
+pub mod conditions;
+pub mod mappers;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Rule {
@@ -28,6 +29,7 @@ pub enum RuleError {
 }
 
 impl Rule {
+    /// Apply the rule to the url in-place.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         if self.condition.satisfied_by(url)? {
             Ok(self.mapper.apply(url)?)
@@ -37,8 +39,10 @@ impl Rule {
     }
 }
 
-#[cfg(feature = "default-rules")]
+#[cfg(all(feature = "default-rules", feature = "minify-default-rules"))]
 const RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-config.json"), ' ', ""), '\t', ""), '\n', "");
+#[cfg(all(feature = "default-rules", not(feature = "minify-default-rules")))]
+const RULES_STR: &str=include_str!("../default-config.json");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
 
@@ -64,11 +68,28 @@ impl Into<Vec<Rule>> for Rules {
     fn into(self) -> Vec<Rule> {self.0}
 }
 
+impl Deref for Rules {
+    type Target = [Rule];
+
+    fn deref(&self) -> &Self::Target {
+        self.0.deref()
+    }
+}
+
+impl DerefMut for Rules {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0.deref_mut()
+    }
+}
+
 impl Rules {
-    fn as_slice<'a>(&'a self) -> &'a [Rule] {self.0.as_slice()}
+    #[allow(dead_code)]
+    fn as_slice<'a>(&'a self) -> &'a [Rule] {self.deref()}
+    #[allow(dead_code)]
+    fn as_mut_slice<'a>(&'a mut self) -> &'a mut [Rule] {self.deref_mut()}
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
-        for rule in self.as_slice() {
+        for rule in self.deref() {
             match rule.apply(&mut temp_url) {
                 Err(RuleError::FailedCondition) => {},
                 e @ Err(_) => e?,

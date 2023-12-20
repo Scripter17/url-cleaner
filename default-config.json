@@ -2,7 +2,7 @@
 	{
 		"condition": {
 			"All": [
-				{"UnqualifiedHost": "deviantart.com"},
+				{"UnqualifiedDomain": "deviantart.com"},
 				{"PathIs": "/users/outgoing"}
 			]
 		},
@@ -13,7 +13,7 @@
 	{
 		"condition": {
 			"All": [
-				{"UnqualifiedHost": "tumblr.com"},
+				{"UnqualifiedDomain": "tumblr.com"},
 				{"QueryHasParam": "redirect_to"}
 			]
 		},
@@ -27,16 +27,16 @@
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedHost": "t.co"},
-				{"UnqualifiedHost": "bit.ly"},
-				{"UnqualifiedHost": "pixiv.me"},
+				{"UnqualifiedDomain": "t.co"},
+				{"UnqualifiedDomain": "bit.ly"},
+				{"UnqualifiedDomain": "pixiv.me"},
 				{
 					"All": [
-						{"UnqualifiedHost": "pawoo.net"},
+						{"UnqualifiedDomain": "pawoo.net"},
 						{"PathIs": "/oauth_authentications"}
 					]
 				},
-				{"UnqualifiedHost": "tr.ee"}
+				{"UnqualifiedDomain": "tr.ee"}
 			]
 		},
 		"mapper": "Expand301"
@@ -48,7 +48,7 @@
 		}
 	},
 	{
-		"condition": {"UnqualifiedHost": "youtube.com"},
+		"condition": {"UnqualifiedDomain": "youtube.com"},
 		"mapper": {
 			"RemoveSomeQueryParams": ["si"]
 		}
@@ -56,10 +56,10 @@
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedHost": "twitter.com"},
-				{"UnqualifiedHost": "vxtwitter.com"},
-				{"UnqualifiedHost": "fxtwitter.com"},
-				{"UnqualifiedHost": "x.com"}
+				{"UnqualifiedDomain": "twitter.com"},
+				{"UnqualifiedDomain": "vxtwitter.com"},
+				{"UnqualifiedDomain": "fxtwitter.com"},
+				{"UnqualifiedDomain": "x.com"}
 			]
 		},
 		"mapper": {
@@ -69,13 +69,13 @@
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedHost": "twitter.com"},
-				{"UnqualifiedHost": "reddit.com"},
-				{"UnqualifiedHost": "theonion.com"},
-				{"UnqualifiedHost": "teespring.com"},
-				{"UnqualifiedHost": "donmai.com"},
-				{"UnqualifiedHost": "tumblr.com"},
-				{"UnqualifiedHost": "instagram.com"}
+				{"UnqualifiedDomain": "twitter.com"},
+				{"UnqualifiedDomain": "reddit.com"},
+				{"UnqualifiedDomain": "theonion.com"},
+				{"UnqualifiedDomain": "teespring.com"},
+				{"UnqualifiedDomain": "donmai.com"},
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"UnqualifiedDomain": "instagram.com"}
 			]
 		},
 		"mapper": "RemoveAllQueryParams"

@@ -1,11 +1,13 @@
 use wasm_bindgen::prelude::*;
 use url::Url;
 
-mod rules;
-mod glue;
-mod types;
+pub mod rules;
+pub mod glue;
+pub mod types;
 
 #[wasm_bindgen]
+/// Takes a URL string and optionally a JS object containing mapper rules
+/// Returns the mapped URL or any errors raised
 pub fn main(url: &str, rules: wasm_bindgen::JsValue) -> Result<String, JsValue> {
     let rules = if rules.is_null() {
         rules::get_rules(None).or(Err(JsValue::from_str("No default rules in binary")))?

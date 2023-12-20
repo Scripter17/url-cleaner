@@ -1,12 +1,15 @@
 use std::borrow::Cow;
 
 use serde::{de::Error, Deserialize, Deserializer};
-pub use regex::{Regex as InnerRegex, RegexBuilder, Replacer};
+pub use regex::{Regex, RegexBuilder, Replacer};
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Regex {
+/// The enabled form of the wrapper around [`regex::Regex`].
+/// Only the necessary methods are exposed for the sake of simplicity.
+/// Note that if the `regex` feature is disabled, this struct is empty.
+pub struct RegexWrapper {
     #[serde(flatten, deserialize_with = "deserialize_regex")]
-    inner: InnerRegex
+    pub inner: Regex
 }
 
 #[derive(Debug, Deserialize)]
@@ -23,7 +26,7 @@ struct RegexParts {
 
 fn newline_u8() -> u8 {'\n' as u8}
 
-pub fn deserialize_regex<'de, D>(deserializer: D) -> Result<InnerRegex, D::Error>
+fn deserialize_regex<'de, D>(deserializer: D) -> Result<Regex, D::Error>
 where
     D: Deserializer<'de>
 {
@@ -40,7 +43,7 @@ where
         .map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}", regex_parts.pattern)))
 }
 
-impl Regex {
+impl RegexWrapper {
     pub fn is_match(&self, str: &str) -> bool {
         self.inner.is_match(str)
     }

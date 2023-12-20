@@ -1,62 +1,97 @@
 use serde::Deserialize;
 use thiserror::Error;
 use url::{Url, ParseError};
+#[cfg(feature = "cache-redirects")]
 use std::path::Path;
 use std::borrow::Cow;
 
 #[cfg(feature = "http")]
-use reqwest;
+use reqwest::{self, Error as ReqwestError};
+#[cfg(not(feature = "http"))]
+#[derive(Debug, Error)]
+#[error("A dummy reqwest::Error")]
+pub struct ReqwestError;
 
 #[cfg(feature = "cache-redirects")]
 use std::{
-    io::{self, BufRead, Write},
+    io::{self, BufRead, Write, Error as IoError},
     fs::{OpenOptions, File}
 };
+#[cfg(not(feature = "cache-redirects"))]
+#[derive(Debug, Error)]
+#[error("A dummy io::Error")]
+pub struct IoError;
 
 use crate::glue;
 use crate::types;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum Mapper {
+    /// Does nothing.
     None,
+    /// Ignores any error the contained mapper may throw.
     IgnoreError(Box<Mapper>),
+    /// Applies the contained mappers in order. If any mapper throws an error, the URL is left unchanged.
     Multiple(Vec<Mapper>),
+    /// Applies the contained mappers in order. If a mapper throws an error, subsequent mappers aren't applied but the URL is still changed by previous mappers.
     MultipleAbortOnError(Vec<Mapper>),
+    /// Applies the contained mappers in order. If a mapper throws an error, subsequent mappers are still applied.
     MultipleIgnoreError(Vec<Mapper>),
+    /// Removes the URL's entire query.
     RemoveAllQueryParams,
+    /// Removes the specified query paramaters.
     RemoveSomeQueryParams(Vec<String>),
+    /// Removes all but the specified query paramaters.
     AllowSomeQueryParams(Vec<String>),
+    /// Replace the current URL with the value of the specified query paramater.
+    /// Useful in cases where websites have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     GetUrlFromQueryParam(String),
+    /// Replace the current URL's path with the value of the specified query paramater.
+    /// Useful in cases where websites have a "you must log in to see this page" page.
     GetPathFromQueryParam(String),
+    /// Replaces the URL's host to the provided host.
+    /// Useful for converting `vxtwitter.com` and `fxtwitter.com` back to `twitter.com`.
     SwapHost(String),
+    /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with
+    /// Useful for link shorteners like `bit.ly` and `t.co`
     Expand301,
+    /// Applies a regular expression substitution to the specified URL part
+    /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`](super::conditions::ConditionError::UrlPartNotFound) error.
     RegexSubUrlPart {
         part_name: types::UrlPartName,
+        #[serde(default = "get_true")]
         none_to_empty_string: bool,
         regex: glue::Regex,
         replace: String
     }
 }
 
+fn get_true() -> bool {true}
+
 #[derive(Error, Debug)]
 pub enum MapperError {
+    /// Returned on mappers that require regex, glob, or http when those features are disabled.
     #[allow(dead_code)]
     #[error("Url-cleaner was compiled without support for this mapper")]
     MapperDisabled,
-    #[error("Provided URL does not have the requested part")]
+    /// Returned when the mapper has `none_to_empty_string` set to `false` and the requested part of the provided URL is `None`.
+    #[error("The provided URL does not have the requested part")]
     UrlPartNotFound,
+    /// Returned when the provided URL's query does not contain a query paramater with the requested name.
     #[error("The URL provided does not contain the query paramater required")]
     CannotFindQueryParam,
-    #[error("Coult not parse the would-be new URL")]
+    /// Returned when the would-be new URL could not be parsed by [`url::Url`].
+    #[error("Could not parse the would-be new URL")]
     UrlParseError(#[from] ParseError),
-    #[cfg(feature = "http")]
+    /// Returned when an HTTP request fails. Currently only applies to the Expand301 mapper.
     #[error("The HTTP request failed")]
-    ReqwestError(#[from] reqwest::Error),
-    #[cfg(feature = "cache-redirects")]
+    ReqwestError(#[from] ReqwestError),
+    /// Returned when an I/O error occurs. Currently only applies when Expand301 is set to cache redirects.
     #[error("IO Error")]
-    IoError(#[from] io::Error),
-    #[error("Could not convert result of replacement as a URL")]
-    PartReplace(#[from] types::PartReplaceError)
+    IoError(#[from] IoError),
+    /// Returned when a part replacement fails.
+    #[error("Replacement error")]
+    ReplaceError(#[from] types::ReplaceError)
 }
 
 #[cfg(feature = "cache-redirects")]

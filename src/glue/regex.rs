@@ -4,6 +4,6 @@ mod enabled;
 mod disabled;
 
 #[cfg(feature = "regex")]
-pub use enabled::Regex;
+pub use enabled::RegexWrapper as Regex;
 #[cfg(not(feature = "regex"))]
-pub use disabled::Regex;
+pub use disabled::RegexWrapper as Regex;
