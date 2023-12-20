@@ -6,7 +6,7 @@
 				{"PathIs": "/users/outgoing"}
 			]
 		},
-		"mapping": {
+		"mapper": {
 			"GetUrlFromQueryParam": "url"
 		}
 	},
@@ -17,7 +17,7 @@
 				{"QueryHasParam": "redirect_to"}
 			]
 		},
-		"mapping": {
+		"mapper": {
 			"Multiple": [
 				{"GetPathFromQueryParam": "redirect_to"},
 				"RemoveAllQueryParams"
@@ -39,17 +39,17 @@
 				{"UnqualifiedHost": "tr.ee"}
 			]
 		},
-		"mapping": "Expand301"
+		"mapper": "Expand301"
 	},
 	{
 		"condition": {"UnqualifiedAnyTld": "google"},
-		"mapping": {
+		"mapper": {
 			"AllowSomeQueryParams": ["hl", "q", "tbm"]
 		}
 	},
 	{
 		"condition": {"UnqualifiedHost": "youtube.com"},
-		"mapping": {
+		"mapper": {
 			"RemoveSomeQueryParams": ["si"]
 		}
 	},
@@ -62,7 +62,7 @@
 				{"UnqualifiedHost": "x.com"}
 			]
 		},
-		"mapping": {
+		"mapper": {
 			"SwapHost": "twitter.com"
 		}
 	},
@@ -78,6 +78,6 @@
 				{"UnqualifiedHost": "instagram.com"}
 			]
 		},
-		"mapping": "RemoveAllQueryParams"
+		"mapper": "RemoveAllQueryParams"
 	}
 ]

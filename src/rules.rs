@@ -9,12 +9,12 @@ use serde_json;
 use thiserror::Error;
 
 mod conditions;
-mod mappings;
+mod mappers;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Rule {
     pub condition: conditions::Condition,
-    pub mapping: mappings::Mapping
+    pub mapper: mappers::Mapper
 }
 
 #[derive(Error, Debug)]
@@ -23,14 +23,14 @@ pub enum RuleError {
     FailedCondition,
     #[error("The condition failed")]
     ConditionError(#[from] conditions::ConditionError),
-    #[error("The mapping failed")]
-    MappingError(#[from] mappings::MappingError)
+    #[error("The mapper failed")]
+    MapperError(#[from] mappers::MapperError)
 }
 
 impl Rule {
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         if self.condition.satisfied_by(url)? {
-            Ok(self.mapping.apply(url)?)
+            Ok(self.mapper.apply(url)?)
         } else {
             Err(RuleError::FailedCondition)
         }
@@ -65,7 +65,6 @@ impl Into<Vec<Rule>> for Rules {
 }
 
 impl Rules {
-    fn into_inner(self) -> Vec<Rule> {self.0}
     fn as_slice<'a>(&'a self) -> &'a [Rule] {self.0.as_slice()}
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         let mut temp_url=url.clone();

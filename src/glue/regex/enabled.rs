@@ -21,9 +21,7 @@ struct RegexParts {
     #[serde(default)]                unicode: bool
 }
 
-fn newline_u8() -> u8 {
-    '\n' as u8
-}
+fn newline_u8() -> u8 {'\n' as u8}
 
 pub fn deserialize_regex<'de, D>(deserializer: D) -> Result<InnerRegex, D::Error>
 where

@@ -49,6 +49,7 @@ pub enum Condition {
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum ConditionError {
+    #[allow(dead_code)]
     #[error("Url-cleaner was compiled without support for this condition")]
     ConditionDisabled,
     #[error("The provided URL does not contain the requested part")]

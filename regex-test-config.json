@@ -1,7 +1,7 @@
 [
   {
     "condition": "Always",
-    "mapping": {
+    "mapper": {
       "RegexSubUrlPart": {
         "part_name": "Host",
         "none_to_empty_string": true,

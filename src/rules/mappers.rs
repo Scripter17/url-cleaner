@@ -17,12 +17,12 @@ use crate::glue;
 use crate::types;
 
 #[derive(Debug, Deserialize, Clone)]
-pub enum Mapping {
+pub enum Mapper {
     None,
-    IgnoreError(Box<Mapping>),
-    Multiple(Vec<Mapping>),
-    MultipleAbortOnError(Vec<Mapping>),
-    MultipleIgnoreError(Vec<Mapping>),
+    IgnoreError(Box<Mapper>),
+    Multiple(Vec<Mapper>),
+    MultipleAbortOnError(Vec<Mapper>),
+    MultipleIgnoreError(Vec<Mapper>),
     RemoveAllQueryParams,
     RemoveSomeQueryParams(Vec<String>),
     AllowSomeQueryParams(Vec<String>),
@@ -39,7 +39,7 @@ pub enum Mapping {
 }
 
 #[derive(Error, Debug)]
-pub enum MappingError {
+pub enum MapperError {
     #[allow(dead_code)]
     #[error("Url-cleaner was compiled without support for this mapper")]
     MapperDisabled,
@@ -66,28 +66,28 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
-impl Mapping {
-    pub fn apply(&self, url: &mut Url) -> Result<(), MappingError> {
+impl Mapper {
+    pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
         match self {
             Self::None => {},
-            Self::IgnoreError(mapping) => {
-                let _=mapping.apply(url);
+            Self::IgnoreError(mapper) => {
+                let _=mapper.apply(url);
             },
-            Self::Multiple(mappings) => {
+            Self::Multiple(mappers) => {
                 let mut temp_url=url.clone();
-                for mapping in mappings {
-                    mapping.apply(&mut temp_url)?;
+                for mapper in mappers {
+                    mapper.apply(&mut temp_url)?;
                 }
                 *url=temp_url;
             },
-            Self::MultipleAbortOnError(mappings) => {
-                for mapping in mappings {
-                    mapping.apply(url)?
+            Self::MultipleAbortOnError(mappers) => {
+                for mapper in mappers {
+                    mapper.apply(url)?
                 }
             },
-            Self::MultipleIgnoreError(mappings) => {
-                for mapping in mappings {
-                    let _=mapping.apply(url);
+            Self::MultipleIgnoreError(mappers) => {
+                for mapper in mappers {
+                    let _=mapper.apply(url);
                 }
             },
             Self::RemoveAllQueryParams => {
@@ -105,13 +105,13 @@ impl Mapping {
             Self::GetUrlFromQueryParam(name) => {
                 match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
                     Some((_, new_url)) => {*url=Url::parse(&new_url)?},
-                    None => Err(MappingError::CannotFindQueryParam)?
+                    None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
             Self::GetPathFromQueryParam(name) => {
                 match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
                     Some((_, new_path)) => {url.set_path(&new_path);},
-                    None => Err(MappingError::CannotFindQueryParam)?
+                    None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
             Self::SwapHost(new_host) => {
@@ -119,7 +119,7 @@ impl Mapping {
             },
             Self::Expand301 => {
                 #[cfg(all(not(feature = "http"), not(feature = "cache-redirects")))]
-                Err(MappingError::MapperDisabled)?;
+                Err(MapperError::MapperDisabled)?;
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(lines) = read_lines("redirect-cache.txt") {
                     for line in lines.filter_map(Result::ok) {
@@ -148,12 +148,12 @@ impl Mapping {
                 if cfg!(feature = "regex") {
                     let old_part_value=part_name
                         .get_from(url)
-                        .ok_or(MappingError::UrlPartNotFound)
-                        .or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(MappingError::UrlPartNotFound)})?
+                        .ok_or(MapperError::UrlPartNotFound)
+                        .or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(MapperError::UrlPartNotFound)})?
                         .into_owned();
                     part_name.replace_with(url, regex.replace(&old_part_value, replace).as_ref())?;
                 } else {
-                    Err(MappingError::MapperDisabled)?;
+                    Err(MapperError::MapperDisabled)?;
                 }
             }
         };
