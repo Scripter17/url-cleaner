@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use thiserror::Error;
 use serde::Deserialize;
 use url::Url;
+use std::convert::identity;
 
 use crate::glue;
 use crate::types::UrlPartName;
@@ -13,6 +14,10 @@ pub enum Condition {
     Always,
     /// Never passes.
     Never,
+    /// Always returns the error [`ConditionError::ExplicitError`]
+    Error,
+    /// Logs the result of the contained condition then propagates any error.
+    Debug(Box<Condition>),
     /// If the contained condition returns an error, treat it as a pass.
     TreatErrorAsPass(Box<Condition>),
     /// If the contained condition returns an error, treat it as a fail.
@@ -77,34 +82,51 @@ pub enum Condition {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         glob: glue::Glob
+    },
+    CommandExitStatus {
+        command: glue::Command,
+        #[serde(default)]
+        expected: i32
     }
 }
 
 fn get_true() -> bool {true}
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug)]
 pub enum ConditionError {
     #[allow(dead_code)]
-    #[error("Url-cleaner was compiled without support for this condition")]
+    #[error("Url-cleaner was compiled without support for this condition.")]
     /// The required condition was disabled at compile time. This can apply to any condition that uses regular expressions or globs.
     ConditionDisabled,
-    #[error("The provided URL does not contain the requested part")]
+    /// The [`Condition::Error`] condition always returns this error.
+    #[error("The \"Error\" condition always returns this error.")]
+    ExplicitError,
+    #[error("The provided URL does not contain the requested part.")]
     /// The provided URL does not contain the requested part.
-    /// See [`crate::types::UrlPartName`] for details
-    UrlPartNotFound
+    /// See [`crate::types::UrlPartName`] for details.
+    UrlPartNotFound,
+    #[error("The command failed to run.")]
+    /// Returned when the specified command failed to run.
+    CommandError(#[from] glue::CommandError)
 }
 
 impl Condition {
-    /// Checks whether or not the provided URL passes the condition
-    /// Returns an error if the condition is disabled or the URL part requested by the condition isn't found
+    /// Checks whether or not the provided URL passes the condition.
+    /// Returns an error if the condition is disabled or the URL part requested by the condition isn't found.
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
+            Self::Error => Err(ConditionError::ExplicitError)?,
+            Self::Debug(condition) => {
+                let is_satisfied=condition.satisfied_by(url);
+                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nCondition satisfied by URL: {is_satisfied:?}");
+                is_satisfied?
+            }
             Self::TreatErrorAsPass(condition) => condition.satisfied_by(url).unwrap_or(true),
             Self::TreatErrorAsFail(condition) => condition.satisfied_by(url).unwrap_or(false),
-            Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(url)==Ok(true)),
-            Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(url)==Ok(true)),
+            Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(url).is_ok_and(identity)),
+            Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(url).is_ok_and(identity)),
             Self::Not(condition) => !condition.satisfied_by(url)?,
             Self::UnqualifiedDomain(parts) => match url.domain() {
                 Some(domain) => domain.split(".").collect::<Vec<_>>().ends_with(&parts.split(".").collect::<Vec<_>>()),
@@ -118,8 +140,8 @@ impl Condition {
                 match url.domain() {
                     Some(domain) => {
                         match domain.split('.').collect::<Vec<_>>().as_slice() {
-                            // All ASCII ccTLD identifiers are two letters long, and all two-letter top-level domains are ccTLDs. - https://en.wikipedia.org/wiki/Country_code_top-level_domain
-                            // I'm just hoping nobody using this ever registers google.whatever.uk and nobody ever tries to sanitize a URL from that domain
+                            // All ASCII ccTLD identifiers are two letters long, and all two-letter top-level domains are ccTLDs. - https://en.wikipedia.org/wiki/Country_code_top-level_domain.
+                            // I'm just hoping nobody using this ever registers google.whatever.uk and nobody ever tries to sanitize a URL from that domain.
                             [.., name2, _, cctld] => name==name2 && cctld.len()==2,
                             [.., name2, _       ] => name==name2,
                             _                     => false
@@ -158,7 +180,10 @@ impl Condition {
             Self::UrlPartMatchesRegex {part_name, none_to_empty_string, regex} => regex.is_match(part_name.get_from(url)
                 .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
             Self::UrlPartMatchesGlob {part_name, none_to_empty_string, glob} => glob.matches(part_name.get_from(url)
-                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref())
+                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+            Self::CommandExitStatus {command, expected} => {
+                &command.exit_code(url)?==expected
+            }
         })
     }
 }

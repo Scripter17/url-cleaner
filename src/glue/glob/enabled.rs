@@ -7,9 +7,9 @@ pub use glob::{Pattern, MatchOptions};
 /// Note that if the `glob` feature is disabled, this struct is empty.
 pub struct Glob {
     #[serde(flatten, deserialize_with = "deserialize_pattern")]
-    inner: Pattern,
+    pub inner: Pattern,
     #[serde(flatten, with = "DeMatchOptions")]
-    options: MatchOptions
+    pub options: MatchOptions
 }
 
 #[derive(Debug, Deserialize)]
@@ -33,10 +33,11 @@ where
     D: Deserializer<'de>
 {
     let pattern_parts: PatternParts = Deserialize::deserialize(deserializer)?;
-    Pattern::new(&pattern_parts.pattern).map_err(|_| D::Error::custom(format!("Invalid glob pattern: {:?}", pattern_parts.pattern)))
+    Pattern::new(&pattern_parts.pattern).map_err(|_| D::Error::custom(format!("Invalid glob pattern: {:?}.", pattern_parts.pattern)))
 }
 
 impl Glob {
+    /// Wrapper for `glob::Pattern::matches`.
     pub fn matches(&self, str: &str) -> bool {
         self.inner.matches_with(str, self.options.clone())
     }

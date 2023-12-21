@@ -13,7 +13,7 @@ impl<'de> Deserialize<'de> for RegexWrapper {
     where
         D: Deserializer<'de>
     {
-        Err(D::Error::custom("Url-cleaner was compiled without support for regex"))
+        Err(D::Error::custom("URL Cleaner was compiled without support for regex."))
     }
 }
 

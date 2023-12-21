@@ -40,14 +40,16 @@ where
         .swap_greed(regex_parts.swap_greed)
         .unicode(regex_parts.unicode)
         .build()
-        .map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}", regex_parts.pattern)))
+        .map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}.", regex_parts.pattern)))
 }
 
 impl RegexWrapper {
+    /// Wrapper for `regex::Regex::is_match`.
     pub fn is_match(&self, str: &str) -> bool {
         self.inner.is_match(str)
     }
 
+    /// Wrapper for `regex::Regex::replace`.
     pub fn replace<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
         self.inner.replace(haystack, rep)
     }

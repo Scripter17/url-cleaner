@@ -1,0 +1,27 @@
+[
+  {
+    "condition": {
+      "Debug": {
+        "CommandExitStatus": {
+          "command": {
+            "program": "/usr/bin/false"
+          }
+        }
+      }
+    },
+    "mapper": "None"
+  },
+  {
+    "condition": "Always",
+    "mapper": {
+      "Debug": {
+        "ReplaceWithCommandStdout": {
+          "command": {
+            "program": "/usr/bin/echo",
+            "args": ["{}"]
+          }
+        }
+      }
+    }
+  }
+]

@@ -4,6 +4,8 @@ use url::{Url, ParseError};
 #[cfg(feature = "cache-redirects")]
 use std::path::Path;
 use std::borrow::Cow;
+#[cfg(feature = "command")]
+use std::str::Utf8Error;
 
 #[cfg(feature = "http")]
 use reqwest::{self, Error as ReqwestError};
@@ -22,6 +24,11 @@ use std::{
 #[error("A dummy io::Error")]
 pub struct IoError;
 
+#[cfg(not(feature = "command"))]
+#[derive(Debug, Error)]
+#[error("UTF-8 error")]
+pub struct Utf8Error;
+
 use crate::glue;
 use crate::types;
 
@@ -29,40 +36,53 @@ use crate::types;
 pub enum Mapper {
     /// Does nothing.
     None,
+    /// Returns an error.
+    Error,
+    /// Always returns the error [`MapperError::ExplicitError`]
+    Debug(Box<Mapper>),
     /// Ignores any error the contained mapper may throw.
     IgnoreError(Box<Mapper>),
-    /// Applies the contained mappers in order. If any mapper throws an error, the URL is left unchanged.
+    /// Applies the contained mappers in order. If a mapper throws an error, the URL is left unchanged and the error is propagated up.
     Multiple(Vec<Mapper>),
-    /// Applies the contained mappers in order. If a mapper throws an error, subsequent mappers aren't applied but the URL is still changed by previous mappers.
+    /// Applies the contained mappers in order. If a mapper throws an error, the URL is left as whatever the previous contained mapper set it to and the error is propagated up..
     MultipleAbortOnError(Vec<Mapper>),
-    /// Applies the contained mappers in order. If a mapper throws an error, subsequent mappers are still applied.
+    /// Applies the contained mappers in order. If a mapper throws an error, subsequent mappers are still applied and the error is ignored.
     MultipleIgnoreError(Vec<Mapper>),
     /// Removes the URL's entire query.
+    /// Useful for webites that only use the query for tracking.
     RemoveAllQueryParams,
     /// Removes the specified query paramaters.
+    /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     RemoveSomeQueryParams(Vec<String>),
     /// Removes all but the specified query paramaters.
+    /// Useful for websites that keep changing their tracking paramaters and you're sick of updating your rule set.
     AllowSomeQueryParams(Vec<String>),
     /// Replace the current URL with the value of the specified query paramater.
-    /// Useful in cases where websites have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
+    /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     GetUrlFromQueryParam(String),
     /// Replace the current URL's path with the value of the specified query paramater.
-    /// Useful in cases where websites have a "you must log in to see this page" page.
+    /// Useful for websites that have a "you must log in to see this page" page.
     GetPathFromQueryParam(String),
     /// Replaces the URL's host to the provided host.
-    /// Useful for converting `vxtwitter.com` and `fxtwitter.com` back to `twitter.com`.
+    /// Useful for websites that are just a wrapper around another website. For example, `vxtwitter.com`.
     SwapHost(String),
-    /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with
-    /// Useful for link shorteners like `bit.ly` and `t.co`
+    /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
+    /// Useful for link shorteners like `bit.ly` and `t.co`.
     Expand301,
-    /// Applies a regular expression substitution to the specified URL part
-    /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`](super::conditions::ConditionError::UrlPartNotFound) error.
+    /// Applies a regular expression substitution to the specified URL part.
+    /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`ConditionError::UrlPartNotFound`](super::conditions::ConditionError::UrlPartNotFound) error.
+    /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
     RegexSubUrlPart {
         part_name: types::UrlPartName,
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         regex: glue::Regex,
         replace: String
+    },
+    /// Execute a command. Any argument paramater with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
+    /// Useful when what you want to do is really specific and niche.
+    ReplaceWithCommandStdout {
+        command: glue::Command
     }
 }
 
@@ -74,6 +94,9 @@ pub enum MapperError {
     #[allow(dead_code)]
     #[error("Url-cleaner was compiled without support for this mapper")]
     MapperDisabled,
+    /// The [`Mapper::Error`] mapper always returns this error.
+    #[error("The \"Error\" mapper always returns this error.")]
+    ExplicitError,
     /// Returned when the mapper has `none_to_empty_string` set to `false` and the requested part of the provided URL is `None`.
     #[error("The provided URL does not have the requested part")]
     UrlPartNotFound,
@@ -91,7 +114,13 @@ pub enum MapperError {
     IoError(#[from] IoError),
     /// Returned when a part replacement fails.
     #[error("Replacement error")]
-    ReplaceError(#[from] types::ReplaceError)
+    ReplaceError(#[from] types::ReplaceError),
+    /// UTF-8 error
+    #[error("UTF-8 error")]
+    Utf8Error(#[from] Utf8Error),
+    /// The command failed
+    #[error("The command failed")]
+    CommandError(#[from] glue::CommandError)
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -105,6 +134,13 @@ impl Mapper {
     pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
         match self {
             Self::None => {},
+            Self::Error => Err(MapperError::ExplicitError)?,
+            Self::Debug(mapper) => {
+                let url_before_mapper=url.clone();
+                let mapper_result=mapper.apply(url);
+                eprintln!("=== Debug Mapper output ===\nMapper: {mapper:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
+                mapper_result?;
+            }
             Self::IgnoreError(mapper) => {
                 let _=mapper.apply(url);
             },
@@ -190,6 +226,9 @@ impl Mapper {
                 } else {
                     Err(MapperError::MapperDisabled)?;
                 }
+            },
+            Self::ReplaceWithCommandStdout {command} => {
+                *url=command.get_url(url)?;
             }
         };
         Ok(())

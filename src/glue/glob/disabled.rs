@@ -11,7 +11,7 @@ impl<'de> Deserialize<'de> for Glob {
     where
         D: Deserializer<'de>
     {
-        Err(D::Error::custom("Url-cleaner was compiled without support for glob"))
+        Err(D::Error::custom("URL Cleaner was compiled without support for glob."))
     }
 }
 
