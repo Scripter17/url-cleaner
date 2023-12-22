@@ -16,7 +16,9 @@ pub enum Condition {
     Never,
     /// Always returns the error [`ConditionError::ExplicitError`]
     Error,
-    /// Logs the result of the contained condition then propagates any error.
+    /// Prints debugging information about the contained condition to STDERR.
+    /// Intended primarily for debugging logic errors.
+    /// *Can* be used in production as bash and batch only have `x | y` pipe STDOUT by default, but it'll look ugly.
     Debug(Box<Condition>),
     /// If the contained condition returns an error, treat it as a pass.
     TreatErrorAsPass(Box<Condition>),
@@ -98,8 +100,8 @@ pub enum ConditionError {
     #[error("Url-cleaner was compiled without support for this condition.")]
     /// The required condition was disabled at compile time. This can apply to any condition that uses regular expressions or globs.
     ConditionDisabled,
-    /// The [`Condition::Error`] condition always returns this error.
     #[error("The \"Error\" condition always returns this error.")]
+    /// The [`Condition::Error`] condition always returns this error.
     ExplicitError,
     #[error("The provided URL does not contain the requested part.")]
     /// The provided URL does not contain the requested part.

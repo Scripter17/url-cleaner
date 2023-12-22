@@ -36,17 +36,20 @@ use crate::types;
 pub enum Mapper {
     /// Does nothing.
     None,
-    /// Returns an error.
+    /// Always returns the error [`MapperError::ExplicitError`].
     Error,
-    /// Always returns the error [`MapperError::ExplicitError`]
+    /// Prints debugging information about the contained mapper and its effect on the URL to STDERR.
+    /// Intended primarily for debugging logic errors.
+    /// *Can* be used in production as bash and batch only have `x | y` pipe STDOUT by default, but it'll look ugly.
     Debug(Box<Mapper>),
     /// Ignores any error the contained mapper may throw.
     IgnoreError(Box<Mapper>),
     /// Applies the contained mappers in order. If a mapper throws an error, the URL is left unchanged and the error is propagated up.
     Multiple(Vec<Mapper>),
-    /// Applies the contained mappers in order. If a mapper throws an error, the URL is left as whatever the previous contained mapper set it to and the error is propagated up..
+    /// Applies the contained mappers in order. If a mapper throws an error, the URL is left as whatever the previous contained mapper set it to and the error is propagated up.
     MultipleAbortOnError(Vec<Mapper>),
     /// Applies the contained mappers in order. If a mapper throws an error, subsequent mappers are still applied and the error is ignored.
+    /// This is equivalent to wrapping every contained mapper in a [`Mapper::IgnoreError`].
     MultipleIgnoreError(Vec<Mapper>),
     /// Removes the URL's entire query.
     /// Useful for webites that only use the query for tracking.
@@ -81,7 +84,7 @@ pub enum Mapper {
     },
     /// Execute a command. Any argument paramater with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
-    ReplaceWithCommandStdout {
+    ReplaceWithCommandOutput {
         command: glue::Command
     }
 }
@@ -227,7 +230,7 @@ impl Mapper {
                     Err(MapperError::MapperDisabled)?;
                 }
             },
-            Self::ReplaceWithCommandStdout {command} => {
+            Self::ReplaceWithCommandOutput {command} => {
                 *url=command.get_url(url)?;
             }
         };

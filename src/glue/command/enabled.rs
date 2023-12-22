@@ -1,7 +1,7 @@
 use std::ffi::OsString;
-use std::process::Command;
+use std::process::{Command, Output as CommandOutput, Stdio};
 use serde::{Deserialize, Deserializer};
-use std::io::Error as IoError;
+use std::io::{Write, Error as IoError};
 use std::path::PathBuf;
 use url::{Url, ParseError};
 use std::str::{from_utf8, FromStr, Utf8Error};
@@ -11,8 +11,33 @@ use std::borrow::Cow;
 #[derive(Debug, Deserialize)]
 pub struct CommandWrapper {
     #[serde(flatten, deserialize_with = "deserialize_command")]
-    pub inner: Command
+    pub inner: Command,
+    #[serde(default)]
+    pub output_handling: OutputHandling
 }
+
+/// The rules for what exactly to return from a command
+#[derive(Debug, Deserialize, Default, Clone)]
+pub enum OutputHandling {
+    #[default]
+    ReturnStdout,
+    ReturnStderr,
+    Error,
+    PipeStdoutTo(Box<CommandWrapper>),
+    PipeStderrTo(Box<CommandWrapper>),
+    ApplyStdoutUrlTo(Box<CommandWrapper>),
+    ApplyStderrUrlTo(Box<CommandWrapper>),
+    IfExitCode {
+        #[serde(default = "get_0")]
+        equals: i32,
+        then: Box<OutputHandling>,
+        #[serde(default = "error_output_handler")]
+        r#else: Box<OutputHandling>
+    }
+}
+
+fn get_0() -> i32 {0}
+fn error_output_handler() -> Box<OutputHandling> {Box::new(OutputHandling::Error)}
 
 #[derive(Debug, Deserialize)]
 struct CommandParts {
@@ -68,7 +93,25 @@ pub enum CommandError {
     ParseError(#[from] ParseError),
     /// The command was terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
-    SignalTermination
+    SignalTermination,
+    /// The output handler wsa [`OutputHandling::Error`].
+    #[error("The output handler was OutputHandling::Error.")]
+    ExplicitError
+}
+
+impl OutputHandling {
+    fn handle(&self, url: &Url, output: CommandOutput) -> Result<String, CommandError> {
+        match self {
+            Self::ReturnStdout                     => Ok(from_utf8(&output.stdout)?.to_string()),
+            Self::ReturnStderr                     => Ok(from_utf8(&output.stderr)?.to_string()),
+            Self::Error                            => Err(CommandError::ExplicitError),
+            Self::PipeStdoutTo(command)            => command.output(url, Some(&output.stdout)),
+            Self::PipeStderrTo(command)            => command.output(url, Some(&output.stderr)),
+            Self::ApplyStdoutUrlTo(command)        => command.output(&Url::parse(from_utf8(&output.stdout)?)?, None),
+            Self::ApplyStderrUrlTo(command)        => command.output(&Url::parse(from_utf8(&output.stderr)?)?, None),
+            Self::IfExitCode{equals, then, r#else} => if output.status.code().ok_or(CommandError::SignalTermination)?==*equals {then.handle(url, output)} else {r#else.handle(url, output)}
+        }
+    }
 }
 
 impl CommandWrapper {
@@ -77,10 +120,28 @@ impl CommandWrapper {
         self.clone().apply_url(url).inner.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
+    fn output(&self, url: &Url, stdin: Option<&[u8]>) -> Result<String, CommandError> {
+        match stdin {
+            Some(stdin) => {
+                // https://stackoverflow.com/a/49597789/10720231
+                let mut cloned=self.clone().apply_url(url);
+                let mut child=cloned.inner
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()?;
+                let child_stdin=child.stdin.as_mut().unwrap();
+                child_stdin.write_all(stdin)?;
+                self.output_handling.handle(url, child.wait_with_output()?)
+            },
+            None => self.output_handling.handle(url, self.clone().apply_url(url).inner.output()?) 
+        }
+    }
+
     /// Run the command and get the resulting URL from the STDOUT.
     /// First calls [`str::trim_end_matches`] on the STDOUT to get rid of all trailing carriage returns and newlines, then passes what's left to [`Url::parse`].
     pub fn get_url(&self, url: &Url) -> Result<Url, CommandError> {
-        Ok(Url::parse(from_utf8(&self.clone().apply_url(url).inner.output()?.stdout)?.trim_end_matches(&['\r', '\n']))?)
+        Ok(Url::parse(&self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }
 
     /// A very messy function that puts the URL in the command arguments.
@@ -92,7 +153,7 @@ impl CommandWrapper {
             None => {}
         }
         ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(OsString::from_str(url.as_str()).unwrap())} else {Cow::Borrowed(arg)}));
-        Self { inner: ret }
+        Self {inner: ret, output_handling: self.output_handling.clone()}
     }
 }
 
@@ -104,6 +165,6 @@ impl Clone for CommandWrapper {
             Some(dir) => {ret.current_dir(dir);},
             None => {}
         }
-        Self {inner: ret}
+        Self {inner: ret, output_handling: self.output_handling.clone()}
     }
 }
