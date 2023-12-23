@@ -7,77 +7,46 @@ use url::{Url, ParseError};
 use std::str::{from_utf8, FromStr, Utf8Error};
 use thiserror::Error;
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct CommandWrapper {
     #[serde(flatten, deserialize_with = "deserialize_command")]
     pub inner: Command,
     #[serde(default)]
-    pub output_handling: OutputHandling
+    pub output_handling: OutputHandler
 }
 
-/// The rules for what exactly to return from a command
+/// Before a [`CommandWrapper`] returns its output, it passes it through this to allow for piping and control flow.
+/// For the sake of simplicity, [`OutputHandler::handle`] returns [`String`] instead of bytes.
 #[derive(Debug, Deserialize, Default, Clone)]
-pub enum OutputHandling {
+pub enum OutputHandler {
+    /// Return the STDOUT.
     #[default]
     ReturnStdout,
+    /// Return the STDERR.
     ReturnStderr,
+    /// Always return the error [`CommandError::ExplicitError`].
     Error,
+    /// Pipes the STDOUT into the contained command's STDIN.
     PipeStdoutTo(Box<CommandWrapper>),
+    /// Pipes the STDERR into the contained command's STDIN.
     PipeStderrTo(Box<CommandWrapper>),
+    /// Extracts the URL from the STDOUT and applies it to the contained command's arguments.
     ApplyStdoutUrlTo(Box<CommandWrapper>),
+    /// Extracts the URL from the STDERR and applies it to the contained command's arguments.
     ApplyStderrUrlTo(Box<CommandWrapper>),
+    /// If the exit code equals `equals`, `then` is used as the handler. Otherwise `else` (Defaults to [`OutputHandler::Error`]) is used.
     IfExitCode {
-        #[serde(default = "get_0")]
+        #[serde(default)]
         equals: i32,
-        then: Box<OutputHandling>,
+        then: Box<OutputHandler>,
         #[serde(default = "error_output_handler")]
-        r#else: Box<OutputHandling>
+        r#else: Box<OutputHandler>
     }
 }
 
-fn get_0() -> i32 {0}
-fn error_output_handler() -> Box<OutputHandling> {Box::new(OutputHandling::Error)}
-
-#[derive(Debug, Deserialize)]
-struct CommandParts {
-    #[serde(deserialize_with = "deserialize_os_string")]
-    program: OsString,
-    #[serde(deserialize_with = "deserialize_os_string_vec", default)]
-    args: Vec<OsString>,
-    #[serde(default)]
-    current_dir: Option<PathBuf>
-}
-
-fn deserialize_os_string<'de, D>(deserializer: D) -> Result<OsString, D::Error>
-where
-    D: Deserializer<'de>
-{
-    let temp: String = Deserialize::deserialize(deserializer)?;
-    Ok(temp.into())
-}
-
-fn deserialize_os_string_vec<'de, D>(deserializer: D) -> Result<Vec<OsString>, D::Error>
-where
-    D: Deserializer<'de>
-{
-    let temp: Vec<String> = Deserialize::deserialize(deserializer)?;
-    Ok(temp.into_iter().map(|x| x.into()).collect::<Vec<_>>())
-}
-
-fn deserialize_command<'de, D>(deserializer: D) -> Result<Command, D::Error>
-where
-    D: Deserializer<'de>
-{
-    let command_parts: CommandParts = Deserialize::deserialize(deserializer)?;
-    let mut ret=Command::new(command_parts.program);
-    ret.args(command_parts.args);
-    match command_parts.current_dir {
-        Some(dir) => {ret.current_dir(dir);},
-        None => {}
-    }
-    Ok(ret)
-}
+fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
 
 /// A wrapper around all the errors a command condition/mapper can return.
 #[derive(Debug, Error)]
@@ -94,13 +63,13 @@ pub enum CommandError {
     /// The command was terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
     SignalTermination,
-    /// The output handler wsa [`OutputHandling::Error`].
-    #[error("The output handler was OutputHandling::Error.")]
+    /// The output handler wsa [`OutputHandler::Error`].
+    #[error("The output handler was OutputHandler::Error.")]
     ExplicitError
 }
 
-impl OutputHandling {
-    fn handle(&self, url: &Url, output: CommandOutput) -> Result<String, CommandError> {
+impl OutputHandler {
+    pub fn handle(&self, url: &Url, output: CommandOutput) -> Result<String, CommandError> {
         match self {
             Self::ReturnStdout                     => Ok(from_utf8(&output.stdout)?.to_string()),
             Self::ReturnStderr                     => Ok(from_utf8(&output.stderr)?.to_string()),
@@ -112,6 +81,29 @@ impl OutputHandling {
             Self::IfExitCode{equals, then, r#else} => if output.status.code().ok_or(CommandError::SignalTermination)?==*equals {then.handle(url, output)} else {r#else.handle(url, output)}
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct CommandParts {
+    program: String,
+    #[serde(default)]
+    args: Vec<String>,
+    #[serde(default)]
+    current_dir: Option<PathBuf>,
+    #[serde(default)]
+    envs: HashMap<String, String>
+}
+
+fn deserialize_command<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Command, D::Error> {
+    let command_parts: CommandParts = Deserialize::deserialize(deserializer)?;
+    let mut ret=Command::new(command_parts.program);
+    ret.args(command_parts.args);
+    match command_parts.current_dir {
+        Some(dir) => {ret.current_dir(dir);},
+        None => {}
+    }
+    ret.envs(command_parts.envs);
+    Ok(ret)
 }
 
 impl CommandWrapper {
@@ -148,11 +140,12 @@ impl CommandWrapper {
     fn apply_url(self, url: &Url) -> Self {
         // Why doesn't std::process::Command have a clear_args method?
         let mut ret=Command::new(self.inner.get_program());
+        ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(OsString::from_str(url.as_str()).unwrap())} else {Cow::Borrowed(arg)}));
         match self.inner.get_current_dir() {
             Some(dir) => {ret.current_dir(dir);},
             None => {}
         }
-        ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(OsString::from_str(url.as_str()).unwrap())} else {Cow::Borrowed(arg)}));
+        ret.envs(self.inner.get_envs().filter(|(_, v)| v.is_some()).map(|(k, v)| (k.to_owned(), v.unwrap().to_owned())));
         Self {inner: ret, output_handling: self.output_handling.clone()}
     }
 }
@@ -165,6 +158,7 @@ impl Clone for CommandWrapper {
             Some(dir) => {ret.current_dir(dir);},
             None => {}
         }
+        ret.envs(self.inner.get_envs().filter(|(_, v)| v.is_some()).map(|(k, v)| (k.to_owned(), v.unwrap().to_owned())));
         Self {inner: ret, output_handling: self.output_handling.clone()}
     }
 }

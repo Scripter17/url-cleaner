@@ -9,10 +9,7 @@ use serde::{de::Error, Deserialize, Deserializer};
 pub struct RegexWrapper;
 
 impl<'de> Deserialize<'de> for RegexWrapper {
-    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>
-    {
+    fn deserialize<D: Deserializer<'de>>(_deserializer: D) -> Result<Self, D::Error> {
         Err(D::Error::custom("URL Cleaner was compiled without support for regex."))
     }
 }

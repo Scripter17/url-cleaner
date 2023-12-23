@@ -58,24 +58,24 @@ pub enum Condition {
     /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
     QueryParamValueMatchesRegex {
         name: String,
-        regex: glue::Regex
+        regex: glue::RegexWrapper
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified glob.
     QueryParamValueMatchesGlob {
         name: String,
-        glob: glue::Glob
+        glob: glue::GlobWrapper
     },
     /// Passes if the URL's path matches the specified regular expression.
-    PathMatchesRegex(glue::Regex),
+    PathMatchesRegex(glue::RegexWrapper),
     /// Passes if the URL's path matches the specified glob.
-    PathMatchesGlob(glue::Glob),
+    PathMatchesGlob(glue::GlobWrapper),
     /// Takes the specified part of the URL and passes if it matches the specified regular expression.
     /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`] error.
     UrlPartMatchesRegex {
         part_name: UrlPartName,
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
-        regex: glue::Regex
+        regex: glue::RegexWrapper
     },
     /// Takes the specified part of the URL and passes if it matches the specified glob.
     /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`] error.
@@ -83,10 +83,10 @@ pub enum Condition {
         part_name: UrlPartName,
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
-        glob: glue::Glob
+        glob: glue::GlobWrapper
     },
     CommandExitStatus {
-        command: glue::Command,
+        command: glue::CommandWrapper,
         #[serde(default)]
         expected: i32
     }

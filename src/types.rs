@@ -6,48 +6,48 @@ use thiserror::Error;
 
 #[derive(Debug, Deserialize, Clone, Copy)]
 pub enum UrlPartName {
-    /// The whole URL. Corresponds to [`Url::as_str`]
+    /// The whole URL. Corresponds to [`Url::as_str`].
     Whole,
-    /// The scheme. Corresponds to [`Url::scheme`]
+    /// The scheme. Corresponds to [`Url::scheme`].
     Scheme,
-    /// The username. Corresponds to [`Url::username`]
+    /// The username. Corresponds to [`Url::username`].
     Username,
-    /// The password. Corresponds to [`Url::password`]
+    /// The password. Corresponds to [`Url::password`].
     Password,
-    /// The host. Either a domain name or IPV4/6 address. Corresponds to [`Url::host`]
+    /// The host. Either a domain name or IPV4/6 address. Corresponds to [`Url::host`].
     Host,
-    /// The domain.. Corresponds to [`Url::domain`]
+    /// The domain.. Corresponds to [`Url::domain`].
     Domain,
-    /// The port as a string. Correspods to [`Url::port`]
-    /// Ports are always treated as strings for the sake of a simpler API
+    /// The port as a string. Correspods to [`Url::port`].
+    /// Ports are always treated as strings for the sake of a simpler API.
     Port,
-    /// The path. Corresponds to [`Url::path`]
+    /// The path. Corresponds to [`Url::path`].
     Path,
-    /// The query. Corresponds to [`Url::query`]
+    /// The query. Corresponds to [`Url::query`].
     Query,
-    /// The fragment. Corresponds to [`Url::fragment`]
+    /// The fragment. Corresponds to [`Url::fragment`].
     Fragment
 }
 
 #[derive(Debug, Error)]
 pub enum ReplaceError {
-    #[error("Attempted replacement would not produce a valid URL.")]
     /// Attempted replacement would not produce a valid URL.
+    #[error("Attempted replacement would not produce a valid URL.")]
     ParseError(#[from] ParseError),
-    #[error("The provided scheme would not have produced a valid URL.")]
     /// The provided scheme would not have produced a valid URL.
+    #[error("The provided scheme would not have produced a valid URL.")]
     InvalidScheme,
-    #[error("The provided port is not a number.")]
     /// The provided port is not a number.
+    #[error("The provided port is not a number.")]
     InvalidPort,
-    #[error("Cannot set port for this URL. Either becasue it is cannot-be-a-base, does not have a host, or has the file scheme.")]
     /// Cannot set port for this URL. Either becasue it is cannot-be-a-base, does not have a host, or has the file scheme.
+    #[error("Cannot set port for this URL. Either becasue it is cannot-be-a-base, does not have a host, or has the file scheme.")]
     CannotSetPort,
-    #[error("Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.")]
     /// Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.
+    #[error("Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.")]
     CannotSetUsername,
-    #[error("Cannot set password for this URL. Either because it is cannot-be-a-base or does not have a host.")]
     /// Cannot set password for this URL. Either because it is cannot-be-a-base or does not have a host.
+    #[error("Cannot set password for this URL. Either because it is cannot-be-a-base or does not have a host.")]
     CannotSetPassword
 }
 

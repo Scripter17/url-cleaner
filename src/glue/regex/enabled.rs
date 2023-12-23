@@ -15,23 +15,25 @@ pub struct RegexWrapper {
 #[derive(Debug, Deserialize)]
 struct RegexParts {
     pattern: String,
+    #[serde(default)]                case_insensitive: bool,
+    #[serde(default)]                crlf: bool,
     #[serde(default)]                dot_all: bool,
     #[serde(default)]                ignore_whitespace: bool,
     #[serde(default = "newline_u8")] line_terminator: u8,
     #[serde(default)]                multi_line: bool,
     #[serde(default)]                octal: bool,
     #[serde(default)]                swap_greed: bool,
-    #[serde(default)]                unicode: bool
+    #[serde(default = "get_true")]   unicode: bool
 }
 
 fn newline_u8() -> u8 {'\n' as u8}
+fn get_true() -> bool {true}
 
-fn deserialize_regex<'de, D>(deserializer: D) -> Result<Regex, D::Error>
-where
-    D: Deserializer<'de>
-{
+fn deserialize_regex<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Regex, D::Error> {
     let regex_parts: RegexParts = Deserialize::deserialize(deserializer)?;
     RegexBuilder::new(&regex_parts.pattern)
+        .case_insensitive(regex_parts.case_insensitive)
+        .crlf(regex_parts.crlf)
         .dot_matches_new_line(regex_parts.dot_all)
         .ignore_whitespace(regex_parts.ignore_whitespace)
         .line_terminator(regex_parts.line_terminator)

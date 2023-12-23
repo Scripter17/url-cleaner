@@ -5,7 +5,7 @@ pub use glob::{Pattern, MatchOptions};
 /// The enabled form of the wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
 /// Only the necessary methods are exposed for the sake of simplicity.
 /// Note that if the `glob` feature is disabled, this struct is empty.
-pub struct Glob {
+pub struct GlobWrapper {
     #[serde(flatten, deserialize_with = "deserialize_pattern")]
     pub inner: Pattern,
     #[serde(flatten, with = "DeMatchOptions")]
@@ -28,15 +28,12 @@ struct DeMatchOptions {
 fn get_true() -> bool {true}
 fn get_false() -> bool {false}
 
-fn deserialize_pattern<'de, D>(deserializer: D) -> Result<Pattern, D::Error>
-where
-    D: Deserializer<'de>
-{
+fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern_parts: PatternParts = Deserialize::deserialize(deserializer)?;
     Pattern::new(&pattern_parts.pattern).map_err(|_| D::Error::custom(format!("Invalid glob pattern: {:?}.", pattern_parts.pattern)))
 }
 
-impl Glob {
+impl GlobWrapper {
     /// Wrapper for `glob::Pattern::matches`.
     pub fn matches(&self, str: &str) -> bool {
         self.inner.matches_with(str, self.options.clone())

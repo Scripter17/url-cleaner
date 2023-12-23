@@ -4,6 +4,6 @@ mod enabled;
 mod disabled;
 
 #[cfg(feature = "command")]
-pub use enabled::{CommandWrapper as Command, CommandError};
+pub use enabled::{CommandWrapper, OutputHandler, CommandError};
 #[cfg(not(feature = "command"))]
-pub use disabled::{CommandWrapper as Command, CommandError};
+pub use disabled::{CommandWrapper, OutputHandler, CommandError};

@@ -79,14 +79,12 @@ pub enum Mapper {
         part_name: types::UrlPartName,
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
-        regex: glue::Regex,
+        regex: glue::RegexWrapper,
         replace: String
     },
     /// Execute a command. Any argument paramater with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
-    ReplaceWithCommandOutput {
-        command: glue::Command
-    }
+    ReplaceWithCommandOutput(glue::CommandWrapper)
 }
 
 fn get_true() -> bool {true}
@@ -230,9 +228,7 @@ impl Mapper {
                     Err(MapperError::MapperDisabled)?;
                 }
             },
-            Self::ReplaceWithCommandOutput {command} => {
-                *url=command.get_url(url)?;
-            }
+            Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;}
         };
         Ok(())
     }
