@@ -1,8 +1,5 @@
 use std::ffi::OsString;
 use std::process::{Command, Output as CommandOutput, Stdio};
-use serde::ser::{Serializer, SerializeStruct};
-use serde::Serialize;
-use serde::{Deserialize, Deserializer};
 use std::io::{Write, Error as IoError};
 use std::path::PathBuf;
 use url::{Url, ParseError};
@@ -11,6 +8,15 @@ use thiserror::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
+use serde::{
+    Serialize, Deserialize,
+    ser::{Serializer, SerializeStruct},
+    de::{Deserializer}
+};
+
+/// The enabled form of the wrapper around [`Command`].
+/// Only the necessary methods are exposed for the sake of simplicity.
+/// Note that if the `command` feature is disabled, this struct is empty and all provided functions will always panic.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CommandWrapper {
     #[serde(flatten, serialize_with = "serialize_command", deserialize_with = "deserialize_command")]
@@ -19,6 +25,8 @@ pub struct CommandWrapper {
     pub output_handling: OutputHandler
 }
 
+/// The enabled form of `OutputHandler`.
+/// Note that if the `command` feature is disabled, this enum is empty and all provided functions will always panic.
 /// Before a [`CommandWrapper`] returns its output, it passes it through this to allow for piping and control flow.
 /// For the sake of simplicity, [`OutputHandler::handle`] returns a [`Result<String, CommandError>`] instead of [`Result<Vec<u8>, CommandError>`].
 #[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
@@ -50,7 +58,8 @@ pub enum OutputHandler {
 
 fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
 
-/// A wrapper around all the errors a command condition/mapper can return.
+/// The enabled form of the wrapper around all the errors a command condition/mapper can return.
+/// Note that if the `command` feature is disabled, this enum is empty and all provided functions will always panic.
 #[derive(Debug, Error)]
 pub enum CommandError {
     /// I/O error.
@@ -118,7 +127,7 @@ fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<
 
 
 impl CommandWrapper {
-    /// Runs the command and gets the exit code. Returns [`Err(CommandError::SignalTerminatio)`] if the command returns no exit code.
+    /// Runs the command and gets the exit code. Returns [`Err(CommandError::SignalTermination)`] if the command returns no exit code.
     pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
         self.clone().apply_url(url).inner.status()?.code().ok_or(CommandError::SignalTermination)
     }
@@ -141,8 +150,7 @@ impl CommandWrapper {
         }
     }
 
-    /// Run the command and get the resulting URL from the STDOUT.
-    /// First calls [`str::trim_end_matches`] on the STDOUT to get rid of all trailing carriage returns and newlines, then passes what's left to [`Url::parse`].
+    /// Runs the command, does the [`OutputHandler`] stuff, removes trailings newlines and carriage returns form the output, then extracts the URL.
     pub fn get_url(&self, url: &Url) -> Result<Url, CommandError> {
         Ok(Url::parse(&self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }
@@ -174,6 +182,7 @@ impl Clone for CommandWrapper {
     }
 }
 
+// Commented out because commands aren't deterministic
 // impl PartialEq for CommandWrapper {
 //     fn eq(&self, other: &Self) -> bool {
 //         self.inner.get_program()==other.inner.get_program() &&

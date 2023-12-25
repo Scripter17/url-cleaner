@@ -1,9 +1,9 @@
-#[cfg(feature = "command")]
+#[cfg(feature = "commands")]
 mod enabled;
-#[cfg(not(feature = "command"))]
+#[cfg(not(feature = "commands"))]
 mod disabled;
 
-#[cfg(feature = "command")]
+#[cfg(feature = "commands")]
 pub use enabled::{CommandWrapper, OutputHandler, CommandError};
-#[cfg(not(feature = "command"))]
+#[cfg(not(feature = "commands"))]
 pub use disabled::{CommandWrapper, OutputHandler, CommandError};

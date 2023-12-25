@@ -62,13 +62,8 @@ pub fn get_default_rules() -> Option<Rules> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rules(Vec<Rule>);
 
-impl From<Vec<Rule>> for Rules {
-    fn from(value: Vec<Rule>) -> Self {Self(value)}
-}
-
-impl Into<Vec<Rule>> for Rules {
-    fn into(self) -> Vec<Rule> {self.0}
-}
+impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
+impl Into<Vec<Rule>> for Rules {fn into(self)             -> Vec<Rule> {self.0}}
 
 impl Deref for Rules {
     type Target = [Rule];
@@ -89,6 +84,9 @@ impl Rules {
     fn as_slice<'a>(&'a self) -> &'a [Rule] {self.deref()}
     fn as_mut_slice<'a>(&'a mut self) -> &'a mut [Rule] {self.deref_mut()}
 
+    /// Applies each rule to the provided [`Url`] one after another.
+    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
+    /// If an error is returned, the `url` is left unmodified.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in self.deref() {
@@ -102,6 +100,11 @@ impl Rules {
         Ok(())
     }
 
+    /// A mess of a function used to simplify the rules parsed from AdGuard lists.
+    /// Currently just merges consecutive [`mappers::Mapper::RemoveSomeQueryParams`] and [`mappers::Mapper::AllowSomeQueryParams`].
+    /// [`Rules::apply`] should always give the same result regardless of if this function was used first.
+    /// Also this function should always be idempotent.
+    /// There is, however, no guarantee that this function always makes the rules as simple as possible for any definition of "simpler".
     pub fn simplify(self) -> Self {
         let mut ret=Vec::<Rule>::new();
         for mut rule in self.0.into_iter() {
@@ -130,11 +133,14 @@ impl Rules {
 
 #[derive(Error, Debug)]
 pub enum GetRulesError {
-    #[error("Can't load file")]
+    /// Could not load the specified.
+    #[error("Could not load the specified.")]
     CantLoadFile,
-    #[error("Can't parse file")]
+    /// The loaded file did not contain valid JSON.
+    #[error("The loaded file did not contain valid JSON.")]
     CantParseFile(#[from] serde_json::Error),
-    #[error("No default rules")]
+    /// URL Cleaner was compiled without default rules.
+    #[error("URL Cleaner was compiled without default rules.")]
     NoDefaultRules
 }
 

@@ -1,12 +1,15 @@
 use std::borrow::Cow;
 
-use serde::ser::{Serialize, Serializer, SerializeStruct};
-use serde::{de::Error, Deserialize, Deserializer};
+use serde::{
+    Serialize,
+    ser::Serializer,
+    {de::Error as DeError, Deserialize, Deserializer}
+};
 pub use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
 
-/// The enabled form of the wrapper around [`regex::Regex`].
+/// The enabled form of the wrapper around [`regex::Regex`] and [`RegexParts`].
+/// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
 /// Only the necessary methods are exposed for the sake of simplicity.
-/// Note that if the `regex` feature is disabled, this struct is empty.
 #[derive(Clone, Debug)]
 pub struct RegexWrapper {
     inner: Regex,
@@ -14,18 +17,15 @@ pub struct RegexWrapper {
 }
 
 impl PartialEq for RegexWrapper {
-    fn eq(&self, other: &Self) -> bool {
-        self.parts.eq(&other.parts)
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        self.parts.ne(&other.parts)
-    }
+    fn eq(&self, other: &Self) -> bool {self.parts.eq(&other.parts)}
+    fn ne(&self, other: &Self) -> bool {self.parts.ne(&other.parts)}
 }
-
 impl Eq for RegexWrapper {}
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+/// The enabled form of `RegexParts`.
+/// Contains the rules for constructing a [`Regex`]
+/// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
     pattern: String,
     #[serde(default)]                case_insensitive: bool,
@@ -55,30 +55,45 @@ impl RegexParts {
             unicode: true
         }
     }
+
+    /// Sets each flag to `true` if its character is in `flags`, otherwise `false`.
+    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details.
+    /// I have chosen to give the octal flag `'o'` because the regex crate forgot.
     pub fn set_flags(&mut self, flags: &str) {
         self.case_insensitive =flags.contains('i');
         self.crlf             =flags.contains('R');
         self.dot_all          =flags.contains('s');
         self.ignore_whitespace=flags.contains('x');
         self.multi_line       =flags.contains('m');
+        self.octal            =flags.contains('o');
         self.swap_greed       =flags.contains('U');
         self.unicode          =flags.contains('u');
     }
+
+    /// Sets each flag to `true` if its character is in `flags`.
+    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details.
+    /// I have chosen to give the octal flag `'o'` because the regex crate forgot.
     pub fn add_flags(&mut self, flags: &str) {
         if flags.contains('i') {self.case_insensitive =true};
         if flags.contains('R') {self.crlf             =true};
         if flags.contains('s') {self.dot_all          =true};
         if flags.contains('x') {self.ignore_whitespace=true};
         if flags.contains('m') {self.multi_line       =true};
+        if flags.contains('o') {self.octal            =true};
         if flags.contains('U') {self.swap_greed       =true};
         if flags.contains('u') {self.unicode          =true};
     }
+
+    /// Sets each flag to `false` if its character is in `flags`.
+    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details.
+    /// I have chosen to give the octal flag `'o'` because the regex crate forgot.
     pub fn remove_flags(&mut self, flags: &str) {
         if flags.contains('i') {self.case_insensitive =false};
         if flags.contains('R') {self.crlf             =false};
         if flags.contains('s') {self.dot_all          =false};
         if flags.contains('x') {self.ignore_whitespace=false};
         if flags.contains('m') {self.multi_line       =false};
+        if flags.contains('o') {self.octal            =false};
         if flags.contains('U') {self.swap_greed       =false};
         if flags.contains('u') {self.unicode          =false};
     }
@@ -89,7 +104,7 @@ fn get_true() -> bool {true}
 
 impl TryInto<Regex> for RegexParts {
     type Error = RegexError;
-    
+
     fn try_into(self) -> Result<Regex, Self::Error> {
         RegexBuilder::new(&self.pattern)
             .case_insensitive(self.case_insensitive)
@@ -119,36 +134,21 @@ impl TryInto<RegexWrapper> for RegexParts {
 impl<'de> Deserialize<'de> for RegexWrapper  {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let parts: RegexParts = Deserialize::deserialize(deserializer)?;
-        let inner=parts.clone().try_into().map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}.", parts.pattern)))?;
         Ok(RegexWrapper {
-            inner: inner,
-            parts: parts
+            inner: parts.clone().try_into().map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}.", parts.pattern)))?,
+            parts
         })
     }
 }
 
 impl Serialize for RegexWrapper {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut state = serializer.serialize_struct("Regex", 10)?;
-        state.serialize_field("pattern"          , &self.parts.pattern          )?;
-        state.serialize_field("case_insensitive" , &self.parts.case_insensitive )?;
-        state.serialize_field("crlf"             , &self.parts.crlf             )?;
-        state.serialize_field("dot_all"          , &self.parts.dot_all          )?;
-        state.serialize_field("ignore_whitespace", &self.parts.ignore_whitespace)?;
-        state.serialize_field("line_terminator"  , &self.parts.line_terminator  )?;
-        state.serialize_field("multi_line"       , &self.parts.multi_line       )?;
-        state.serialize_field("octal"            , &self.parts.octal            )?;
-        state.serialize_field("swap_greed"       , &self.parts.swap_greed       )?;
-        state.serialize_field("unicode"          , &self.parts.unicode          )?;
-        state.end()
+        self.parts.serialize(serializer)
     }
 }
 
-impl Into<Regex> for RegexWrapper {
-    fn into(self) -> Regex {
-        self.inner
-    }
-}
+impl Into<Regex     > for RegexWrapper {fn into(self) -> Regex      {self.inner}}
+impl Into<RegexParts> for RegexWrapper {fn into(self) -> RegexParts {self.parts}}
 
 impl RegexWrapper {
     /// Wrapper for `regex::Regex::is_match`.

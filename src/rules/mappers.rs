@@ -6,8 +6,10 @@ use std::borrow::Cow;
 #[cfg(feature = "http")]
 use reqwest::{self, Error as ReqwestError};
 #[cfg(not(feature = "http"))]
+/// A dummy and empty [`reqwest::Error`].
+/// Only exists when the `http` feature is disabled.
 #[derive(Debug, Error)]
-#[error("A dummy reqwest::Error")]
+#[error("A dummy reqwest::Error; Only exists because URL Cleaner was compiled without the http feature.")]
 pub struct ReqwestError;
 
 #[cfg(feature = "cache-redirects")]
@@ -17,20 +19,25 @@ use std::{
     fs::{OpenOptions, File}
 };
 #[cfg(not(feature = "cache-redirects"))]
+/// A dummy [`std::io::Error`].
+/// Only exists when the `cache-redirects` feature is disabled.
 #[derive(Debug, Error)]
-#[error("A dummy io::Error")]
+#[error("A dummy std::io::Error; Only exists because URL Cleaner was compiled without the cache-redirects feature.")]
 pub struct IoError;
 
-#[cfg(feature = "command")]
+#[cfg(feature = "commands")]
 use std::str::Utf8Error;
-#[cfg(not(feature = "command"))]
+#[cfg(not(feature = "commands"))]
+/// A dummy [`std::str::Utf8Error`].
+/// Only exists when the `commands` feature is disabled.
 #[derive(Debug, Error)]
-#[error("A dummy str::Utf8Error")]
+#[error("A dummy std::str::Utf8Error; Only exists because URL Cleaner was compiled without the commands feature.")]
 pub struct Utf8Error;
 
 use crate::glue;
 use crate::types;
 
+/// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Mapper {
     /// Does nothing.
@@ -53,13 +60,17 @@ pub enum Mapper {
     /// Removes the URL's entire query.
     /// Useful for webites that only use the query for tracking.
     RemoveAllQueryParams,
-    /// Removes the specified query paramaters.
+    /// Removes query paramaters whose name is in the specified names.
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     RemoveSomeQueryParams(Vec<String>),
-    /// Removes all but the specified query paramaters.
+    /// Removes query paramaters whose name isn't in the specified names.
     /// Useful for websites that keep changing their tracking paramaters and you're sick of updating your rule set.
     AllowSomeQueryParams(Vec<String>),
+    /// Removes query paramaters whose name matches the specified regex.
+    /// Useful for parsing AdGuard rules.
     RemoveQueryParamsMatching(glue::RegexWrapper),
+    /// Removes query paramaters whose name doesn't match the specified regex.
+    /// Useful for parsing AdGuard rules.
     AllowQueryParamsMatching(glue::RegexWrapper),
     /// Replace the current URL with the value of the specified query paramater.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.

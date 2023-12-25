@@ -8,6 +8,7 @@ use std::convert::identity;
 use crate::glue;
 use crate::types::UrlPartName;
 
+/// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Condition {
     /// Always passes.
@@ -54,23 +55,30 @@ pub enum Condition {
         none_to_empty_string: bool,
         value: String
     },
+
     // Disablable conditions
+
     /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
+    /// Requires the `regex` feature to be enabled.
     QueryParamValueMatchesRegex {
         name: String,
         regex: glue::RegexWrapper
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified glob.
+    /// Requires the `glob` feature to be enabled.
     QueryParamValueMatchesGlob {
         name: String,
         glob: glue::GlobWrapper
     },
     /// Passes if the URL's path matches the specified regular expression.
+    /// Requires the `regex` feature to be enabled.
     PathMatchesRegex(glue::RegexWrapper),
     /// Passes if the URL's path matches the specified glob.
+    /// Requires the `glob` feature to be enabled.
     PathMatchesGlob(glue::GlobWrapper),
     /// Takes the specified part of the URL and passes if it matches the specified regular expression.
     /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`] error.
+    /// Requires the `regex` feature to be enabled.
     UrlPartMatchesRegex {
         part_name: UrlPartName,
         #[serde(default = "get_true")]
@@ -79,12 +87,15 @@ pub enum Condition {
     },
     /// Takes the specified part of the URL and passes if it matches the specified glob.
     /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`] error.
+    /// Requires the `glob` feature to be enabled.
     UrlPartMatchesGlob {
         part_name: UrlPartName,
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         glob: glue::GlobWrapper
     },
+    /// Runs the specified [`CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
+    /// Requires the `commands` feature to be enabled.
     CommandExitStatus {
         command: glue::CommandWrapper,
         #[serde(default)]
@@ -96,25 +107,25 @@ fn get_true() -> bool {true}
 
 #[derive(Error, Debug)]
 pub enum ConditionError {
+    /// The required condition was disabled at compile time. This can apply to any condition that uses regular expressions, globs, or commands.
     #[allow(dead_code)]
     #[error("Url-cleaner was compiled without support for this condition.")]
-    /// The required condition was disabled at compile time. This can apply to any condition that uses regular expressions or globs.
     ConditionDisabled,
-    #[error("The \"Error\" condition always returns this error.")]
     /// The [`Condition::Error`] condition always returns this error.
+    #[error("The \"Error\" condition always returns this error.")]
     ExplicitError,
-    #[error("The provided URL does not contain the requested part.")]
     /// The provided URL does not contain the requested part.
     /// See [`crate::types::UrlPartName`] for details.
+    #[error("The provided URL does not contain the requested part.")]
     UrlPartNotFound,
-    #[error("The command failed to run.")]
     /// Returned when the specified command failed to run.
+    #[error("The command failed to run.")]
     CommandError(#[from] glue::CommandError)
 }
 
 impl Condition {
     /// Checks whether or not the provided URL passes the condition.
-    /// Returns an error if the condition is disabled or the URL part requested by the condition isn't found.
+    /// Returns an error if the condition is disabled, the URL part requested by the condition isn't found, or if the condition is [`Condition::Error`].
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
         Ok(match self {
             Self::Always => true,
