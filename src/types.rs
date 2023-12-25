@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use url::{Url, ParseError};
 use thiserror::Error;
 
-#[derive(Debug, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum UrlPartName {
     /// The whole URL. Corresponds to [`Url::as_str`].
     Whole,

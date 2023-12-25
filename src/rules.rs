@@ -5,15 +5,17 @@ use std::fs::read_to_string;
 use std::path::Path;
 use std::ops::{Deref, DerefMut};
 
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use serde_json;
 use thiserror::Error;
 
 pub mod conditions;
 pub mod mappers;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Rule {
+    // #[serde(skip)]
+    // pub credit: (),
     pub condition: conditions::Condition,
     pub mapper: mappers::Mapper
 }
@@ -22,9 +24,9 @@ pub struct Rule {
 pub enum RuleError {
     #[error("The URL does not meet the rule's conditon")]
     FailedCondition,
-    #[error("The condition failed")]
+    #[error("The condition returned an error")]
     ConditionError(#[from] conditions::ConditionError),
-    #[error("The mapper failed")]
+    #[error("The mapper returned an error")]
     MapperError(#[from] mappers::MapperError)
 }
 
@@ -57,7 +59,7 @@ pub fn get_default_rules() -> Option<Rules> {
     None
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rules(Vec<Rule>);
 
 impl From<Vec<Rule>> for Rules {
@@ -82,11 +84,11 @@ impl DerefMut for Rules {
     }
 }
 
+#[allow(dead_code)]
 impl Rules {
-    #[allow(dead_code)]
     fn as_slice<'a>(&'a self) -> &'a [Rule] {self.deref()}
-    #[allow(dead_code)]
     fn as_mut_slice<'a>(&'a mut self) -> &'a mut [Rule] {self.deref_mut()}
+
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in self.deref() {
@@ -98,6 +100,31 @@ impl Rules {
         }
         *url=temp_url;
         Ok(())
+    }
+
+    pub fn simplify(self) -> Self {
+        let mut ret=Vec::<Rule>::new();
+        for mut rule in self.0.into_iter() {
+            match ret.last_mut() {
+                Some(last_rule) => {
+                    if last_rule.condition==rule.condition {
+                        match (&mut last_rule.mapper, &mut rule.mapper) {
+                            (&mut mappers::Mapper::RemoveSomeQueryParams(ref mut last_params), &mut mappers::Mapper::RemoveSomeQueryParams(ref mut params)) => {
+                                last_params.append(params)
+                            },
+                            (&mut mappers::Mapper::AllowSomeQueryParams (ref mut last_params), &mut mappers::Mapper::AllowSomeQueryParams (ref mut params)) => {
+                                last_params.append(params)
+                            },
+                            (_, _) => {ret.push(rule);}
+                        }
+                    } else {
+                        ret.push(rule);
+                    }
+                },
+                None => {ret.push(rule);}
+            }
+        }
+        Rules::from(ret)
     }
 }
 

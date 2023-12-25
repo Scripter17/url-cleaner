@@ -1,11 +1,7 @@
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
-#[cfg(feature = "cache-redirects")]
-use std::path::Path;
 use std::borrow::Cow;
-#[cfg(feature = "command")]
-use std::str::Utf8Error;
 
 #[cfg(feature = "http")]
 use reqwest::{self, Error as ReqwestError};
@@ -16,6 +12,7 @@ pub struct ReqwestError;
 
 #[cfg(feature = "cache-redirects")]
 use std::{
+    path::Path,
     io::{self, BufRead, Write, Error as IoError},
     fs::{OpenOptions, File}
 };
@@ -24,15 +21,17 @@ use std::{
 #[error("A dummy io::Error")]
 pub struct IoError;
 
+#[cfg(feature = "command")]
+use std::str::Utf8Error;
 #[cfg(not(feature = "command"))]
 #[derive(Debug, Error)]
-#[error("UTF-8 error")]
+#[error("A dummy str::Utf8Error")]
 pub struct Utf8Error;
 
 use crate::glue;
 use crate::types;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Mapper {
     /// Does nothing.
     None,
@@ -60,6 +59,8 @@ pub enum Mapper {
     /// Removes all but the specified query paramaters.
     /// Useful for websites that keep changing their tracking paramaters and you're sick of updating your rule set.
     AllowSomeQueryParams(Vec<String>),
+    RemoveQueryParamsMatching(glue::RegexWrapper),
+    AllowQueryParamsMatching(glue::RegexWrapper),
     /// Replace the current URL with the value of the specified query paramater.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     GetUrlFromQueryParam(String),
@@ -174,6 +175,14 @@ impl Mapper {
                 let new_query=url.query_pairs().into_owned().filter(|(name, _)| names.iter().any(|allowed_name| allowed_name==name)).collect::<Vec<_>>();
                 url.query_pairs_mut().clear().extend_pairs(new_query);
             },
+            Self::RemoveQueryParamsMatching(regex) => {
+                let new_query=url.query_pairs().into_owned().filter(|(name, _)| !regex.is_match(name)).collect::<Vec<_>>();
+                url.query_pairs_mut().clear().extend_pairs(new_query);
+            }
+            Self::AllowQueryParamsMatching(regex) => {
+                let new_query=url.query_pairs().into_owned().filter(|(name, _)| regex.is_match(name)).collect::<Vec<_>>();
+                url.query_pairs_mut().clear().extend_pairs(new_query);
+            }
             Self::GetUrlFromQueryParam(name) => {
                 match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
                     Some((_, new_url)) => {*url=Url::parse(&new_url)?},
@@ -233,4 +242,3 @@ impl Mapper {
         Ok(())
     }
 }
-

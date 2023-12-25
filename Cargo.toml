@@ -21,7 +21,7 @@ regex = { version = "1.10.2", optional = true }
 glob = { version = "0.3.1", optional = true }
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["http", "command", "cache-redirects", "stdin", "default-rules", "minify-default-rules", "regex", "glob"]

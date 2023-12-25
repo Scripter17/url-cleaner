@@ -1,5 +1,7 @@
 use std::ffi::OsString;
 use std::process::{Command, Output as CommandOutput, Stdio};
+use serde::ser::{Serializer, SerializeStruct};
+use serde::Serialize;
 use serde::{Deserialize, Deserializer};
 use std::io::{Write, Error as IoError};
 use std::path::PathBuf;
@@ -9,17 +11,17 @@ use thiserror::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CommandWrapper {
-    #[serde(flatten, deserialize_with = "deserialize_command")]
+    #[serde(flatten, serialize_with = "serialize_command", deserialize_with = "deserialize_command")]
     pub inner: Command,
     #[serde(default)]
     pub output_handling: OutputHandler
 }
 
 /// Before a [`CommandWrapper`] returns its output, it passes it through this to allow for piping and control flow.
-/// For the sake of simplicity, [`OutputHandler::handle`] returns [`String`] instead of bytes.
-#[derive(Debug, Deserialize, Default, Clone)]
+/// For the sake of simplicity, [`OutputHandler::handle`] returns a [`Result<String, CommandError>`] instead of [`Result<Vec<u8>, CommandError>`].
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
 pub enum OutputHandler {
     /// Return the STDOUT.
     #[default]
@@ -83,7 +85,7 @@ impl OutputHandler {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct CommandParts {
     program: String,
     #[serde(default)]
@@ -105,6 +107,15 @@ fn deserialize_command<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Com
     ret.envs(command_parts.envs);
     Ok(ret)
 }
+
+fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<S::Ok, S::Error> {
+    let mut state = serializer.serialize_struct("Comamnd", 3)?;
+    state.serialize_field("program", command.get_program().to_str().unwrap())?;
+    state.serialize_field("args", &command.get_args().map(|x| x.to_str().unwrap()).collect::<Vec<_>>())?;
+    state.serialize_field("envs", &command.get_envs().filter(|(_, v)| v.is_some()).map(|(k, v)| (k.to_str().unwrap(), v.unwrap().to_str().unwrap())).collect::<HashMap<_, _>>())?;
+    state.end()
+}
+
 
 impl CommandWrapper {
     /// Runs the command and gets the exit code. Returns [`Err(CommandError::SignalTerminatio)`] if the command returns no exit code.
@@ -162,3 +173,20 @@ impl Clone for CommandWrapper {
         Self {inner: ret, output_handling: self.output_handling.clone()}
     }
 }
+
+// impl PartialEq for CommandWrapper {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.inner.get_program()==other.inner.get_program() &&
+//             self.inner.get_args().collect::<Vec<_>>()==other.inner.get_args().collect::<Vec<_>>() &&
+//             self.inner.get_current_dir()==other.inner.get_current_dir() &&
+//             self.inner.get_envs().collect::<Vec<_>>()==other.inner.get_envs().collect::<Vec<_>>()
+//     }
+// }
+
+impl PartialEq for CommandWrapper {
+    fn eq(&self, _: &Self) -> bool {
+        false
+    }
+}
+
+// impl Eq for CommandWrapper {}

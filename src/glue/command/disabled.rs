@@ -1,3 +1,4 @@
+use serde::ser::{Error as SerError, Serialize, Serializer};
 use serde::{de::Error, Deserialize, Deserializer};
 use thiserror::Error;
 use url::Url;
@@ -8,7 +9,13 @@ use url::Url;
 /// This form cannot be deserialized, which may or may not be the best way to handle this.
 pub struct CommandWrapper;
 
-#[derive(Debug, Clone)]
+impl PartialEq for CommandWrapper {
+    fn eq(&self, _: &Self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum OutputHandler {}
 
 /// The disabled form of CommandError. As an empty enum it can't be created at all (in safe Rust).
@@ -21,9 +28,21 @@ impl<'de> Deserialize<'de> for CommandWrapper {
     }
 }
 
+impl Serialize for CommandWrapper {
+    fn serialize<S: Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
+        Err(S::Error::custom("URL Cleaner was compiled without support for running commands."))
+    }
+}
+
 impl<'de> Deserialize<'de> for OutputHandler {
     fn deserialize<D: Deserializer<'de>>(_deserializer: D) -> Result<Self, D::Error> {
         Err(D::Error::custom("URL Cleaner was compiled without support for running commands."))
+    }
+}
+
+impl Serialize for OutputHandler {
+    fn serialize<S: Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
+        Err(S::Error::custom("URL Cleaner was compiled without support for running commands."))
     }
 }
 

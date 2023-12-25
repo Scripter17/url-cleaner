@@ -1,14 +1,14 @@
 use std::borrow::Cow;
 
 use thiserror::Error;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use url::Url;
 use std::convert::identity;
 
 use crate::glue;
 use crate::types::UrlPartName;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Condition {
     /// Always passes.
     Always,
