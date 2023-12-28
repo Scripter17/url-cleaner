@@ -4,18 +4,17 @@ use std::sync::OnceLock;
 use std::fs::read_to_string;
 use std::path::Path;
 use std::ops::{Deref, DerefMut};
+use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use serde_json;
 use thiserror::Error;
 
 pub mod conditions;
 pub mod mappers;
+use crate::types;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Rule {
-    // #[serde(skip)]
-    // pub credit: (),
     pub condition: conditions::Condition,
     pub mapper: mappers::Mapper
 }
@@ -33,7 +32,12 @@ pub enum RuleError {
 impl Rule {
     /// Apply the rule to the url in-place.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        if self.condition.satisfied_by(url)? {
+        self.apply_with_dcr(url, &types::DomainConditionRule::default())
+    }
+    
+    /// Apply the rule to the url in-place.
+    pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
+        if self.condition.satisfied_by_with_dcr(url, dcr)? {
             Ok(self.mapper.apply(url)?)
         } else {
             Err(RuleError::FailedCondition)
@@ -48,22 +52,29 @@ const RULES_STR: &str=include_str!("../default-config.json");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
 
-pub fn get_default_rules() -> Option<Rules> {
+pub fn get_default_rules() -> Option<&'static Rules> {
     #[cfg(feature = "default-rules")]
     {
         Some(RULES.get_or_init(|| {
             serde_json::from_str(RULES_STR).unwrap()
-        }).clone())
+        }))
     }
     #[cfg(not(feature = "default-rules"))]
     None
+}
+
+pub fn get_rules(path: Option<&Path>) -> Result<Cow<Rules>, GetRulesError> {
+    Ok(match path {
+        Some(path) => Cow::Owned(serde_json::from_str::<Rules>(&read_to_string(path).or(Err(GetRulesError::CantLoadFile))?)?),
+        None => Cow::Borrowed(get_default_rules().ok_or(GetRulesError::NoDefaultRules)?)
+    })
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rules(Vec<Rule>);
 
 impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
-impl Into<Vec<Rule>> for Rules {fn into(self)             -> Vec<Rule> {self.0}}
+impl From<Rules> for Vec<Rule> {fn from(value: Rules)     -> Self {value.0}}
 
 impl Deref for Rules {
     type Target = [Rule];
@@ -81,16 +92,20 @@ impl DerefMut for Rules {
 
 #[allow(dead_code)]
 impl Rules {
-    fn as_slice<'a>(&'a self) -> &'a [Rule] {self.deref()}
-    fn as_mut_slice<'a>(&'a mut self) -> &'a mut [Rule] {self.deref_mut()}
+    fn as_slice(&self) -> &[Rule] {self.deref()}
+    fn as_mut_slice(&mut self) -> &mut [Rule] {self.deref_mut()}
+
+    pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
+        self.apply_with_dcr(url, &types::DomainConditionRule::default())
+    }
 
     /// Applies each rule to the provided [`Url`] one after another.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, the `url` is left unmodified.
-    pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
+    pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in self.deref() {
-            match rule.apply(&mut temp_url) {
+            match rule.apply_with_dcr(&mut temp_url, dcr) {
                 Err(RuleError::FailedCondition) => {},
                 e @ Err(_) => e?,
                 _ => {}
@@ -110,6 +125,11 @@ impl Rules {
         for mut rule in self.0.into_iter() {
             match ret.last_mut() {
                 Some(last_rule) => {
+                    // match rule.condition {
+                    //     conditions::Condition::All(x) if x.len()==1 => {rule.condition=x[0];},
+                    //     conditions::Condition::Any(x) if x.len()==1 => {rule.condition=x[0];},
+                    //     _ => {}
+                    // }
                     if last_rule.condition==rule.condition {
                         match (&mut last_rule.mapper, &mut rule.mapper) {
                             (&mut mappers::Mapper::RemoveSomeQueryParams(ref mut last_params), &mut mappers::Mapper::RemoveSomeQueryParams(ref mut params)) => {
@@ -142,11 +162,4 @@ pub enum GetRulesError {
     /// URL Cleaner was compiled without default rules.
     #[error("URL Cleaner was compiled without default rules.")]
     NoDefaultRules
-}
-
-pub fn get_rules(path: Option<&Path>) -> Result<Rules, GetRulesError> {
-    Ok(match path {
-        Some(path) => serde_json::from_str::<Rules>(&read_to_string(path).or(Err(GetRulesError::CantLoadFile))?)?,
-        None => get_default_rules().ok_or(GetRulesError::NoDefaultRules)?
-    })
 }

@@ -2,31 +2,33 @@ use std::path::PathBuf;
 
 #[cfg(feature = "stdin")]
 use std::io;
-#[cfg(feature = "stdin")]
-use atty;
 
 use clap::Parser;
 use url::Url;
 
 mod rules;
 mod glue;
+mod suffix;
 mod types;
 
 #[derive(Parser)]
 struct Args {
-    url: Option<String>,
+    urls: Vec<Url>,
     #[arg(short, long)]
-    rules: Option<PathBuf>
+    rules: Option<PathBuf>,
+    #[arg(short, long, default_value_t)]
+    domain_condition_rule: types::DomainConditionRule
 }
 
 fn main() {
+    suffix::init_tlds();
+    
     let args=Args::parse();
     let rules=rules::get_rules(args.rules.as_deref()).unwrap();
-    if let Some(url) = args.url {
-        let mut url=Url::parse(&url).unwrap();
-        match rules.apply(&mut url) {
+    for mut url in args.urls.into_iter() {
+        match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
             Ok(_) => {println!("{url}");},
-            Err(e) => {println!("{e:?}");}
+            Err(e) => {println!(); eprintln!("{e:?}");}
         }
     }
 
@@ -35,9 +37,9 @@ fn main() {
         if atty::isnt(atty::Stream::Stdin) {
             for line in io::stdin().lines() {
                 let mut url=Url::parse(&line.unwrap()).unwrap();
-                match rules.apply(&mut url) {
+                match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
                     Ok(_) => {println!("{url}");},
-                    Err(_) => {println!();}
+                    Err(e) => {println!(); eprintln!("{e:?}")}
                 }
             }
         }

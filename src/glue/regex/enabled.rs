@@ -1,4 +1,6 @@
 use std::borrow::Cow;
+use std::str::FromStr;
+use std::convert::Infallible;
 
 use serde::{
     Serialize,
@@ -9,6 +11,7 @@ pub use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
 
 /// The enabled form of the wrapper around [`regex::Regex`] and [`RegexParts`].
 /// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
+/// Because converting a [`Regex`] to [`RegexParts`] is way more complicated than it should be, various [`From`]/[`Into`] and [`TryFrom`]/[`TryInto`] conversions are defined instead of making the filds public.
 /// Only the necessary methods are exposed for the sake of simplicity.
 #[derive(Clone, Debug)]
 pub struct RegexWrapper {
@@ -18,7 +21,6 @@ pub struct RegexWrapper {
 
 impl PartialEq for RegexWrapper {
     fn eq(&self, other: &Self) -> bool {self.parts.eq(&other.parts)}
-    fn ne(&self, other: &Self) -> bool {self.parts.ne(&other.parts)}
 }
 impl Eq for RegexWrapper {}
 
@@ -28,15 +30,30 @@ impl Eq for RegexWrapper {}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
     pattern: String,
-    #[serde(default)]                case_insensitive: bool,
-    #[serde(default)]                crlf: bool,
-    #[serde(default)]                dot_all: bool,
-    #[serde(default)]                ignore_whitespace: bool,
-    #[serde(default = "newline_u8")] line_terminator: u8,
-    #[serde(default)]                multi_line: bool,
-    #[serde(default)]                octal: bool,
-    #[serde(default)]                swap_greed: bool,
-    #[serde(default = "get_true")]   unicode: bool
+    #[serde(default               , skip_serializing_if = "is_false")] case_insensitive: bool,
+    #[serde(default               , skip_serializing_if = "is_false")] crlf: bool,
+    #[serde(default               , skip_serializing_if = "is_false")] dot_all: bool,
+    #[serde(default               , skip_serializing_if = "is_false")] ignore_whitespace: bool,
+    #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] line_terminator: u8,
+    #[serde(default               , skip_serializing_if = "is_false")] multi_line: bool,
+    #[serde(default               , skip_serializing_if = "is_false")] octal: bool,
+    #[serde(default               , skip_serializing_if = "is_false")] swap_greed: bool,
+    #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] unicode: bool
+}
+
+const fn is_false(x: &bool) -> bool {!*x}
+const fn is_true(x: &bool) -> bool {*x}
+const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
+const fn newline_u8() -> u8 {b'\n'}
+const fn get_true() -> bool {true}
+
+
+impl FromStr for RegexParts {
+    type Err=Infallible;
+
+    fn from_str(str: &str) -> Result<Self, Self::Err> {
+        Ok(RegexParts::new(str))
+    }
 }
 
 #[allow(dead_code)]
@@ -99,41 +116,41 @@ impl RegexParts {
     }
 }
 
-fn newline_u8() -> u8 {'\n' as u8}
-fn get_true() -> bool {true}
-
-impl TryInto<Regex> for RegexParts {
+impl TryFrom<RegexParts> for Regex {
     type Error = RegexError;
 
-    fn try_into(self) -> Result<Regex, Self::Error> {
-        RegexBuilder::new(&self.pattern)
-            .case_insensitive(self.case_insensitive)
-            .crlf(self.crlf)
-            .dot_matches_new_line(self.dot_all)
-            .ignore_whitespace(self.ignore_whitespace)
-            .line_terminator(self.line_terminator)
-            .multi_line(self.multi_line)
-            .octal(self.octal)
-            .swap_greed(self.swap_greed)
-            .unicode(self.unicode)
+    fn try_from(value: RegexParts) -> Result<Self, Self::Error> {
+        RegexBuilder::new(&value.pattern)
+            .case_insensitive(value.case_insensitive)
+            .crlf(value.crlf)
+            .dot_matches_new_line(value.dot_all)
+            .ignore_whitespace(value.ignore_whitespace)
+            .line_terminator(value.line_terminator)
+            .multi_line(value.multi_line)
+            .octal(value.octal)
+            .swap_greed(value.swap_greed)
+            .unicode(value.unicode)
             .build()
     }
 }
 
-impl TryInto<RegexWrapper> for RegexParts {
+impl TryFrom<RegexParts> for RegexWrapper {
     type Error = <RegexParts as TryInto<Regex>>::Error;
 
-    fn try_into(self) -> Result<RegexWrapper, Self::Error> {
-        Ok(RegexWrapper {
-            inner: self.clone().try_into()?,
-            parts: self
+    fn try_from(value: RegexParts) -> Result<Self, Self::Error> {
+        Ok(Self {
+            inner: value.clone().try_into()?,
+            parts: value
         })
     }
 }
 
+impl From<RegexWrapper> for Regex      {fn from(value: RegexWrapper) -> Self {value.inner}}
+impl From<RegexWrapper> for RegexParts {fn from(value: RegexWrapper) -> Self {value.parts}}
+
 impl<'de> Deserialize<'de> for RegexWrapper  {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let parts: RegexParts = Deserialize::deserialize(deserializer)?;
+        let parts: RegexParts = crate::glue::string_or_struct(deserializer)?;
         Ok(RegexWrapper {
             inner: parts.clone().try_into().map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}.", parts.pattern)))?,
             parts
@@ -146,9 +163,6 @@ impl Serialize for RegexWrapper {
         self.parts.serialize(serializer)
     }
 }
-
-impl Into<Regex     > for RegexWrapper {fn into(self) -> Regex      {self.inner}}
-impl Into<RegexParts> for RegexWrapper {fn into(self) -> RegexParts {self.parts}}
 
 impl RegexWrapper {
     /// Wrapper for `regex::Regex::is_match`.

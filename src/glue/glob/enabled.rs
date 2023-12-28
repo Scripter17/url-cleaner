@@ -25,8 +25,8 @@ struct SerdeMatchOptions {
     #[serde(default = "get_true" )] require_literal_leading_dot: bool,
 }
 
-fn get_true() -> bool {true}
-fn get_false() -> bool {false}
+const fn get_true() -> bool {true}
+const fn get_false() -> bool {false}
 
 fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern: String=Deserialize::deserialize(deserializer)?;
@@ -40,6 +40,6 @@ fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<
 impl GlobWrapper {
     /// Wrapper for `glob::Pattern::matches`.
     pub fn matches(&self, str: &str) -> bool {
-        self.inner.matches_with(str, self.options.clone())
+        self.inner.matches_with(str, self.options)
     }
 }

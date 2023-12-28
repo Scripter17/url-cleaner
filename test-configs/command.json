@@ -15,13 +15,15 @@
     "condition": "Always",
     "mapper": {
       "Debug": {
-        "ReplaceWithCommandStdout": {
-          "command": {
+        "ReplaceWithCommandOutput": {
             "program": "/usr/bin/echo",
             "args": ["{}"]
-          }
         }
       }
     }
+  },
+  {
+    "condition": {"Debug": {"CommandExists": {"program": "gallery-dl"}}},
+    "mapper": {"Debug": "None"}
   }
 ]

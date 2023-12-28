@@ -52,6 +52,12 @@ impl Serialize for OutputHandler {
 }
 
 impl CommandWrapper {
+    /// The disabled version of the function that checks if a path exists.
+    /// This version will always panic.
+    pub fn exists(&self) -> bool {
+        panic!("URL Cleaner was compiled without the `commands` feature.")
+    }
+
     /// The disabled version of the function that gets the command's exit code.
     /// This version will always panic.
     pub fn exit_code(&self, _url: &Url) -> Result<i32, CommandError> {

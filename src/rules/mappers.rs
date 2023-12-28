@@ -46,7 +46,7 @@ pub enum Mapper {
     Error,
     /// Prints debugging information about the contained mapper and its effect on the URL to STDERR.
     /// Intended primarily for debugging logic errors.
-    /// *Can* be used in production as bash and batch only have `x | y` pipe STDOUT by default, but it'll look ugly.
+    /// *Can* be used in production as in both bash and batch `x|y` only pipes `x`'s STDOUT, but it'll look ugly.
     Debug(Box<Mapper>),
     /// Ignores any error the contained mapper may throw.
     IgnoreError(Box<Mapper>),
@@ -214,10 +214,10 @@ impl Mapper {
                 Err(MapperError::MapperDisabled)?;
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(lines) = read_lines("redirect-cache.txt") {
-                    for line in lines.filter_map(Result::ok) {
+                    for line in lines.map_while(Result::ok) {
                         if let Some((short, long)) = line.split_once('\t') {
                             if url.as_str()==short {
-                                *url=Url::parse(&long)?;
+                                *url=Url::parse(long)?;
                                 return Ok(());
                             }
                         }
@@ -230,7 +230,7 @@ impl Mapper {
                         let new_url=reqwest::blocking::Client::new().get(url.to_string()).send()?.url().clone();
                         *url=new_url.clone();
                         #[cfg(feature = "cache-redirects")]
-                        OpenOptions::new().create(true).append(true).open("redirect-cache.txt")?.write(format!("{}\t{}", url.as_str(), new_url.as_str()).as_bytes())?;
+                        let _=OpenOptions::new().create(true).append(true).open("redirect-cache.txt")?.write(format!("{}\t{}", url.as_str(), new_url.as_str()).as_bytes())?;
                     }
                     #[cfg(target_family = "wasm")]
                     todo!();

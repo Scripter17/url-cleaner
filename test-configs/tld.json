@@ -1,0 +1,18 @@
+[
+  {
+    "condition": {"Debug": {"UnqualifiedAnyTld": "google"}},
+    "mapper": "None"
+  },
+  {
+    "condition": {"Debug": {"QualifiedAnyTld": "google"}},
+    "mapper": "None"
+  },
+  {
+    "condition": {"Debug": {"UnqualifiedAnyTld": "www.google"}},
+    "mapper": "None"
+  },
+  {
+    "condition": {"Debug": {"QualifiedAnyTld": "www.google"}},
+    "mapper": "None"
+  }
+]

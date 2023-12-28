@@ -1,8 +1,14 @@
 use std::borrow::Cow;
 
-use serde::{Serialize, Deserialize};
 use url::{Url, ParseError};
 use thiserror::Error;
+use std::str::FromStr;
+
+use serde::{
+    Serialize,
+    ser::Serializer,
+    {de::Error as DeError, Deserialize, Deserializer}
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum UrlPartName {
@@ -16,7 +22,7 @@ pub enum UrlPartName {
     Password,
     /// The host. Either a domain name or IPV4/6 address. Corresponds to [`Url::host`].
     Host,
-    /// The domain.. Corresponds to [`Url::domain`].
+    /// The domain. Corresponds to [`Url::domain`].
     Domain,
     /// The port as a string. Correspods to [`Url::port`].
     /// Ports are always treated as strings for the sake of a simpler API.
@@ -59,7 +65,7 @@ impl UrlPartName {
             Self::Scheme   => Cow::Borrowed(url.scheme()),
             Self::Username => Cow::Borrowed(url.username()),
             Self::Password => Cow::Borrowed(url.password()?),
-            Self::Host     => Cow::Owned   (url.host()?.to_string()), // IPV4/6 hosts need to be converted into Strings
+            Self::Host     => Cow::Borrowed(url.host_str()?),
             Self::Domain   => Cow::Borrowed(url.domain()?),
             Self::Port     => Cow::Owned   (url.port()?.to_string()), // I cannot be bothered to add number handling
             Self::Path     => Cow::Borrowed(url.path()),
@@ -83,5 +89,47 @@ impl UrlPartName {
             Self::Fragment => url.set_fragment(Some(with))
         }
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub enum DomainConditionRule {
+    #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
+    Url(Url),
+    Always,
+    Never,
+    #[default]
+    UseUrlBeingCleaned
+}
+
+fn deserialize_url<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Url, D::Error> {
+    let x: &'de str=Deserialize::deserialize(deserializer)?;
+    Url::parse(x).map_err(|_| D::Error::custom(format!("Invalid URL pattern: {x:?}.")))
+}
+fn serialize_url<S: Serializer>(value: &Url, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(value.as_str())
+}
+
+impl FromStr for DomainConditionRule {
+    type Err=ParseError;
+
+    fn from_str(x: &str) -> Result<Self, Self::Err> {
+        Ok(match x {
+            "Always" => DomainConditionRule::Always,
+            "Never" => DomainConditionRule::Never,
+            "UseUrlBeingCleaned" => DomainConditionRule::UseUrlBeingCleaned,
+            _ => DomainConditionRule::Url(Url::parse(x)?)
+        })
+    }
+}
+
+impl ToString for DomainConditionRule {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Url(url) => url.to_string(),
+            Self::Always => "Always".to_string(),
+            Self::Never => "Never".to_string(),
+            Self::UseUrlBeingCleaned => "UseUrlBeingCleaned".to_string()
+        }
     }
 }

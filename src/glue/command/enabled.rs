@@ -1,12 +1,13 @@
 use std::ffi::OsString;
 use std::process::{Command, Output as CommandOutput, Stdio};
 use std::io::{Write, Error as IoError};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use url::{Url, ParseError};
 use std::str::{from_utf8, FromStr, Utf8Error};
 use thiserror::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::env;
 
 use serde::{
     Serialize, Deserialize,
@@ -109,9 +110,8 @@ fn deserialize_command<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Com
     let command_parts: CommandParts = Deserialize::deserialize(deserializer)?;
     let mut ret=Command::new(command_parts.program);
     ret.args(command_parts.args);
-    match command_parts.current_dir {
-        Some(dir) => {ret.current_dir(dir);},
-        None => {}
+    if let Some(dir) = command_parts.current_dir {
+        ret.current_dir(dir);
     }
     ret.envs(command_parts.envs);
     Ok(ret)
@@ -125,8 +125,11 @@ fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<
     state.end()
 }
 
-
 impl CommandWrapper {
+    pub fn exists(&self) -> bool {
+        PathBuf::from(self.inner.get_program()).exists() || find_it(self.inner.get_program()).is_some()
+    }
+    
     /// Runs the command and gets the exit code. Returns [`Err(CommandError::SignalTermination)`] if the command returns no exit code.
     pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
         self.clone().apply_url(url).inner.status()?.code().ok_or(CommandError::SignalTermination)
@@ -152,7 +155,7 @@ impl CommandWrapper {
 
     /// Runs the command, does the [`OutputHandler`] stuff, removes trailings newlines and carriage returns form the output, then extracts the URL.
     pub fn get_url(&self, url: &Url) -> Result<Url, CommandError> {
-        Ok(Url::parse(&self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
+        Ok(Url::parse(self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }
 
     /// A very messy function that puts the URL in the command arguments.
@@ -160,9 +163,8 @@ impl CommandWrapper {
         // Why doesn't std::process::Command have a clear_args method?
         let mut ret=Command::new(self.inner.get_program());
         ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(OsString::from_str(url.as_str()).unwrap())} else {Cow::Borrowed(arg)}));
-        match self.inner.get_current_dir() {
-            Some(dir) => {ret.current_dir(dir);},
-            None => {}
+        if let Some(dir) = self.inner.get_current_dir() {
+            ret.current_dir(dir);
         }
         ret.envs(self.inner.get_envs().filter(|(_, v)| v.is_some()).map(|(k, v)| (k.to_owned(), v.unwrap().to_owned())));
         Self {inner: ret, output_handling: self.output_handling.clone()}
@@ -173,24 +175,13 @@ impl Clone for CommandWrapper {
     fn clone(&self) -> Self {
         let mut ret=Command::new(self.inner.get_program());
         ret.args(self.inner.get_args());
-        match self.inner.get_current_dir() {
-            Some(dir) => {ret.current_dir(dir);},
-            None => {}
+        if let Some(dir) = self.inner.get_current_dir() {
+            ret.current_dir(dir);
         }
         ret.envs(self.inner.get_envs().filter(|(_, v)| v.is_some()).map(|(k, v)| (k.to_owned(), v.unwrap().to_owned())));
         Self {inner: ret, output_handling: self.output_handling.clone()}
     }
 }
-
-// Commented out because commands aren't deterministic
-// impl PartialEq for CommandWrapper {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.inner.get_program()==other.inner.get_program() &&
-//             self.inner.get_args().collect::<Vec<_>>()==other.inner.get_args().collect::<Vec<_>>() &&
-//             self.inner.get_current_dir()==other.inner.get_current_dir() &&
-//             self.inner.get_envs().collect::<Vec<_>>()==other.inner.get_envs().collect::<Vec<_>>()
-//     }
-// }
 
 impl PartialEq for CommandWrapper {
     fn eq(&self, _: &Self) -> bool {
@@ -198,4 +189,39 @@ impl PartialEq for CommandWrapper {
     }
 }
 
-// impl Eq for CommandWrapper {}
+// https://stackoverflow.com/a/37499032/10720231
+fn find_it<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
+    let exe_name = enhance_exe_name(exe_name.as_ref());
+    env::var_os("PATH").and_then(|paths| {
+        env::split_paths(&paths).filter_map(|dir| {
+            let full_path = dir.join(&exe_name);
+            if full_path.is_file() {
+                Some(full_path)
+            } else {
+                None
+            }
+        }).next()
+    })
+}
+
+#[cfg(not(target_os = "windows"))]
+fn enhance_exe_name(exe_name: &Path) -> Cow<Path> {
+    exe_name.into()
+}
+
+#[cfg(target_os = "windows")]
+fn enhance_exe_name(exe_name: &Path) -> Cow<Path> {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+
+    let raw_input: Vec<_> = exe_name.as_os_str().encode_wide().collect();
+    let raw_extension: Vec<_> = OsStr::new(".exe").encode_wide().collect();
+
+    if raw_input.ends_with(&raw_extension) {
+        exe_name.into()
+    } else {
+        let mut with_exe = exe_name.as_os_str().to_owned();
+        with_exe.push(".exe");
+        PathBuf::from(with_exe).into()
+    }
+}
