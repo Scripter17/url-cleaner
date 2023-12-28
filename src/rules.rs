@@ -21,11 +21,11 @@ pub struct Rule {
 
 #[derive(Error, Debug)]
 pub enum RuleError {
-    #[error("The URL does not meet the rule's conditon")]
+    #[error("The URL does not meet the rule's conditon.")]
     FailedCondition,
-    #[error("The condition returned an error")]
+    #[error("The condition returned an error.")]
     ConditionError(#[from] conditions::ConditionError),
-    #[error("The mapper returned an error")]
+    #[error("The mapper returned an error.")]
     MapperError(#[from] mappers::MapperError)
 }
 

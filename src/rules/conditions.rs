@@ -172,17 +172,6 @@ impl Condition {
                 None => false
             },
             Self::UnqualifiedAnyTld(name) => {
-                // if let Some(domain) = url.domain() {
-                //     match domain.split('.').collect::<Vec<_>>().as_slice() {
-                //         // All ASCII ccTLD identifiers are two letters long, and all two-letter top-level domains are ccTLDs. - https://en.wikipedia.org/wiki/Country_code_top-level_domain.
-                //         // I'm just hoping nobody using this ever registers google.whatever.uk and nobody ever tries to sanitize a URL from that domain.
-                //         [.., name2, _, cctld] => name==name2 && cctld.len()==2,
-                //         [.., name2, _       ] => name==name2,
-                //         _                     => false
-                //     }
-                // } else {
-                //     false
-                // }
                 match url.domain() {
                     Some(url_domain) => match crate::suffix::TLDS.get().unwrap().domain(url_domain.as_bytes()) {
                         Some(parsed_domain) => {
@@ -196,15 +185,6 @@ impl Condition {
                 }
             },
             Self::QualifiedAnyTld(name) => {
-                // if let Some(partial_domain) = url.domain().and_then(|domain| domain.strip_prefix(name)) {
-                //     match partial_domain.split('.').collect::<Vec<_>>().as_slice() {
-                //         [_, cctld] => cctld.len()==2,
-                //         [_       ] => true,
-                //         _          => false
-                //     }
-                // } else {
-                //     false
-                // }
                 match url.domain() {
                     Some(url_domain) => match crate::suffix::TLDS.get().unwrap().domain(url_domain.as_bytes()) {
                         Some(parsed_domain) => {
@@ -215,10 +195,6 @@ impl Condition {
                     },
                     None => false
                 }
-                // match crate::suffix::TLDS.get().unwrap().domain(name.as_bytes()) {
-                //     Some(domain) => url.domain().unwrap().as_bytes()==domain.as_bytes().strip_suffix(domain.suffix().as_bytes()).unwrap(),
-                //     None => false
-                // }
             },
             Self::PathIs(path) => path==url.path(),
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),

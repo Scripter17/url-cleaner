@@ -56,27 +56,25 @@
 	},
   {
     "condition": {
-			"All": {
-				"UnqualifiedDomain": "tumblr.com",
-				"CommandExists": "gallery-dl",
-				"CommandExists": "jq"
-			},
-		}
+			"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"CommandExists": {"program": "gallery-dl"}},
+				{"CommandExists": {"program": "jq"}}
+			]
+		},
     "mapper": {
       "ReplaceWithCommandOutput": {
-        "command": {
-          "program": "gallery-dl",
-          "args": ["--dump-json", "{}"],
-          "output_handling": {
-            "PipeStdoutTo": {
-              "program": "jq",
-              "args": ["-r", ".[0][1][\"reblogged_root_url\"]"]
-            }
+        "program": "gallery-dl",
+        "args": ["--dump-json", "{}"],
+        "output_handling": {
+          "PipeStdoutTo": {
+            "program": "jq",
+            "args": ["-r", ".[0][1][\"reblogged_root_url\"]"]
           }
         }
       }
     }
-  }
+  },
 	{
 		"condition": {
 			"Any": [

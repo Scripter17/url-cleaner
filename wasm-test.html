@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module">
+    import init, {clean_url_str} from "pkg/url_cleaner.js";
+    let wasm=await init();
+    console.log(clean_url_str("https://x.com", null));
+  </script>
+</head>
