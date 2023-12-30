@@ -4,6 +4,6 @@ mod enabled;
 mod disabled;
 
 #[cfg(feature = "glob")]
-pub use enabled::GlobWrapper;
+pub use enabled::*;
 #[cfg(not(feature = "glob"))]
-pub use disabled::GlobWrapper;
+pub use disabled::*;

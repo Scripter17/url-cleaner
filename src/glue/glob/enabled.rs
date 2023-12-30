@@ -3,7 +3,7 @@ pub use glob::{Pattern, MatchOptions};
 use serde::{
     Serialize, Deserialize,
     ser::Serializer,
-    de::{Error as DeError, Deserializer}
+    de::{Error as _, Deserializer}
 };
 
 /// The enabled form of the wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
@@ -11,8 +11,10 @@ use serde::{
 /// Note that if the `glob` feature is disabled, this struct is empty and all provided functions will always panic.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GlobWrapper {
+    /// The pattern used to match stuff.
     #[serde(flatten, serialize_with = "serialize_pattern", deserialize_with = "deserialize_pattern")]
-    pub inner: Pattern,
+    pub pattern: Pattern,
+    /// The options used to chooose how the pattern matches stuff.
     #[serde(flatten, with = "SerdeMatchOptions")]
     pub options: MatchOptions
 }
@@ -25,6 +27,7 @@ struct SerdeMatchOptions {
     #[serde(default = "get_true" )] require_literal_leading_dot: bool,
 }
 
+/// Serde doesn't have an equivalent to Clap's `default_value_t`
 const fn get_true() -> bool {true}
 const fn get_false() -> bool {false}
 
@@ -40,6 +43,6 @@ fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<
 impl GlobWrapper {
     /// Wrapper for `glob::Pattern::matches`.
     pub fn matches(&self, str: &str) -> bool {
-        self.inner.matches_with(str, self.options)
+        self.pattern.matches_with(str, self.options)
     }
 }

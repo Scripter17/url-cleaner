@@ -2,9 +2,9 @@ mod regex;
 mod glob;
 mod command;
 
-pub use regex::{RegexParts, RegexWrapper};
-pub use glob::GlobWrapper;
-pub use command::{CommandWrapper, CommandError, OutputHandler};
+pub use regex::*;
+pub use glob::*;
+pub use command::*;
 
 use std::{
     str::FromStr,
@@ -40,7 +40,7 @@ where
         }
 
         fn visit_str<E: de::Error>(self, value: &str) -> Result<T, E> {
-            Ok(FromStr::from_str(value).unwrap())
+            FromStr::from_str(value).map_err(|_| E::custom("The provided string could not be parsed."))
         }
 
         fn visit_map<M: MapAccess<'de>>(self, map: M) -> Result<T, M::Error> {

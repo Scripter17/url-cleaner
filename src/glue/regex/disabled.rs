@@ -1,29 +1,41 @@
 use std::borrow::Cow;
 
 use serde::{
-    ser::{Error as SerError, Serialize, Serializer},
-    de::{Error as DeError, Deserialize, Deserializer}
+    ser::{Error as _, Serialize, Serializer},
+    de::{Error as _, Deserialize, Deserializer}
 };
 
-/// The disabled form of the wrapper around [`regex::Regex`] and [`RegexParts`].
-/// This is the result of the default `regex` feature being disabled during compile time.
-/// This form cannot be deserialized, which may or may not be the best way to handle this.
+/// The disabled version of the wrapper around [`regex::Regex`] and [`RegexParts`].
+/// This is the result of the default `regex` feature being disabled at compile time.
+/// This version cannot be deserialized, which may or may not be the best way to handle this.
 /// Calling any provided method on this will panic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegexWrapper;
 
-/// The disabled form of RegexParts.
-/// This is the result of the default `regex` feature being disabled during compile time.
-/// This form cannot be deserialized, which may or may not be the best way to handle this.
+/// The disabled version of RegexParts.
+/// This is the result of the default `regex` feature being disabled at compile time.
+/// This version cannot be deserialized, which may or may not be the best way to handle this.
 /// Calling any provided method on this will panic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegexParts;
 
 #[allow(dead_code)]
 impl RegexParts {
+    /// The disabled version of [`RegexParts::new`].
+    /// # Panics
+    /// This verison lways panics.
     pub fn new         (_pattern: &str) -> Self  {panic!()}
+    /// The disabled version of [`RegexParts::set_flags`].
+    /// # Panics
+    /// This verison lways panics.
     pub fn set_flags   (&mut self, _flags: &str) {panic!()}
+    /// The disabled version of [`RegexParts::add_flags`].
+    /// # Panics
+    /// This verison lways panics.
     pub fn add_flags   (&mut self, _flags: &str) {panic!()}
+    /// The disabled version of [`RegexParts::remove_flags`].
+    /// # Panics
+    /// This verison lways panics.
     pub fn remove_flags(&mut self, _flags: &str) {panic!()}
 }
 
@@ -53,12 +65,14 @@ impl Serialize for RegexParts {
 
 impl RegexWrapper {
     /// The disabled version of the wrapper for `regex::Regex::is_match`.
+    /// # Panics
     /// This version will always panic.
     pub fn is_match(&self, _str: &str) -> bool {
         panic!("URL Cleaner was compiled without the `regex` feature.")
     }
 
     /// The disabled version of the wrapper for `regex::Regex::replace`.
+    /// # Panics
     /// This version will always panic.
     pub fn replace<'h, T>(&self, _haystack: &str, _rep: T) -> Cow<'h, str> {
         panic!("URL Cleaner was compiled without the `regex` feature.")

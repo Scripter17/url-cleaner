@@ -1,3 +1,6 @@
+//! The [`Rule`] type is how this crate modifies URLs. A [`Rule`] contains a [`conditions::Condition`] and a [`mappers::Mapper`].
+//! If the condition passes (returns [`Ok(true)`]), then the mapper is applied to a mutable reference to the URL.
+
 use url::Url;
 #[cfg(feature = "default-rules")]
 use std::sync::OnceLock;
@@ -9,22 +12,31 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
+/// The logic for when to modify a URL.
 pub mod conditions;
+/// The logic for how to modify a URL.
 pub mod mappers;
 use crate::types;
 
+/// The core unit describing when and how URLs are modified.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Rule {
+    /// The condition under which the provided URL is modified.
     pub condition: conditions::Condition,
+    /// The mapper used to modify the provided URL.
     pub mapper: mappers::Mapper
 }
 
+/// Denotes that either the condition failed (returned `Ok(false)`), the condition errored, or the mapper errored.
 #[derive(Error, Debug)]
 pub enum RuleError {
+    /// The URL does not meet the rule's conditon.
     #[error("The URL does not meet the rule's conditon.")]
     FailedCondition,
+    /// The condition returned an error.
     #[error("The condition returned an error.")]
     ConditionError(#[from] conditions::ConditionError),
+    /// The mapper returned an error.
     #[error("The mapper returned an error.")]
     MapperError(#[from] mappers::MapperError)
 }
@@ -52,29 +64,38 @@ const RULES_STR: &str=include_str!("../default-config.json");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
 
-pub fn get_default_rules() -> Option<&'static Rules> {
+/// Gets the rules compiled into the URL Cleaner binary.
+/// Panics if the it isn't parseable into [`Rules`].
+pub fn get_default_rules() -> Result<&'static Rules, GetRulesError> {
     #[cfg(feature = "default-rules")]
     {
-        Some(RULES.get_or_init(|| {
-            serde_json::from_str(RULES_STR).unwrap()
-        }))
+        if let Some(rules) = RULES.get() {
+            Ok(rules)
+        } else {
+            let rules=serde_json::from_str(RULES_STR).map_err(GetRulesError::CantParseDefaultRules)?; // I don't know why that syntax is allowed. Literally it makes sense. Conceptually it does not.
+            Ok(RULES.get_or_init(|| rules))
+        }
     }
     #[cfg(not(feature = "default-rules"))]
-    None
+    Err(GetRulesError::NoDefaultRules)
 }
 
+/// If `path` is `Some`, loads and parses [`Rules`] from the JSON file it points to.
+/// If `None`, returns [`get_default_rules`].
 pub fn get_rules(path: Option<&Path>) -> Result<Cow<Rules>, GetRulesError> {
     Ok(match path {
         Some(path) => Cow::Owned(serde_json::from_str::<Rules>(&read_to_string(path).or(Err(GetRulesError::CantLoadFile))?)?),
-        None => Cow::Borrowed(get_default_rules().ok_or(GetRulesError::NoDefaultRules)?)
+        None => Cow::Borrowed(get_default_rules()?)
     })
 }
 
+/// A thin wrapper around a vector of rules.
+/// Exists mainly for convenience.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rules(Vec<Rule>);
 
 impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
-impl From<Rules> for Vec<Rule> {fn from(value: Rules)     -> Self {value.0}}
+impl From<Rules> for Vec<Rule> {fn from(value: Rules    ) -> Self {value.0    }}
 
 impl Deref for Rules {
     type Target = [Rule];
@@ -92,16 +113,21 @@ impl DerefMut for Rules {
 
 #[allow(dead_code)]
 impl Rules {
-    fn as_slice(&self) -> &[Rule] {self.deref()}
-    fn as_mut_slice(&mut self) -> &mut [Rule] {self.deref_mut()}
+    /// A wrapper around [`Rules::deref`]
+    pub fn as_slice(&self) -> &[Rule] {self.deref()}
+    /// A wrapper around [`Rules::deref_mut`]
+    pub fn as_mut_slice(&mut self) -> &mut [Rule] {self.deref_mut()}
 
+    /// Applies each rule to the provided [`URL`] in order.
+    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
+    /// If an error is returned, `url` is left unmodified.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.apply_with_dcr(url, &types::DomainConditionRule::default())
     }
 
-    /// Applies each rule to the provided [`Url`] one after another.
+    /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
-    /// If an error is returned, the `url` is left unmodified.
+    /// If an error is returned, `url` is left unmodified.
     pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in self.deref() {
@@ -115,6 +141,7 @@ impl Rules {
         Ok(())
     }
 
+    /// TODO: REMOVE THIS.
     /// A mess of a function used to simplify the rules parsed from AdGuard lists.
     /// Currently just merges consecutive [`mappers::Mapper::RemoveSomeQueryParams`] and [`mappers::Mapper::AllowSomeQueryParams`].
     /// [`Rules::apply`] should always give the same result regardless of if this function was used first.
@@ -151,15 +178,21 @@ impl Rules {
     }
 }
 
+/// An enum containing all possible errors that can happen when loading/parsing a rules into a [`Rules`]
 #[derive(Error, Debug)]
 pub enum GetRulesError {
-    /// Could not load the specified.
-    #[error("Could not load the specified.")]
+    /// Could not load the specified rules file.
+    #[error("Could not load the specified rules file.")]
     CantLoadFile,
     /// The loaded file did not contain valid JSON.
     #[error("The loaded file did not contain valid JSON.")]
     CantParseFile(#[from] serde_json::Error),
     /// URL Cleaner was compiled without default rules.
+    #[allow(dead_code)]
     #[error("URL Cleaner was compiled without default rules.")]
-    NoDefaultRules
+    NoDefaultRules,
+    /// The default rules compiled into URL Cleaner aren't valid JSON.
+    #[allow(dead_code)]
+    #[error("The default rules compiled into URL Cleaner aren't valid JSON.")]
+    CantParseDefaultRules(serde_json::Error)
 }

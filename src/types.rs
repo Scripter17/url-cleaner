@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use url::{Url, ParseError};
 use thiserror::Error;
 use std::str::FromStr;
+use std::io::Error as IoError;
 
 use serde::{
     Serialize,
@@ -10,6 +11,7 @@ use serde::{
     {de::Error as DeError, Deserialize, Deserializer}
 };
 
+/// An enum that makes using the various [`Url`] getter simplers.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum UrlPartName {
     /// The whole URL. Corresponds to [`Url::as_str`].
@@ -35,6 +37,7 @@ pub enum UrlPartName {
     Fragment
 }
 
+/// An enum of all possible errors [`UrlPartName::replace_with`] can return.
 #[derive(Debug, Error)]
 pub enum ReplaceError {
     /// Attempted replacement would not produce a valid URL.
@@ -92,12 +95,18 @@ impl UrlPartName {
     }
 }
 
+/// The method [`crate::rules::conditions::Condition::DomainCondition`] should use.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub enum DomainConditionRule {
+    /// Use the specified URL. If the source of the URL being cleaned is a link on a webpage then this should contain the URL of that webpage.
     #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
     Url(Url),
+    /// Makes [`crate::rules::conditions::Condition::DomainCondition`] always pass.
     Always,
+    /// Makes [`crate::rules::conditions::Condition::DomainCondition`] always fail.
     Never,
+    /// Similar to [`DomainConditionRule::Url`] except the contained URL would always be the URL being cleaned.
+    /// This is the default as I assusme it's the one that works most of the time.
     #[default]
     UseUrlBeingCleaned
 }
@@ -132,4 +141,24 @@ impl ToString for DomainConditionRule {
             Self::UseUrlBeingCleaned => "UseUrlBeingCleaned".to_string()
         }
     }
+}
+
+/// An enum that, if I've done my job properly, contains details on any possible error that can heppen when cleaning a URL.
+/// Except for if a [`crate::Mapper::Expand301`] can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
+/// Not only is it a recoverable error, it's an error that doesn't need to be recovered from.
+#[allow(clippy::enum_variant_names)]
+#[derive(Debug, Error)]
+pub enum CleaningError {
+    /// There was an error getting the rules.
+    #[error("There was an errot getting the rules.")]
+    GetRulesError(#[from] crate::rules::GetRulesError),
+    /// There was an error executing a rule.
+    #[error("There was an error executing a rule.")]
+    RuleError(#[from] crate::rules::RuleError),
+    /// There was an error parsing the URL.
+    #[error("There was an error parsing the URL.")]
+    UrlParseError(#[from] ParseError),
+    /// IO error.
+    #[error("IO error")]
+    IoError(#[from] IoError)
 }

@@ -1,6 +1,9 @@
+//! The logic for how to modify a URL.
+
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
+#[cfg(feature = "regex")]
 use std::borrow::Cow;
 
 #[cfg(feature = "http")]
@@ -68,10 +71,10 @@ pub enum Mapper {
     AllowSomeQueryParams(Vec<String>),
     /// Removes query paramaters whose name matches the specified regex.
     /// Useful for parsing AdGuard rules.
-    RemoveQueryParamsMatching(glue::RegexWrapper),
+    RemoveQueryParamsMatchingRegex(glue::RegexWrapper),
     /// Removes query paramaters whose name doesn't match the specified regex.
     /// Useful for parsing AdGuard rules.
-    AllowQueryParamsMatching(glue::RegexWrapper),
+    AllowQueryParamsMatchingRegex(glue::RegexWrapper),
     /// Replace the current URL with the value of the specified query paramater.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     GetUrlFromQueryParam(String),
@@ -88,10 +91,16 @@ pub enum Mapper {
     /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`ConditionError::UrlPartNotFound`](super::conditions::ConditionError::UrlPartNotFound) error.
     /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
     RegexSubUrlPart {
+        /// The name of the part to modify.
         part_name: types::UrlPartName,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// Defaults to [`true`].
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
+        /// The [`glue::GlobWrapper`] that is used to match and extract parts of the selected part.
         regex: glue::RegexWrapper,
+        /// The pattern the extracted parts are put into.
+        /// See [`regex::Regex::replace`] for details.
         replace: String
     },
     /// Execute a command. Any argument paramater with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
@@ -101,38 +110,39 @@ pub enum Mapper {
 
 fn get_true() -> bool {true}
 
+/// An enum of all possible errors a [`Mapper`] can reutrn.
 #[derive(Error, Debug)]
 pub enum MapperError {
     /// Returned on mappers that require regex, glob, or http when those features are disabled.
     #[allow(dead_code)]
-    #[error("Url-cleaner was compiled without support for this mapper")]
+    #[error("Url-cleaner was compiled without support for this mapper.")]
     MapperDisabled,
     /// The [`Mapper::Error`] mapper always returns this error.
     #[error("The \"Error\" mapper always returns this error.")]
     ExplicitError,
     /// Returned when the mapper has `none_to_empty_string` set to `false` and the requested part of the provided URL is `None`.
-    #[error("The provided URL does not have the requested part")]
+    #[error("The provided URL does not have the requested part.")]
     UrlPartNotFound,
     /// Returned when the provided URL's query does not contain a query paramater with the requested name.
-    #[error("The URL provided does not contain the query paramater required")]
+    #[error("The URL provided does not contain the query paramater required.")]
     CannotFindQueryParam,
     /// Returned when the would-be new URL could not be parsed by [`url::Url`].
-    #[error("Could not parse the would-be new URL")]
+    #[error("Could not parse the would-be new URL.")]
     UrlParseError(#[from] ParseError),
     /// Returned when an HTTP request fails. Currently only applies to the Expand301 mapper.
-    #[error("The HTTP request failed")]
+    #[error("The HTTP request failed.")]
     ReqwestError(#[from] ReqwestError),
     /// Returned when an I/O error occurs. Currently only applies when Expand301 is set to cache redirects.
-    #[error("IO Error")]
+    #[error("IO Error.")]
     IoError(#[from] IoError),
     /// Returned when a part replacement fails.
-    #[error("Replacement error")]
+    #[error("Replacement error.")]
     ReplaceError(#[from] types::ReplaceError),
-    /// UTF-8 error
-    #[error("UTF-8 error")]
+    /// UTF-8 error.
+    #[error("UTF-8 error.")]
     Utf8Error(#[from] Utf8Error),
-    /// The command failed
-    #[error("The command failed")]
+    /// The command failed.
+    #[error("The command failed.")]
     CommandError(#[from] glue::CommandError)
 }
 
@@ -144,6 +154,8 @@ where P: AsRef<Path>, {
 }
 
 impl Mapper {
+    /// Applies the mapper to the provided URL.
+    /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
     pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
         match self {
             Self::None => {},
@@ -186,14 +198,6 @@ impl Mapper {
                 let new_query=url.query_pairs().into_owned().filter(|(name, _)| names.iter().any(|allowed_name| allowed_name==name)).collect::<Vec<_>>();
                 url.query_pairs_mut().clear().extend_pairs(new_query);
             },
-            Self::RemoveQueryParamsMatching(regex) => {
-                let new_query=url.query_pairs().into_owned().filter(|(name, _)| !regex.is_match(name)).collect::<Vec<_>>();
-                url.query_pairs_mut().clear().extend_pairs(new_query);
-            }
-            Self::AllowQueryParamsMatching(regex) => {
-                let new_query=url.query_pairs().into_owned().filter(|(name, _)| regex.is_match(name)).collect::<Vec<_>>();
-                url.query_pairs_mut().clear().extend_pairs(new_query);
-            }
             Self::GetUrlFromQueryParam(name) => {
                 match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
                     Some((_, new_url)) => {*url=Url::parse(&new_url)?},
@@ -209,9 +213,11 @@ impl Mapper {
             Self::SwapHost(new_host) => {
                 url.set_host(Some(new_host))?;
             },
+
+            // Disablanle conditions
+
+            #[cfg(feature = "http")]
             Self::Expand301 => {
-                #[cfg(all(not(feature = "http"), not(feature = "cache-redirects")))]
-                Err(MapperError::MapperDisabled)?;
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(lines) = read_lines("redirect-cache.txt") {
                     for line in lines.map_while(Result::ok) {
@@ -223,19 +229,32 @@ impl Mapper {
                         }
                     }
                 }
-                #[cfg(feature = "http")]
+                #[cfg(not(target_family = "wasm"))]
                 {
-                    #[cfg(not(target_family = "wasm"))]
-                    {
-                        let new_url=reqwest::blocking::Client::new().get(url.to_string()).send()?.url().clone();
-                        *url=new_url.clone();
-                        #[cfg(feature = "cache-redirects")]
-                        let _=OpenOptions::new().create(true).append(true).open("redirect-cache.txt")?.write(format!("{}\t{}", url.as_str(), new_url.as_str()).as_bytes())?;
+                    let new_url=reqwest::blocking::Client::new().get(url.to_string()).send()?.url().clone();
+                    *url=new_url.clone();
+                    // Intentionally ignore any and all file writing errors.
+                    // Probably should return a warning but idk how to make that.
+                    // enum Warning<T, W, E> {Ok(T), Warning(T, W), Error(E)} is obvious.
+                    // But I'd want to bubble up a warning then return the Ok value with it.
+                    #[cfg(feature = "cache-redirects")]
+                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
+                        let _=x.write(format!("{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
                     }
-                    #[cfg(target_family = "wasm")]
+                }
+                #[cfg(target_family = "wasm")]
+                {
                     todo!();
+                    // let client=web_sys::XmlHttpRequest::new().unwrap();
+                    // client.open("GET", url.as_str());
+                    // client.send(); // Doesn't wait for it to return.
+                    // *url=Url::parse(&client.response_url())?;
                 }
             },
+            #[cfg(not(feature = "http"))]
+            Self::Expand301 => Err(MapperError::MapperDisabled)?,
+
+            #[cfg(feature = "regex")]
             Self::RegexSubUrlPart {part_name, none_to_empty_string, regex, replace} => {
                 if cfg!(feature = "regex") {
                     let old_part_value=part_name
@@ -248,7 +267,23 @@ impl Mapper {
                     Err(MapperError::MapperDisabled)?;
                 }
             },
-            Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;}
+            #[cfg(feature = "regex")]
+            Self::RemoveQueryParamsMatchingRegex(regex) => {
+                let new_query=url.query_pairs().into_owned().filter(|(name, _)| !regex.is_match(name)).collect::<Vec<_>>();
+                url.query_pairs_mut().clear().extend_pairs(new_query);
+            },
+            #[cfg(feature = "regex")]
+            Self::AllowQueryParamsMatchingRegex(regex) => {
+                let new_query=url.query_pairs().into_owned().filter(|(name, _)| regex.is_match(name)).collect::<Vec<_>>();
+                url.query_pairs_mut().clear().extend_pairs(new_query);
+            },
+
+            #[cfg(not(feature = "regex"))] Self::RegexSubUrlPart               {..} => Err(MapperError::MapperDisabled)?,
+            #[cfg(not(feature = "regex"))] Self::RemoveQueryParamsMatchingRegex(..) => Err(MapperError::MapperDisabled)?,
+            #[cfg(not(feature = "regex"))] Self::AllowQueryParamsMatchingRegex (..) => Err(MapperError::MapperDisabled)?,
+
+            #[cfg(    feature = "commands") ] Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;},
+            #[cfg(not(feature = "commands"))] Self::ReplaceWithCommandOutput(..)      => Err(MapperError::MapperDisabled)?,
         };
         Ok(())
     }

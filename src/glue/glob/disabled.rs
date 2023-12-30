@@ -1,12 +1,12 @@
 use serde::{
     Serialize, Deserialize,
-    ser::{Error as SeError, Serializer},
-    de::{Error as DeError, Deserializer}
+    ser::{Error as _, Serializer},
+    de::{Error as _, Deserializer}
 };
 
-/// The disabled form of the wrapper around [`glob::Glob`] and [`glob::MatchOptions`].
-/// This is the result of the default `glob` feature being disabled during compile time.
-/// This form cannot be deserialized, which may or may not be the best way to handle this.
+/// The disabled version of the wrapper around [`glob::Glob`] and [`glob::MatchOptions`].
+/// This is the result of the default `glob` feature being disabled at compile time.
+/// This version cannot be deserialized, which may or may not be the best way to handle this.
 /// Calling any provided method on this will panic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobWrapper;
@@ -24,6 +24,9 @@ impl Serialize for GlobWrapper {
 }
 
 impl GlobWrapper {
+    /// The disabled version of [`GlobWrapper::matches`].
+    /// # Panics
+    /// This version always panics.
     pub fn matches(&self, _str: &str) -> bool {
         panic!("URL Cleaner was compiled without the `glob` feature.")
     }

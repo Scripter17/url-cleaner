@@ -1,3 +1,3 @@
 #!/usr/bin/bash
 
-curl https://publicsuffix.org/list/public_suffix_list.dat > src/tlds.dat
+curl https://publicsuffix.org/list/public_suffix_list.dat | grep -P "^[^/]|^// =" > src/tlds.dat

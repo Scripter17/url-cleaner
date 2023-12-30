@@ -1,56 +1,43 @@
+#![warn(missing_docs)]
+#![warn(clippy::expect_used)] // On a separate line so I can comment it out when using Bacon.
+#![deny(clippy::unwrap_used, clippy::missing_panics_doc)]
+
+//! URL Cleaner - A tool to remove tracking garbage from URLs.
+
 use wasm_bindgen::prelude::*;
 use url::Url;
 use std::borrow::Cow;
-use thiserror::Error;
 
+/// Contains the logic for conditions and mappers.
 pub mod rules;
+/// Contains wrappers for [`regex::Regex`], [`glob::Pattern`], and [`std::process::Command`].
+/// In the case their respective features are disabled, the wrappers are empty, always fail deseirlaization, and all of their methods panic.
 pub mod glue;
+/// Contains logic for handling [`rules::conditions::UnqualifiedAnyTld`] and [`rules::conditions::QualifiedAnyTld`].
 pub mod suffix;
+/// Contains types that don't fit in the other modules.
 pub mod types;
 
-/// Takes a URL string and optionally a [`JsValue`] containing mapper rules.
-/// Returns the mapped URL or any errors raised.
-#[wasm_bindgen]
-pub fn clean_url_str(url: &str, rules: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
+/// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that DCR to the URL.
+#[wasm_bindgen(js_name = clean_url)]
+pub fn wasm_clean_url(url: &str, rules: wasm_bindgen::JsValue, dcr: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
     let mut url=Url::parse(url)?;
-    clean_url_with_dcr(&mut url, Some(js_value_to_rules(rules)?.as_ref()), &types::DomainConditionRule::default())?;
+    clean_url(&mut url, Some(js_value_to_rules(rules)?.as_ref()), Some(&js_value_to_dcr(dcr)?))?;
     Ok(JsValue::from_str(url.as_str()))
 }
 
-/// Takes a URL string and optionally a [`JsValue`] containing mapper rules.
-/// Takes a [`types::DomainConditionRule`]
-/// Returns the mapped URL or any errors raised.
-#[wasm_bindgen]
-pub fn clean_url_str_with_dcr(url: &str, rules: wasm_bindgen::JsValue, dcr: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
-    let mut url=Url::parse(url)?;
-    clean_url_with_dcr(&mut url, Some(js_value_to_rules(rules)?.as_ref()), &js_value_to_dcr(dcr)?)?;
-    Ok(JsValue::from_str(url.as_str()))
-}
-
-pub fn clean_url(url: &mut Url, rules: Option<&rules::Rules>) -> Result<(), CleaningError> {
-    clean_url_with_dcr(url, rules, &types::DomainConditionRule::default())
-}
-
-pub fn clean_url_with_dcr(url: &mut Url, rules: Option<&rules::Rules>, dcr: &types::DomainConditionRule) -> Result<(), CleaningError> {
-    suffix::init_tlds();
+/// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that DCR to the URL.
+pub fn clean_url(url: &mut Url, rules: Option<&rules::Rules>, dcr: Option<&types::DomainConditionRule>) -> Result<(), types::CleaningError> {
     match rules {
-        Some(rules) => rules.apply_with_dcr(url, dcr)?,
-        None => rules::get_default_rules().ok_or(rules::GetRulesError::NoDefaultRules)?.apply_with_dcr(url, dcr)?
+        Some(rules) => rules.apply_with_dcr(url, dcr.unwrap_or(&types::DomainConditionRule::default()))?, // T implementing Default doesn't mean &T implements Default. :/
+        None => rules::get_default_rules()?.apply_with_dcr(url, dcr.unwrap_or(&types::DomainConditionRule::default()))?
     }
     Ok(())
 }
 
-#[derive(Debug, Error)]
-pub enum CleaningError {
-    #[error("There was an issue getting the rules.")]
-    GetRulesError(#[from] rules::GetRulesError),
-    #[error("There was an issue executing a rule.")]
-    RuleError(#[from] rules::RuleError)
-}
-
 fn js_value_to_rules(rules: wasm_bindgen::JsValue) -> Result<Cow<'static, rules::Rules>, JsError> {
     Ok(if rules.is_null() {
-        Cow::Borrowed(rules::get_default_rules().ok_or(JsError::new("URL Cleaner was compiled without default rules."))?)
+        Cow::Borrowed(rules::get_default_rules()?)
     } else {
         Cow::Owned(serde_wasm_bindgen::from_value(rules)?)
     })

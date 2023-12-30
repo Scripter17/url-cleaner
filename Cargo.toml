@@ -25,13 +25,13 @@ publicsuffix = "2.2.3"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["http", "commands", "cache-redirects", "stdin", "default-rules", "minify-default-rules", "regex", "glob"]
+default = ["http", "commands", "cache-redirects", "stdin", "default-rules", "minify-included-strings", "regex", "glob"]
 http = ["dep:reqwest"]
 commands = []
 cache-redirects = []
 stdin = ["dep:atty"]
 default-rules = []
-minify-default-rules = ["default-rules", "dep:const-str"]
+minify-included-strings = ["dep:const-str"]
 regex = ["dep:regex"]
 glob = ["dep:glob"]
 
@@ -41,4 +41,4 @@ opt-level = 'z'     # Optimize for size
 lto = true          # Enable link-time optimization
 codegen-units = 1   # Reduce number of codegen units to increase optimizations
 panic = 'abort'     # Abort on panic
-# strip = true        # Strip symbols from binary*
+ strip = true        # Strip symbols from binary*

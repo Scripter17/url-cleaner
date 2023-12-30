@@ -130,5 +130,33 @@
 			]
 		},
 		"mapper": "RemoveAllQueryParams"
+	},
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedAnyTld": "amazon"},
+				{"PathMatchesRegex": "/dp/\\w+/"}
+			]
+		},
+		"mapper": {
+			"Multiple": [
+				"RemoveAllQueryParams",
+				{
+					"RegexSubUrlPart": {
+						"part_name": "Path",
+						"regex": ".*(/dp/\\w+).*",
+						"replace": "$1"
+					}
+				}
+			]
+		}
+	},
+	{	
+		"condition": {"UnqualifiedAnyTld": "amazon"},
+		"mapper": {"RemoveSomeQueryParams": ["ref"]}
+	},
+	{
+		"condition": "Always",
+		"mapper": "Expand301"
 	}
 ]

@@ -5,9 +5,9 @@ use std::convert::Infallible;
 use serde::{
     Serialize,
     ser::Serializer,
-    {de::Error as DeError, Deserialize, Deserializer}
+    {de::Error as _, Deserialize, Deserializer}
 };
-pub use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
+use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
 
 /// The enabled form of the wrapper around [`regex::Regex`] and [`RegexParts`].
 /// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
@@ -15,7 +15,10 @@ pub use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
 /// Only the necessary methods are exposed for the sake of simplicity.
 #[derive(Clone, Debug)]
 pub struct RegexWrapper {
+    /// The compiled [`regex::Regex`].
     inner: Regex,
+    /// The [`RegexParts`] used to construct the above [`regex::Regex`].
+    /// Exists here primarily for the sake of [`Clone`].
     parts: RegexParts
 }
 
@@ -41,12 +44,12 @@ pub struct RegexParts {
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] unicode: bool
 }
 
-const fn is_false(x: &bool) -> bool {!*x}
+/// Serde doesn't have an equivalent to Clap's `default_value_t`
+const fn is_false(x: &bool) -> bool {!*x} // <&bool as std::ops::Not>::not is not const.
 const fn is_true(x: &bool) -> bool {*x}
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
 const fn newline_u8() -> u8 {b'\n'}
 const fn get_true() -> bool {true}
-
 
 impl FromStr for RegexParts {
     type Err=Infallible;
@@ -58,6 +61,7 @@ impl FromStr for RegexParts {
 
 #[allow(dead_code)]
 impl RegexParts {
+    /// Creates a [`RegexParts`] with the provided pattern. All other fields are set to their default values.
     pub fn new(pattern: &str) -> Self {
         Self {
             pattern: pattern.to_string(),
