@@ -4,7 +4,6 @@ use std::convert::Infallible;
 
 use serde::{
     Serialize,
-    ser::Serializer,
     {de::Error as _, Deserialize, Deserializer}
 };
 use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
@@ -13,12 +12,14 @@ use regex::{Regex, RegexBuilder, Replacer, Error as RegexError};
 /// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
 /// Because converting a [`Regex`] to [`RegexParts`] is way more complicated than it should be, various [`From`]/[`Into`] and [`TryFrom`]/[`TryInto`] conversions are defined instead of making the filds public.
 /// Only the necessary methods are exposed for the sake of simplicity.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(into = "RegexParts")]
 pub struct RegexWrapper {
     /// The compiled [`regex::Regex`].
     inner: Regex,
     /// The [`RegexParts`] used to construct the above [`regex::Regex`].
     /// Exists here primarily for the sake of [`Clone`].
+    /// Let's see YOU implement clone for [`regex::Regex`]. It's a mess.
     parts: RegexParts
 }
 
@@ -152,19 +153,13 @@ impl TryFrom<RegexParts> for RegexWrapper {
 impl From<RegexWrapper> for Regex      {fn from(value: RegexWrapper) -> Self {value.inner}}
 impl From<RegexWrapper> for RegexParts {fn from(value: RegexWrapper) -> Self {value.parts}}
 
-impl<'de> Deserialize<'de> for RegexWrapper  {
+impl<'de> Deserialize<'de> for RegexWrapper {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let parts: RegexParts = crate::glue::string_or_struct(deserializer)?;
         Ok(RegexWrapper {
             inner: parts.clone().try_into().map_err(|_| D::Error::custom(format!("Invalid regex pattern: {:?}.", parts.pattern)))?,
             parts
         })
-    }
-}
-
-impl Serialize for RegexWrapper {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.parts.serialize(serializer)
     }
 }
 

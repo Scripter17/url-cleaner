@@ -154,9 +154,5 @@
 	{	
 		"condition": {"UnqualifiedAnyTld": "amazon"},
 		"mapper": {"RemoveSomeQueryParams": ["ref"]}
-	},
-	{
-		"condition": "Always",
-		"mapper": "Expand301"
 	}
 ]

@@ -1,3 +1,5 @@
 /target
 /301-cache.txt
 /konsole*
+/benchmarking/stdin
+/benchmarking/output-*

@@ -219,7 +219,7 @@ impl Mapper {
             #[cfg(feature = "http")]
             Self::Expand301 => {
                 #[cfg(feature = "cache-redirects")]
-                if let Ok(lines) = read_lines("redirect-cache.txt") {
+                if let Ok(lines) = read_lines("301-cache.txt") {
                     for line in lines.map_while(Result::ok) {
                         if let Some((short, long)) = line.split_once('\t') {
                             if url.as_str()==short {
@@ -238,8 +238,8 @@ impl Mapper {
                     // enum Warning<T, W, E> {Ok(T), Warning(T, W), Error(E)} is obvious.
                     // But I'd want to bubble up a warning then return the Ok value with it.
                     #[cfg(feature = "cache-redirects")]
-                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
-                        let _=x.write(format!("{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
+                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("301-cache.txt") {
+                        let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
                     }
                 }
                 #[cfg(target_family = "wasm")]

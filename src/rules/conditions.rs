@@ -213,8 +213,8 @@ impl Condition {
                 match url.domain() {
                     Some(url_domain) => match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
                         Some(suffix) => {
-                            url_domain.as_bytes().split(|x| *x==b'.').collect::<Vec<_>>()
-                                .ends_with(&name.as_bytes().split(|x| *x==b'.').chain(suffix.as_bytes().split(|x| *x==b'.')).collect::<Vec<_>>())
+                            // https://github.com/rust-lang/libs-team/issues/212
+                            url_domain.as_bytes().strip_suffix(suffix.as_bytes()).is_some_and(|x| x.strip_suffix(b".").is_some_and(|y| y.ends_with(name.as_bytes()) && y.get(y.len()-name.bytes().len()-1).map_or(true, |x| *x==b'.')))
                         },
                         None => false
                     },
@@ -225,9 +225,7 @@ impl Condition {
                 match url.domain() {
                     Some(url_domain) => match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
                         Some(suffix) => {
-                            url_domain.as_bytes().split(|x| *x==b'.').eq(
-                                name.as_bytes().split(|x| *x==b'.').chain(suffix.as_bytes().split(|x| *x==b'.'))
-                            )
+                            url_domain.as_bytes().strip_suffix(suffix.as_bytes()).is_some_and(|x| x.strip_suffix(b".")==Some(name.as_bytes()))
                         },
                         None => false
                     },
@@ -238,7 +236,7 @@ impl Condition {
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
             Self::UrlPartIs{part_name, none_to_empty_string, value} => value==part_name.get_from(url)
-                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref(),
+                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref(),
             
             // Disablable conditions
 
@@ -248,7 +246,7 @@ impl Condition {
                     DomainConditionRule::Always => true,
                     DomainConditionRule::Never => false,
                     // Somewhatly annoyingly `DomainConditionRule::Url(Url) | DomainConditionRule::UseUrlBeingCloned` doesn't desugar to this.
-                    // I get it's a nich and weird case, but in this one specific instance it'd be nice.
+                    // I get it's a niche and weird case, but in this one specific instance it'd be nice.
                     DomainConditionRule::Url(url) => {
                         if let Some(host)=url.host_str() {
                             (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
@@ -274,7 +272,7 @@ impl Condition {
             #[cfg(feature = "regex")] Self::QueryParamValueMatchesRegex{name, regex} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && regex.is_match(value2)),
             #[cfg(feature = "regex")] Self::PathMatchesRegex(regex) => regex.is_match(url.path()),
             #[cfg(feature = "regex")] Self::UrlPartMatchesRegex {part_name, none_to_empty_string, regex} => regex.is_match(part_name.get_from(url)
-                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             #[cfg(not(feature = "regex"))] Self::QueryParamValueMatchesRegex{..} => Err(ConditionError::ConditionDisabled)?,
             #[cfg(not(feature = "regex"))] Self::PathMatchesRegex(..)            => Err(ConditionError::ConditionDisabled)?,
@@ -283,7 +281,7 @@ impl Condition {
             #[cfg(feature = "glob")] Self::QueryParamValueMatchesGlob {name, glob} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob.matches(value2)),
             #[cfg(feature = "glob")] Self::PathMatchesGlob (glob) => glob  .matches(url.path()),
             #[cfg(feature = "glob")] Self::UrlPartMatchesGlob {part_name, none_to_empty_string, glob} => glob.matches(part_name.get_from(url)
-                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             #[cfg(not(feature = "glob"))] Self::QueryParamValueMatchesGlob{..} => Err(ConditionError::ConditionDisabled)?,
             #[cfg(not(feature = "glob"))] Self::PathMatchesGlob(..)            => Err(ConditionError::ConditionDisabled)?,

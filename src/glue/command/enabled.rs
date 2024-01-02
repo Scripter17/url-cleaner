@@ -8,6 +8,7 @@ use thiserror::Error;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env;
+use std::convert::Infallible;
 
 use serde::{
     Serialize, Deserialize,
@@ -18,14 +19,76 @@ use serde::{
 /// The enabled form of the wrapper around [`Command`].
 /// Only the necessary methods are exposed for the sake of simplicity.
 /// Note that if the `command` feature is disabled, this struct is empty and all provided functions will always panic.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct CommandWrapper {
     /// The command being wrapped around.
-    #[serde(flatten, serialize_with = "serialize_command", deserialize_with = "deserialize_command")]
+    #[serde(flatten, serialize_with = "serialize_command")]
     pub inner: Command,
     /// The rule for how the command's output is handled and returned in [`CommandWrapper::get_url`].
-    #[serde(default)]
     pub output_handler: OutputHandler
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CommandParts {
+    program: String,
+    #[serde(default)]
+    args: Vec<String>,
+    #[serde(default)]
+    current_dir: Option<PathBuf>,
+    #[serde(default)]
+    envs: HashMap<String, String>,
+    #[serde(default)]
+    output_handler: OutputHandler
+}
+
+impl FromStr for CommandParts {
+    type Err = Infallible;
+
+    fn from_str(x: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            program: x.to_string(),
+            args: Vec::new(),
+            current_dir: None,
+            envs: HashMap::new(),
+            output_handler: OutputHandler::default()
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for CommandWrapper {
+    /// TODO: Deserializing from a list.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let parts: CommandParts = crate::glue::string_or_struct(deserializer)?;
+        Ok(Self {
+            output_handler: parts.output_handler.clone(),
+            inner: parts.into()
+        })
+    }
+}
+
+impl From<CommandParts> for Command {
+    fn from(parts: CommandParts) -> Self {
+        let mut ret=Command::new(parts.program);
+        ret.args(parts.args);
+        if let Some(dir) = parts.current_dir {
+            ret.current_dir(dir);
+        }
+        ret.envs(parts.envs);
+        ret
+    }
+}
+
+fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<S::Ok, S::Error> {
+    let mut state = serializer.serialize_struct("Comamnd", 3)?;
+    state.serialize_field("program", command.get_program().to_str().ok_or_else(|| S::Error::custom("The command's program name/path is not UTF-8"))?)?;
+    state.serialize_field("args", &command.get_args().map(|x| x.to_str()).collect::<Option<Vec<_>>>().ok_or_else(|| S::Error::custom("One of the command's arguments isn't UTF-8"))?)?;
+    state.serialize_field("envs", &command.get_envs().filter_map(
+        |(k, v)| match (k.to_str(), v.map(|x| x.to_str())) {
+            (Some(k), Some(Some(v))) => Some((k, v)),
+            _ => None
+        }
+    ).collect::<HashMap<_, _>>())?;
+    state.end()
 }
 
 /// The enabled form of `OutputHandler`.
@@ -102,40 +165,6 @@ impl OutputHandler {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct CommandParts {
-    program: String,
-    #[serde(default)]
-    args: Vec<String>,
-    #[serde(default)]
-    current_dir: Option<PathBuf>,
-    #[serde(default)]
-    envs: HashMap<String, String>
-}
-
-fn deserialize_command<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Command, D::Error> {
-    let command_parts: CommandParts = Deserialize::deserialize(deserializer)?;
-    let mut ret=Command::new(command_parts.program);
-    ret.args(command_parts.args);
-    if let Some(dir) = command_parts.current_dir {
-        ret.current_dir(dir);
-    }
-    ret.envs(command_parts.envs);
-    Ok(ret)
-}
-
-fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<S::Ok, S::Error> {
-    let mut state = serializer.serialize_struct("Comamnd", 3)?;
-    state.serialize_field("program", command.get_program().to_str().ok_or_else(|| S::Error::custom("The command's program name/path is not UTF-8"))?)?;
-    state.serialize_field("args", &command.get_args().map(|x| x.to_str()).collect::<Option<Vec<_>>>().ok_or_else(|| S::Error::custom("One of the command's arguments isn't UTF-8"))?)?;
-    state.serialize_field("envs", &command.get_envs().filter_map(|(k, v)| {
-        match (k.to_str(), v.map(|x| x.to_str())) {
-            (Some(k), Some(Some(v))) => Some((k, v)),
-            _ => None
-        }
-    }).collect::<HashMap<_, _>>())?;
-    state.end()
-}
 
 impl CommandWrapper {
     /// Checks if the command's [`std::process::Command::program`] exists. Checks the system's PATH.
@@ -143,7 +172,7 @@ impl CommandWrapper {
     pub fn exists(&self) -> bool {
         PathBuf::from(self.inner.get_program()).exists() || find_it(self.inner.get_program()).is_some()
     }
-    
+
     /// Runs the command and gets the exit code. Returns [`Err(CommandError::SignalTermination)`] if the command returns no exit code.
     pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
         self.clone().apply_url(url).inner.status()?.code().ok_or(CommandError::SignalTermination)
@@ -159,7 +188,8 @@ impl CommandWrapper {
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
                     .spawn()?;
-                let child_stdin=child.stdin.as_mut().expect("The STDIN inserted a few lines ago to have worked");
+                #[allow(clippy::unwrap_used)]
+                let child_stdin=child.stdin.as_mut().unwrap(); // This never panics. If it ever does, so will I.
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)
             },
@@ -181,12 +211,7 @@ impl CommandWrapper {
         if let Some(dir) = self.inner.get_current_dir() {
             ret.current_dir(dir);
         }
-        ret.envs(self.inner.get_envs().filter_map(|(k, v)| {
-            match (k, v) {
-                (k, Some(v)) => Some((k.to_owned(), v.to_owned())),
-                _ => None
-            }
-        }));
+        ret.envs(self.inner.get_envs().filter_map(|(k, v)| v.map(|v| (k, v))));
         Self {inner: ret, output_handler: self.output_handler.clone()}
     }
 }
@@ -198,12 +223,7 @@ impl Clone for CommandWrapper {
         if let Some(dir) = self.inner.get_current_dir() {
             ret.current_dir(dir);
         }
-        ret.envs(self.inner.get_envs().filter_map(|(k, v)|
-            match (k, v) {
-                (k, Some(v)) => Some((k, v)),
-                _ => None
-            }
-        ));
+        ret.envs(self.inner.get_envs().filter_map(|(k, v)| v.map(|v| (k, v))));
         Self {inner: ret, output_handler: self.output_handler.clone()}
     }
 }
@@ -220,11 +240,7 @@ fn find_it<P: AsRef<Path>>(exe_name: P) -> Option<PathBuf> {
     env::var_os("PATH").and_then(|paths| {
         env::split_paths(&paths).filter_map(|dir| {
             let full_path = dir.join(&exe_name);
-            if full_path.is_file() {
-                Some(full_path)
-            } else {
-                None
-            }
+            full_path.is_file().then_some(full_path)
         }).next()
     })
 }
