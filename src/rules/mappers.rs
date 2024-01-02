@@ -157,7 +157,6 @@ impl Mapper {
     /// Applies the mapper to the provided URL.
     /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
     pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
-        println!("{self:?} - {url:?}");
         match self {
             Self::None => {},
             Self::Error => Err(MapperError::ExplicitError)?,
@@ -191,7 +190,6 @@ impl Mapper {
                 url.set_query(None);
             },
             Self::RemoveSomeQueryParams(names) => {
-                // Apparently `x.y().z(f())` will execute `x.y()` before `f()`
                 let new_query=url.query_pairs().into_owned().filter(|(name, _)| names.iter().all(|blocked_name| blocked_name!=name)).collect::<Vec<_>>();
                 url.query_pairs_mut().clear().extend_pairs(new_query);
             },

@@ -1,0 +1,151 @@
+
+[
+	{
+		"condition": "Always",
+		"mapper": {
+			"RemoveSomeQueryParams": [
+				"__hsfp", "__hssc", "__hstc", "__s", "_gl", "_hsenc", "_kx", "_openstat", "at_recipient_id", "at_recipient_list",
+				"bsft_clkid", "bsft_uid", "dclid", "fb_action_ids", "fb_comment_id", "fbclid", "gbraid", "gclid", "guce_referrer",
+				"guce_referrer_sig", "hsCtaTracking", "irclickid", "mc_eid", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mtm_cid",
+				"oft_c", "oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "pk_cid",
+				"rb_clickid", "s_cid", "ss_email_id", "twclid", "unicorn_click_id", "vero_conv", "vero_id", "vgo_ee", "wbraid",
+				"wickedid", "yclid", "ymclid", "ysclid",
+
+				"mc_eid", "oly_anon_id", "oly_enc_id", "__s",
+				"vero_id", "_hsenc", "mkt_tok", "fbclid",
+
+				"ltcld"
+			]
+		}
+	},
+	{
+		"condition": {"UnqualifiedDomain": "instagram.com"},
+		"mapper": {"RemoveSomeQueryParams": ["igshid"]}
+	},
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedDomain": "deviantart.com"},
+				{"PathIs": "/users/outgoing"}
+			]
+		},
+		"mapper": {
+			"GetUrlFromQueryParam": "url"
+		}
+	},
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"QueryHasParam": "redirect_to"}
+			]
+		},
+		"mapper": {
+			"Multiple": [
+				{"GetPathFromQueryParam": "redirect_to"},
+				"RemoveAllQueryParams"
+			]
+		}
+	},
+  {
+    "condition": {
+			"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"CommandExists": {"program": "gallery-dl"}},
+				{"CommandExists": {"program": "jq"}}
+			]
+		},
+    "mapper": {
+      "ReplaceWithCommandOutput": {
+        "program": "gallery-dl",
+        "args": ["--dump-json", "{}"],
+        "output_handling": {
+          "PipeStdoutTo": {
+            "program": "jq",
+            "args": ["-r", ".[0][1][\"reblogged_root_url\"]"]
+          }
+        }
+      }
+    }
+  },
+	{
+		"condition": {
+			"Any": [
+				{"UnqualifiedDomain": "t.co"},
+				{"UnqualifiedDomain": "bit.ly"},
+				{"UnqualifiedDomain": "pixiv.me"},
+				{
+					"All": [
+						{"UnqualifiedDomain": "pawoo.net"},
+						{"PathIs": "/oauth_authentications"}
+					]
+				},
+				{"UnqualifiedDomain": "tr.ee"}
+			]
+		},
+		"mapper": "Expand301"
+	},
+	{
+		"condition": {"UnqualifiedAnyTld": "google"},
+		"mapper": {
+			"AllowSomeQueryParams": ["hl", "q", "tbm"]
+		}
+	},
+	{
+		"condition": {"UnqualifiedDomain": "youtube.com"},
+		"mapper": {
+			"RemoveSomeQueryParams": ["si"]
+		}
+	},
+	{
+		"condition": {
+			"Any": [
+				{"UnqualifiedDomain": "twitter.com"},
+				{"UnqualifiedDomain": "vxtwitter.com"},
+				{"UnqualifiedDomain": "fxtwitter.com"},
+				{"UnqualifiedDomain": "x.com"}
+			]
+		},
+		"mapper": {
+			"SwapHost": "twitter.com"
+		}
+	},
+	{
+		"condition": {
+			"Any": [
+				{"UnqualifiedDomain": "twitter.com"},
+				{"UnqualifiedDomain": "reddit.com"},
+				{"UnqualifiedDomain": "theonion.com"},
+				{"UnqualifiedDomain": "teespring.com"},
+				{"UnqualifiedDomain": "donmai.com"},
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"UnqualifiedDomain": "instagram.com"}
+			]
+		},
+		"mapper": "RemoveAllQueryParams"
+	},
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedAnyTld": "amazon"},
+				{"PathMatchesRegex": "/dp/\\w+/"}
+			]
+		},
+		"mapper": {
+			"Multiple": [
+				"RemoveAllQueryParams",
+				{
+					"RegexSubUrlPart": {
+						"part_name": "Path",
+						"regex": ".*(/dp/\\w+).*",
+						"replace": "$1"
+					}
+				}
+			]
+		}
+	},
+	{	
+		"condition": {"UnqualifiedAnyTld": "amazon"},
+		"mapper": {"RemoveSomeQueryParams": ["ref"]}
+	}
+]

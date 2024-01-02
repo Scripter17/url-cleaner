@@ -186,7 +186,6 @@ impl Condition {
     
     /// Checks whether or not the provided URL passes the condition.
     pub fn satisfied_by_with_dcr(&self, url: &Url, dcr: &DomainConditionRule) -> Result<bool, ConditionError> {
-        println!("{self:?} - {url:?}");
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

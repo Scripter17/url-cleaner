@@ -6,7 +6,6 @@ URLS=("https://x.com?a=2" "https://example.com?fb_action_ids&mc_eid&ml_subscribe
 
 cargo build -r
 
-hyperfine -N -n "No urls" -w 5 "../target/release/url-cleaner" --export-json "output--0"
 for url in "${URLS[@]}"; do
   echo $url > stdin
   for num in $(seq 3); do
