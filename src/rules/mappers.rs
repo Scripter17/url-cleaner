@@ -88,12 +88,12 @@ pub enum Mapper {
     /// Useful for link shorteners like `bit.ly` and `t.co`.
     Expand301,
     /// Applies a regular expression substitution to the specified URL part.
-    /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`ConditionError::UrlPartNotFound`](super::conditions::ConditionError::UrlPartNotFound) error.
+    /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
     /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
     RegexSubUrlPart {
         /// The name of the part to modify.
         part_name: types::UrlPartName,
-        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to [`true`].
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
@@ -157,6 +157,7 @@ impl Mapper {
     /// Applies the mapper to the provided URL.
     /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
     pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
+        println!("{self:?} - {url:?}");
         match self {
             Self::None => {},
             Self::Error => Err(MapperError::ExplicitError)?,

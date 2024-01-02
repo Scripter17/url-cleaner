@@ -15,7 +15,7 @@ wasm-bindgen = "0.2.88"
 reqwest = { version = "0.11.22", features = ["blocking"], optional = true}
 const-str = { version = "0.5.6", optional = true }
 atty = { version = "0.2.14", optional = true }
-thiserror = "1.0.52"
+thiserror = "1.0.50"
 serde-wasm-bindgen = "0.6.3"
 regex = { version = "1.10.2", optional = true }
 glob = { version = "0.3.1", optional = true }
@@ -41,4 +41,4 @@ opt-level = 'z'     # Optimize for size
 lto = true          # Enable link-time optimization
 codegen-units = 1   # Reduce number of codegen units to increase optimizations
 panic = 'abort'     # Abort on panic
- strip = true        # Strip symbols from binary*
+strip = true        # Strip symbols from binary*

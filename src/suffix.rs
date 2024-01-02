@@ -21,7 +21,7 @@ pub fn get_tlds() -> Result<&'static List, GetTldsError> {
 #[derive(Debug, Error)]
 pub enum GetTldsError {
     /// The list of top level domains included in URL Cleaner at compile time could not be parsed.
-    /// Currently does not contain [`publicSuffix::Error`] pending [thiserror#271](https://github.com/dtolnay/thiserror/issues/271).
+    /// Currently does not contain [`publicsuffix::Error`] pending [thiserror#271](https://github.com/dtolnay/thiserror/issues/271).
     #[error("The list of top level domains included in URL Cleaner at compile time could not be parsed.")]
     ParseError
 }

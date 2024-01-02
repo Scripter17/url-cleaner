@@ -1,5 +1,5 @@
-//! The [`Rule`] type is how this crate modifies URLs. A [`Rule`] contains a [`conditions::Condition`] and a [`mappers::Mapper`].
-//! If the condition passes (returns [`Ok(true)`]), then the mapper is applied to a mutable reference to the URL.
+//! The [`rules::Rule`] type is how this crate modifies URLs. A [`rules::Rule`] contains a [`rules::conditions::Condition`] and a [`rules::mappers::Mapper`].
+//! If the condition passes (returns `Ok(true)`), then the mapper is applied to a mutable reference to the URL.
 
 use url::Url;
 #[cfg(feature = "default-rules")]
@@ -118,7 +118,7 @@ impl Rules {
     /// A wrapper around [`Rules::deref_mut`]
     pub fn as_mut_slice(&mut self) -> &mut [Rule] {self.deref_mut()}
 
-    /// Applies each rule to the provided [`URL`] in order.
+    /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {

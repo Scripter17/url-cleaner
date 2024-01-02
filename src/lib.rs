@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 #![warn(clippy::expect_used)] // On a separate line so I can comment it out when using Bacon.
-#![deny(clippy::unwrap_used, clippy::missing_panics_doc)]
+// #![deny(clippy::unwrap_used, clippy::missing_panics_doc)]
 
 //! URL Cleaner - A tool to remove tracking garbage from URLs.
 
@@ -13,7 +13,7 @@ pub mod rules;
 /// Contains wrappers for [`regex::Regex`], [`glob::Pattern`], and [`std::process::Command`].
 /// In the case their respective features are disabled, the wrappers are empty, always fail deseirlaization, and all of their methods panic.
 pub mod glue;
-/// Contains logic for handling [`rules::conditions::UnqualifiedAnyTld`] and [`rules::conditions::QualifiedAnyTld`].
+/// Contains logic for handling [`rules::conditions::Condition::UnqualifiedAnyTld`] and [`rules::conditions::Condition::QualifiedAnyTld`].
 pub mod suffix;
 /// Contains types that don't fit in the other modules.
 pub mod types;

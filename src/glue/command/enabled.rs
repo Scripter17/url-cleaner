@@ -167,7 +167,7 @@ impl OutputHandler {
 
 
 impl CommandWrapper {
-    /// Checks if the command's [`std::process::Command::program`] exists. Checks the system's PATH.
+    /// Checks if the command's [`std::process::Command::get_program`] exists. Checks the system's PATH.
     /// Uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the PATH.
     pub fn exists(&self) -> bool {
         PathBuf::from(self.inner.get_program()).exists() || find_it(self.inner.get_program()).is_some()

@@ -1,6 +1,6 @@
 #![warn(missing_docs)]
 #![warn(clippy::expect_used)] // On a separate line so I can comment it out when using Bacon.
-#![deny(clippy::unwrap_used, clippy::missing_panics_doc)]
+// #![deny(clippy::unwrap_used, clippy::missing_panics_doc)]
 
 //! URL Cleaner - A tool to remove tracking garbage from URLs.
 
@@ -48,5 +48,6 @@ fn main() -> Result<(), types::CleaningError> {
             }
         }
     }
+
     Ok(())
 }

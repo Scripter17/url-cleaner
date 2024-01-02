@@ -186,6 +186,7 @@ impl Condition {
     
     /// Checks whether or not the provided URL passes the condition.
     pub fn satisfied_by_with_dcr(&self, url: &Url, dcr: &DomainConditionRule) -> Result<bool, ConditionError> {
+        println!("{self:?} - {url:?}");
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
@@ -201,17 +202,11 @@ impl Condition {
             Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(url).is_ok_and(identity)),
             Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(url).is_ok_and(identity)),
             Self::Not(condition) => !condition.satisfied_by(url)?,
-            Self::UnqualifiedDomain(parts) => match url.domain() {
-                Some(domain) => domain.split('.').collect::<Vec<_>>().ends_with(&parts.split('.').collect::<Vec<_>>()),
-                None => false
-            },
-            Self::QualifiedDomain(parts) => match url.domain() {
-                Some(domain) => domain==parts,
-                None => false
-            },
+            Self::UnqualifiedDomain(parts) => url.domain().is_some_and(|domain| domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')})),
+            Self::QualifiedDomain(parts) => url.domain()==Some(parts),
             Self::UnqualifiedAnyTld(name) => {
                 match url.domain() {
-                    Some(url_domain) => match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
+                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
                         Some(suffix) => {
                             // https://github.com/rust-lang/libs-team/issues/212
                             url_domain.as_bytes().strip_suffix(suffix.as_bytes()).is_some_and(|x| x.strip_suffix(b".").is_some_and(|y| y.ends_with(name.as_bytes()) && y.get(y.len()-name.bytes().len()-1).map_or(true, |x| *x==b'.')))
@@ -223,7 +218,7 @@ impl Condition {
             },
             Self::QualifiedAnyTld(name) => {
                 match url.domain() {
-                    Some(url_domain) => match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
+                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
                         Some(suffix) => {
                             url_domain.as_bytes().strip_suffix(suffix.as_bytes()).is_some_and(|x| x.strip_suffix(b".")==Some(name.as_bytes()))
                         },
@@ -236,8 +231,8 @@ impl Condition {
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
             Self::UrlPartIs{part_name, none_to_empty_string, value} => value==part_name.get_from(url)
-                .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref(),
-            
+                .ok_or(ConditionError::UrlPartNotFound).or(if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref(),
+
             // Disablable conditions
 
             #[cfg(feature = "regex")]
@@ -249,16 +244,16 @@ impl Condition {
                     // I get it's a niche and weird case, but in this one specific instance it'd be nice.
                     DomainConditionRule::Url(url) => {
                         if let Some(host)=url.host_str() {
-                            (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                !(unless_domains.iter().any(|domain| domain==host) || unless_domains_regexes.iter().any(|regex| regex.is_match(host)))
+                            !(unless_domains.iter().any(|domain| domain==host) || unless_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
+                                (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host)))
                         } else {
                             false
                         }
                     },
                     DomainConditionRule::UseUrlBeingCleaned => {
                         if let Some(host)=url.host_str() {
-                            (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                !(unless_domains.iter().any(|domain| domain==host) || unless_domains_regexes.iter().any(|regex| regex.is_match(host)))
+                            !(unless_domains.iter().any(|domain| domain==host) || unless_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
+                                (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host)))
                         } else {
                             false
                         }
