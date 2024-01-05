@@ -133,13 +133,13 @@ fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
 #[derive(Debug, Error)]
 pub enum CommandError {
     /// I/O error.
-    #[error("I/O error.")]
+    #[error(transparent)]
     IoError(#[from] IoError),
     /// UTF-8 error.
-    #[error("UTF-8 error.")]
+    #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
     /// URL parsing error.
-    #[error("URL parsing error.")]
+    #[error(transparent)]
     ParseError(#[from] ParseError),
     /// The command was terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]

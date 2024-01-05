@@ -5,7 +5,6 @@ use std::borrow::Cow;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use url::Url;
-use std::convert::identity;
 use publicsuffix::Psl;
 
 use crate::glue;
@@ -20,7 +19,9 @@ pub enum Condition {
     Always,
     /// Never passes.
     Never,
-    /// Always returns the error [`ConditionError::ExplicitError`]
+    /// Always returns the error [`ConditionError::ExplicitError`].
+    /// # Errors
+    /// Always returns the error [`ConditionError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained condition to STDERR.
     /// Intended primarily for debugging logic errors.
@@ -31,26 +32,42 @@ pub enum Condition {
     /// If the contained condition returns an error, treat it as a fail.
     TreatErrorAsFail(Box<Condition>),
     /// If the `try` condition reuterns an error, return the result of the `else` condition instead.
-    /// Note that the `else` condition can still return an error, in which case this whole condition returns that error.
+    /// # Errors
+    /// If the `else` condition returns an error, that error is returned.
     TryCatch {
         /// The condition to try first.
         r#try: Box<Condition>,
         /// If the try condition fails, instead return the result of this one.
         catch: Box<Condition>
     },
-    /// Passes if all of the included conditions pass.
+    /// Passes if all of the included conditions pass. Like [`Iterator::all`], an empty list of conditions returns `true`.
+    /// # Errors
+    /// If any contained condition returns an error, that error is returned.
     All(Vec<Condition>),
-    /// Passes if any of the included conditions pass.
+    /// Passes if any of the included conditions pass. Like [`Iterator::any`], an empty list of conditions returns `false`.
+    /// # Errors
+    /// If any contained condition returns an error, that error is returned.
     Any(Vec<Condition>),
     /// Passes if the included condition doesn't and vice-versa.
+    /// # Errors
+    /// If the contained condition reutrns an error, that error is returned.
     Not(Box<Condition>),
     /// Passes if the URL's domain is or is a subdomain of the specified domain.
     UnqualifiedDomain(String),
+    /// Similar to [`Condition::UnqualifiedDomain`] but only checks if the subdomain is empty or `www`.
+    /// `Condition::MaybeWWWDomain("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedDomain("example.com".to_string()), Condition::QualifiedDomain("www.example.com".to_string())])`.
+    MaybeWWWDomain(String),
     /// Passes if the URL's domain is the specified domain.
     QualifiedDomain(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
+    /// # Errors
+    /// If URL Cleaner is unable to parse the included domain suffix list, this returns the error [`ConditionError::GetTldError`].
+    /// See [the publicsuffix crate](https://docs.rs/publicsuffix/latest/publicsuffix/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     UnqualifiedAnyTld(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
+    /// # Errors
+    /// If URL Cleaner is unable to parse the included domain suffix list, this returns the error [`ConditionError::GetTldError`].
+    /// See [the publicsuffix crate](https://docs.rs/publicsuffix/latest/publicsuffix/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     QualifiedAnyTld(String),
     /// Passes if the URL's path is the specified string.
     PathIs(String),
@@ -64,35 +81,40 @@ pub enum Condition {
         value: String
     },
     /// Passes if the value of the specified part of the URL is the specified value.
+    /// # Errors
+    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartIs {
         /// The name of the part to check.
         part_name: UrlPartName,
-        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
-        /// Defaults to [`true`].
+        /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
+        /// Defaults to `true` for the sake of simplicity.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
         value: String
     },
 
-    // Disablable conditions
+    // Disablable conditions.
 
     /// A condition meant specifically to handle AdGuard's `$domain` rule modifier.
     /// Please see [AdGuard's docs](https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier) for details.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
     #[allow(clippy::enum_variant_names)]
     DomainCondition {
         /// Unqualified domains where the rule is valid.
         yes_domains: Vec<String>,
         /// Regexes that match domains where the rule is valie.
-        yes_domains_regexes: Vec<glue::RegexWrapper>,
+        yes_domain_regexes: Vec<glue::RegexWrapper>,
         /// Unqualified domains that marks a domain invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
         unless_domains: Vec<String>,
         /// Regexes that match domains where the rule is invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
-        unless_domains_regexes: Vec<glue::RegexWrapper>
+        unless_domain_regexes: Vec<glue::RegexWrapper>
     },
 
     /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
-    /// Requires the `regex` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
     QueryParamValueMatchesRegex {
         /// The name of the query paramater.
         name: String,
@@ -100,7 +122,8 @@ pub enum Condition {
         regex: glue::RegexWrapper
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified glob.
-    /// Requires the `glob` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
     QueryParamValueMatchesGlob {
         /// The name of the query paramater.
         name: String,
@@ -108,14 +131,17 @@ pub enum Condition {
         glob: glue::GlobWrapper
     },
     /// Passes if the URL's path matches the specified regular expression.
-    /// Requires the `regex` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
     PathMatchesRegex(glue::RegexWrapper),
     /// Passes if the URL's path matches the specified glob.
-    /// Requires the `glob` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
     PathMatchesGlob(glue::GlobWrapper),
     /// Takes the specified part of the URL and passes if it matches the specified regular expression.
-    /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`] error.
-    /// Requires the `regex` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
+    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartMatchesRegex {
         /// The name of the part to check.
         part_name: UrlPartName,
@@ -127,8 +153,9 @@ pub enum Condition {
         regex: glue::RegexWrapper
     },
     /// Takes the specified part of the URL and passes if it matches the specified glob.
-    /// if `none_to_empty_string` is `false`, then getting the host, domain, query, or fragment may result in a [`ConditionError::UrlPartNotFound`] error.
-    /// Requires the `glob` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
+    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartMatchesGlob {
         /// The name of the part to check.
         part_name: UrlPartName,
@@ -140,10 +167,13 @@ pub enum Condition {
         glob: glue::GlobWrapper
     },
     /// Checks the contained comand's [`glue::CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
-    /// Requires the `commands` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `commands` feature.
     CommandExists (glue::CommandWrapper),
     /// Runs the specified [`glue::CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
-    /// Requires the `commands` feature to be enabled.
+    /// # Errors
+    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `commands` feature.
+    /// If the comamnd is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
     CommandExitStatus {
         /// The [`glue::CommandWrapper`] to execute.
         command: glue::CommandWrapper,
@@ -171,10 +201,10 @@ pub enum ConditionError {
     #[error("The provided URL does not contain the requested part.")]
     UrlPartNotFound,
     /// Returned when the specified command failed to run.
-    #[error("The command failed to run.")]
+    #[error(transparent)]
     CommandError(#[from] glue::CommandError),
     /// Could not parse the included TLD list.
-    #[error("Could not parse the included TLD list.")]
+    #[error(transparent)]
     GetTldError(#[from] crate::suffix::GetTldsError)
 }
 
@@ -183,7 +213,7 @@ impl Condition {
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
         self.satisfied_by_with_dcr(url, &DomainConditionRule::default())
     }
-    
+
     /// Checks whether or not the provided URL passes the condition.
     pub fn satisfied_by_with_dcr(&self, url: &Url, dcr: &DomainConditionRule) -> Result<bool, ConditionError> {
         Ok(match self {
@@ -191,17 +221,32 @@ impl Condition {
             Self::Never => false,
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
-                let is_satisfied=condition.satisfied_by(url);
-                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=condition.satisfied_by_with_dcr(url, dcr);
+                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nDCR: {dcr:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             }, // For some reason leaving this comma out (as of Rust 1.75) doesn't cause a compilation error.
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by(url).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by(url).unwrap_or(false),
-            Self::TryCatch{r#try, catch}  => r#try.satisfied_by(url).or_else(|_| catch.satisfied_by(url))?,
-            Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(url).is_ok_and(identity)),
-            Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(url).is_ok_and(identity)),
-            Self::Not(condition) => !condition.satisfied_by(url)?,
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_dcr(url, dcr).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_dcr(url, dcr).unwrap_or(false),
+            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_dcr(url, dcr).or_else(|_| catch.satisfied_by_with_dcr(url, dcr))?,
+            Self::All(conditions) => {
+                for condition in conditions {
+                    if !condition.satisfied_by_with_dcr(url, dcr)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            },
+            Self::Any(conditions) => {
+                for condition in conditions {
+                    if condition.satisfied_by_with_dcr(url, dcr)? {
+                        return Ok(true);
+                    }
+                }
+                false
+            },
+            Self::Not(condition) => !condition.satisfied_by_with_dcr(url, dcr)?,
             Self::UnqualifiedDomain(parts) => url.domain().is_some_and(|domain| domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')})),
+            Self::MaybeWWWDomain(parts) => url.domain()==Some(parts) || url.domain().and_then(|x| x.strip_prefix("www."))==Some(parts),
             Self::QualifiedDomain(parts) => url.domain()==Some(parts),
             Self::UnqualifiedAnyTld(name) => {
                 match url.domain() {
@@ -235,7 +280,7 @@ impl Condition {
             // Disablable conditions
 
             #[cfg(feature = "regex")]
-            Self::DomainCondition {yes_domains, yes_domains_regexes, unless_domains, unless_domains_regexes} => {
+            Self::DomainCondition {yes_domains, yes_domain_regexes, unless_domains, unless_domain_regexes} => {
                 match dcr {
                     DomainConditionRule::Always => true,
                     DomainConditionRule::Never => false,
@@ -243,16 +288,16 @@ impl Condition {
                     // I get it's a niche and weird case, but in this one specific instance it'd be nice.
                     DomainConditionRule::Url(url) => {
                         if let Some(host)=url.host_str() {
-                            !(unless_domains.iter().any(|domain| domain==host) || unless_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host)))
+                            !(unless_domains.iter().any(|domain| domain==host) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
+                                (yes_domains.iter().any(|domain| domain==host) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
                         } else {
                             false
                         }
                     },
                     DomainConditionRule::UseUrlBeingCleaned => {
                         if let Some(host)=url.host_str() {
-                            !(unless_domains.iter().any(|domain| domain==host) || unless_domains_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                (yes_domains.iter().any(|domain| domain==host) || yes_domains_regexes.iter().any(|regex| regex.is_match(host)))
+                            !(unless_domains.iter().any(|domain| domain==host) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
+                                (yes_domains.iter().any(|domain| domain==host) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
                         } else {
                             false
                         }

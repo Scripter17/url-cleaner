@@ -34,10 +34,10 @@ pub enum RuleError {
     #[error("The URL does not meet the rule's conditon.")]
     FailedCondition,
     /// The condition returned an error.
-    #[error("The condition returned an error.")]
+    #[error(transparent)]
     ConditionError(#[from] conditions::ConditionError),
     /// The mapper returned an error.
-    #[error("The mapper returned an error.")]
+    #[error(transparent)]
     MapperError(#[from] mappers::MapperError)
 }
 
@@ -46,7 +46,7 @@ impl Rule {
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.apply_with_dcr(url, &types::DomainConditionRule::default())
     }
-    
+
     /// Apply the rule to the url in-place.
     pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
         if self.condition.satisfied_by_with_dcr(url, dcr)? {
@@ -57,9 +57,9 @@ impl Rule {
     }
 }
 
-#[cfg(all(feature = "default-rules", feature = "minify-default-rules"))]
+#[cfg(all(feature = "default-rules", feature = "minify-included-strings"))]
 const RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-config.json"), ' ', ""), '\t', ""), '\n', "");
-#[cfg(all(feature = "default-rules", not(feature = "minify-default-rules")))]
+#[cfg(all(feature = "default-rules", not(feature = "minify-included-strings")))]
 const RULES_STR: &str=include_str!("../default-config.json");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
@@ -139,42 +139,6 @@ impl Rules {
         }
         *url=temp_url;
         Ok(())
-    }
-
-    /// TODO: REMOVE THIS.
-    /// A mess of a function used to simplify the rules parsed from AdGuard lists.
-    /// Currently just merges consecutive [`mappers::Mapper::RemoveSomeQueryParams`] and [`mappers::Mapper::AllowSomeQueryParams`].
-    /// [`Rules::apply`] should always give the same result regardless of if this function was used first.
-    /// Also this function should always be idempotent.
-    /// There is, however, no guarantee that this function always makes the rules as simple as possible for any definition of "simpler".
-    pub fn simplify(self) -> Self {
-        let mut ret=Vec::<Rule>::new();
-        for mut rule in self.0.into_iter() {
-            match ret.last_mut() {
-                Some(last_rule) => {
-                    // match rule.condition {
-                    //     conditions::Condition::All(x) if x.len()==1 => {rule.condition=x[0];},
-                    //     conditions::Condition::Any(x) if x.len()==1 => {rule.condition=x[0];},
-                    //     _ => {}
-                    // }
-                    if last_rule.condition==rule.condition {
-                        match (&mut last_rule.mapper, &mut rule.mapper) {
-                            (&mut mappers::Mapper::RemoveSomeQueryParams(ref mut last_params), &mut mappers::Mapper::RemoveSomeQueryParams(ref mut params)) => {
-                                last_params.append(params)
-                            },
-                            (&mut mappers::Mapper::AllowSomeQueryParams (ref mut last_params), &mut mappers::Mapper::AllowSomeQueryParams (ref mut params)) => {
-                                last_params.append(params)
-                            },
-                            (_, _) => {ret.push(rule);}
-                        }
-                    } else {
-                        ret.push(rule);
-                    }
-                },
-                None => {ret.push(rule);}
-            }
-        }
-        Rules::from(ret)
     }
 }
 

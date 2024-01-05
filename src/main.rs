@@ -39,11 +39,16 @@ fn main() -> Result<(), types::CleaningError> {
     #[cfg(feature = "stdin")]
     {
         if atty::isnt(atty::Stream::Stdin) {
-            for line in io::stdin().lines() {
-                let mut url=Url::parse(&line?)?;
-                match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
-                    Ok(_) => {println!("{url}");},
-                    Err(e) => {println!(); eprintln!("{e:?}");}
+            for maybe_line in io::stdin().lines() {
+                match maybe_line {
+                    Ok(line) => match Url::parse(&line) {
+                        Ok(mut url) => match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
+                            Ok(_) => {println!("{url}");},
+                            Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
+                        },
+                        Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
+                    },
+                    Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
                 }
             }
         }

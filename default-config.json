@@ -2,7 +2,7 @@
 	{
 		"condition": "Always",
 		"mapper": {
-			"RemoveSomeQueryParams": [
+			"RemoveQueryParams": [
 				"__hsfp", "__hssc", "__hstc", "__s", "_gl", "_hsenc", "_kx", "_openstat", "at_recipient_id", "at_recipient_list",
 				"bsft_clkid", "bsft_uid", "dclid", "fb_action_ids", "fb_comment_id", "fbclid", "gbraid", "gclid", "guce_referrer",
 				"guce_referrer_sig", "hsCtaTracking", "irclickid", "mc_eid", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mtm_cid",
@@ -18,8 +18,8 @@
 		}
 	},
 	{
-		"condition": {"UnqualifiedDomain": "instagram.com"},
-		"mapper": {"RemoveSomeQueryParams": ["igshid"]}
+		"condition": {"MaybeWWWDomain": "instagram.com"},
+		"mapper": {"RemoveQueryParams": ["igshid"]}
 	},
 	{
 		"condition": {
@@ -40,9 +40,9 @@
 			]
 		},
 		"mapper": {
-			"Multiple": [
+			"All": [
 				{"GetPathFromQueryParam": "redirect_to"},
-				"RemoveAllQueryParams"
+				"RemoveQuery"
 			]
 		}
 	},
@@ -70,73 +70,73 @@
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedDomain": "t.co"},
-				{"UnqualifiedDomain": "bit.ly"},
-				{"UnqualifiedDomain": "pixiv.me"},
+				{"MaybeWWWDomain": "t.co"},
+				{"MaybeWWWDomain": "bit.ly"},
+				{"MaybeWWWDomain": "pixiv.me"},
 				{
 					"All": [
-						{"UnqualifiedDomain": "pawoo.net"},
+						{"MaybeWWWDomain": "pawoo.net"},
 						{"PathIs": "/oauth_authentications"}
 					]
 				},
-				{"UnqualifiedDomain": "tr.ee"}
+				{"MaybeWWWDomain": "tr.ee"}
 			]
 		},
-		"mapper": "Expand301"
+		"mapper": "ExpandShortLink"
 	},
 	{
 		"condition": {"UnqualifiedAnyTld": "google"},
 		"mapper": {
-			"AllowSomeQueryParams": ["hl", "q", "tbm"]
+			"AllowQueryParams": ["hl", "q", "tbm"]
 		}
 	},
 	{
-		"condition": {"UnqualifiedDomain": "youtube.com"},
+		"condition": {"MaybeWWWDomain": "youtube.com"},
 		"mapper": {
-			"RemoveSomeQueryParams": ["si"]
+			"RemoveQueryParams": ["si"]
 		}
 	},
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedDomain": "twitter.com"},
-				{"UnqualifiedDomain": "vxtwitter.com"},
-				{"UnqualifiedDomain": "fxtwitter.com"},
-				{"UnqualifiedDomain": "x.com"}
+				{"MaybeWWWDomain": "twitter.com"},
+				{"MaybeWWWDomain": "vxtwitter.com"},
+				{"MaybeWWWDomain": "fxtwitter.com"},
+				{"MaybeWWWDomain": "x.com"}
 			]
 		},
 		"mapper": {
-			"SwapHost": "twitter.com"
+			"SetHost": "twitter.com"
 		}
 	},
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedDomain": "twitter.com"},
-				{"UnqualifiedDomain": "reddit.com"},
-				{"UnqualifiedDomain": "theonion.com"},
-				{"UnqualifiedDomain": "teespring.com"},
-				{"UnqualifiedDomain": "donmai.com"},
-				{"UnqualifiedDomain": "tumblr.com"},
-				{"UnqualifiedDomain": "instagram.com"}
+				{"MaybeWWWDomain"   : "twitter.com"  },
+				{"UnqualifiedDomain": "reddit.com"   },
+				{"MaybeWWWDomain"   : "theonion.com" },
+				{"MaybeWWWDomain"   : "teespring.com"},
+				{"MaybeWWWDomain"   : "donmai.com"   },
+				{"UnqualifiedDomain": "tumblr.com"   },
+				{"MaybeWWWDomain"   : "instagram.com"}
 			]
 		},
-		"mapper": "RemoveAllQueryParams"
+		"mapper": "RemoveQuery"
 	},
 	{
 		"condition": {
 			"All": [
 				{"UnqualifiedAnyTld": "amazon"},
-				{"PathMatchesRegex": "/dp/\\w+/"}
+				{"PathMatchesRegex": "/dp/[^/]+/"}
 			]
 		},
 		"mapper": {
-			"Multiple": [
-				"RemoveAllQueryParams",
+			"All": [
+				"RemoveQuery",
 				{
 					"RegexSubUrlPart": {
 						"part_name": "Path",
-						"regex": ".*(/dp/\\w+).*",
+						"regex": ".*(/dp/[^/]+).*",
 						"replace": "$1"
 					}
 				}
@@ -145,6 +145,6 @@
 	},
 	{	
 		"condition": {"UnqualifiedAnyTld": "amazon"},
-		"mapper": {"RemoveSomeQueryParams": ["ref"]}
+		"mapper": {"RemoveQueryParams": ["ref"]}
 	}
 ]

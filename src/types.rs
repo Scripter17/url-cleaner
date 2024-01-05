@@ -41,8 +41,11 @@ pub enum UrlPartName {
 #[derive(Debug, Error)]
 pub enum ReplaceError {
     /// Attempted replacement would not produce a valid URL.
-    #[error("Attempted replacement would not produce a valid URL.")]
+    #[error(transparent)]
     ParseError(#[from] ParseError),
+    /// [`UrlPartName::replace_with`] attempted to set a part that cannot be None to None.
+    #[error("UrlPartName::replace_with attempted to set a part that cannot be None to None.")]
+    PartCannotBeNone,
     /// The provided scheme would not have produced a valid URL.
     #[error("The provided scheme would not have produced a valid URL.")]
     InvalidScheme,
@@ -62,6 +65,22 @@ pub enum ReplaceError {
 
 impl UrlPartName {
     /// Extracts the specified part of the provided URL
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Whole    => "Whole   ", 
+            Self::Scheme   => "Scheme  ", 
+            Self::Username => "Username", 
+            Self::Password => "Password", 
+            Self::Host     => "Host    ", 
+            Self::Domain   => "Domain  ", 
+            Self::Port     => "Port    ", 
+            Self::Path     => "Path    ", 
+            Self::Query    => "Query   ", 
+            Self::Fragment => "Fragment" 
+        }
+    }
+
+    /// Extracts the specified part of the provided URL
     pub fn get_from<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         Some(match self {
             Self::Whole    => Cow::Borrowed(url.as_str()),
@@ -78,18 +97,18 @@ impl UrlPartName {
     }
 
     /// Replaces the specified part of the provided URL with the provided value
-    pub fn replace_with(&self, url: &mut Url, with: &str) -> Result<(), ReplaceError> {
+    pub fn replace_with(&self, url: &mut Url, with: Option<&str>) -> Result<(), ReplaceError> {
         match self {
-            Self::Whole    => *url=Url::parse(with)?,
-            Self::Scheme   => url.set_scheme(with).map_err(|_| ReplaceError::InvalidScheme)?,
-            Self::Username => url.set_username(with).map_err(|_| ReplaceError::CannotSetUsername)?,
-            Self::Password => url.set_password(Some(with)).map_err(|_| ReplaceError::CannotSetPassword)?,
-            Self::Host     => url.set_host(Some(with))?,
-            Self::Domain   => url.set_host(Some(with))?,
-            Self::Port     => url.set_port(Some(with.parse().map_err(|_| ReplaceError::InvalidPort)?)).map_err(|_| ReplaceError::CannotSetPort)?,
-            Self::Path     => url.set_path(with),
-            Self::Query    => url.set_query(Some(with)),
-            Self::Fragment => url.set_fragment(Some(with))
+            Self::Whole    => *url=Url::parse (with.ok_or(ReplaceError::PartCannotBeNone)?)?,
+            Self::Scheme   => url.set_scheme  (with.ok_or(ReplaceError::PartCannotBeNone)?).map_err(|_| ReplaceError::InvalidScheme)?,
+            Self::Username => url.set_username(with.ok_or(ReplaceError::PartCannotBeNone)?).map_err(|_| ReplaceError::CannotSetUsername)?,
+            Self::Password => url.set_password(with).map_err(|_| ReplaceError::CannotSetPassword)?,
+            Self::Host     => url.set_host    (with)?,
+            Self::Domain   => url.set_host    (with)?,
+            Self::Port     => url.set_port    (with.map(|x| x.parse().map_err(|_| ReplaceError::InvalidPort)).transpose()?).map_err(|_| ReplaceError::CannotSetPort)?,
+            Self::Path     => url.set_path    (with.ok_or(ReplaceError::PartCannotBeNone)?),
+            Self::Query    => url.set_query   (with),
+            Self::Fragment => url.set_fragment(with)
         }
         Ok(())
     }
@@ -144,7 +163,7 @@ impl ToString for DomainConditionRule {
 }
 
 /// An enum that, if I've done my job properly, contains details on any possible error that can heppen when cleaning a URL.
-/// Except for if a [`crate::rules::mappers::Mapper::Expand301`] can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
+/// Except for if a [`crate::rules::mappers::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
 /// Not only is it a recoverable error, it's an error that doesn't need to be recovered from.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
