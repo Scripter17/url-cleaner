@@ -11,7 +11,7 @@ use std::borrow::Cow;
 /// Contains the logic for conditions and mappers.
 pub mod rules;
 /// Contains wrappers for [`regex::Regex`], [`glob::Pattern`], and [`std::process::Command`].
-/// In the case their respective features are disabled, the wrappers are empty, always fail deseirlaization, and all of their methods panic.
+/// In the case their respective features are disabled, the wrappers are empty, always fail deserialization, and all of their methods panic.
 pub mod glue;
 /// Contains logic for handling [`rules::conditions::Condition::UnqualifiedAnyTld`] and [`rules::conditions::Condition::QualifiedAnyTld`].
 pub mod suffix;

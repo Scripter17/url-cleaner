@@ -79,7 +79,7 @@ impl From<CommandParts> for Command {
 }
 
 fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<S::Ok, S::Error> {
-    let mut state = serializer.serialize_struct("Comamnd", 3)?;
+    let mut state = serializer.serialize_struct("Command", 3)?;
     state.serialize_field("program", command.get_program().to_str().ok_or_else(|| S::Error::custom("The command's program name/path is not UTF-8"))?)?;
     state.serialize_field("args", &command.get_args().map(|x| x.to_str()).collect::<Option<Vec<_>>>().ok_or_else(|| S::Error::custom("One of the command's arguments isn't UTF-8"))?)?;
     state.serialize_field("envs", &command.get_envs().filter_map(
@@ -144,7 +144,7 @@ pub enum CommandError {
     /// The command was terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
     SignalTermination,
-    /// The output handler wsa [`OutputHandler::Error`].
+    /// The output handler was [`OutputHandler::Error`].
     #[error("The output handler was OutputHandler::Error.")]
     ExplicitError
 }
@@ -197,7 +197,7 @@ impl CommandWrapper {
         }
     }
 
-    /// Runs the command, does the [`OutputHandler`] stuff, removes trailings newlines and carriage returns form the output, then extracts the URL.
+    /// Runs the command, does the [`OutputHandler`] stuff, removes trailing newlines and carriage returns form the output, then extracts the URL.
     pub fn get_url(&self, url: &Url) -> Result<Url, CommandError> {
         Ok(Url::parse(self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }

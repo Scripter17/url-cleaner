@@ -135,7 +135,7 @@
 				"RemoveQuery",
 				{
 					"RegexSubUrlPart": {
-						"part_name": "Path",
+						"part": "Path",
 						"regex": ".*(/dp/[^/]+).*",
 						"replace": "$1"
 					}

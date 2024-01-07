@@ -14,7 +14,7 @@ pub struct GlobWrapper {
     /// The pattern used to match stuff.
     #[serde(flatten, serialize_with = "serialize_pattern", deserialize_with = "deserialize_pattern")]
     pub pattern: Pattern,
-    /// The options used to chooose how the pattern matches stuff.
+    /// The options used to choose how the pattern matches stuff.
     #[serde(flatten, with = "SerdeMatchOptions")]
     pub options: MatchOptions
 }

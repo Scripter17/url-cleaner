@@ -57,7 +57,7 @@ pub enum Mapper {
     Debug(Box<Mapper>),
     /// Ignores any error the contained mapper may return.
     IgnoreError(Box<Mapper>),
-    /// If the `try` mapper reuterns an error, the `else` mapper is used instead
+    /// If the `try` mapper reuterns an error, the `else` mapper is used instead.
     /// # Errors
     /// If the `else` mapper returns an error, that error is returned.
     TryCatch {
@@ -71,7 +71,7 @@ pub enum Mapper {
     /// If one of the contained mappers returns an error, the URL is left unchanged and the error is returned.
     All(Vec<Mapper>),
     /// Applies the contained mappers in order. If an error occurs that error is returned and the URL is left unchanged.
-    /// Technically the name is wrong as [`Condition::All`] only actually changes the URL after all the mappers pass, but this is conceptually simpler.
+    /// Technically the name is wrong as [`super::conditions::Condition::All`] only actually changes the URL after all the mappers pass, but this is conceptually simpler.
     /// # Errors
     /// If one of the contained mappers returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
     AllNoRevert(Vec<Mapper>),
@@ -126,10 +126,10 @@ pub enum Mapper {
     ExpandShortLink,
     /// Sets the specified URL part to `with`.
     /// # Errors
-    /// If `with` is `None` and `part_name` is one [`types::UrlPartName::Whole`], [`types::UrlPartName::Scheme`], [`types::UrlPartName::Username`], or [`types::UrlPartName::Path`], the error [`types::ReplaceError::CannotBeNone`].
+    /// If `with` is `None` and `part` is one [`types::UrlPartName::Whole`], [`types::UrlPartName::Scheme`], [`types::UrlPartName::Username`], or [`types::UrlPartName::Path`], returns the error [`types::ReplaceError::PartCannotBeNone`].
     SetUrlPart {
         /// The name of the part to replace.
-        part_name: types::UrlPartName,
+        part: types::UrlPartName,
         /// The value to replace the part with.
         with: Option<String>
     },
@@ -141,7 +141,7 @@ pub enum Mapper {
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`MapperError::UrlPartNotFound`].
     RegexSubUrlPart {
         /// The name of the part to modify.
-        part_name: types::UrlPartName,
+        part: types::UrlPartName,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
@@ -158,7 +158,7 @@ pub enum Mapper {
     /// If the requested part replacement fails (returns an error [`crate::types::ReplaceError`]), that error is returned.
     GetPartFromQueryParam {
         /// The name of the part to replace.
-        part_name: types::UrlPartName,
+        part: types::UrlPartName,
         /// The query paramater to get the part from.
         param_name: String
     },
@@ -170,7 +170,7 @@ pub enum Mapper {
     ReplaceWithCommandOutput(glue::CommandWrapper)
 }
 
-fn get_true() -> bool {true}
+const fn get_true() -> bool {true}
 
 /// An enum of all possible errors a [`Mapper`] can reutrn.
 #[derive(Error, Debug)]
@@ -344,25 +344,25 @@ impl Mapper {
             },
             #[cfg(not(feature = "http"))]
             Self::ExpandShortLink => Err(MapperError::MapperDisabled)?,
-            Self::SetUrlPart{part_name, with} => part_name.replace_with(url, with.as_deref())?,
+            Self::SetUrlPart{part, with} => part.replace_with(url, with.as_deref())?,
             #[cfg(feature = "regex")]
-            Self::RegexSubUrlPart {part_name, none_to_empty_string, regex, replace} => {
+            Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
                 if cfg!(feature = "regex") {
-                    let old_part_value=part_name
+                    let old_part_value=part
                         .get_from(url)
                         .ok_or(MapperError::UrlPartNotFound)
                         .or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(MapperError::UrlPartNotFound)})?
                         .into_owned();
-                    part_name.replace_with(url, Some(&regex.replace(&old_part_value, replace)))?;
+                    part.replace_with(url, Some(&regex.replace(&old_part_value, replace)))?;
                 } else {
                     Err(MapperError::MapperDisabled)?;
                 }
             },
             #[cfg(not(feature = "regex"))]
             Self::RegexSubUrlPart{..} => Err(MapperError::MapperDisabled)?,
-            Self::GetPartFromQueryParam{part_name, param_name} => {
+            Self::GetPartFromQueryParam{part, param_name} => {
                 match url.query_pairs().into_owned().find(|(name, _)| param_name==name) {
-                    Some((_, new_part)) => {part_name.replace_with(url, Some(&new_part))?;},
+                    Some((_, new_part)) => {part.replace_with(url, Some(&new_part))?;},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
@@ -378,13 +378,14 @@ impl Mapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::glue::RegexParts;
 
-    fn before_and_after(mut url: Url, mapper: Mapper) -> (Url, Result<Url, MapperError>) {
-        (url.clone(), mapper.apply(&mut url).and(Ok(url)))
+    macro_rules! exurl {
+        () => {Url::parse("https://www.example.com").unwrap()};
     }
 
     #[test]
-    fn remove_some_query_params() {
+    fn remove_query_params() {
         let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
         assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
         assert_eq!(url.query(), Some("b=3&c=4&d=5"));
@@ -392,5 +393,60 @@ mod tests {
         assert_eq!(url.query(), Some("d=5"));
         assert!(Mapper::RemoveQueryParams(vec!["d".to_string()]).apply(&mut url).is_ok());
         assert_eq!(url.query(), None);
+    }
+
+    #[test]
+    fn allow_query_params() {
+        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+        assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn remove_query_params_matching_regex() {
+        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("a|b|c").try_into().unwrap()).apply(&mut url).is_ok());
+        assert_eq!(url.query(), Some("a=2&b=3&c=4"));
+        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("d").try_into().unwrap()).apply(&mut url).is_ok());
+        assert_eq!(url.query(), None);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn allow_query_params_matching_regex() {
+        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("a|b|c").try_into().unwrap()).apply(&mut url).is_ok());
+        assert_eq!(url.query(), Some("d=5"));
+        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("d").try_into().unwrap()).apply(&mut url).is_ok());
+        assert_eq!(url.query(), None);
+    }
+
+    #[test]
+    fn try_catch() {
+        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::None )}.apply(&mut exurl!()).is_ok ());
+        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::Error)}.apply(&mut exurl!()).is_ok ());
+        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::None )}.apply(&mut exurl!()).is_ok ());
+        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::Error)}.apply(&mut exurl!()).is_err());
+    }
+
+    #[test]
+    fn all() {
+        let mut url=exurl!();
+        assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url).is_err());
+        assert_eq!(url.domain(), Some("www.example.com"));
+    }
+
+    #[test]
+    fn all_no_revert() {
+        let mut url=exurl!();
+        assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_err());
+        assert_eq!(url.domain(), Some("3.com"));
+    }
+
+    #[test]
+    fn all_ignore_error() {
+        let mut url=exurl!();
+        assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url).is_ok());
+        assert_eq!(url.domain(), Some("6.com"));
     }
 }

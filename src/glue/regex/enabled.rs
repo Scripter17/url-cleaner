@@ -34,15 +34,24 @@ impl Eq for RegexWrapper {}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
     pattern: String,
-    #[serde(default               , skip_serializing_if = "is_false")] case_insensitive: bool,
-    #[serde(default               , skip_serializing_if = "is_false")] crlf: bool,
-    #[serde(default               , skip_serializing_if = "is_false")] dot_all: bool,
-    #[serde(default               , skip_serializing_if = "is_false")] ignore_whitespace: bool,
-    #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] line_terminator: u8,
-    #[serde(default               , skip_serializing_if = "is_false")] multi_line: bool,
-    #[serde(default               , skip_serializing_if = "is_false")] octal: bool,
-    #[serde(default               , skip_serializing_if = "is_false")] swap_greed: bool,
-    #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] unicode: bool
+    /// The flag that decides if [`Regex::case_insensitive`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,
+    /// The flag that decides if [`Regex::crlf`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub crlf: bool,
+    /// The flag that decides if [`Regex::dot_matches_new_line`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub dot_all: bool,
+    /// The flag that decides if [`Regex::ignore_whitespace`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace: bool,
+    /// The flag that decides if [`Regex::line_terminator`] is set.
+    #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator: u8,
+    /// The flag that decides if [`Regex::multi_line`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub multi_line: bool,
+    /// The flag that decides if [`Regex::octal`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub octal: bool,
+    /// The flag that decides if [`Regex::swap_greed`] is set.
+    #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed: bool,
+    /// The flag that decides if [`Regex::unicode`] is set.
+    #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
 }
 
 /// Serde doesn't have an equivalent to Clap's `default_value_t`

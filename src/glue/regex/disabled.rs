@@ -23,19 +23,19 @@ pub struct RegexParts;
 impl RegexParts {
     /// The disabled version of [`RegexParts::new`].
     /// # Panics
-    /// This verison lways panics.
+    /// This version always panics.
     pub fn new         (_pattern: &str) -> Self  {panic!()}
     /// The disabled version of [`RegexParts::set_flags`].
     /// # Panics
-    /// This verison lways panics.
+    /// This version always panics.
     pub fn set_flags   (&mut self, _flags: &str) {panic!()}
     /// The disabled version of [`RegexParts::add_flags`].
     /// # Panics
-    /// This verison lways panics.
+    /// This version always panics.
     pub fn add_flags   (&mut self, _flags: &str) {panic!()}
     /// The disabled version of [`RegexParts::remove_flags`].
     /// # Panics
-    /// This verison lways panics.
+    /// This version always panics.
     pub fn remove_flags(&mut self, _flags: &str) {panic!()}
 }
 

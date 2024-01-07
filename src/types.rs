@@ -11,7 +11,7 @@ use serde::{
     {de::Error as DeError, Deserialize, Deserializer}
 };
 
-/// An enum that makes using the various [`Url`] getter simplers.
+/// An enum that makes using the various [`Url`] getters simpler.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum UrlPartName {
     /// The whole URL. Corresponds to [`Url::as_str`].
@@ -26,7 +26,7 @@ pub enum UrlPartName {
     Host,
     /// The domain. Corresponds to [`Url::domain`].
     Domain,
-    /// The port as a string. Correspods to [`Url::port`].
+    /// The port as a string. Corresponds to [`Url::port`].
     /// Ports are always treated as strings for the sake of a simpler API.
     Port,
     /// The path. Corresponds to [`Url::path`].
@@ -52,8 +52,8 @@ pub enum ReplaceError {
     /// The provided port is not a number.
     #[error("The provided port is not a number.")]
     InvalidPort,
-    /// Cannot set port for this URL. Either becasue it is cannot-be-a-base, does not have a host, or has the file scheme.
-    #[error("Cannot set port for this URL. Either becasue it is cannot-be-a-base, does not have a host, or has the file scheme.")]
+    /// Cannot set port for this URL. Either because it is cannot-be-a-base, does not have a host, or has the file scheme.
+    #[error("Cannot set port for this URL. Either because it is cannot-be-a-base, does not have a host, or has the file scheme.")]
     CannotSetPort,
     /// Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.
     #[error("Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.")]
@@ -125,7 +125,7 @@ pub enum DomainConditionRule {
     /// Makes [`crate::rules::conditions::Condition::DomainCondition`] always fail.
     Never,
     /// Similar to [`DomainConditionRule::Url`] except the contained URL would always be the URL being cleaned.
-    /// This is the default as I assusme it's the one that works most of the time.
+    /// This is the default as I assume it's the one that works most of the time.
     #[default]
     UseUrlBeingCleaned
 }
@@ -162,14 +162,14 @@ impl ToString for DomainConditionRule {
     }
 }
 
-/// An enum that, if I've done my job properly, contains details on any possible error that can heppen when cleaning a URL.
+/// An enum that, if I've done my job properly, contains details on any possible error that can happen when cleaning a URL.
 /// Except for if a [`crate::rules::mappers::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
 /// Not only is it a recoverable error, it's an error that doesn't need to be recovered from.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum CleaningError {
     /// There was an error getting the rules.
-    #[error("There was an errot getting the rules.")]
+    #[error("There was an error getting the rules.")]
     GetRulesError(#[from] crate::rules::GetRulesError),
     /// There was an error executing a rule.
     #[error("There was an error executing a rule.")]

@@ -30,8 +30,8 @@ pub struct Rule {
 /// Denotes that either the condition failed (returned `Ok(false)`), the condition errored, or the mapper errored.
 #[derive(Error, Debug)]
 pub enum RuleError {
-    /// The URL does not meet the rule's conditon.
-    #[error("The URL does not meet the rule's conditon.")]
+    /// The URL does not meet the rule's condition.
+    #[error("The URL does not meet the rule's condition.")]
     FailedCondition,
     /// The condition returned an error.
     #[error(transparent)]
