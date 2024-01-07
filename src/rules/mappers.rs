@@ -6,6 +6,8 @@ use url::{Url, ParseError};
 #[cfg(feature = "regex")]
 use std::borrow::Cow;
 
+use form_urlencoded::{self, Target};
+
 #[cfg(feature = "http")]
 use reqwest::{self, Error as ReqwestError};
 #[cfg(not(feature = "http"))]
@@ -253,29 +255,28 @@ impl Mapper {
                 url.set_query(None);
             },
             Self::RemoveQueryParams(names) => {
-                // Apparently `x.y().z(f())` will execute `x.y()` before `f()`
-                let new_query=url.query_pairs().into_owned().filter(|(name, _)| names.iter().all(|blocked_name| blocked_name!=name)).collect::<Vec<_>>();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| names.iter().all(|blocked_name| blocked_name!=name))).finish();
                 if new_query.is_empty() {
                     url.set_query(None);
                 } else {
-                    url.query_pairs_mut().clear().extend_pairs(new_query);
+                    url.set_query(Some(&new_query));
                 }
             },
             Self::AllowQueryParams(names) => {
-                let new_query=url.query_pairs().into_owned().filter(|(name, _)| names.iter().any(|allowed_name| allowed_name==name)).collect::<Vec<_>>();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| names.iter().any(|allowed_name| allowed_name==name))).finish();
                 if new_query.is_empty() {
                     url.set_query(None);
                 } else {
-                    url.query_pairs_mut().clear().extend_pairs(new_query);
+                    url.set_query(Some(&new_query));
                 }
             },
             #[cfg(feature = "regex")]
             Self::RemoveQueryParamsMatchingRegex(regex) => {
-                let new_query=url.query_pairs().into_owned().filter(|(name, _)| !regex.is_match(name)).collect::<Vec<_>>();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !regex.is_match(name))).finish();
                 if new_query.is_empty() {
                     url.set_query(None);
                 } else {
-                    url.query_pairs_mut().clear().extend_pairs(new_query);
+                    url.set_query(Some(&new_query));
                 }
             },
             #[cfg(not(feature = "regex"))]
@@ -283,11 +284,11 @@ impl Mapper {
 
             #[cfg(feature = "regex")]
             Self::AllowQueryParamsMatchingRegex(regex) => {
-                let new_query=url.query_pairs().into_owned().filter(|(name, _)| regex.is_match(name)).collect::<Vec<_>>();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| regex.is_match(name))).finish();
                 if new_query.is_empty() {
                     url.set_query(None);
                 } else {
-                    url.query_pairs_mut().clear().extend_pairs(new_query);
+                    url.set_query(Some(&new_query));
                 }
             },
             #[cfg(not(feature = "regex"))]

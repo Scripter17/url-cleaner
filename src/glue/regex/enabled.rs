@@ -33,24 +33,25 @@ impl Eq for RegexWrapper {}
 /// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
-    pattern: String,
-    /// The flag that decides if [`Regex::case_insensitive`] is set.
+    /// The pattern passed into [`RegexBuilder::new`].
+    pub pattern: String,
+    /// The flag that decides if [`RegexBuilder::case_insensitive`] is set. Defaults to `false`. This flags character is `'i'`
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,
-    /// The flag that decides if [`Regex::crlf`] is set.
+    /// The flag that decides if [`RegexBuilder::crlf`] is set. Defaults to `false`. This flags character is `'R'`
     #[serde(default               , skip_serializing_if = "is_false")] pub crlf: bool,
-    /// The flag that decides if [`Regex::dot_matches_new_line`] is set.
-    #[serde(default               , skip_serializing_if = "is_false")] pub dot_all: bool,
-    /// The flag that decides if [`Regex::ignore_whitespace`] is set.
+    /// The flag that decides if [`RegexBuilder::dot_matches_new_line`] is set. Defaults to `false`. This flags character is `'s'`
+    #[serde(default               , skip_serializing_if = "is_false")] pub dot_matches_new_line: bool,
+    /// The flag that decides if [`RegexBuilder::ignore_whitespace`] is set. Defaults to `false`. This flags character is `'x'`
     #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace: bool,
-    /// The flag that decides if [`Regex::line_terminator`] is set.
+    /// The flag that decides if [`RegexBuilder::line_terminator`] is set. Defaults to `b'\n'` (`10`).
     #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator: u8,
-    /// The flag that decides if [`Regex::multi_line`] is set.
+    /// The flag that decides if [`RegexBuilder::multi_line`] is set. Defaults to `false`. This flags character is `'m'`
     #[serde(default               , skip_serializing_if = "is_false")] pub multi_line: bool,
-    /// The flag that decides if [`Regex::octal`] is set.
+    /// The flag that decides if [`RegexBuilder::octal`] is set. Defaults to `false`. This flags character is `'o'`
     #[serde(default               , skip_serializing_if = "is_false")] pub octal: bool,
-    /// The flag that decides if [`Regex::swap_greed`] is set.
+    /// The flag that decides if [`RegexBuilder::swap_greed`] is set. Defaults to `false`. This flags character is `'U'`
     #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed: bool,
-    /// The flag that decides if [`Regex::unicode`] is set.
+    /// The flag that decides if [`RegexBuilder::unicode`] is set. Defaults to `true`. This flags character is `'u'`
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
 }
 
@@ -77,7 +78,7 @@ impl RegexParts {
             pattern: pattern.to_string(),
             case_insensitive: false,
             crlf: false,
-            dot_all: false,
+            dot_matches_new_line: false,
             ignore_whitespace: false,
             line_terminator: newline_u8(),
             multi_line: false,
@@ -91,42 +92,42 @@ impl RegexParts {
     /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details.
     /// I have chosen to give the octal flag `'o'` because the regex crate forgot.
     pub fn set_flags(&mut self, flags: &str) {
-        self.case_insensitive =flags.contains('i');
-        self.crlf             =flags.contains('R');
-        self.dot_all          =flags.contains('s');
-        self.ignore_whitespace=flags.contains('x');
-        self.multi_line       =flags.contains('m');
-        self.octal            =flags.contains('o');
-        self.swap_greed       =flags.contains('U');
-        self.unicode          =flags.contains('u');
+        self.case_insensitive    =flags.contains('i');
+        self.crlf                =flags.contains('R');
+        self.dot_matches_new_line=flags.contains('s');
+        self.ignore_whitespace   =flags.contains('x');
+        self.multi_line          =flags.contains('m');
+        self.octal               =flags.contains('o');
+        self.swap_greed          =flags.contains('U');
+        self.unicode             =flags.contains('u');
     }
 
     /// Sets each flag to `true` if its character is in `flags`.
     /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details.
     /// I have chosen to give the octal flag `'o'` because the regex crate forgot.
     pub fn add_flags(&mut self, flags: &str) {
-        if flags.contains('i') {self.case_insensitive =true};
-        if flags.contains('R') {self.crlf             =true};
-        if flags.contains('s') {self.dot_all          =true};
-        if flags.contains('x') {self.ignore_whitespace=true};
-        if flags.contains('m') {self.multi_line       =true};
-        if flags.contains('o') {self.octal            =true};
-        if flags.contains('U') {self.swap_greed       =true};
-        if flags.contains('u') {self.unicode          =true};
+        if flags.contains('i') {self.case_insensitive    =true};
+        if flags.contains('R') {self.crlf                =true};
+        if flags.contains('s') {self.dot_matches_new_line=true};
+        if flags.contains('x') {self.ignore_whitespace   =true};
+        if flags.contains('m') {self.multi_line          =true};
+        if flags.contains('o') {self.octal               =true};
+        if flags.contains('U') {self.swap_greed          =true};
+        if flags.contains('u') {self.unicode             =true};
     }
 
     /// Sets each flag to `false` if its character is in `flags`.
     /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details.
     /// I have chosen to give the octal flag `'o'` because the regex crate forgot.
     pub fn remove_flags(&mut self, flags: &str) {
-        if flags.contains('i') {self.case_insensitive =false};
-        if flags.contains('R') {self.crlf             =false};
-        if flags.contains('s') {self.dot_all          =false};
-        if flags.contains('x') {self.ignore_whitespace=false};
-        if flags.contains('m') {self.multi_line       =false};
-        if flags.contains('o') {self.octal            =false};
-        if flags.contains('U') {self.swap_greed       =false};
-        if flags.contains('u') {self.unicode          =false};
+        if flags.contains('i') {self.case_insensitive    =false};
+        if flags.contains('R') {self.crlf                =false};
+        if flags.contains('s') {self.dot_matches_new_line=false};
+        if flags.contains('x') {self.ignore_whitespace   =false};
+        if flags.contains('m') {self.multi_line          =false};
+        if flags.contains('o') {self.octal               =false};
+        if flags.contains('U') {self.swap_greed          =false};
+        if flags.contains('u') {self.unicode             =false};
     }
 }
 
@@ -137,7 +138,7 @@ impl TryFrom<RegexParts> for Regex {
         RegexBuilder::new(&value.pattern)
             .case_insensitive(value.case_insensitive)
             .crlf(value.crlf)
-            .dot_matches_new_line(value.dot_all)
+            .dot_matches_new_line(value.dot_matches_new_line)
             .ignore_whitespace(value.ignore_whitespace)
             .line_terminator(value.line_terminator)
             .multi_line(value.multi_line)
@@ -173,12 +174,24 @@ impl<'de> Deserialize<'de> for RegexWrapper {
 }
 
 impl RegexWrapper {
-    /// Wrapper for `regex::Regex::is_match`.
+    /// Gets an immutable reference to the contained [`Regex`].
+    #[allow(dead_code)]
+    pub fn get_regex(&self) -> &Regex {
+        &self.inner
+    }
+
+    /// Gets an immutable reference to the contained [`RegexParts`].
+    #[allow(dead_code)]
+    pub fn get_parts(&self) -> &RegexParts {
+        &self.parts
+    }
+
+    /// Wrapper for `Regex::is_match`.
     pub fn is_match(&self, str: &str) -> bool {
         self.inner.is_match(str)
     }
 
-    /// Wrapper for `regex::Regex::replace`.
+    /// Wrapper for `Regex::replace`.
     pub fn replace<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
         self.inner.replace(haystack, rep)
     }

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::convert::Infallible;
 
 use serde::{
     ser::{Error as _, Serialize, Serializer},
@@ -76,5 +77,15 @@ impl RegexWrapper {
     /// This version will always panic.
     pub fn replace<'h, T>(&self, _haystack: &str, _rep: T) -> Cow<'h, str> {
         panic!("URL Cleaner was compiled without the `regex` feature.")
+    }
+}
+
+// Makes the --no-default-features compiliation not fail due to the tests.
+// TryFrom also doesn't make `RegexWrapper::try_from` produce a warning.
+impl TryFrom<RegexParts> for RegexWrapper {
+    type Error=Infallible; // Never type when
+
+    fn try_from(_: RegexParts) -> Result<Self, Self::Error> {
+        Ok(Self)
     }
 }

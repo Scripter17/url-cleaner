@@ -19,6 +19,7 @@ pub mod suffix;
 pub mod types;
 
 /// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that DCR to the URL.
+/// This function's name is set to `clean_url` in WASM for API simplicity.
 #[wasm_bindgen(js_name = clean_url)]
 pub fn wasm_clean_url(url: &str, rules: wasm_bindgen::JsValue, dcr: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
     let mut url=Url::parse(url)?;
@@ -29,7 +30,7 @@ pub fn wasm_clean_url(url: &str, rules: wasm_bindgen::JsValue, dcr: wasm_bindgen
 /// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that DCR to the URL.
 pub fn clean_url(url: &mut Url, rules: Option<&rules::Rules>, dcr: Option<&types::DomainConditionRule>) -> Result<(), types::CleaningError> {
     match rules {
-        Some(rules) => rules.apply_with_dcr(url, dcr.unwrap_or(&types::DomainConditionRule::default()))?, // T implementing Default doesn't mean &T implements Default. :/
+        Some(rules) => rules.apply_with_dcr(url, dcr.unwrap_or(&types::DomainConditionRule::default()))?,
         None => rules::get_default_rules()?.apply_with_dcr(url, dcr.unwrap_or(&types::DomainConditionRule::default()))?
     }
     Ok(())
