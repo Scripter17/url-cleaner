@@ -3,10 +3,14 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
+
+// Used only for [`LazyRegex::replace`].
 #[cfg(feature = "regex")]
 use std::borrow::Cow;
 
-use form_urlencoded::{self, Target};
+// Used internally by the `url` crate to handle query manipulation.
+// Imported here for faster allow/remove query parts mappers.
+use form_urlencoded;
 
 #[cfg(feature = "http")]
 use reqwest::{self, Error as ReqwestError};
@@ -93,12 +97,12 @@ pub enum Mapper {
     /// Useful for parsing AdGuard rules.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `regex` feature.
-    RemoveQueryParamsMatchingRegex(glue::RegexWrapper),
+    RemoveQueryParamsMatchingRegex(glue::LazyRegex),
     /// Removes query paramaters whose name doesn't match the specified regex.
     /// Useful for parsing AdGuard rules.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `regex` feature.
-    AllowQueryParamsMatchingRegex(glue::RegexWrapper),
+    AllowQueryParamsMatchingRegex(glue::LazyRegex),
     /// Replace the current URL with the value of the specified query paramater.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     /// # Errors
@@ -149,7 +153,7 @@ pub enum Mapper {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The [`glue::GlobWrapper`] that is used to match and extract parts of the selected part.
-        regex: glue::RegexWrapper,
+        regex: glue::LazyRegex,
         /// The pattern the extracted parts are put into.
         /// See [`regex::Regex::replace`] for details.
         replace: String

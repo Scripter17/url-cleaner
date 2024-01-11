@@ -149,7 +149,7 @@ pub enum GetRulesError {
     #[error("Could not load the specified rules file.")]
     CantLoadFile,
     /// The loaded file did not contain valid JSON.
-    #[error("The loaded file did not contain valid JSON.")]
+    #[error(transparent)]
     CantParseFile(#[from] serde_json::Error),
     /// URL Cleaner was compiled without default rules.
     #[allow(dead_code)]
@@ -159,4 +159,14 @@ pub enum GetRulesError {
     #[allow(dead_code)]
     #[error("The default rules compiled into URL Cleaner aren't valid JSON.")]
     CantParseDefaultRules(serde_json::Error)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn failed_condition() {
+        assert!(Rule {condition: conditions::Condition::Never, mapper: mappers::Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+    }
 }

@@ -22,6 +22,12 @@ pub enum Condition {
     /// Always returns the error [`ConditionError::ExplicitError`].
     /// # Errors
     /// Always returns the error [`ConditionError::ExplicitError`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::Error.satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// ```
     Error,
     /// Prints debugging information about the contained condition to STDERR.
     /// Intended primarily for debugging logic errors.
@@ -106,11 +112,11 @@ pub enum Condition {
         /// Unqualified domains where the rule is valid.
         yes_domains: Vec<String>,
         /// Regexes that match domains where the rule is value.
-        yes_domain_regexes: Vec<glue::RegexWrapper>,
+        yes_domain_regexes: Vec<glue::LazyRegex>,
         /// Unqualified domains that marks a domain invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
         unless_domains: Vec<String>,
         /// Regexes that match domains where the rule is invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
-        unless_domain_regexes: Vec<glue::RegexWrapper>
+        unless_domain_regexes: Vec<glue::LazyRegex>
     },
 
     /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
@@ -119,8 +125,8 @@ pub enum Condition {
     QueryParamValueMatchesRegex {
         /// The name of the query parameter.
         name: String,
-        /// The [`glue::RegexWrapper`] the query parameter's value is checked against.
-        regex: glue::RegexWrapper
+        /// The [`glue::LazyRegex`] the query parameter's value is checked against.
+        regex: glue::LazyRegex
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified glob.
     /// # Errors
@@ -134,7 +140,7 @@ pub enum Condition {
     /// Passes if the URL's path matches the specified regular expression.
     /// # Errors
     /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
-    PathMatchesRegex(glue::RegexWrapper),
+    PathMatchesRegex(glue::LazyRegex),
     /// Passes if the URL's path matches the specified glob.
     /// # Errors
     /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
@@ -150,8 +156,8 @@ pub enum Condition {
         /// Defaults to [`true`].
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
-        /// The [`glue::RegexWrapper`] the part's value is checked against.
-        regex: glue::RegexWrapper
+        /// The [`glue::LazyRegex`] the part's value is checked against.
+        regex: glue::LazyRegex
     },
     /// Takes the specified part of the URL and passes if it matches the specified glob.
     /// # Errors
@@ -206,7 +212,7 @@ pub enum ConditionError {
     CommandError(#[from] glue::CommandError),
     /// Could not parse the included TLD list.
     #[error(transparent)]
-    GetTldError(#[from] crate::suffix::GetTldsError)
+    GetTldError(#[from] crate::suffix::GetSuffixesError)
 }
 
 impl Condition {
@@ -251,7 +257,7 @@ impl Condition {
             Self::QualifiedDomain(parts) => url.domain()==Some(parts),
             Self::UnqualifiedAnyTld(name) => {
                 match url.domain() {
-                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
+                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_suffixes()?.suffix(url_domain.as_bytes()) {
                         Some(suffix) => {
                             url_domain.as_bytes().strip_suffix(suffix.as_bytes())
                                 .is_some_and(|x| x.strip_suffix(b".")
@@ -267,7 +273,7 @@ impl Condition {
             },
             Self::QualifiedAnyTld(name) => {
                 match url.domain() {
-                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_tlds()?.suffix(url_domain.as_bytes()) {
+                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_suffixes()?.suffix(url_domain.as_bytes()) {
                         Some(suffix) => {
                             url_domain.as_bytes().strip_suffix(suffix.as_bytes()).is_some_and(|x| x.strip_suffix(b".")==Some(name.as_bytes()))
                         },
