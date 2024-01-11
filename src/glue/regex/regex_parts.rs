@@ -7,7 +7,7 @@ use regex_syntax::ParserBuilder;
 
 /// The enabled form of `RegexParts`.
 /// Contains the rules for constructing a [`Regex`].
-/// The patterm can be invalid. It only needs to be valid when the [`super::LazyRegex`] it turns into is created.
+/// The patterm can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
 /// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
@@ -141,8 +141,7 @@ impl RegexParts {
 
     /// Uses [`ParserBuilder`] to set all relevant flags and parse the contained pattern.
     /// Assumes that [`ParserBuilder::utf8`] is equivalent to [`RegexBuilder::unicode`].
-    /// Return type is simple because honestly this is all I need.
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> bool {
         ParserBuilder::new()
             .case_insensitive(self.case_insensitive)
             .crlf(self.crlf)
@@ -155,8 +154,7 @@ impl RegexParts {
             .utf8(self.unicode)
             .build()
             .parse(&self.pattern)
-            .map(|_| ())
-            .map_err(|e| e.to_string())
+            .is_ok()
     }
 }
 

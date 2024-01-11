@@ -22,13 +22,13 @@ glob = { version = "0.3.1", optional = true }
 publicsuffix = "2.2.3"
 form_urlencoded = "1.2.1"
 regex-syntax = "0.8.2"
-oncemutex = "0.1.1"
+oncemutex = { version = "0.1.1", optional = true }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["http", "commands", "cache-redirects", "stdin", "default-rules", "minify-included-strings", "regex", "glob"]
+default = ["http", "commands", "cache-redirects", "stdin", "default-rules", "minify-included-strings", "regex", "lazy-regex", "glob"]
 http = ["dep:reqwest"]
 commands = []
 cache-redirects = []
@@ -36,6 +36,7 @@ stdin = ["dep:atty"]
 default-rules = []
 minify-included-strings = ["dep:const-str"]
 regex = ["dep:regex"]
+lazy-regex = ["regex", "dep:oncemutex"]
 glob = ["dep:glob"]
 
 # https://stackoverflow.com/a/54842093/10720231

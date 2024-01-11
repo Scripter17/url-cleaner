@@ -112,11 +112,11 @@ pub enum Condition {
         /// Unqualified domains where the rule is valid.
         yes_domains: Vec<String>,
         /// Regexes that match domains where the rule is value.
-        yes_domain_regexes: Vec<glue::LazyRegex>,
+        yes_domain_regexes: Vec<glue::RegexWrapper>,
         /// Unqualified domains that marks a domain invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
         unless_domains: Vec<String>,
         /// Regexes that match domains where the rule is invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
-        unless_domain_regexes: Vec<glue::LazyRegex>
+        unless_domain_regexes: Vec<glue::RegexWrapper>
     },
 
     /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
@@ -125,8 +125,8 @@ pub enum Condition {
     QueryParamValueMatchesRegex {
         /// The name of the query parameter.
         name: String,
-        /// The [`glue::LazyRegex`] the query parameter's value is checked against.
-        regex: glue::LazyRegex
+        /// The [`glue::RegexWrapper`] the query parameter's value is checked against.
+        regex: glue::RegexWrapper
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified glob.
     /// # Errors
@@ -140,7 +140,7 @@ pub enum Condition {
     /// Passes if the URL's path matches the specified regular expression.
     /// # Errors
     /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
-    PathMatchesRegex(glue::LazyRegex),
+    PathMatchesRegex(glue::RegexWrapper),
     /// Passes if the URL's path matches the specified glob.
     /// # Errors
     /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
@@ -156,8 +156,8 @@ pub enum Condition {
         /// Defaults to [`true`].
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
-        /// The [`glue::LazyRegex`] the part's value is checked against.
-        regex: glue::LazyRegex
+        /// The [`glue::RegexWrapper`] the part's value is checked against.
+        regex: glue::RegexWrapper
     },
     /// Takes the specified part of the URL and passes if it matches the specified glob.
     /// # Errors
@@ -352,6 +352,7 @@ impl Condition {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::glue::RegexParts;
 
     const fn passes(x: bool) -> bool {x}
     const fn fails(x: bool) -> bool {!x}
@@ -414,9 +415,9 @@ mod test {
     fn domain_condition() {
         let dc=Condition::DomainCondition {
             yes_domains: vec!["example.com".to_string()],
-            yes_domain_regexes: vec![glue::RegexParts::new(r"example\d\.com").try_into().unwrap()],
+            yes_domain_regexes: vec![RegexParts::new(r"example\d\.com").try_into().unwrap()],
             unless_domains: vec!["wawawa.example.com".to_string()],
-            unless_domain_regexes: vec![glue::RegexParts::new(r"thing\d\.example.com").try_into().unwrap()]
+            unless_domain_regexes: vec![RegexParts::new(r"thing\d\.example.com").try_into().unwrap()]
         };
 
         assert!(dc.satisfied_by         (&Url::parse("https://example.com"       ).unwrap()).is_ok_and(passes));
