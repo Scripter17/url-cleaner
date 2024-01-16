@@ -58,9 +58,9 @@ impl Rule {
 }
 
 #[cfg(all(feature = "default-rules", feature = "minify-included-strings"))]
-const RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-config.json"), ' ', ""), '\t', ""), '\n', "");
+static RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-config.json"), ' ', ""), '\t', ""), '\n', "");
 #[cfg(all(feature = "default-rules", not(feature = "minify-included-strings")))]
-const RULES_STR: &str=include_str!("../default-config.json");
+static RULES_STR: &str=include_str!("../default-config.json");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
 
@@ -162,6 +162,7 @@ pub enum GetRulesError {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod test {
     use super::*;
 

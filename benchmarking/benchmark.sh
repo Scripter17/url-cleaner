@@ -7,6 +7,8 @@ URLS=("https://x.com?a=2" "https://example.com?fb_action_ids&mc_eid&ml_subscribe
 # cargo build -r --no-default-features --features "http commands cache-redirects stdin default-rules minify-included-strings regex glob"
 cargo build -r
 
+hyperfine -N -n "No URL - 0" -w 5 "../target/release/url-cleaner" --export-json "output-No URL-0"
+
 for url in "${URLS[@]}"; do
   echo $url -\> $(../target/release/url-cleaner $url)
   for num in $(seq 0 2); do

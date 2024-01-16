@@ -76,7 +76,7 @@ impl AsRef<Regex> for RegexWrapper {
 }
 
 impl FromStr for RegexWrapper {
-    type Err = RegexError;
+    type Err = <RegexParts as TryInto<RegexWrapper>>::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         RegexParts::new(s).try_into()
@@ -98,12 +98,12 @@ impl From<RegexWrapper> for RegexParts {
 
 impl fmt::Debug for RegexWrapper {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(<RegexWrapper as AsRef<Regex>>::as_ref(self), f)
+        fmt::Debug::fmt(<Self as AsRef<Regex>>::as_ref(self), f)
     }
 }
 
 impl fmt::Display for RegexWrapper {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(<RegexWrapper as AsRef<Regex>>::as_ref(self), f)
+        fmt::Display::fmt(<Self as AsRef<Regex>>::as_ref(self), f)
     }
 }

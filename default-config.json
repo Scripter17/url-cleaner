@@ -18,8 +18,13 @@
 		}
 	},
 	{
-		"condition": {"MaybeWWWDomain": "instagram.com"},
-		"mapper": {"RemoveQueryParams": ["igshid"]}
+		"condition": {
+			"Any": [
+				{"MaybeWWWDomain": "instagram.com"},
+				{"MaybeWWWDomain": "threads.net"}
+			]
+		},
+		"mapper": {"RemoveQueryParams": ["igshid", "igsh"]}
 	},
 	{
 		"condition": {
@@ -50,6 +55,7 @@
     "condition": {
 			"All": [
 				{"UnqualifiedDomain": "tumblr.com"},
+				{"UrlPartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
 				{"CommandExists": {"program": "gallery-dl"}},
 				{"CommandExists": {"program": "jq"}}
 			]
@@ -127,24 +133,37 @@
 		"condition": {
 			"All": [
 				{"UnqualifiedAnyTld": "amazon"},
-				{"PathMatchesRegex": "/dp/[^/]+/"}
+				{"UrlPartIs": {
+					"part": {"PathSegment": 2},
+					"value": "dp"
+				}}
 			]
 		},
 		"mapper": {
 			"All": [
 				"RemoveQuery",
-				{
-					"RegexSubUrlPart": {
-						"part": "Path",
-						"regex": ".*(/dp/[^/]+).*",
-						"replace": "$1"
-					}
-				}
+				{"RemovePathSegments": [1, 4]}
 			]
 		}
 	},
 	{	
 		"condition": {"UnqualifiedAnyTld": "amazon"},
 		"mapper": {"RemoveQueryParams": ["ref"]}
+	},
+	{
+		"condition": {
+			"All": [
+				{"MaybeWWWDomain": "bsky.app"},
+				{"UrlPartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
+			]
+		},
+		"mapper": {
+			"ModifyUrlPart": {
+				"part": "Path",
+				"how": {
+					"Append": ".social"
+				}
+			}
+		}
 	}
 ]

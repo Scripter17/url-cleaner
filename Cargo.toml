@@ -19,7 +19,7 @@ thiserror = "1.0.50"
 serde-wasm-bindgen = "0.6.3"
 regex = { version = "1.10.2", optional = true }
 glob = { version = "0.3.1", optional = true }
-publicsuffix = "2.2.3"
+psl = "2.1.14"
 form_urlencoded = "1.2.1"
 regex-syntax = "0.8.2"
 oncemutex = { version = "0.1.1", optional = true }

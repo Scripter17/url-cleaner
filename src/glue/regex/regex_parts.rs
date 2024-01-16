@@ -124,7 +124,8 @@ impl RegexParts {
         ret
     }
 
-    /// Builds the 
+    /// Creates the regex.
+    /// Assumes that [`ParserBuilder::utf8`] is equivalent to [`RegexBuilder::unicode`].
     pub fn build(&self) -> Result<Regex, RegexError> {
         RegexBuilder::new(&self.pattern)
             .case_insensitive(self.case_insensitive)
@@ -139,7 +140,7 @@ impl RegexParts {
             .build()
     }
 
-    /// Uses [`ParserBuilder`] to set all relevant flags and parse the contained pattern.
+    /// Uses [`ParserBuilder`] to set all relevant flags and checks if the contained regex can be parsed.
     /// Assumes that [`ParserBuilder::utf8`] is equivalent to [`RegexBuilder::unicode`].
     pub fn validate(&self) -> bool {
         ParserBuilder::new()

@@ -120,6 +120,24 @@ pub enum Mapper {
     /// If the resulting string cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     /// See [`Url::set_host`] for details.
     SetHost(String),
+    /// Modifies the specified part of the URL.
+    /// # Errors
+    /// If `how` is `types::StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringModificationErrorr`].
+    /// If the modification fails, returns the error [`MapperError::ReplaceError`].
+    ModifyUrlPart {
+        /// The name of the part to modify.
+        part: types::UrlPart,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
+        /// How exactly to modify the part.
+        how: types::StringModification
+    },
+    /// Removes the path segments with an index in the specified list.
+    /// For most URLs the indices seems one-indexed as the path starts with a `"/"`.
+    /// See [`Url::path`] for details.
+    RemovePathSegments(Vec<usize>),
     /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
     /// Useful for link shorteners like `bit.ly` and `t.co`.
     /// # Errors
@@ -132,10 +150,10 @@ pub enum Mapper {
     ExpandShortLink,
     /// Sets the specified URL part to `with`.
     /// # Errors
-    /// If `with` is `None` and `part` is one [`types::UrlPartName::Whole`], [`types::UrlPartName::Scheme`], [`types::UrlPartName::Username`], or [`types::UrlPartName::Path`], returns the error [`types::ReplaceError::PartCannotBeNone`].
+    /// If `with` is `None` and `part` is one [`types::UrlPart::Whole`], [`types::UrlPart::Scheme`], [`types::UrlPart::Username`], or [`types::UrlPart::Path`], returns the error [`types::ReplaceError::PartCannotBeNone`].
     SetUrlPart {
         /// The name of the part to replace.
-        part: types::UrlPartName,
+        part: types::UrlPart,
         /// The value to replace the part with.
         with: Option<String>
     },
@@ -147,7 +165,7 @@ pub enum Mapper {
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`MapperError::UrlPartNotFound`].
     RegexSubUrlPart {
         /// The name of the part to modify.
-        part: types::UrlPartName,
+        part: types::UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
@@ -164,7 +182,7 @@ pub enum Mapper {
     /// If the requested part replacement fails (returns an error [`crate::types::ReplaceError`]), that error is returned.
     GetPartFromQueryParam {
         /// The name of the part to replace.
-        part: types::UrlPartName,
+        part: types::UrlPart,
         /// The query paramater to get the part from.
         param_name: String
     },
@@ -211,7 +229,10 @@ pub enum MapperError {
     Utf8Error(#[from] Utf8Error),
     /// The command failed.
     #[error(transparent)]
-    CommandError(#[from] glue::CommandError)
+    CommandError(#[from] glue::CommandError),
+    /// A string operation failed.
+    #[error(transparent)]
+    StringError(#[from] types::StringError)
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -312,6 +333,15 @@ impl Mapper {
             Self::SetHost(new_host) => {
                 url.set_host(Some(new_host))?;
             },
+            Self::ModifyUrlPart{part, none_to_empty_string, how} => {
+                let mut part_value=part.get_from(url)
+                    .ok_or(MapperError::UrlPartNotFound).or(if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(MapperError::UrlPartNotFound)})?.to_string();
+                how.apply(&mut part_value)?;
+                part.replace_with(url, Some(&part_value))?;
+            },
+            Self::RemovePathSegments(indices) => {
+                url.set_path(&url.path().split('/').enumerate().filter(|(i, _)| !indices.contains(&i)).map(|(_, x)| x).collect::<Vec<_>>().join("/"))
+            },
             #[cfg(feature = "http")]
             Self::ExpandShortLink => {
                 #[cfg(feature = "cache-redirects")]
@@ -381,6 +411,7 @@ impl Mapper {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::glue::RegexParts;
@@ -453,5 +484,12 @@ mod tests {
         let mut url=exurl!();
         assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url).is_ok());
         assert_eq!(url.domain(), Some("6.com"));
+    }
+
+    #[test]
+    fn remove_path_segments() {
+        let mut url=Url::parse("https://example.com/1/2/3/4/5/6").unwrap();
+        assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
+        assert_eq!(url.path(), "/2/4");
     }
 }

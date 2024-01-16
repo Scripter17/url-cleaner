@@ -5,10 +5,10 @@ use std::borrow::Cow;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use url::Url;
-use publicsuffix::Psl;
+use psl;
 
 use crate::glue;
-use crate::types::{UrlPartName, DomainConditionRule};
+use crate::types::{UrlPart, DomainConditionRule, StringLocation};
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
 /// Note that conditions are checked by the output of the previous mapper.
@@ -91,13 +91,29 @@ pub enum Condition {
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartIs {
         /// The name of the part to check.
-        part: UrlPartName,
+        part: UrlPart,
         /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
         /// Defaults to `true` for the sake of simplicity.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
         value: String
+    },
+    /// Passes if the specified part containes the specified value in a range specified by `where`.
+    /// # Errors
+    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    UrlPartContains {
+        /// The name of the part to check.
+        part: UrlPart,
+        /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
+        /// Defaults to `true` for the sake of simplicity.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
+        /// The value to look for.
+        value: String,
+        /// Where to look for the value.
+        #[serde(default)]
+        r#where: StringLocation
     },
 
     // Disablable conditions.
@@ -151,7 +167,7 @@ pub enum Condition {
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartMatchesRegex {
         /// The name of the part to check.
-        part: UrlPartName,
+        part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to [`true`].
         #[serde(default = "get_true")]
@@ -165,7 +181,7 @@ pub enum Condition {
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartMatchesGlob {
         /// The name of the part to check.
-        part: UrlPartName,
+        part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to [`true`].
         #[serde(default = "get_true")]
@@ -204,15 +220,15 @@ pub enum ConditionError {
     #[error("The \"Error\" condition always returns this error.")]
     ExplicitError,
     /// The provided URL does not contain the requested part.
-    /// See [`crate::types::UrlPartName`] for details.
+    /// See [`crate::types::UrlPart`] for details.
     #[error("The provided URL does not contain the requested part.")]
     UrlPartNotFound,
     /// Returned when the specified command failed to run.
     #[error(transparent)]
     CommandError(#[from] glue::CommandError),
-    /// Could not parse the included TLD list.
+    /// Returned when a string condition fails.
     #[error(transparent)]
-    GetTldError(#[from] crate::suffix::GetSuffixesError)
+    StringError(#[from] crate::types::StringError)
 }
 
 impl Condition {
@@ -252,41 +268,34 @@ impl Condition {
                 false
             },
             Self::Not(condition) => !condition.satisfied_by_with_dcr(url, dcr)?,
-            Self::UnqualifiedDomain(parts) => url.domain().is_some_and(|domain| domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')})),
-            Self::MaybeWWWDomain(parts) => url.domain()==Some(parts) || url.domain().and_then(|x| x.strip_prefix("www."))==Some(parts),
+            Self::UnqualifiedDomain(parts) => url.domain().is_some_and(|domain| domain.strip_suffix(parts).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
+            Self::MaybeWWWDomain(parts) => url.domain().is_some_and(|x| x.strip_prefix("www.").unwrap_or(x)==parts),
             Self::QualifiedDomain(parts) => url.domain()==Some(parts),
-            Self::UnqualifiedAnyTld(name) => {
+            Self::UnqualifiedAnyTld(parts) => {
                 match url.domain() {
-                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_suffixes()?.suffix(url_domain.as_bytes()) {
-                        Some(suffix) => {
-                            url_domain.as_bytes().strip_suffix(suffix.as_bytes())
-                                .is_some_and(|x| x.strip_suffix(b".")
-                                    .is_some_and(|y| y.strip_suffix(name.as_bytes())
-                                        .is_some_and(|z| z.is_empty() || z.ends_with(b"."))
-                                    )
+                    Some(domain) => domain.contains(parts) && match psl::suffix_str(domain) {
+                        Some(suffix) => domain.strip_suffix(suffix)
+                            .is_some_and(|x| x.strip_suffix('.')
+                                .is_some_and(|y| y.strip_suffix(parts)
+                                    .is_some_and(|z| z.is_empty() || z.ends_with('.'))
                                 )
-                        },
+                            ),
                         None => false
                     },
                     None => false
                 }
             },
-            Self::QualifiedAnyTld(name) => {
-                match url.domain() {
-                    Some(url_domain) => url_domain.contains(name) && match crate::suffix::get_suffixes()?.suffix(url_domain.as_bytes()) {
-                        Some(suffix) => {
-                            url_domain.as_bytes().strip_suffix(suffix.as_bytes()).is_some_and(|x| x.strip_suffix(b".")==Some(name.as_bytes()))
-                        },
-                        None => false
-                    },
-                    None => false
-                }
-            },
-            Self::PathIs(path) => path==url.path(),
+            Self::QualifiedAnyTld(parts) => url.domain().is_some_and(|domain| domain.strip_prefix(parts).is_some_and(|dot_suffix| dot_suffix.strip_prefix('.').is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix)))),
+            Self::PathIs(path) => url.path()==path,
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
             Self::UrlPartIs{part, none_to_empty_string, value} => value==part.get_from(url)
                 .ok_or(ConditionError::UrlPartNotFound).or(if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref(),
+            Self::UrlPartContains{part, none_to_empty_string, value, r#where} => {
+                let part_value=part.get_from(url)
+                    .ok_or(ConditionError::UrlPartNotFound).or(if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?;
+                r#where.satisfied_by(&part_value, value)?
+            }
 
             // Disablable conditions
 
@@ -350,6 +359,7 @@ impl Condition {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod test {
     use super::*;
     use crate::glue::RegexParts;
@@ -365,6 +375,13 @@ mod test {
     fn unqualified_domain() {
         assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&exurl!()).is_ok_and(passes));
         assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&exurl!()).is_ok_and(passes));
+    }
+
+    #[test]
+    fn maybe_www_domain() {
+        assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(passes));
+        assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(passes));
+        assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://not.example.com").unwrap()).is_ok_and(fails ));
     }
 
     #[test]

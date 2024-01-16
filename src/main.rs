@@ -14,7 +14,6 @@ use url::Url;
 
 mod rules;
 mod glue;
-mod suffix;
 mod types;
 
 #[derive(Parser)]
@@ -32,7 +31,7 @@ fn main() -> Result<(), types::CleaningError> {
     for mut url in args.urls.into_iter() {
         match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
             Ok(_) => {println!("{url}");},
-            Err(e) => {println!(); eprintln!("{e:?}");}
+            Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
         }
     }
 
