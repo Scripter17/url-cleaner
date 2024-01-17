@@ -33,9 +33,7 @@
 				{"PathIs": "/users/outgoing"}
 			]
 		},
-		"mapper": {
-			"GetUrlFromQueryParam": "url"
-		}
+		"mapper": {"GetUrlFromQueryParam": "url"}
 	},
 	{
 		"condition": {
@@ -92,15 +90,11 @@
 	},
 	{
 		"condition": {"UnqualifiedAnyTld": "google"},
-		"mapper": {
-			"AllowQueryParams": ["hl", "q", "tbm"]
-		}
+		"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
 	},
 	{
 		"condition": {"MaybeWWWDomain": "youtube.com"},
-		"mapper": {
-			"RemoveQueryParams": ["si"]
-		}
+		"mapper": {"RemoveQueryParams": ["si"]}
 	},
 	{
 		"condition": {
@@ -112,13 +106,15 @@
 			]
 		},
 		"mapper": {
-			"SetHost": "twitter.com"
+			"All": [
+				{"SetHost": "twitter.com"},
+				"RemoveQuery"
+			]
 		}
 	},
 	{
 		"condition": {
 			"Any": [
-				{"MaybeWWWDomain"   : "twitter.com"  },
 				{"UnqualifiedDomain": "reddit.com"   },
 				{"MaybeWWWDomain"   : "theonion.com" },
 				{"MaybeWWWDomain"   : "teespring.com"},
@@ -132,11 +128,11 @@
 	{
 		"condition": {
 			"All": [
-				{"UnqualifiedAnyTld": "amazon"},
 				{"UrlPartIs": {
 					"part": {"PathSegment": 2},
 					"value": "dp"
-				}}
+				}},
+				{"UnqualifiedAnyTld": "amazon"}
 			]
 		},
 		"mapper": {
@@ -146,10 +142,6 @@
 			]
 		}
 	},
-	{	
-		"condition": {"UnqualifiedAnyTld": "amazon"},
-		"mapper": {"RemoveQueryParams": ["ref"]}
-	},
 	{
 		"condition": {
 			"All": [
@@ -158,12 +150,25 @@
 			]
 		},
 		"mapper": {
-			"ModifyUrlPart": {
+			"ModifyPart": {
 				"part": "Path",
-				"how": {
-					"Append": ".social"
-				}
+				"how": {"Append": ".social"}
 			}
+		}
+	},
+	{
+		"condition": {
+			"All": [
+				{"MaybeWWWDomain": "pixiv.net"},
+				{"PathIs": "/member.php"}
+			]
+		},
+		"mapper": {
+			"All": [
+				{"SetPart": {"part": "Path", "to": "/users/"}},
+				{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
+				"RemoveQuery"
+			]
 		}
 	}
 ]

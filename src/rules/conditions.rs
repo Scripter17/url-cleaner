@@ -87,8 +87,7 @@ pub enum Condition {
         value: String
     },
     /// Passes if the value of the specified part of the URL is the specified value.
-    /// # Errors
-    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// Does not error when the specified part is `None`.
     UrlPartIs {
         /// The name of the part to check.
         part: UrlPart,
@@ -97,11 +96,11 @@ pub enum Condition {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
-        value: String
+        value: Option<String>
     },
     /// Passes if the specified part containes the specified value in a range specified by `where`.
     /// # Errors
-    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartContains {
         /// The name of the part to check.
         part: UrlPart,
@@ -289,10 +288,13 @@ impl Condition {
             Self::PathIs(path) => url.path()==path,
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
-            Self::UrlPartIs{part, none_to_empty_string, value} => value==part.get_from(url)
-                .ok_or(ConditionError::UrlPartNotFound).or(if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref(),
+            Self::UrlPartIs{part, none_to_empty_string, value} => value.as_ref().map(|x| Cow::Borrowed(x.as_str()))==if *none_to_empty_string {
+                Some(part.get(url).unwrap_or(Cow::Borrowed("")))
+            } else {
+                part.get(url)
+            },
             Self::UrlPartContains{part, none_to_empty_string, value, r#where} => {
-                let part_value=part.get_from(url)
+                let part_value=part.get(url)
                     .ok_or(ConditionError::UrlPartNotFound).or(if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?;
                 r#where.satisfied_by(&part_value, value)?
             }
@@ -333,7 +335,7 @@ impl Condition {
 
             #[cfg(feature = "regex")] Self::QueryParamValueMatchesRegex{name, regex} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && regex.is_match(value2)),
             #[cfg(feature = "regex")] Self::PathMatchesRegex(regex) => regex.is_match(url.path()),
-            #[cfg(feature = "regex")] Self::UrlPartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get_from(url)
+            #[cfg(feature = "regex")] Self::UrlPartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url)
                 .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             #[cfg(not(feature = "regex"))] Self::QueryParamValueMatchesRegex{..} => Err(ConditionError::ConditionDisabled)?,
@@ -342,7 +344,7 @@ impl Condition {
 
             #[cfg(feature = "glob")] Self::QueryParamValueMatchesGlob {name, glob} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob.matches(value2)),
             #[cfg(feature = "glob")] Self::PathMatchesGlob (glob) => glob  .matches(url.path()),
-            #[cfg(feature = "glob")] Self::UrlPartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get_from(url)
+            #[cfg(feature = "glob")] Self::UrlPartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get(url)
                 .ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             #[cfg(not(feature = "glob"))] Self::QueryParamValueMatchesGlob{..} => Err(ConditionError::ConditionDisabled)?,

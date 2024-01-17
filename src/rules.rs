@@ -24,7 +24,11 @@ pub struct Rule {
     /// The condition under which the provided URL is modified.
     pub condition: conditions::Condition,
     /// The mapper used to modify the provided URL.
-    pub mapper: mappers::Mapper
+    pub mapper: mappers::Mapper,
+    /// Apply the contained rule if the rule this is a part of does not error.
+    /// Useful for... optimizing rule lists? I guess?
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub and: Option<Box<Rule>>
 }
 
 /// Denotes that either the condition failed (returned `Ok(false)`), the condition errored, or the mapper errored.
@@ -50,7 +54,11 @@ impl Rule {
     /// Apply the rule to the url in-place.
     pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
         if self.condition.satisfied_by_with_dcr(url, dcr)? {
-            Ok(self.mapper.apply(url)?)
+            self.mapper.apply(url)?;
+            if let Some(and) = &self.and {
+                and.apply_with_dcr(url, dcr)?;
+            }
+            Ok(())
         } else {
             Err(RuleError::FailedCondition)
         }
@@ -168,6 +176,6 @@ mod test {
 
     #[test]
     fn failed_condition() {
-        assert!(Rule {condition: conditions::Condition::Never, mapper: mappers::Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+        assert!(Rule {condition: conditions::Condition::Never, mapper: mappers::Mapper::None, and: None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
     }
 }
