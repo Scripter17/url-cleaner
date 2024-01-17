@@ -66,14 +66,10 @@ pub enum Condition {
     /// Passes if the URL's domain is the specified domain.
     QualifiedDomain(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
-    /// # Errors
-    /// If URL Cleaner is unable to parse the included domain suffix list, this returns the error [`ConditionError::GetTldError`].
-    /// See [the publicsuffix crate](https://docs.rs/publicsuffix/latest/publicsuffix/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
+    /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     UnqualifiedAnyTld(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
-    /// # Errors
-    /// If URL Cleaner is unable to parse the included domain suffix list, this returns the error [`ConditionError::GetTldError`].
-    /// See [the publicsuffix crate](https://docs.rs/publicsuffix/latest/publicsuffix/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
+    /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     QualifiedAnyTld(String),
     /// Passes if the URL's path is the specified string.
     PathIs(String),

@@ -4,8 +4,6 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
 
-// Used only for [`RegexWrapper::replace`].
-#[cfg(feature = "regex")]
 use std::borrow::Cow;
 
 // Used internally by the `url` crate to handle query manipulation.
@@ -127,7 +125,7 @@ pub enum Mapper {
     SetHost(String),
     /// Modifies the specified part of the URL.
     /// # Errors
-    /// If `how` is `types::StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringModificationErrorr`].
+    /// If `how` is `types::StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
     /// If the modification fails, returns the error [`MapperError::ReplaceError`].
     ModifyPart {
         /// The name of the part to modify.

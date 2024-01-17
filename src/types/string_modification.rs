@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use serde::{Serialize, Deserialize};
 
-/// Where and how to modify a string. Used by [`crate::rules::mappers::Mapper::ModifyUrlPart`].
+/// Where and how to modify a string. Used by [`crate::rules::mappers::Mapper::ModifyPart`].
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringModification {
     /// Replaces the entire target string with the specified string.
@@ -35,11 +35,11 @@ pub enum StringModification {
     Uppercase,
     /// [`str::strip_prefix`].
     /// # Errors
-    /// If the provided string doesn't begin with the specified prefix, returns the error [`StringError::Prefix`].
+    /// If the provided string doesn't begin with the specified prefix, returns the error [`StringError::PrefixNotFound`].
     StripPrefix(String),
     /// Mimics [`str::strip_suffix`] using [`str::ends_with`] and [`String::truncate`]. Should be faster due to not needing an additional heap allocation.
     /// # Errors
-    /// If the provided string doesn't end with the specified suffix, returns the error [`StringError::Suffix`].
+    /// If the provided string doesn't end with the specified suffix, returns the error [`StringError::SuffixNotFound`].
     StripSuffix(String),
     /// [`Self::StripPrefix`] but does nothing if the provided string doesn't begin with the specified prefix.
     StripMaybePrefix(String),

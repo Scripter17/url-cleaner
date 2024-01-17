@@ -24,7 +24,7 @@ pub enum UrlPart {
     NotSubdomain,
     /// The domain. Corresponds to [`Url::domain`].
     Domain,
-    /// The port as a string. Corresponds to [`Url::port_or_default`].
+    /// The port as a string. Corresponds to [`Url::port_or_known_default`].
     /// Ports are strings for the sake of a simpler API.
     Port,
     /// A specficic segment of the URL's path.
@@ -75,7 +75,7 @@ impl UrlPart {
 
     /// Replaces the specified part of the provided URL with the provided value
     /// # Errors
-    /// If `with` is `None`, the following part setters will return the error [`ReplaceError::CannotBeNone`]:
+    /// If `with` is `None`, the following part setters will return the error [`ReplaceError::PartCannotBeNone`]:
     /// [`UrlPart::Whole`], [`UrlPart::Scheme`], [`UrlPart::Username`], 
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), ReplaceError> {
         match (self, to) {
