@@ -41,10 +41,12 @@ impl StringLocation {
             Self::Anywhere             => haystack.contains   (needle),
             Self::Start                => haystack.starts_with(needle),
             Self::End                  => haystack.ends_with  (needle),
-            Self::StartsAt(start     ) => haystack.get(*start..    ).ok_or(super::StringError::InvalidSlice)?.starts_with(needle),
-            Self::EndsAt  (       end) => haystack.get(      ..*end).ok_or(super::StringError::InvalidSlice)?.ends_with  (needle),
+
             Self::RangeIs {start, end} => haystack.get(*start..*end).ok_or(super::StringError::InvalidSlice)?==needle,
             Self::RangeHas{start, end} => haystack.get(*start..*end).ok_or(super::StringError::InvalidSlice)?.contains(needle),
+            Self::StartsAt(start     ) => haystack.get(*start..    ).ok_or(super::StringError::InvalidSlice)?.starts_with(needle),
+            Self::EndsAt  (       end) => haystack.get(      ..*end).ok_or(super::StringError::InvalidSlice)?.ends_with(needle),
+
             Self::After   (start     ) => haystack.get(*start..    ).ok_or(super::StringError::InvalidSlice)?.contains(needle),
             Self::Before  (       end) => haystack.get(      ..*end).ok_or(super::StringError::InvalidSlice)?.contains(needle)
         })

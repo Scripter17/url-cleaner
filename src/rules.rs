@@ -80,7 +80,7 @@ pub fn get_default_rules() -> Result<&'static Rules, GetRulesError> {
         if let Some(rules) = RULES.get() {
             Ok(rules)
         } else {
-            let rules=serde_json::from_str(RULES_STR).map_err(GetRulesError::CantParseDefaultRules)?; // I don't know why that syntax is allowed. Literally it makes sense. Conceptually it does not.
+            let rules=serde_json::from_str(RULES_STR).map_err(GetRulesError::CantParseDefaultRules)?;
             Ok(RULES.get_or_init(|| rules))
         }
     }

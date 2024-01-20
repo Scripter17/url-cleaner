@@ -28,11 +28,10 @@ pub enum UrlPart {
     /// Ports are strings for the sake of a simpler API.
     Port,
     /// A specficic segment of the URL's path.
-    /// For most URLs the indices seems one-indexed as the path starts with a `"/"`.
-    /// See [`Url::path`] for details.
-    /// If the last segment is empty, it is ignored.
     PathSegment(usize),
     /// Useful only for appending a path segment to a URL as the getter is always `None`.
+    /// Using this with a URL whose path ends in an empty segment (`https://example.com/a/b/`), the setter will overwrite that segment instead of leaving a random empty segment in the middle of the path.
+    /// Why is path manipulation always a pain?
     NextPathSegment,
     /// The path. Corresponds to [`Url::path`].
     Path,
@@ -48,10 +47,9 @@ impl UrlPart {
     /// Extracts the specified part of the provided URL
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         Some(match self {
+            // Ordered hopefully most used to least used.
+            Self::Query            => Cow::Borrowed(url.query()?),
             Self::Whole            => Cow::Borrowed(url.as_str()),
-            Self::Scheme           => Cow::Borrowed(url.scheme()),
-            Self::Username         => Cow::Borrowed(url.username()),
-            Self::Password         => Cow::Borrowed(url.password()?),
             Self::Host             => Cow::Borrowed(url.host_str()?),
             Self::Subdomain        => Cow::Borrowed({
                 let domain=url.domain()?;
@@ -64,11 +62,16 @@ impl UrlPart {
             }),
             Self::Domain           => Cow::Borrowed(url.domain()?),
             Self::Port             => Cow::Owned   (url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
-            Self::PathSegment(n)   => Cow::Borrowed(url.path().split_terminator('/').nth(*n)?),
-            Self::NextPathSegment  => None?,
+            Self::PathSegment(n)   => Cow::Borrowed(url.path_segments()?.nth(*n)?), // If the path doesn't start with `'/'` then it's
             Self::Path             => Cow::Borrowed(url.path()),
             Self::QueryParam(name) => url.query_pairs().find_map(|(name2, value)| (name==&name2).then_some(value))?,
-            Self::Query            => Cow::Borrowed(url.query()?),
+
+            // The things that are likely very rarely used.
+
+            Self::NextPathSegment  => None?,
+            Self::Scheme           => Cow::Borrowed(url.scheme()),
+            Self::Username         => Cow::Borrowed(url.username()),
+            Self::Password         => Cow::Borrowed(url.password()?),
             Self::Fragment         => Cow::Borrowed(url.fragment()?)
         })
     }
@@ -79,11 +82,10 @@ impl UrlPart {
     /// [`UrlPart::Whole`], [`UrlPart::Scheme`], [`UrlPart::Username`], 
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), ReplaceError> {
         match (self, to) {
-            (Self::Whole    , Some(to)) => *url=Url::parse (to)?,
-            (Self::Scheme   , Some(to)) => url.set_scheme  (to).map_err(|_| ReplaceError::InvalidScheme)?,
-            (Self::Username , Some(to)) => url.set_username(to).map_err(|_| ReplaceError::CannotSetUsername)?,
-            (Self::Password , _       ) => url.set_password(to).map_err(|_| ReplaceError::CannotSetPassword)?,
-            (Self::Host     , _       ) => url.set_host    (to)?,
+            // Ordered hopefully most used to least used.
+            (Self::Query    , _       ) => url.set_query  (to),
+            (Self::Whole    , Some(to)) => *url=Url::parse(to)?,
+            (Self::Host     , _       ) => url.set_host   (to)?,
             (Self::Subdomain, Some(to)) => {
                 let mut new_domain=to.to_string();
                 new_domain.push('.');
@@ -100,14 +102,12 @@ impl UrlPart {
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| ReplaceError::InvalidPort)).transpose()?).map_err(|_| ReplaceError::CannotSetPort)?,
             (Self::PathSegment(n), _) => match to {
                 // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
-                Some(to) => url.set_path(&url.path().split('/').enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
-                None     => url.set_path(&url.path().split('/').enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join("/")),
+                Some(to) => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
+                None     => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join("/")),
             },
             (Self::NextPathSegment, _)  => {
-                match (to, url.path().ends_with('/')) {
-                    (Some(to), true ) => url.set_path(&{let mut new_path=url.path().to_string();                     new_path.push_str(to); new_path}),
-                    (Some(to), false) => url.set_path(&{let mut new_path=url.path().to_string(); new_path.push('/'); new_path.push_str(to); new_path}),
-                    _ => {}
+                if let Some(to) = to {
+                    url.path_segments_mut().map_err(|_| ReplaceError::CannotBeABase)?.pop_if_empty().push(to);
                 }
             },
             (Self::Path, Some(to)) => url.set_path(to),
@@ -115,14 +115,11 @@ impl UrlPart {
                 match to {
                     Some(to) => {
                         if url.query().is_some() {
-                            if url.query_pairs().any(|(name2, _)| name==&name2) {
-                                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().map(|(name2, value)| if name==&name2 {(name2, Cow::Borrowed(to))} else {(name2, value)})).finish();
-                                // At least one + At least zero = Not zero
-                                url.set_query(Some(&new_query));
+                            url.set_query(Some(&if url.query_pairs().any(|(name2, _)| name==&name2) {
+                                form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().map(|(name2, value)| if name==&name2 {(name2, Cow::Borrowed(to))} else {(name2, value)})).finish()
                             } else {
-                                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish();
-                                url.set_query(Some(&new_query));
-                            }
+                                form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish()
+                            }))
                         }
                     },
                     None => {
@@ -131,7 +128,12 @@ impl UrlPart {
                     }
                 }
             }
-            (Self::Query   , _) => url.set_query   (to),
+
+            // The things that are likely very rarely used.
+
+            (Self::Scheme   , Some(to)) => url.set_scheme  (to).map_err(|_| ReplaceError::InvalidScheme)?,
+            (Self::Username , Some(to)) => url.set_username(to).map_err(|_| ReplaceError::CannotSetUsername)?,
+            (Self::Password , _       ) => url.set_password(to).map_err(|_| ReplaceError::CannotSetPassword)?,
             (Self::Fragment, _) => url.set_fragment(to),
             (_, None) => Err(ReplaceError::PartCannotBeNone)?
         }
@@ -173,7 +175,10 @@ pub enum ReplaceError {
     CannotSetPassword,
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
     #[error("The URL's host is not a domain.")]
-    HostIsNotADomain
+    HostIsNotADomain,
+    /// Returned by `UrlPart::PathSegment.set` when the URL is `cannot-be-a-base` because [`Url::path_segments`] returns `None` in that case.
+    #[error("The URL cannot be a base and for whatever reason that means `Url::path_segments` returned `None`")]
+    CannotBeABase
 }
 
 /// The enum of all possible errors that can occur when applying a [`super::StringModification`] to a [`UrlPart`] using [`UrlPart::modify`].
@@ -272,11 +277,11 @@ mod tests {
 
     #[test]
     fn url_part_path_segment_get() {
-        assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com"     ).unwrap()), None);
-        assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("a")));
-        assert_eq!(UrlPart::PathSegment(2).get(&Url::parse("https://example.com/a"   ).unwrap()), None);
-        assert_eq!(UrlPart::PathSegment(2).get(&Url::parse("https://example.com/a/"  ).unwrap()), None);
-        assert_eq!(UrlPart::PathSegment(2).get(&Url::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("b")));
+        assert_eq!(UrlPart::PathSegment(0).get(&Url::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("")));
+        assert_eq!(UrlPart::PathSegment(0).get(&Url::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("a")));
+        assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a"   ).unwrap()), None);
+        assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a/"  ).unwrap()), Some(Cow::Borrowed("")));
+        assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("b")));
     }
 
     #[test]
@@ -345,19 +350,27 @@ mod tests {
     #[test]
     fn url_part_path_segment_set() {
         let mut url=Url::parse("https://example.com/a/b/c/d").unwrap();
-        assert!(UrlPart::PathSegment(2).set(&mut url, Some("e")).is_ok());
+        assert!(UrlPart::PathSegment(1).set(&mut url, Some("e")).is_ok());
         assert_eq!(url.path(), "/a/e/c/d");
-        assert!(UrlPart::PathSegment(2).set(&mut url, None).is_ok());
+        assert!(UrlPart::PathSegment(1).set(&mut url, None).is_ok());
         assert_eq!(url.path(), "/a/c/d");
     }
 
     #[test]
-    fn url_part_next_path_segment() {
+    fn url_part_next_path_segment_set() {
         let mut url=Url::parse("https://example.com").unwrap();
         assert!(UrlPart::NextPathSegment.set(&mut url, Some("a")).is_ok());
         assert_eq!(url.path(), "/a");
+        assert!(UrlPart::NextPathSegment.set(&mut url, Some("b")).is_ok());
+        assert_eq!(url.path(), "/a/b");
+        assert!(UrlPart::NextPathSegment.set(&mut url, Some("")).is_ok());
+        assert_eq!(url.path(), "/a/b/");
+        assert!(UrlPart::NextPathSegment.set(&mut url, Some("")).is_ok());
+        assert_eq!(url.path(), "/a/b/");
+        assert!(UrlPart::NextPathSegment.set(&mut url, Some("c")).is_ok());
+        assert_eq!(url.path(), "/a/b/c");
         assert!(UrlPart::NextPathSegment.set(&mut url, None).is_ok());
-        assert_eq!(url.path(), "/a");
+        assert_eq!(url.path(), "/a/b/c");
     }
 
     #[test]

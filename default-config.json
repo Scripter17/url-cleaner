@@ -129,7 +129,7 @@
 		"condition": {
 			"All": [
 				{"UrlPartIs": {
-					"part": {"PathSegment": 2},
+					"part": {"PathSegment": 1},
 					"value": "dp"
 				}},
 				{"UnqualifiedAnyTld": "amazon"}
@@ -138,7 +138,7 @@
 		"mapper": {
 			"All": [
 				"RemoveQuery",
-				{"RemovePathSegments": [1, 4]}
+				{"RemovePathSegments": [0, 3]}
 			]
 		}
 	},

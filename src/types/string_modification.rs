@@ -67,10 +67,10 @@ impl StringModification {
             Self::ReplaceAt{start, end, replace} => if to.get(*start..*end).is_some() {to.replace_range(start..end, replace)} else {Err(StringError::InvalidSlice)?}, // Why does `String::try_replace_range` not exist???
             Self::Lowercase                      => *to=to.to_lowercase(),
             Self::Uppercase                      => *to=to.to_uppercase(),
-            Self::StripPrefix(prefix)            => *to=to.strip_prefix(prefix).ok_or(StringError::PrefixNotFound)?.to_string(),
-            Self::StripSuffix(suffix)            => if to.ends_with(suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringError::SuffixNotFound)?},
-            Self::StripMaybePrefix(prefix)       => *to=to.strip_prefix(prefix).unwrap_or(to).to_string(),
-            Self::StripMaybeSuffix(suffix)       => if to.ends_with(suffix) {to.truncate(to.len()-suffix.len())},
+            Self::StripPrefix(prefix)            => if to.starts_with(prefix) {std::mem::drop(to.drain(..prefix.len()))} else {Err(StringError::PrefixNotFound)?},
+            Self::StripSuffix(suffix)            => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringError::SuffixNotFound)?},
+            Self::StripMaybePrefix(prefix)       => if to.starts_with(prefix) {std::mem::drop(to.drain(..prefix.len()))},
+            Self::StripMaybeSuffix(suffix)       => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())},
             Self::ReplaceN{find, replace, count} => *to=to.replacen(find, replace, *count)
         };
         Ok(())

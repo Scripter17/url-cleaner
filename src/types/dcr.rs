@@ -25,7 +25,7 @@ pub enum DomainConditionRule {
 
 fn deserialize_url<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Url, D::Error> {
     let x: &'de str=Deserialize::deserialize(deserializer)?;
-    Url::parse(x).map_err(|_| D::Error::custom(format!("Invalid URL pattern: {x:?}.")))
+    Url::parse(x).map_err(|e| D::Error::custom(format!("{e:?}: {x:?}")))
 }
 fn serialize_url<S: Serializer>(value: &Url, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(value.as_str())

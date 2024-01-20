@@ -251,7 +251,10 @@ pub enum MapperError {
     StringError(#[from] types::StringError),
     /// The part modification failed.
     #[error(transparent)]
-    PartModificationError(#[from] types::PartModificationError)
+    PartModificationError(#[from] types::PartModificationError),
+    /// The URL cannot be a base.
+    #[error("The URL cannot be a base.")]
+    UrlCannotBeABase
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -287,7 +290,7 @@ impl Mapper {
             },
             Self::AllNoRevert(mappers) => {
                 for mapper in mappers {
-                    mapper.apply(url)?
+                    mapper.apply(url)?;
                 }
             },
             Self::AllIgnoreError(mappers) => {
@@ -311,7 +314,7 @@ impl Mapper {
                 url.set_query(None);
             },
             Self::RemoveQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| names.iter().all(|blocked_name| blocked_name!=name))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !names.iter().any(|blocked_name| blocked_name==name))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::AllowQueryParams(names) => {
@@ -334,14 +337,14 @@ impl Mapper {
             #[cfg(not(feature = "regex"))]
             Self::AllowQueryParamsMatchingRegex(..) => Err(MapperError::MapperDisabled)?,
             Self::GetUrlFromQueryParam(name) => {
-                match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
+                match url.query_pairs().find(|(param_name, _)| param_name==name) {
                     Some((_, new_url)) => {*url=Url::parse(&new_url)?},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
             Self::GetPathFromQueryParam(name) => {
-                match url.query_pairs().into_owned().find(|(param_name, _)| param_name==name) {
-                    Some((_, new_path)) => {url.set_path(&new_path);},
+                match url.query_pairs().find(|(param_name, _)| param_name==name) {
+                    Some((_, new_path)) => {#[allow(clippy::unnecessary_to_owned)] url.set_path(&new_path.into_owned());},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
@@ -354,7 +357,7 @@ impl Mapper {
                 to.set(url, from.get(url).map(|x| x.into_owned()).as_deref())
             }?,
             Self::RemovePathSegments(indices) => {
-                url.set_path(&url.path().split('/').enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/"))
+                url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/"))
             },
             #[cfg(feature = "http")]
             Self::ExpandShortLink => {
@@ -398,10 +401,10 @@ impl Mapper {
             Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
                 let old_part_value=part
                     .get(url)
-                    .ok_or(MapperError::UrlPartNotFound)
-                    .or_else(|_| if *none_to_empty_string {Ok(Cow::Owned("".to_string()))} else {Err(MapperError::UrlPartNotFound)})?
-                    .into_owned();
-                part.set(url, Some(&regex.replace(&old_part_value, replace)))?;
+                    .or_else(|| none_to_empty_string.then_some(Cow::Borrowed("")))
+                    .ok_or(MapperError::UrlPartNotFound)?;
+                #[allow(clippy::unnecessary_to_owned)]
+                part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
             },
             #[cfg(not(feature = "regex"))]
             Self::RegexSubUrlPart{..} => Err(MapperError::MapperDisabled)?,
@@ -511,8 +514,8 @@ mod tests {
 
     #[test]
     fn remove_path_segments() {
-        let mut url=Url::parse("https://example.com/1/2/3/4/5/6").unwrap();
+        let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
         assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
-        assert_eq!(url.path(), "/2/4");
+        assert_eq!(url.path(), "/0/2/4");
     }
 }
