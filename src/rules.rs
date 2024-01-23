@@ -48,15 +48,15 @@ pub enum RuleError {
 impl Rule {
     /// Apply the rule to the url in-place.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        self.apply_with_dcr(url, &types::DomainConditionRule::default())
+        self.apply_with_config(url, &types::RuleConfig::default())
     }
 
     /// Apply the rule to the url in-place.
-    pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
-        if self.condition.satisfied_by_with_dcr(url, dcr)? {
+    pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
+        if self.condition.satisfied_by_with_config(url, config)? {
             self.mapper.apply(url)?;
             if let Some(and) = &self.and {
-                and.apply_with_dcr(url, dcr)?;
+                and.apply_with_config(url, config)?;
             }
             Ok(())
         } else {
@@ -66,9 +66,9 @@ impl Rule {
 }
 
 #[cfg(all(feature = "default-rules", feature = "minify-included-strings"))]
-static RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-config.json"), ' ', ""), '\t', ""), '\n', "");
+static RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-rules.json"), ' ', ""), '\t', ""), '\n', "");
 #[cfg(all(feature = "default-rules", not(feature = "minify-included-strings")))]
-static RULES_STR: &str=include_str!("../default-config.json");
+static RULES_STR: &str=include_str!("../default-rules.json");
 #[cfg(feature = "default-rules")]
 static RULES: OnceLock<Rules>=OnceLock::new();
 
@@ -130,16 +130,16 @@ impl Rules {
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        self.apply_with_dcr(url, &types::DomainConditionRule::default())
+        self.apply_with_config(url, &types::RuleConfig::default())
     }
 
     /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
-    pub fn apply_with_dcr(&self, url: &mut Url, dcr: &types::DomainConditionRule) -> Result<(), RuleError> {
+    pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in self.deref() {
-            match rule.apply_with_dcr(&mut temp_url, dcr) {
+            match rule.apply_with_config(&mut temp_url, config) {
                 Err(RuleError::FailedCondition) => {},
                 e @ Err(_) => e?,
                 _ => {}

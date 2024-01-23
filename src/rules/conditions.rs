@@ -8,7 +8,7 @@ use url::Url;
 use psl;
 
 use crate::glue;
-use crate::types::{UrlPart, DomainConditionRule, StringLocation};
+use crate::types::{UrlPart, RuleConfig, DomainConditionRule, StringLocation};
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
 /// Note that conditions are checked by the output of the previous mapper.
@@ -68,23 +68,113 @@ pub enum Condition {
     // Domain conditions
     
     /// Passes if the URL's domain is or is a subdomain of the specified domain.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     UnqualifiedDomain(String),
     /// Similar to [`Condition::UnqualifiedDomain`] but only checks if the subdomain is empty or `www`.
     /// `Condition::MaybeWWWDomain("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedDomain("example.com".to_string()), Condition::QualifiedDomain("www.example.com".to_string())])`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://not.example.com").unwrap()).is_ok_and(|x| x==false));
+    /// ```
     MaybeWWWDomain(String),
     /// Passes if the URL's domain is the specified domain.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     QualifiedDomain(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     UnqualifiedAnyTld(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     QualifiedAnyTld(String),
     /// A condition meant specifically to handle AdGuard's `$domain` rule modifier.
     /// All domains are treated as unqualified.
     /// Please see [AdGuard's docs](https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier) for details.
     /// # Errors
     /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::glue::RegexParts;
+    /// # use url_cleaner::types::DomainConditionRule;
+    /// # use url::Url;
+    /// let dc=Condition::DomainCondition {
+    ///     yes_domains: vec!["example.com".to_string()],
+    ///     yes_domain_regexes: vec![RegexParts::new(r"example\d\.com").unwrap().into()],
+    ///     unless_domains: vec!["wawawa.example.com".to_string()],
+    ///     unless_domain_regexes: vec![RegexParts::new(r"thing\d\.example.com").unwrap().into()]
+    /// };
+    ///
+    /// assert!(dc.satisfied_by(&Url::parse("https://example.com"       ).unwrap()).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by(&Url::parse("https://example9.com"      ).unwrap()).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by(&Url::parse("https://wawawa.example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by(&Url::parse("https://thing2.example.com").unwrap()).is_ok_and(|x| x==false));
+    ///
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
+    ///
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
+    ///
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
+    ///
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap())).is_ok_and(|x| x==true ));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap())).is_ok_and(|x| x==true ));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap())).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap())).is_ok_and(|x| x==false));
+    /// ```
     #[allow(clippy::enum_variant_names)]
     DomainCondition {
         /// Unqualified domains where the rule is valid.
@@ -100,8 +190,24 @@ pub enum Condition {
     // Query
 
     /// Passes if the URL has a query of the specified name.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==false));
+    /// ````
     QueryHasParam(String),
     /// Passes if the URL has a query of the specified name and its value is the specified value.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::QueryParamValueIs{name: "a".to_string(), value: "2".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "3".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "4".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==false));
+    /// ````
     QueryParamValueIs {
         /// The name of the query parameter.
         name: String,
@@ -248,11 +354,11 @@ pub enum ConditionError {
 impl Condition {
     /// Checks whether or not the provided URL passes the condition.
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
-        self.satisfied_by_with_dcr(url, &DomainConditionRule::default())
+        self.satisfied_by_with_config(url, &RuleConfig::default())
     }
 
     /// Checks whether or not the provided URL passes the condition.
-    pub fn satisfied_by_with_dcr(&self, url: &Url, dcr: &DomainConditionRule) -> Result<bool, ConditionError> {
+    pub fn satisfied_by_with_config(&self, url: &Url, config: &RuleConfig) -> Result<bool, ConditionError> {
         Ok(match self {
             // Domain conditions
 
@@ -275,26 +381,26 @@ impl Condition {
             Self::QualifiedAnyTld(parts) => url.domain().is_some_and(|domain| domain.strip_prefix(parts).is_some_and(|dot_suffix| dot_suffix.strip_prefix('.').is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix)))),
             #[cfg(feature = "regex")]
             Self::DomainCondition {yes_domains, yes_domain_regexes, unless_domains, unless_domain_regexes} => {
-                fn unqualified_domain(url: &Url, parts: &str) -> bool {
-                    url.domain().is_some_and(|domain| domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')}))
+                fn unqualified_domain(domain: &str, parts: &str) -> bool {
+                    domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')})
                 }
-                match dcr {
+                match &config.dcr {
                     DomainConditionRule::Always => true,
                     DomainConditionRule::Never => false,
                     // Somewhat annoyingly `DomainConditionRule::Url(Url) | DomainConditionRule::UseUrlBeingCloned` doesn't desugar to this.
                     // I get it's a niche and weird case, but in this one specific instance it'd be nice.
                     DomainConditionRule::Url(url) => {
-                        url.host_str()
-                            .map_or(false, |host| 
-                                !(unless_domains.iter().any(|domain| unqualified_domain(url, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                    (yes_domains.iter().any(|domain| unqualified_domain(url, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
+                        url.domain()
+                            .map_or(false, |url_domain|
+                                !(unless_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(url_domain))) &&
+                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(url_domain)))
                             )
                     },
                     DomainConditionRule::UseUrlBeingCleaned => {
-                        url.host_str()
-                            .map_or(false, |host| 
-                                !(unless_domains.iter().any(|domain| unqualified_domain(url, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                    (yes_domains.iter().any(|domain| unqualified_domain(url, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
+                        url.domain()
+                            .map_or(false, |url_domain|
+                                !(unless_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(url_domain))) &&
+                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(url_domain)))
                             )
                     },
                 }
@@ -308,12 +414,12 @@ impl Condition {
 
             // Meta conditions
 
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_dcr(url, dcr).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_dcr(url, dcr).unwrap_or(false),
-            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_dcr(url, dcr).or_else(|_| catch.satisfied_by_with_dcr(url, dcr))?,
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(false),
+            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_config(url, config).or_else(|_| catch.satisfied_by_with_config(url, config))?,
             Self::All(conditions) => {
                 for condition in conditions {
-                    if !condition.satisfied_by_with_dcr(url, dcr)? {
+                    if !condition.satisfied_by_with_config(url, config)? {
                         return Ok(false);
                     }
                 }
@@ -321,13 +427,13 @@ impl Condition {
             },
             Self::Any(conditions) => {
                 for condition in conditions {
-                    if condition.satisfied_by_with_dcr(url, dcr)? {
+                    if condition.satisfied_by_with_config(url, config)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Not(condition) => !condition.satisfied_by_with_dcr(url, dcr)?,
+            Self::Not(condition) => !condition.satisfied_by_with_config(url, config)?,
 
 
             // Query
@@ -379,116 +485,10 @@ impl Condition {
             Self::Never => false,
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
-                let is_satisfied=condition.satisfied_by_with_dcr(url, dcr);
-                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nDCR: {dcr:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=condition.satisfied_by_with_config(url, config);
+                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nConfig: {config:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             }
         })
-    }
-}
-
-#[cfg(test)]
-#[allow(clippy::unwrap_used)]
-mod test {
-    use super::*;
-    use crate::glue::RegexParts;
-
-    const fn passes(x: bool) -> bool {x}
-    const fn fails(x: bool) -> bool {!x}
-
-    macro_rules! exurl {
-        () => {Url::parse("https://www.example.com").unwrap()};
-    }
-
-    #[test]
-    fn unqualified_domain() {
-        assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&exurl!()).is_ok_and(passes));
-        assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&exurl!()).is_ok_and(passes));
-    }
-
-    #[test]
-    fn maybe_www_domain() {
-        assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap()).is_ok_and(passes));
-        assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(passes));
-        assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://not.example.com").unwrap()).is_ok_and(fails ));
-    }
-
-    #[test]
-    fn qualified_domain() {
-        assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&exurl!()).is_ok_and(fails ));
-        assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&exurl!()).is_ok_and(passes));
-    }
-
-    #[test]
-    fn unqualified_any_tld() {
-        assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(passes));
-        assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(fails ));
-        assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(passes));
-        assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(fails ));
-        assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(passes));
-        assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(passes));
-        assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(passes));
-        assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(passes));
-    }
-
-    #[test]
-    fn qualified_any_tld() {
-        assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(passes));
-        assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(fails ));
-        assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(passes));
-        assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(fails ));
-        assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(fails ));
-        assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(passes));
-        assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(fails ));
-        assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(passes));
-    }
-
-    #[test]
-    fn query_has_param() {
-        assert!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(passes));
-        assert!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(passes));
-        assert!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(fails));
-    }
-
-    #[test]
-    fn query_param_value_is() {
-        assert!(Condition::QueryParamValueIs{name: "a".to_string(), value: "2".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(passes));
-        assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "3".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(passes));
-        assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "4".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(fails));
-    }
-
-    #[test]
-    fn domain_condition() {
-        let dc=Condition::DomainCondition {
-            yes_domains: vec!["example.com".to_string()],
-            yes_domain_regexes: vec![RegexParts::new(r"example\d\.com").try_into().unwrap()],
-            unless_domains: vec!["wawawa.example.com".to_string()],
-            unless_domain_regexes: vec![RegexParts::new(r"thing\d\.example.com").try_into().unwrap()]
-        };
-
-        assert!(dc.satisfied_by         (&Url::parse("https://example.com"       ).unwrap()).is_ok_and(passes));
-        assert!(dc.satisfied_by         (&Url::parse("https://example9.com"      ).unwrap()).is_ok_and(passes));
-        assert!(dc.satisfied_by         (&Url::parse("https://wawawa.example.com").unwrap()).is_ok_and(fails));
-        assert!(dc.satisfied_by         (&Url::parse("https://thing2.example.com").unwrap()).is_ok_and(fails));
-
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example.com"       ).unwrap(), &crate::types::DomainConditionRule::Always).is_ok_and(passes));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example9.com"      ).unwrap(), &crate::types::DomainConditionRule::Always).is_ok_and(passes));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://wawawa.example.com").unwrap(), &crate::types::DomainConditionRule::Always).is_ok_and(passes));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://thing2.example.com").unwrap(), &crate::types::DomainConditionRule::Always).is_ok_and(passes));
-
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example.com"       ).unwrap(), &crate::types::DomainConditionRule::Never).is_ok_and(fails));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example9.com"      ).unwrap(), &crate::types::DomainConditionRule::Never).is_ok_and(fails));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://wawawa.example.com").unwrap(), &crate::types::DomainConditionRule::Never).is_ok_and(fails));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://thing2.example.com").unwrap(), &crate::types::DomainConditionRule::Never).is_ok_and(fails));
-
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example.com"       ).unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(fails));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example9.com"      ).unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(fails));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://wawawa.example.com").unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(fails));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://thing2.example.com").unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(fails));
-
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example.com"       ).unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap())).is_ok_and(passes));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://example9.com"      ).unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap())).is_ok_and(passes));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://wawawa.example.com").unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap())).is_ok_and(fails ));
-        assert!(dc.satisfied_by_with_dcr(&Url::parse("https://thing2.example.com").unwrap(), &crate::types::DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap())).is_ok_and(fails ));
     }
 }

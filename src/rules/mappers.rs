@@ -454,9 +454,9 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn remove_query_params_matching_regex() {
         let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("a|b|c").try_into().unwrap()).apply(&mut url).is_ok());
+        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
         assert_eq!(url.query(), Some("a=2&b=3&c=4"));
-        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("d").try_into().unwrap()).apply(&mut url).is_ok());
+        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
         assert_eq!(url.query(), None);
     }
 
@@ -464,9 +464,9 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn allow_query_params_matching_regex() {
         let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("a|b|c").try_into().unwrap()).apply(&mut url).is_ok());
+        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
         assert_eq!(url.query(), Some("d=5"));
-        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("d").try_into().unwrap()).apply(&mut url).is_ok());
+        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
         assert_eq!(url.query(), None);
     }
 

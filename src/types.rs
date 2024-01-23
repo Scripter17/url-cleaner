@@ -2,6 +2,8 @@ use url::ParseError;
 use thiserror::Error;
 use std::io::Error as IoError;
 
+use serde::{Serialize, Deserialize};
+
 mod url_part;
 pub use url_part::*;
 mod dcr;
@@ -10,6 +12,14 @@ mod string_location;
 pub use string_location::*;
 mod string_modification;
 pub use string_modification::*;
+
+/// Configuration options to choose the behaviour of a few select [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct RuleConfig {
+    /// Chooses how [`crate::rules::conditions::Condition::DomainCondition`] works.
+    #[serde(default)]
+    pub dcr: DomainConditionRule
+}
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
 /// Except for if a [`crate::rules::mappers::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.

@@ -24,8 +24,11 @@ struct Args {
 fn main() -> Result<(), types::CleaningError> {
     let args=Args::parse();
     let rules=rules::get_rules(args.rules.as_deref())?;
+    let config=types::RuleConfig {
+        dcr: args.domain_condition_rule
+    };
     for mut url in args.urls.into_iter() {
-        match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
+        match rules.apply_with_config(&mut url, &config) {
             Ok(_) => {println!("{url}");},
             Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
         }
@@ -37,7 +40,7 @@ fn main() -> Result<(), types::CleaningError> {
             for maybe_line in io::stdin().lines() {
                 match maybe_line {
                     Ok(line) => match Url::parse(&line) {
-                        Ok(mut url) => match rules.apply_with_dcr(&mut url, &args.domain_condition_rule) {
+                        Ok(mut url) => match rules.apply_with_config(&mut url, &config) {
                             Ok(_) => {println!("{url}");},
                             Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
                         },
