@@ -251,6 +251,7 @@ pub enum UrlPart {
 
 impl UrlPart {
     /// Extracts the specified part of the provided URL.
+    #[must_use]
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         Some(match self {
             // Ordered hopefully most used to least used.
@@ -305,7 +306,7 @@ impl UrlPart {
                 url.set_host(Some(&new_domain))?;
             },
             (Self::Domain        , _) => url.set_host(to)?,
-            (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| ReplaceError::InvalidPort)).transpose()?).map_err(|_| ReplaceError::CannotSetPort)?,
+            (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| ReplaceError::InvalidPort)).transpose()?).map_err(|()| ReplaceError::CannotSetPort)?,
             (Self::PathSegment(n), _) => match to {
                 // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
                 Some(to) => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
@@ -313,33 +314,30 @@ impl UrlPart {
             },
             (Self::NextPathSegment, _)  => {
                 if let Some(to) = to {
-                    url.path_segments_mut().map_err(|_| ReplaceError::CannotBeABase)?.pop_if_empty().push(to);
+                    url.path_segments_mut().map_err(|()| ReplaceError::CannotBeABase)?.pop_if_empty().push(to);
                 }
             },
             (Self::Path, Some(to)) => url.set_path(to),
             (Self::QueryParam(name), _) => {
-                match to {
-                    Some(to) => {
-                        if url.query().is_some() {
-                            url.set_query(Some(&if url.query_pairs().any(|(name2, _)| name==&name2) {
-                                form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().map(|(name2, value)| if name==&name2 {(name2, Cow::Borrowed(to))} else {(name2, value)})).finish()
-                            } else {
-                                form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish()
-                            }))
-                        }
-                    },
-                    None => {
-                        let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name2, _)| name!=name2)).finish();
-                        url.set_query((!new_query.is_empty()).then_some(&new_query))
+                if let Some(to) = to {
+                    if url.query().is_some() {
+                        url.set_query(Some(&if url.query_pairs().any(|(name2, _)| name==&name2) {
+                            form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().map(|(name2, value)| if name==&name2 {(name2, Cow::Borrowed(to))} else {(name2, value)})).finish()
+                        } else {
+                            form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish()
+                        }));
                     }
+                } else {
+                    let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name2, _)| name!=name2)).finish();
+                    url.set_query((!new_query.is_empty()).then_some(&new_query));
                 }
             }
 
             // The things that are likely very rarely used.
 
-            (Self::Scheme   , Some(to)) => url.set_scheme  (to).map_err(|_| ReplaceError::InvalidScheme)?,
-            (Self::Username , Some(to)) => url.set_username(to).map_err(|_| ReplaceError::CannotSetUsername)?,
-            (Self::Password , _       ) => url.set_password(to).map_err(|_| ReplaceError::CannotSetPassword)?,
+            (Self::Scheme   , Some(to)) => url.set_scheme  (to).map_err(|()| ReplaceError::InvalidScheme)?,
+            (Self::Username , Some(to)) => url.set_username(to).map_err(|()| ReplaceError::CannotSetUsername)?,
+            (Self::Password , _       ) => url.set_password(to).map_err(|()| ReplaceError::CannotSetPassword)?,
             (Self::Fragment, _) => url.set_fragment(to),
             (_, None) => Err(ReplaceError::PartCannotBeNone)?
         }
@@ -347,6 +345,10 @@ impl UrlPart {
     }
 
     /// Get the part from the provided URL and modify it according to the provided string modification rule.
+    /// # Errors
+    /// If [`UrlPart::get`] returns an error, that error is returned.
+    /// If the string modification returns an error, that error is returned.
+    /// If [`UrlPart::set`] returns an error, that error is returned.
     pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &super::StringModification) -> Result<(), PartModificationError> {
         let mut new_part=self.get(url).ok_or(PartModificationError::PartCannotBeNone).or(if none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(PartModificationError::PartCannotBeNone)})?.into_owned();
         how.apply(&mut new_part)?;

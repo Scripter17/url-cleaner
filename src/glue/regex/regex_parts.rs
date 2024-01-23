@@ -7,7 +7,6 @@ use regex_syntax::{ParserBuilder, Error as RegexSyntaxError};
 /// The enabled form of `RegexParts`.
 /// Contains the rules for constructing a [`Regex`].
 /// The pattern can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
-/// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
     /// The pattern passed into [`RegexBuilder::new`].
@@ -63,11 +62,17 @@ impl FromStr for RegexParts {
 #[allow(dead_code)]
 impl RegexParts {
     /// Creates a [`RegexParts`] with the provided pattern. The config is set to its default value.
+    /// # Errors
+    /// If the pattern is invalid, the error encountered by the parser is returned.
+    /// The error is boxed because it's massive.
     pub fn new(pattern: &str) -> Result<Self, Box<RegexSyntaxError>> {
         Self::new_with_config(pattern, RegexConfig::default())
     }
 
     /// Creates a [`RegexParts`] with the provided pattern and config.
+    /// # Errors
+    /// If the pattern is invalid, the error encountered by the parser is returned.
+    /// The error is boxed because it's massive.
     pub fn new_with_config(pattern: &str, config: RegexConfig) -> Result<Self, Box<RegexSyntaxError>> {
         let ret=Self {
             pattern: pattern.to_string(),
@@ -78,6 +83,9 @@ impl RegexParts {
     }
 
     /// Creates the regex.
+    /// # Panics
+    /// If the regex is larger than the maximum DFA size, this will panic.
+    #[must_use]
     pub fn build(&self) -> Regex {
         RegexBuilder::new(&self.pattern)
             .case_insensitive(self.config.case_insensitive)
@@ -212,6 +220,7 @@ impl RegexConfig {
     /// Returns the flags as a string. `regex_parts.set_flags(&regex_parts.get_flags())` does nothing.
     /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details on which character is which flag.
     /// I have chosen to give the octal flag `'o'` because the `regex` crate forgot.
+    #[must_use]
     pub fn get_flags(&self) -> String {
         let mut ret=String::new();
         if self.case_insensitive    {ret.push('i');}

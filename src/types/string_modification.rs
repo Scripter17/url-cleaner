@@ -152,6 +152,10 @@ pub enum StringModification {
 
 impl StringModification {
     /// Apply the modification in-place.
+    /// # Errors
+    /// If the modification is [`Self::StripPrefix`] and the specified prefix isn't found, returns the error [`StringError::PrefixNotFound`].
+    /// If the modification is [`Self::StripSuffix`] and the specified suffix isn't found, returns the error [`StringError::SuffixNotFound`].
+    /// If the modification is [`Self::ReplaceAt`] and the specified range is either out of bounds or splits a UTF-8 codepoint, returns the error [`StringError::InvalidSlice`].
     pub fn apply(&self, to: &mut String) -> Result<(), StringError> {
         match self {
             Self::Set(value)                     => *to=value.clone(),

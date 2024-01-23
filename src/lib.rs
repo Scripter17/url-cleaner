@@ -14,6 +14,9 @@ pub mod types;
 
 /// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that Config to the URL.
 /// This function's name is set to `clean_url` in WASM for API simplicity.
+/// # Errors
+/// If the rules or config cannot be converted into a [`rules::Rules`] or [`types::RuleConfig`], returns the parsing error.
+/// If the [`rules::Rules`] returns an error, that error is returned.
 #[wasm_bindgen(js_name = clean_url)]
 pub fn wasm_clean_url(url: &str, rules: wasm_bindgen::JsValue, config: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
     let mut url=Url::parse(url)?;
@@ -22,6 +25,8 @@ pub fn wasm_clean_url(url: &str, rules: wasm_bindgen::JsValue, config: wasm_bind
 }
 
 /// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that Config to the URL.
+/// # Errors
+/// If the [`rules::Rules`] returns an error, that error is returned.
 pub fn clean_url(url: &mut Url, rules: Option<&rules::Rules>, config: Option<&types::RuleConfig>) -> Result<(), types::CleaningError> {
     match rules {
         Some(rules) => rules.apply_with_config(url, config.unwrap_or(&types::RuleConfig::default()))?,

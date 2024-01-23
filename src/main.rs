@@ -30,9 +30,9 @@ fn main() -> Result<(), types::CleaningError> {
         dcr: args.domain_condition_rule,
         variables: types::parse_variables(&args.variables)
     };
-    for mut url in args.urls.into_iter() {
+    for mut url in args.urls {
         match rules.apply_with_config(&mut url, &config) {
-            Ok(_) => {println!("{url}");},
+            Ok(()) => {println!("{url}");},
             Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
         }
     }
@@ -44,7 +44,7 @@ fn main() -> Result<(), types::CleaningError> {
                 match maybe_line {
                     Ok(line) => match Url::parse(&line) {
                         Ok(mut url) => match rules.apply_with_config(&mut url, &config) {
-                            Ok(_) => {println!("{url}");},
+                            Ok(()) => {println!("{url}");},
                             Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
                         },
                         Err(e) => {println!(); eprintln!("ERROR: {e:?}");}

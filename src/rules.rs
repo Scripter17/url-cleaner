@@ -53,11 +53,15 @@ pub enum RuleError {
 
 impl Rule {
     /// Apply the rule to the url in-place.
+    /// # Errors
+    /// If the condition fails or the condition/mapper returns an error, that error is returned.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.apply_with_config(url, &types::RuleConfig::default())
     }
 
     /// Apply the rule to the url in-place.
+    /// # Errors
+    /// If the condition fails or the condition/mapper returns an error, that error is returned.
     pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
         if self.condition.satisfied_by_with_config(url, config)? {
             self.mapper.apply(url)?;
@@ -80,6 +84,9 @@ static RULES: OnceLock<Rules>=OnceLock::new();
 
 /// Gets the rules compiled into the URL Cleaner binary.
 /// Panics if the it isn't parseable into [`Rules`].
+/// # Errors
+/// If the default rules cannot be parsed, returns the error [`GetRulesError::CantParseDefaultRules`].
+/// If URL Cleaner was compiled without default rules, returns the error [`GetRulesError::NoDefaultRules`].
 pub fn get_default_rules() -> Result<&'static Rules, GetRulesError> {
     #[cfg(feature = "default-rules")]
     {
@@ -96,6 +103,10 @@ pub fn get_default_rules() -> Result<&'static Rules, GetRulesError> {
 
 /// If `path` is `Some`, loads and parses [`Rules`] from the JSON file it points to.
 /// If `None`, returns [`get_default_rules`].
+/// # Errors
+/// If `path` is `None` and [`get_default_rules`] returns an error, that error is returned.
+/// If the specified file can't be loaded, returns the error [`GetRulesError::CantLoadFile`].
+/// If the rules contained in the specified file can't be parsed, returns the error [`GetRulesError::CantParseFile`].
 pub fn get_rules(path: Option<&Path>) -> Result<Cow<Rules>, GetRulesError> {
     Ok(match path {
         Some(path) => Cow::Owned(serde_json::from_str::<Rules>(&read_to_string(path).or(Err(GetRulesError::CantLoadFile))?)?),
@@ -112,29 +123,33 @@ impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
 impl From<Rules> for Vec<Rule> {fn from(value: Rules    ) -> Self {value.0    }}
 
 impl Deref for Rules {
-    type Target = [Rule];
+    type Target = Vec<Rule>;
 
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        &self.0
     }
 }
 
 impl DerefMut for Rules {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.0.deref_mut()
+        &mut self.0
     }
 }
 
 #[allow(dead_code)]
 impl Rules {
     /// A wrapper around [`Rules::deref`]
-    pub fn as_slice(&self) -> &[Rule] {self.deref()}
+    #[must_use]
+    pub fn as_slice(&self) -> &[Rule] {self}
     /// A wrapper around [`Rules::deref_mut`]
-    pub fn as_mut_slice(&mut self) -> &mut [Rule] {self.deref_mut()}
+    pub fn as_mut_slice(&mut self) -> &mut [Rule] {self}
 
     /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
+    /// # Errors
+    /// If a rule returns any error other than [`RuleError::FailedCondition`], that error is returned.
+    /// If the error [`RuleError::FailedCondition`] is encountered, it is ignored.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.apply_with_config(url, &types::RuleConfig::default())
     }
@@ -142,9 +157,12 @@ impl Rules {
     /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
+    /// # Errors
+    /// If a rule returns any error other than [`RuleError::FailedCondition`], that error is returned.
+    /// If the error [`RuleError::FailedCondition`] is encountered, it is ignored.
     pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
-        for rule in self.deref() {
+        for rule in &**self {
             match rule.apply_with_config(&mut temp_url, config) {
                 Err(RuleError::FailedCondition) => {},
                 e @ Err(_) => e?,

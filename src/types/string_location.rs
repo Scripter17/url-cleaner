@@ -111,6 +111,8 @@ pub enum StringLocation {
 
 impl StringLocation {
     /// Checks if `needle` exists in `haystack` according to `self`'s rules.
+    /// # Errors
+    /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`suoer::StringError::InvalidSlice`].
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, super::StringError> {
         Ok(match self {
             Self::Anywhere             => haystack.contains   (needle),

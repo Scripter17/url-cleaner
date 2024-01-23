@@ -1,9 +1,15 @@
+#[cfg(feature = "regex")]
 mod regex;
+#[cfg(feature = "glob")]
 mod glob;
+#[cfg(feature = "commands")]
 mod command;
 
+#[cfg(feature = "regex")]
 pub use regex::*;
+#[cfg(feature = "glob")]
 pub use glob::*;
+#[cfg(feature = "commands")]
 pub use command::*;
 
 use std::{

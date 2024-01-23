@@ -31,10 +31,11 @@ pub struct RuleConfig {
 /// # use std::collections::HashMap;
 /// # use url_cleaner::types::parse_variables;
 /// assert_eq!(parse_variables("a=2;b=3"), HashMap::from([("a".to_string(), "2".to_string()), ("b".to_string(), "3".to_string())]));
-/// ````
+/// ```
+#[must_use]
 pub fn parse_variables(s: &str) -> HashMap<String, String> {
     s.split(';')
-        .flat_map(|kv| kv.split_once('='))
+        .filter_map(|kv| kv.split_once('='))
         .map(|(k, v)| (k.to_owned(), v.to_owned()))
         .collect()
 }

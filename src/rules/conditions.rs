@@ -135,8 +135,6 @@ pub enum Condition {
     /// A condition meant specifically to handle AdGuard's `$domain` rule modifier.
     /// All domains are treated as unqualified.
     /// Please see [AdGuard's docs](https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier) for details.
-    /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -175,6 +173,7 @@ pub enum Condition {
     /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
     /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
     /// ```
+    #[cfg(feature = "regex")]
     #[allow(clippy::enum_variant_names)]
     DomainCondition {
         /// Unqualified domains where the rule is valid.
@@ -215,8 +214,7 @@ pub enum Condition {
         value: String
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
-    /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
+    #[cfg(feature = "regex")]
     QueryParamValueMatchesRegex {
         /// The name of the query parameter.
         name: String,
@@ -224,8 +222,7 @@ pub enum Condition {
         regex: glue::RegexWrapper
     },
     /// Passes if the URL has a query of the specified name and its value matches the specified glob.
-    /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
+    #[cfg(feature = "glob")]
     QueryParamValueMatchesGlob {
         /// The name of the query parameter.
         name: String,
@@ -238,12 +235,10 @@ pub enum Condition {
     /// Passes if the URL's path is the specified string.
     PathIs(String),
     /// Passes if the URL's path matches the specified regular expression.
-    /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
+    #[cfg(feature = "regex")]
     PathMatchesRegex(glue::RegexWrapper),
     /// Passes if the URL's path matches the specified glob.
-    /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
+    #[cfg(feature = "glob")]
     PathMatchesGlob(glue::GlobWrapper),
 
     // General parts
@@ -280,8 +275,8 @@ pub enum Condition {
     },
     /// Takes the specified part of the URL and passes if it matches the specified regular expression.
     /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `regex` feature.
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    #[cfg(feature = "regex")]
     UrlPartMatchesRegex {
         /// The name of the part to check.
         part: UrlPart,
@@ -294,8 +289,8 @@ pub enum Condition {
     },
     /// Takes the specified part of the URL and passes if it matches the specified glob.
     /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `glob` feature.
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    #[cfg(feature = "glob")]
     UrlPartMatchesGlob {
         /// The name of the part to check.
         part: UrlPart,
@@ -310,13 +305,12 @@ pub enum Condition {
     // Commands
     
     /// Checks the contained command's [`glue::CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
-    /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `commands` feature.
-    CommandExists (glue::CommandWrapper),
+    #[cfg(feature = "commands")]
+    CommandExists(glue::CommandWrapper),
     /// Runs the specified [`glue::CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
     /// # Errors
-    /// Returns the error [`ConditionError::ConditionDisabled`] if URL Cleaner is compiled without the `commands` feature.
     /// If the command is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
+    #[cfg(feature = "commands")]
     CommandExitStatus {
         /// The [`glue::CommandWrapper`] to execute.
         command: glue::CommandWrapper,
@@ -328,24 +322,36 @@ pub enum Condition {
     // Other
 
     /// Passes if the specified rule variable is set to the specified value.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// # use url_cleaner::types::RuleConfig;
+    /// # use std::collections::HashMap;
+    /// let url=Url::parse("https://example.com").unwrap();
+    /// let config=RuleConfig {variables: HashMap::from([("a".to_string(), "2".to_string())]), ..RuleConfig::default()};
+    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==true ));
+    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
+    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
+    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &RuleConfig::default()).is_ok_and(|x| x==true));
+    /// ````
     RuleVariableIs {
         /// The name of the variable to check.
         name: String,
         /// The expected value of the variable.
-        value: String
+        value: String,
+        /// The default value if the variable isn't provided. Defaults to `false`
+        #[serde(default = "get_false")]
+        default: bool
     }
 }
 
-/// Serde doesn't have an equivalent to Clap's `default_value_t`
 const fn get_true() -> bool {true}
+const fn get_false() -> bool {false}
 
 /// An enum of all possible errors a [`Condition`] can return.
 #[derive(Error, Debug)]
 pub enum ConditionError {
-    /// The required condition was disabled at compile time. This can apply to any condition that uses regular expressions, globs, or commands.
-    #[allow(dead_code)]
-    #[error("Url-cleaner was compiled without support for this condition.")]
-    ConditionDisabled,
     /// The [`Condition::Error`] condition always returns this error.
     #[error("The \"Error\" condition always returns this error.")]
     ExplicitError,
@@ -354,6 +360,7 @@ pub enum ConditionError {
     #[error("The provided URL does not contain the requested part.")]
     UrlPartNotFound,
     /// Returned when the specified command failed to run.
+    #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] glue::CommandError),
     /// Returned when a string condition fails.
@@ -363,11 +370,15 @@ pub enum ConditionError {
 
 impl Condition {
     /// Checks whether or not the provided URL passes the condition.
+    /// # Errors
+    /// If the condition has an error, that error is returned.
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
         self.satisfied_by_with_config(url, &RuleConfig::default())
     }
 
     /// Checks whether or not the provided URL passes the condition.
+    /// # Errors
+    /// If the condition has an error, that error is returned.
     pub fn satisfied_by_with_config(&self, url: &Url, config: &RuleConfig) -> Result<bool, ConditionError> {
         Ok(match self {
             // Domain conditions
@@ -415,8 +426,6 @@ impl Condition {
                     },
                 }
             }
-            #[cfg(not(feature = "regex"))]
-            Self::DomainCondition{..} => Err(ConditionError::ConditionDisabled)?,
 
             // Should only ever be used once
 
@@ -450,18 +459,14 @@ impl Condition {
 
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
-            #[cfg(    feature = "regex" )] Self::QueryParamValueMatchesRegex{name, regex} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && regex.is_match(value2)),
-            #[cfg(not(feature = "regex"))] Self::QueryParamValueMatchesRegex{..} => Err(ConditionError::ConditionDisabled)?,
-            #[cfg(    feature = "glob" )] Self::QueryParamValueMatchesGlob {name, glob} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob.matches(value2)),
-            #[cfg(not(feature = "glob"))] Self::QueryParamValueMatchesGlob{..} => Err(ConditionError::ConditionDisabled)?,
+            #[cfg(feature = "regex")] Self::QueryParamValueMatchesRegex{name, regex} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && regex.is_match(value2)),
+            #[cfg(feature = "glob" )] Self::QueryParamValueMatchesGlob {name, glob} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob.matches(value2)),
 
             // Path
 
             Self::PathIs(path) => url.path()==path,
-            #[cfg(    feature = "regex" )] Self::PathMatchesRegex(regex) => regex.is_match(url.path()),
-            #[cfg(not(feature = "regex"))] Self::PathMatchesRegex(..)            => Err(ConditionError::ConditionDisabled)?,
-            #[cfg(    feature = "glob" )] Self::PathMatchesGlob (glob) => glob  .matches(url.path()),
-            #[cfg(not(feature = "glob"))] Self::PathMatchesGlob(..)            => Err(ConditionError::ConditionDisabled)?,
+            #[cfg(feature = "regex")] Self::PathMatchesRegex(regex) => regex.is_match(url.path()),
+            #[cfg(feature = "glob" )] Self::PathMatchesGlob (glob) => glob  .matches(url.path()),
 
             // General parts
 
@@ -477,21 +482,16 @@ impl Condition {
                     .ok_or(ConditionError::UrlPartNotFound)?;
                 r#where.satisfied_by(&part_value, value)?
             }
-            #[cfg(    feature = "regex" )] Self::UrlPartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
-            #[cfg(not(feature = "regex"))] Self::UrlPartMatchesRegex{..} => Err(ConditionError::ConditionDisabled)?,
-            #[cfg(    feature = "glob" )] Self::UrlPartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
-            #[cfg(not(feature = "glob"))] Self::UrlPartMatchesGlob{..} => Err(ConditionError::ConditionDisabled)?,
+            #[cfg(feature = "regex")] Self::UrlPartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+            #[cfg(feature = "glob" )] Self::UrlPartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             // Disablable conditions
 
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
             #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url)?==expected},
 
-            #[cfg(not(feature = "commands"))] Self::CommandExists(..)     => Err(ConditionError::ConditionDisabled)?,
-            #[cfg(not(feature = "commands"))] Self::CommandExitStatus{..} => Err(ConditionError::ConditionDisabled)?,
-
             // Debug conditions
-            
+
             Self::Never => false,
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
@@ -502,7 +502,7 @@ impl Condition {
 
             // Other
 
-            Self::RuleVariableIs {name, value} => config.variables.get(name)==Some(value)
+            Self::RuleVariableIs{name, value, default} => config.variables.get(name).map_or(*default, |x| x==value)
         })
     }
 }
