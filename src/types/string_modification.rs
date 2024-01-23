@@ -6,12 +6,40 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringModification {
     /// Replaces the entire target string with the specified string.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::Set("ghi".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "ghi");
+    /// ````
     Set(String),
     /// Append the contained string to the end of the part.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::Append("ghi".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "abcdefghi");
+    /// ```
     Append(String),
     /// Prepend the contained string to the beginning of the part.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::Prepend("ghi".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "ghiabcdef");
+    /// ```
     Prepend(String),
     /// Replace all instances of `find` with `replace`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcabc".to_string();
+    /// assert!(StringModification::Replace{find: "ab".to_string(), replace: "xy".to_string()}.apply(&mut x).is_ok());
+    /// assert_eq!(&x, "xycxyc");
+    /// ```
     Replace{
         /// The value to look for.
         find: String,
@@ -21,6 +49,15 @@ pub enum StringModification {
     /// Replace the specified range with `replace`.
     /// # Errors
     /// If either end of the specified range is either not on a UTF-8 boundary or out of bounds, returns the error [`StringError::InvalidSlice`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::ReplaceAt{start: 6, end: 7, replace: "g".to_string()}.apply(&mut x).is_err());
+    /// assert_eq!(&x, "abcdef");
+    /// assert!(StringModification::ReplaceAt{start: 1, end: 4, replace: "...".to_string()}.apply(&mut x).is_ok());
+    /// assert_eq!(&x, "a...ef");
+    /// ```
     ReplaceAt{
         /// The start of the range to replace.
         start: usize,
@@ -30,22 +67,79 @@ pub enum StringModification {
         replace: String
     },
     /// [`str::to_lowercase`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "ABCdef".to_string();
+    /// assert!(StringModification::Lowercase.apply(&mut x).is_ok());
+    /// assert_eq!(&x, "abcdef");
+    /// ```
     Lowercase,
     /// [`str::to_uppercase`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcDEF".to_string();
+    /// assert!(StringModification::Uppercase.apply(&mut x).is_ok());
+    /// assert_eq!(&x, "ABCDEF");
+    /// ```
     Uppercase,
     /// [`str::strip_prefix`].
     /// # Errors
     /// If the provided string doesn't begin with the specified prefix, returns the error [`StringError::PrefixNotFound`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::StripPrefix("abc".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "def");
+    /// assert!(StringModification::StripPrefix("abc".to_string()).apply(&mut x).is_err());
+    /// assert_eq!(&x, "def");
+    /// ```
     StripPrefix(String),
     /// Mimics [`str::strip_suffix`] using [`str::ends_with`] and [`String::truncate`]. Should be faster due to not needing an additional heap allocation.
     /// # Errors
     /// If the provided string doesn't end with the specified suffix, returns the error [`StringError::SuffixNotFound`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::StripSuffix("def".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "abc");
+    /// assert!(StringModification::StripSuffix("def".to_string()).apply(&mut x).is_err());
+    /// assert_eq!(&x, "abc");
+    /// ```
     StripSuffix(String),
     /// [`Self::StripPrefix`] but does nothing if the provided string doesn't begin with the specified prefix.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "def");
+    /// assert!(StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "def");
+    /// ```
     StripMaybePrefix(String),
     /// [`Self::StripSuffix`] but does nothing if the provided string doesn't end with the specified suffix.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdef".to_string();
+    /// assert!(StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "abc");
+    /// assert!(StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x).is_ok());
+    /// assert_eq!(&x, "abc");
+    /// ```
     StripMaybeSuffix(String),
     /// [`str::replacen`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// let mut x = "abcdefaaa".to_string();
+    /// assert!(StringModification::ReplaceN{find: "a".to_string(), replace: "x".to_string(), count: 2}.apply(&mut x).is_ok());
+    /// assert_eq!(&x, "xbcdefxaa");
+    /// ```
     ReplaceN{
         /// The value to look for.
         find: String,
@@ -91,97 +185,4 @@ pub enum StringError {
     /// The provided string did not end with the requested prefix.
     #[error("The string being modified did not end with the provided suffix. Maybe try StringModification::StripMaybeSuffix?")]
     SuffixNotFound
-}
-
-#[cfg(test)]
-#[allow(clippy::unwrap_used)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn string_modification_append() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::Append("ghi".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "abcdefghi");
-    }
-
-    #[test]
-    fn string_modification_prepend() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::Prepend("ghi".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "ghiabcdef");
-    }
-
-    #[test]
-    fn string_modification_replace() {
-        let mut x = "abcabc".to_string();
-        assert!(StringModification::Replace{find: "ab".to_string(), replace: "xy".to_string()}.apply(&mut x).is_ok());
-        assert_eq!(&x, "xycxyc");
-    }
-
-    #[test]
-    fn string_modification_replace_at() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::ReplaceAt{start: 6, end: 7, replace: "g".to_string()}.apply(&mut x).is_err());
-        assert_eq!(&x, "abcdef");
-        assert!(StringModification::ReplaceAt{start: 1, end: 4, replace: "...".to_string()}.apply(&mut x).is_ok());
-        assert_eq!(&x, "a...ef");
-    }
-
-    #[test]
-    fn string_modification_lowercase() {
-        let mut x = "ABCdef".to_string();
-        assert!(StringModification::Lowercase.apply(&mut x).is_ok());
-        assert_eq!(&x, "abcdef");
-    }
-
-    #[test]
-    fn string_modification_uppercase() {
-        let mut x = "abcDEF".to_string();
-        assert!(StringModification::Uppercase.apply(&mut x).is_ok());
-        assert_eq!(&x, "ABCDEF");
-    }
-
-    #[test]
-    fn string_modification_strip_prefix() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::StripPrefix("abc".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "def");
-        assert!(StringModification::StripPrefix("abc".to_string()).apply(&mut x).is_err());
-        assert_eq!(&x, "def");
-    }
-
-    #[test]
-    fn string_modification_strip_suffix() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::StripSuffix("def".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "abc");
-        assert!(StringModification::StripSuffix("def".to_string()).apply(&mut x).is_err());
-        assert_eq!(&x, "abc");
-    }
-
-    #[test]
-    fn string_modification_strip_maybe_prefix() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "def");
-        assert!(StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "def");
-    }
-
-    #[test]
-    fn string_modification_strip_maybe_suffix() {
-        let mut x = "abcdef".to_string();
-        assert!(StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "abc");
-        assert!(StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x).is_ok());
-        assert_eq!(&x, "abc");
-    }
-
-    #[test]
-    fn string_modification_replacen() {
-        let mut x = "abcdefaaa".to_string();
-        assert!(StringModification::ReplaceN{find: "a".to_string(), replace: "x".to_string(), count: 2}.apply(&mut x).is_ok());
-        assert_eq!(&x, "xbcdefxaa");
-    }
 }

@@ -18,14 +18,17 @@ struct Args {
     #[arg(short, long)]
     rules: Option<PathBuf>,
     #[arg(short, long, default_value_t)]
-    domain_condition_rule: types::DomainConditionRule
+    domain_condition_rule: types::DomainConditionRule,
+    #[arg(short, long, default_value_t)]
+    variables: String
 }
 
 fn main() -> Result<(), types::CleaningError> {
     let args=Args::parse();
     let rules=rules::get_rules(args.rules.as_deref())?;
     let config=types::RuleConfig {
-        dcr: args.domain_condition_rule
+        dcr: args.domain_condition_rule,
+        variables: types::parse_variables(&args.variables)
     };
     for mut url in args.urls.into_iter() {
         match rules.apply_with_config(&mut url, &config) {

@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
+use std::str::Utf8Error;
 
 use std::borrow::Cow;
 
@@ -26,20 +27,7 @@ use std::{
     fs::{OpenOptions, File}
 };
 #[cfg(not(feature = "cache-redirects"))]
-/// A dummy [`std::io::Error`].
-/// Only exists when the `cache-redirects` feature is disabled.
-#[derive(Debug, Error)]
-#[error("A dummy std::io::Error; Only exists because URL Cleaner was compiled without the cache-redirects feature.")]
-pub struct IoError;
-
-#[cfg(feature = "commands")]
-use std::str::Utf8Error;
-#[cfg(not(feature = "commands"))]
-/// A dummy [`std::str::Utf8Error`].
-/// Only exists when the `commands` feature is disabled.
-#[derive(Debug, Error)]
-#[error("A dummy std::str::Utf8Error; Only exists because URL Cleaner was compiled without the commands feature.")]
-pub struct Utf8Error;
+use std::io::Error as IoError;
 
 use crate::glue;
 use crate::types;
@@ -64,6 +52,15 @@ pub enum Mapper {
     /// If the `try` mapper reuterns an error, the `else` mapper is used instead.
     /// # Errors
     /// If the `else` mapper returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_ok ());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_ok ());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_ok ());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_err());
+    /// ```
     TryCatch {
         /// The mapper to try first.
         r#try: Box<Mapper>,
@@ -73,38 +70,117 @@ pub enum Mapper {
     /// Applies the contained mappers in order.
     /// # Errors
     /// If one of the contained mappers returns an error, the URL is left unchanged and the error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://www.example.com").unwrap();
+    /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url).is_err());
+    /// assert_eq!(url.domain(), Some("www.example.com"));
+    /// ```
     All(Vec<Mapper>),
     /// Applies the contained mappers in order. If an error occurs that error is returned and the URL is left unchanged.
     /// Technically the name is wrong as [`super::conditions::Condition::All`] only actually changes the URL after all the mappers pass, but this is conceptually simpler.
     /// # Errors
     /// If one of the contained mappers returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://www.example.com").unwrap();
+    /// assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_err());
+    /// assert_eq!(url.domain(), Some("3.com"));
+    /// ```
     AllNoRevert(Vec<Mapper>),
     /// If one of the contained mappers returns an error, that error is returned and sebsequent mappers are still applied.
     /// This is equivalent to wrapping every contained mapper in a [`Mapper::IgnoreError`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://www.example.com").unwrap();
+    /// assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url).is_ok());
+    /// assert_eq!(url.domain(), Some("6.com"));
+    /// ```
     AllIgnoreError(Vec<Mapper>),
     /// Effectively a [`Mapper::TryCatch`] chain but less ugly.
     /// Useful for when a mapper can be implemented under various different feature configurations.
     /// # Errors
     /// Returns the same error the equivalent [`Mapper::TryCatch`] chain would return.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://www.example.com").unwrap();
+    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url).is_ok());
+    /// assert_eq!(url.domain(), Some("1.com"));
+    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url).is_ok());
+    /// assert_eq!(url.domain(), Some("3.com"));
+    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_ok());
+    /// assert_eq!(url.domain(), Some("4.com"));
+    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url).is_err());
+    /// assert_eq!(url.domain(), Some("4.com"));
+    /// ```
     FirstNotError(Vec<Mapper>),
     /// Removes the URL's entire query.
     /// Useful for webites that only use the query for tracking.
     RemoveQuery,
     /// Removes query paramaters whose name is in the specified names.
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), Some("b=3&c=4&d=5"));
+    /// assert!(Mapper::RemoveQueryParams(vec!["b".to_string(), "c".to_string()]).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), Some("d=5"));
+    /// assert!(Mapper::RemoveQueryParams(vec!["d".to_string()]).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), None);
+    /// ```
     RemoveQueryParams(Vec<String>),
     /// Removes query paramaters whose name isn't in the specified names.
     /// Useful for websites that keep changing their tracking paramaters and you're sick of updating your rule set.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
+    /// ```
     AllowQueryParams(Vec<String>),
     /// Removes query paramaters whose name matches the specified regex.
     /// Useful for parsing AdGuard rules.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `regex` feature.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// # use url_cleaner::glue::RegexParts;
+    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), Some("a=2&b=3&c=4"));
+    /// assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), None);
+    /// ```
     RemoveQueryParamsMatchingRegex(glue::RegexWrapper),
     /// Removes query paramaters whose name doesn't match the specified regex.
     /// Useful for parsing AdGuard rules.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `regex` feature.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// # use url_cleaner::glue::RegexParts;
+    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), Some("d=5"));
+    /// assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
+    /// assert_eq!(url.query(), None);
+    /// ```
     AllowQueryParamsMatchingRegex(glue::RegexWrapper),
     /// Replace the current URL with the value of the specified query paramater.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
@@ -153,6 +229,14 @@ pub enum Mapper {
     /// Removes the path segments with an index in the specified list.
     /// For most URLs the indices seems one-indexed as the path starts with a `"/"`.
     /// See [`Url::path`] for details.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
+    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
+    /// assert_eq!(url.path(), "/0/2/4");
+    /// ```
     RemovePathSegments(Vec<usize>),
     /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
     /// Useful for link shorteners like `bit.ly` and `t.co`.
@@ -420,102 +504,5 @@ impl Mapper {
             Self::ReplaceWithCommandOutput(..) => Err(MapperError::MapperDisabled)?,
         };
         Ok(())
-    }
-}
-
-#[cfg(test)]
-#[allow(clippy::unwrap_used)]
-mod tests {
-    use super::*;
-    use crate::glue::RegexParts;
-
-    macro_rules! exurl {
-        () => {Url::parse("https://www.example.com").unwrap()};
-    }
-
-    #[test]
-    fn remove_query_params() {
-        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-        assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
-        assert_eq!(url.query(), Some("b=3&c=4&d=5"));
-        assert!(Mapper::RemoveQueryParams(vec!["b".to_string(), "c".to_string()]).apply(&mut url).is_ok());
-        assert_eq!(url.query(), Some("d=5"));
-        assert!(Mapper::RemoveQueryParams(vec!["d".to_string()]).apply(&mut url).is_ok());
-        assert_eq!(url.query(), None);
-    }
-
-    #[test]
-    fn allow_query_params() {
-        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-        assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
-    }
-
-    #[test]
-    #[allow(clippy::unwrap_used)]
-    fn remove_query_params_matching_regex() {
-        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
-        assert_eq!(url.query(), Some("a=2&b=3&c=4"));
-        assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
-        assert_eq!(url.query(), None);
-    }
-
-    #[test]
-    #[allow(clippy::unwrap_used)]
-    fn allow_query_params_matching_regex() {
-        let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
-        assert_eq!(url.query(), Some("d=5"));
-        assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
-        assert_eq!(url.query(), None);
-    }
-
-    #[test]
-    fn try_catch() {
-        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::None )}.apply(&mut exurl!()).is_ok ());
-        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::Error)}.apply(&mut exurl!()).is_ok ());
-        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::None )}.apply(&mut exurl!()).is_ok ());
-        assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::Error)}.apply(&mut exurl!()).is_err());
-    }
-
-    #[test]
-    fn all() {
-        let mut url=exurl!();
-        assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url).is_err());
-        assert_eq!(url.domain(), Some("www.example.com"));
-    }
-
-    #[test]
-    fn all_no_revert() {
-        let mut url=exurl!();
-        assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_err());
-        assert_eq!(url.domain(), Some("3.com"));
-    }
-
-    #[test]
-    fn all_ignore_error() {
-        let mut url=exurl!();
-        assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url).is_ok());
-        assert_eq!(url.domain(), Some("6.com"));
-    }
-
-    #[test]
-    fn first_not_error() {
-        let mut url=exurl!();
-        assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url).is_ok());
-        assert_eq!(url.domain(), Some("1.com"));
-        assert!(Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url).is_ok());
-        assert_eq!(url.domain(), Some("3.com"));
-        assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_ok());
-        assert_eq!(url.domain(), Some("4.com"));
-        assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url).is_err());
-        assert_eq!(url.domain(), Some("4.com"));
-    }
-
-    #[test]
-    fn remove_path_segments() {
-        let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-        assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
-        assert_eq!(url.path(), "/0/2/4");
     }
 }

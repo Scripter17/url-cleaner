@@ -19,6 +19,12 @@ pub mod mappers;
 use crate::types;
 
 /// The core unit describing when and how URLs are modified.
+/// # Examples
+/// ```
+/// # use url_cleaner::rules::{Rule, conditions, mappers};
+/// # use url::Url;
+/// assert!(Rule {condition: conditions::Condition::Never, mapper: mappers::Mapper::None, and: None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+/// ```
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Rule {
     /// The condition under which the provided URL is modified.
@@ -167,15 +173,4 @@ pub enum GetRulesError {
     #[allow(dead_code)]
     #[error("The default rules compiled into URL Cleaner aren't valid JSON.")]
     CantParseDefaultRules(serde_json::Error)
-}
-
-#[cfg(test)]
-#[allow(clippy::unwrap_used)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn failed_condition() {
-        assert!(Rule {condition: conditions::Condition::Never, mapper: mappers::Mapper::None, and: None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
-    }
 }

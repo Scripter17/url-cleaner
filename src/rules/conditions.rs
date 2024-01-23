@@ -141,7 +141,7 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url_cleaner::glue::RegexParts;
-    /// # use url_cleaner::types::DomainConditionRule;
+    /// # use url_cleaner::types::{RuleConfig, DomainConditionRule};
     /// # use url::Url;
     /// let dc=Condition::DomainCondition {
     ///     yes_domains: vec!["example.com".to_string()],
@@ -155,25 +155,25 @@ pub enum Condition {
     /// assert!(dc.satisfied_by(&Url::parse("https://wawawa.example.com").unwrap()).is_ok_and(|x| x==false));
     /// assert!(dc.satisfied_by(&Url::parse("https://thing2.example.com").unwrap()).is_ok_and(|x| x==false));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Always).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Never).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://test.com").unwrap())).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap())).is_ok_and(|x| x==true ));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap())).is_ok_and(|x| x==true ));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap())).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap())).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==true ));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==true ));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
     /// ```
     #[allow(clippy::enum_variant_names)]
     DomainCondition {
@@ -323,6 +323,16 @@ pub enum Condition {
         /// The expected [`std::process::ExitStatus`]. Defaults to `0`.
         #[serde(default)]
         expected: i32
+    },
+
+    // Other
+
+    /// Passes if the specified rule variable is se to the specified value.
+    RuleVariableIs {
+        /// The name of the variable to check.
+        name: String,
+        /// The expected value of the variable.
+        value: String
     }
 }
 
@@ -488,7 +498,11 @@ impl Condition {
                 let is_satisfied=condition.satisfied_by_with_config(url, config);
                 eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nConfig: {config:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
-            }
+            },
+
+            // Other
+
+            Self::RuleVariableIs {name, value} => config.variables.get(name)==Some(value)
         })
     }
 }
