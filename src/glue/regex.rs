@@ -1,14 +1,10 @@
-#[cfg(all(feature = "regex", feature = "lazy-regex"))]
-mod lazy;
-#[cfg(all(feature = "regex", not(feature = "lazy-regex")))]
-mod eager;
+#[cfg(feature = "regex")]
+mod enabled;
 #[cfg(not(feature = "regex"))]
 mod disabled;
 
-#[cfg(all(feature = "regex", feature = "lazy-regex"))]
-pub use lazy::*;
-#[cfg(all(feature = "regex", not(feature = "lazy-regex")))]
-pub use eager::*;
+#[cfg(feature = "regex")]
+pub use enabled::*;
 #[cfg(not(feature = "regex"))]
 pub use disabled::*;
 
