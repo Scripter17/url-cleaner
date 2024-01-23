@@ -49,7 +49,7 @@ pub enum Mapper {
     Debug(Box<Mapper>),
     /// Ignores any error the contained mapper may return.
     IgnoreError(Box<Mapper>),
-    /// If the `try` mapper reuterns an error, the `else` mapper is used instead.
+    /// If the `try` mapper returns an error, the `else` mapper is used instead.
     /// # Errors
     /// If the `else` mapper returns an error, that error is returned.
     /// # Examples
@@ -92,7 +92,7 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Mapper>),
-    /// If one of the contained mappers returns an error, that error is returned and sebsequent mappers are still applied.
+    /// If one of the contained mappers returns an error, that error is returned and subsequent mappers are still applied.
     /// This is equivalent to wrapping every contained mapper in a [`Mapper::IgnoreError`].
     /// # Examples
     /// ```
@@ -123,9 +123,9 @@ pub enum Mapper {
     /// ```
     FirstNotError(Vec<Mapper>),
     /// Removes the URL's entire query.
-    /// Useful for webites that only use the query for tracking.
+    /// Useful for websites that only use the query for tracking.
     RemoveQuery,
-    /// Removes query paramaters whose name is in the specified names.
+    /// Removes query parameters whose name is in the specified names.
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     /// # Examples
     /// ```
@@ -140,8 +140,8 @@ pub enum Mapper {
     /// assert_eq!(url.query(), None);
     /// ```
     RemoveQueryParams(Vec<String>),
-    /// Removes query paramaters whose name isn't in the specified names.
-    /// Useful for websites that keep changing their tracking paramaters and you're sick of updating your rule set.
+    /// Removes query parameters whose name isn't in the specified names.
+    /// Useful for websites that keep changing their tracking parameters and you're sick of updating your rule set.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -150,7 +150,7 @@ pub enum Mapper {
     /// assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
     /// ```
     AllowQueryParams(Vec<String>),
-    /// Removes query paramaters whose name matches the specified regex.
+    /// Removes query parameters whose name matches the specified regex.
     /// Useful for parsing AdGuard rules.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `regex` feature.
@@ -166,7 +166,7 @@ pub enum Mapper {
     /// assert_eq!(url.query(), None);
     /// ```
     RemoveQueryParamsMatchingRegex(glue::RegexWrapper),
-    /// Removes query paramaters whose name doesn't match the specified regex.
+    /// Removes query parameters whose name doesn't match the specified regex.
     /// Useful for parsing AdGuard rules.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `regex` feature.
@@ -182,16 +182,16 @@ pub enum Mapper {
     /// assert_eq!(url.query(), None);
     /// ```
     AllowQueryParamsMatchingRegex(glue::RegexWrapper),
-    /// Replace the current URL with the value of the specified query paramater.
+    /// Replace the current URL with the value of the specified query parameter.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     /// # Errors
-    /// If the specified query paramater cannot be found, returns the error [`MapperError::CannotFindQueryParam`].
-    /// If the query paramater is found but its value cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
+    /// If the specified query parameter cannot be found, returns the error [`MapperError::CannotFindQueryParam`].
+    /// If the query parameter is found but its value cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     GetUrlFromQueryParam(String),
-    /// Replace the current URL's path with the value of the specified query paramater.
+    /// Replace the current URL's path with the value of the specified query parameter.
     /// Useful for websites that have a "you must log in to see this page" page.
     /// # Errors
-    /// If the specified query paramater cannot be found, returns the error [`MapperError::CannotFindQueryParam`].
+    /// If the specified query parameter cannot be found, returns the error [`MapperError::CannotFindQueryParam`].
     GetPathFromQueryParam(String),
     /// Replaces the URL's host to the provided host.
     /// Useful for websites that are just a wrapper around another website. For example, `vxtwitter.com`.
@@ -244,7 +244,7 @@ pub enum Mapper {
     /// If URL Cleaner is compiled with the feature `cache-redirects`, the provided URL is found in the cache, but its cached result cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
     /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
-    /// When compiled for WebAssembly, this funcion currently always returns the error [`MapperError::MapperDisabled`].
+    /// When compiled for WebAssembly, this function currently always returns the error [`MapperError::MapperDisabled`].
     /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
     /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
     ExpandShortLink,
@@ -276,17 +276,17 @@ pub enum Mapper {
         /// See [`regex::Regex::replace`] for details.
         replace: String
     },
-    /// Extracts the specified query paramater's value and sets the specified part of the URL to that value.
+    /// Extracts the specified query parameter's value and sets the specified part of the URL to that value.
     /// # Errors
-    /// If the specified query paramater is not found, returns the error [`MapperError::CannotFindQueryParam`].
+    /// If the specified query parameter is not found, returns the error [`MapperError::CannotFindQueryParam`].
     /// If the requested part replacement fails (returns an error [`crate::types::ReplaceError`]), that error is returned.
     GetPartFromQueryParam {
         /// The name of the part to replace.
         part: types::UrlPart,
-        /// The query paramater to get the part from.
+        /// The query parameter to get the part from.
         param_name: String
     },
-    /// Execute a command and sets the URL to its output. Any argument paramater with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
+    /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
     /// # Errors
     /// Returns the error [`MapperError::MapperDisabled`] if URL Cleaner is compiled without the `commands` feature.
@@ -296,7 +296,7 @@ pub enum Mapper {
 
 const fn get_true() -> bool {true}
 
-/// An enum of all possible errors a [`Mapper`] can reutrn.
+/// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Error, Debug)]
 pub enum MapperError {
     /// Returned on mappers that require regex, glob, or http when those features are disabled.
@@ -309,8 +309,8 @@ pub enum MapperError {
     /// Returned when the mapper has `none_to_empty_string` set to `false` and the requested part of the provided URL is `None`.
     #[error("The provided URL does not have the requested part.")]
     UrlPartNotFound,
-    /// Returned when the provided URL's query does not contain a query paramater with the requested name.
-    #[error("The URL provided does not contain the query paramater required.")]
+    /// Returned when the provided URL's query does not contain a query parameter with the requested name.
+    #[error("The URL provided does not contain the query parameter required.")]
     CannotFindQueryParam,
     /// Returned when the would-be new URL could not be parsed by [`url::Url`].
     #[error(transparent)]

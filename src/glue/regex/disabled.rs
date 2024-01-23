@@ -80,7 +80,7 @@ impl RegexWrapper {
     }
 }
 
-// Makes the --no-default-features compiliation not fail due to the tests.
+// Makes the --no-default-features compilation not fail due to the tests.
 // TryFrom also doesn't make `RegexWrapper::try_from` produce a warning.
 impl TryFrom<RegexParts> for RegexWrapper {
     type Error=Infallible; // Never type when

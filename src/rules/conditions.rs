@@ -262,7 +262,7 @@ pub enum Condition {
         /// The expected value of the part.
         value: Option<String>
     },
-    /// Passes if the specified part containes the specified value in a range specified by `where`.
+    /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
     /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     UrlPartContains {
@@ -327,7 +327,7 @@ pub enum Condition {
 
     // Other
 
-    /// Passes if the specified rule variable is se to the specified value.
+    /// Passes if the specified rule variable is set to the specified value.
     RuleVariableIs {
         /// The name of the variable to check.
         name: String,
@@ -376,7 +376,7 @@ impl Condition {
             Self::UnqualifiedDomain(parts) => url.domain().is_some_and(|domain| domain.strip_suffix(parts).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
             Self::QualifiedDomain(parts) => url.domain()==Some(parts),
             Self::UnqualifiedAnyTld(parts) => {
-                // Sometimes you just gotta write gabage.
+                // Sometimes you just gotta write garbage.
                 url.domain()
                     .is_some_and(|domain| domain.contains(parts) && psl::suffix_str(domain)
                         .is_some_and(|suffix| domain.strip_suffix(suffix)

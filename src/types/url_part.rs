@@ -133,7 +133,7 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:80" ).unwrap()), Some(Cow::Owned("80" .to_string())));
     /// ```
     Port,
-    /// A specficic segment of the URL's path.
+    /// A specific segment of the URL's path.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -193,7 +193,7 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("/a/b")));
     /// ```
     Path,
-    /// A specific query paramater. The contained string is the paramater's name and the setter sets the paramater's value.
+    /// A specific query parameter. The contained string is the parameter's name and the setter sets the parameter's value.
     /// # Examples
     /// ```
     /// # use url::Url;

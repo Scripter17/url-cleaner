@@ -6,7 +6,7 @@ use regex_syntax::{ParserBuilder, Error as RegexSyntaxError};
 
 /// The enabled form of `RegexParts`.
 /// Contains the rules for constructing a [`Regex`].
-/// The patterm can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
+/// The pattern can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
 /// Note that if the `regex` feature is disabled, this struct is empty and all provided functions will always panic.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexParts {
@@ -90,7 +90,7 @@ impl RegexParts {
             .swap_greed(self.config.swap_greed)
             .unicode(self.config.unicode)
             .build()
-            .expect("The regex to have been validated during `RegexParts::new` and the regex to not exceed configured limtis.")
+            .expect("The regex to have been validated during `RegexParts::new` and the regex to not exceed configured limits.")
     }
 }
 

@@ -57,7 +57,7 @@ pub enum StringLocation {
     /// assert!(StringLocation::StartsAt(5).satisfied_by("abcdef", "def").is_ok_and(|x| x==false));
     /// ````
     StartsAt(usize),
-    /// Checks if an instance of the needle emds at the specified point in the haystack.
+    /// Checks if an instance of the needle ends at the specified point in the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
@@ -110,7 +110,7 @@ pub enum StringLocation {
 }
 
 impl StringLocation {
-    /// Cecks if `needle` exists in `haystack` according to `self`'s rules.
+    /// Checks if `needle` exists in `haystack` according to `self`'s rules.
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, super::StringError> {
         Ok(match self {
             Self::Anywhere             => haystack.contains   (needle),
