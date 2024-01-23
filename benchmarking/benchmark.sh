@@ -10,7 +10,8 @@ cargo build -r
 hyperfine -N -n "No URL - 0" -w 5 "../target/release/url-cleaner" --export-json "output-No URL-0"
 
 for url in "${URLS[@]}"; do
-  echo $url -\> $(../target/release/url-cleaner $url)
+  echo IN : $url
+  echo OUT: $(../target/release/url-cleaner $url)
   for num in $(seq 0 2); do
     yes $url | head -n $((100**$num)) > stdin
 

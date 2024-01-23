@@ -36,10 +36,10 @@ impl FromStr for DomainConditionRule {
 
     fn from_str(x: &str) -> Result<Self, Self::Err> {
         Ok(match x {
-            "Always"             => DomainConditionRule::Always,
-            "Never"              => DomainConditionRule::Never,
-            "UseUrlBeingCleaned" => DomainConditionRule::UseUrlBeingCleaned,
-            _                    => DomainConditionRule::Url(Url::parse(x)?)
+            "Always"             => Self::Always,
+            "Never"              => Self::Never,
+            "UseUrlBeingCleaned" => Self::UseUrlBeingCleaned,
+            _                    => Self::Url(Url::parse(x)?)
         })
     }
 }

@@ -1,6 +1,3 @@
-#![warn(missing_docs, clippy::expect_used, clippy::perf)]
-#![deny(clippy::unwrap_used, clippy::missing_panics_doc)]
-
 //! URL Cleaner - A tool to remove tracking garbage from URLs.
 
 use wasm_bindgen::prelude::*;

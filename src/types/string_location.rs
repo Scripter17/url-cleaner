@@ -3,34 +3,34 @@ use serde::{Serialize, Deserialize};
 /// The location of a string. Used by [`crate::rules::conditions::Condition::UrlPartContains`].
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
-    /// [`str::contains`].
+    /// Checks if an instance of the needle exists anywhere in the haystack.
     #[default]
     Anywhere,
-    /// [`str::starts_with`].
+    /// Checks if an instance of the needle exists at the start of the haystack.
     Start,
-    /// [`str::ends_with`].
+    /// Checks if an instance of the needle exists at the end of the haystack.
     End,
-    /// `str::get(start..).handle_error().substr.starts_with(...)`.
-    StartsAt(usize),
-    /// `str::get(..end).handle_error().substr.ends_with(...)`.
-    EndsAt(usize),
-    /// `str::get(start..end).handle_error()==...`.
+    /// Checks if an instance of the needle starts and ends at the specified range in the haystack.
     RangeIs {
         /// The start of the range to check.
         start: usize,
         /// The end of the range to check.
         end: usize
     },
-    /// `str::get(start.end).handle_error().substr.contains(...)`
+    /// Checks if an instance of the needle starts at the specified point in the haystack.
+    StartsAt(usize),
+    /// Checks if an instance of the needle emds at the specified point in the haystack.
+    EndsAt(usize),
+    /// Checks if an instance of the needle exists within the specified range of the haystack.
     RangeHas {
         /// The start of the range to check.
         start: usize,
         /// The end of the range to check.
         end: usize
     },
-    /// `str::get(start..).handle_error().substr.contains(...)`.
+    /// Checks if an instance of the needle exists after the specified point in the haystack.
     After(usize),
-    /// `str::get(..end).handle_error().substr.contains(...)`.
+    /// Checks if an instance of the needle exists before the specified point in the haystack.
     Before(usize)
 }
 
@@ -43,10 +43,10 @@ impl StringLocation {
             Self::End                  => haystack.ends_with  (needle),
 
             Self::RangeIs {start, end} => haystack.get(*start..*end).ok_or(super::StringError::InvalidSlice)?==needle,
-            Self::RangeHas{start, end} => haystack.get(*start..*end).ok_or(super::StringError::InvalidSlice)?.contains(needle),
             Self::StartsAt(start     ) => haystack.get(*start..    ).ok_or(super::StringError::InvalidSlice)?.starts_with(needle),
             Self::EndsAt  (       end) => haystack.get(      ..*end).ok_or(super::StringError::InvalidSlice)?.ends_with(needle),
 
+            Self::RangeHas{start, end} => haystack.get(*start..*end).ok_or(super::StringError::InvalidSlice)?.contains(needle),
             Self::After   (start     ) => haystack.get(*start..    ).ok_or(super::StringError::InvalidSlice)?.contains(needle),
             Self::Before  (       end) => haystack.get(      ..*end).ok_or(super::StringError::InvalidSlice)?.contains(needle)
         })

@@ -161,7 +161,7 @@ impl RegexParts {
 
 impl From<RegexParts> for RegexBuilder {
     fn from(value: RegexParts) -> Self {
-        let mut ret=RegexBuilder::new(&value.pattern);
+        let mut ret=Self::new(&value.pattern);
         ret.case_insensitive(value.case_insensitive)
             .crlf(value.crlf)
             .dot_matches_new_line(value.dot_matches_new_line)

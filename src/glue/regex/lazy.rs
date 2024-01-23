@@ -76,7 +76,7 @@ impl AsRef<Regex> for RegexWrapper {
 }
 
 impl FromStr for RegexWrapper {
-    type Err = <RegexParts as TryInto<RegexWrapper>>::Error;
+    type Err = <RegexParts as TryInto<Self>>::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         RegexParts::new(s).try_into()

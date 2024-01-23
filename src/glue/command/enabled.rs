@@ -68,7 +68,7 @@ impl<'de> Deserialize<'de> for CommandWrapper {
 
 impl From<CommandParts> for Command {
     fn from(parts: CommandParts) -> Self {
-        let mut ret=Command::new(parts.program);
+        let mut ret=Self::new(parts.program);
         ret.args(parts.args);
         if let Some(dir) = parts.current_dir {
             ret.current_dir(dir);

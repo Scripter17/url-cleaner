@@ -284,20 +284,18 @@ impl Condition {
                     // Somewhat annoyingly `DomainConditionRule::Url(Url) | DomainConditionRule::UseUrlBeingCloned` doesn't desugar to this.
                     // I get it's a niche and weird case, but in this one specific instance it'd be nice.
                     DomainConditionRule::Url(url) => {
-                        if let Some(host)=url.host_str() {
-                            !(unless_domains.iter().any(|domain| unqualified_domain(url, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                (yes_domains.iter().any(|domain| unqualified_domain(url, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
-                        } else {
-                            false
-                        }
+                        url.host_str()
+                            .map_or(false, |host| 
+                                !(unless_domains.iter().any(|domain| unqualified_domain(url, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
+                                    (yes_domains.iter().any(|domain| unqualified_domain(url, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
+                            )
                     },
                     DomainConditionRule::UseUrlBeingCleaned => {
-                        if let Some(host)=url.host_str() {
-                            !(unless_domains.iter().any(|domain| unqualified_domain(url, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
-                                (yes_domains.iter().any(|domain| unqualified_domain(url, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
-                        } else {
-                            false
-                        }
+                        url.host_str()
+                            .map_or(false, |host| 
+                                !(unless_domains.iter().any(|domain| unqualified_domain(url, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(host))) &&
+                                    (yes_domains.iter().any(|domain| unqualified_domain(url, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(host)))
+                            )
                     },
                 }
             }
