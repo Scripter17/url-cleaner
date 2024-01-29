@@ -18,7 +18,7 @@ pub enum Condition {
     /// Always passes.
     Always,
 
-    // Testing conditions
+    // Testing conditions.
     
     /// Never passes.
     Never,
@@ -37,7 +37,7 @@ pub enum Condition {
     /// *Can* be used in production as bash and batch only have `x | y` pipe STDOUT by default, but it'll look ugly.
     Debug(Box<Condition>),
 
-    // Meta conditions
+    // Error handling
     
     /// If the contained condition returns an error, treat it as a pass.
     TreatErrorAsPass(Box<Condition>),
@@ -52,6 +52,9 @@ pub enum Condition {
         /// If the try condition fails, instead return the result of this one.
         catch: Box<Condition>
     },
+
+    // Boolean.
+
     /// Passes if all of the included conditions pass. Like [`Iterator::all`], an empty list of conditions returns `true`.
     /// # Errors
     /// If any contained condition returns an error, that error is returned.
@@ -65,7 +68,7 @@ pub enum Condition {
     /// If the contained condition returns an error, that error is returned.
     Not(Box<Condition>),
 
-    // Domain conditions
+    // Domain conditions.
     
     /// Passes if the URL's domain is or is a subdomain of the specified domain.
     /// # Examples
@@ -186,7 +189,7 @@ pub enum Condition {
         unless_domain_regexes: Vec<glue::RegexWrapper>
     },
 
-    // Query
+    // Query.
 
     /// Passes if the URL has a query of the specified name.
     /// # Examples
@@ -230,7 +233,7 @@ pub enum Condition {
         glob: glue::GlobWrapper
     },
 
-    // Path
+    // Path.
     
     /// Passes if the URL's path is the specified string.
     PathIs(String),
@@ -241,13 +244,13 @@ pub enum Condition {
     #[cfg(feature = "glob")]
     PathMatchesGlob(glue::GlobWrapper),
 
-    // General parts
+    // General parts.
 
     /// Passes if the part's getter is `Some`.
-    UrlPartExists(UrlPart),
+    PartExists(UrlPart),
     /// Passes if the value of the specified part of the URL is the specified value.
     /// Does not error when the specified part is `None`.
-    UrlPartIs {
+    PartIs {
         /// The name of the part to check.
         part: UrlPart,
         /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
@@ -260,7 +263,7 @@ pub enum Condition {
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
     /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
-    UrlPartContains {
+    PartContains {
         /// The name of the part to check.
         part: UrlPart,
         /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
@@ -277,7 +280,7 @@ pub enum Condition {
     /// # Errors
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     #[cfg(feature = "regex")]
-    UrlPartMatchesRegex {
+    PartMatchesRegex {
         /// The name of the part to check.
         part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
@@ -291,7 +294,7 @@ pub enum Condition {
     /// # Errors
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     #[cfg(feature = "glob")]
-    UrlPartMatchesGlob {
+    PartMatchesGlob {
         /// The name of the part to check.
         part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
@@ -302,7 +305,7 @@ pub enum Condition {
         glob: glue::GlobWrapper
     },
 
-    // Commands
+    // Commands.
     
     /// Checks the contained command's [`glue::CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
     #[cfg(feature = "commands")]
@@ -319,7 +322,7 @@ pub enum Condition {
         expected: i32
     },
 
-    // Other
+    // Miscelanious.
 
     /// Passes if the specified rule variable is set to the specified value.
     /// # Examples
@@ -330,12 +333,12 @@ pub enum Condition {
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let config=RuleConfig {variables: HashMap::from([("a".to_string(), "2".to_string())]), ..RuleConfig::default()};
-    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==true ));
-    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
-    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
-    /// assert!(Condition::RuleVariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &RuleConfig::default()).is_ok_and(|x| x==true));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &RuleConfig::default()).is_ok_and(|x| x==true));
     /// ````
-    RuleVariableIs {
+    VariableIs {
         /// The name of the variable to check.
         name: String,
         /// The expected value of the variable.
@@ -343,7 +346,10 @@ pub enum Condition {
         /// The default value if the variable isn't provided. Defaults to `false`
         #[serde(default = "get_false")]
         default: bool
-    }
+    },
+
+    /// Passes if the specified rule flag is set.
+    FlagSet(String)
 }
 
 const fn get_true() -> bool {true}
@@ -470,27 +476,33 @@ impl Condition {
 
             // General parts
 
-            Self::UrlPartExists(part) => part.get(url).is_some(),
-            Self::UrlPartIs{part, none_to_empty_string, value} => value.as_deref()==if *none_to_empty_string {
+            Self::PartExists(part) => part.get(url).is_some(),
+            Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==if *none_to_empty_string {
                 Some(part.get(url).unwrap_or(Cow::Borrowed("")))
             } else {
                 part.get(url)
             }.as_deref(),
-            Self::UrlPartContains{part, none_to_empty_string, value, r#where} => {
+            Self::PartContains{part, none_to_empty_string, value, r#where} => {
                 let part_value=part.get(url)
                     .or_else(|| none_to_empty_string.then_some(Cow::Borrowed("")))
                     .ok_or(ConditionError::UrlPartNotFound)?;
                 r#where.satisfied_by(&part_value, value)?
             }
-            #[cfg(feature = "regex")] Self::UrlPartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
-            #[cfg(feature = "glob" )] Self::UrlPartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+            #[cfg(feature = "regex")] Self::PartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+            #[cfg(feature = "glob" )] Self::PartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             // Disablable conditions
 
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
             #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url)?==expected},
 
-            // Debug conditions
+            // Miscelanious
+
+            Self::VariableIs{name, value, default} => config.variables.get(name).map_or(*default, |x| x==value),
+
+            Self::FlagSet(name) => config.flags.contains(name),
+
+            // Debug
 
             Self::Never => false,
             Self::Error => Err(ConditionError::ExplicitError)?,
@@ -498,11 +510,7 @@ impl Condition {
                 let is_satisfied=condition.satisfied_by_with_config(url, config);
                 eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nConfig: {config:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
-            },
-
-            // Other
-
-            Self::RuleVariableIs{name, value, default} => config.variables.get(name).map_or(*default, |x| x==value)
+            }
         })
     }
 }

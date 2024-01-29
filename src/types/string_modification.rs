@@ -165,10 +165,10 @@ impl StringModification {
             Self::ReplaceAt{start, end, replace} => if to.is_char_boundary(*start) && to.is_char_boundary(*end) {to.replace_range(start..end, replace)} else {Err(StringError::InvalidSlice)?}, // Why does `String::try_replace_range` not exist???
             Self::Lowercase                      => *to=to.to_lowercase(),
             Self::Uppercase                      => *to=to.to_uppercase(),
-            Self::StripPrefix(prefix)            => if to.starts_with(prefix) {std::mem::drop(to.drain(..prefix.len()))} else {Err(StringError::PrefixNotFound)?},
+            Self::StripPrefix(prefix)            => if to.starts_with(prefix) {to.drain(..prefix.len());} else {Err(StringError::PrefixNotFound)?},
             #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
             Self::StripSuffix(suffix)            => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringError::SuffixNotFound)?},
-            Self::StripMaybePrefix(prefix)       => if to.starts_with(prefix) {std::mem::drop(to.drain(..prefix.len()))},
+            Self::StripMaybePrefix(prefix)       => if to.starts_with(prefix) {to.drain(..prefix.len());},
             #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
             Self::StripMaybeSuffix(suffix)       => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())},
             Self::ReplaceN{find, replace, count} => *to=to.replacen(find, replace, *count)
@@ -184,9 +184,9 @@ pub enum StringError {
     #[error("The requested slice either was not on a UTF-8 boundary or was out of bounds.")]
     InvalidSlice,
     /// The provided string did not start with the requested prefix.
-    #[error("The string being modified did not start with the provided prefix. Maybe try StringModification::StripMaybePrefix?")]
+    #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
     PrefixNotFound,
     /// The provided string did not end with the requested prefix.
-    #[error("The string being modified did not end with the provided suffix. Maybe try StringModification::StripMaybeSuffix?")]
+    #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
     SuffixNotFound
 }

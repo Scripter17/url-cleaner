@@ -19,8 +19,10 @@ struct Args {
     rules: Option<PathBuf>,
     #[arg(short, long, default_value_t)]
     domain_condition_rule: types::DomainConditionRule,
-    #[arg(short, long, default_value_t)]
-    variables: String
+    #[arg(short, long)]
+    variables: Vec<String>,
+    #[arg(short, long)]
+    flags: Vec<String>
 }
 
 fn main() -> Result<(), types::CleaningError> {
@@ -28,7 +30,8 @@ fn main() -> Result<(), types::CleaningError> {
     let rules=rules::get_rules(args.rules.as_deref())?;
     let config=types::RuleConfig {
         dcr: args.domain_condition_rule,
-        variables: types::parse_variables(&args.variables)
+        variables: args.variables.iter().filter_map(|kev| kev.split_once('=')).map(|(k, v)| (k.to_owned(), v.to_owned())).collect(),
+        flags: args.flags.into_iter().collect()
     };
     for mut url in args.urls {
         match rules.apply_with_config(&mut url, &config) {

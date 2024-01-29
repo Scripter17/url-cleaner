@@ -123,6 +123,7 @@ pub enum OutputHandler {
     }
 }
 
+// Serde helper functions
 fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
 
 /// The enabled form of the wrapper around all the errors a command condition/mapper can return.
@@ -191,7 +192,7 @@ impl CommandWrapper {
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
                     .spawn()?;
-                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available"); // This never panics. If it ever does, so will I.
+                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics. If it ever does, so will I.
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)
             },

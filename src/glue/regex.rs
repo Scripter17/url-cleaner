@@ -3,12 +3,12 @@ pub use regex_parts::*;
 
 use std::str::FromStr;
 use std::sync::OnceLock;
-use std::ops::Deref;
+use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize, Deserializer};
 
 use regex_syntax::Error as RegexSyntaxError;
-use regex::Regex;
+use regex::{Regex, Replacer};
 
 /// The enabled and not lazy form of the wrapper around [`regex::Regex`] and [`RegexParts`].
 /// Because converting a [`Regex`] to [`RegexParts`] is way more complicated than it should be, various [`From`]/[`Into`] and [`TryFrom`]/[`TryInto`] conversions are defined instead of making the fields public.
@@ -35,20 +35,6 @@ impl From<RegexParts> for RegexWrapper {
     }
 }
 
-impl Deref for RegexWrapper {
-    type Target = Regex;
-
-    fn deref(&self) -> &Self::Target {
-        self.regex.get_or_init(|| (&self.parts).into())
-    }
-}
-
-impl AsRef<Regex> for RegexWrapper {
-    fn as_ref(&self) -> &Regex {
-        self
-    }
-}
-
 impl FromStr for RegexWrapper {
     type Err = Box<RegexSyntaxError>;
 
@@ -67,5 +53,88 @@ impl Eq for RegexWrapper {}
 impl From<RegexWrapper> for RegexParts {
     fn from(value: RegexWrapper) -> Self {
         value.parts
+    }
+}
+
+impl RegexWrapper {
+    /// Gets the cached compiled regex and compiles it first if it's not already cached.
+    /// # Panics
+    /// Although the regex is guaranteed to be syntactically valid, it is possible to exceed the default DFA size limit. In that case, this method will panic.
+    /// For the sake of API design, I consider that a niche enough case that this warning is sufficient.
+    pub fn get_regex(&self) -> &Regex {
+        self.regex.get_or_init(|| self.parts.build()
+            .expect("The regex to have been validated during `RegexParts::new` and the regex to not exceed configured limits."))
+    }
+
+    /// Mutably gets the cached compiled regex and compiles it first if it's not already cached.
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// # Safety
+    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
+    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
+    pub unsafe fn get_regex_mut(&mut self) -> &mut Regex {
+        self.get_regex();
+        self.regex.get_mut().expect("The regex to have just been set.") // No [`OnceLock::get_mut_or_init`] as of 1.75.
+    }
+
+    /// Mutably gets the [`OnceLock`] containging the cached [`Regex`].
+    /// # Safety
+    /// Because [`OnceLock`] has interior mutability, this is effectively as unsafe as [`Self::get_regex_container_mut`].
+    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
+    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
+    pub unsafe fn get_regex_container(&self) -> &OnceLock<Regex> {
+        &self.regex
+    }
+
+    /// Mutably gets the [`OnceLock`] containging the cached [`Regex`].
+    /// # Safety
+    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
+    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
+    pub unsafe fn get_regex_container_mut(&mut self) -> &mut OnceLock<Regex> {
+        &mut self.regex
+    }
+
+    /// Gets the contained [`RegexParts`].
+    pub fn get_regex_parts(&self) -> &RegexParts {
+        &self.parts
+    }
+
+    /// Mutably gets the contained [`RegexParts`].
+    /// # Safety
+    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
+    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
+    /// If the regex hasn't been compiled and cached yet (or the [`OnceLock`] it's stored in has been cleared via [`OnceLock::take`] or by being replaced) then mutating this *should* be fine.
+    /// Though in that case you should probably just [`Into::into`] this back into a [`RegexParts`], mutate that, then makea a new [`RegexWrapper`].
+    /// I'm not the boss of you. That's why I'm providing these functions.
+    pub unsafe fn get_regex_parts_mut(&mut self) -> &mut RegexParts {
+        &mut self.parts
+    }
+
+    /// A convenience wrapper around [`Regex::is_match`].
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    pub fn is_match(&self, haystack: &str) -> bool {
+        self.get_regex().is_match(haystack)
+    }
+
+    /// A convenience wrapper around [`Regex::replace`].
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    pub fn replace<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
+        self.get_regex().replace(haystack, rep)
+    }
+
+    /// A convenience wrapper around [`Regex::replace_all`].
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    pub fn replace_all<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
+        self.get_regex().replace_all(haystack, rep)
+    }
+
+    /// A convenience wrapper around [`Regex::replacen`].
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    pub fn replacen<'h, R: Replacer>(&self, haystack: &'h str, limit: usize, rep: R) -> Cow<'h, str> {
+        self.get_regex().replacen(haystack, limit, rep)
     }
 }

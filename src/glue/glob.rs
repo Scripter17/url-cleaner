@@ -21,14 +21,16 @@ pub struct GlobWrapper {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(remote = "MatchOptions")]
 struct SerdeMatchOptions {
-    #[serde(default = "get_true" )] case_sensitive: bool,
-    #[serde(default = "get_false")] require_literal_separator: bool,
-    #[serde(default = "get_true" )] require_literal_leading_dot: bool,
+    #[serde(default = "get_true" , skip_serializing_if = "is_true" )] case_sensitive: bool,
+    #[serde(default = "get_false", skip_serializing_if = "is_false")] require_literal_separator: bool,
+    #[serde(default = "get_true" , skip_serializing_if = "is_true" )] require_literal_leading_dot: bool,
 }
 
-/// Serde doesn't have an equivalent to Clap's `default_value_t`
+// Serde helper functions
 const fn get_true() -> bool {true}
 const fn get_false() -> bool {false}
+const fn is_true(x: &bool) -> bool {*x}
+const fn is_false(x: &bool) -> bool {!*x}
 
 fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern: String=Deserialize::deserialize(deserializer)?;

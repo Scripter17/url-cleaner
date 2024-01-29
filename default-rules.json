@@ -1,5 +1,52 @@
 [
 	{
+		"condition": {"QualifiedDomain": "l.threads.net"},
+		"mapper": {"GetUrlFromQueryParam": "u"}
+	},
+	{
+		"condition": {
+			"All": [
+				{"QualifiedDomain": "pixiv.net"},
+				{"PathIs": "/member.php"}
+			]
+		},
+		"mapper": {
+			"All": [
+				{"SetPart": {"part": "Path", "to": "/users/"}},
+				{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
+				"RemoveQuery"
+			]
+		}
+	},
+	{
+		"condition": {
+			"All": [
+				{"UnqualifiedDomain": "deviantart.com"},
+				{"PathIs": "/users/outgoing"}
+			]
+		},
+		"mapper": {"GetUrlFromQueryParam": "url"}
+	},
+	{
+		"condition": {
+			"Any": [
+				{"QualifiedDomain": "t.co"},
+				{"QualifiedDomain": "bit.ly"},
+				{"QualifiedDomain": "pixiv.me"},
+				{
+					"All": [
+						{"QualifiedDomain": "pawoo.net"},
+						{"PathIs": "/oauth_authentications"}
+					]
+				},
+				{"QualifiedDomain": "tr.ee"}
+			]
+		},
+		"mapper": "ExpandShortLink"
+	},
+
+	{
+		"comment": "The tracking parameters from (in order) Brave Browser, FireFox, and... I don't remember.",
 		"condition": "Always",
 		"mapper": {
 			"RemoveQueryParams": [
@@ -17,23 +64,15 @@
 			]
 		}
 	},
+
 	{
 		"condition": {
 			"Any": [
-				{"MaybeWWWDomain": "instagram.com"},
-				{"MaybeWWWDomain": "threads.net"}
+				{"QualifiedDomain": "instagram.com"},
+				{"QualifiedDomain": "threads.net"}
 			]
 		},
 		"mapper": {"RemoveQueryParams": ["igshid", "igsh"]}
-	},
-	{
-		"condition": {
-			"All": [
-				{"UnqualifiedDomain": "deviantart.com"},
-				{"PathIs": "/users/outgoing"}
-			]
-		},
-		"mapper": {"GetUrlFromQueryParam": "url"}
 	},
 	{
 		"condition": {
@@ -52,8 +91,9 @@
   {
     "condition": {
 			"All": [
+				{"FlagSet": "tumblr-strip-reblogs"},
 				{"UnqualifiedDomain": "tumblr.com"},
-				{"UrlPartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
+				{"PartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
 				{"CommandExists": {"program": "gallery-dl"}},
 				{"CommandExists": {"program": "jq"}}
 			]
@@ -72,37 +112,44 @@
     }
   },
 	{
-		"condition": {
-			"Any": [
-				{"MaybeWWWDomain": "t.co"},
-				{"MaybeWWWDomain": "bit.ly"},
-				{"MaybeWWWDomain": "pixiv.me"},
-				{
-					"All": [
-						{"MaybeWWWDomain": "pawoo.net"},
-						{"PathIs": "/oauth_authentications"}
-					]
-				},
-				{"MaybeWWWDomain": "tr.ee"}
-			]
-		},
-		"mapper": "ExpandShortLink"
-	},
-	{
 		"condition": {"UnqualifiedAnyTld": "google"},
 		"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
 	},
 	{
-		"condition": {"MaybeWWWDomain": "youtube.com"},
+		"condition": {"QualifiedDomain": "youtu.be"},
+		"mapper": {
+			"All": [
+				{"SetHost": "youtube.com"},
+				{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
+				{"SetPart": {"part": "Path", "to": "watch"}}
+			]
+		}
+	},
+	{
+		"condition": {"QualifiedDomain": "youtube.com"},
 		"mapper": {"RemoveQueryParams": ["si"]}
 	},
 	{
 		"condition": {
+			"All": [
+				{"FlagSet": "unshort-youtube"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
+			]
+		},
+		"mapper": {
+			"All": [
+				{"CopyPart": {"from": {"PathSegment": 1} , "to": {"QueryParam": "v"}}},
+				{"SetPart": {"part": "Path", "to": "watch"}}
+			]
+		}
+	},
+	{
+		"condition": {
 			"Any": [
-				{"MaybeWWWDomain": "twitter.com"},
-				{"MaybeWWWDomain": "vxtwitter.com"},
-				{"MaybeWWWDomain": "fxtwitter.com"},
-				{"MaybeWWWDomain": "x.com"}
+				{"QualifiedDomain": "twitter.com"},
+				{"QualifiedDomain": "vxtwitter.com"},
+				{"QualifiedDomain": "fxtwitter.com"},
+				{"QualifiedDomain": "x.com"}
 			]
 		},
 		"mapper": {
@@ -113,14 +160,19 @@
 		}
 	},
 	{
+		"comment": "Discord currently can't embed any twitter link. Not just videos.",
+		"condition": {"FlagSet": "discord-compatibility"},
+		"mapper": {"SetHost": "vxtwitter.com"}
+	},
+	{
 		"condition": {
 			"Any": [
 				{"UnqualifiedDomain": "reddit.com"   },
-				{"MaybeWWWDomain"   : "theonion.com" },
-				{"MaybeWWWDomain"   : "teespring.com"},
-				{"MaybeWWWDomain"   : "donmai.com"   },
+				{"QualifiedDomain"  : "theonion.com" },
+				{"QualifiedDomain"  : "teespring.com"},
+				{"QualifiedDomain"  : "donmai.com"   },
 				{"UnqualifiedDomain": "tumblr.com"   },
-				{"MaybeWWWDomain"   : "instagram.com"}
+				{"QualifiedDomain"  : "instagram.com"}
 			]
 		},
 		"mapper": "RemoveQuery"
@@ -128,10 +180,7 @@
 	{
 		"condition": {
 			"All": [
-				{"UrlPartIs": {
-					"part": {"PathSegment": 1},
-					"value": "dp"
-				}},
+				{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
 				{"UnqualifiedAnyTld": "amazon"}
 			]
 		},
@@ -145,8 +194,8 @@
 	{
 		"condition": {
 			"All": [
-				{"MaybeWWWDomain": "bsky.app"},
-				{"UrlPartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
+				{"QualifiedDomain": "bsky.app"},
+				{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
 			]
 		},
 		"mapper": {
@@ -154,21 +203,6 @@
 				"part": "Path",
 				"how": {"Append": ".social"}
 			}
-		}
-	},
-	{
-		"condition": {
-			"All": [
-				{"MaybeWWWDomain": "pixiv.net"},
-				{"PathIs": "/member.php"}
-			]
-		},
-		"mapper": {
-			"All": [
-				{"SetPart": {"part": "Path", "to": "/users/"}},
-				{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
-				"RemoveQuery"
-			]
 		}
 	}
 ]

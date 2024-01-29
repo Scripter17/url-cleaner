@@ -35,6 +35,9 @@ use crate::types;
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Mapper {
+
+    // Testing.
+
     /// Does nothing.
     None,
     /// Always returns the error [`MapperError::ExplicitError`].
@@ -47,6 +50,9 @@ pub enum Mapper {
     /// # Errors
     /// If the contained mapper returns an error, that error is returned after the debug info is printed.
     Debug(Box<Mapper>),
+
+    // Error handling.
+
     /// Ignores any error the contained mapper may return.
     IgnoreError(Box<Mapper>),
     /// If the `try` mapper returns an error, the `else` mapper is used instead.
@@ -78,6 +84,9 @@ pub enum Mapper {
     /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url).is_err());
     /// assert_eq!(url.domain(), Some("www.example.com"));
     /// ```
+
+    // Multiple.
+
     All(Vec<Mapper>),
     /// Applies the contained mappers in order. If an error occurs that error is returned and the URL is left unchanged.
     /// Technically the name is wrong as [`super::conditions::Condition::All`] only actually changes the URL after all the mappers pass, but this is conceptually simpler.
@@ -106,7 +115,7 @@ pub enum Mapper {
     /// Effectively a [`Mapper::TryCatch`] chain but less ugly.
     /// Useful for when a mapper can be implemented under various different feature configurations.
     /// # Errors
-    /// Returns the same error the equivalent [`Mapper::TryCatch`] chain would return.
+    /// If every contained mapper errors, returns the last error.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -122,6 +131,9 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("4.com"));
     /// ```
     FirstNotError(Vec<Mapper>),
+
+    // Query.
+
     /// Removes the URL's entire query.
     /// Useful for websites that only use the query for tracking.
     RemoveQuery,
@@ -191,12 +203,40 @@ pub enum Mapper {
     /// # Errors
     /// If the specified query parameter cannot be found, returns the error [`MapperError::CannotFindQueryParam`].
     GetPathFromQueryParam(String),
+
+    // Other parts.
+
     /// Replaces the URL's host to the provided host.
     /// Useful for websites that are just a wrapper around another website. For example, `vxtwitter.com`.
     /// # Errors
     /// If the resulting string cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     /// See [`Url::set_host`] for details.
     SetHost(String),
+    /// Removes the path segments with an index in the specified list.
+    /// See [`Url::path_segments`] for details.
+    /// # Errors
+    /// If the URL cannot be a base, returms the error [`MapperError::UrlCannotBeABase`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::*;
+    /// # use url::Url;
+    /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
+    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
+    /// assert_eq!(url.path(), "/0/2/4");
+    /// ```
+    RemovePathSegments(Vec<usize>),
+
+    // Generic part handling.
+
+    /// Sets the specified URL part to `to`.
+    /// # Errors
+    /// If `to` is `None` and `part` is [`types::UrlPart::Whole`], [`types::UrlPart::Scheme`], [`types::UrlPart::Username`], or [`types::UrlPart::Path`], returns the error [`types::ReplaceError::PartCannotBeNone`].
+    SetPart {
+        /// The name of the part to replace.
+        part: types::UrlPart,
+        /// The value to set the part to.
+        to: Option<String>
+    },
     /// Modifies the specified part of the URL.
     /// # Errors
     /// If `how` is `types::StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
@@ -224,37 +264,6 @@ pub enum Mapper {
         /// The part to set to `from`'s value.
         to: types::UrlPart
     },
-    /// Removes the path segments with an index in the specified list.
-    /// For most URLs the indices seems one-indexed as the path starts with a `"/"`.
-    /// See [`Url::path`] for details.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::mappers::*;
-    /// # use url::Url;
-    /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
-    /// assert_eq!(url.path(), "/0/2/4");
-    /// ```
-    RemovePathSegments(Vec<usize>),
-    /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
-    /// Useful for link shorteners like `bit.ly` and `t.co`.
-    /// # Errors
-    /// If URL Cleaner is compiled with the feature `cache-redirects`, the provided URL is found in the cache, but its cached result cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
-    /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
-    /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
-    /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
-    /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    ExpandShortLink,
-    /// Sets the specified URL part to `to`.
-    /// # Errors
-    /// If `to` is `None` and `part` is [`types::UrlPart::Whole`], [`types::UrlPart::Scheme`], [`types::UrlPart::Username`], or [`types::UrlPart::Path`], returns the error [`types::ReplaceError::PartCannotBeNone`].
-    SetPart {
-        /// The name of the part to replace.
-        part: types::UrlPart,
-        /// The value to set the part to.
-        to: Option<String>
-    },
     /// Applies a regular expression substitution to the specified URL part.
     /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
     /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
@@ -274,16 +283,19 @@ pub enum Mapper {
         /// See [`regex::Regex::replace`] for details.
         replace: String
     },
-    /// Extracts the specified query parameter's value and sets the specified part of the URL to that value.
+
+    // Miscelanious.
+
+    /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
+    /// Useful for link shorteners like `bit.ly` and `t.co`.
     /// # Errors
-    /// If the specified query parameter is not found, returns the error [`MapperError::CannotFindQueryParam`].
-    /// If the requested part replacement fails (returns an error [`crate::types::ReplaceError`]), that error is returned.
-    GetPartFromQueryParam {
-        /// The name of the part to replace.
-        part: types::UrlPart,
-        /// The query parameter to get the part from.
-        param_name: String
-    },
+    /// If URL Cleaner is compiled with the feature `cache-redirects`, the provided URL is found in the cache, but its cached result cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
+    /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
+    /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
+    /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
+    /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    ExpandShortLink,
     /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
     /// # Errors
@@ -350,18 +362,9 @@ impl Mapper {
     /// If the mapper has an error, that error is returned.
     pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
         match self {
-            Self::None => {},
-            Self::Error => Err(MapperError::ExplicitError)?,
-            Self::Debug(mapper) => {
-                let url_before_mapper=url.clone();
-                let mapper_result=mapper.apply(url);
-                eprintln!("=== Debug Mapper output ===\nMapper: {mapper:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
-                mapper_result?;
-            }
-            Self::IgnoreError(mapper) => {
-                let _=mapper.apply(url);
-            },
-            Self::TryCatch{r#try, catch} => r#try.apply(url).or_else(|_| catch.apply(url))?,
+
+            // Boolean
+            
             Self::All(mappers) => {
                 let mut temp_url=url.clone();
                 for mapper in mappers {
@@ -380,26 +383,28 @@ impl Mapper {
                 }
             },
             Self::FirstNotError(mappers) => {
-                let mut error=None;
+                let mut error=Ok(());
                 for mapper in mappers {
-                    match mapper.apply(url) {
-                        Ok(()) => {error=None; break},
-                        Err(e) => error=Some(e)
-                    }
+                    error=mapper.apply(url);
+                    if error.is_ok() {break}
                 }
-                if let Some(error) = error {
-                    Err(error)?;
-                }
+                error?
             },
-            Self::RemoveQuery => {
-                url.set_query(None);
-            },
+
+            // Error handling
+            
+            Self::IgnoreError(mapper) => {let _=mapper.apply(url);},
+            Self::TryCatch{r#try, catch} => r#try.apply(url).or_else(|_| catch.apply(url))?,
+
+            // Query
+
+            Self::RemoveQuery => url.set_query(None),
             Self::RemoveQueryParams(names) => {
                 let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !names.iter().any(|blocked_name| blocked_name==name))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::AllowQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| names.iter().any(|allowed_name| allowed_name==name))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  names.iter().any(|allowed_name| allowed_name==name))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             #[cfg(feature = "regex")]
@@ -407,10 +412,9 @@ impl Mapper {
                 let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !regex.is_match(name))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
-
             #[cfg(feature = "regex")]
             Self::AllowQueryParamsMatchingRegex(regex) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| regex.is_match(name))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  regex.is_match(name))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::GetUrlFromQueryParam(name) => {
@@ -425,7 +429,15 @@ impl Mapper {
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
+
+            // Other parts
+
             Self::SetHost(new_host) => url.set_host(Some(new_host))?,
+            Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
+
+            // Generic part handling
+
+            Self::SetPart{part, to} => part.set(url, to.as_deref())?,
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how)?,
             Self::CopyPart{from, none_to_empty_string, to} => if *none_to_empty_string {
                 #[allow(clippy::unnecessary_to_owned)] // It is necessary.
@@ -433,7 +445,18 @@ impl Mapper {
             } else {
                 to.set(url, from.get(url).map(Cow::into_owned).as_deref())
             }?,
-            Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
+            #[cfg(feature = "regex")]
+            Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
+                let old_part_value=part
+                    .get(url)
+                    .or_else(|| none_to_empty_string.then_some(Cow::Borrowed("")))
+                    .ok_or(MapperError::UrlPartNotFound)?;
+                #[allow(clippy::unnecessary_to_owned)]
+                part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
+            },
+
+            // Miscelanious
+
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink => {
                 #[cfg(feature = "cache-redirects")]
@@ -450,32 +473,24 @@ impl Mapper {
                 let new_url=reqwest::blocking::Client::new().get(url.to_string()).send()?.url().clone();
                 *url=new_url.clone();
                 // Intentionally ignore any and all file writing errors.
-                // Probably should return a warning but idk how to make that.
-                // enum Warning<T, W, E> {Ok(T), Warning(T, W), Error(E)} is obvious.
-                // But I'd want to bubble up a warning then return the Ok value with it.
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
                     let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
                 }
             },
-            Self::SetPart{part, to} => part.set(url, to.as_deref())?,
-            #[cfg(feature = "regex")]
-            Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
-                let old_part_value=part
-                    .get(url)
-                    .or_else(|| none_to_empty_string.then_some(Cow::Borrowed("")))
-                    .ok_or(MapperError::UrlPartNotFound)?;
-                #[allow(clippy::unnecessary_to_owned)]
-                part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
-            },
-            Self::GetPartFromQueryParam{part, param_name} => {
-                match url.query_pairs().into_owned().find(|(name, _)| param_name==name) {
-                    Some((_, new_part)) => {part.set(url, Some(&new_part))?;},
-                    None => Err(MapperError::CannotFindQueryParam)?
-                }
-            },
             #[cfg(feature = "commands")]
             Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;},
+
+            // Testing
+
+            Self::None => {},
+            Self::Error => Err(MapperError::ExplicitError)?,
+            Self::Debug(mapper) => {
+                let url_before_mapper=url.clone();
+                let mapper_result=mapper.apply(url);
+                eprintln!("=== Debug Mapper output ===\nMapper: {mapper:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
+                mapper_result?;
+            }
         };
         Ok(())
     }

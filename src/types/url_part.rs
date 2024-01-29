@@ -213,6 +213,8 @@ pub enum UrlPart {
     /// assert_eq!(url.query(), Some("c=4"));
     /// assert!(UrlPart::QueryParam("c".to_string()).set(&mut url, None).is_ok());
     /// assert_eq!(url.query(), None);
+    /// assert!(UrlPart::QueryParam("c".to_string()).set(&mut url, Some("4")).is_ok());
+    /// assert_eq!(url.query(), Some("c=4"));
     /// ```
     QueryParam(String),
     /// The query. Corresponds to [`Url::query`].
@@ -255,6 +257,14 @@ impl UrlPart {
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         Some(match self {
             // Ordered hopefully most used to least used.
+
+            // No shortcut conditions/mappers.
+
+            Self::PathSegment(n)   => Cow::Borrowed(url.path_segments()?.nth(*n)?),
+            Self::QueryParam(name) => url.query_pairs().find(|(name2, _)| name==name2)?.1,
+
+            // Miscelanious.
+
             Self::Query            => Cow::Borrowed(url.query()?),
             Self::Whole            => Cow::Borrowed(url.as_str()),
             Self::Host             => Cow::Borrowed(url.host_str()?),
@@ -269,9 +279,7 @@ impl UrlPart {
             }),
             Self::Domain           => Cow::Borrowed(url.domain()?),
             Self::Port             => Cow::Owned   (url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
-            Self::PathSegment(n)   => Cow::Borrowed(url.path_segments()?.nth(*n)?), // If the path doesn't start with `'/'` then it's
             Self::Path             => Cow::Borrowed(url.path()),
-            Self::QueryParam(name) => url.query_pairs().find_map(|(name2, value)| (name==&name2).then_some(value))?,
 
             // The things that are likely very rarely used.
 
@@ -299,7 +307,7 @@ impl UrlPart {
                 new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?);
                 url.set_host(Some(&new_domain))?;
             },
-            (Self::NotSubdomain, Some(to))     => {
+            (Self::NotSubdomain, Some(to)) => {
                 let mut new_domain=Self::Subdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?.to_string();
                 new_domain.push('.');
                 new_domain.push_str(to);
@@ -312,7 +320,7 @@ impl UrlPart {
                 Some(to) => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
                 None     => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join("/")),
             },
-            (Self::NextPathSegment, _)  => {
+            (Self::NextPathSegment, _) => {
                 if let Some(to) = to {
                     url.path_segments_mut().map_err(|()| ReplaceError::CannotBeABase)?.pop_if_empty().push(to);
                 }
@@ -326,6 +334,8 @@ impl UrlPart {
                         } else {
                             form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish()
                         }));
+                    } else {
+                        url.set_query(Some(&form_urlencoded::Serializer::new(String::new()).extend_pairs([(name, to)]).finish()));
                     }
                 } else {
                     let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name2, _)| name!=name2)).finish();
@@ -335,9 +345,9 @@ impl UrlPart {
 
             // The things that are likely very rarely used.
 
-            (Self::Scheme   , Some(to)) => url.set_scheme  (to).map_err(|()| ReplaceError::InvalidScheme)?,
-            (Self::Username , Some(to)) => url.set_username(to).map_err(|()| ReplaceError::CannotSetUsername)?,
-            (Self::Password , _       ) => url.set_password(to).map_err(|()| ReplaceError::CannotSetPassword)?,
+            (Self::Scheme  , Some(to)) => url.set_scheme  (to).map_err(|()| ReplaceError::InvalidScheme)?,
+            (Self::Username, Some(to)) => url.set_username(to).map_err(|()| ReplaceError::CannotSetUsername)?,
+            (Self::Password, _       ) => url.set_password(to).map_err(|()| ReplaceError::CannotSetPassword)?,
             (Self::Fragment, _) => url.set_fragment(to),
             (_, None) => Err(ReplaceError::PartCannotBeNone)?
         }

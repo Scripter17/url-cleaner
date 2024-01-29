@@ -1,7 +1,7 @@
 use url::ParseError;
 use thiserror::Error;
 use std::io::Error as IoError;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Serialize, Deserialize};
 
@@ -22,22 +22,10 @@ pub struct RuleConfig {
     pub dcr: DomainConditionRule,
     /// Works with [`crate::rules::conditions::Condition::RuleVariableIs'`].
     #[serde(default)]
-    pub variables: HashMap<String, String>
-}
-
-/// Parses CLI variable strings.
-/// # Examples
-/// ```
-/// # use std::collections::HashMap;
-/// # use url_cleaner::types::parse_variables;
-/// assert_eq!(parse_variables("a=2;b=3"), HashMap::from([("a".to_string(), "2".to_string()), ("b".to_string(), "3".to_string())]));
-/// ```
-#[must_use]
-pub fn parse_variables(s: &str) -> HashMap<String, String> {
-    s.split(';')
-        .filter_map(|kv| kv.split_once('='))
-        .map(|(k, v)| (k.to_owned(), v.to_owned()))
-        .collect()
+    pub variables: HashMap<String, String>,
+    /// Works with [`crate::rules::conditions::Condition::FlagSet`].
+    #[serde(default)]
+    pub flags: HashSet<String>
 }
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.

@@ -31,10 +31,16 @@ pub struct Rule {
     pub condition: conditions::Condition,
     /// The mapper used to modify the provided URL.
     pub mapper: mappers::Mapper,
-    /// Apply the contained rule if the rule this is a part of does not error.
-    /// Useful for... optimizing rule lists? I guess?
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub and: Option<Box<Rule>>
+    // Removed for performance reasons.
+    // Code left in just in case.
+    // /// Apply the contained rule if the rule this is a part of does not error.
+    // /// Useful for... optimizing rule lists? I guess?
+    // #[serde(default, skip_serializing_if = "Option::is_none")]
+    // pub and: Option<Box<Rule>>,
+    // /// Apply the contained rule if the rule this is a part of's condition fails.
+    // /// Also useful for optimizing rule lists.
+    // #[serde(default, skip_serializing_if = "Option::is_none")]
+    // pub r#else: Option<Box<Rule>>
 }
 
 /// Denotes that either the condition failed (returned `Ok(false)`), the condition errored, or the mapper errored.
@@ -55,6 +61,7 @@ impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
     /// If the condition fails or the condition/mapper returns an error, that error is returned.
+    /// If the `and` field is `Some` and its rule errors, that error is returned.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.apply_with_config(url, &types::RuleConfig::default())
     }
@@ -62,28 +69,41 @@ impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
     /// If the condition fails or the condition/mapper returns an error, that error is returned.
+    /// If the `and` field is `Some` and its rule errors, that error is returned.
     pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
         if self.condition.satisfied_by_with_config(url, config)? {
             self.mapper.apply(url)?;
-            if let Some(and) = &self.and {
-                and.apply_with_config(url, config)?;
-            }
+            // if let Some(and) = &self.and {
+            //     and.apply_with_config(url, config)?;
+            // }
             Ok(())
         } else {
+            // match &self.r#else {
+            //     Some(r#else) => r#else.apply_with_config(url, config),
+            //     None => Err(RuleError::FailedCondition)
+            // }
             Err(RuleError::FailedCondition)
         }
     }
 }
 
+/// The rules loaded into URL Cleaner at compile time.
+/// When the `minify-included-strings` is enabled, the macro [`const_str::squish`] is used to squish all ASCII whitespace in the file to one space.
+/// If there is more than one space in a string in part of a rule, this may mess that up.
+/// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
+/// If you cannot avoid multiple spaces in a strng then turn off the `minify-default-strings` feature to disable this squishing.
 #[cfg(all(feature = "default-rules", feature = "minify-included-strings"))]
-static RULES_STR: &str=const_str::replace!(const_str::replace!(const_str::replace!(include_str!("../default-rules.json"), ' ', ""), '\t', ""), '\n', "");
+pub static RULES_STR: &str=const_str::squish!(include_str!("../default-rules.json"));
+/// The non-minified rules loaded into URL Cleaner at compile time.
 #[cfg(all(feature = "default-rules", not(feature = "minify-included-strings")))]
-static RULES_STR: &str=include_str!("../default-rules.json");
+pub static RULES_STR: &str=include_str!("../default-rules.json");
+/// The container for caching the parsed version of [`RULES_STR`].
 #[cfg(feature = "default-rules")]
-static RULES: OnceLock<Rules>=OnceLock::new();
+pub static RULES: OnceLock<Rules>=OnceLock::new();
 
 /// Gets the rules compiled into the URL Cleaner binary.
-/// Panics if the it isn't parseable into [`Rules`].
+/// On the first call, it parses [`RULES_STR`] and caches it in [`RULES`]. On all future calls it simply returns the cached value.
+/// In the future it would be nice to have the rules pre-parsed so the startup speed can be significantly lowered, but that's pending const heap allocations and serde support.
 /// # Errors
 /// If the default rules cannot be parsed, returns the error [`GetRulesError::CantParseDefaultRules`].
 /// If URL Cleaner was compiled without default rules, returns the error [`GetRulesError::NoDefaultRules`].
@@ -191,4 +211,15 @@ pub enum GetRulesError {
     #[allow(dead_code)]
     #[error("The default rules compiled into URL Cleaner aren't valid JSON.")]
     CantParseDefaultRules(serde_json::Error)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(feature = "default-rules")]
+    fn parse_default_rules() {
+        assert!(get_default_rules().is_ok());
+    }
 }

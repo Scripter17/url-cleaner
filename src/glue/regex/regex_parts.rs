@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
-use regex::{Regex, RegexBuilder};
+use regex::{Regex, RegexBuilder, Error as RegexError};
 use regex_syntax::{ParserBuilder, Error as RegexSyntaxError};
 
 /// The enabled form of `RegexParts`.
@@ -44,7 +44,7 @@ pub struct RegexConfig {
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
 }
 
-/// Serde doesn't have an equivalent to Clap's `default_value_t`
+// Serde helper functions
 const fn is_false(x: &bool) -> bool {!*x} // <&bool as std::ops::Not>::not is not const.
 const fn is_true(x: &bool) -> bool {*x}
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
@@ -83,10 +83,9 @@ impl RegexParts {
     }
 
     /// Creates the regex.
-    /// # Panics
-    /// If the regex is larger than the maximum DFA size, this will panic.
-    #[must_use]
-    pub fn build(&self) -> Regex {
+    /// # Errors
+    /// If the regex is larger than the maximum DFA size, this will error.
+    pub fn build(&self) -> Result<Regex, RegexError> {
         RegexBuilder::new(&self.pattern)
             .case_insensitive(self.config.case_insensitive)
             .crlf(self.config.crlf)
@@ -98,7 +97,6 @@ impl RegexParts {
             .swap_greed(self.config.swap_greed)
             .unicode(self.config.unicode)
             .build()
-            .expect("The regex to have been validated during `RegexParts::new` and the regex to not exceed configured limits.")
     }
 }
 
@@ -146,15 +144,19 @@ impl From<RegexConfig> for ParserBuilder {
     }
 }
 
-impl From<&RegexParts> for Regex {
-    fn from(value: &RegexParts) -> Self {
+impl TryFrom<&RegexParts> for Regex {
+    type Error = RegexError;
+    
+    fn try_from(value: &RegexParts) -> Result<Self, Self::Error> {
         value.build()
     }
 }
 
-impl From<RegexParts> for Regex {
-    fn from(value: RegexParts) -> Self {
-        (&value).into()
+impl TryFrom<RegexParts> for Regex {
+    type Error = RegexError;
+    
+    fn try_from(value: RegexParts) -> Result<Self, Self::Error> {
+        (&value).try_into()
     }
 }
 
