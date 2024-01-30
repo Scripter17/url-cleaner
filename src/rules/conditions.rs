@@ -1,6 +1,7 @@
 //! The logic for when to modify a URL.
 
 use std::borrow::Cow;
+use std::collections::hash_set::HashSet;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
@@ -103,6 +104,8 @@ pub enum Condition {
     /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap()).is_ok_and(|x| x==true ));
     /// ```
     QualifiedDomain(String),
+    /// Passes if the URL's host is in the specified set of hosts.
+    HostIsOneOf(HashSet<String>),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     /// # Examples
@@ -385,21 +388,23 @@ impl Condition {
     /// Checks whether or not the provided URL passes the condition.
     /// # Errors
     /// If the condition has an error, that error is returned.
+    /// See [`Condition`]'s documentation for details.
     pub fn satisfied_by_with_config(&self, url: &Url, config: &RuleConfig) -> Result<bool, ConditionError> {
         Ok(match self {
             // Domain conditions
 
-            Self::MaybeWWWDomain(parts) => url.domain().is_some_and(|x| x.strip_prefix("www.").unwrap_or(x)==parts),
-            Self::UnqualifiedDomain(parts) => url.domain().is_some_and(|domain| domain.strip_suffix(parts).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
-            Self::QualifiedDomain(parts) => url.domain()==Some(parts),
-            Self::UnqualifiedAnyTld(parts) => {
+            Self::UnqualifiedDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
+            Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
+            Self::QualifiedDomain(domain) => url.domain()==Some(domain),
+            Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
+            Self::UnqualifiedAnyTld(middle) => {
                 // Sometimes you just gotta write garbage.
                 url.domain()
-                    .is_some_and(|domain| domain.contains(parts) && psl::suffix_str(domain)
+                    .is_some_and(|domain| domain.contains(middle) && psl::suffix_str(domain)
                         .is_some_and(|suffix| domain.strip_suffix(suffix)
-                            .is_some_and(|prefix_dot| prefix_dot.strip_suffix('.')
-                                .is_some_and(|prefix| prefix.strip_suffix(parts)
-                                    .is_some_and(|subdomain_dot| subdomain_dot.is_empty() || subdomain_dot.ends_with('.'))
+                            .is_some_and(|not_suffix_dot| not_suffix_dot.strip_suffix('.')
+                                .is_some_and(|not_suffix| not_suffix.strip_suffix(middle)
+                                    .is_some_and(|prefix_dot| prefix_dot.is_empty() || prefix_dot.ends_with('.'))
                                 )
                             )
                         )
@@ -420,36 +425,21 @@ impl Condition {
                         url.domain()
                             .map_or(false, |url_domain|
                                 !(unless_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(url_domain))) &&
-                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(url_domain)))
+                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes   .iter().any(|regex| regex.is_match(url_domain)))
                             )
                     },
                     DomainConditionRule::UseUrlBeingCleaned => {
                         url.domain()
                             .map_or(false, |url_domain|
                                 !(unless_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(url_domain))) &&
-                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes.iter().any(|regex| regex.is_match(url_domain)))
+                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes   .iter().any(|regex| regex.is_match(url_domain)))
                             )
                     },
                 }
             }
 
-            // Should only ever be used once
-
-            Self::Always => true,
-
             // Meta conditions
 
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(false),
-            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_config(url, config).or_else(|_| catch.satisfied_by_with_config(url, config))?,
-            Self::All(conditions) => {
-                for condition in conditions {
-                    if !condition.satisfied_by_with_config(url, config)? {
-                        return Ok(false);
-                    }
-                }
-                true
-            },
             Self::Any(conditions) => {
                 for condition in conditions {
                     if condition.satisfied_by_with_config(url, config)? {
@@ -458,25 +448,31 @@ impl Condition {
                 }
                 false
             },
+            Self::All(conditions) => {
+                for condition in conditions {
+                    if !condition.satisfied_by_with_config(url, config)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            },
             Self::Not(condition) => !condition.satisfied_by_with_config(url, config)?,
-
 
             // Query
 
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
             #[cfg(feature = "regex")] Self::QueryParamValueMatchesRegex{name, regex} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && regex.is_match(value2)),
-            #[cfg(feature = "glob" )] Self::QueryParamValueMatchesGlob {name, glob} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob.matches(value2)),
+            #[cfg(feature = "glob" )] Self::QueryParamValueMatchesGlob {name, glob } => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob .matches (value2)),
 
             // Path
 
             Self::PathIs(path) => url.path()==path,
             #[cfg(feature = "regex")] Self::PathMatchesRegex(regex) => regex.is_match(url.path()),
-            #[cfg(feature = "glob" )] Self::PathMatchesGlob (glob) => glob  .matches(url.path()),
+            #[cfg(feature = "glob" )] Self::PathMatchesGlob (glob ) => glob .matches (url.path()),
 
             // General parts
 
-            Self::PartExists(part) => part.get(url).is_some(),
             Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==if *none_to_empty_string {
                 Some(part.get(url).unwrap_or(Cow::Borrowed("")))
             } else {
@@ -488,19 +484,29 @@ impl Condition {
                     .ok_or(ConditionError::UrlPartNotFound)?;
                 r#where.satisfied_by(&part_value, value)?
             }
+            Self::PartExists(part) => part.get(url).is_some(),
             #[cfg(feature = "regex")] Self::PartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
-            #[cfg(feature = "glob" )] Self::PartMatchesGlob {part, none_to_empty_string, glob} => glob.matches(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
-
-            // Disablable conditions
-
-            #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
-            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url)?==expected},
+            #[cfg(feature = "glob" )] Self::PartMatchesGlob  {part, none_to_empty_string, glob } => glob .matches (part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
 
             // Miscelanious
 
             Self::VariableIs{name, value, default} => config.variables.get(name).map_or(*default, |x| x==value),
-
             Self::FlagSet(name) => config.flags.contains(name),
+
+            // Should only ever be used once
+
+            Self::Always => true,
+
+            // Commands
+
+            #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
+            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url)?==expected},
+
+            // Error handling
+
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(false),
+            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_config(url, config).or_else(|_| catch.satisfied_by_with_config(url, config))?,
 
             // Debug
 

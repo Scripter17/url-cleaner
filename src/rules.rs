@@ -8,6 +8,7 @@ use std::fs::read_to_string;
 use std::path::Path;
 use std::ops::{Deref, DerefMut};
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -23,27 +24,24 @@ use crate::types;
 /// ```
 /// # use url_cleaner::rules::{Rule, conditions, mappers};
 /// # use url::Url;
-/// assert!(Rule {condition: conditions::Condition::Never, mapper: mappers::Mapper::None, and: None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+/// # use std::collections::HashMap;
+/// assert!(Rule::Normal{condition: conditions::Condition::Never, mapper: mappers::Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
 /// ```
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Rule {
-    /// The condition under which the provided URL is modified.
-    pub condition: conditions::Condition,
-    /// The mapper used to modify the provided URL.
-    pub mapper: mappers::Mapper,
-    // Removed for performance reasons.
-    // Code left in just in case.
-    // /// Apply the contained rule if the rule this is a part of does not error.
-    // /// Useful for... optimizing rule lists? I guess?
-    // #[serde(default, skip_serializing_if = "Option::is_none")]
-    // pub and: Option<Box<Rule>>,
-    // /// Apply the contained rule if the rule this is a part of's condition fails.
-    // /// Also useful for optimizing rule lists.
-    // #[serde(default, skip_serializing_if = "Option::is_none")]
-    // pub r#else: Option<Box<Rule>>
+pub enum Rule {
+    /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
+    HostMap(HashMap<String, mappers::Mapper>),
+    /// The basic condition mapper rule type.
+    #[serde(untagged)]
+    Normal {
+        /// The condition under which the provided URL is modified.
+        condition: conditions::Condition,
+        /// The mapper used to modify the provided URL.
+        mapper: mappers::Mapper
+    }
 }
 
-/// Denotes that either the condition failed (returned `Ok(false)`), the condition errored, or the mapper errored.
+/// The errors that [`Rule`] can return.
 #[derive(Error, Debug)]
 pub enum RuleError {
     /// The URL does not meet the rule's condition.
@@ -54,35 +52,37 @@ pub enum RuleError {
     ConditionError(#[from] conditions::ConditionError),
     /// The mapper returned an error.
     #[error(transparent)]
-    MapperError(#[from] mappers::MapperError)
+    MapperError(#[from] mappers::MapperError),
+    /// Returned when the provided URL doesn't have a host to find in a [`Rule::HostMap`].
+    #[error("The provided URL doesn't have a host to find in the hashmap.")]
+    UrlHasNoHost,
+    /// Returned when the provided URL's host isn't in a [`Rule::HostMap`].
+    #[error("The provided URL's host was not found in the hashmap.")]
+    HostNotInMap
 }
 
 impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
-    /// If the condition fails or the condition/mapper returns an error, that error is returned.
-    /// If the `and` field is `Some` and its rule errors, that error is returned.
+    /// If the call to [`Self::apply_with_config`] returns an error, that error is returned.
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.apply_with_config(url, &types::RuleConfig::default())
     }
 
     /// Apply the rule to the url in-place.
     /// # Errors
-    /// If the condition fails or the condition/mapper returns an error, that error is returned.
-    /// If the `and` field is `Some` and its rule errors, that error is returned.
+    /// If the rule is a [`Self::NormalRule`] and the contained [`NormalRule`] returns an error, that error is returned.
+    /// If the rule is a [`Self::HostMap`] and the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
+    /// If the rule is a [`Self::HostMap`] and the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
     pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
-        if self.condition.satisfied_by_with_config(url, config)? {
-            self.mapper.apply(url)?;
-            // if let Some(and) = &self.and {
-            //     and.apply_with_config(url, config)?;
-            // }
-            Ok(())
-        } else {
-            // match &self.r#else {
-            //     Some(r#else) => r#else.apply_with_config(url, config),
-            //     None => Err(RuleError::FailedCondition)
-            // }
-            Err(RuleError::FailedCondition)
+        match self {
+            Self::Normal{condition, mapper} => if condition.satisfied_by_with_config(url, config)? {
+                mapper.apply(url)?;
+                Ok(())
+            } else {
+                Err(RuleError::FailedCondition)
+            },
+            Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url)?)
         }
     }
 }
@@ -178,13 +178,12 @@ impl Rules {
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
     /// # Errors
-    /// If a rule returns any error other than [`RuleError::FailedCondition`], that error is returned.
-    /// If the error [`RuleError::FailedCondition`] is encountered, it is ignored.
+    /// If the error [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, it is ignored.
     pub fn apply_with_config(&self, url: &mut Url, config: &types::RuleConfig) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in &**self {
             match rule.apply_with_config(&mut temp_url, config) {
-                Err(RuleError::FailedCondition) => {},
+                Err(RuleError::FailedCondition | RuleError::UrlHasNoHost | RuleError::HostNotInMap) => {},
                 e @ Err(_) => e?,
                 _ => {}
             }

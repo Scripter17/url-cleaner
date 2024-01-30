@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
 use std::str::Utf8Error;
+use std::collections::hash_set::HashSet;
 
 use std::borrow::Cow;
 
@@ -143,25 +144,27 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::rules::mappers::*;
     /// # use url::Url;
+    /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url).is_ok());
     /// assert_eq!(url.query(), Some("b=3&c=4&d=5"));
-    /// assert!(Mapper::RemoveQueryParams(vec!["b".to_string(), "c".to_string()]).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut url).is_ok());
     /// assert_eq!(url.query(), Some("d=5"));
-    /// assert!(Mapper::RemoveQueryParams(vec!["d".to_string()]).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut url).is_ok());
     /// assert_eq!(url.query(), None);
     /// ```
-    RemoveQueryParams(Vec<String>),
+    RemoveQueryParams(HashSet<String>),
     /// Removes query parameters whose name isn't in the specified names.
     /// Useful for websites that keep changing their tracking parameters and you're sick of updating your rule set.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
     /// # use url::Url;
+    /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParams(vec!["a".to_string()]).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url).is_ok());
     /// ```
-    AllowQueryParams(Vec<String>),
+    AllowQueryParams(HashSet<String>),
     /// Removes query parameters whose name matches the specified regex.
     /// Useful for parsing AdGuard rules.
     /// # Examples
@@ -391,20 +394,15 @@ impl Mapper {
                 error?
             },
 
-            // Error handling
-            
-            Self::IgnoreError(mapper) => {let _=mapper.apply(url);},
-            Self::TryCatch{r#try, catch} => r#try.apply(url).or_else(|_| catch.apply(url))?,
-
             // Query
 
             Self::RemoveQuery => url.set_query(None),
             Self::RemoveQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !names.iter().any(|blocked_name| blocked_name==name))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::AllowQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  names.iter().any(|allowed_name| allowed_name==name))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             #[cfg(feature = "regex")]
@@ -454,6 +452,11 @@ impl Mapper {
                 #[allow(clippy::unnecessary_to_owned)]
                 part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
             },
+
+            // Error handling
+            
+            Self::IgnoreError(mapper) => {let _=mapper.apply(url);},
+            Self::TryCatch{r#try, catch} => r#try.apply(url).or_else(|_| catch.apply(url))?,
 
             // Miscelanious
 

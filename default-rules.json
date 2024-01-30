@@ -1,9 +1,5 @@
 [
 	{
-		"condition": {"QualifiedDomain": "l.threads.net"},
-		"mapper": {"GetUrlFromQueryParam": "u"}
-	},
-	{
 		"condition": {
 			"All": [
 				{"QualifiedDomain": "pixiv.net"},
@@ -30,50 +26,30 @@
 	{
 		"condition": {
 			"Any": [
-				{"QualifiedDomain": "t.co"},
-				{"QualifiedDomain": "bit.ly"},
-				{"QualifiedDomain": "pixiv.me"},
-				{
-					"All": [
-						{"QualifiedDomain": "pawoo.net"},
-						{"PathIs": "/oauth_authentications"}
-					]
-				},
-				{"QualifiedDomain": "tr.ee"}
+				{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
+				{"All": [
+					{"QualifiedDomain": "pawoo.net"},
+					{"PathIs": "/oauth_authentications"}
+				]}
 			]
 		},
 		"mapper": "ExpandShortLink"
 	},
 
 	{
-		"comment": "The tracking parameters from (in order) Brave Browser, FireFox, and... I don't remember.",
+		"comment": "The query paramaters to always remove. Sources are Brave Browser and Firefox.",
 		"condition": "Always",
 		"mapper": {
 			"RemoveQueryParams": [
-				"__hsfp", "__hssc", "__hstc", "__s", "_gl", "_hsenc", "_kx", "_openstat", "at_recipient_id", "at_recipient_list",
-				"bsft_clkid", "bsft_uid", "dclid", "fb_action_ids", "fb_comment_id", "fbclid", "gbraid", "gclid", "guce_referrer",
-				"guce_referrer_sig", "hsCtaTracking", "irclickid", "mc_eid", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mtm_cid",
-				"oft_c", "oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "pk_cid",
-				"rb_clickid", "s_cid", "ss_email_id", "twclid", "unicorn_click_id", "vero_conv", "vero_id", "vgo_ee", "wbraid",
-				"wickedid", "yclid", "ymclid", "ysclid",
-
-				"mc_eid", "oly_anon_id", "oly_enc_id", "__s",
-				"vero_id", "_hsenc", "mkt_tok", "fbclid",
-
-				"ltcld"
+				"t_recipient_id", "at_recipient_list", "bsft_clkid", "bsft_uid", "dclid", "fb_action_ids", "fbclid", "fb_comment_id", "gbraid",
+				"gclid", "_gl", "guce_referrer", "guce_referrer_sig", "hsCtaTracking", "_hsenc", "__hsfp", "__hssc", "__hstc", "irclickid", "_kx",
+				"ltcld", "mc_eid", "mkt_tok", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mtm_cid", "oft_c", "oft_ck", "oft_d", "oft_id",
+				"oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_openstat", "pk_cid", "rb_clickid", "__s", "s_cid",
+				"ss_email_id", "twclid", "unicorn_click_id", "vero_conv", "vero_id", "vgo_ee", "wbraid", "wickedid", "yclid", "ymclid", "ysclid"
 			]
 		}
 	},
 
-	{
-		"condition": {
-			"Any": [
-				{"QualifiedDomain": "instagram.com"},
-				{"QualifiedDomain": "threads.net"}
-			]
-		},
-		"mapper": {"RemoveQueryParams": ["igshid", "igsh"]}
-	},
 	{
 		"condition": {
 			"All": [
@@ -116,20 +92,6 @@
 		"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
 	},
 	{
-		"condition": {"QualifiedDomain": "youtu.be"},
-		"mapper": {
-			"All": [
-				{"SetHost": "youtube.com"},
-				{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
-				{"SetPart": {"part": "Path", "to": "watch"}}
-			]
-		}
-	},
-	{
-		"condition": {"QualifiedDomain": "youtube.com"},
-		"mapper": {"RemoveQueryParams": ["si"]}
-	},
-	{
 		"condition": {
 			"All": [
 				{"FlagSet": "unshort-youtube"},
@@ -144,35 +106,48 @@
 		}
 	},
 	{
-		"condition": {
-			"Any": [
-				{"QualifiedDomain": "twitter.com"},
-				{"QualifiedDomain": "vxtwitter.com"},
-				{"QualifiedDomain": "fxtwitter.com"},
-				{"QualifiedDomain": "x.com"}
-			]
-		},
-		"mapper": {
-			"All": [
-				{"SetHost": "twitter.com"},
-				"RemoveQuery"
-			]
+		"HostMap": {
+			"theonion.com" : "RemoveQuery",
+			"teespring.com": "RemoveQuery",
+			"donmai.com"   : "RemoveQuery",
+			"instagram.com": "RemoveQuery",
+			"twitter.com"  : "RemoveQuery",
+			"vxtwitter.com": {"All": [{"SetHost": "twitter.com"}, "RemoveQuery"]},
+			"fxtwitter.com": {"All": [{"SetHost": "twitter.com"}, "RemoveQuery"]},
+			"x.com"        : {"All": [{"SetHost": "twitter.com"}, "RemoveQuery"]},
+			"youtube.com"  : {"RemoveQueryParams": ["si"]},
+			"l.threads.net": {"GetUrlFromQueryParam": "u"},
+			"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
+			"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
+			"youtu.be"     : {
+				"All": [
+					{"SetHost": "youtube.com"},
+					{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
+					{"SetPart": {"part": "Path", "to": "watch"}}
+				]
+			}
 		}
 	},
 	{
+		"condition": {"All": [
+			{"QualifiedDomain": "bsky.app"},
+			{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
+		]},
+		"mapper": {"ModifyPart": {"part": "Path", "how": {"Append": ".social"}}}
+	},
+	{
 		"comment": "Discord currently can't embed any twitter link. Not just videos.",
-		"condition": {"FlagSet": "discord-compatibility"},
+		"condition": {"All": [
+			{"FlagSet": "discord-compatibility"},
+			{"QualifiedDomain": "twitter.com"}
+		]},
 		"mapper": {"SetHost": "vxtwitter.com"}
 	},
 	{
 		"condition": {
 			"Any": [
-				{"UnqualifiedDomain": "reddit.com"   },
-				{"QualifiedDomain"  : "theonion.com" },
-				{"QualifiedDomain"  : "teespring.com"},
-				{"QualifiedDomain"  : "donmai.com"   },
-				{"UnqualifiedDomain": "tumblr.com"   },
-				{"QualifiedDomain"  : "instagram.com"}
+				{"UnqualifiedDomain": "reddit.com"},
+				{"UnqualifiedDomain": "tumblr.com"}
 			]
 		},
 		"mapper": "RemoveQuery"
@@ -189,20 +164,6 @@
 				"RemoveQuery",
 				{"RemovePathSegments": [0, 3]}
 			]
-		}
-	},
-	{
-		"condition": {
-			"All": [
-				{"QualifiedDomain": "bsky.app"},
-				{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
-			]
-		},
-		"mapper": {
-			"ModifyPart": {
-				"part": "Path",
-				"how": {"Append": ".social"}
-			}
 		}
 	}
 ]
