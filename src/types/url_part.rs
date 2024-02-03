@@ -133,6 +133,27 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:80" ).unwrap()), Some(Cow::Owned("80" .to_string())));
     /// ```
     Port,
+    /// Useful only for inserting a path segment inside the a URL's path.
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::types::UrlPart;
+    /// let mut url=Url::parse("https://example.com/a/b/c").unwrap();
+    /// assert!(UrlPart::BeforePathSegment(0).get(&url).is_none());
+    /// assert!(UrlPart::BeforePathSegment(1).get(&url).is_none());
+    /// assert!(UrlPart::BeforePathSegment(2).get(&url).is_none());
+    /// assert!(UrlPart::BeforePathSegment(0).set(&mut url, Some("d")).is_ok());
+    /// assert_eq!(url.path(), "/d/a/b/c");
+    /// assert!(UrlPart::BeforePathSegment(5).set(&mut url, Some("e")).is_ok());
+    /// assert_eq!(url.path(), "/d/a/b/c");
+    /// assert!(UrlPart::BeforePathSegment(4).set(&mut url, Some("f")).is_ok());
+    /// assert_eq!(url.path(), "/d/a/b/c");
+    /// assert!(UrlPart::BeforePathSegment(3).set(&mut url, Some("g")).is_ok());
+    /// assert_eq!(url.path(), "/d/a/b/g/c");
+    /// assert!(UrlPart::BeforePathSegment(100).set(&mut url, Some("h")).is_ok());
+    /// assert_eq!(url.path(), "/d/a/b/g/c");
+    /// ```
+    BeforePathSegment(usize),
     /// A specific segment of the URL's path.
     /// # Examples
     /// ```
@@ -265,29 +286,30 @@ impl UrlPart {
 
             // Miscelanious.
 
-            Self::Query            => Cow::Borrowed(url.query()?),
-            Self::Whole            => Cow::Borrowed(url.as_str()),
-            Self::Host             => Cow::Borrowed(url.host_str()?),
-            Self::Subdomain        => Cow::Borrowed({
+            Self::Query                => Cow::Borrowed(url.query()?),
+            Self::Whole                => Cow::Borrowed(url.as_str()),
+            Self::Host                 => Cow::Borrowed(url.host_str()?),
+            Self::Subdomain            => Cow::Borrowed({
                 let domain=url.domain()?;
                 // `psl::suffix_str` should never return `None`. Testing required.
                 domain.strip_suffix(psl::suffix_str(domain)?)?.strip_suffix('.').unwrap_or("").rsplit_once('.').unwrap_or(("", "")).0
             }),
-            Self::NotSubdomain     => Cow::Borrowed({
+            Self::NotSubdomain         => Cow::Borrowed({
                 let temp=url.domain()?.strip_prefix(&*Self::Subdomain.get(url)?)?;
                 temp.strip_prefix('.').unwrap_or(temp)
             }),
-            Self::Domain           => Cow::Borrowed(url.domain()?),
-            Self::Port             => Cow::Owned   (url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
-            Self::Path             => Cow::Borrowed(url.path()),
+            Self::Domain               => Cow::Borrowed(url.domain()?),
+            Self::Port                 => Cow::Owned   (url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
+            Self::Path                 => Cow::Borrowed(url.path()),
 
             // The things that are likely very rarely used.
 
-            Self::NextPathSegment  => None?,
-            Self::Scheme           => Cow::Borrowed(url.scheme()),
-            Self::Username         => Cow::Borrowed(url.username()),
-            Self::Password         => Cow::Borrowed(url.password()?),
-            Self::Fragment         => Cow::Borrowed(url.fragment()?)
+            Self::BeforePathSegment(_) => None?,
+            Self::NextPathSegment      => None?,
+            Self::Scheme               => Cow::Borrowed(url.scheme()),
+            Self::Username             => Cow::Borrowed(url.username()),
+            Self::Password             => Cow::Borrowed(url.password()?),
+            Self::Fragment             => Cow::Borrowed(url.fragment()?)
         })
     }
 
@@ -301,11 +323,19 @@ impl UrlPart {
             (Self::Query    , _       ) => url.set_query  (to),
             (Self::Whole    , Some(to)) => *url=Url::parse(to)?,
             (Self::Host     , _       ) => url.set_host   (to)?,
-            (Self::Subdomain, Some(to)) => {
-                let mut new_domain=to.to_string();
-                new_domain.push('.');
-                new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?);
-                url.set_host(Some(&new_domain))?;
+            (Self::Subdomain, _       ) => {
+                match to {
+                    Some(to) => {
+                        let mut new_domain=to.to_string();
+                        new_domain.push('.');
+                        new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?);
+                        url.set_host(Some(&new_domain))?;
+                    },
+                    None => {
+                        #[allow(clippy::unnecessary_to_owned)]
+                        url.set_host(Some(&Self::NotSubdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?.into_owned()))?;
+                    }
+                }
             },
             (Self::NotSubdomain, Some(to)) => {
                 let mut new_domain=Self::Subdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?.to_string();
@@ -315,6 +345,13 @@ impl UrlPart {
             },
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| ReplaceError::InvalidPort)).transpose()?).map_err(|()| ReplaceError::CannotSetPort)?,
+            (Self::BeforePathSegment(n), _) => {
+                if let Some(to) = to {
+                    if url.path_segments().ok_or(ReplaceError::CannotBeABase)?.skip(*n).count()!=0 {
+                        url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.take(*n).chain([to]).chain(url.path_segments().ok_or(ReplaceError::CannotBeABase)?.skip(*n)).collect::<Vec<_>>().join("/"));
+                    }
+                }
+            }
             (Self::PathSegment(n), _) => match to {
                 // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
                 Some(to) => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),

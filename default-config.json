@@ -1,0 +1,264 @@
+{
+	"rules": [
+		{
+			"condition": {
+				"All": [
+					{"QualifiedDomain": "pixiv.net"},
+					{"PathIs": "/member.php"}
+				]
+			},
+			"mapper": {
+				"All": [
+					{"SetPart": {"part": "Path", "value": "/users/"}},
+					{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
+					"RemoveQuery"
+				]
+			}
+		},
+		{
+			"condition": {
+				"All": [
+					{"UnqualifiedDomain": "deviantart.com"},
+					{"PathIs": "/users/outgoing"}
+				]
+			},
+			"mapper": {"GetUrlFromQueryParam": "url"}
+		},
+		{
+			"condition": {
+				"Any": [
+					{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
+					{"All": [
+						{"QualifiedDomain": "pawoo.net"},
+						{"PathIs": "/oauth_authentications"}
+					]}
+				]
+			},
+			"mapper": "ExpandShortLink"
+		},
+
+		{
+			"comment": "The query paramaters to always remove. Sources are Brave Browser and Firefox.",
+			"condition": "Always",
+			"mapper": {
+				"RemoveQueryParams": [
+					"t_recipient_id", "at_recipient_list", "bsft_clkid", "bsft_uid", "dclid", "fb_action_ids", "fbclid", "fb_comment_id", "gbraid",
+					"gclid", "_gl", "guce_referrer", "guce_referrer_sig", "hsCtaTracking", "_hsenc", "__hsfp", "__hssc", "__hstc", "irclickid", "_kx",
+					"ltcld", "mc_eid", "mkt_tok", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mtm_cid", "oft_c", "oft_ck", "oft_d", "oft_id",
+					"oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_openstat", "pk_cid", "rb_clickid", "__s", "s_cid",
+					"ss_email_id", "twclid", "unicorn_click_id", "vero_conv", "vero_id", "vgo_ee", "wbraid", "wickedid", "yclid", "ymclid", "ysclid"
+				]
+			}
+		},
+
+		{
+			"condition": {
+				"All": [
+					{"UnqualifiedDomain": "tumblr.com"},
+					{"QueryHasParam": "redirect_to"}
+				]
+			},
+			"mapper": {
+				"All": [
+					{"GetPathFromQueryParam": "redirect_to"},
+					"RemoveQuery"
+				]
+			}
+		},
+	  {
+	    "condition": {
+				"All": [
+					{"FlagSet": "tumblr-strip-reblogs"},
+					{"UnqualifiedDomain": "tumblr.com"},
+					{"PartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
+					{"CommandExists": {"program": "gallery-dl"}},
+					{"CommandExists": {"program": "jq"}}
+				]
+			},
+	    "mapper": {
+	      "ReplaceWithCommandOutput": {
+	        "program": "gallery-dl",
+	        "args": ["--dump-json", "{}"],
+	        "output_handling": {
+	          "PipeStdoutTo": {
+	            "program": "jq",
+	            "args": ["-r", ".[0][1][\"reblogged_root_url\"]"]
+	          }
+	        }
+	      }
+	    }
+	  },
+		{
+			"condition": {"UnqualifiedAnyTld": "google"},
+			"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
+		},
+		{
+			"condition": {
+				"All": [
+					{"FlagSet": "unshort-youtube"},
+					{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
+				]
+			},
+			"mapper": {
+				"All": [
+					{"CopyPart": {"from": {"PathSegment": 1} , "to": {"QueryParam": "v"}}},
+					{"SetPart": {"part": "Path", "value": "watch"}}
+				]
+			}
+		},
+		{
+			"HostMap": {
+				"theonion.com" : "RemoveQuery",
+				"teespring.com": "RemoveQuery",
+				"instagram.com": "RemoveQuery",
+				"vxtwitter.com": {"SetHost": "twitter.com"},
+				"fxtwitter.com": {"SetHost": "twitter.com"},
+				"x.com"        : {"SetHost": "twitter.com"},
+				"youtube.com"  : {"RemoveQueryParams": ["si"]},
+				"l.threads.net": {"GetUrlFromQueryParam": "u"},
+				"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
+				"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
+				"youtu.be"     : {"All": [
+					{"SetHost": "youtube.com"},
+					{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
+					{"SetPart": {"part": "Path", "value": "watch"}}
+				]}
+			}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "danbooru.donmai.us"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "posts"}}
+			]},
+			"mapper": {"RemoveQueryParams": ["q"]}
+		},
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "gelbooru.com"},
+				{"PartIs": {"part": {"QueryParam": "page"}, "value": "post"}}
+			]},
+			"mapper": {"RemoveQueryParams": ["tags"]}
+		},
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "inkbunny.net"},
+				{"PathIs": "/submissionsviewall.php"}
+			]},
+			"mapper": {"RemoveQueryParams": ["rid"]}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "twitter.com"},
+				{"Not": {"PathIs": "/search"}}
+			]},
+			"mapper": "RemoveQuery"
+		},
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "twitter.com"},
+				{"PathIs": "/search"}
+			]},
+			"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "twitter.com"},
+				{"FlagSet": "discord-compatibility"}
+			]},
+			"mapper": {"SetHost": "vxtwitter.com"}
+		},
+		{
+			"condition": {"All": [
+				{"UnqualifiedDomain": "deviantart.com"},
+				{"FlagSet": "discord-compatibility"}
+			]},
+			"mapper": {"SetHost": "fxdeviantart.com"}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"UnqualifiedDomain": "fandom.com"},
+				{"FlagSet": "antifandom"}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
+				{"SetPart": {"part": "Domain", "value": "antifandom.com"}}
+			]}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "bsky.app"},
+				{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
+			]},
+			"mapper": {"ModifyPart": {"part": "Path", "how": {"Append": ".social"}}}
+		},
+		{
+			"condition": {"All": [
+				{"QualifiedDomain": "bsky.app"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
+				{"Not": {"PartContains": {"part": {"PathSegment": 1}, "where": "Anywhere", "value": "."}}}
+			]},
+			"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "how": {"Append": ".bsky.social"}}}
+		},
+		{
+			"condition": {"Any": [
+				{"All": [
+					{"UnqualifiedDomain": "reddit.com"},
+					{"Not": {"PathIs": "search"}}
+				]},
+				{"All": [
+					{"UnqualifiedDomain": "tumblr.com"},
+					{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}}
+				]}
+			]},
+			"mapper": "RemoveQuery"
+		},
+		{
+			"condition": {"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}
+			]},
+			"mapper": "RemoveQuery"
+		},
+
+
+
+		{
+			"condition": {
+				"All": [
+					{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
+					{"UnqualifiedAnyTld": "amazon"}
+				]
+			},
+			"mapper": {"All": [
+				"RemoveQuery",
+				{"RemovePathSegments": [0, 3]}
+			]}
+		},
+		{
+			"condition": {"All": [
+				{"PathIs": "/s"},
+				{"UnqualifiedAnyTld": "amazon"}
+			]},
+			"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
+		},
+		{
+			"condition": {"UnqualifiedAnyTld": "amazon"},
+			"mapper": {"RemoveQueryParams": ["ref"]}
+		}
+	]
+}

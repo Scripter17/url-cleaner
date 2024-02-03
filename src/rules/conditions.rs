@@ -9,12 +9,14 @@ use url::Url;
 use psl;
 
 use crate::glue;
-use crate::types::{UrlPart, RuleConfig, DomainConditionRule, StringLocation};
+use crate::types::{UrlPart, DomainConditionRule, StringLocation};
+use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
 /// Note that conditions are checked by the output of the previous mapper.
 /// A `Mapper::SwapHost` will make `Condition::UnqualifiedDomain` match on the host that was swapped in.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub enum Condition {
     /// Always passes.
     Always,
@@ -145,7 +147,7 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url_cleaner::glue::RegexParts;
-    /// # use url_cleaner::types::{RuleConfig, DomainConditionRule};
+    /// # use url_cleaner::types::{Params, DomainConditionRule};
     /// # use url::Url;
     /// let dc=Condition::DomainCondition {
     ///     yes_domains: vec!["example.com".to_string()],
@@ -159,25 +161,25 @@ pub enum Condition {
     /// assert!(dc.satisfied_by(&Url::parse("https://wawawa.example.com").unwrap()).is_ok_and(|x| x==false));
     /// assert!(dc.satisfied_by(&Url::parse("https://thing2.example.com").unwrap()).is_ok_and(|x| x==false));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Always, ..RuleConfig::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Never, ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
     ///
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example.com"       ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==true ));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://example9.com"      ).unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==true ));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://wawawa.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_config(&Url::parse("https://thing2.example.com").unwrap(), &RuleConfig{dcr: DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap()), ..RuleConfig::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap()), ..Params::default()}).is_ok_and(|x| x==true ));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap()), ..Params::default()}).is_ok_and(|x| x==true ));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
+    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
     /// ```
     #[cfg(feature = "regex")]
     #[allow(clippy::enum_variant_names)]
@@ -332,14 +334,14 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url::Url;
-    /// # use url_cleaner::types::RuleConfig;
+    /// # use url_cleaner::types::Params;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
-    /// let config=RuleConfig {variables: HashMap::from([("a".to_string(), "2".to_string())]), ..RuleConfig::default()};
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &config).is_ok_and(|x| x==false));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_config(&url, &RuleConfig::default()).is_ok_and(|x| x==true));
+    /// let config=Params {variables: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==false));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==false));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &Params::default()).is_ok_and(|x| x==true));
     /// ````
     VariableIs {
         /// The name of the variable to check.
@@ -382,14 +384,14 @@ impl Condition {
     /// # Errors
     /// If the condition has an error, that error is returned.
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
-        self.satisfied_by_with_config(url, &RuleConfig::default())
+        self.satisfied_by_with_params(url, &Params::default())
     }
 
     /// Checks whether or not the provided URL passes the condition.
     /// # Errors
     /// If the condition has an error, that error is returned.
     /// See [`Condition`]'s documentation for details.
-    pub fn satisfied_by_with_config(&self, url: &Url, config: &RuleConfig) -> Result<bool, ConditionError> {
+    pub fn satisfied_by_with_params(&self, url: &Url, params: &Params) -> Result<bool, ConditionError> {
         Ok(match self {
             // Domain conditions
 
@@ -416,7 +418,7 @@ impl Condition {
                 fn unqualified_domain(domain: &str, parts: &str) -> bool {
                     domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')})
                 }
-                match &config.dcr {
+                match &params.dcr {
                     DomainConditionRule::Always => true,
                     DomainConditionRule::Never => false,
                     // Somewhat annoyingly `DomainConditionRule::Url(Url) | DomainConditionRule::UseUrlBeingCloned` doesn't desugar to this.
@@ -442,7 +444,7 @@ impl Condition {
 
             Self::Any(conditions) => {
                 for condition in conditions {
-                    if condition.satisfied_by_with_config(url, config)? {
+                    if condition.satisfied_by_with_params(url, params)? {
                         return Ok(true);
                     }
                 }
@@ -450,13 +452,13 @@ impl Condition {
             },
             Self::All(conditions) => {
                 for condition in conditions {
-                    if !condition.satisfied_by_with_config(url, config)? {
+                    if !condition.satisfied_by_with_params(url, params)? {
                         return Ok(false);
                     }
                 }
                 true
             },
-            Self::Not(condition) => !condition.satisfied_by_with_config(url, config)?,
+            Self::Not(condition) => !condition.satisfied_by_with_params(url, params)?,
 
             // Query
 
@@ -490,8 +492,8 @@ impl Condition {
 
             // Miscelanious
 
-            Self::VariableIs{name, value, default} => config.variables.get(name).map_or(*default, |x| x==value),
-            Self::FlagSet(name) => config.flags.contains(name),
+            Self::VariableIs{name, value, default} => params.variables.get(name).map_or(*default, |x| x==value),
+            Self::FlagSet(name) => params.flags.contains(name),
 
             // Should only ever be used once
 
@@ -504,17 +506,17 @@ impl Condition {
 
             // Error handling
 
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_config(url, config).unwrap_or(false),
-            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_config(url, config).or_else(|_| catch.satisfied_by_with_config(url, config))?,
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by_with_params(url, params).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by_with_params(url, params).unwrap_or(false),
+            Self::TryCatch{r#try, catch}  => r#try.satisfied_by_with_params(url, params).or_else(|_| catch.satisfied_by_with_params(url, params))?,
 
             // Debug
 
             Self::Never => false,
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
-                let is_satisfied=condition.satisfied_by_with_config(url, config);
-                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nConfig: {config:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=condition.satisfied_by_with_params(url, params);
+                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nparams: {params:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             }
         })

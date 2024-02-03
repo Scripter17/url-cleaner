@@ -35,6 +35,7 @@ use crate::types;
 
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub enum Mapper {
 
     // Testing.
@@ -238,7 +239,7 @@ pub enum Mapper {
         /// The name of the part to replace.
         part: types::UrlPart,
         /// The value to set the part to.
-        to: Option<String>
+        value: Option<String>
     },
     /// Modifies the specified part of the URL.
     /// # Errors
@@ -435,7 +436,7 @@ impl Mapper {
 
             // Generic part handling
 
-            Self::SetPart{part, to} => part.set(url, to.as_deref())?,
+            Self::SetPart{part, value} => part.set(url, value.as_deref())?,
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how)?,
             Self::CopyPart{from, none_to_empty_string, to} => if *none_to_empty_string {
                 #[allow(clippy::unnecessary_to_owned)] // It is necessary.
