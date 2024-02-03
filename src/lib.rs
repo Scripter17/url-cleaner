@@ -11,14 +11,14 @@ pub mod rules;
 pub mod glue;
 /// Types that don't fit in the other modules.
 pub mod types;
-/// Deserializing and handlign configuration.
+/// Deserializing and handling configuration.
 pub mod config;
 
-/// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that Config to the URL.
+/// Takes a URL, an optional [`config::Config`], an optional [`config::Params`], and returns the result of applying the config and params to the URL.
 /// This function's name is set to `clean_url` in WASM for API simplicity.
 /// # Errors
-/// If the rules or config cannot be converted into a [`rules::Rules`] or [`types::RuleConfig`], returns the parsing error.
-/// If the [`rules::Rules`] returns an error, that error is returned.
+/// If the config or params can't be parsed, returns the parsing error.
+/// If applying the rules returns an error, that error is returned.
 #[wasm_bindgen(js_name = clean_url)]
 pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
     let mut url=Url::parse(url)?;
@@ -26,9 +26,9 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params: wasm_bin
     Ok(JsValue::from_str(url.as_str()))
 }
 
-/// Takes a URL, an optional [`rules::Rules`], an optional [`types::DomainConditionRule`], and returns the result of applying those rules and that Config to the URL.
+/// Takes a URL, an optional [`config::Config`], an optional [`config::Params`], and returns the result of applying the config and params to the URL.
 /// # Errors
-/// If the [`rules::Rules`] returns an error, that error is returned.
+/// If applying the rules returns an error, that error is returned.
 pub fn clean_url(url: &mut Url, config: Option<&config::Config>, params: Option<&config::Params>) -> Result<(), types::CleaningError> {
     #[allow(clippy::redundant_closure)] // The closures shrink the lifetime of [`config::Config::get_default`] to the lifetime of `config`.
     match params {

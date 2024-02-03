@@ -147,7 +147,8 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url_cleaner::glue::RegexParts;
-    /// # use url_cleaner::types::{Params, DomainConditionRule};
+    /// # use url_cleaner::types::DomainConditionRule;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let dc=Condition::DomainCondition {
     ///     yes_domains: vec!["example.com".to_string()],
@@ -334,7 +335,7 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url::Url;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::config::Params;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let config=Params {variables: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};

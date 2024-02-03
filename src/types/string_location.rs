@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-/// The location of a string. Used by [`crate::rules::conditions::Condition::UrlPartContains`].
+/// The location of a string. Used by [`crate::rules::conditions::Condition::PartContains`].
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
     /// Checks if an instance of the needle exists anywhere in the haystack.
@@ -112,7 +112,7 @@ pub enum StringLocation {
 impl StringLocation {
     /// Checks if `needle` exists in `haystack` according to `self`'s rules.
     /// # Errors
-    /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`suoer::StringError::InvalidSlice`].
+    /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`super::StringError::InvalidSlice`].
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, super::StringError> {
         Ok(match self {
             Self::Anywhere             => haystack.contains   (needle),

@@ -16,24 +16,20 @@
 			}
 		},
 		{
-			"condition": {
-				"All": [
-					{"UnqualifiedDomain": "deviantart.com"},
-					{"PathIs": "/users/outgoing"}
-				]
-			},
+			"condition": {"All": [
+				{"UnqualifiedDomain": "deviantart.com"},
+				{"PathIs": "/users/outgoing"}
+			]},
 			"mapper": {"GetUrlFromQueryParam": "url"}
 		},
 		{
-			"condition": {
-				"Any": [
-					{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
-					{"All": [
-						{"QualifiedDomain": "pawoo.net"},
-						{"PathIs": "/oauth_authentications"}
-					]}
-				]
-			},
+			"condition": {"Any": [
+				{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
+				{"All": [
+					{"QualifiedDomain": "pawoo.net"},
+					{"PathIs": "/oauth_authentications"}
+				]}
+			]},
 			"mapper": "ExpandShortLink"
 		},
 
@@ -52,29 +48,23 @@
 		},
 
 		{
-			"condition": {
-				"All": [
-					{"UnqualifiedDomain": "tumblr.com"},
-					{"QueryHasParam": "redirect_to"}
-				]
-			},
-			"mapper": {
-				"All": [
-					{"GetPathFromQueryParam": "redirect_to"},
-					"RemoveQuery"
-				]
-			}
+			"condition": {"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"QueryHasParam": "redirect_to"}
+			]},
+			"mapper": {"All": [
+				{"GetPathFromQueryParam": "redirect_to"},
+				"RemoveQuery"
+			]}
 		},
 	  {
-	    "condition": {
-				"All": [
-					{"FlagSet": "tumblr-strip-reblogs"},
-					{"UnqualifiedDomain": "tumblr.com"},
-					{"PartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
-					{"CommandExists": {"program": "gallery-dl"}},
-					{"CommandExists": {"program": "jq"}}
-				]
-			},
+	    "condition": {"All": [
+				{"FlagSet": "tumblr-strip-reblogs"},
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"PartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
+				{"CommandExists": {"program": "gallery-dl"}},
+				{"CommandExists": {"program": "jq"}}
+			]},
 	    "mapper": {
 	      "ReplaceWithCommandOutput": {
 	        "program": "gallery-dl",
@@ -93,18 +83,14 @@
 			"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
 		},
 		{
-			"condition": {
-				"All": [
-					{"FlagSet": "unshort-youtube"},
-					{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
-				]
-			},
-			"mapper": {
-				"All": [
-					{"CopyPart": {"from": {"PathSegment": 1} , "to": {"QueryParam": "v"}}},
-					{"SetPart": {"part": "Path", "value": "watch"}}
-				]
-			}
+			"condition": {"All": [
+				{"FlagSet": "unshort-youtube"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": {"PathSegment": 1} , "to": {"QueryParam": "v"}}},
+				{"SetPart": {"part": "Path", "value": "watch"}}
+			]}
 		},
 		{
 			"HostMap": {
@@ -238,12 +224,10 @@
 
 
 		{
-			"condition": {
-				"All": [
-					{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
-					{"UnqualifiedAnyTld": "amazon"}
-				]
-			},
+			"condition": {"All": [
+				{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
+				{"UnqualifiedAnyTld": "amazon"}
+			]},
 			"mapper": {"All": [
 				"RemoveQuery",
 				{"RemovePathSegments": [0, 3]}

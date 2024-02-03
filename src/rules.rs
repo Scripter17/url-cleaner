@@ -66,7 +66,7 @@ impl Rule {
 
     /// Apply the rule to the url in-place.
     /// # Errors
-    /// If the rule is a [`Self::NormalRule`] and the contained [`NormalRule`] returns an error, that error is returned.
+    /// If the rule is a [`Self::Normal`] and the contained condition or mapper returns an error, that error is returned.
     /// If the rule is a [`Self::HostMap`] and the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
     /// If the rule is a [`Self::HostMap`] and the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
     pub fn apply_with_params(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {

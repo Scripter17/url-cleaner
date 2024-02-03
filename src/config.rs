@@ -46,7 +46,7 @@ impl Config {
     }
 
     /// Gets the config compiled into the URL Cleaner binary.
-    /// On the first call, it parses [`DEFAULT_CONFIG_STR`] and caches it in [`RULES`]. On all future calls it simply returns the cached value.
+    /// On the first call, it parses [`DEFAULT_CONFIG_STR`] and caches it in [`DEFAULT_CONFIG`]. On all future calls it simply returns the cached value.
     /// # Errors
     /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
     /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
@@ -92,20 +92,19 @@ impl Config {
     }
 }
 
-/// The rules loaded into URL Cleaner at compile time.
-/// When the `minify-included-strings` is enabled, the macro [`const_str::squish`] is used to squish all ASCII whitespace in the file to one space.
+/// The config loaded into URL Cleaner at compile time.
+/// When the `minify-included-strings` is enabled, all whitespace is removed compress the config.
 /// If there is more than one space in a string in part of a rule, this may mess that up.
-/// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
-/// If you cannot avoid multiple spaces in a strng then turn off the `minify-default-strings` feature to disable this squishing.
+/// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"xy":"z"}`, which could alter the functionality of the rule.
+/// If you cannot avoid spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]
-pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../default-config.json"));
-/// The non-minified rules loaded into URL Cleaner at compile time.
+pub static DEFAULT_CONFIG_STR: &str=const_str::replace!(const_str::squish!(include_str!("../default-config.json")), " ", "");
+/// The non-minified config loaded into URL Cleaner at compile time.
 #[cfg(all(feature = "default-config", not(feature = "minify-included-strings")))]
 pub static DEFAULT_CONFIG_STR: &str=include_str!("../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 pub static DEFAULT_CONFIG: OnceLock<Config>=OnceLock::new();
-
 
 /// An enum containing all possible errors that can happen when loading/parsing a rules into a [`Rules`]
 #[derive(Error, Debug)]
