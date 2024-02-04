@@ -30,3 +30,17 @@ pub enum CleaningError {
     #[error(transparent)]
     IoError(#[from] IoError)
 }
+
+/// The enum of all possible errors that can happen when using `StringModification`.
+#[derive(Debug, Clone, Error)]
+pub enum StringError {
+    /// The requested slice either was not on a UTF-8 boundary or was out of bounds.
+    #[error("The requested slice either was not on a UTF-8 boundary or was out of bounds.")]
+    InvalidSlice,
+    /// The provided string did not start with the requested prefix.
+    #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
+    PrefixNotFound,
+    /// The provided string did not end with the requested prefix.
+    #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
+    SuffixNotFound
+}

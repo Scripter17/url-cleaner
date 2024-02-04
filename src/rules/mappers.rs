@@ -234,7 +234,7 @@ pub enum Mapper {
 
     /// Sets the specified URL part to `to`.
     /// # Errors
-    /// If `to` is `None` and `part` is [`types::UrlPart::Whole`], [`types::UrlPart::Scheme`], [`types::UrlPart::Username`], or [`types::UrlPart::Path`], returns the error [`types::ReplaceError::PartCannotBeNone`].
+    /// If `to` is `None` and `part` is [`types::UrlPart::Whole`], [`types::UrlPart::Scheme`], [`types::UrlPart::Username`], or [`types::UrlPart::Path`], returns the error [`types::PartError::PartCannotBeNone`].
     SetPart {
         /// The name of the part to replace.
         part: types::UrlPart,
@@ -244,7 +244,7 @@ pub enum Mapper {
     /// Modifies the specified part of the URL.
     /// # Errors
     /// If `how` is `types::StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
-    /// If the modification fails, returns the error [`MapperError::ReplaceError`].
+    /// If the modification fails, returns the error [`MapperError::PartError`].
     ModifyPart {
         /// The name of the part to modify.
         part: types::UrlPart,
@@ -257,7 +257,7 @@ pub enum Mapper {
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
-    /// If the part specified by `from` is None, `none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`types::ReplaceError::PartCannotBeNone`].
+    /// If the part specified by `from` is None, `none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`types::PartError::PartCannotBeNone`].
     CopyPart {
         /// The part to get the value from.
         from: types::UrlPart,
@@ -333,7 +333,7 @@ pub enum MapperError {
     IoError(#[from] IoError),
     /// Returned when a part replacement fails.
     #[error(transparent)]
-    ReplaceError(#[from] types::ReplaceError),
+    PartError(#[from] types::PartError),
     /// UTF-8 error.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
@@ -492,7 +492,7 @@ impl Mapper {
             Self::Debug(mapper) => {
                 let url_before_mapper=url.clone();
                 let mapper_result=mapper.apply(url);
-                eprintln!("=== Debug Mapper output ===\nMapper: {mapper:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
+                eprintln!("=== Debug mapper ===\nMapper: {mapper:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
                 mapper_result?;
             }
         };

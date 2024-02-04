@@ -517,7 +517,7 @@ impl Condition {
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
                 let is_satisfied=condition.satisfied_by_with_params(url, params);
-                eprintln!("=== Debug Condition output ===\nCondition: {condition:?}\nURL: {url:?}\nparams: {params:?}\nSatisfied?: {is_satisfied:?}");
+                eprintln!("=== Debug condition ===\nCondition: {condition:?}\nURL: {url:?}\nparams: {params:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             }
         })

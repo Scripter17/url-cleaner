@@ -337,62 +337,75 @@ impl UrlPart {
 
     /// Replaces the specified part of the provided URL with the provided value
     /// # Errors
-    /// TODO: Document
-    pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), ReplaceError> {
+    /// If the part is [`Self::Whole`], [`Self::Scheme`], [`Self::Username`], [`Self::NotSubdomain`], or [`Self::Path`] but `to` is `None`, returns the error [`PartError::PartCannotBeNone`].
+    /// If the part is [`Self::Scheme`] and the scheme is invalid, returns the error [`PartError::CannotSetScheme`].
+    /// If the part is [`Self::Username`] and the provided URL cannot be a base or does not have a host, returns the error [`PartError::CannotSetUsername`].
+    /// If the part is [`Self::Password`] and the provided URL cannot be a base or does not have a host, returns the error [`PartError::CannotSetPassword`].
+    /// If the part is [`Self::DomainSegment`], [`Self::Subdomain`], [`Self::NotSubdomain`], or [`Self::Domain`] but the URL's host is not a domain, returns the error [`PartError::HostIsNotADomain`].
+    /// If the part is [`Self::DomainSegment`] or [`Self::PathSegment`] and the specified segment is not in the domain/path, returns the error [`PartError::SegmentNotFound`].
+    /// If the part is [`Self::Port`] and the provided port is not a number, returns the error [`PartError::InvalidPort`].
+    /// If the part is [`Self::Port`] and the provided URL cannot have a port, returns the error [`PartError::CannotSetPort`].
+    /// If the part is [`Self::BeforePathSegment`] or [`Self::PathSegment`] and the provided URL cannot be a base, returns the error [`PartError::CannotBeABase`].
+    pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), PartError> {
         match (self, to) {
             // Ordered hopefully most used to least used.
             (Self::Query    , _       ) => url.set_query  (to),
-            (Self::Whole    , Some(to)) => *url=Url::parse(to)?,
             (Self::Host     , _       ) => url.set_host   (to)?,
             (Self::DomainSegment(n), _   ) => {
-                if *n<url.domain().ok_or(ReplaceError::HostIsNotADomain)?.split('.').count() {
+                if *n<url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').count() {
                     match to {
-                        Some(to) => url.set_host(Some(&url.domain().ok_or(ReplaceError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join(".")))?,
-                        None     => url.set_host(Some(&url.domain().ok_or(ReplaceError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join(".")))?
+                        Some(to) => url.set_host(Some(&url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join(".")))?,
+                        None     => url.set_host(Some(&url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join(".")))?
                     }
                 } else {
-                    Err(ReplaceError::SegmentNotFound)?
+                    Err(PartError::SegmentNotFound)?
                 }
             }
-            (Self::Subdomain, _       ) => {
+            (Self::Subdomain, _) => {
                 match to {
                     Some(to) => {
                         let mut new_domain=to.to_string();
                         new_domain.push('.');
-                        new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?);
+                        new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(PartError::HostIsNotADomain)?);
                         url.set_host(Some(&new_domain))?;
                     },
                     None => {
                         #[allow(clippy::unnecessary_to_owned)]
-                        url.set_host(Some(&Self::NotSubdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?.into_owned()))?;
+                        url.set_host(Some(&Self::NotSubdomain.get(url).ok_or(PartError::HostIsNotADomain)?.into_owned()))?;
                     }
                 }
             },
             (Self::NotSubdomain, Some(to)) => {
-                let mut new_domain=Self::Subdomain.get(url).ok_or(ReplaceError::HostIsNotADomain)?.to_string();
+                let mut new_domain=Self::Subdomain.get(url).ok_or(PartError::HostIsNotADomain)?.to_string();
                 new_domain.push('.');
                 new_domain.push_str(to);
                 url.set_host(Some(&new_domain))?;
             },
             (Self::Domain        , _) => url.set_host(to)?,
-            (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| ReplaceError::InvalidPort)).transpose()?).map_err(|()| ReplaceError::CannotSetPort)?,
+            (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| PartError::InvalidPort)).transpose()?).map_err(|()| PartError::CannotSetPort)?,
             (Self::BeforePathSegment(n), _) => {
-                if url.path_segments().ok_or(ReplaceError::CannotBeABase)?.skip(*n).count()!=0 {
+                if url.path_segments().ok_or(PartError::CannotBeABase)?.skip(*n).count()!=0 {
                     if let Some(to) = to {
-                        url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.take(*n).chain([to]).chain(url.path_segments().ok_or(ReplaceError::CannotBeABase)?.skip(*n)).collect::<Vec<_>>().join("/"));
+                        url.set_path(&url.path_segments().ok_or(PartError::CannotBeABase)?.take(*n).chain([to]).chain(url.path_segments().ok_or(PartError::CannotBeABase)?.skip(*n)).collect::<Vec<_>>().join("/"));
                     }
                 } else {
-                    Err(ReplaceError::SegmentNotFound)?
+                    Err(PartError::SegmentNotFound)?
                 }
             }
-            (Self::PathSegment(n), _) => match to {
-                // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
-                Some(to) => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
-                None     => url.set_path(&url.path_segments().ok_or(ReplaceError::CannotBeABase)?.enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join("/")),
+            (Self::PathSegment(n), _) => {
+                if *n<url.path_segments().ok_or(PartError::CannotBeABase)?.count() {
+                    match to {
+                        // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
+                        Some(to) => url.set_path(&url.path_segments().ok_or(PartError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
+                        None     => url.set_path(&url.path_segments().ok_or(PartError::CannotBeABase)?.enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join("/")),
+                    }
+                } else {
+                    Err(PartError::SegmentNotFound)?
+                }
             },
             (Self::NextPathSegment, _) => {
                 if let Some(to) = to {
-                    url.path_segments_mut().map_err(|()| ReplaceError::CannotBeABase)?.pop_if_empty().push(to);
+                    url.path_segments_mut().map_err(|()| PartError::CannotBeABase)?.pop_if_empty().push(to);
                 }
             },
             (Self::Path, Some(to)) => url.set_path(to),
@@ -405,7 +418,7 @@ impl UrlPart {
                             form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish()
                         }));
                     } else {
-                        url.set_query(Some(&form_urlencoded::Serializer::new(String::new()).extend_pairs([(name, to)]).finish()));
+                        url.set_query(Some(&form_urlencoded::Serializer::new(String::new()).append_pair(name, to).finish()));
                     }
                 } else {
                     let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name2, _)| name!=name2)).finish();
@@ -415,11 +428,12 @@ impl UrlPart {
 
             // The things that are likely very rarely used.
 
-            (Self::Scheme  , Some(to)) => url.set_scheme  (to).map_err(|()| ReplaceError::InvalidScheme)?,
-            (Self::Username, Some(to)) => url.set_username(to).map_err(|()| ReplaceError::CannotSetUsername)?,
-            (Self::Password, _       ) => url.set_password(to).map_err(|()| ReplaceError::CannotSetPassword)?,
+            (Self::Whole   , Some(to)) => *url=Url::parse(to)?,
+            (Self::Scheme  , Some(to)) => url.set_scheme  (to).map_err(|()| PartError::CannotSetScheme)?,
+            (Self::Username, Some(to)) => url.set_username(to).map_err(|()| PartError::CannotSetUsername)?,
+            (Self::Password, _       ) => url.set_password(to).map_err(|()| PartError::CannotSetPassword)?,
             (Self::Fragment, _) => url.set_fragment(to),
-            (_, None) => Err(ReplaceError::PartCannotBeNone)?
+            (_, None) => Err(PartError::PartCannotBeNone)?
         }
         Ok(())
     }
@@ -439,7 +453,7 @@ impl UrlPart {
 
 /// An enum of all possible errors [`UrlPart::set`] can return.
 #[derive(Debug, Error)]
-pub enum ReplaceError {
+pub enum PartError {
     /// Attempted replacement would not produce a valid URL.
     #[error(transparent)]
     ParseError(#[from] ParseError),
@@ -448,7 +462,7 @@ pub enum ReplaceError {
     PartCannotBeNone,
     /// The provided scheme would not have produced a valid URL.
     #[error("The provided scheme would not have produced a valid URL.")]
-    InvalidScheme,
+    CannotSetScheme,
     /// The provided port is not a number.
     #[error("The provided port is not a number.")]
     InvalidPort,
@@ -483,5 +497,5 @@ pub enum PartModificationError {
     StringError(#[from] super::StringError),
     /// The error returned when the call to [`UrlPart::set`] fails.
     #[error(transparent)]
-    ReplaceError(#[from] ReplaceError)
+    PartError(#[from] PartError)
 }
