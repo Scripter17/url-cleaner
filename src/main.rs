@@ -36,14 +36,8 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
         // Tuple maps when.
         if let Some(variables) = args.variables {
             config.params.variables=variables
-                .iter()
-                .filter_map(|x|
-                    x.split_once('=').map(|x|
-                        Into::<[_; 2]>::into(x)
-                            .map(str::to_string)
-                    )
-                )
-                .map(Into::<(String, String)>::into)
+                .into_iter()
+                .filter_map(|mut kev| kev.find('=').map(|e| {let v=kev.split_off(e); kev.shrink_to_fit(); (kev, v)}))
                 .collect();
         }
         if let Some(flags) = args.flags {config.params.flags=flags.into_iter().collect();}
@@ -53,8 +47,7 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
 }
 
 fn main() -> Result<(), types::CleaningError> {
-    let args: Args=Args::parse();
-    let (urls, config): (Vec<Url>, config::Config)=args.try_into()?;
+    let (urls, config): (Vec<Url>, config::Config)=Args::parse().try_into()?;
 
     for mut url in urls {
         match config.apply(&mut url) {

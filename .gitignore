@@ -3,3 +3,4 @@
 /konsole*
 /benchmarking/stdin
 /benchmarking/output-*
+massif*

@@ -5,25 +5,20 @@ use std::str::FromStr;
 use std::sync::OnceLock;
 use std::borrow::Cow;
 
-use serde::{Serialize, Deserialize, Deserializer};
+use serde::{Serialize, Deserialize};
 
 use regex_syntax::Error as RegexSyntaxError;
 use regex::{Regex, Replacer};
 
-/// The enabled and not lazy form of the wrapper around [`regex::Regex`] and [`RegexParts`].
-/// Because converting a [`Regex`] to [`RegexParts`] is way more complicated than it should be, various [`From`]/[`Into`] and [`TryFrom`]/[`TryInto`] conversions are defined instead of making the fields public.
-#[derive(Clone, Debug, Serialize)]
-#[serde(into = "RegexParts")]
+/// A wrapper around both a [`OnceLock`] of a [`Regex`] and a [`RegexParts`].
+/// This is because converting a [`Regex`] into a [`RegexParts`] is extremely complicated and because it allows lazy compilation of regexes.
+/// Because the contained regex and regex parts have to always be in sync, the fields of this struct are unfortunately private.
+/// In place of public fields, various [`Into`]'s and getters are defined for this type.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(from = "RegexParts", into = "RegexParts")]
 pub struct RegexWrapper {
     regex: OnceLock<Regex>,
     parts: RegexParts
-}
-
-impl<'de> Deserialize<'de> for RegexWrapper {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let parts: RegexParts = crate::glue::string_or_struct(deserializer)?;
-        Ok(Self::from(parts))
-    }
 }
 
 impl From<RegexParts> for RegexWrapper {

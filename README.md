@@ -14,6 +14,10 @@ As such, it is currently recommended that you do not make a browser extension th
 Because most people don't use URL Cleaner, using URL Cleaner can let websites correlate information similar to URL tracking parameters.
 This is a similar situation to using Tor Browser where, although everyone who uses Tor Browser looks the same, it is easy for websites to tell that you're using Tor Browser.
 
+## MSRV
+
+The Minimum Supported Rust Version is the latest stable release. URL Cleaner may or may not work on older versions, but there's no guarantee.
+
 ## Rule sources
 
 - [Brave Browser's query filter](https://github.com/brave/brave-core/blob/ed5fa80c20295ab7f82ab22233531bcc241b9700/components/query_filter/utils.cc#L22)
