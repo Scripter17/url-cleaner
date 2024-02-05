@@ -32,6 +32,10 @@
 			]},
 			"mapper": "ExpandShortLink"
 		},
+		{
+			"condition": {"QualifiedDomain": "t.umblr.com"},
+			"mapper": {"GetUrlFromQueryParam": "z"}
+		},
 
 		{
 			"comment": "The query paramaters to always remove. Sources are Brave Browser and Firefox.",
@@ -45,6 +49,10 @@
 					"ss_email_id", "twclid", "unicorn_click_id", "vero_conv", "vero_id", "vgo_ee", "wbraid", "wickedid", "yclid", "ymclid", "ysclid"
 				]
 			}
+		},
+		{
+			"condition": {"PartIs": {"part": "Scheme", "value": "http"}},
+			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 		},
 
 		{

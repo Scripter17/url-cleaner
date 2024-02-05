@@ -205,7 +205,7 @@ pub enum Condition {
     /// assert!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==false));
-    /// ````
+    /// ```
     QueryHasParam(String),
     /// Passes if the URL has a query of the specified name and its value is the specified value.
     /// # Examples
@@ -215,7 +215,7 @@ pub enum Condition {
     /// assert!(Condition::QueryParamValueIs{name: "a".to_string(), value: "2".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "3".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "4".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==false));
-    /// ````
+    /// ```
     QueryParamValueIs {
         /// The name of the query parameter.
         name: String,
@@ -343,7 +343,7 @@ pub enum Condition {
     /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==false));
     /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==false));
     /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &Params::default()).is_ok_and(|x| x==true));
-    /// ````
+    /// ```
     VariableIs {
         /// The name of the variable to check.
         name: String,

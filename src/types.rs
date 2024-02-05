@@ -1,6 +1,8 @@
+use std::io::Error as IoError;
+use std::ops::Bound;
+
 use url::ParseError;
 use thiserror::Error;
-use std::io::Error as IoError;
 
 mod url_part;
 pub use url_part::*;
@@ -34,9 +36,12 @@ pub enum CleaningError {
 /// The enum of all possible errors that can happen when using `StringModification`.
 #[derive(Debug, Clone, Error)]
 pub enum StringError {
-    /// The requested slice either was not on a UTF-8 boundary or was out of bounds.
-    #[error("The requested slice either was not on a UTF-8 boundary or was out of bounds.")]
+    /// The requested slice was either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
     InvalidSlice,
+    /// The requested location was either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested location was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidLocation,
     /// The provided string did not start with the requested prefix.
     #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
     PrefixNotFound,
@@ -44,3 +49,32 @@ pub enum StringError {
     #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
     SuffixNotFound
 }
+
+/// Emulates Python's `"xyz"[-1]` feature.
+pub(crate) fn f(s: &str, i: isize) -> Result<usize, StringError> {
+    if i<0 {
+        s.len().checked_sub(i.unsigned_abs()).ok_or(StringError::InvalidLocation)
+    } else {
+        Ok(i as usize)
+    }
+}
+
+/// `f` but allows for `None` to represent open range ends.
+pub(crate) fn fo(s: &str, i: Option<isize>) -> Result<Option<usize>, StringError> {
+    i.map(|i|  f(s, i)).transpose()
+}
+
+/// A range that may or may not have one or both ends open.
+pub(crate) fn r(s: Option<usize>, e: Option<usize>) -> (Bound<usize>, Bound<usize>) {
+    (
+        match s {
+            Some(s) => Bound::Included(s),
+            None    => Bound::Unbounded
+        },
+        match e {
+            Some(e) => Bound::Excluded(e),
+            None    => Bound::Unbounded
+        }
+    )
+}
+
