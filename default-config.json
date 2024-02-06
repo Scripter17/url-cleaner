@@ -1,41 +1,45 @@
 {
 	"rules": [
 		{
-			"condition": {
-				"All": [
-					{"QualifiedDomain": "pixiv.net"},
-					{"PathIs": "/member.php"}
-				]
-			},
-			"mapper": {
-				"All": [
-					{"SetPart": {"part": "Path", "value": "/users/"}},
-					{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
-					"RemoveQuery"
+			"RepeatUntilNonePass": {
+				"rules": [
+					{
+						"condition": {"All": [
+							{"QualifiedDomain": "pixiv.net"},
+							{"PathIs": "/member.php"}
+						]},
+						"mapper": {"All": [
+							{"SetPart": {"part": "Path", "value": "/users/"}},
+							{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
+							"RemoveQuery"
+						]}
+					},
+					{
+						"condition": {"All": [
+							{"UnqualifiedDomain": "deviantart.com"},
+							{"PathIs": "/users/outgoing"}
+						]},
+						"mapper": {"GetUrlFromQueryParam": "url"}
+					},
+					{
+						"condition": {"QualifiedDomain": "t.umblr.com"},
+						"mapper": {"GetUrlFromQueryParam": "z"}
+					},
+					{
+						"condition": {"Any": [
+							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
+							{"All": [
+								{"QualifiedDomain": "pawoo.net"},
+								{"PathIs": "/oauth_authentications"}
+							]}
+						]},
+						"mapper": "ExpandShortLink"
+					}
 				]
 			}
 		},
-		{
-			"condition": {"All": [
-				{"UnqualifiedDomain": "deviantart.com"},
-				{"PathIs": "/users/outgoing"}
-			]},
-			"mapper": {"GetUrlFromQueryParam": "url"}
-		},
-		{
-			"condition": {"Any": [
-				{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
-				{"All": [
-					{"QualifiedDomain": "pawoo.net"},
-					{"PathIs": "/oauth_authentications"}
-				]}
-			]},
-			"mapper": "ExpandShortLink"
-		},
-		{
-			"condition": {"QualifiedDomain": "t.umblr.com"},
-			"mapper": {"GetUrlFromQueryParam": "z"}
-		},
+
+
 
 		{
 			"comment": "The query paramaters to always remove. Sources are Brave Browser and Firefox.",
@@ -55,6 +59,8 @@
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 		},
 
+
+
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "tumblr.com"},
@@ -64,6 +70,13 @@
 				{"GetPathFromQueryParam": "redirect_to"},
 				"RemoveQuery"
 			]}
+		},
+		{
+			"condition": {"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}
+			]},
+			"mapper": "RemoveQuery"
 		},
 	  {
 	    "condition": {"All": [
@@ -86,13 +99,19 @@
 	      }
 	    }
 	  },
+
+
+
 		{
 			"condition": {"UnqualifiedAnyTld": "google"},
 			"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
 		},
+
+
+
 		{
 			"condition": {"All": [
-				{"FlagSet": "unshort-youtube"},
+				{"FlagSet": "youtube-unshort"},
 				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
 			]},
 			"mapper": {"All": [
@@ -113,10 +132,12 @@
 				"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
 				"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
 				"youtu.be"     : {"All": [
-					{"SetHost": "youtube.com"},
+					{"SetHost" : "youtube.com"},
 					{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
-					{"SetPart": {"part": "Path", "value": "watch"}}
-				]}
+					{"SetPart" : {"part": "Path", "value": "watch"}}
+				]},
+				"stackoverflow.com": {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
+				"duckduckgo.com"   : {"RemoveQueryParams": ["t", "atb", "ia"]}
 			}
 		},
 
@@ -136,6 +157,9 @@
 			]},
 			"mapper": {"RemoveQueryParams": ["tags"]}
 		},
+
+
+
 		{
 			"condition": {"All": [
 				{"QualifiedDomain": "inkbunny.net"},
@@ -160,19 +184,36 @@
 			]},
 			"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
 		},
-
-
-
 		{
 			"condition": {"All": [
 				{"QualifiedDomain": "twitter.com"},
+				{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}},
 				{"FlagSet": "discord-compatibility"}
 			]},
 			"mapper": {"SetHost": "vxtwitter.com"}
 		},
+
+
+
+		{
+			"condition": {"UnqualifiedDomain": "fxdeviantart.com"},
+			"mapper": {"SetPart": {"part": "NotSubdomain", "value": "deviantart.com"}}
+		},
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "deviantart.com"},
+				{"Not": {"PartIs": {"part": "Subdomain", "value": "www"}}},
+				{"Not": {"PartIs": {"part": "Subdomain", "value": ""}}}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
+				{"SetPart": {"part": "Subdomain", "value": null}}
+			]}
+		},
+		{
+			"condition": {"All": [
+				{"UnqualifiedDomain": "deviantart.com"},
+				{"PartIs": {"part": {"PathSegment": 1}, "value": "art"}},
 				{"FlagSet": "discord-compatibility"}
 			]},
 			"mapper": {"SetHost": "fxdeviantart.com"}
@@ -187,7 +228,7 @@
 			]},
 			"mapper": {"All": [
 				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-				{"SetPart": {"part": "Domain", "value": "antifandom.com"}}
+				{"SetHost": "antifandom.com"}
 			]}
 		},
 
@@ -208,6 +249,9 @@
 			]},
 			"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "how": {"Append": ".bsky.social"}}}
 		},
+
+
+
 		{
 			"condition": {"Any": [
 				{"All": [
@@ -218,13 +262,6 @@
 					{"UnqualifiedDomain": "tumblr.com"},
 					{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}}
 				]}
-			]},
-			"mapper": "RemoveQuery"
-		},
-		{
-			"condition": {"All": [
-				{"UnqualifiedDomain": "tumblr.com"},
-				{"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}
 			]},
 			"mapper": "RemoveQuery"
 		},
@@ -251,6 +288,42 @@
 		{
 			"condition": {"UnqualifiedAnyTld": "amazon"},
 			"mapper": {"RemoveQueryParams": ["ref"]}
+		},
+		{
+			"condition": {"UnqualifiedAnyTld": "ebay"},
+			"mapper": {"RemoveQueryParams": ["_trkparms", "_trksid"]}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"MaybeWWWDomain": "cnn.com"},
+				{"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "where": "Start"}}
+			]},
+			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+		},
+		{
+			"condition": {"MaybeWWWDomain": "washingtonpost.com"},
+			"mapper": {"RemoveQueryParams": ["itid"]}
+		},
+		{
+			"condition": {"UnqualifiedDomain": "foxnews.com"},
+			"mapper": {"RemoveQueryParams": ["cmpid"]}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"MaybeWWWDomain": "bell.ca"},
+				{"PartContains": {"part": "Fragment", "where": "Start", "value": "INT="}}
+			]},
+			"mapper": {"SetPart": {"part": "Fragment", "value": null}}
+		},
+		{
+			"condition": {"MaybeWWWDomain": "bell.ca"},
+			"mapper": {"RemoveQueryParams": ["INT"]}
 		}
 	]
 }

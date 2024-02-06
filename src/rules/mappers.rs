@@ -225,7 +225,7 @@ pub enum Mapper {
     /// # use url_cleaner::rules::mappers::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6]).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url).is_ok());
     /// assert_eq!(url.path(), "/0/2/4");
     /// ```
     RemovePathSegments(Vec<usize>),

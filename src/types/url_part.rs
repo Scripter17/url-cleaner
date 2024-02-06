@@ -2,8 +2,9 @@ use std::borrow::Cow;
 
 use url::{Url, ParseError};
 use thiserror::Error;
-
 use serde::{Serialize, Deserialize};
+
+use super::{neg_nth, neg_index};
 
 /// An enum that makes using the various [`Url`] getters simpler.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -105,7 +106,7 @@ pub enum UrlPart {
     /// assert!(UrlPart::DomainSegment(4).set(&mut url, Some("e")).is_err());
     /// assert_eq!(url.domain().unwrap(), "a.c.example.com");
     /// ```
-    DomainSegment(usize),
+    DomainSegment(isize),
     /// The subdomain. If the domain is `a.b.c.co.uk`, the value returned/changed by this is `a.b`.
     /// # Examples
     /// ```
@@ -116,6 +117,15 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www")));
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b")));
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("")));
+    /// let mut x = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::Subdomain.set(&mut x, Some("abc")).is_ok());
+    /// assert_eq!(x.as_str(), "https://abc.example.com/");
+    /// assert!(UrlPart::Subdomain.set(&mut x, Some("abc.def")).is_ok());
+    /// assert_eq!(x.as_str(), "https://abc.def.example.com/");
+    /// assert!(UrlPart::Subdomain.set(&mut x, Some("")).is_ok());
+    /// assert_eq!(x.as_str(), "https://.example.com/");
+    /// assert!(UrlPart::Subdomain.set(&mut x, None).is_ok());
+    /// assert_eq!(x.as_str(), "https://example.com/");
     /// ```
     Subdomain,
     /// The domain minus the subdomain. If the domain is `a.b.c.co.uk` value returned/changed by this is `c.co.uk`.
@@ -128,6 +138,10 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("example.com")));
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("example.com")));
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com")));
+    /// let mut x = Url::parse("https://abc.example.com").unwrap();
+    /// assert!(UrlPart::Domain.set(&mut x, Some("example.co.uk")).is_ok());
+    /// assert_eq!(x.as_str(), "https://example.co.uk/");
+    /// assert!(UrlPart::Domain.set(&mut x, None).is_err());
     /// ```
     NotSubdomain,
     /// The domain. Corresponds to [`Url::domain`].
@@ -152,6 +166,11 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Owned("443".to_string())));
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:443").unwrap()), Some(Cow::Owned("443".to_string())));
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:80" ).unwrap()), Some(Cow::Owned("80" .to_string())));
+    /// let mut x = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::Port.set(&mut x, Some("80")).is_ok());
+    /// assert_eq!(UrlPart::Port.get(&x), Some(Cow::Owned("80".to_string())));
+    /// assert!(UrlPart::Port.set(&mut x, None).is_ok());
+    /// assert_eq!(UrlPart::Port.get(&x), Some(Cow::Owned("443".to_string())));
     /// ```
     Port,
     /// Useful only for inserting a path segment inside the a URL's path.
@@ -174,7 +193,7 @@ pub enum UrlPart {
     /// assert!(UrlPart::BeforePathSegment(100).set(&mut url, Some("h")).is_err());
     /// assert_eq!(url.path(), "/d/a/b/g/c");
     /// ```
-    BeforePathSegment(usize),
+    BeforePathSegment(isize),
     /// A specific segment of the URL's path.
     /// # Examples
     /// ```
@@ -193,7 +212,7 @@ pub enum UrlPart {
     /// assert!(UrlPart::PathSegment(1).set(&mut url, None).is_ok());
     /// assert_eq!(url.path(), "/a/c/d");
     /// ```
-    PathSegment(usize),
+    PathSegment(isize),
     /// Useful only for appending a path segment to a URL as the getter is always `None`.
     /// Using this with a URL whose path ends in an empty segment (`https://example.com/a/b/`), the setter will overwrite that segment instead of leaving a random empty segment in the middle of the path.
     /// Why is path manipulation always a pain?
@@ -218,7 +237,7 @@ pub enum UrlPart {
     /// assert_eq!(url.path(), "/a/b/");
     /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("c")).is_ok());
     /// assert_eq!(url.path(), "/a/b/c");
-    /// assert!(UrlPart::NextPathSegment.set(&mut url, None).is_ok());
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, None).is_err());
     /// assert_eq!(url.path(), "/a/b/c");
     /// ```
     NextPathSegment,
@@ -302,7 +321,7 @@ impl UrlPart {
 
             // No shortcut conditions/mappers.
 
-            Self::PathSegment(n)   => Cow::Borrowed(url.path_segments()?.nth(*n)?),
+            Self::PathSegment(n)   => Cow::Borrowed(neg_nth(url.path_segments()?, *n)?),
             Self::QueryParam(name) => url.query_pairs().find(|(name2, _)| name==name2)?.1,
 
             // Miscelanious.
@@ -310,7 +329,7 @@ impl UrlPart {
             Self::Query                => Cow::Borrowed(url.query()?),
             Self::Whole                => Cow::Borrowed(url.as_str()),
             Self::Host                 => Cow::Borrowed(url.host_str()?),
-            Self::DomainSegment(n)     => Cow::Borrowed(url.domain()?.split('.').nth(*n)?),
+            Self::DomainSegment(n)     => Cow::Borrowed(neg_nth(url.domain()?.split('.'), *n)?),
             Self::Subdomain            => Cow::Borrowed({
                 let domain=url.domain()?;
                 // `psl::suffix_str` should never return `None`. Testing required.
@@ -337,7 +356,7 @@ impl UrlPart {
 
     /// Replaces the specified part of the provided URL with the provided value
     /// # Errors
-    /// If the part is [`Self::Whole`], [`Self::Scheme`], [`Self::Username`], [`Self::NotSubdomain`], or [`Self::Path`] but `to` is `None`, returns the error [`PartError::PartCannotBeNone`].
+    /// If the part is [`Self::Whole`], [`Self::Scheme`], [`Self::Username`], [`Self::NotSubdomain`], [`Self::Path`], or [`Self::NextPathSegment`] but `to` is `None`, returns the error [`PartError::PartCannotBeNone`].
     /// If the part is [`Self::Scheme`] and the scheme is invalid, returns the error [`PartError::CannotSetScheme`].
     /// If the part is [`Self::Username`] and the provided URL cannot be a base or does not have a host, returns the error [`PartError::CannotSetUsername`].
     /// If the part is [`Self::Password`] and the provided URL cannot be a base or does not have a host, returns the error [`PartError::CannotSetPassword`].
@@ -352,13 +371,11 @@ impl UrlPart {
             (Self::Query    , _       ) => url.set_query  (to),
             (Self::Host     , _       ) => url.set_host   (to)?,
             (Self::DomainSegment(n), _   ) => {
-                if *n<url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').count() {
-                    match to {
-                        Some(to) => url.set_host(Some(&url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join(".")))?,
-                        None     => url.set_host(Some(&url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join(".")))?
-                    }
-                } else {
-                    Err(PartError::SegmentNotFound)?
+                let fixed_n=neg_index(*n, url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').count()).ok_or(PartError::SegmentNotFound)?;
+                if fixed_n==url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').count() {Err(PartError::SegmentNotFound)?;}
+                match to {
+                    Some(to) => url.set_host(Some(&url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join(".")))?,
+                    None     => url.set_host(Some(&url.domain().ok_or(PartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join(".")))?
                 }
             }
             (Self::Subdomain, _) => {
@@ -383,31 +400,20 @@ impl UrlPart {
             },
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| PartError::InvalidPort)).transpose()?).map_err(|()| PartError::CannotSetPort)?,
-            (Self::BeforePathSegment(n), _) => {
-                if url.path_segments().ok_or(PartError::CannotBeABase)?.skip(*n).count()!=0 {
-                    if let Some(to) = to {
-                        url.set_path(&url.path_segments().ok_or(PartError::CannotBeABase)?.take(*n).chain([to]).chain(url.path_segments().ok_or(PartError::CannotBeABase)?.skip(*n)).collect::<Vec<_>>().join("/"));
-                    }
-                } else {
-                    Err(PartError::SegmentNotFound)?
-                }
+            (Self::BeforePathSegment(n), Some(to)) => {
+                let fixed_n=neg_index(*n, url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.count()).ok_or(PartError::SegmentNotFound)?;
+                if fixed_n==url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.count() {Err(PartError::SegmentNotFound)?;}
+                url.set_path(&url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.take(fixed_n).chain([to]).chain(url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.skip(fixed_n)).collect::<Vec<_>>().join("/"));
             }
             (Self::PathSegment(n), _) => {
-                if *n<url.path_segments().ok_or(PartError::CannotBeABase)?.count() {
-                    match to {
-                        // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
-                        Some(to) => url.set_path(&url.path_segments().ok_or(PartError::CannotBeABase)?.enumerate().       map(|(i, x)| if i==*n {to} else {x}).collect::<Vec<_>>().join("/")),
-                        None     => url.set_path(&url.path_segments().ok_or(PartError::CannotBeABase)?.enumerate().filter_map(|(i, x)|   (i!=*n).then_some(x)).collect::<Vec<_>>().join("/")),
-                    }
-                } else {
-                    Err(PartError::SegmentNotFound)?
+                let fixed_n=neg_index(*n, url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.count()).ok_or(PartError::SegmentNotFound)?;
+                match to {
+                    // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
+                    Some(to) => url.set_path(&url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("/")),
+                    None     => url.set_path(&url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("/")),
                 }
             },
-            (Self::NextPathSegment, _) => {
-                if let Some(to) = to {
-                    url.path_segments_mut().map_err(|()| PartError::CannotBeABase)?.pop_if_empty().push(to);
-                }
-            },
+            (Self::NextPathSegment, Some(to)) => {url.path_segments_mut().map_err(|()| PartError::UrlDoesNotHavePath)?.pop_if_empty().push(to);},
             (Self::Path, Some(to)) => url.set_path(to),
             (Self::QueryParam(name), _) => {
                 if let Some(to) = to {
@@ -478,9 +484,9 @@ pub enum PartError {
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
     #[error("The URL's host is not a domain.")]
     HostIsNotADomain,
-    /// Returned by `UrlPart::PathSegment.set` when the URL is `cannot-be-a-base` because [`Url::path_segments`] returns `None` in that case.
-    #[error("The URL cannot be a base and for whatever reason that means `Url::path_segments` returned `None`")]
-    CannotBeABase,
+    /// Urls that are cannot-be-a-base don't have a path.
+    #[error("Urls that are cannot-be-a-base don't have a path.")]
+    UrlDoesNotHavePath,
     /// Returned when setting a [`UrlPart::DomainSegment`], [`UrlPart::PathSegment`], or [`UrlPart::BeforePathSegment`] when the index isn't in the relevant part's segments.
     #[error("The requested segment was not found")]
     SegmentNotFound

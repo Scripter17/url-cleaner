@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-use super::{f, fo, r};
+use super::{StringError, neg_index, neg_range};
 
 /// The location of a string. Used by [`crate::rules::conditions::Condition::PartContains`].
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -115,19 +115,19 @@ impl StringLocation {
     /// Checks if `needle` exists in `haystack` according to `self`'s rules.
     /// # Errors
     /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`super::StringError::InvalidSlice`].
-    pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, super::StringError> {
+    pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringError> {
         Ok(match self {
             Self::Anywhere             => haystack.contains   (needle),
             Self::Start                => haystack.starts_with(needle),
             Self::End                  => haystack.ends_with  (needle),
 
-            Self::RangeIs {start, end} => haystack.get(r(fo(haystack, *start)?, fo(haystack, *end)?)).ok_or(super::StringError::InvalidSlice)?==needle,
-            Self::StartsAt(start     ) => haystack.get(  f (haystack, *start)?..                    ).ok_or(super::StringError::InvalidSlice)?.starts_with(needle),
-            Self::EndsAt  (       end) => haystack.get(                       ..f (haystack, *end)? ).ok_or(super::StringError::InvalidSlice)?.ends_with(needle),
+            Self::RangeIs {start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringError::InvalidSlice)?  ).ok_or(StringError::InvalidSlice)?==needle,
+            Self::StartsAt(start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringError::InvalidIndex)?..).ok_or(StringError::InvalidSlice)?.starts_with(needle),
+            Self::EndsAt  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringError::InvalidIndex)?  ).ok_or(StringError::InvalidSlice)?.ends_with(needle),
 
-            Self::RangeHas{start, end} => haystack.get(r(fo(haystack, *start)?, fo(haystack, *end)?)).ok_or(super::StringError::InvalidSlice)?.contains(needle),
-            Self::After   (start     ) => haystack.get(  f (haystack, *start)?..                    ).ok_or(super::StringError::InvalidSlice)?.contains(needle),
-            Self::Before  (       end) => haystack.get(                       ..f (haystack, *end)? ).ok_or(super::StringError::InvalidSlice)?.contains(needle)
+            Self::RangeHas{start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringError::InvalidSlice)?  ).ok_or(StringError::InvalidSlice)?.contains(needle),
+            Self::After   (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringError::InvalidIndex)?..).ok_or(StringError::InvalidSlice)?.contains(needle),
+            Self::Before  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringError::InvalidIndex)?  ).ok_or(StringError::InvalidSlice)?.contains(needle)
         })
     }
 }

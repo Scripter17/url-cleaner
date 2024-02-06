@@ -124,3 +124,13 @@ pub enum GetConfigError {
     #[error("Can't parse default config: `{0}`.")]
     CantParseDefaultConfig(serde_json::Error)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_default_rules() {
+        assert!(Config::get_default().is_ok());
+    }
+}

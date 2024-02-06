@@ -34,14 +34,17 @@ pub enum CleaningError {
 }
 
 /// The enum of all possible errors that can happen when using `StringModification`.
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub enum StringError {
     /// The requested slice was either not on a UTF-8 boundary or out of bounds.
     #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
     InvalidSlice,
-    /// The requested location was either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested location was either not on a UTF-8 boundary or out of bounds.")]
-    InvalidLocation,
+    /// The requested index was either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidIndex,
+    /// The requested segment was not found.
+    #[error("The requested segment was not found.")]
+    SegmentNotFound,
     /// The provided string did not start with the requested prefix.
     #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
     PrefixNotFound,
@@ -50,31 +53,74 @@ pub enum StringError {
     SuffixNotFound
 }
 
-/// Emulates Python's `"xyz"[-1]` feature.
-pub(crate) fn f(s: &str, i: isize) -> Result<usize, StringError> {
-    if i<0 {
-        s.len().checked_sub(i.unsigned_abs()).ok_or(StringError::InvalidLocation)
+/// Loops negative `index`es around similar to Python.
+pub(crate) fn neg_index(index: isize, len: usize) -> Option<usize> {
+    if 0<=index && (index as usize)<=len {
+        Some(index as usize)
+    } else if index<0 {
+        Some(len.checked_sub(index.unsigned_abs())?)
     } else {
-        Ok(i as usize)
+        None
+    }
+}
+
+/// Equivalent to how python handles indexing. Minus the panicking, of course.
+pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
+    if i<0 {
+        let temp=iter.into_iter().collect::<Vec<_>>();
+        let fixed_i=neg_index(i, temp.len())?;
+        temp.into_iter().nth(fixed_i)
+    } else {
+        iter.into_iter().nth(i as usize)
     }
 }
 
 /// `f` but allows for `None` to represent open range ends.
-pub(crate) fn fo(s: &str, i: Option<isize>) -> Result<Option<usize>, StringError> {
-    i.map(|i|  f(s, i)).transpose()
+fn neg_maybe_index(index: Option<isize>, len: usize) -> Option<Option<usize>> {
+    index.map(|index| neg_index(index, len))
 }
 
 /// A range that may or may not have one or both ends open.
-pub(crate) fn r(s: Option<usize>, e: Option<usize>) -> (Bound<usize>, Bound<usize>) {
-    (
-        match s {
-            Some(s) => Bound::Included(s),
-            None    => Bound::Unbounded
+pub(crate) fn neg_range(start: Option<isize>, end: Option<isize>, len: usize) -> Option<(Bound<usize>, Bound<usize>)> {
+    Some((
+        match neg_maybe_index(start, len) {
+            Some(Some(start)) => Bound::Included(start),
+            Some(None       ) => None?,
+            None              => Bound::Unbounded
         },
-        match e {
-            Some(e) => Bound::Excluded(e),
-            None    => Bound::Unbounded
+        match neg_maybe_index(end, len) {
+            Some(Some(end)) => Bound::Excluded(end),
+            Some(None     ) => None?,
+            None            => Bound::Unbounded
         }
-    )
+    ))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn neg_index_test() {
+        assert_eq!(neg_index( 0, 5), Some(0));
+        assert_eq!(neg_index( 4, 5), Some(4));
+        assert_eq!(neg_index(-1, 5), Some(4));
+        assert_eq!(neg_index( 6, 5), None   );
+        assert_eq!(neg_index(-6, 5), None   );
+    }
+
+    #[test]
+    fn neg_range_test() {
+        assert_eq!(neg_range(Some( 3), None   , 10), Some((Bound::Included( 3), Bound::Unbounded)));
+        assert_eq!(neg_range(Some(10), None   , 10), Some((Bound::Included(10), Bound::Unbounded)));
+        assert_eq!(neg_range(Some(11), None   , 10), None);
+        assert_eq!(neg_range(Some( 3), Some(5), 10), Some((Bound::Included( 3), Bound::Excluded(5))));
+    }
+
+    #[test]
+    fn neg_nth_test() {
+        assert_eq!(neg_nth([1,2,3],  0), Some(1));
+        assert_eq!(neg_nth([1,2,3], -1), Some(3));
+        assert_eq!(neg_nth([1,2,3], -4), None);
+    }
+}

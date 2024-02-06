@@ -21,9 +21,9 @@ struct Args {
     #[arg(short, long)]
     dcr: Option<types::DomainConditionRule>,
     #[arg(short, long)]
-    variables: Option<Vec<String>>,
+    var: Vec<String>,
     #[arg(short, long)]
-    flags: Option<Vec<String>>
+    flag: Vec<String>
 }
 
 impl TryFrom<Args> for (Vec<Url>, config::Config) {
@@ -34,13 +34,13 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
 
         if let Some(dcr) = args.dcr {config.params.dcr=dcr;}
         // Tuple maps when.
-        if let Some(variables) = args.variables {
-            config.params.variables=variables
+        if !args.var.is_empty() {
+            config.params.variables=args.var
                 .into_iter()
                 .filter_map(|mut kev| kev.find('=').map(|e| {let v=kev.split_off(e); kev.shrink_to_fit(); (kev, v)}))
                 .collect();
         }
-        if let Some(flags) = args.flags {config.params.flags=flags.into_iter().collect();}
+        if !args.flag.is_empty() {config.params.flags=args.flag.into_iter().collect();}
 
         Ok((args.urls, config))
     }
@@ -52,7 +52,7 @@ fn main() -> Result<(), types::CleaningError> {
     for mut url in urls {
         match config.apply(&mut url) {
             Ok(()) => {println!("{url}");},
-            Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
+            Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
         }
     }
 
@@ -63,11 +63,11 @@ fn main() -> Result<(), types::CleaningError> {
                 Ok(line) => match Url::parse(&line) {
                     Ok(mut url) => match config.apply(&mut url) {
                         Ok(()) => {println!("{url}");},
-                        Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
+                        Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
                     },
-                    Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
+                    Err(e) => {println!(); eprintln!("Line parse: {e:?}");}
                 },
-                Err(e) => {println!(); eprintln!("ERROR: {e:?}");}
+                Err(e) => {println!(); eprintln!("Line read error: {e:?}");}
             }
         }
     }

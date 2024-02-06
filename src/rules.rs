@@ -26,6 +26,15 @@ use crate::config;
 pub enum Rule {
     /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
     HostMap(HashMap<String, mappers::Mapper>),
+    /// Runs all the contained rules until none of their conditions pass.
+    /// Runs at most `limit` times. (Defaults to 10).
+    RepeatUntilNonePass {
+        /// The rules to repeat.
+        rules: Vec<Rule>,
+        /// The max amount of times to repeat them.
+        #[serde(default = "get_10_u8")]
+        limit: u8
+    },
     /// The basic condition mapper rule type.
     #[serde(untagged)]
     Normal {
@@ -35,6 +44,9 @@ pub enum Rule {
         mapper: mappers::Mapper
     }
 }
+
+// Serde helpers.
+const fn get_10_u8() -> u8 {10}
 
 /// The errors that [`Rule`] can return.
 #[derive(Error, Debug)]
@@ -76,6 +88,20 @@ impl Rule {
                 Ok(())
             } else {
                 Err(RuleError::FailedCondition)
+            },
+            Self::RepeatUntilNonePass{rules, limit} => {
+                for _ in 0..*limit {
+                    let mut done=true;
+                    for rule in rules.iter() {
+                        match rule.apply_with_params(url, params) {
+                            Err(RuleError::FailedCondition) => {},
+                            Ok(()) => done=false,
+                            e @ Err(_) => e?
+                        }
+                    }
+                    if done {break}
+                }
+                Ok(())
             },
             Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url)?)
         }

@@ -6,6 +6,7 @@ description = "A CLI tool and library for URL manipulation with a focus on strip
 repository = "https://github.com/Scripter17/url-cleaner"
 keywords = ["url", "tracking", "paramaters"]
 categories = ["command-line-utilities"]
+license-file = "LICENSE.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
