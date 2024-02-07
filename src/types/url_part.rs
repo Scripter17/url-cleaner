@@ -364,7 +364,7 @@ impl UrlPart {
     /// If the part is [`Self::DomainSegment`] or [`Self::PathSegment`] and the specified segment is not in the domain/path, returns the error [`PartError::SegmentNotFound`].
     /// If the part is [`Self::Port`] and the provided port is not a number, returns the error [`PartError::InvalidPort`].
     /// If the part is [`Self::Port`] and the provided URL cannot have a port, returns the error [`PartError::CannotSetPort`].
-    /// If the part is [`Self::BeforePathSegment`] or [`Self::PathSegment`] and the provided URL cannot be a base, returns the error [`PartError::CannotBeABase`].
+    /// If the part is [`Self::BeforePathSegment`] or [`Self::PathSegment`] and the provided URL cannot be a base, returns the error [`PartError::UrlDoesNotHavePath`].
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), PartError> {
         match (self, to) {
             // Ordered hopefully most used to least used.

@@ -229,7 +229,7 @@ pub enum StringModification {
         /// The value to place at the segment index. If `None` then the segment is erased.
         value: Option<String>
     },
-    /// Like [`Self::SetNthSplit`] except it inserts `value` before the `n`th segment instead of overwriting.
+    /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
     /// # Examples
     /// ```
     /// use url_cleaner::types::StringModification;

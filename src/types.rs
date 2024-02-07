@@ -110,17 +110,17 @@ mod tests {
     }
 
     #[test]
+    fn neg_nth_test() {
+        assert_eq!(neg_nth([1,2,3],  0), Some(1));
+        assert_eq!(neg_nth([1,2,3], -1), Some(3));
+        assert_eq!(neg_nth([1,2,3], -4), None);
+    }
+
+    #[test]
     fn neg_range_test() {
         assert_eq!(neg_range(Some( 3), None   , 10), Some((Bound::Included( 3), Bound::Unbounded)));
         assert_eq!(neg_range(Some(10), None   , 10), Some((Bound::Included(10), Bound::Unbounded)));
         assert_eq!(neg_range(Some(11), None   , 10), None);
         assert_eq!(neg_range(Some( 3), Some(5), 10), Some((Bound::Included( 3), Bound::Excluded(5))));
-    }
-
-    #[test]
-    fn neg_nth_test() {
-        assert_eq!(neg_nth([1,2,3],  0), Some(1));
-        assert_eq!(neg_nth([1,2,3], -1), Some(3));
-        assert_eq!(neg_nth([1,2,3], -4), None);
     }
 }

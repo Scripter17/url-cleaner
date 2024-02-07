@@ -35,7 +35,7 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
         if let Some(dcr) = args.dcr {config.params.dcr=dcr;}
         // Tuple maps when.
         if !args.var.is_empty() {
-            config.params.variables=args.var
+            config.params.vars=args.var
                 .into_iter()
                 .filter_map(|mut kev| kev.find('=').map(|e| {let v=kev.split_off(e); kev.shrink_to_fit(); (kev, v)}))
                 .collect();

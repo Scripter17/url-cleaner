@@ -8,6 +8,8 @@ use std::sync::OnceLock;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::Url;
+#[cfg(all(feature = "http", not(target_family = "wasm")))]
+use reqwest::header::HeaderMap;
 
 use crate::types::DomainConditionRule;
 use crate::rules::Rules;
@@ -20,10 +22,14 @@ pub struct Params {
     pub dcr: DomainConditionRule,
     /// Works with [`crate::rules::conditions::Condition::RuleVariableIs'`].
     #[serde(default)]
-    pub variables: HashMap<String, String>,
+    pub vars: HashMap<String, String>,
     /// Works with [`crate::rules::conditions::Condition::FlagSet`].
     #[serde(default)]
-    pub flags: HashSet<String>
+    pub flags: HashSet<String>,
+    /// The default headers to send in HTTP requests.
+    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+    #[serde(default, with = "crate::glue::headermap")]
+    pub default_http_headers: HeaderMap
 }
 
 /// The rules and rule parameters describing how to modify URLs.
@@ -92,9 +98,21 @@ impl Config {
     }
 }
 
+#[cfg(all(feature = "http", not(target_family = "wasm")))]
+impl Params {
+    /// Gets an HTTP client with [`self`]'s configuration pre-applied.
+    /// # Errors
+    /// Errors if [`reqwest::blocking::ClientBuilder::build`] errors.
+    pub fn http_client(&self) -> reqwest::Result<reqwest::blocking::Client> {
+        reqwest::blocking::ClientBuilder::new()
+            .default_headers(self.default_http_headers.clone())
+            .build()
+    }
+}
+
 /// The config loaded into URL Cleaner at compile time.
-/// When the `minify-included-strings` is enabled, all whitespace is removed compress the config.
-/// If there is more than one space in a string in part of a rule, this may mess that up.
+/// When the `minify-included-strings` is enabled, all whitespace is removed to compress the config.
+/// If there are any spaces in a string, this compression will alter how the config works.
 /// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"xy":"z"}`, which could alter the functionality of the rule.
 /// If you cannot avoid spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]

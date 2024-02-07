@@ -382,8 +382,10 @@ pub enum ConditionError {
 
 impl Condition {
     /// Checks whether or not the provided URL passes the condition.
+    /// Thin wrapper around [`Self::satisfied_by_with_params`] using [`Params::default`].
     /// # Errors
     /// If the condition has an error, that error is returned.
+    /// See [`Condition`]'s documentation for details.
     pub fn satisfied_by(&self, url: &Url) -> Result<bool, ConditionError> {
         self.satisfied_by_with_params(url, &Params::default())
     }
@@ -443,14 +445,6 @@ impl Condition {
 
             // Meta conditions
 
-            Self::Any(conditions) => {
-                for condition in conditions {
-                    if condition.satisfied_by_with_params(url, params)? {
-                        return Ok(true);
-                    }
-                }
-                false
-            },
             Self::All(conditions) => {
                 for condition in conditions {
                     if !condition.satisfied_by_with_params(url, params)? {
@@ -458,6 +452,14 @@ impl Condition {
                     }
                 }
                 true
+            },
+            Self::Any(conditions) => {
+                for condition in conditions {
+                    if condition.satisfied_by_with_params(url, params)? {
+                        return Ok(true);
+                    }
+                }
+                false
             },
             Self::Not(condition) => !condition.satisfied_by_with_params(url, params)?,
 
@@ -493,7 +495,7 @@ impl Condition {
 
             // Miscelanious
 
-            Self::VariableIs{name, value, default} => params.variables.get(name).map_or(*default, |x| x==value),
+            Self::VariableIs{name, value, default} => params.vars.get(name).map_or(*default, |x| x==value),
             Self::FlagSet(name) => params.flags.contains(name),
 
             // Should only ever be used once

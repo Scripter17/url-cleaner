@@ -1,5 +1,4 @@
-//! The [`rules::Rule`] type is how this crate modifies URLs. A [`rules::Rule`] contains a [`rules::conditions::Condition`] and a [`rules::mappers::Mapper`].
-//! If the condition passes (returns `Ok(true)`), then the mapper is applied to a mutable reference to the URL.
+//! The [`rules::Rule`] type is how this crate modifies URLs.
 
 use url::Url;
 use std::ops::{Deref, DerefMut};
@@ -32,6 +31,7 @@ pub enum Rule {
         /// The rules to repeat.
         rules: Vec<Rule>,
         /// The max amount of times to repeat them.
+        /// Defaults to 10.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
@@ -64,7 +64,7 @@ pub enum RuleError {
     #[error("The provided URL doesn't have a host to find in the hashmap.")]
     UrlHasNoHost,
     /// Returned when the provided URL's host isn't in a [`Rule::HostMap`].
-    #[error("The provided URL's host was not found in the hashmap.")]
+    #[error("The provided URL's host was not found in the `Rule::HostMap`.")]
     HostNotInMap
 }
 
@@ -84,7 +84,7 @@ impl Rule {
     pub fn apply_with_params(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by_with_params(url, params)? {
-                mapper.apply(url)?;
+                mapper.apply_with_params(url, params)?;
                 Ok(())
             } else {
                 Err(RuleError::FailedCondition)
@@ -92,7 +92,7 @@ impl Rule {
             Self::RepeatUntilNonePass{rules, limit} => {
                 for _ in 0..*limit {
                     let mut done=true;
-                    for rule in rules.iter() {
+                    for rule in rules {
                         match rule.apply_with_params(url, params) {
                             Err(RuleError::FailedCondition) => {},
                             Ok(()) => done=false,
@@ -103,7 +103,7 @@ impl Rule {
                 }
                 Ok(())
             },
-            Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url)?)
+            Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply_with_params(url, params)?)
         }
     }
 }
@@ -132,12 +132,6 @@ impl DerefMut for Rules {
 
 #[allow(dead_code)]
 impl Rules {
-    /// A wrapper around [`Rules::deref`]
-    #[must_use]
-    pub fn as_slice(&self) -> &[Rule] {self}
-    /// A wrapper around [`Rules::deref_mut`]
-    pub fn as_mut_slice(&mut self) -> &mut [Rule] {self}
-
     /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.

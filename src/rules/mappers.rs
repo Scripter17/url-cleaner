@@ -1,34 +1,23 @@
 //! The logic for how to modify a URL.
 
-use serde::{Serialize, Deserialize};
-use thiserror::Error;
-use url::{Url, ParseError};
-use std::str::Utf8Error;
-use std::collections::hash_set::HashSet;
-
 use std::borrow::Cow;
-
-// Used internally by the `url` crate to handle query manipulation.
-// Imported here for faster allow/remove query parts mappers.
-use form_urlencoded;
-
-#[cfg(feature = "http")]
-use reqwest::{self, Error as ReqwestError};
-#[cfg(not(feature = "http"))]
-/// A dummy and empty [`reqwest::Error`].
-/// Only exists when the `http` feature is disabled.
-#[derive(Debug, Error)]
-#[error("A dummy reqwest::Error; Only exists because URL Cleaner was compiled without the http feature.")]
-pub struct ReqwestError;
-
 #[cfg(feature = "cache-redirects")]
 use std::{
     path::Path,
     io::{self, BufRead, Write, Error as IoError},
     fs::{OpenOptions, File}
 };
-#[cfg(not(feature = "cache-redirects"))]
-use std::io::Error as IoError;
+
+use serde::{Serialize, Deserialize};
+use thiserror::Error;
+use url::{Url, ParseError};
+use std::str::Utf8Error;
+use std::collections::hash_set::HashSet;
+// Used internally by the `url` crate to handle query manipulation.
+// Imported here for faster allow/remove query parts mappers.
+use form_urlencoded;
+#[cfg(all(feature = "http", not(target_family = "wasm")))]
+use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
 use crate::glue;
 use crate::types;
@@ -287,6 +276,17 @@ pub enum Mapper {
         /// See [`regex::Regex::replace`] for details.
         replace: String
     },
+    /// Copies a config/CLI argument variable's value into a URL's part.
+    SetPartToVar {
+        /// The part to copy the variable's value to
+        part: types::UrlPart,
+        /// The variable whose part to copy.
+        var: String,
+        /// Whether or not to treat a lack of variable as the variable being set to `""`.
+        /// Defaults to false.
+        #[serde(default = "get_false")]
+        none_to_empty_string: bool
+    },
 
     // Miscelanious.
 
@@ -298,8 +298,33 @@ pub enum Mapper {
     /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
     /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
     /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::mappers::Mapper;
+    /// # use url::Url;
+    /// let mut x = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
+    /// assert!(Mapper::ExpandShortLink.apply(&mut x).is_ok());
+    /// assert_eq!(x.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
+    /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    ExpandShortLink,
+    ExpandShortLink {
+        /// The headers to send alongside the config's default headers.
+        #[serde(default, with = "crate::glue::headermap")]
+        headers: HeaderMap
+    },
+    /// Gets the URL as a webpage, uses `regex` to find a URL, and uses `expand` to join the regex capture's groups.
+    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+    ExtractUrlFromPage {
+        /// The headers to send alongside the config's default headers.
+        #[serde(default, with = "crate::glue::headermap")]
+        headers: HeaderMap,
+        /// The pattern to search for in the page.
+        regex: glue::RegexWrapper,
+        /// Used for [`regex::Captures::expand`].
+        /// Defaults to `"$1"`.
+        #[serde(default = "eufp_expand")]
+        expand: String
+    },
     /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
     /// # Errors
@@ -309,6 +334,9 @@ pub enum Mapper {
 }
 
 const fn get_true() -> bool {true}
+const fn get_false() -> bool {false}
+#[cfg(feature = "regex")]
+fn eufp_expand() -> String {"$1".to_string()}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Error, Debug)]
@@ -326,9 +354,11 @@ pub enum MapperError {
     #[error(transparent)]
     UrlParseError(#[from] ParseError),
     /// Returned when an HTTP request fails. Currently only applies to the Expand301 mapper.
+    #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] ReqwestError),
     /// Returned when an I/O error occurs. Currently only applies when Expand301 is set to cache redirects.
+    #[cfg(feature = "cache-redirects")]
     #[error(transparent)]
     IoError(#[from] IoError),
     /// Returned when a part replacement fails.
@@ -349,7 +379,13 @@ pub enum MapperError {
     PartModificationError(#[from] types::PartModificationError),
     /// The URL cannot be a base.
     #[error("The URL cannot be a base.")]
-    UrlCannotBeABase
+    UrlCannotBeABase,
+    /// An instance of the regex pattern could not be found in the page returned by the URL.
+    #[error("An instance of the regex pattern could not be found in the page returned by the URL.")]
+    PatternNotFound,
+    /// A variable was requested but not found at runtime.
+    #[error("A variable was requested but not found at runtime.")]
+    VariableNotFound
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -361,10 +397,21 @@ where P: AsRef<Path>, {
 
 impl Mapper {
     /// Applies the mapper to the provided URL.
+    /// Thin wrapper around [`Self::apply_with_params`] using [`crate::config::Params::default`].
     /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
     /// # Errors
     /// If the mapper has an error, that error is returned.
+    /// See [`Mapper`]'s documentation for details.
     pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
+        self.apply_with_params(url, &crate::config::Params::default())
+    }
+    
+    /// Applies the mapper to the provided URL.
+    /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
+    /// # Errors
+    /// If the mapper has an error, that error is returned.
+    /// See [`Mapper`]'s documentation for details.
+    pub fn apply_with_params(&self, url: &mut Url, params: &crate::config::Params) -> Result<(), MapperError> {
         match self {
 
             // Boolean
@@ -453,6 +500,14 @@ impl Mapper {
                 #[allow(clippy::unnecessary_to_owned)]
                 part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
             },
+            Self::SetPartToVar{part, var, none_to_empty_string} => {
+                if *none_to_empty_string {
+                    // Option<&String>::as_deref doesn't return Option<&str>.
+                    part.set(url, Some(params.vars.get(var).map(|x| x.as_str()).unwrap_or_else(|| "")))?;
+                } else {
+                    part.set(url, Some(params.vars.get(var).ok_or(MapperError::VariableNotFound)?.as_str()))?;
+                }
+            },
 
             // Error handling
             
@@ -462,7 +517,7 @@ impl Mapper {
             // Miscelanious
 
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
-            Self::ExpandShortLink => {
+            Self::ExpandShortLink{headers} => {
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(lines) = read_lines("redirect-cache.txt") {
                     for line in lines.map_while(Result::ok) {
@@ -474,13 +529,19 @@ impl Mapper {
                         }
                     }
                 }
-                let new_url=reqwest::blocking::Client::new().get(url.to_string()).send()?.url().clone();
+                let new_url=params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.url().clone();
                 *url=new_url.clone();
                 // Intentionally ignore any and all file writing errors.
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
                     let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
                 }
+            },
+            #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+            Self::ExtractUrlFromPage{headers, regex, expand} => {
+                let mut ret = String::new();
+                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::PatternNotFound)?.expand(expand, &mut ret);
+                *url=Url::parse(&ret)?;
             },
             #[cfg(feature = "commands")]
             Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;},

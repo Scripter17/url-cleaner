@@ -8,7 +8,7 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 
 use regex_syntax::Error as RegexSyntaxError;
-use regex::{Regex, Replacer};
+use regex::{Regex, Replacer, Match, Captures};
 
 /// A wrapper around both a [`OnceLock`] of a [`Regex`] and a [`RegexParts`].
 /// This is because converting a [`Regex`] into a [`RegexParts`] is extremely complicated and because it allows lazy compilation of regexes.
@@ -103,6 +103,20 @@ impl RegexWrapper {
     /// I'm not the boss of you. That's why I'm providing these functions.
     pub unsafe fn get_regex_parts_mut(&mut self) -> &mut RegexParts {
         &mut self.parts
+    }
+
+    /// A convenience wrapper around [`Regex::find`].
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    pub fn find<'h>(&self, haystack: &'h str) -> Option<Match<'h>> {
+        self.get_regex().find(haystack)
+    }
+
+    /// A convenience wrapper around [`Regex::captures`].
+    /// # Panics
+    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    pub fn captures<'h>(&self, haystack: &'h str) -> Option<Captures<'h>> {
+        self.get_regex().captures(haystack)
     }
 
     /// A convenience wrapper around [`Regex::is_match`].

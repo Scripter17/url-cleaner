@@ -27,13 +27,13 @@
 					},
 					{
 						"condition": {"Any": [
-							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee"]},
+							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it"]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
 								{"PathIs": "/oauth_authentications"}
 							]}
 						]},
-						"mapper": "ExpandShortLink"
+						"mapper": {"ExpandShortLink": {"headers": {}}}
 					}
 				]
 			}
@@ -172,6 +172,16 @@
 
 		{
 			"condition": {"All": [
+				{"MaybeWWWDomain": "pixiv.net"},
+				{"PathIs": "/jump.php"}
+			]},
+			"mapper": {"GetUrlFromQueryParam": "url"}
+		},
+
+
+
+		{
+			"condition": {"All": [
 				{"QualifiedDomain": "twitter.com"},
 				{"Not": {"PathIs": "/search"}}
 			]},
@@ -186,9 +196,9 @@
 		},
 		{
 			"condition": {"All": [
+				{"FlagSet": "discord-compatibility"},
 				{"QualifiedDomain": "twitter.com"},
-				{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}},
-				{"FlagSet": "discord-compatibility"}
+				{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
 			]},
 			"mapper": {"SetHost": "vxtwitter.com"}
 		},
@@ -212,9 +222,9 @@
 		},
 		{
 			"condition": {"All": [
+				{"FlagSet": "discord-compatibility"},
 				{"UnqualifiedDomain": "deviantart.com"},
-				{"PartIs": {"part": {"PathSegment": 1}, "value": "art"}},
-				{"FlagSet": "discord-compatibility"}
+				{"PartIs": {"part": {"PathSegment": 1}, "value": "art"}}
 			]},
 			"mapper": {"SetHost": "fxdeviantart.com"}
 		},
@@ -223,8 +233,8 @@
 
 		{
 			"condition": {"All": [
-				{"UnqualifiedDomain": "fandom.com"},
-				{"FlagSet": "antifandom"}
+				{"FlagSet": "antifandom"},
+				{"UnqualifiedDomain": "fandom.com"}
 			]},
 			"mapper": {"All": [
 				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},

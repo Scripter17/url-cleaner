@@ -7,7 +7,6 @@ use std::borrow::Cow;
 /// The logic for conditions and mappers.
 pub mod rules;
 /// Wrappers for [`regex::Regex`], [`glob::Pattern`], and [`std::process::Command`].
-/// In the case their respective features are disabled, the wrappers are empty, always fail deserialization, and all of their methods panic.
 pub mod glue;
 /// Types that don't fit in the other modules.
 pub mod types;
