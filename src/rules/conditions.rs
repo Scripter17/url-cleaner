@@ -1,6 +1,5 @@
 //! The logic for when to modify a URL.
 
-use std::borrow::Cow;
 use std::collections::hash_set::HashSet;
 
 use thiserror::Error;
@@ -207,48 +206,11 @@ pub enum Condition {
     /// assert!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==false));
     /// ```
     QueryHasParam(String),
-    /// Passes if the URL has a query of the specified name and its value is the specified value.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::conditions::Condition;
-    /// # use url::Url;
-    /// assert!(Condition::QueryParamValueIs{name: "a".to_string(), value: "2".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "3".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QueryParamValueIs{name: "b".to_string(), value: "4".to_string()}.satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap()).is_ok_and(|x| x==false));
-    /// ```
-    QueryParamValueIs {
-        /// The name of the query parameter.
-        name: String,
-        /// The expected value of the query parameter.
-        value: String
-    },
-    /// Passes if the URL has a query of the specified name and its value matches the specified regular expression.
-    #[cfg(feature = "regex")]
-    QueryParamValueMatchesRegex {
-        /// The name of the query parameter.
-        name: String,
-        /// The [`glue::RegexWrapper`] the query parameter's value is checked against.
-        regex: glue::RegexWrapper
-    },
-    /// Passes if the URL has a query of the specified name and its value matches the specified glob.
-    #[cfg(feature = "glob")]
-    QueryParamValueMatchesGlob {
-        /// The name of the query parameter.
-        name: String,
-        /// The [`glue::GlobWrapper`] the query parameter's value is checked against.
-        glob: glue::GlobWrapper
-    },
 
     // Path.
     
     /// Passes if the URL's path is the specified string.
     PathIs(String),
-    /// Passes if the URL's path matches the specified regular expression.
-    #[cfg(feature = "regex")]
-    PathMatchesRegex(glue::RegexWrapper),
-    /// Passes if the URL's path matches the specified glob.
-    #[cfg(feature = "glob")]
-    PathMatchesGlob(glue::GlobWrapper),
 
     // General parts.
 
@@ -338,10 +300,10 @@ pub enum Condition {
     /// # use url_cleaner::config::Params;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
-    /// let config=Params {variables: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==false));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &config).is_ok_and(|x| x==false));
+    /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_params(&url, &params).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_params(&url, &params).is_ok_and(|x| x==false));
+    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &params).is_ok_and(|x| x==false));
     /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &Params::default()).is_ok_and(|x| x==true));
     /// ```
     VariableIs {
@@ -404,16 +366,17 @@ impl Condition {
             Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
             Self::UnqualifiedAnyTld(middle) => {
                 // Sometimes you just gotta write garbage.
-                url.domain()
-                    .is_some_and(|domain| domain.contains(middle) && psl::suffix_str(domain)
-                        .is_some_and(|suffix| domain.strip_suffix(suffix)
-                            .is_some_and(|not_suffix_dot| not_suffix_dot.strip_suffix('.')
-                                .is_some_and(|not_suffix| not_suffix.strip_suffix(middle)
-                                    .is_some_and(|prefix_dot| prefix_dot.is_empty() || prefix_dot.ends_with('.'))
-                                )
-                            )
-                        )
-                    )
+                // url.domain()
+                //     .is_some_and(|domain| domain.contains(middle) && psl::suffix_str(domain)
+                //         .is_some_and(|suffix| domain.strip_suffix(suffix)
+                //             .is_some_and(|not_suffix_dot| not_suffix_dot.strip_suffix('.')
+                //                 .is_some_and(|not_suffix| not_suffix.strip_suffix(middle)
+                //                     .is_some_and(|prefix_dot| prefix_dot.is_empty() || prefix_dot.ends_with('.'))
+                //                 )
+                //             )
+                //         )
+                //     )
+                url.domain().is_some_and(|url_domain| url_domain.split_once(middle).is_some_and(|(_, dot_suffix)| dot_suffix.strip_prefix('.').is_some_and(|suffix| psl::suffix_str(suffix).is_some_and(|psl_suffix| psl_suffix==suffix))))
             },
             Self::QualifiedAnyTld(parts) => url.domain().is_some_and(|domain| domain.strip_prefix(parts).is_some_and(|dot_suffix| dot_suffix.strip_prefix('.').is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix)))),
             #[cfg(feature = "regex")]
@@ -441,7 +404,7 @@ impl Condition {
                             )
                     },
                 }
-            }
+            },
 
             // Meta conditions
 
@@ -466,32 +429,18 @@ impl Condition {
             // Query
 
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
-            Self::QueryParamValueIs{name, value} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && value2==value),
-            #[cfg(feature = "regex")] Self::QueryParamValueMatchesRegex{name, regex} => url.query_pairs().any(|(ref name2, ref value2)| name2==name && regex.is_match(value2)),
-            #[cfg(feature = "glob" )] Self::QueryParamValueMatchesGlob {name, glob } => url.query_pairs().any(|(ref name2, ref value2)| name2==name && glob .matches (value2)),
 
             // Path
 
             Self::PathIs(path) => url.path()==path,
-            #[cfg(feature = "regex")] Self::PathMatchesRegex(regex) => regex.is_match(url.path()),
-            #[cfg(feature = "glob" )] Self::PathMatchesGlob (glob ) => glob .matches (url.path()),
 
             // General parts
 
-            Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==if *none_to_empty_string {
-                Some(part.get(url).unwrap_or(Cow::Borrowed("")))
-            } else {
-                part.get(url)
-            }.as_deref(),
-            Self::PartContains{part, none_to_empty_string, value, r#where} => {
-                let part_value=part.get(url)
-                    .or_else(|| none_to_empty_string.then_some(Cow::Borrowed("")))
-                    .ok_or(ConditionError::UrlPartNotFound)?;
-                r#where.satisfied_by(&part_value, value)?
-            }
-            Self::PartExists(part) => part.get(url).is_some(),
-            #[cfg(feature = "regex")] Self::PartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
-            #[cfg(feature = "glob" )] Self::PartMatchesGlob  {part, none_to_empty_string, glob } => glob .matches (part.get(url).ok_or(ConditionError::UrlPartNotFound).or_else(|_| if *none_to_empty_string {Ok(Cow::Borrowed(""))} else {Err(ConditionError::UrlPartNotFound)})?.as_ref()),
+            Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
+            Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
+            Self::PartExists(part) => part.get(url, false).is_some(),
+            #[cfg(feature = "regex")] Self::PartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?.as_ref()),
+            #[cfg(feature = "glob" )] Self::PartMatchesGlob  {part, none_to_empty_string, glob } => glob .matches (part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?.as_ref()),
 
             // Miscelanious
 

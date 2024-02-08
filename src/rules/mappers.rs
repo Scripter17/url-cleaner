@@ -1,6 +1,5 @@
 //! The logic for how to modify a URL.
 
-use std::borrow::Cow;
 #[cfg(feature = "cache-redirects")]
 use std::{
     path::Path,
@@ -104,7 +103,7 @@ pub enum Mapper {
     /// ```
     AllIgnoreError(Vec<Mapper>),
     /// Effectively a [`Mapper::TryCatch`] chain but less ugly.
-    /// Useful for when a mapper can be implemented under various different feature configurations.
+    /// Useful for when a mapper can be implemented in different ways depending the features URL Cleaner was compiled with.
     /// # Errors
     /// If every contained mapper errors, returns the last error.
     /// # Examples
@@ -270,13 +269,13 @@ pub enum Mapper {
         /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
-        /// The [`glue::GlobWrapper`] that is used to match and extract parts of the selected part.
+        /// The regex that is used to match and extract parts of the selected part.
         regex: glue::RegexWrapper,
         /// The pattern the extracted parts are put into.
         /// See [`regex::Regex::replace`] for details.
         replace: String
     },
-    /// Copies a config/CLI argument variable's value into a URL's part.
+    /// Copies a config param/CLI argument variable's value into a URL's part.
     SetPartToVar {
         /// The part to copy the variable's value to
         part: types::UrlPart,
@@ -302,20 +301,21 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::rules::mappers::Mapper;
     /// # use url::Url;
+    /// # use reqwest::header::HeaderMap;
     /// let mut x = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// assert!(Mapper::ExpandShortLink.apply(&mut x).is_ok());
+    /// assert!(Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut x).is_ok());
     /// assert_eq!(x.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     ExpandShortLink {
-        /// The headers to send alongside the config's default headers.
+        /// The headers to send alongside the param's default headers.
         #[serde(default, with = "crate::glue::headermap")]
         headers: HeaderMap
     },
     /// Gets the URL as a webpage, uses `regex` to find a URL, and uses `expand` to join the regex capture's groups.
     #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
     ExtractUrlFromPage {
-        /// The headers to send alongside the config's default headers.
+        /// The headers to send alongside the param's default headers.
         #[serde(default, with = "crate::glue::headermap")]
         headers: HeaderMap,
         /// The pattern to search for in the page.
@@ -415,7 +415,7 @@ impl Mapper {
         match self {
 
             // Boolean
-            
+
             Self::All(mappers) => {
                 let mut temp_url=url.clone();
                 for mapper in mappers {
@@ -485,18 +485,10 @@ impl Mapper {
 
             Self::SetPart{part, value} => part.set(url, value.as_deref())?,
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how)?,
-            Self::CopyPart{from, none_to_empty_string, to} => if *none_to_empty_string {
-                #[allow(clippy::unnecessary_to_owned)] // It is necessary.
-                to.set(url, Some(&from.get(url).unwrap_or(Cow::Borrowed("")).into_owned()))
-            } else {
-                to.set(url, from.get(url).map(Cow::into_owned).as_deref())
-            }?,
+            Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
             #[cfg(feature = "regex")]
             Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
-                let old_part_value=part
-                    .get(url)
-                    .or_else(|| none_to_empty_string.then_some(Cow::Borrowed("")))
-                    .ok_or(MapperError::UrlPartNotFound)?;
+                let old_part_value=part.get(url, *none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
                 #[allow(clippy::unnecessary_to_owned)]
                 part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
             },
@@ -510,7 +502,7 @@ impl Mapper {
             },
 
             // Error handling
-            
+
             Self::IgnoreError(mapper) => {let _=mapper.apply(url);},
             Self::TryCatch{r#try, catch} => r#try.apply(url).or_else(|_| catch.apply(url))?,
 
@@ -530,12 +522,12 @@ impl Mapper {
                     }
                 }
                 let new_url=params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.url().clone();
-                *url=new_url.clone();
                 // Intentionally ignore any and all file writing errors.
                 #[cfg(feature = "cache-redirects")]
                 if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
                     let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
                 }
+                *url=new_url.clone();
             },
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
             Self::ExtractUrlFromPage{headers, regex, expand} => {
