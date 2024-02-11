@@ -57,10 +57,7 @@ impl<'de> Deserialize<'de> for CommandWrapper {
     /// TODO: Deserializing from a list.
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let parts: CommandParts = crate::glue::string_or_struct(deserializer)?;
-        Ok(Self {
-            output_handler: parts.output_handler.clone(),
-            inner: parts.into()
-        })
+        Ok(parts.into())
     }
 }
 
@@ -73,6 +70,23 @@ impl From<CommandParts> for Command {
         }
         ret.envs(parts.envs);
         ret
+    }
+}
+
+impl From<CommandParts> for CommandWrapper {
+    fn from(parts: CommandParts) -> Self {
+        Self {
+            output_handler: parts.output_handler.clone(),
+            inner: parts.into()
+        }
+    }
+}
+
+impl FromStr for CommandWrapper {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(CommandParts::from_str(s)?.into())
     }
 }
 

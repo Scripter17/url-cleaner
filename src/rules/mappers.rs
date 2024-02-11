@@ -45,7 +45,7 @@ pub enum Mapper {
 
     /// Ignores any error the contained mapper may return.
     IgnoreError(Box<Mapper>),
-    /// If the `try` mapper returns an error, the `else` mapper is used instead.
+    /// If the `try` mapper returns an error, the `else` mapper is used instead. If the `try` mapper does not error, `else` is not executed.
     /// # Errors
     /// If the `else` mapper returns an error, that error is returned.
     /// # Examples
@@ -63,6 +63,9 @@ pub enum Mapper {
         /// If the try mapper fails, instead return the result of this one.
         catch: Box<Mapper>
     },
+
+    // Multiple.
+
     /// Applies the contained mappers in order.
     /// # Errors
     /// If one of the contained mappers returns an error, the URL is left unchanged and the error is returned.
@@ -74,9 +77,6 @@ pub enum Mapper {
     /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url).is_err());
     /// assert_eq!(url.domain(), Some("www.example.com"));
     /// ```
-
-    // Multiple.
-
     All(Vec<Mapper>),
     /// Applies the contained mappers in order. If an error occurs that error is returned and the URL is left unchanged.
     /// Technically the name is wrong as [`super::conditions::Condition::All`] only actually changes the URL after all the mappers pass, but this is conceptually simpler.
@@ -217,6 +217,8 @@ pub enum Mapper {
     /// assert_eq!(url.path(), "/0/2/4");
     /// ```
     RemovePathSegments(Vec<usize>),
+    /// [`Url::join`].
+    Join(String),
 
     // Generic part handling.
 
@@ -276,6 +278,23 @@ pub enum Mapper {
         replace: String
     },
     /// Copies a config param/CLI argument variable's value into a URL's part.
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::rules::mappers::Mapper;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::config::Params;
+    /// # use std::collections::HashMap;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(Mapper::SetPartToVar {part: UrlPart::Path, var: "abc".to_string(), none_to_empty_string: true}
+    ///     .apply_with_params(&mut url, &Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()}).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/xyz");
+    /// assert!(Mapper::SetPartToVar {part: UrlPart::Path, var: "abc".to_string(), none_to_empty_string: true}
+    ///     .apply_with_params(&mut url, &Params {vars: HashMap::from_iter([]), ..Params::default()}).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/");
+    /// assert!(Mapper::SetPartToVar {part: UrlPart::Path, var: "abc".to_string(), none_to_empty_string: false}
+    ///     .apply_with_params(&mut url, &Params {vars: HashMap::from_iter([]), ..Params::default()}).is_err());
+    /// ```
     SetPartToVar {
         /// The part to copy the variable's value to
         part: types::UrlPart,
@@ -302,9 +321,9 @@ pub enum Mapper {
     /// # use url_cleaner::rules::mappers::Mapper;
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
-    /// let mut x = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// assert!(Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut x).is_ok());
-    /// assert_eq!(x.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
+    /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
+    /// assert!(Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut url).is_ok());
+    /// assert_eq!(url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     ExpandShortLink {
@@ -480,6 +499,7 @@ impl Mapper {
 
             Self::SetHost(new_host) => url.set_host(Some(new_host))?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
+            Self::Join(with) => *url=url.join(with)?,
 
             // Generic part handling
 

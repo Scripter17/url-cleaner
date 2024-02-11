@@ -12,8 +12,8 @@ use crate::types::{UrlPart, DomainConditionRule, StringLocation};
 use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
-/// Note that conditions are checked by the output of the previous mapper.
-/// A `Mapper::SwapHost` will make `Condition::UnqualifiedDomain` match on the host that was swapped in.
+/// Note that conditions check the output of the previous rule.
+/// A [`Mapper::SwapHost`] will make [`Condition::UnqualifiedDomain`] match on the host that was swapped in.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
@@ -21,7 +21,7 @@ pub enum Condition {
     Always,
 
     // Testing conditions.
-    
+
     /// Never passes.
     Never,
     /// Always returns the error [`ConditionError::ExplicitError`].
@@ -40,14 +40,44 @@ pub enum Condition {
     Debug(Box<Condition>),
 
     // Error handling
-    
+
     /// If the contained condition returns an error, treat it as a pass.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     TreatErrorAsPass(Box<Condition>),
     /// If the contained condition returns an error, treat it as a fail.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// ```
     TreatErrorAsFail(Box<Condition>),
-    /// If the `try` condition returns an error, return the result of the `else` condition instead.
+    /// If the `try` condition returns an error, return the result of the `else` condition instead. If the `try` condition does not error, the `else` condition is not executed.
     /// # Errors
     /// If the `else` condition returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Always), catch: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Always), catch: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Always), catch: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Never ), catch: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Never ), catch: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Never ), catch: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Error ), catch: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Error ), catch: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Error ), catch: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// ```
     TryCatch {
         /// The condition to try first.
         r#try: Box<Condition>,
@@ -57,21 +87,59 @@ pub enum Condition {
 
     // Boolean.
 
-    /// Passes if all of the included conditions pass. Like [`Iterator::all`], an empty list of conditions returns `true`.
+    /// Passes if all of the included conditions pass.
+    /// Like [`Iterator::all`], an empty list of conditions returns `true`.
     /// # Errors
     /// If any contained condition returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::All(vec![Condition::Always, Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Condition::All(vec![Condition::Never , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::All(vec![Condition::Never , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::All(vec![Condition::Never , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::All(vec![Condition::Error , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Condition::All(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// ```
     All(Vec<Condition>),
-    /// Passes if any of the included conditions pass. Like [`Iterator::any`], an empty list of conditions returns `false`.
+    /// Passes if any of the included conditions pass.
+    /// Like [`Iterator::any`], an empty list of conditions returns `false`.
     /// # Errors
     /// If any contained condition returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::Any(vec![Condition::Always, Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::Any(vec![Condition::Never , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::Any(vec![Condition::Never , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::Any(vec![Condition::Never , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Condition::Any(vec![Condition::Error , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Condition::Any(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// ```
     Any(Vec<Condition>),
     /// Passes if the included condition doesn't and vice-versa.
     /// # Errors
     /// If the contained condition returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::Not(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap()).is_err());
+    /// ```
     Not(Box<Condition>),
 
     // Domain conditions.
-    
+
     /// Passes if the URL's domain is or is a subdomain of the specified domain.
     /// # Examples
     /// ```
@@ -106,6 +174,18 @@ pub enum Condition {
     /// ```
     QualifiedDomain(String),
     /// Passes if the URL's host is in the specified set of hosts.
+    /// Compared to having `n` rules of [`Self::MaybeWWWDomain`], this is `O(1)`.
+    /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`Self::UnqualifiedDomain`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// # use std::collections::HashSet;
+    /// assert!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example2.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example2.com").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     HostIsOneOf(HashSet<String>),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
@@ -121,6 +201,10 @@ pub enum Condition {
     /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(|x| x==true ));
     /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
     /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
+    /// // Weird edge cases.
+    /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.example.co.uk").unwrap()).is_ok_and(|x| x==true));
+    /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.example.co.uk").unwrap()).is_ok_and(|x| x==true));
+    /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.co.uk").unwrap()).is_ok_and(|x| x==false));
     /// ```
     UnqualifiedAnyTld(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
@@ -208,16 +292,35 @@ pub enum Condition {
     QueryHasParam(String),
 
     // Path.
-    
+
     /// Passes if the URL's path is the specified string.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com"   ).unwrap()).is_ok_and(|x| x==true));
+    /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com/"  ).unwrap()).is_ok_and(|x| x==true));
+    /// assert!(Condition::PathIs("/a" .to_string()).satisfied_by(&Url::parse("https://example.com/a" ).unwrap()).is_ok_and(|x| x==true));
+    /// assert!(Condition::PathIs("/a/".to_string()).satisfied_by(&Url::parse("https://example.com/a/").unwrap()).is_ok_and(|x| x==true));
+    /// ```
     PathIs(String),
 
     // General parts.
 
-    /// Passes if the part's getter is `Some`.
-    PartExists(UrlPart),
     /// Passes if the value of the specified part of the URL is the specified value.
     /// Does not error when the specified part is `None`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// assert!(Condition::PartIs{part: UrlPart::Username      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Password      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Path          , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// ```
     PartIs {
         /// The name of the part to check.
         part: UrlPart,
@@ -231,6 +334,15 @@ pub enum Condition {
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
     /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::StringLocation;
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true , value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true , value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap()).is_ok_and(|x| x==false));
+    /// ```
     PartContains {
         /// The name of the part to check.
         part: UrlPart,
@@ -244,9 +356,20 @@ pub enum Condition {
         #[serde(default)]
         r#where: StringLocation
     },
-    /// Takes the specified part of the URL and passes if it matches the specified regular expression.
+    /// Passes if the specified part of the provided URL matches the specified regular expression.
     /// # Errors
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::glue::RegexWrapper;
+    /// # use std::str::FromStr;
+    /// let url = Url::parse("https://example.com").unwrap();
+    /// assert!(Condition::PartMatchesRegex {part: UrlPart::Domain, none_to_empty_string: true, regex: RegexWrapper::from_str(  r"amp"          ).unwrap()}.satisfied_by(&url).is_ok_and(|x| x==true));
+    /// assert!(Condition::PartMatchesRegex {part: UrlPart::Domain, none_to_empty_string: true, regex: RegexWrapper::from_str(r"example\d?\.com").unwrap()}.satisfied_by(&url).is_ok_and(|x| x==true));
+    /// ```
     #[cfg(feature = "regex")]
     PartMatchesRegex {
         /// The name of the part to check.
@@ -258,9 +381,18 @@ pub enum Condition {
         /// The [`glue::RegexWrapper`] the part's value is checked against.
         regex: glue::RegexWrapper
     },
-    /// Takes the specified part of the URL and passes if it matches the specified glob.
+    /// Passes if the specified part of the provided URL matches the specified glob.
     /// # Errors
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::glue::GlobWrapper;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// assert!(Condition::PartMatchesGlob {part: UrlPart::Path, none_to_empty_string: false, glob: GlobWrapper::from_str("/a/**/b").unwrap()}.satisfied_by(&Url::parse("https://example.com/a/c/c/b").unwrap()).is_ok_and(|x| x==true));
+    /// ```
     #[cfg(feature = "glob")]
     PartMatchesGlob {
         /// The name of the part to check.
@@ -274,13 +406,33 @@ pub enum Condition {
     },
 
     // Commands.
-    
+
     /// Checks the contained command's [`glue::CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap()).is_ok_and(|x| x==false));
+    /// ```
     #[cfg(feature = "commands")]
     CommandExists(glue::CommandWrapper),
     /// Runs the specified [`glue::CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
     /// # Errors
     /// If the command is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap()).is_err());
+    /// ```
     #[cfg(feature = "commands")]
     CommandExitStatus {
         /// The [`glue::CommandWrapper`] to execute.
@@ -317,6 +469,15 @@ pub enum Condition {
     },
 
     /// Passes if the specified rule flag is set.
+    /// # Examples
+    /// ```
+    /// # use std::collections::HashSet;
+    /// # use url::Url;
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url_cleaner::config::Params;
+    /// assert!(Condition::FlagSet("abc".to_string()).satisfied_by_with_params(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
+    /// assert!(Condition::FlagSet("abc".to_string()).satisfied_by_with_params(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
+    /// ```
     FlagSet(String)
 }
 
@@ -363,22 +524,21 @@ impl Condition {
             Self::UnqualifiedDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
             Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
             Self::QualifiedDomain(domain) => url.domain()==Some(domain),
-            Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
-            Self::UnqualifiedAnyTld(middle) => {
-                // Sometimes you just gotta write garbage.
-                // url.domain()
-                //     .is_some_and(|domain| domain.contains(middle) && psl::suffix_str(domain)
-                //         .is_some_and(|suffix| domain.strip_suffix(suffix)
-                //             .is_some_and(|not_suffix_dot| not_suffix_dot.strip_suffix('.')
-                //                 .is_some_and(|not_suffix| not_suffix.strip_suffix(middle)
-                //                     .is_some_and(|prefix_dot| prefix_dot.is_empty() || prefix_dot.ends_with('.'))
-                //                 )
-                //             )
-                //         )
-                //     )
-                url.domain().is_some_and(|url_domain| url_domain.split_once(middle).is_some_and(|(_, dot_suffix)| dot_suffix.strip_prefix('.').is_some_and(|suffix| psl::suffix_str(suffix).is_some_and(|psl_suffix| psl_suffix==suffix))))
-            },
-            Self::QualifiedAnyTld(parts) => url.domain().is_some_and(|domain| domain.strip_prefix(parts).is_some_and(|dot_suffix| dot_suffix.strip_prefix('.').is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix)))),
+            Self::HostIsOneOf(hosts) => url.host_str().map(|host| host.strip_prefix("www.").unwrap_or(host)).is_some_and(|url_host| hosts.contains(url_host)),
+            Self::UnqualifiedAnyTld(middle) => url.domain()
+                .is_some_and(|url_domain| url_domain.rsplit_once(middle)
+                    .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')
+                        .is_some_and(|suffix| psl::suffix_str(suffix)
+                            .is_some_and(|psl_suffix| psl_suffix==suffix)
+                        )
+                    )
+                ),
+            Self::QualifiedAnyTld(parts) => url.domain()
+                .is_some_and(|domain| domain.strip_prefix(parts)
+                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
+                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
+                    )
+                ),
             #[cfg(feature = "regex")]
             Self::DomainCondition {yes_domains, yes_domain_regexes, unless_domains, unless_domain_regexes} => {
                 fn unqualified_domain(domain: &str, parts: &str) -> bool {
@@ -438,7 +598,6 @@ impl Condition {
 
             Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
             Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
-            Self::PartExists(part) => part.get(url, false).is_some(),
             #[cfg(feature = "regex")] Self::PartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?.as_ref()),
             #[cfg(feature = "glob" )] Self::PartMatchesGlob  {part, none_to_empty_string, glob } => glob .matches (part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?.as_ref()),
 

@@ -58,51 +58,12 @@ impl RegexWrapper {
     /// For the sake of API design, I consider that a niche enough case that this warning is sufficient.
     pub fn get_regex(&self) -> &Regex {
         self.regex.get_or_init(|| self.parts.build()
-            .expect("The regex to have been validated during `RegexParts::new` and the regex to not exceed configured limits."))
-    }
-
-    /// Mutably gets the cached compiled regex and compiles it first if it's not already cached.
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
-    /// # Safety
-    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
-    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
-    pub unsafe fn get_regex_mut(&mut self) -> &mut Regex {
-        self.get_regex();
-        self.regex.get_mut().expect("The regex to have just been set.") // No [`OnceLock::get_mut_or_init`] as of 1.75.
-    }
-
-    /// Mutably gets the [`OnceLock`] containging the cached [`Regex`].
-    /// # Safety
-    /// Because [`OnceLock`] has interior mutability, this is effectively as unsafe as [`Self::get_regex_container_mut`].
-    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
-    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
-    pub unsafe fn get_regex_container(&self) -> &OnceLock<Regex> {
-        &self.regex
-    }
-
-    /// Mutably gets the [`OnceLock`] containging the cached [`Regex`].
-    /// # Safety
-    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
-    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
-    pub unsafe fn get_regex_container_mut(&mut self) -> &mut OnceLock<Regex> {
-        &mut self.regex
+            .expect("The regex to have been validated during `RegexParts::new` and not exceed the size limit."))
     }
 
     /// Gets the contained [`RegexParts`].
     pub fn get_regex_parts(&self) -> &RegexParts {
         &self.parts
-    }
-
-    /// Mutably gets the contained [`RegexParts`].
-    /// # Safety
-    /// [`RegexWrapper`] assumes the contained [`RegexParts`] and [`Regex`] are always the same.
-    /// The exact behaviour of a desync is unspecified but should be fairly limited in practice.
-    /// If the regex hasn't been compiled and cached yet (or the [`OnceLock`] it's stored in has been cleared via [`OnceLock::take`] or by being replaced) then mutating this *should* be fine.
-    /// Though in that case you should probably just [`Into::into`] this back into a [`RegexParts`], mutate that, then makea a new [`RegexWrapper`].
-    /// I'm not the boss of you. That's why I'm providing these functions.
-    pub unsafe fn get_regex_parts_mut(&mut self) -> &mut RegexParts {
-        &mut self.parts
     }
 
     /// A convenience wrapper around [`Regex::find`].

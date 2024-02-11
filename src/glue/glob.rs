@@ -1,5 +1,6 @@
-pub use glob::{Pattern, MatchOptions};
+use std::str::FromStr;
 
+pub use glob::{Pattern, MatchOptions, PatternError};
 use serde::{
     Serialize, Deserialize,
     ser::Serializer,
@@ -46,5 +47,16 @@ impl GlobWrapper {
     #[must_use]
     pub fn matches(&self, str: &str) -> bool {
         self.pattern.matches_with(str, self.options)
+    }
+}
+
+impl FromStr for GlobWrapper {
+    type Err=PatternError;
+
+    fn from_str(str: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            pattern: Pattern::from_str(str)?,
+            options: MatchOptions::default()
+        })
     }
 }

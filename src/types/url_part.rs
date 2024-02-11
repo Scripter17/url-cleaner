@@ -6,10 +6,16 @@ use serde::{Serialize, Deserialize};
 
 use super::{neg_nth, neg_index};
 
-/// An enum that makes using the various [`Url`] getters simpler.
+/// An enum that allows getting and setting various parts of a URL without a bajillion [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
+/// In general (except for [`Self::DomainSegment`] and [`Self::PathSegment`]), setting a part to its own value is a no-op.
+/// __Some parts may behave in unusual ways. Please check the documentation of parts you use to make sure you understand them.__
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum UrlPart {
     /// The whole URL. Corresponds to [`Url::as_str`].
+    /// # Getting
+    /// Is never `None`.
+    /// # Setting
+    /// Cannot be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -26,6 +32,10 @@ pub enum UrlPart {
     /// ```
     Whole,
     /// The scheme. Corresponds to [`Url::scheme`].
+    /// # Getting
+    /// Is never `None`.
+    /// # Setting
+    /// Cannot be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -42,6 +52,10 @@ pub enum UrlPart {
     /// ```
     Scheme,
     /// The username. Corresponds to [`Url::username`].
+    /// # Getting
+    /// Is never `None`.
+    /// # Setting
+    /// Cannot be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -61,6 +75,10 @@ pub enum UrlPart {
     /// ```
     Username,
     /// The password. Corresponds to [`Url::password`].
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -72,9 +90,17 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Password.get(&Url::parse("https://example.com").unwrap(), false), None);
     /// assert_eq!(UrlPart::Password.get(&Url::parse("http://example.com" ).unwrap(), false), None);
     /// assert_eq!(UrlPart::Password.get(&Url::parse("ftp://example.com"  ).unwrap(), false), None);
+    ///
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::Password.set(&mut url, Some("xyz")).is_ok());
+    /// assert_eq!(url.as_str(), "https://:xyz@example.com/");
     /// ```
     Password,
     /// The host. Either a domain name or IPV4/6 address. Corresponds to [`Url::host`].
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -87,6 +113,14 @@ pub enum UrlPart {
     /// ```
     Host,
     /// The nth domain segment.
+    /// Negative `n` values will get the `-n`'th last item similar to Python's `list[-x]` feature.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`, but that's a no-op.
+    /// # Set-get identity.
+    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`PartError::SegmentNotFound`].
+    /// This may be changed to a different error and/or work for some inputs that currently error.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -99,6 +133,7 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::DomainSegment(3).get(&url, false), Some(Cow::Borrowed("example")));
     /// assert_eq!(UrlPart::DomainSegment(4).get(&url, false), Some(Cow::Borrowed("com")));
     /// assert_eq!(UrlPart::DomainSegment(5).get(&url, false), None);
+    ///
     /// assert!(UrlPart::DomainSegment(1).set(&mut url, Some("d")).is_ok());
     /// assert_eq!(url.domain().unwrap(), "a.d.c.example.com");
     /// assert!(UrlPart::DomainSegment(1).set(&mut url, None).is_ok());
@@ -108,6 +143,10 @@ pub enum UrlPart {
     /// ```
     DomainSegment(isize),
     /// The subdomain. If the domain is `a.b.c.co.uk`, the value returned/changed by this is `a.b`.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -117,18 +156,23 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://www.example.com").unwrap(), false), Some(Cow::Borrowed("www")));
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://a.b.example.com").unwrap(), false), Some(Cow::Borrowed("a.b")));
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://example.com"    ).unwrap(), false), Some(Cow::Borrowed("")));
-    /// let mut x = Url::parse("https://example.com").unwrap();
-    /// assert!(UrlPart::Subdomain.set(&mut x, Some("abc")).is_ok());
-    /// assert_eq!(x.as_str(), "https://abc.example.com/");
-    /// assert!(UrlPart::Subdomain.set(&mut x, Some("abc.def")).is_ok());
-    /// assert_eq!(x.as_str(), "https://abc.def.example.com/");
-    /// assert!(UrlPart::Subdomain.set(&mut x, Some("")).is_ok());
-    /// assert_eq!(x.as_str(), "https://.example.com/");
-    /// assert!(UrlPart::Subdomain.set(&mut x, None).is_ok());
-    /// assert_eq!(x.as_str(), "https://example.com/");
+    ///
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::Subdomain.set(&mut url, Some("abc")).is_ok());
+    /// assert_eq!(url.as_str(), "https://abc.example.com/");
+    /// assert!(UrlPart::Subdomain.set(&mut url, Some("abc.def")).is_ok());
+    /// assert_eq!(url.as_str(), "https://abc.def.example.com/");
+    /// assert!(UrlPart::Subdomain.set(&mut url, Some("")).is_ok());
+    /// assert_eq!(url.as_str(), "https://.example.com/");
+    /// assert!(UrlPart::Subdomain.set(&mut url, None).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/");
     /// ```
     Subdomain,
     /// The domain minus the subdomain. If the domain is `a.b.c.co.uk` value returned/changed by this is `c.co.uk`.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -138,13 +182,18 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://www.example.com").unwrap(), false), Some(Cow::Borrowed("example.com")));
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://a.b.example.com").unwrap(), false), Some(Cow::Borrowed("example.com")));
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://example.com"    ).unwrap(), false), Some(Cow::Borrowed("example.com")));
-    /// let mut x = Url::parse("https://abc.example.com").unwrap();
-    /// assert!(UrlPart::Domain.set(&mut x, Some("example.co.uk")).is_ok());
-    /// assert_eq!(x.as_str(), "https://example.co.uk/");
-    /// assert!(UrlPart::Domain.set(&mut x, None).is_err());
+    ///
+    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// assert!(UrlPart::Domain.set(&mut url, Some("example.co.uk")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.co.uk/");
+    /// assert!(UrlPart::Domain.set(&mut url, None).is_err());
     /// ```
     NotSubdomain,
     /// The domain. Corresponds to [`Url::domain`].
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -154,10 +203,19 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://www.example.com").unwrap(), false), Some(Cow::Borrowed("www.example.com")));
     /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://a.b.example.com").unwrap(), false), Some(Cow::Borrowed("a.b.example.com")));
     /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://example.com"    ).unwrap(), false), Some(Cow::Borrowed("example.com")));
+    ///
+    /// let mut url = Url::parse("https://www.example.com").unwrap();
+    /// assert!(UrlPart::Domain.set(&mut url, Some("example2.com")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example2.com/");
+    /// assert!(UrlPart::Domain.set(&mut url, None).is_err());
     /// ```
     Domain,
     /// The port as a string. Corresponds to [`Url::port_or_known_default`].
     /// Ports are strings for the sake of a simpler API.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -166,14 +224,22 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com"    ).unwrap(), false), Some(Cow::Owned("443".to_string())));
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:443").unwrap(), false), Some(Cow::Owned("443".to_string())));
     /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:80" ).unwrap(), false), Some(Cow::Owned("80" .to_string())));
-    /// let mut x = Url::parse("https://example.com").unwrap();
-    /// assert!(UrlPart::Port.set(&mut x, Some("80")).is_ok());
-    /// assert_eq!(UrlPart::Port.get(&x, false), Some(Cow::Owned("80".to_string())));
-    /// assert!(UrlPart::Port.set(&mut x, None).is_ok());
-    /// assert_eq!(UrlPart::Port.get(&x, false), Some(Cow::Owned("443".to_string())));
+    ///
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::Port.set(&mut url, Some("80")).is_ok());
+    /// assert_eq!(UrlPart::Port.get(&url, false), Some(Cow::Owned("80".to_string())));
+    /// assert!(UrlPart::Port.set(&mut url, None).is_ok());
+    /// assert_eq!(UrlPart::Port.get(&url, false), Some(Cow::Owned("443".to_string())));
     /// ```
     Port,
     /// Useful only for inserting a path segment inside the a URL's path.
+    /// Negative `n` values will get the `-n`'th last item similar to Python's `list[-x]` feature.
+    /// Please note that, if a URL has 3 path segments, setting `BeforePathSegment(3)` (the 4th segment) will error even though it's reasonable to expect it to work like [`Self::NextPathSegment`].
+    /// This may be changed in the future.
+    /// # Getting
+    /// Is always `None`.
+    /// # Setting
+    /// Cannot be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -182,6 +248,7 @@ pub enum UrlPart {
     /// assert!(UrlPart::BeforePathSegment(0).get(&url, false).is_none());
     /// assert!(UrlPart::BeforePathSegment(1).get(&url, false).is_none());
     /// assert!(UrlPart::BeforePathSegment(2).get(&url, false).is_none());
+    ///
     /// assert!(UrlPart::BeforePathSegment(0).set(&mut url, Some("d")).is_ok());
     /// assert_eq!(url.path(), "/d/a/b/c");
     /// assert!(UrlPart::BeforePathSegment(5).set(&mut url, Some("e")).is_err());
@@ -195,6 +262,17 @@ pub enum UrlPart {
     /// ```
     BeforePathSegment(isize),
     /// A specific segment of the URL's path.
+    /// Negative `n` values will get the `-n`'th last item similar to Python's `list[-x]` feature.
+    /// Please note that for URLs that aren't cannot-be-a-base, `PathSegemnt(0)` will always be `Some`. On URLs that look like they don't have a path and/or only have a `/`, the value is `Some("")`.
+    /// This is potentially unexpected but technically correct.
+    /// As far as I know, all cases where this is a problem can be solved using [`crate::types::StringLocation`] on [`Self::Path`] or other combinations of existing tools.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
+    /// # Set-get identity.
+    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`PartError::SegmentNotFound`].
+    /// This may be changed to a different error and/or work for some inputs that currently error.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -215,7 +293,10 @@ pub enum UrlPart {
     PathSegment(isize),
     /// Useful only for appending a path segment to a URL as the getter is always `None`.
     /// Using this with a URL whose path ends in an empty segment (`https://example.com/a/b/`), the setter will overwrite that segment instead of leaving a random empty segment in the middle of the path.
-    /// Why is path manipulation always a pain?
+    /// # Getting
+    /// Is always `None`.
+    /// # Setting
+    /// Can be `None`, but that's a no-op.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -231,30 +312,54 @@ pub enum UrlPart {
     /// assert_eq!(url.path(), "/a");
     /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("b")).is_ok());
     /// assert_eq!(url.path(), "/a/b");
-    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("")).is_ok());
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("") ).is_ok());
     /// assert_eq!(url.path(), "/a/b/");
-    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("")).is_ok());
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("") ).is_ok());
     /// assert_eq!(url.path(), "/a/b/");
     /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("c")).is_ok());
     /// assert_eq!(url.path(), "/a/b/c");
-    /// assert!(UrlPart::NextPathSegment.set(&mut url, None).is_err());
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, None     ).is_ok());
     /// assert_eq!(url.path(), "/a/b/c");
+    ///
+    /// // Note that trailing empty path segments are replaced.
+    /// let mut url=Url::parse("https://example.com/a/b/c/").unwrap();
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("d")).is_ok());
+    /// assert_eq!(url.path(), "/a/b/c/d");
     /// ```
     NextPathSegment,
     /// The path. Corresponds to [`Url::path`].
+    /// Please note that for URLs that are not cannot-be-a-base, the path is always `Some` and starts with `/`.
+    /// If a URL is cannot-be-a-base, getting the path will always return `None`. `Url::path` doesn't but given it's described as "an arbitrary string" in this case I believe returning `None` is less surprising behaviour.
+    /// # Getting
+    /// Will be `None` when the URL is cannot-be-a-base.
+    /// # Setting
+    /// Can only be `None` when the URL is cannot-be-a-base (always a no-op as it is already `None`).
     /// # Examples
     /// ```
     /// # use url::Url;
     /// # use url_cleaner::types::UrlPart;
     /// # use std::borrow::Cow;
     /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com"     ).unwrap(), false), Some(Cow::Borrowed("/"   )));
+    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/"    ).unwrap(), false), Some(Cow::Borrowed("/"   )));
     /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a"   ).unwrap(), false), Some(Cow::Borrowed("/a"  )));
     /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a"   ).unwrap(), false), Some(Cow::Borrowed("/a"  )));
     /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a/"  ).unwrap(), false), Some(Cow::Borrowed("/a/" )));
     /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a/b" ).unwrap(), false), Some(Cow::Borrowed("/a/b")));
+    ///
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::Path.set(&mut url, Some("abc")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/abc");
+    /// assert!(UrlPart::Path.set(&mut url, Some("")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/");
+    /// assert!(UrlPart::Path.set(&mut url, None).is_err());
+    /// assert_eq!(url.as_str(), "https://example.com/");
     /// ```
     Path,
     /// A specific query parameter. The contained string is the parameter's name and the setter sets the parameter's value.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -274,11 +379,15 @@ pub enum UrlPart {
     /// assert_eq!(url.query(), Some("c=4"));
     /// assert!(UrlPart::QueryParam("c".to_string()).set(&mut url, None).is_ok());
     /// assert_eq!(url.query(), None);
-    /// assert!(UrlPart::QueryParam("c".to_string()).set(&mut url, Some("4")).is_ok());
-    /// assert_eq!(url.query(), Some("c=4"));
+    /// assert!(UrlPart::QueryParam("d".to_string()).set(&mut url, Some("5")).is_ok());
+    /// assert_eq!(url.query(), Some("d=5"));
     /// ```
     QueryParam(String),
     /// The query. Corresponds to [`Url::query`].
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -295,6 +404,12 @@ pub enum UrlPart {
     /// ```
     Query,
     /// The fragment. Corresponds to [`Url::fragment`].
+    /// Please note that if the query is set to `Some("")`, the resulting URL will look like `https://example.com/?`.
+    /// The mappers that filter query parameters will automatically set empty queries to `None`, but this currently does not.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -314,6 +429,8 @@ pub enum UrlPart {
 
 impl UrlPart {
     /// Extracts the specified part of the provided URL.
+    /// # Errors
+    /// See [`Self`]'s documentation for which parts return `None` and when.
     #[must_use]
     pub fn get<'a>(&self, url: &'a Url, none_to_empty_string: bool) -> Option<Cow<'a, str>> {
         let x=match self {
@@ -331,12 +448,11 @@ impl UrlPart {
             Self::Host                 => url.host_str().map(Cow::Borrowed),
             Self::DomainSegment(n)     => neg_nth(url.domain()?.split('.'), *n).map(Cow::Borrowed),
             Self::Subdomain            => url.domain()
-                .and_then(|domain| domain.strip_suffix(psl::domain_str(domain)?).map(|subdomain_dot| subdomain_dot.strip_suffix('.').unwrap_or(subdomain_dot)))
-                .map(Cow::Borrowed),
+                .and_then(|domain| domain.strip_suffix(psl::domain_str(domain)?).map(|subdomain_dot| Cow::Borrowed(subdomain_dot.strip_suffix('.').unwrap_or(subdomain_dot)))),
             Self::NotSubdomain         => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
             Self::Domain               => url.domain().map(Cow::Borrowed),
             Self::Port                 => url.port_or_known_default().map(|port| Cow::Owned(port.to_string())), // I cannot be bothered to add number handling.
-            Self::Path                 => Some(Cow::Borrowed(url.path())),
+            Self::Path                 => if url.cannot_be_a_base() {None} else {Some(Cow::Borrowed(url.path()))},
 
             // The things that are likely very rarely used.
 
@@ -354,17 +470,10 @@ impl UrlPart {
         }
     }
 
-    /// Replaces the specified part of the provided URL with the provided value
+    /// Replaces the specified part of the provided URL with the provided value.
+    /// If this method returns an error, `url` is left unchanged.
     /// # Errors
-    /// If the part is [`Self::Whole`], [`Self::Scheme`], [`Self::Username`], [`Self::NotSubdomain`], [`Self::Path`], or [`Self::NextPathSegment`] but `to` is `None`, returns the error [`PartError::PartCannotBeNone`].
-    /// If the part is [`Self::Scheme`] and the scheme is invalid, returns the error [`PartError::CannotSetScheme`].
-    /// If the part is [`Self::Username`] and the provided URL cannot be a base or does not have a host, returns the error [`PartError::CannotSetUsername`].
-    /// If the part is [`Self::Password`] and the provided URL cannot be a base or does not have a host, returns the error [`PartError::CannotSetPassword`].
-    /// If the part is [`Self::DomainSegment`], [`Self::Subdomain`], [`Self::NotSubdomain`], or [`Self::Domain`] but the URL's host is not a domain, returns the error [`PartError::HostIsNotADomain`].
-    /// If the part is [`Self::DomainSegment`] or [`Self::PathSegment`] and the specified segment is not in the domain/path, returns the error [`PartError::SegmentNotFound`].
-    /// If the part is [`Self::Port`] and the provided port is not a number, returns the error [`PartError::InvalidPort`].
-    /// If the part is [`Self::Port`] and the provided URL cannot have a port, returns the error [`PartError::CannotSetPort`].
-    /// If the part is [`Self::BeforePathSegment`] or [`Self::PathSegment`] and the provided URL cannot be a base, returns the error [`PartError::UrlDoesNotHavePath`].
+    /// TODO
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), PartError> {
         match (self, to) {
             // Ordered hopefully most used to least used.
@@ -400,11 +509,11 @@ impl UrlPart {
             },
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| PartError::InvalidPort)).transpose()?).map_err(|()| PartError::CannotSetPort)?,
-            (Self::BeforePathSegment(n), Some(to)) => {
+            (Self::BeforePathSegment(n), _) => if let Some(to) = to {
                 let fixed_n=neg_index(*n, url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.count()).ok_or(PartError::SegmentNotFound)?;
                 if fixed_n==url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.count() {Err(PartError::SegmentNotFound)?;}
                 url.set_path(&url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.take(fixed_n).chain([to]).chain(url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.skip(fixed_n)).collect::<Vec<_>>().join("/"));
-            }
+            },
             (Self::PathSegment(n), _) => {
                 let fixed_n=neg_index(*n, url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.count()).ok_or(PartError::SegmentNotFound)?;
                 match to {
@@ -413,8 +522,13 @@ impl UrlPart {
                     None     => url.set_path(&url.path_segments().ok_or(PartError::UrlDoesNotHavePath)?.enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("/")),
                 }
             },
-            (Self::NextPathSegment, Some(to)) => {url.path_segments_mut().map_err(|()| PartError::UrlDoesNotHavePath)?.pop_if_empty().push(to);},
-            (Self::Path, Some(to)) => url.set_path(to),
+            (Self::NextPathSegment, _) => if let Some(to) = to {url.path_segments_mut().map_err(|()| PartError::UrlDoesNotHavePath)?.pop_if_empty().push(to);},
+            (Self::Path, _) => match (url.cannot_be_a_base(), to) {
+                (false, Some(to)) => url.set_path(to),
+                (false, None    ) => Err(PartError::UrlMustHavePath)?,
+                (true , Some(_) ) => Err(PartError::UrlCannotHavePath)?,
+                (true , None    ) => {}
+            },
             (Self::QueryParam(name), _) => {
                 if let Some(to) = to {
                     if url.query().is_some() {
@@ -489,7 +603,13 @@ pub enum PartError {
     UrlDoesNotHavePath,
     /// Returned when setting a [`UrlPart::DomainSegment`], [`UrlPart::PathSegment`], or [`UrlPart::BeforePathSegment`] when the index isn't in the relevant part's segments.
     #[error("The requested segment was not found")]
-    SegmentNotFound
+    SegmentNotFound,
+    /// The URL must have a path as it is not cannot-be-a-base.
+    #[error("The URL must have a path as it is not cannot-be-a-base.")]
+    UrlMustHavePath,
+    /// The URL cannot have a path as it is not cannot-be-a-base.
+    #[error("The URL cannot have a path as it is not cannot-be-a-base.")]
+    UrlCannotHavePath
 }
 
 /// The enum of all possible errors that can occur when applying a [`super::StringModification`] to a [`UrlPart`] using [`UrlPart::modify`].
@@ -504,4 +624,51 @@ pub enum PartModificationError {
     /// The error returned when the call to [`UrlPart::set`] fails.
     #[error(transparent)]
     PartError(#[from] PartError)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const URLS: [&str; 1] = [
+        "https://example.com"
+    ];
+
+    macro_rules! math_thing {
+        ($part:ident) => {
+            for mut url in URLS.iter().map(|url| Url::parse(url).unwrap()) {
+                let old=UrlPart::$part.get(&url, false).map(Cow::into_owned);
+                assert!(UrlPart::$part.set(&mut url, old.as_deref()).is_ok());
+                assert_eq!(UrlPart::$part.get(&url, false).as_deref(), old.as_deref());
+            }
+        };
+        ($part:ident, $($parts:ident),+) => {{
+            math_thing!($part);
+            math_thing!($($parts),+);
+        }};
+    }
+
+    macro_rules! math_thing_2 {
+        ($expr:expr) => {
+            for mut url in URLS.iter().map(|url| Url::parse(url).unwrap()) {
+                let old=$expr.get(&url, false).map(Cow::into_owned);
+                assert!($expr.set(&mut url, old.as_deref()).is_ok());
+                assert_eq!($expr.get(&url, false).as_deref(), old.as_deref());
+            }
+        };
+        ($expr:expr, $($exprs:expr),+) => {{
+            math_thing_2!($expr);
+            math_thing_2!($($exprs),+);
+        }};
+    }
+    
+    #[test]
+    fn set_to_get_identity() {
+        math_thing!(Whole, Scheme, Username, Password, Host, Subdomain, NotSubdomain, Domain, Port, NextPathSegment, Path, Query, Fragment);
+        math_thing_2!(
+            // UrlPart::DomainSegment(0), UrlPart::DomainSegment(1), UrlPart::DomainSegment(2),
+            // UrlPart::PathSegment(0), UrlPart::PathSegment(1), UrlPart::PathSegment(2),
+            UrlPart::QueryParam("a".to_string())
+        );
+    }
 }
