@@ -24,6 +24,7 @@ use crate::config;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Rule {
     /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
+    /// Strips leading `"www."` from the provided URL to act like [`Condition::MaybeWWWDomain`].
     HostMap(HashMap<String, mappers::Mapper>),
     /// Runs all the contained rules until none of their conditions pass.
     /// Runs at most `limit` times. (Defaults to 10).

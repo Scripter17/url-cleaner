@@ -207,6 +207,20 @@ pub enum Condition {
     /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.co.uk").unwrap()).is_ok_and(|x| x==false));
     /// ```
     UnqualifiedAnyTld(String),
+    /// Similar to [`Condition::UnqualifiedAnyTld`] but only checks if the subdomain is empty or `www`.
+    /// `Condition::MaybeWWWAnyTld("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnyTld("example.com".to_string()), Condition::QualifiedAnyTld("www.example.com".to_string())])`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::conditions::Condition;
+    /// # use url::Url;
+    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://not.example.com"  ).unwrap()).is_ok_and(|x| x==false));
+    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://not.example.co.uk").unwrap()).is_ok_and(|x| x==false));
+    /// ```
+    MaybeWWWAnyTld(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     /// # Examples
@@ -531,6 +545,12 @@ impl Condition {
                         .is_some_and(|suffix| psl::suffix_str(suffix)
                             .is_some_and(|psl_suffix| psl_suffix==suffix)
                         )
+                    )
+                ),
+            Self::MaybeWWWAnyTld(middle) => url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))
+                .is_some_and(|domain| domain.strip_prefix(middle)
+                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
+                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
                     )
                 ),
             Self::QualifiedAnyTld(parts) => url.domain()

@@ -49,10 +49,11 @@
 
 
 		{
-			"comment": "The query paramaters to always remove. Sources are, in order, FireFox, Brave Browser, and Wikipedia. The 4th group is miscellanious stuff I've noticed..",
+			"comment": "The query paramaters to always remove. Sources are, in order, FireFox, Brave Browser, Wikipedia, and AdGuard. The 4th group is miscellanious stuff I've noticed..",
 			"FireFox-Source": "https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html",
 			"Brave-Source": "https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc",
 			"Wikipedia-Source": "https://en.wikipedia.org/wiki/UTM_parameters",
+			"AdGuard-source": "https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections/general_url.txt",
 			"condition": "Always",
 			"mapper": {
 				"RemoveQueryParams": [
@@ -68,6 +69,36 @@
 					"vero_id", "vgo_ee", "wbraid", "wickedid", "yclid", "ymclid", "ysclid",
 
 					"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+
+					"cjdata", "cjevent", "at_campaign", "at_campaign_type", "at_creation", "at_emailtype", "at_link",
+					"at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id",
+					"at_recipient_list", "at_send_date", "_ope", "af_xp", "af_ad", "af_adset", "af_click_lookback",
+					"af_force_deeplink", "is_retargeting", "dclid", "sms_click", "sms_source", "sms_uph", "ttclid",
+					"spot_im_redirect_source", "mt_link_id", "iclid", "srsltid", "user_email_address", "_ga", "_gl",
+					"cm_me", "cm_cr", "sscid", "rtkcid", "cuid", "ir_campaignid", "ir_adid", "irclickid", "ir_partnerid",
+					"__io_lv", "_io_session_id", "asgtbndr", "ymid", "tduid", "gci", "pk_vid", "mindbox-click-id",
+					"famad_xuid", "twclid", "erid", "cx_click", "cx_recsOrder", "cx_recsWidget", "mkt_tok",
+					"mindbox-message-key", "_kx", "s_cid", "awc", "__hsfp", "__hssc", "__hstc", "_hsenc", "hsa_acc",
+					"hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src",
+					"hsa_tgt", "hsa_ver", "hsCtaTracking", "ysclid", "yclid", "aiad_clid", "_sgm_campaign",
+					"_sgm_source", "_sgm_action", "mc_eid", "maf", "_clde", "_cldee", "wt_mc", "oprtrack", "xtor",
+					"msclkid", "vero_conv", "vero_id", "itm_source", "itm_medium", "itm_campaign", "itm_content",
+					"itm_term", "utm_adgroup", "utm_ad", "utm_affiliate", "utm_brand", "utm_campaign",
+					"utm_campaignid", "utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid",
+					"utm_emmid", "utm_id", "utm_id_", "utm_keyword", "utm_medium", "utm_name", "utm_place",
+					"utm_product", "utm_pubreferrer", "utm_reader", "utm_referrer", "utm_serial", "utm_servlet",
+					"utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_supplier",
+					"utm_swu", "utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "gad_source", "gbraid", "wbraid",
+					"gclsrc", "gclid", "usqp", "dpg_source", "dpg_campaign", "dpg_medium", "dpg_content", "admitad_uid",
+					"gps_adid", "unicorn_click_id", "adjust_creative", "adjust_tracker_limit", "adjust_tracker",
+					"adjust_adgroup", "adjust_campaign", "adjust_referrer", "external_click_id", "bsft_clkid",
+					"bsft_eid", "bsft_mid", "bsft_uid", "bsft_aaid", "bsft_ek", "mtm_campaign", "mtm_cid",
+					"mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source",
+					"pk_campaign", "pk_medium", "pk_source", "_branch_referrer", "_branch_match_id", "vc_lpp",
+					"ml_subscriber", "ml_subscriber_hash", "rb_clickid", "oly_anon_id", "oly_enc_id", "ebisAdID",
+					"wickedid", "irgwc", "fbclid", "adfrom", "nx_source", "_zucks_suid", "cmpid", "guccounter",
+					"guce_referrer", "guce_referrer_sig", "_openstat", "action_object_map", "action_ref_map",
+					"action_type_map", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref", "fb_source",
 
 					"icid"
 				]
@@ -122,7 +153,7 @@
 
 
 		{
-			"condition": {"UnqualifiedAnyTld": "google"},
+			"condition": {"MaybeWWWAnyTld": "google"},
 			"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
 		},
 
