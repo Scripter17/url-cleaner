@@ -475,10 +475,10 @@ pub enum Condition {
     /// # use url::Url;
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url_cleaner::config::Params;
-    /// assert!(Condition::FlagSet("abc".to_string()).satisfied_by_with_params(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
-    /// assert!(Condition::FlagSet("abc".to_string()).satisfied_by_with_params(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by_with_params(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
+    /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by_with_params(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
-    FlagSet(String)
+    FlagIsSet(String)
 }
 
 const fn get_true() -> bool {true}
@@ -604,7 +604,7 @@ impl Condition {
             // Miscelanious
 
             Self::VariableIs{name, value, default} => params.vars.get(name).map_or(*default, |x| x==value),
-            Self::FlagSet(name) => params.flags.contains(name),
+            Self::FlagIsSet(name) => params.flags.contains(name),
 
             // Should only ever be used once
 

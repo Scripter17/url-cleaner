@@ -5,6 +5,13 @@
 				"rules": [
 					{
 						"condition": {"All": [
+							{"MaybeWWWDomain": "pixiv.net"},
+							{"PathIs": "/jump.php"}
+						]},
+						"mapper": {"GetUrlFromQueryParam": "url"}
+					},
+					{
+						"condition": {"All": [
 							{"QualifiedDomain": "pixiv.net"},
 							{"PathIs": "/member.php"}
 						]},
@@ -30,7 +37,7 @@
 							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it"]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
-								{"PathIs": "/oauth_authentications"}
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
 							]}
 						]},
 						"mapper": {"ExpandShortLink": {"headers": {}}}
@@ -92,7 +99,7 @@
 		},
 	  {
 	    "condition": {"All": [
-				{"FlagSet": "tumblr-strip-reblogs"},
+				{"FlagIsSet": "tumblr-strip-reblogs"},
 				{"UnqualifiedDomain": "tumblr.com"},
 				{"PartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
 				{"CommandExists": {"program": "gallery-dl"}},
@@ -123,7 +130,7 @@
 
 		{
 			"condition": {"All": [
-				{"FlagSet": "youtube-unshort"},
+				{"FlagIsSet": "youtube-unshort"},
 				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
 			]},
 			"mapper": {"All": [
@@ -185,16 +192,6 @@
 
 		{
 			"condition": {"All": [
-				{"MaybeWWWDomain": "pixiv.net"},
-				{"PathIs": "/jump.php"}
-			]},
-			"mapper": {"GetUrlFromQueryParam": "url"}
-		},
-
-
-
-		{
-			"condition": {"All": [
 				{"QualifiedDomain": "twitter.com"},
 				{"Not": {"PathIs": "/search"}}
 			]},
@@ -209,7 +206,7 @@
 		},
 		{
 			"condition": {"All": [
-				{"FlagSet": "discord-compatibility"},
+				{"FlagIsSet": "discord-compatibility"},
 				{"QualifiedDomain": "twitter.com"},
 				{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
 			]},
@@ -235,7 +232,7 @@
 		},
 		{
 			"condition": {"All": [
-				{"FlagSet": "discord-compatibility"},
+				{"FlagIsSet": "discord-compatibility"},
 				{"UnqualifiedDomain": "deviantart.com"},
 				{"PartIs": {"part": {"PathSegment": 1}, "value": "art"}}
 			]},
@@ -246,7 +243,7 @@
 
 		{
 			"condition": {"All": [
-				{"FlagSet": "unfix-domains"},
+				{"FlagIsSet": "unfix-domains"},
 				{"MaybeWWWDomain": "antifandom.com"},
 				{"Not": {"PathIs": "/"}}
 			]},
@@ -258,7 +255,7 @@
 		},
 		{
 			"condition": {"All": [
-				{"FlagSet": "antifandom"},
+				{"FlagIsSet": "antifandom"},
 				{"UnqualifiedDomain": "fandom.com"}
 			]},
 			"mapper": {"All": [
