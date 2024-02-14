@@ -14,17 +14,10 @@ pub mod mappers;
 use crate::config;
 
 /// The core unit describing when and how URLs are modified.
-/// # Examples
-/// ```
-/// # use url_cleaner::rules::{Rule, conditions, mappers};
-/// # use url::Url;
-/// # use std::collections::HashMap;
-/// assert!(Rule::Normal{condition: conditions::Condition::Never, mapper: mappers::Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
-/// ```
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Rule {
     /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
-    /// Strips leading `"www."` from the provided URL to act like [`Condition::MaybeWWWDomain`].
+    /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
     HostMap(HashMap<String, mappers::Mapper>),
     /// Runs all the contained rules until none of their conditions pass.
     /// Runs at most `limit` times. (Defaults to 10).
@@ -37,6 +30,13 @@ pub enum Rule {
         limit: u8
     },
     /// The basic condition mapper rule type.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::{Rule, conditions, mappers};
+    /// # use url::Url;
+    /// # use std::collections::HashMap;
+    /// assert!(Rule::Normal{condition: conditions::Condition::Never, mapper: mappers::Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+    /// ```
     #[serde(untagged)]
     Normal {
         /// The condition under which the provided URL is modified.
@@ -112,7 +112,7 @@ impl Rule {
 /// A thin wrapper around a vector of rules.
 /// Exists mainly for convenience.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Rules(Vec<Rule>);
+pub struct Rules(pub Vec<Rule>);
 
 impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
 impl From<Rules> for Vec<Rule> {fn from(value: Rules    ) -> Self {value.0    }}

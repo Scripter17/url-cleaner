@@ -23,7 +23,7 @@ Like variables except the only defined as "set" and "not set", various flags are
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
 - `tumblr-strip-reblogs`: Replace tumblr reblog links with the original post. Does not care about reblog chains so maybe don't set this in your keyboard shortcut.
 - `antifandom`: Turns `abc.fandom.com` URLs into `antifandom.com/abc` URLs.
-- `unfix-domains`: Replace `antifandom.com` URLs with `fandom.com` URLs. Other domains (Like `vxtwitter.com`) may be added to this or added to a separate flag.
+- `unfix-domains`: Replace `antifandom.com` URLs with `fandom.com` URLs.
 
 Flags can be added to configs by using the `FlagSet` condition and specified at runtime by doing `--flag flag1 --flag flag2`
 

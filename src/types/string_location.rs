@@ -2,7 +2,8 @@ use serde::{Serialize, Deserialize};
 
 use super::{StringError, neg_index, neg_range};
 
-/// The location of a string. Used by [`crate::rules::conditions::Condition::PartContains`].
+/// A wrapper around [`str`]'s various substring searching functions.
+/// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
     /// Checks if an instance of the needle exists anywhere in the haystack.
@@ -34,12 +35,15 @@ pub enum StringLocation {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// assert!(StringLocation::RangeIs{start: Some(0), end: Some(3)}.satisfied_by("abcdef", "abc"   ).is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::RangeIs{start: Some(1), end: Some(4)}.satisfied_by("abcdef", "bcd"   ).is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::RangeIs{start: Some(0), end: Some(6)}.satisfied_by("abcdef", "abcdef").is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::RangeIs{start: Some(5), end: Some(6)}.satisfied_by("abcdef", "f"     ).is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::RangeIs{start: Some(6), end: Some(7)}.satisfied_by("abcdef", "f"     ).is_err());
-    /// assert!(StringLocation::RangeIs{start: Some(7), end: Some(8)}.satisfied_by("abcdef", "f"     ).is_err());
+    /// assert!(StringLocation::RangeIs{start: Some( 0), end: Some( 3)}.satisfied_by("abcdef", "abc"   ).is_ok_and(|x| x==true));
+    /// assert!(StringLocation::RangeIs{start: Some( 1), end: Some( 4)}.satisfied_by("abcdef", "bcd"   ).is_ok_and(|x| x==true));
+    /// assert!(StringLocation::RangeIs{start: Some( 0), end: Some( 6)}.satisfied_by("abcdef", "abcdef").is_ok_and(|x| x==true));
+    /// assert!(StringLocation::RangeIs{start: Some( 5), end: Some( 6)}.satisfied_by("abcdef", "f"     ).is_ok_and(|x| x==true));
+    /// assert!(StringLocation::RangeIs{start: Some( 6), end: Some( 7)}.satisfied_by("abcdef", "f"     ).is_err());
+    /// assert!(StringLocation::RangeIs{start: Some( 6), end: None    }.satisfied_by("abcdef", ""      ).is_ok_and(|x| x==true));
+    ///
+    /// assert!(StringLocation::RangeIs{start: Some(-1), end: None    }.satisfied_by("abcdef", "f"     ).is_ok_and(|x| x==true));
+    /// assert!(StringLocation::RangeIs{start: Some(-2), end: Some(-1)}.satisfied_by("abcdef", "e"     ).is_ok_and(|x| x==true));
     /// ```
     RangeIs {
         /// The start of the range to check.
@@ -51,12 +55,14 @@ pub enum StringLocation {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// assert!(StringLocation::StartsAt(0).satisfied_by("abcdef", "abc").is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::StartsAt(1).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::StartsAt(5).satisfied_by("abcdef", "f"  ).is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::StartsAt(0).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==false));
-    /// assert!(StringLocation::StartsAt(1).satisfied_by("abcdef", "cde").is_ok_and(|x| x==false));
-    /// assert!(StringLocation::StartsAt(5).satisfied_by("abcdef", "def").is_ok_and(|x| x==false));
+    /// assert!(StringLocation::StartsAt( 0).satisfied_by("abcdef", "abc").is_ok_and(|x| x==true ));
+    /// assert!(StringLocation::StartsAt( 1).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==true ));
+    /// assert!(StringLocation::StartsAt( 5).satisfied_by("abcdef", "f"  ).is_ok_and(|x| x==true ));
+    /// assert!(StringLocation::StartsAt( 0).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==false));
+    /// assert!(StringLocation::StartsAt( 1).satisfied_by("abcdef", "cde").is_ok_and(|x| x==false));
+    /// assert!(StringLocation::StartsAt( 5).satisfied_by("abcdef", "def").is_ok_and(|x| x==false));
+    ///
+    /// assert!(StringLocation::StartsAt(-2).satisfied_by("abcdef", "ef" ).is_ok_and(|x| x==true));
     /// ```
     StartsAt(isize),
     /// Checks if an instance of the needle ends at the specified point in the haystack.
@@ -79,6 +85,7 @@ pub enum StringLocation {
     /// assert!(StringLocation::RangeHas{start: Some(0), end: Some(2)}.satisfied_by("abcdef", "a"   ).is_ok_and(|x| x==true ));
     /// assert!(StringLocation::RangeHas{start: Some(0), end: Some(6)}.satisfied_by("abcdef", "bcde").is_ok_and(|x| x==true ));
     /// assert!(StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "a"   ).is_ok_and(|x| x==false));
+    /// assert!(StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "f"   ).is_ok_and(|x| x==true ));
     /// assert!(StringLocation::RangeHas{start: Some(0), end: Some(7)}.satisfied_by("abcdef", ""    ).is_err());
     /// ```
     RangeHas {

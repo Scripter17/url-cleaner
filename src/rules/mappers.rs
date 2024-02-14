@@ -373,7 +373,7 @@ pub enum MapperError {
     #[error(transparent)]
     UrlParseError(#[from] ParseError),
     /// Returned when an HTTP request fails. Currently only applies to the Expand301 mapper.
-    #[cfg(feature = "http")]
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
     ReqwestError(#[from] ReqwestError),
     /// Returned when an I/O error occurs. Currently only applies when Expand301 is set to cache redirects.

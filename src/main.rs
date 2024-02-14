@@ -19,8 +19,6 @@ struct Args {
     #[arg(short, long)]
     config: Option<PathBuf>,
     #[arg(short, long)]
-    dcr: Option<types::DomainConditionRule>,
-    #[arg(short, long)]
     var: Vec<String>,
     #[arg(short, long)]
     flag: Vec<String>
@@ -32,8 +30,7 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
     fn try_from(args: Args) -> Result<Self, Self::Error> {
         let mut config=config::Config::get_default_or_load(args.config.as_deref())?.into_owned();
 
-        if let Some(dcr) = args.dcr {config.params.dcr=dcr;}
-        // Tuple maps when.
+        // Tuple maps when?
         if !args.var.is_empty() {
             config.params.vars=args.var
                 .into_iter()

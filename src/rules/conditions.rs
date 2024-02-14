@@ -8,12 +8,10 @@ use url::Url;
 use psl;
 
 use crate::glue;
-use crate::types::{UrlPart, DomainConditionRule, StringLocation};
+use crate::types::{UrlPart, StringLocation};
 use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
-/// Note that conditions check the output of the previous rule.
-/// A [`Mapper::SwapHost`] will make [`Condition::UnqualifiedDomain`] match on the host that was swapped in.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
@@ -237,60 +235,6 @@ pub enum Condition {
     /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap()).is_ok_and(|x| x==true ));
     /// ```
     QualifiedAnyTld(String),
-    /// A condition meant specifically to handle AdGuard's `$domain` rule modifier.
-    /// All domains are treated as unqualified.
-    /// Please see [AdGuard's docs](https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier) for details.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::conditions::Condition;
-    /// # use url_cleaner::glue::RegexParts;
-    /// # use url_cleaner::types::DomainConditionRule;
-    /// # use url_cleaner::config::Params;
-    /// # use url::Url;
-    /// let dc=Condition::DomainCondition {
-    ///     yes_domains: vec!["example.com".to_string()],
-    ///     yes_domain_regexes: vec![RegexParts::new(r"example\d\.com").unwrap().into()],
-    ///     unless_domains: vec!["wawawa.example.com".to_string()],
-    ///     unless_domain_regexes: vec![RegexParts::new(r"thing\d\.example.com").unwrap().into()]
-    /// };
-    ///
-    /// assert!(dc.satisfied_by(&Url::parse("https://example.com"       ).unwrap()).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by(&Url::parse("https://example9.com"      ).unwrap()).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by(&Url::parse("https://wawawa.example.com").unwrap()).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by(&Url::parse("https://thing2.example.com").unwrap()).is_ok_and(|x| x==false));
-    ///
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Always, ..Params::default()}).is_ok_and(|x| x==true));
-    ///
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Never, ..Params::default()}).is_ok_and(|x| x==false));
-    ///
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://test.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
-    ///
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example.com"       ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://www.example.com"     ).unwrap()), ..Params::default()}).is_ok_and(|x| x==true ));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://example9.com"      ).unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://www.example9.com"    ).unwrap()), ..Params::default()}).is_ok_and(|x| x==true ));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://wawawa.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://a.wawawa.example.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
-    /// assert!(dc.satisfied_by_with_params(&Url::parse("https://thing2.example.com").unwrap(), &Params{dcr: DomainConditionRule::Url(Url::parse("https://a.thing2.example.com").unwrap()), ..Params::default()}).is_ok_and(|x| x==false));
-    /// ```
-    #[cfg(feature = "regex")]
-    #[allow(clippy::enum_variant_names)]
-    DomainCondition {
-        /// Unqualified domains where the rule is valid.
-        yes_domains: Vec<String>,
-        /// Regexes that match domains where the rule is value.
-        yes_domain_regexes: Vec<glue::RegexWrapper>,
-        /// Unqualified domains that marks a domain invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
-        unless_domains: Vec<String>,
-        /// Regexes that match domains where the rule is invalid. Takes priority over `yes_domains` and `yes_domains_regexes`.
-        unless_domain_regexes: Vec<glue::RegexWrapper>
-    },
 
     // Query.
 
@@ -559,32 +503,6 @@ impl Condition {
                         .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
                     )
                 ),
-            #[cfg(feature = "regex")]
-            Self::DomainCondition {yes_domains, yes_domain_regexes, unless_domains, unless_domain_regexes} => {
-                fn unqualified_domain(domain: &str, parts: &str) -> bool {
-                    domain.strip_suffix(parts).map_or(false, |x| {x.is_empty() || x.ends_with('.')})
-                }
-                match &params.dcr {
-                    DomainConditionRule::Always => true,
-                    DomainConditionRule::Never => false,
-                    // Somewhat annoyingly `DomainConditionRule::Url(Url) | DomainConditionRule::UseUrlBeingCloned` doesn't desugar to this.
-                    // I get it's a niche and weird case, but in this one specific instance it'd be nice.
-                    DomainConditionRule::Url(url) => {
-                        url.domain()
-                            .map_or(false, |url_domain|
-                                !(unless_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(url_domain))) &&
-                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes   .iter().any(|regex| regex.is_match(url_domain)))
-                            )
-                    },
-                    DomainConditionRule::UseUrlBeingCleaned => {
-                        url.domain()
-                            .map_or(false, |url_domain|
-                                !(unless_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || unless_domain_regexes.iter().any(|regex| regex.is_match(url_domain))) &&
-                                    (yes_domains.iter().any(|domain| unqualified_domain(url_domain, domain)) || yes_domain_regexes   .iter().any(|regex| regex.is_match(url_domain)))
-                            )
-                    },
-                }
-            },
 
             // Meta conditions
 

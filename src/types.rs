@@ -6,8 +6,6 @@ use thiserror::Error;
 
 mod url_part;
 pub use url_part::*;
-mod dcr;
-pub use dcr::*;
 mod string_location;
 pub use string_location::*;
 mod string_modification;
@@ -54,11 +52,11 @@ pub enum StringError {
 }
 
 /// Loops negative `index`es around similar to Python.
-pub(crate) fn neg_index(index: isize, len: usize) -> Option<usize> {
+pub(crate) const fn neg_index(index: isize, len: usize) -> Option<usize> {
     if 0<=index && (index as usize)<=len {
         Some(index as usize)
     } else if index<0 {
-        Some(len.checked_sub(index.unsigned_abs())?)
+        len.checked_sub(index.unsigned_abs())
     } else {
         None
     }

@@ -11,19 +11,15 @@ use url::Url;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::header::HeaderMap;
 
-use crate::types::DomainConditionRule;
 use crate::rules::Rules;
 
 /// Configuration options to choose the behaviour of a few select [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Params {
-    /// Chooses how [`crate::rules::conditions::Condition::DomainCondition`] works.
-    #[serde(default)]
-    pub dcr: DomainConditionRule,
     /// Works with [`crate::rules::conditions::Condition::RuleVariableIs'`].
     #[serde(default)]
     pub vars: HashMap<String, String>,
-    /// Works with [`crate::rules::conditions::Condition::FlagSet`].
+    /// Works with [`crate::rules::conditions::Condition::FlagIsSet`].
     #[serde(default)]
     pub flags: HashSet<String>,
     /// The default headers to send in HTTP requests.
