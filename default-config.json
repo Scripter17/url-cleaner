@@ -435,6 +435,7 @@
 		},
 		{
 			"condition": {"All": [
+				{"Not": {"VarIs": {"name": "tor2web", "value": null}}},
 				{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
 			]},
 			"mapper": {"SetPartToVar": {"part": "NextDomainSegment", "var": "tor2web"}}

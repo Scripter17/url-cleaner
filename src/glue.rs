@@ -69,11 +69,6 @@ where
     D: Deserializer<'de>,
     <T as FromStr>::Err: fmt::Debug
 {
-    // This is a Visitor that forwards string types to T's `FromStr` impl and
-    // forwards map types to T's `Deserialize` impl. The `PhantomData` is to
-    // keep the compiler from complaining about T being an unused generic type
-    // parameter. We need T in order to know the Value type for the Visitor
-    // impl.
     struct OptionalStringOrStruct<T>(PhantomData<fn() -> Option<T>>);
 
     impl<'de, T> Visitor<'de> for OptionalStringOrStruct<Option<T>>
@@ -87,22 +82,45 @@ where
             formatter.write_str("string or map")
         }
 
-        fn visit_str<E: de::Error>(self, value: &str) -> Result<Option<T>, E> {
+        fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
             FromStr::from_str(value).map_err(|_| E::custom("The provided string could not be parsed.")).map(Some)
         }
 
-        fn visit_map<M: MapAccess<'de>>(self, map: M) -> Result<Option<T>, M::Error> {
+        fn visit_map<M: MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
             // `MapAccessDeserializer` is a wrapper that turns a `MapAccess`
             // into a `Deserializer`, allowing it to be used as the input to T's
             // `Deserialize` implementation. T then deserializes itself using
             // the entries from the map visitor.
             Deserialize::deserialize(de::value::MapAccessDeserializer::new(map)).map(Some)
         }
-
-        fn visit_none<E: de::Error>(self) -> Result<Option<T>, E> {
-            Ok(None)
-        }
     }
 
     deserializer.deserialize_any(OptionalStringOrStruct(PhantomData))
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use serde::Deserialize;
+    use serde_json;
+
+    use super::*;
+    
+    #[derive(Deserialize)]
+    struct A {
+        #[serde(deserialize_with = "optional_string_or_struct")]
+        a: Option<crate::types::StringSource>
+    }
+    #[test]
+    fn optional_string_or_struct_test() {
+        serde_json::from_str::<A>(r#"{"a": null}"#).unwrap();
+        serde_json::from_str::<A>(r#"{"a": "/"}"# ).unwrap();
+        serde_json::from_str::<A>(r#"{"a": {"String": "/"}}"#).unwrap();
+        serde_json::from_str::<A>(r#"{"a": {"Part": "Path"}}"#).unwrap();
+        serde_json::from_str::<A>(r#"{"a": {"Var": "path"}}"#).unwrap();
+    }
 }

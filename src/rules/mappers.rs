@@ -204,8 +204,7 @@ pub enum Mapper {
     /// # Errors
     /// If the resulting string cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     /// See [`Url::set_host`] for details.
-    #[serde(deserialize_with = "string_or_struct")]
-    SetHost(StringSource),
+    SetHost(#[serde(deserialize_with = "string_or_struct")] StringSource),
     /// Removes the path segments with an index in the specified list.
     /// See [`Url::path_segments`] for details.
     /// # Errors
@@ -220,8 +219,7 @@ pub enum Mapper {
     /// ```
     RemovePathSegments(Vec<usize>),
     /// [`Url::join`].
-    #[serde(deserialize_with = "string_or_struct")]
-    Join(StringSource),
+    Join(#[serde(deserialize_with = "string_or_struct")] StringSource),
 
     // Generic part handling.
 
@@ -253,6 +251,19 @@ pub enum Mapper {
         /// How exactly to modify the part.
         how: types::StringModification
     },
+    /// Copies the part specified by `from` to the part specified by `to`.
+    /// # Errors
+    /// If the part specified by `from` is None, `none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`types::PartError::PartCannotBeNone`].
+    CopyPart {
+        /// The part to get the value from.
+        from: types::UrlPart,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
+        /// The part to set to `from`'s value.
+        to: types::UrlPart
+    },   
     /// Applies a regular expression substitution to the specified URL part.
     /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
     /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
@@ -508,6 +519,7 @@ impl Mapper {
 
             Self::SetPart{part, value, none_to_empty_string} => part.set(url, value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).map(|x| x.into_owned()).as_deref())?,
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how)?,
+            Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
             #[cfg(feature = "regex")]
             Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
                 let old_part_value=part.get(url, *none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
