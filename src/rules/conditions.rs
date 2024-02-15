@@ -1,14 +1,15 @@
 //! The logic for when to modify a URL.
 
 use std::collections::hash_set::HashSet;
+use std::ops::Deref;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use url::Url;
 use psl;
 
-use crate::glue;
-use crate::types::{UrlPart, StringLocation};
+use crate::glue::{self, string_or_struct, optional_string_or_struct};
+use crate::types::{UrlPart, PartError, StringLocation, StringSource};
 use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
@@ -261,7 +262,7 @@ pub enum Condition {
     /// assert!(Condition::PathIs("/a" .to_string()).satisfied_by(&Url::parse("https://example.com/a" ).unwrap()).is_ok_and(|x| x==true));
     /// assert!(Condition::PathIs("/a/".to_string()).satisfied_by(&Url::parse("https://example.com/a/").unwrap()).is_ok_and(|x| x==true));
     /// ```
-    PathIs(String),
+    PathIs(#[serde(deserialize_with = "string_or_struct")] StringSource),
 
     // General parts.
 
@@ -287,7 +288,8 @@ pub enum Condition {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
-        value: Option<String>
+        #[serde(deserialize_with = "optional_string_or_struct")]
+        value: Option<StringSource>
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
@@ -309,7 +311,8 @@ pub enum Condition {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The value to look for.
-        value: String,
+        #[serde(deserialize_with = "string_or_struct")]
+        value: StringSource,
         /// Where to look for the value.
         #[serde(default)]
         r#where: StringLocation
@@ -411,19 +414,22 @@ pub enum Condition {
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "2".to_string(), default: false}.satisfied_by_with_params(&url, &params).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: false}.satisfied_by_with_params(&url, &params).is_ok_and(|x| x==false));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &params).is_ok_and(|x| x==false));
-    /// assert!(Condition::VariableIs{name: "a".to_string(), value: "3".to_string(), default: true }.satisfied_by_with_params(&url, &Params::default()).is_ok_and(|x| x==true));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("2".to_string())}.satisfied_by_with_params(&url, &params           ).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string())}.satisfied_by_with_params(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string())}.satisfied_by_with_params(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string())}.satisfied_by_with_params(&url, &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: None                 }.satisfied_by_with_params(&url, &Params::default()).is_ok_and(|x| x==true ));
     /// ```
-    VariableIs {
+    VarIs {
         /// The name of the variable to check.
         name: String,
         /// The expected value of the variable.
-        value: String,
-        /// The default value if the variable isn't provided. Defaults to `false`
-        #[serde(default = "get_false")]
-        default: bool
+        #[serde(deserialize_with = "optional_string_or_struct")]
+        value: Option<StringSource>,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to just pretend it's an empty string.
+        /// Defaults to [`false`].
+        #[serde(default)]
+        none_to_empty_string: bool
     },
 
     /// Passes if the specified rule flag is set.
@@ -440,7 +446,6 @@ pub enum Condition {
 }
 
 const fn get_true() -> bool {true}
-const fn get_false() -> bool {false}
 
 /// An enum of all possible errors a [`Condition`] can return.
 #[derive(Error, Debug)]
@@ -458,7 +463,13 @@ pub enum ConditionError {
     CommandError(#[from] glue::CommandError),
     /// Returned when a string condition fails.
     #[error(transparent)]
-    StringError(#[from] crate::types::StringError)
+    StringError(#[from] crate::types::StringError),
+    /// Returned when a [`UrlPart`] method returns an error.
+    #[error(transparent)]
+    PartError(#[from] PartError),
+    // The specified [`StringSource`] returned `None`.
+    #[error("The specified StringSource returned None.")]
+    StringSourceIsNone
 }
 
 impl Condition {
@@ -530,18 +541,22 @@ impl Condition {
 
             // Path
 
-            Self::PathIs(path) => url.path()==path,
+            Self::PathIs(value) => if url.cannot_be_a_base() {
+                Err(PartError::UrlDoesNotHaveAPath)?
+            } else {
+                Some(url.path())==value.get_string(url, params, false).as_deref()
+            },
 
             // General parts
 
-            Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
-            Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
+            Self::PartIs{part, none_to_empty_string, value} => value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).as_deref()==part.get(url, *none_to_empty_string).as_deref(),
+            Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value.get_string(url, params, *none_to_empty_string).ok_or(ConditionError::StringSourceIsNone)?.deref())?,
             #[cfg(feature = "regex")] Self::PartMatchesRegex {part, none_to_empty_string, regex} => regex.is_match(part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?.as_ref()),
             #[cfg(feature = "glob" )] Self::PartMatchesGlob  {part, none_to_empty_string, glob } => glob .matches (part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?.as_ref()),
 
             // Miscelanious
 
-            Self::VariableIs{name, value, default} => params.vars.get(name).map_or(*default, |x| x==value),
+            Self::VarIs{name, value, none_to_empty_string} => params.vars.get(name).map(|x| x.deref())==value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).as_deref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
 
             // Should only ever be used once

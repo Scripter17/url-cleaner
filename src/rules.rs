@@ -18,24 +18,60 @@ use crate::config;
 pub enum Rule {
     /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::{Rule, conditions, mappers::Mapper};
+    /// # use url::Url;
+    /// # use std::collections::HashMap;
+    /// let rule=Rule::HostMap(HashMap::from_iter([
+    ///     ("example1.com".to_string(), Mapper::SetHost("example2.com".to_string())),
+    ///     ("example2.com".to_string(), Mapper::SetHost("example1.com".to_string()))
+    /// ]));
+    /// 
+    /// let mut url1 = Url::parse("https://example1.com").unwrap();
+    /// assert!(rule.apply(&mut url1).is_ok());
+    /// assert_eq!(url1.as_str(), "https://example2.com/");
+    /// 
+    /// let mut url2 = Url::parse("https://example2.com").unwrap();
+    /// assert!(rule.apply(&mut url2).is_ok());
+    /// assert_eq!(url2.as_str(), "https://example1.com/");
+    /// ```
     HostMap(HashMap<String, mappers::Mapper>),
     /// Runs all the contained rules until none of their conditions pass.
     /// Runs at most `limit` times. (Defaults to 10).
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::{Rule, conditions::Condition, mappers::Mapper};
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(Rule::RepeatUntilNonePass {
+    ///     rules: vec![
+    ///         Rule::Normal {
+    ///             condition: Condition::Always,
+    ///             mapper: Mapper::SetPart {part: UrlPart::NextPathSegment, value: Some("a".to_string())}
+    ///         }
+    ///     ],
+    ///     limit: 10
+    /// }.apply(&mut url).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
+    /// ```
     RepeatUntilNonePass {
         /// The rules to repeat.
         rules: Vec<Rule>,
         /// The max amount of times to repeat them.
         /// Defaults to 10.
+        /// If you need more than 256 iterations then you actually need a better config.
+        /// If you do actually need more than 256 iterations (again, you don't), I may or may not bump this number up to help you.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
     /// The basic condition mapper rule type.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, conditions, mappers};
+    /// # use url_cleaner::rules::{Rule, conditions::Condition, mappers::Mapper};
     /// # use url::Url;
-    /// # use std::collections::HashMap;
-    /// assert!(Rule::Normal{condition: conditions::Condition::Never, mapper: mappers::Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
     /// ```
     #[serde(untagged)]
     Normal {

@@ -4,7 +4,8 @@
 use std::{
     path::Path,
     io::{self, BufRead, Write, Error as IoError},
-    fs::{OpenOptions, File}
+    fs::{OpenOptions, File},
+    ops::Deref
 };
 
 use serde::{Serialize, Deserialize};
@@ -18,8 +19,8 @@ use form_urlencoded;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
-use crate::glue;
-use crate::types;
+use crate::glue::{self, string_or_struct, optional_string_or_struct};
+use crate::types::{self, StringSource};
 
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -203,7 +204,8 @@ pub enum Mapper {
     /// # Errors
     /// If the resulting string cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     /// See [`Url::set_host`] for details.
-    SetHost(String),
+    #[serde(deserialize_with = "string_or_struct")]
+    SetHost(StringSource),
     /// Removes the path segments with an index in the specified list.
     /// See [`Url::path_segments`] for details.
     /// # Errors
@@ -218,18 +220,24 @@ pub enum Mapper {
     /// ```
     RemovePathSegments(Vec<usize>),
     /// [`Url::join`].
-    Join(String),
+    #[serde(deserialize_with = "string_or_struct")]
+    Join(StringSource),
 
     // Generic part handling.
 
     /// Sets the specified URL part to `to`.
     /// # Errors
-    /// If `to` is `None` and `part` is [`types::UrlPart::Whole`], [`types::UrlPart::Scheme`], [`types::UrlPart::Username`], or [`types::UrlPart::Path`], returns the error [`types::PartError::PartCannotBeNone`].
+    /// If `to` is `None` and `part` cannot be `None` (see [`UrlPart`] for details), returns the error [`types::PartError::PartCannotBeNone`].
     SetPart {
         /// The name of the part to replace.
         part: types::UrlPart,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
         /// The value to set the part to.
-        value: Option<String>
+        #[serde(deserialize_with = "optional_string_or_struct")]
+        value: Option<StringSource>
     },
     /// Modifies the specified part of the URL.
     /// # Errors
@@ -244,19 +252,6 @@ pub enum Mapper {
         none_to_empty_string: bool,
         /// How exactly to modify the part.
         how: types::StringModification
-    },
-    /// Copies the part specified by `from` to the part specified by `to`.
-    /// # Errors
-    /// If the part specified by `from` is None, `none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`types::PartError::PartCannotBeNone`].
-    CopyPart {
-        /// The part to get the value from.
-        from: types::UrlPart,
-        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
-        /// Defaults to `true`.
-        #[serde(default = "get_true")]
-        none_to_empty_string: bool,
-        /// The part to set to `from`'s value.
-        to: types::UrlPart
     },
     /// Applies a regular expression substitution to the specified URL part.
     /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
@@ -299,7 +294,8 @@ pub enum Mapper {
         /// The part to copy the variable's value to
         part: types::UrlPart,
         /// The variable whose part to copy.
-        var: String,
+        #[serde(deserialize_with = "string_or_struct")]
+        var: StringSource,
         /// Whether or not to treat a lack of variable as the variable being set to `""`.
         /// Defaults to false.
         #[serde(default = "get_false")]
@@ -341,8 +337,8 @@ pub enum Mapper {
         regex: glue::RegexWrapper,
         /// Used for [`regex::Captures::expand`].
         /// Defaults to `"$1"`.
-        #[serde(default = "eufp_expand")]
-        expand: String
+        #[serde(deserialize_with = "string_or_struct", default = "eufp_expand")]
+        expand: StringSource
     },
     /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
@@ -355,7 +351,7 @@ pub enum Mapper {
 const fn get_true() -> bool {true}
 const fn get_false() -> bool {false}
 #[cfg(feature = "regex")]
-fn eufp_expand() -> String {"$1".to_string()}
+fn eufp_expand() -> StringSource {StringSource::String("$1".to_string())}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Error, Debug)]
@@ -404,7 +400,10 @@ pub enum MapperError {
     PatternNotFound,
     /// A variable was requested but not found at runtime.
     #[error("A variable was requested but not found at runtime.")]
-    VariableNotFound
+    VarNotFound,
+    // The specified [`StringSource`] returned `None`.
+    #[error("The specified StringSource returned None.")]
+    StringSourceIsNone
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -497,15 +496,18 @@ impl Mapper {
 
             // Other parts
 
-            Self::SetHost(new_host) => url.set_host(Some(new_host))?,
+            Self::SetHost(new_host) => url.set_host(new_host.get_string(url, params, false).map(|x| x.into_owned()).as_deref())?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
-            Self::Join(with) => *url=url.join(with)?,
+            Self::Join(with) => if let Some(value) = with.get_string(url, params, false) {
+                *url=url.join(value.deref())?;
+            } else {
+                Err(MapperError::StringSourceIsNone)?
+            },
 
             // Generic part handling
 
-            Self::SetPart{part, value} => part.set(url, value.as_deref())?,
+            Self::SetPart{part, value, none_to_empty_string} => part.set(url, value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).map(|x| x.into_owned()).as_deref())?,
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how)?,
-            Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
             #[cfg(feature = "regex")]
             Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
                 let old_part_value=part.get(url, *none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
@@ -515,9 +517,9 @@ impl Mapper {
             Self::SetPartToVar{part, var, none_to_empty_string} => {
                 if *none_to_empty_string {
                     // Option<&String>::as_deref doesn't return Option<&str>.
-                    part.set(url, Some(params.vars.get(var).map(|x| x.as_str()).unwrap_or_else(|| "")))?;
+                    part.set(url, Some(var.get_string(url, params, true ).as_deref().and_then(|var| params.vars.get(var)).map(|x| x.as_str()).unwrap_or_else(|| "")))?;
                 } else {
-                    part.set(url, Some(params.vars.get(var).ok_or(MapperError::VariableNotFound)?.as_str()))?;
+                    part.set(url, Some(var.get_string(url, params, false).as_deref().and_then(|var| params.vars.get(var)).ok_or(MapperError::VarNotFound)?.as_str()))?;
                 }
             },
 
@@ -550,10 +552,12 @@ impl Mapper {
                 *url=new_url.clone();
             },
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
-            Self::ExtractUrlFromPage{headers, regex, expand} => {
+            Self::ExtractUrlFromPage{headers, regex, expand} => if let Some(expand) = expand.get_string(url, params, false) {
                 let mut ret = String::new();
-                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::PatternNotFound)?.expand(expand, &mut ret);
+                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::PatternNotFound)?.expand(&expand, &mut ret);
                 *url=Url::parse(&ret)?;
+            } else {
+                Err(MapperError::StringSourceIsNone)?
             },
             #[cfg(feature = "commands")]
             Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;},

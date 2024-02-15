@@ -107,12 +107,12 @@ impl Params {
 }
 
 /// The config loaded into URL Cleaner at compile time.
-/// When the `minify-included-strings` is enabled, all whitespace is removed to compress the config.
+/// When the `minify-included-strings` is enabled, all whitespace is replaced with a single space.
 /// If there are any spaces in a string, this compression will alter how the config works.
-/// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"xy":"z"}`, which could alter the functionality of the rule.
-/// If you cannot avoid spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
+/// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
+/// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]
-pub static DEFAULT_CONFIG_STR: &str=const_str::replace!(const_str::squish!(include_str!("../default-config.json")), " ", "");
+pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../default-config.json"));
 /// The non-minified config loaded into URL Cleaner at compile time.
 #[cfg(all(feature = "default-config", not(feature = "minify-included-strings")))]
 pub static DEFAULT_CONFIG_STR: &str=include_str!("../default-config.json");
@@ -140,11 +140,12 @@ pub enum GetConfigError {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
     #[test]
     fn parse_default_rules() {
-        assert!(Config::get_default().is_ok());
+        Config::get_default().unwrap();
     }
 }

@@ -40,7 +40,7 @@
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
 							]}
 						]},
-						"mapper": {"ExpandShortLink": {"headers": {}}}
+						"mapper": {"ExpandShortLink": {}}
 					},
 					{
 						"condition": {"All": [
@@ -48,9 +48,41 @@
 							{"PartIs": {"part": {"PathSegment": 0}, "value": "linkfilter"}}
 						]},
 						"mapper": {"GetUrlFromQueryParam": "u"}
+					},
+
+
+
+					{
+						"condition": {"QualifiedDomain": "preview.tinyurl.com"},
+						"mapper": {"All": [
+							{"SetPart": {"part": "Subdomain", "value": null}},
+							{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "preview"}}
+						]}
+					},
+					{
+						"condition": {"All": [
+							{"MaybeWWWDomain": "tinyurl.com"},
+							{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}},
+							{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "app"}}}
+						]},
+						"mapper": {"SetPart": {"part": {"BeforePathSegment": 0}, "value": "preview"}}
+					},
+					{
+						"condition": {"All": [
+							{"MaybeWWWDomain": "tinyurl.com"},
+							{"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}
+						]},
+						"mapper": {"ExtractUrlFromPage": {"regex": {"pattern": "let url = \\\"(.+)\\\""}}}
 					}
 				]
 			}
+		},
+
+
+
+		{
+			"condition": {"PartContains": {"part": "Domain", "where": "End", "value": ".tumblr.com.tumblr.com"}},
+			"mapper": {"CopyPart": {"from": {"DomainSegment": 0}, "to": "Subdomain"}}
 		},
 
 
@@ -173,6 +205,9 @@
 				{"SetPart": {"part": "Path", "value": "watch"}}
 			]}
 		},
+
+
+
 		{
 			"HostMap": {
 				"theonion.com" : "RemoveQuery",
@@ -387,6 +422,22 @@
 		{
 			"condition": {"UnqualifiedDomain": "bell.ca"},
 			"mapper": {"RemoveQueryParams": ["INT"]}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"FlagIsSet": "tor2web2tor"},
+				{"PartIs": {"part": {"DomainSegment": -2}, "value": "onion"}}
+			]},
+			"mapper": {"SetPart": {"part": {"DomainSegment": -1}, "value": null}}
+		},
+		{
+			"condition": {"All": [
+				{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
+			]},
+			"mapper": {"SetPartToVar": {"part": "NextDomainSegment", "var": "tor2web"}}
 		}
 	]
 }

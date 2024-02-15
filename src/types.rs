@@ -10,6 +10,8 @@ mod string_location;
 pub use string_location::*;
 mod string_modification;
 pub use string_modification::*;
+mod string_source;
+pub use string_source::*;
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
 /// Except for if a [`crate::rules::mappers::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
