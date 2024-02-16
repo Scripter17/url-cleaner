@@ -5,6 +5,7 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use super::{neg_nth, neg_index};
+use crate::config::Params;
 
 /// An enum that allows getting and setting various parts of a URL without a bajillion [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
 /// In general (except for [`Self::DomainSegment`] and [`Self::PathSegment`]), setting a part to its own value is a no-op.
@@ -629,9 +630,9 @@ impl UrlPart {
     /// If [`UrlPart::get`] returns an error, that error is returned.
     /// If the string modification returns an error, that error is returned.
     /// If [`UrlPart::set`] returns an error, that error is returned.
-    pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &super::StringModification) -> Result<(), PartModificationError> {
-        let mut new_part=self.get(url, none_to_empty_string).ok_or(PartModificationError::PartCannotBeNone)?.into_owned();
-        how.apply(&mut new_part)?;
+    pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &super::StringModification, params: &Params) -> Result<(), PartModificationError> {
+        let mut new_part=self.get(url, none_to_empty_string).ok_or(PartModificationError::PartIsNone)?.into_owned();
+        how.apply(&mut new_part, params)?;
         self.set(url, Some(&new_part))?;
         Ok(())
     }
@@ -685,8 +686,8 @@ pub enum PartError {
 #[derive(Debug, Error)]
 pub enum PartModificationError {
     /// The error returned when the call to [`UrlPart::get`] returns `None` and `none_to_empty_string` is `false`
-    #[error("Cannot modify the part's string because it doesn't have a string.")]
-    PartCannotBeNone,
+    #[error("Cannot modify the part's value because it doesn't have a value.")]
+    PartIsNone,
     /// The error returned when the call to [`super::StringModification::apply`] fails.
     #[error(transparent)]
     StringError(#[from] super::StringError),
@@ -699,8 +700,9 @@ pub enum PartModificationError {
 mod tests {
     use super::*;
 
-    const URLS: [&str; 1] = [
-        "https://example.com"
+    const URLS: [&str; 2] = [
+        "https://example.com",
+        "https://abc.example.com/d/e?f=g&h=i#j"
     ];
 
     macro_rules! math_thing {

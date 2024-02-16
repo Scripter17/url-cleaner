@@ -103,10 +103,9 @@ where
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
+#[allow(clippy::unwrap_used, dead_code)]
 mod tests {
     use serde::Deserialize;
-    use serde_json;
 
     use super::*;
     

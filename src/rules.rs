@@ -21,6 +21,8 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::{Rule, conditions, mappers::Mapper};
+    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let rule=Rule::HostMap(HashMap::from_iter([
@@ -29,11 +31,11 @@ pub enum Rule {
     /// ]));
     /// 
     /// let mut url1 = Url::parse("https://example1.com").unwrap();
-    /// assert!(rule.apply(&mut url1).is_ok());
+    /// assert!(rule.apply(&mut url1, &Params::default()).is_ok());
     /// assert_eq!(url1.as_str(), "https://example2.com/");
     /// 
     /// let mut url2 = Url::parse("https://example2.com").unwrap();
-    /// assert!(rule.apply(&mut url2).is_ok());
+    /// assert!(rule.apply(&mut url2, &Params::default()).is_ok());
     /// assert_eq!(url2.as_str(), "https://example1.com/");
     /// ```
     HostMap(HashMap<String, mappers::Mapper>),
@@ -42,6 +44,8 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::{Rule, conditions::Condition, mappers::Mapper};
+    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::StringSource;
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -49,11 +53,15 @@ pub enum Rule {
     ///     rules: vec![
     ///         Rule::Normal {
     ///             condition: Condition::Always,
-    ///             mapper: Mapper::SetPart {part: UrlPart::NextPathSegment, value: Some("a".to_string())}
+    ///             mapper: Mapper::SetPart {
+    ///                 part: UrlPart::NextPathSegment,
+    ///                 none_to_empty_string: false,
+    ///                 value: Some(StringSource::String("a".to_string()))
+    ///             }
     ///         }
     ///     ],
     ///     limit: 10
-    /// }.apply(&mut url).is_ok());
+    /// }.apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
     /// ```
     RepeatUntilNonePass {
@@ -70,8 +78,9 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::{Rule, conditions::Condition, mappers::Mapper};
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
-    /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap()).is_err());
+    /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     #[serde(untagged)]
     Normal {
@@ -108,20 +117,13 @@ pub enum RuleError {
 impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
-    /// If the call to [`Self::apply_with_params`] returns an error, that error is returned.
-    pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        self.apply_with_params(url, &config::Params::default())
-    }
-
-    /// Apply the rule to the url in-place.
-    /// # Errors
     /// If the rule is a [`Self::Normal`] and the contained condition or mapper returns an error, that error is returned.
     /// If the rule is a [`Self::HostMap`] and the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
     /// If the rule is a [`Self::HostMap`] and the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
-    pub fn apply_with_params(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
+    pub fn apply(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
         match self {
-            Self::Normal{condition, mapper} => if condition.satisfied_by_with_params(url, params)? {
-                mapper.apply_with_params(url, params)?;
+            Self::Normal{condition, mapper} => if condition.satisfied_by(url, params)? {
+                mapper.apply(url, params)?;
                 Ok(())
             } else {
                 Err(RuleError::FailedCondition)
@@ -130,7 +132,7 @@ impl Rule {
                 for _ in 0..*limit {
                     let mut done=true;
                     for rule in rules {
-                        match rule.apply_with_params(url, params) {
+                        match rule.apply(url, params) {
                             Err(RuleError::FailedCondition) => {},
                             Ok(()) => done=false,
                             e @ Err(_) => e?
@@ -140,7 +142,7 @@ impl Rule {
                 }
                 Ok(())
             },
-            Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply_with_params(url, params)?)
+            Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url, params)?)
         }
     }
 }
@@ -173,21 +175,11 @@ impl Rules {
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
     /// If an error is returned, `url` is left unmodified.
     /// # Errors
-    /// If a rule returns any error other than [`RuleError::FailedCondition`], that error is returned.
-    /// If the error [`RuleError::FailedCondition`] is encountered, it is ignored.
-    pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        self.apply_with_params(url, &config::Params::default())
-    }
-
-    /// Applies each rule to the provided [`Url`] in order.
-    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
-    /// If an error is returned, `url` is left unmodified.
-    /// # Errors
     /// If the error [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, it is ignored.
-    pub fn apply_with_params(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
+    pub fn apply(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in &**self {
-            match rule.apply_with_params(&mut temp_url, params) {
+            match rule.apply(&mut temp_url, params) {
                 Err(RuleError::FailedCondition | RuleError::UrlHasNoHost | RuleError::HostNotInMap) => {},
                 e @ Err(_) => e?,
                 _ => {}

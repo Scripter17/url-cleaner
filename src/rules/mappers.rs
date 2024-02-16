@@ -20,7 +20,7 @@ use form_urlencoded;
 use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
-use crate::types::{self, StringSource};
+use crate::types::{self, StringSource, StringMatcher, MatcherError};
 
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -52,11 +52,12 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_ok ());
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_ok ());
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_ok ());
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap()).is_err());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
     /// ```
     TryCatch {
         /// The mapper to try first.
@@ -73,9 +74,10 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url).is_err());
+    /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url, &Params::default()).is_err());
     /// assert_eq!(url.domain(), Some("www.example.com"));
     /// ```
     All(Vec<Mapper>),
@@ -86,9 +88,10 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_err());
+    /// assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).is_err());
     /// assert_eq!(url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Mapper>),
@@ -97,9 +100,10 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url).is_ok());
+    /// assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Mapper>),
@@ -110,15 +114,16 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url).is_ok());
+    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.domain(), Some("1.com"));
-    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url).is_ok());
+    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.domain(), Some("3.com"));
-    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url).is_ok());
+    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.domain(), Some("4.com"));
-    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url).is_err());
+    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url, &Params::default()).is_err());
     /// assert_eq!(url.domain(), Some("4.com"));
     /// ```
     FirstNotError(Vec<Mapper>),
@@ -128,63 +133,43 @@ pub enum Mapper {
     /// Removes the URL's entire query.
     /// Useful for websites that only use the query for tracking.
     RemoveQuery,
-    /// Removes query parameters whose name is in the specified names.
+    /// Removes all query parameters whose name exists in the specified [`HashMap`].
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.query(), Some("b=3&c=4&d=5"));
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.query(), Some("d=5"));
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.query(), None);
     /// ```
     RemoveQueryParams(HashSet<String>),
-    /// Removes query parameters whose name isn't in the specified names.
+    /// Keeps only the query parameters whose name exists in the specified [`HashSet`].
     /// Useful for websites that keep changing their tracking parameters and you're sick of updating your rule set.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).is_ok());
     /// ```
     AllowQueryParams(HashSet<String>),
-    /// Removes query parameters whose name matches the specified regex.
-    /// Useful for parsing AdGuard rules.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::mappers::*;
-    /// # use url::Url;
-    /// # use url_cleaner::glue::RegexParts;
-    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
-    /// assert_eq!(url.query(), Some("a=2&b=3&c=4"));
-    /// assert!(Mapper::AllowQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
-    /// assert_eq!(url.query(), None);
-    /// ```
-    #[cfg(feature = "regex")]
-    RemoveQueryParamsMatchingRegex(glue::RegexWrapper),
-    /// Removes query parameters whose name doesn't match the specified regex.
-    /// Useful for parsing AdGuard rules.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::mappers::*;
-    /// # use url::Url;
-    /// # use url_cleaner::glue::RegexParts;
-    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("a|b|c").unwrap().into()).apply(&mut url).is_ok());
-    /// assert_eq!(url.query(), Some("d=5"));
-    /// assert!(Mapper::RemoveQueryParamsMatchingRegex(RegexParts::new("d").unwrap().into()).apply(&mut url).is_ok());
-    /// assert_eq!(url.query(), None);
-    /// ```
-    #[cfg(feature = "regex")]
-    AllowQueryParamsMatchingRegex(glue::RegexWrapper),
+    /// Removes all query parameters whose name matches the specified [`StringMatcher`].
+    /// # Errors
+    /// If the call to [`StringMatcher::matches`] returns an error, that error is returned.
+    RemoveQueryParamsMatching(StringMatcher),
+    /// Keeps only the query parameters whose name matches the specified [`StringMatcher`].
+    /// # Errors
+    /// If the call to [`StringMatcher::matches`] returns an error, that error is returned.
+    AllowQueryParamsMatching(StringMatcher),
     /// Replace the current URL with the value of the specified query parameter.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     /// # Errors
@@ -204,7 +189,7 @@ pub enum Mapper {
     /// # Errors
     /// If the resulting string cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     /// See [`Url::set_host`] for details.
-    SetHost(#[serde(deserialize_with = "string_or_struct")] StringSource),
+    SetHost(String),
     /// Removes the path segments with an index in the specified list.
     /// See [`Url::path_segments`] for details.
     /// # Errors
@@ -212,9 +197,10 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url).is_ok());
+    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.path(), "/0/2/4");
     /// ```
     RemovePathSegments(Vec<usize>),
@@ -278,39 +264,12 @@ pub enum Mapper {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The regex that is used to match and extract parts of the selected part.
+        #[serde(deserialize_with = "string_or_struct")]
         regex: glue::RegexWrapper,
         /// The pattern the extracted parts are put into.
         /// See [`regex::Regex::replace`] for details.
-        replace: String
-    },
-    /// Copies a config param/CLI argument variable's value into a URL's part.
-    /// # Examples
-    /// ```
-    /// # use url::Url;
-    /// # use url_cleaner::rules::mappers::Mapper;
-    /// # use url_cleaner::types::UrlPart;
-    /// # use url_cleaner::config::Params;
-    /// # use std::collections::HashMap;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// assert!(Mapper::SetPartToVar {part: UrlPart::Path, var: "abc".to_string(), none_to_empty_string: true}
-    ///     .apply_with_params(&mut url, &Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()}).is_ok());
-    /// assert_eq!(url.as_str(), "https://example.com/xyz");
-    /// assert!(Mapper::SetPartToVar {part: UrlPart::Path, var: "abc".to_string(), none_to_empty_string: true}
-    ///     .apply_with_params(&mut url, &Params {vars: HashMap::from_iter([]), ..Params::default()}).is_ok());
-    /// assert_eq!(url.as_str(), "https://example.com/");
-    /// assert!(Mapper::SetPartToVar {part: UrlPart::Path, var: "abc".to_string(), none_to_empty_string: false}
-    ///     .apply_with_params(&mut url, &Params {vars: HashMap::from_iter([]), ..Params::default()}).is_err());
-    /// ```
-    SetPartToVar {
-        /// The part to copy the variable's value to
-        part: types::UrlPart,
-        /// The variable whose part to copy.
-        #[serde(deserialize_with = "string_or_struct")]
-        var: StringSource,
-        /// Whether or not to treat a lack of variable as the variable being set to `""`.
-        /// Defaults to false.
-        #[serde(default = "get_false")]
-        none_to_empty_string: bool
+        #[serde(deserialize_with = "string_or_struct", default = "eufp_expand")]
+        replace: StringSource
     },
 
     // Miscelanious.
@@ -326,10 +285,11 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::Mapper;
+    /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// assert!(Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut url).is_ok());
+    /// assert!(Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -345,6 +305,7 @@ pub enum Mapper {
         #[serde(default, with = "crate::glue::headermap")]
         headers: HeaderMap,
         /// The pattern to search for in the page.
+        #[serde(deserialize_with = "string_or_struct")]
         regex: glue::RegexWrapper,
         /// Used for [`regex::Captures::expand`].
         /// Defaults to `"$1"`.
@@ -360,7 +321,6 @@ pub enum Mapper {
 }
 
 const fn get_true() -> bool {true}
-const fn get_false() -> bool {false}
 #[cfg(feature = "regex")]
 fn eufp_expand() -> StringSource {StringSource::String("$1".to_string())}
 
@@ -412,9 +372,12 @@ pub enum MapperError {
     /// A variable was requested but not found at runtime.
     #[error("A variable was requested but not found at runtime.")]
     VarNotFound,
-    // The specified [`StringSource`] returned `None`.
+    /// The specified [`StringSource`] returned `None`.
     #[error("The specified StringSource returned None.")]
-    StringSourceIsNone
+    StringSourceIsNone,
+    /// The call to [`StringMatcher::matches`] returned an error.
+    #[error(transparent)]
+    MatcherError(#[from] MatcherError)
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -426,21 +389,11 @@ where P: AsRef<Path>, {
 
 impl Mapper {
     /// Applies the mapper to the provided URL.
-    /// Thin wrapper around [`Self::apply_with_params`] using [`crate::config::Params::default`].
     /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
     /// # Errors
     /// If the mapper has an error, that error is returned.
     /// See [`Mapper`]'s documentation for details.
-    pub fn apply(&self, url: &mut Url) -> Result<(), MapperError> {
-        self.apply_with_params(url, &crate::config::Params::default())
-    }
-    
-    /// Applies the mapper to the provided URL.
-    /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
-    /// # Errors
-    /// If the mapper has an error, that error is returned.
-    /// See [`Mapper`]'s documentation for details.
-    pub fn apply_with_params(&self, url: &mut Url, params: &crate::config::Params) -> Result<(), MapperError> {
+    pub fn apply(&self, url: &mut Url, params: &crate::config::Params) -> Result<(), MapperError> {
         match self {
 
             // Boolean
@@ -448,24 +401,24 @@ impl Mapper {
             Self::All(mappers) => {
                 let mut temp_url=url.clone();
                 for mapper in mappers {
-                    mapper.apply(&mut temp_url)?;
+                    mapper.apply(&mut temp_url, params)?;
                 }
                 *url=temp_url;
             },
             Self::AllNoRevert(mappers) => {
                 for mapper in mappers {
-                    mapper.apply(url)?;
+                    mapper.apply(url, params)?;
                 }
             },
             Self::AllIgnoreError(mappers) => {
                 for mapper in mappers {
-                    let _=mapper.apply(url);
+                    let _=mapper.apply(url, params);
                 }
             },
             Self::FirstNotError(mappers) => {
                 let mut error=Ok(());
                 for mapper in mappers {
-                    error=mapper.apply(url);
+                    error=mapper.apply(url, params);
                     if error.is_ok() {break}
                 }
                 error?
@@ -482,15 +435,25 @@ impl Mapper {
                 let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
-            #[cfg(feature = "regex")]
-            Self::RemoveQueryParamsMatchingRegex(regex) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !regex.is_match(name))).finish();
-                url.set_query((!new_query.is_empty()).then_some(&new_query));
+            Self::RemoveQueryParamsMatching(matcher) => {
+                let mut new_query=form_urlencoded::Serializer::new(String::new());
+                for (name, value) in url.query_pairs() {
+                    if !matcher.matches(&name)? {
+                        new_query.append_pair(&name, &value);
+                    }
+                }
+                let x = new_query.finish();
+                url.set_query((!x.is_empty()).then_some(&x));
             },
-            #[cfg(feature = "regex")]
-            Self::AllowQueryParamsMatchingRegex(regex) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  regex.is_match(name))).finish();
-                url.set_query((!new_query.is_empty()).then_some(&new_query));
+            Self::AllowQueryParamsMatching(matcher) => {
+                let mut new_query=form_urlencoded::Serializer::new(String::new());
+                for (name, value) in url.query_pairs() {
+                    if matcher.matches(&name)? {
+                        new_query.append_pair(&name, &value);
+                    }
+                }
+                let x = new_query.finish();
+                url.set_query((!x.is_empty()).then_some(&x));
             },
             Self::GetUrlFromQueryParam(name) => {
                 match url.query_pairs().find(|(param_name, _)| param_name==name) {
@@ -507,7 +470,7 @@ impl Mapper {
 
             // Other parts
 
-            Self::SetHost(new_host) => url.set_host(new_host.get_string(url, params, false).map(|x| x.into_owned()).as_deref())?,
+            Self::SetHost(new_host) => url.set_host(Some(new_host))?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
             Self::Join(with) => if let Some(value) = with.get_string(url, params, false) {
                 *url=url.join(value.deref())?;
@@ -518,27 +481,19 @@ impl Mapper {
             // Generic part handling
 
             Self::SetPart{part, value, none_to_empty_string} => part.set(url, value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).map(|x| x.into_owned()).as_deref())?,
-            Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how)?,
+            Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how, params)?,
             Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
             #[cfg(feature = "regex")]
             Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
                 let old_part_value=part.get(url, *none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
                 #[allow(clippy::unnecessary_to_owned)]
-                part.set(url, Some(&regex.replace(&old_part_value, replace).into_owned()))?;
-            },
-            Self::SetPartToVar{part, var, none_to_empty_string} => {
-                if *none_to_empty_string {
-                    // Option<&String>::as_deref doesn't return Option<&str>.
-                    part.set(url, Some(var.get_string(url, params, true ).as_deref().and_then(|var| params.vars.get(var)).map(|x| x.as_str()).unwrap_or_else(|| "")))?;
-                } else {
-                    part.set(url, Some(var.get_string(url, params, false).as_deref().and_then(|var| params.vars.get(var)).ok_or(MapperError::VarNotFound)?.as_str()))?;
-                }
+                part.set(url, Some(&regex.replace(&old_part_value, replace.get_string(url, params, false).ok_or(MapperError::StringSourceIsNone)?).into_owned()))?;
             },
 
             // Error handling
 
-            Self::IgnoreError(mapper) => {let _=mapper.apply(url);},
-            Self::TryCatch{r#try, catch} => r#try.apply(url).or_else(|_| catch.apply(url))?,
+            Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
+            Self::TryCatch{r#try, catch} => r#try.apply(url, params).or_else(|_| catch.apply(url, params))?,
 
             // Miscelanious
 
@@ -580,7 +535,7 @@ impl Mapper {
             Self::Error => Err(MapperError::ExplicitError)?,
             Self::Debug(mapper) => {
                 let url_before_mapper=url.clone();
-                let mapper_result=mapper.apply(url);
+                let mapper_result=mapper.apply(url, params);
                 eprintln!("=== Debug mapper ===\nMapper: {mapper:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
                 mapper_result?;
             }

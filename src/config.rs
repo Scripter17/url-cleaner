@@ -13,21 +13,6 @@ use reqwest::header::HeaderMap;
 
 use crate::rules::Rules;
 
-/// Configuration options to choose the behaviour of a few select [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-pub struct Params {
-    /// Works with [`crate::rules::conditions::Condition::RuleVariableIs'`].
-    #[serde(default)]
-    pub vars: HashMap<String, String>,
-    /// Works with [`crate::rules::conditions::Condition::FlagIsSet`].
-    #[serde(default)]
-    pub flags: HashSet<String>,
-    /// The default headers to send in HTTP requests.
-    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
-    #[serde(default, with = "crate::glue::headermap")]
-    pub default_http_headers: HeaderMap
-}
-
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -78,20 +63,28 @@ impl Config {
         })
     }
 
-    /// Applies the rules to the provided URL using the config's own default parameters.
+    /// Applies the rules to the provided URL using the parameters contained in [`Self::params`].
     /// # Errors
-    /// If the call to `Rules::apply_with_params` returns an error, that error is returned.
-    pub fn apply(&self, url: &mut Url) -> Result<(), crate::rules::RuleError> {
-        self.rules.apply_with_params(url, &self.params)
-    }
-
-    /// Applies the rules to the provided URL using the provided parameters.
-    /// # Errors
-    /// If the call to `Rules::apply_with_params` returns an error, that error is returned.
+    /// If the call to `Rules::apply` returns an error, that error is returned.
     #[allow(dead_code)]
-    pub fn apply_with_params(&self, url: &mut Url, params: &Params) -> Result<(), crate::rules::RuleError> {
-        self.rules.apply_with_params(url, params)
+    pub fn apply(&self, url: &mut Url,) -> Result<(), crate::rules::RuleError> {
+        self.rules.apply(url, &self.params)
     }
+}
+
+/// Configuration options to choose the behaviour of a few select [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct Params {
+    /// Works with [`crate::rules::conditions::Condition::RuleVariableIs'`].
+    #[serde(default)]
+    pub vars: HashMap<String, String>,
+    /// Works with [`crate::rules::conditions::Condition::FlagIsSet`].
+    #[serde(default)]
+    pub flags: HashSet<String>,
+    /// The default headers to send in HTTP requests.
+    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+    #[serde(default, with = "crate::glue::headermap")]
+    pub default_http_headers: HeaderMap
 }
 
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -103,6 +96,12 @@ impl Params {
         reqwest::blocking::ClientBuilder::new()
             .default_headers(self.default_http_headers.clone())
             .build()
+    }
+
+    pub fn merge(&mut self, from: Self) {
+        self.vars.extend(from.vars);
+        self.flags.extend(from.flags);
+        self.default_http_headers.extend(from.default_http_headers);
     }
 }
 

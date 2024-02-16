@@ -15,8 +15,9 @@ Since these are somewhat common when social media sites have dedicated fields fo
 
 ## Variables
 
-While the `VariableIs` condition and the `--var` flag allow setting variables to refine URL handling, currently none of the default config uses them.  
-Additionally, proper integration into mappers and conditions is currently somewhat lacking.
+Variables let you specify runtime behaviour.
+
+- `tor2web`: The domain suffix to append to `**.onion` URLs to allow accessing the onionsite without Tor. Does work if the suffix has multiple segments but the exact way it works is really just a bug. It is intended behaviour though.
 
 ## Flags
 
@@ -27,6 +28,7 @@ Like variables except the only defined as "set" and "not set", various flags are
 - `tumblr-strip-reblogs`: Replace tumblr reblog links with the original post. Does not care about reblog chains so maybe don't set this in your keyboard shortcut.
 - `antifandom`: Turns `abc.fandom.com` URLs into `antifandom.com/abc` URLs.
 - `unfix-domains`: Replace `antifandom.com` URLs with `fandom.com` URLs.
+- `tor2web2tor`: Replace `**.onion.*` domains with `*.onion`. Currently does not work if the domain suffix is more than one segment.
 
 Flags can be added to configs by using the `FlagSet` condition and specified at runtime by doing `--flag flag1 --flag flag2`.
 
@@ -44,6 +46,8 @@ Tips for people who don't know Rust's syntax:
 - `HashMap<..., ...>` and `HeaderMap` are written as dictionaries in JSON.
 - Fields preceeded by `#[serde(default)]` or `#[serde(default = "...")]` can be omitted from config files. The defaults are almost always what you want.
 - `u8`, `u16`, `u32`, `u64`, `u128`, and `usize` are unsigned (non-negative) integers. `i8`, `i16`, `i32`, `i64`, `i128`, and `isize` are signed integers. `usize` is a `u32` on 32-bit computers and `u64` on 64-bit computers. Likewise `isize` is `i32` and `i64` under the same conditions. Basically if a number makes sense to be used in a field then it'll fit.
+- A `StringSource` is usually just written as a string. To see how it can be used to get URL parts or variables see [`string_source.rs`](src/types/string_source.rs).
+- If a field starts with `r#` (like `r#else`) you write it without the `r#` (like `"else"`). The `r#` is just Rust syntax for "this isn't a keyword".
 
 ## Anonymity
 

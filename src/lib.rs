@@ -29,11 +29,12 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params: wasm_bin
 /// # Errors
 /// If applying the rules returns an error, that error is returned.
 pub fn clean_url(url: &mut Url, config: Option<&config::Config>, params: Option<&config::Params>) -> Result<(), types::CleaningError> {
-    #[allow(clippy::redundant_closure)] // The closures shrink the lifetime of [`config::Config::get_default`] to the lifetime of `config`.
-    match params {
-        Some(params) => config.map_or_else(|| config::Config::get_default(), Ok)?.apply_with_params(url, params)?,
-        None         => config.map_or_else(|| config::Config::get_default(), Ok)?.apply(url)?
-    }
+    let mut config=match config {
+        Some(config) => config.clone(),
+        None => config::Config::get_default()?.clone()
+    };
+    if let Some(params) = params {config.params.merge(params.clone());}
+    config.apply(url)?;
     Ok(())
 }
 

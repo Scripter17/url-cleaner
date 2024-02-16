@@ -29,16 +29,16 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
 
     fn try_from(args: Args) -> Result<Self, Self::Error> {
         let mut config=config::Config::get_default_or_load(args.config.as_deref())?.into_owned();
-
-        // Tuple maps when?
-        if !args.var.is_empty() {
-            config.params.vars=args.var
-                .into_iter()
-                .filter_map(|mut kev| kev.find('=').map(|e| {let v=kev.split_off(e); kev.shrink_to_fit(); (kev, v)}))
-                .collect();
-        }
-        if !args.flag.is_empty() {config.params.flags=args.flag.into_iter().collect();}
-
+        config.params.merge(
+            config::Params {
+                vars: args.var
+                    .into_iter()
+                    .filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)}))
+                    .collect(),
+                flags: args.flag.into_iter().collect(),
+                ..config::Params::default()
+            }
+        );
         Ok((args.urls, config))
     }
 }

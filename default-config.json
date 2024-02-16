@@ -93,8 +93,8 @@
 			"Brave-Source": "https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc",
 			"AdGuard-source": "https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections/general_url.txt",
 			"condition": "Always",
-			"mapper": {
-				"RemoveQueryParams": [
+			"mapper": {"All": [
+				{"RemoveQueryParams": [
 					"mc_eid", "oly_anon_id", "oly_enc_id", "__s", "vero_id", "_hsenc", "mkt_tok", "fbclid",
 					"gclid", "dclid", "msclkid", "_openstat", "yclid", "wickedid", "twclid", "_hsenc", "__hssc", "__hstc", "__hsfp", "hsctatracking", "wbraid", "gbraid", "ysclid",
 
@@ -127,16 +127,12 @@
 					"nx_source", "oly_anon_id", "oly_enc_id", "_ope", "_openstat", "oprtrack", "pk_campaign",
 					"pk_medium", "pk_source", "pk_vid", "rb_clickid", "rtkcid", "s_cid", "_sgm_action", "_sgm_campaign",
 					"_sgm_source", "sms_click", "sms_source", "sms_uph", "spot_im_redirect_source", "srsltid", "sscid",
-					"tduid", "ttclid", "twclid", "unicorn_click_id", "user_email_address", "usqp", "utm_ad",
-					"utm_adgroup", "utm_affiliate", "utm_brand", "utm_campaign", "utm_campaignid", "utm_channel",
-					"utm_cid", "utm_content", "utm_creative", "utm_emcid", "utm_emmid", "utm_id", "utm_id_",
-					"utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader",
-					"utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social",
-					"utm_social-type", "utm_source", "utm_supplier", "utm_swu", "utm_term", "utm_umguk", "utm_userid",
-					"utm_viz_id", "vc_lpp", "vero_conv", "vero_id", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
+					"tduid", "ttclid", "twclid", "unicorn_click_id", "user_email_address", "usqp", "vc_lpp", "vero_conv",
+					"vero_id", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
 					"ymid", "ysclid", "_zucks_suid",
 
-					"icid"
+					"icid"]},
+					{"RemoveQueryParamsMatching": {"StringLocation": {"location": "Start", "value": "utm_"}}}
 				]
 			}
 		},
@@ -438,7 +434,7 @@
 				{"Not": {"VarIs": {"name": "tor2web", "value": null}}},
 				{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
 			]},
-			"mapper": {"SetPartToVar": {"part": "NextDomainSegment", "var": "tor2web"}}
+			"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web"}}}
 		}
 	]
 }
