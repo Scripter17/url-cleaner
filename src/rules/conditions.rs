@@ -37,7 +37,7 @@ pub enum Condition {
     /// Prints debugging information about the contained condition to STDERR.
     /// Intended primarily for debugging logic errors.
     /// *Can* be used in production as bash and batch only have `x | y` pipe STDOUT by default, but it'll look ugly.
-    Debug(Box<Condition>),
+    Debug(Box<Self>),
 
     // Error handling
 
@@ -51,7 +51,7 @@ pub enum Condition {
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// ```
-    TreatErrorAsPass(Box<Condition>),
+    TreatErrorAsPass(Box<Self>),
     /// If the contained condition returns an error, treat it as a fail.
     /// # Examples
     /// ```
@@ -62,7 +62,7 @@ pub enum Condition {
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
-    TreatErrorAsFail(Box<Condition>),
+    TreatErrorAsFail(Box<Self>),
     /// If the `try` condition returns an error, return the result of the `else` condition instead. If the `try` condition does not error, the `else` condition is not executed.
     /// # Errors
     /// If the `else` condition returns an error, that error is returned.
@@ -83,9 +83,9 @@ pub enum Condition {
     /// ```
     TryCatch {
         /// The condition to try first.
-        r#try: Box<Condition>,
+        r#try: Box<Self>,
         /// If the try condition fails, instead return the result of this one.
-        catch: Box<Condition>
+        catch: Box<Self>
     },
 
     // Boolean.
@@ -109,7 +109,7 @@ pub enum Condition {
     /// assert!(Condition::All(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// assert!(Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
-    All(Vec<Condition>),
+    All(Vec<Self>),
     /// Passes if any of the included conditions pass.
     /// Like [`Iterator::any`], an empty list of conditions returns `false`.
     /// # Errors
@@ -129,7 +129,7 @@ pub enum Condition {
     /// assert!(Condition::Any(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// assert!(Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
-    Any(Vec<Condition>),
+    Any(Vec<Self>),
     /// Passes if the included condition doesn't and vice-versa.
     /// # Errors
     /// If the contained condition returns an error, that error is returned.
@@ -142,7 +142,7 @@ pub enum Condition {
     /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::Not(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
-    Not(Box<Condition>),
+    Not(Box<Self>),
 
     // Domain conditions.
 
@@ -306,8 +306,7 @@ pub enum Condition {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
-        #[serde(deserialize_with = "optional_string_or_struct")]
-        value: Option<StringSource>
+        value: Option<String>
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
@@ -320,8 +319,8 @@ pub enum Condition {
     /// # use url_cleaner::types::StringSource;
     /// # use url_cleaner::types::UrlPart;
     /// # use url_cleaner::types::StringLocation;
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: StringSource::String("ple".to_string()), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: StringSource::String("ple".to_string()), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     PartContains {
         /// The name of the part to check.
@@ -331,8 +330,7 @@ pub enum Condition {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The value to look for.
-        #[serde(deserialize_with = "string_or_struct")]
-        value: StringSource,
+        value: String,
         /// Where to look for the value.
         #[serde(default)]
         r#where: StringLocation
@@ -533,13 +531,16 @@ impl Condition {
 
             // General parts
 
-            Self::PartIs{part, none_to_empty_string, value} => value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).as_deref()==part.get(url, *none_to_empty_string).as_deref(),
-            Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value.get_string(url, params, *none_to_empty_string).ok_or(ConditionError::StringSourceIsNone)?.deref())?,
-            Self::PartMatches {part, none_to_empty_string, matcher} => matcher.matches(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?)?,
+            Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
+            Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
+            Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?)?,
 
             // Miscelanious
 
-            Self::VarIs{name, value, none_to_empty_string} => params.vars.get(&name.get_string(url, params, false).ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==value.as_ref().and_then(|x| x.get_string(url, params, *none_to_empty_string)).as_deref(),
+            Self::VarIs{name, value, none_to_empty_string} => match value.as_ref() {
+                Some(source) => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get_string(url, params, *none_to_empty_string)?.as_deref(),
+                None => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
+            },
             Self::FlagIsSet(name) => params.flags.contains(name),
 
             // Should only ever be used once
@@ -563,7 +564,7 @@ impl Condition {
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
                 let is_satisfied=condition.satisfied_by(url, params);
-                eprintln!("=== Debug condition ===\nCondition: {condition:?}\nURL: {url:?}\nparams: {params:?}\nSatisfied?: {is_satisfied:?}");
+                eprintln!("=== Debug condition ===\nCondition: {condition:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             }
         })

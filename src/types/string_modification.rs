@@ -1,7 +1,10 @@
 use serde::{Serialize, Deserialize};
+use urlencoding;
 
 use super::{StringError, neg_index, neg_range};
-use crate::glue::{RegexWrapper, string_or_struct};
+#[cfg(feature = "regex")]
+use crate::glue::RegexWrapper;
+use crate::glue::string_or_struct;
 use crate::config::Params;
 
 /// A wrapper around [`str`]'s various substring modification functions.
@@ -158,12 +161,12 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::config::Params;
     /// let mut x = "aaaaa".to_string();
-    /// assert!(StringModification::ReplaceN{find: "a" .to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok());
+    /// assert!(StringModification::Replacen{find: "a" .to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok());
     /// assert_eq!(&x, "xxaaa");
-    /// assert!(StringModification::ReplaceN{find: "xa".to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok());
+    /// assert!(StringModification::Replacen{find: "xa".to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok());
     /// assert_eq!(&x, "xxaa");
     /// ```
-    ReplaceN {
+    Replacen {
         /// The value to look for.
         find: String,
         /// The value to replace with.
@@ -284,30 +287,50 @@ pub enum StringModification {
         /// The value to insert.
         value: String
     },
+    /// [`RegexWrapper::replace`]
     #[cfg(feature = "regex")]
     RegexReplace {
+        /// The regex to do replacement with.
         #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
+        /// The replacement string.
         replace: String
     },
+    /// [`RegexWrapper::replace_all`]
     #[cfg(feature = "regex")]
     RegexReplaceAll {
+        /// The regex to do replacement with.
         #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
+        /// The replacement string.
         replace: String
     },
+    /// [`RegexWrapper::replacen`]
     #[cfg(feature = "regex")]
-    RegexReplaceN {
+    RegexReplacen {
+        /// The regex to do replacement with.
         #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
+        /// The number of replacements to do.
         n: usize,
+        /// The replacement string.
         replace: String
     },
+    /// Choose which string modification to apply based on of a flag is set.
     IfFlag {
+        /// THe flag to check the setness of.
         flag: String,
+        /// The string modification to apply if the flag is set.
         then: Box<Self>,
+        /// The string modification to apply if the flag is not set.
         r#else: Box<Self>
-    }
+    },
+    URLEncode,
+    URLDecode,
+    All(Vec<Self>),
+    AllNoRevert(Vec<Self>),
+    AllIgnoreError(Vec<Self>),
+    FirstNotError(Vec<Self>)
 }
 
 impl StringModification {
@@ -336,7 +359,7 @@ impl StringModification {
             Self::StripMaybePrefix(prefix)           => if to.starts_with(prefix) {to.drain(..prefix.len());},
             #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
             Self::StripMaybeSuffix(suffix)           => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len());},
-            Self::ReplaceN{find, replace, count}     => *to=to.replacen(find, replace, *count),
+            Self::Replacen{find, replace, count}     => *to=to.replacen(find, replace, *count),
             Self::Insert{r#where, value}             => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?, value);} else {Err(StringError::InvalidIndex)?;},
             Self::Remove(r#where)                    => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?) {to.remove    (neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?       );} else {Err(StringError::InvalidIndex)?;},
             Self::KeepRange{start, end}              => *to=to.get(neg_range(*start, *end, to.len()).ok_or(StringError::InvalidSlice)?).ok_or(StringError::InvalidSlice)?.to_string(),
@@ -358,8 +381,36 @@ impl StringModification {
             },
             #[cfg(feature = "regex")] Self::RegexReplace    {regex,    replace} => *to=regex.replace    (to,     replace).to_string(),
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to=regex.replace_all(to,     replace).to_string(),
-            #[cfg(feature = "regex")] Self::RegexReplaceN   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?
+            #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
+            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?,
+            Self::URLEncode => *to=urlencoding::encode(to).into_owned(),
+            Self::URLDecode => *to=urlencoding::decode(to)?.into_owned(),
+            Self::All(modifications) => {
+                let mut temp_to=to.clone();
+                for modification in modifications {
+                    modification.apply(&mut temp_to, params)?;
+                }
+                *to=temp_to;
+            }
+            Self::AllNoRevert(modifications) => {
+                for modification in modifications {
+                    modification.apply(to, params)?;
+                }
+            },
+            Self::AllIgnoreError(modifications) => {
+                for modification in modifications {
+                    let _=modification.apply(to, params);
+                }
+            },
+            Self::FirstNotError(modifications) => {
+                let mut error=Ok(());
+                for modification in modifications {
+                    error=modification.apply(to, params);
+                    if error.is_ok() {break}
+                }
+                error?
+            },
+
         };
         Ok(())
     }

@@ -42,6 +42,7 @@ struct CommandParts {
 impl FromStr for CommandParts {
     type Err = Infallible;
 
+    /// Somply treats the string as the command to run.
     fn from_str(x: &str) -> Result<Self, Self::Err> {
         Ok(Self {
             program: x.to_string(),
@@ -85,6 +86,7 @@ impl From<CommandParts> for CommandWrapper {
 impl FromStr for CommandWrapper {
     type Err = Infallible;
 
+    /// Somply treats the string as the command to run.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(CommandParts::from_str(s)?.into())
     }
@@ -180,7 +182,6 @@ impl OutputHandler {
     }
 }
 
-
 impl CommandWrapper {
     /// Checks if the command's [`std::process::Command::get_program`] exists. Checks the system's PATH.
     /// Uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the PATH.
@@ -249,6 +250,8 @@ impl Clone for CommandWrapper {
 }
 
 impl PartialEq for CommandWrapper {
+    /// Always returns `false` as commands are assumed to be non-deterministic.
+    /// Yes that is a weird reason; This'll likely change at some point.
     fn eq(&self, _: &Self) -> bool {
         false
     }

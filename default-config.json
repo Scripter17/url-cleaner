@@ -8,15 +8,23 @@
 							{"MaybeWWWDomain": "pixiv.net"},
 							{"PathIs": "/jump.php"}
 						]},
-						"mapper": {"GetUrlFromQueryParam": "url"}
+						"mapper": {"TryCatch": {
+							"try": {"GetUrlFromQueryParam": "url"},
+							"catch": {
+								"SetPart": {
+									"part": "Whole",
+									"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
+								}
+							}
+						}}
 					},
 					{
 						"condition": {"All": [
-							{"QualifiedDomain": "pixiv.net"},
+							{"MaybeWWWDomain": "pixiv.net"},
 							{"PathIs": "/member.php"}
 						]},
 						"mapper": {"All": [
-							{"SetPart": {"part": "Path", "value": "/users/"}},
+							{"SetPart": {"part": "Path", "value": "/users"}},
 							{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
 							"RemoveQuery"
 						]}
@@ -131,7 +139,7 @@
 					"vero_id", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
 					"ymid", "ysclid", "_zucks_suid",
 
-					"icid"]},
+					"icid", "_trkparms", "_trksid", "ref", "source", "referer"]},
 					{"RemoveQueryParamsMatching": {"StringLocation": {"location": "Start", "value": "utm_"}}}
 				]
 			}
@@ -153,34 +161,6 @@
 				"RemoveQuery"
 			]}
 		},
-		{
-			"condition": {"All": [
-				{"UnqualifiedDomain": "tumblr.com"},
-				{"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}
-			]},
-			"mapper": "RemoveQuery"
-		},
-	  {
-	    "condition": {"All": [
-				{"FlagIsSet": "tumblr-strip-reblogs"},
-				{"UnqualifiedDomain": "tumblr.com"},
-				{"PartContains": {"part": "Path", "where": {"After": 1}, "value": "/"}},
-				{"CommandExists": {"program": "gallery-dl"}},
-				{"CommandExists": {"program": "jq"}}
-			]},
-	    "mapper": {
-	      "ReplaceWithCommandOutput": {
-	        "program": "gallery-dl",
-	        "args": ["--dump-json", "{}"],
-	        "output_handling": {
-	          "PipeStdoutTo": {
-	            "program": "jq",
-	            "args": ["-r", ".[0][1][\"reblogged_root_url\"]"]
-	          }
-	        }
-	      }
-	    }
-	  },
 
 
 
@@ -223,7 +203,8 @@
 				]},
 				"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 				"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
-				"washingtonpost.com": {"RemoveQueryParams": ["itid"]}
+				"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
+				"tumblr.com"        : "RemoveQuery"
 			}
 		},
 
@@ -351,15 +332,9 @@
 
 
 		{
-			"condition": {"Any": [
-				{"All": [
-					{"UnqualifiedDomain": "reddit.com"},
-					{"Not": {"PathIs": "search"}}
-				]},
-				{"All": [
-					{"UnqualifiedDomain": "tumblr.com"},
-					{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}}
-				]}
+			"condition": {"All": [
+				{"UnqualifiedDomain": "reddit.com"},
+				{"Not": {"PathIs": "search"}}
 			]},
 			"mapper": "RemoveQuery"
 		},
@@ -383,14 +358,6 @@
 			]},
 			"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
 		},
-		{
-			"condition": {"UnqualifiedAnyTld": "amazon"},
-			"mapper": {"RemoveQueryParams": ["ref"]}
-		},
-		{
-			"condition": {"UnqualifiedAnyTld": "ebay"},
-			"mapper": {"RemoveQueryParams": ["_trkparms", "_trksid"]}
-		},
 
 
 
@@ -400,10 +367,6 @@
 				{"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "where": "Start"}}
 			]},
 			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
-		},
-		{
-			"condition": {"UnqualifiedDomain": "foxnews.com"},
-			"mapper": {"RemoveQueryParams": ["cmpid"]}
 		},
 
 
@@ -432,7 +395,7 @@
 		{
 			"condition": {"All": [
 				{"Not": {"VarIs": {"name": "tor2web", "value": null}}},
-				{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
+				{"PartContains": {"part": "Domain", "where": "End", "value": ".onion"}}
 			]},
 			"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web"}}}
 		}

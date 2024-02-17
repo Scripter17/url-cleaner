@@ -147,9 +147,9 @@ impl StringLocation {
     /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`super::StringError::InvalidSlice`].
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringError> {
         Ok(match self {
-            Self::Anywhere             => haystack.contains   (needle),
             Self::Start                => haystack.starts_with(needle),
             Self::End                  => haystack.ends_with  (needle),
+            Self::Anywhere             => haystack.contains   (needle),
 
             Self::RangeIs {start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringError::InvalidSlice)?  ).ok_or(StringError::InvalidSlice)?==needle,
             Self::StartsAt(start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringError::InvalidIndex)?..).ok_or(StringError::InvalidSlice)?.starts_with(needle),

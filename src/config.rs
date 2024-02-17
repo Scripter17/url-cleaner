@@ -97,10 +97,14 @@ impl Params {
             .default_headers(self.default_http_headers.clone())
             .build()
     }
+}
 
+impl Params {
+    /// Overwrites part of `self` with `from`.
     pub fn merge(&mut self, from: Self) {
         self.vars.extend(from.vars);
         self.flags.extend(from.flags);
+        #[cfg(all(feature = "http", not(target_family = "wasm")))]
         self.default_http_headers.extend(from.default_http_headers);
     }
 }

@@ -54,7 +54,7 @@ Tips for people who don't know Rust's syntax:
 Because most people don't use URL Cleaner, using URL Cleaner can let websites correlate information similar to URL tracking parameters.  
 If you're the only person without a tracking parameter in links, it's fairly easy to distinguish you from everyone else.
 
-As with Tor, safety comes in numbers.
+As with Tor, protests, and, really, everyting, safety comes in numbers.
 
 ## MSRV
 

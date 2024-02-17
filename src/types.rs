@@ -1,5 +1,6 @@
 use std::io::Error as IoError;
 use std::ops::Bound;
+use std::string::FromUtf8Error;
 
 use url::ParseError;
 use thiserror::Error;
@@ -52,7 +53,9 @@ pub enum StringError {
     PrefixNotFound,
     /// The provided string did not end with the requested prefix.
     #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
-    SuffixNotFound
+    SuffixNotFound,
+    #[error(transparent)]
+    FromUtf8Error(#[from] FromUtf8Error)
 }
 
 /// Loops negative `index`es around similar to Python.

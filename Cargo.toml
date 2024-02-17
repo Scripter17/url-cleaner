@@ -26,19 +26,28 @@ glob = { version = "0.3.1", optional = true }
 psl = "2.1.14"
 form_urlencoded = "1.2.1"
 regex-syntax = "0.8.2"
+urlencoding = "2.1.3"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["http", "commands", "cache-redirects", "stdin", "default-config", "minify-included-strings", "regex", "glob"]
+# Enables HTTP stuff. DOES NOT WORK ON WASM.
 http = ["dep:reqwest"]
+# Enables [`url_cleaner::glue::CommandWrapper`].
 commands = []
+# Write the result of [`url_cleaner::rules::mappers::Mapper::ExpandShortLink`] to redirect-cache.txt.
 cache-redirects = []
+# Allow reading URLs from STDIN.
 stdin = ["dep:atty"]
+# Include default-config.json in the binary.
 default-config = []
+# Replace all whitepace in the default config with just one space.
 minify-included-strings = ["dep:const-str"]
+# Enables [`url_cleaner::glue::RegexWrapper`].
 regex = ["dep:regex"]
+# Enables [`url_cleaner::glue::GlobWrapper`].
 glob = ["dep:glob"]
 
 # https://stackoverflow.com/a/54842093/10720231

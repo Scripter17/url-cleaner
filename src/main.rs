@@ -30,6 +30,7 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
     fn try_from(args: Args) -> Result<Self, Self::Error> {
         let mut config=config::Config::get_default_or_load(args.config.as_deref())?.into_owned();
         config.params.merge(
+            #[allow(clippy::needless_update)]
             config::Params {
                 vars: args.var
                     .into_iter()

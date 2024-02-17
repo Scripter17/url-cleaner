@@ -142,7 +142,7 @@ impl Rule {
                 }
                 Ok(())
             },
-            Self::HostMap(map) => Ok(map.get(url.host_str().ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url, params)?)
+            Self::HostMap(map) => Ok(map.get(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x)).ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url, params)?)
         }
     }
 }

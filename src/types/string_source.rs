@@ -5,8 +5,9 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 use url::Url;
 
-use super::UrlPart;
+use super::{UrlPart, StringModification, StringError};
 use crate::config::Params;
+use crate::glue::box_string_or_struct;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each variant.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -68,15 +69,22 @@ pub enum StringSource {
         /// The name of the flag to check.
         flag: String,
         /// If the flag is set, use this.
-        then: Box<StringSource>,
+        then: Box<Self>,
         /// If the flag is not set, use this.
-        r#else: Box<StringSource>
-    }
+        r#else: Box<Self>
+    },
+    Modified {
+        #[serde(deserialize_with = "box_string_or_struct")]
+        source: Box<Self>,
+        modification: StringModification
+    },
+    Debug(Box<Self>)
 }
 
 impl FromStr for StringSource {
     type Err=Infallible;
 
+    /// Simply encase the provided string in a [`StringSource::String`] since it's the most common variant.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::String(s.to_string()))
     }
@@ -84,15 +92,32 @@ impl FromStr for StringSource {
 
 impl StringSource {
     /// Gets the string from the source.
-    pub fn get_string<'a>(&'a self, url: &'a Url, params: &'a Params, none_to_empty_string: bool) -> Option<Cow<'a, str>> {
-        let ret = match self {
+    /// # Errors
+    /// If `self` is [`Self::Modified`] and the call to [`StringModification::apply`] errors, that error is returned.
+    pub fn get_string<'a>(&'a self, url: &'a Url, params: &'a Params, none_to_empty_string: bool) -> Result<Option<Cow<'a, str>>, StringError> {
+        let ret = Ok(match self {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
             Self::Part(x) => x.get(url, none_to_empty_string),
             Self::Var(x) => params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.get_string(url, params, none_to_empty_string)} else {r#else.get_string(url, params, none_to_empty_string)}
-        };
+            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.get_string(url, params, none_to_empty_string)?} else {r#else.get_string(url, params, none_to_empty_string)?},
+            Self::Modified {source, modification} => {
+                let x=source.as_ref().get_string(url, params, none_to_empty_string)?.map(Cow::into_owned);
+                if let Some(mut x) = x {
+                    modification.apply(&mut x, params)?;
+                    Some(Cow::Owned(x))
+                } else {
+                    x.map(Cow::Owned)
+                }
+            },
+            Self::Debug(source) => {
+                let ret=source.get_string(url, params, none_to_empty_string);
+                eprintln!("=== Debug StringSource ===\nSource: {source:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");
+                ret?
+            }
+
+        });
         if none_to_empty_string {
-            ret.or(Some(Cow::Borrowed("")))
+            ret.map(|x| x.or(Some(Cow::Borrowed(""))))
         } else {
             ret
         }

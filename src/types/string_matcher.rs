@@ -2,7 +2,11 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
 use super::{StringLocation, StringError};
-use crate::glue::{RegexWrapper, GlobWrapper, string_or_struct};
+#[cfg(feature = "regex")]
+use crate::glue::RegexWrapper;
+#[cfg(feature = "glob")]
+use crate::glue::GlobWrapper;
+use crate::glue::string_or_struct;
 
 /// A general API for matching strings with a variety of methods.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -34,7 +38,11 @@ pub enum StringMatcher {
     /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).matches("aabcc").is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "glob")]
-    Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper)
+    Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
+    All(Vec<Self>),
+    Any(Vec<Self>),
+    Not(Box<Self>),
+
 }
 
 /// Enum containing all possible errors [`StringMatcher::matches`] can return.
@@ -48,13 +56,30 @@ pub enum MatcherError {
 impl StringMatcher {
     /// # Errors
     /// If `self` is [`Self::StringLocation`] and the call to [`StringLocation::satisfied_by`] errors, returns that error.
-    pub fn matches(&self, haystack: &str) -> Result<bool, MatcherError> {
+    pub fn satisfied_by(&self, haystack: &str) -> Result<bool, MatcherError> {
         Ok(match self {
             Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,
             #[cfg(feature = "regex")]
             Self::Regex(regex) => regex.is_match(haystack),
             #[cfg(feature = "glob")]
-            Self::Glob(glob) => glob.matches(haystack)
+            Self::Glob(glob) => glob.matches(haystack),
+            Self::All(matchers) => {
+                for matcher in matchers {
+                    if !matcher.satisfied_by(haystack)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            },
+            Self::Any(matchers) => {
+                for matcher in matchers {
+                    if matcher.satisfied_by(haystack)? {
+                        return Ok(true);
+                    }
+                }
+                false
+            },
+            Self::Not(matcher) => !matcher.satisfied_by(haystack)?
         })
     }
 }
