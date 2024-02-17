@@ -14,7 +14,7 @@ pub mod mappers;
 use crate::config;
 
 /// The core unit describing when and how URLs are modified.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum Rule {
     /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
@@ -149,7 +149,7 @@ impl Rule {
 
 /// A thin wrapper around a vector of rules.
 /// Exists mainly for convenience.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Rules(pub Vec<Rule>);
 
 impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}

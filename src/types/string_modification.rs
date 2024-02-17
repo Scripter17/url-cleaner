@@ -1,16 +1,39 @@
 use serde::{Serialize, Deserialize};
 use urlencoding;
+use thiserror::Error;
 
 use super::{StringError, neg_index, neg_range};
 #[cfg(feature = "regex")]
 use crate::glue::RegexWrapper;
+#[cfg(feature = "commands")]
+use crate::glue::{CommandWrapper, CommandError};
 use crate::glue::string_or_struct;
 use crate::config::Params;
 
 /// A wrapper around [`str`]'s various substring modification functions.
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone,Serialize, Deserialize, PartialEq)]
 pub enum StringModification {
+    None,
+    Error,
+    Debug(Box<Self>),
+    IgnoreError(Box<Self>),
+    /// # Errors
+    /// If `r#else` errors, that error is returned.
+    TryElse {
+        r#try: Box<Self>,
+        r#else: Box<Self>
+    },
+    /// # Errors
+    /// If any of the contained [`Self`]s error, returns that error.
+    All(Vec<Self>),
+    /// # Errors
+    /// If any of the contained [`Self`]s error, returns that error.
+    AllNoRevert(Vec<Self>),
+    AllIgnoreError(Vec<Self>),
+    /// # Errors
+    /// If the last [`Self`] errors, returns that error.
+    FirstNotError(Vec<Self>),
     /// Replaces the entire target string to the specified string.
     /// # Examples
     /// ```
@@ -326,19 +349,41 @@ pub enum StringModification {
         r#else: Box<Self>
     },
     URLEncode,
+    /// # Errors
+    /// If the call to [`urlencoding::decode`] errors, returns that error.
     URLDecode,
-    All(Vec<Self>),
-    AllNoRevert(Vec<Self>),
-    AllIgnoreError(Vec<Self>),
-    FirstNotError(Vec<Self>)
+    /// Runs the contained command with the provided string as the STDIN.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url_cleaner::config::Params;
+    /// # use std::str::FromStr;
+    /// let mut x = "abc\n".to_string();
+    /// StringModification::CommandOutput(CommandWrapper::from_str("cat").unwrap()).apply(&mut x, &Params::default());
+    /// assert_eq!(&x, "abc\n");
+    /// ````
+    #[cfg(feature = "commands")]
+    CommandOutput(CommandWrapper)
+}
+
+#[derive(Debug, Error)]
+pub enum StringModificationError {
+    #[error(transparent)]
+    StringError(#[from] StringError),
+    #[error(transparent)]
+    CommandError(#[from] CommandError),
+    #[error("StringModification::Error was used.")]
+    ExplicitError
 }
 
 impl StringModification {
     /// Apply the modification in-place using the provided [`Params`].
     /// # Errors
     /// See the docs for each [`Self`] variant for details on which operations error and when.
-    pub fn apply(&self, to: &mut String, params: &Params) -> Result<(), StringError> {
+    pub fn apply(&self, to: &mut String, params: &Params) -> Result<(), StringModificationError> {
         match self {
+            Self::None                               => {},
             Self::Set(value)                         => *to=value.clone(),
             Self::Append(value)                      => to.push_str(value),
             Self::Prepend(value)                     => {let mut ret=value.to_string(); ret.push_str(to); *to=ret;},
@@ -384,7 +429,7 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
             Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?,
             Self::URLEncode => *to=urlencoding::encode(to).into_owned(),
-            Self::URLDecode => *to=urlencoding::decode(to)?.into_owned(),
+            Self::URLDecode => *to=urlencoding::decode(to).map_err(|e| StringError::FromUtf8Error(e))?.into_owned(),
             Self::All(modifications) => {
                 let mut temp_to=to.clone();
                 for modification in modifications {
@@ -410,7 +455,16 @@ impl StringModification {
                 }
                 error?
             },
-
+            Self::IgnoreError(modification) => {let _=modification.apply(to, params);},
+            Self::TryElse{r#try, r#else} => r#try.apply(to, params).or_else(|_| r#else.apply(to, params))?,
+            Self::Debug(modification) => {
+                let to_before_mapper=to.clone();
+                let modification_result=modification.apply(to, params);
+                eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\nParams: {params:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
+                modification_result?;
+            },
+            Self::CommandOutput(command) => *to=command.output(None, Some(to.as_bytes()))?,
+            Self::Error => Err(StringModificationError::ExplicitError)?
         };
         Ok(())
     }

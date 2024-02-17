@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use thiserror::Error;
 
 use super::{StringError, neg_index, neg_range};
 
@@ -6,6 +7,19 @@ use super::{StringError, neg_index, neg_range};
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
+    Always,
+    Never,
+    Error,
+    Debug(Box<Self>),
+    TreatErrorAsPass(Box<Self>),
+    TreatErrorAsFail(Box<Self>),
+    TryElse {
+        r#try: Box<Self>,
+        r#else: Box<Self>
+    },
+    All(Vec<Self>),
+    Any(Vec<Self>),
+    Not(Box<Self>),
     /// Checks if an instance of the needle exists anywhere in the haystack.
     /// # Examples
     /// ```
@@ -123,7 +137,7 @@ pub enum StringLocation {
     AnySegment {
         /// The string to split by.
         split: String,
-        /// The [`StringLocation`] of each segment to look for `needle` in.
+        /// The location of each segment to look for `needle` in.
         #[serde(default = "box_equals")]
         location: Box<StringLocation>
     },
@@ -133,7 +147,7 @@ pub enum StringLocation {
         split: String,
         /// The index of the segment to search in.
         n: isize,
-        /// The [`StringLocation`] of the `n`th segment to look for `needle` in.
+        /// The location of the `n`th segment to look for `needle` in.
         #[serde(default = "box_equals")]
         location: Box<StringLocation>
     }
@@ -141,11 +155,19 @@ pub enum StringLocation {
 
 fn box_equals() -> Box<StringLocation> {Box::new(StringLocation::Equals)}
 
+#[derive(Debug, Error)]
+pub enum StringLocationError {
+    #[error(transparent)]
+    StringError(#[from] StringError),
+    #[error("StringLocation::Error was used.")]
+    ExplicitError
+}
+
 impl StringLocation {
     /// Checks if `needle` exists in `haystack` according to `self`'s rules.
     /// # Errors
     /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`super::StringError::InvalidSlice`].
-    pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringError> {
+    pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringLocationError> {
         Ok(match self {
             Self::Start                => haystack.starts_with(needle),
             Self::End                  => haystack.ends_with  (needle),
@@ -168,7 +190,36 @@ impl StringLocation {
                 }
                 return Ok(false)
             },
-            Self::NthSegment {split, n, location} => location.satisfied_by(super::neg_nth(haystack.split(split), *n).ok_or(StringError::SegmentNotFound)?, needle)?
+            Self::NthSegment {split, n, location} => location.satisfied_by(super::neg_nth(haystack.split(split), *n).ok_or(StringError::SegmentNotFound)?, needle)?,
+
+            Self::All(locations) => {
+                for location in locations {
+                    if !location.satisfied_by(haystack, needle)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            },
+            Self::Any(locations) => {
+                for location in locations {
+                    if location.satisfied_by(haystack, needle)? {
+                        return Ok(true);
+                    }
+                }
+                false
+            },
+            Self::Not(location) => !location.satisfied_by(haystack, needle)?,
+            Self::Always => true,
+            Self::Never => false,
+            Self::TreatErrorAsPass(location) => location.satisfied_by(haystack, needle).unwrap_or(true),
+            Self::TreatErrorAsFail(location) => location.satisfied_by(haystack, needle).unwrap_or(false),
+            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack, needle).or_else(|_| r#else.satisfied_by(haystack, needle))?,
+            Self::Debug(location) => {
+                let is_satisfied=location.satisfied_by(haystack, needle);
+                eprintln!("=== StringLocation::Debug ===\nLocation: {location:?}\nHaystack: {haystack:?}\nNeedle: {needle:?}\nSatisfied?: {is_satisfied:?}");
+                is_satisfied?
+            },
+            Self::Error => Err(StringLocationError::ExplicitError)?
         })
     }
 }

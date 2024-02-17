@@ -168,15 +168,15 @@ impl OutputHandler {
     /// If the command returns an error, that error is returned.
     /// If the command's STDOUT is not valid UTF-8 when using [`Self::ReturnStdout`] or [`Self::ApplyStdoutUrlTo`], returns the error [`CommandError::Utf8Error`].
     /// If the command's STDERR is not valid UTF-8 when using [`Self::ReturnStderr`] or [`Self::ApplyStderrUrlTo`], returns the error [`CommandError::Utf8Error`].
-    pub fn handle(&self, url: &Url, output: CommandOutput) -> Result<String, CommandError> {
+    pub fn handle(&self, url: Option<&Url>, output: CommandOutput) -> Result<String, CommandError> {
         match self {
             Self::ReturnStdout                     => Ok(from_utf8(&output.stdout)?.to_string()),
             Self::ReturnStderr                     => Ok(from_utf8(&output.stderr)?.to_string()),
             Self::Error                            => Err(CommandError::ExplicitError),
             Self::PipeStdoutTo(command)            => command.output(url, Some(&output.stdout)),
             Self::PipeStderrTo(command)            => command.output(url, Some(&output.stderr)),
-            Self::ApplyStdoutUrlTo(command)        => command.output(&Url::parse(from_utf8(&output.stdout)?)?, None),
-            Self::ApplyStderrUrlTo(command)        => command.output(&Url::parse(from_utf8(&output.stderr)?)?, None),
+            Self::ApplyStdoutUrlTo(command)        => command.output(Some(&Url::parse(from_utf8(&output.stdout)?)?), None),
+            Self::ApplyStderrUrlTo(command)        => command.output(Some(&Url::parse(from_utf8(&output.stderr)?)?), None),
             Self::IfExitCode{expect, then, r#else} => if output.status.code().ok_or(CommandError::SignalTermination)?==*expect {then.handle(url, output)} else {r#else.handle(url, output)}
         }
     }
@@ -194,12 +194,17 @@ impl CommandWrapper {
     /// # Errors
     /// If the command returns no exit code, returns the error [`Err(CommandError::SignalTermination)`].
     pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
-        self.clone().apply_url(url).inner.status()?.code().ok_or(CommandError::SignalTermination)
+        self.clone().apply_url(Some(url)).inner.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
-    fn output(&self, url: &Url, stdin: Option<&[u8]>) -> Result<String, CommandError> {
-        match stdin {
-            Some(stdin) => {
+    /// # Errors
+    /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::Command::ChildStdin::write_all`], or [`std::process::Command::Child::wait_with_output`] returns an error, that error is returned.
+    /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
+    #[allow(clippy::missing_panics_doc)]
+    #[must_use]
+    pub fn output(&self, url: Option<&Url>, stdin: Option<&[u8]>) -> Result<String, CommandError> {
+        match (url, stdin) {
+            (url @ Some(_), Some(stdin)) => {
                 // https://stackoverflow.com/a/49597789/10720231
                 let mut cloned=self.clone().apply_url(url);
                 let mut child=cloned.inner
@@ -211,29 +216,46 @@ impl CommandWrapper {
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)
             },
-            None => self.output_handler.handle(url, self.clone().apply_url(url).inner.output()?) 
+            (url @ Some(_), None) => self.output_handler.handle(url, self.clone().apply_url(url).inner.output()?),
+            (None, Some(stdin)) => {
+                // https://stackoverflow.com/a/49597789/10720231
+                let mut cloned=self.clone();
+                let mut child=cloned.inner
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .spawn()?;
+                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics. If it ever does, so will I.
+                child_stdin.write_all(stdin)?;
+                self.output_handler.handle(url, child.wait_with_output()?)
+            },
+            (None, None) => self.output_handler.handle(url, self.clone().inner.output()?) 
         }
     }
 
     /// Runs the command, does the [`OutputHandler`] stuff, removes trailing newlines and carriage returns form the output, then extracts the URL.
     /// # Errors
-    /// If [`Command::output`] returns an error, that error is returned.
+    /// If the call to [`Self::output`] returns an error, that error is returned.
     /// If the output cannot be parsed as a URL (give or take trailign newlines and carriage returns), returns the error [`CommandError::ParseError`].
-    pub fn get_url(&self, url: &Url) -> Result<Url, CommandError> {
+    pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
         Ok(Url::parse(self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }
 
     /// A very messy function that puts the URL in the command arguments.
-    fn apply_url(self, url: &Url) -> Self {
-        // Why doesn't std::process::Command have a clear_args method?
-        // More broadly why does the Command API suck?
-        let mut ret=Command::new(self.inner.get_program());
-        ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(url.as_str().to_string().into())} else {Cow::Borrowed(arg)}));
-        if let Some(dir) = self.inner.get_current_dir() {
-            ret.current_dir(dir);
+    fn apply_url(self, url: Option<&Url>) -> Self {
+        if let Some(url) = url {
+            // Why doesn't std::process::Command have a clear_args method?
+            // More broadly why does the Command API suck?
+            let mut ret=Command::new(self.inner.get_program());
+            ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(url.as_str().to_string().into())} else {Cow::Borrowed(arg)}));
+            if let Some(dir) = self.inner.get_current_dir() {
+                ret.current_dir(dir);
+            }
+            ret.envs(self.inner.get_envs().filter_map(|(k, v)| v.map(|v| (k, v))));
+            Self {inner: ret, output_handler: self.output_handler.clone()}
+        } else {
+            self
         }
-        ret.envs(self.inner.get_envs().filter_map(|(k, v)| v.map(|v| (k, v))));
-        Self {inner: ret, output_handler: self.output_handler.clone()}
     }
 }
 

@@ -5,9 +5,10 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use super::{neg_nth, neg_index};
+use super::{StringModification, StringModificationError};
 use crate::config::Params;
 
-/// An enum that allows getting and setting various parts of a URL without a bajillion [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
+/// Getters and setters for various parts of a URL.
 /// In general (except for [`Self::DomainSegment`] and [`Self::PathSegment`]), setting a part to its own value is a no-op.
 /// __Some parts may behave in unusual ways. Please check the documentation of parts you use to make sure you understand them.__
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -630,7 +631,7 @@ impl UrlPart {
     /// If [`UrlPart::get`] returns an error, that error is returned.
     /// If the string modification returns an error, that error is returned.
     /// If [`UrlPart::set`] returns an error, that error is returned.
-    pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &super::StringModification, params: &Params) -> Result<(), PartModificationError> {
+    pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &StringModification, params: &Params) -> Result<(), PartModificationError> {
         let mut new_part=self.get(url, none_to_empty_string).ok_or(PartModificationError::PartIsNone)?.into_owned();
         how.apply(&mut new_part, params)?;
         self.set(url, Some(&new_part))?;
@@ -639,7 +640,7 @@ impl UrlPart {
 }
 
 /// An enum of all possible errors [`UrlPart::set`] can return.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum PartError {
     /// Attempted replacement would not produce a valid URL.
     #[error(transparent)]
@@ -693,7 +694,9 @@ pub enum PartModificationError {
     StringError(#[from] super::StringError),
     /// The error returned when the call to [`UrlPart::set`] fails.
     #[error(transparent)]
-    PartError(#[from] PartError)
+    PartError(#[from] PartError),
+    #[error(transparent)]
+    StringModificationError(#[from] StringModificationError)
 }
 
 #[cfg(test)]

@@ -19,7 +19,12 @@ use form_urlencoded;
 use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
-use crate::types::{self, StringSource, StringMatcher, MatcherError};
+use crate::types::{
+    self,
+    StringSource, StringSourceError,
+    StringMatcher, StringMatcherError,
+    StringModification, StringModificationError
+};
 
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -53,16 +58,16 @@ pub enum Mapper {
     /// # use url_cleaner::rules::mappers::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::None ), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryCatch {r#try: Box::new(Mapper::Error), catch: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
     /// ```
-    TryCatch {
+    TryElse {
         /// The mapper to try first.
         r#try: Box<Self>,
         /// If the try mapper fails, instead return the result of this one.
-        catch: Box<Self>
+        r#else: Box<Self>
     },
 
     // Multiple.
@@ -106,7 +111,7 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
-    /// Effectively a [`Mapper::TryCatch`] chain but less ugly.
+    /// Effectively a [`Mapper::TryElse`] chain but less ugly.
     /// Useful for when a mapper can be implemented in different ways depending the features URL Cleaner was compiled with.
     /// # Errors
     /// If every contained mapper errors, returns the last error.
@@ -115,7 +120,7 @@ pub enum Mapper {
     /// # use url_cleaner::rules::mappers::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
-    /// let mut url=Url:satisfied_by"https://www.example.com").unwrap();
+    /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
     /// assert_eq!(url.domain(), Some("1.com"));
     /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url, &Params::default()).is_ok());
@@ -223,7 +228,7 @@ pub enum Mapper {
     },
     /// Modifies the specified part of the URL.
     /// # Errors
-    /// If `how` is `types::StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
+    /// If `how` is `StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
     /// If the modification fails, returns the error [`MapperError::PartError`].
     ModifyPart {
         /// The name of the part to modify.
@@ -233,7 +238,7 @@ pub enum Mapper {
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// How exactly to modify the part.
-        how: types::StringModification
+        how: StringModification
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
@@ -375,7 +380,11 @@ pub enum MapperError {
     StringSourceIsNone,
     /// The call to [`StringMatcher::matches`] returned an error.
     #[error(transparent)]
-    MatcherError(#[from] MatcherError)
+    StringMatcherError(#[from] StringMatcherError),
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError),
+    #[error(transparent)]
+    StringModificationError(#[from] StringModificationError)
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -497,7 +506,7 @@ impl Mapper {
             // Error handling
 
             Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
-            Self::TryCatch{r#try, catch} => r#try.apply(url, params).or_else(|_| catch.apply(url, params))?,
+            Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|_| r#else.apply(url, params))?,
 
             // Miscelanious
 
@@ -531,7 +540,7 @@ impl Mapper {
                 Err(MapperError::StringSourceIsNone)?
             },
             #[cfg(feature = "commands")]
-            Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(url)?;},
+            Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(Some(url))?;},
 
             // Testing
 

@@ -36,8 +36,7 @@ pub enum CleaningError {
     IoError(#[from] IoError)
 }
 
-/// The enum of all possible errors that can happen when using `StringModification`.
-#[derive(Debug, Clone, Error, PartialEq, Eq)]
+#[derive(Debug, Error)]
 pub enum StringError {
     /// The requested slice was either not on a UTF-8 boundary or out of bounds.
     #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
@@ -55,7 +54,7 @@ pub enum StringError {
     #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
     SuffixNotFound,
     #[error(transparent)]
-    FromUtf8Error(#[from] FromUtf8Error)
+    FromUtf8Error(#[from] FromUtf8Error),
 }
 
 /// Loops negative `index`es around similar to Python.

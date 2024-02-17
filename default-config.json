@@ -8,9 +8,9 @@
 							{"MaybeWWWDomain": "pixiv.net"},
 							{"PathIs": "/jump.php"}
 						]},
-						"mapper": {"TryCatch": {
+						"mapper": {"TryElse": {
 							"try": {"GetUrlFromQueryParam": "url"},
-							"catch": {
+							"else": {
 								"SetPart": {
 									"part": "Whole",
 									"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}

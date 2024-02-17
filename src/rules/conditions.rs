@@ -9,7 +9,12 @@ use url::Url;
 use psl;
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
-use crate::types::{UrlPart, PartError, StringLocation, StringSource, StringMatcher, MatcherError};
+use crate::types::{
+    UrlPart, PartError,
+    StringLocation, StringLocationError,
+    StringSource, StringSourceError,
+    StringMatcher, StringMatcherError
+};
 use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
@@ -71,21 +76,21 @@ pub enum Condition {
     /// # use url_cleaner::rules::conditions::Condition;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Always), catch: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Always), catch: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Always), catch: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Never ), catch: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Never ), catch: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Never ), catch: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Error ), catch: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Error ), catch: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryCatch{r#try: Box::new(Condition::Error ), catch: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
-    TryCatch {
+    TryElse {
         /// The condition to try first.
         r#try: Box<Self>,
         /// If the try condition fails, instead return the result of this one.
-        catch: Box<Self>
+        r#else: Box<Self>
     },
 
     // Boolean.
@@ -460,7 +465,11 @@ pub enum ConditionError {
     StringSourceIsNone,
     /// The call to [`StringMatcher::matches`] returned an error.
     #[error(transparent)]
-    MatcherError(#[from] MatcherError)
+    StringMatcherError(#[from] StringMatcherError),
+    #[error(transparent)]
+    StringLocationError(#[from] StringLocationError),
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError)
 }
 
 impl Condition {
@@ -556,7 +565,7 @@ impl Condition {
 
             Self::TreatErrorAsPass(condition) => condition.satisfied_by(url, params).unwrap_or(true),
             Self::TreatErrorAsFail(condition) => condition.satisfied_by(url, params).unwrap_or(false),
-            Self::TryCatch{r#try, catch}  => r#try.satisfied_by(url, params).or_else(|_| catch.satisfied_by(url, params))?,
+            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
 
             // Debug
 
