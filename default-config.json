@@ -34,7 +34,15 @@
 							{"UnqualifiedDomain": "deviantart.com"},
 							{"PathIs": "/users/outgoing"}
 						]},
-						"mapper": {"GetUrlFromQueryParam": "url"}
+						"mapper": {"TryElse": {
+							"try": {"GetUrlFromQueryParam": "url"},
+							"else": {
+								"SetPart": {
+									"part": "Whole",
+									"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
+								}
+							}
+						}}
 					},
 					{
 						"condition": {"QualifiedDomain": "t.umblr.com"},
