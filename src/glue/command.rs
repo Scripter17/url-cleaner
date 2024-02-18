@@ -202,7 +202,6 @@ impl CommandWrapper {
     /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc)]
-    #[must_use]
     pub fn output(&self, url: Option<&Url>, stdin: Option<&[u8]>) -> Result<String, CommandError> {
         match (url, stdin) {
             (url @ Some(_), Some(stdin)) => {

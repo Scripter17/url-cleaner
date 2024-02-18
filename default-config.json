@@ -50,7 +50,7 @@
 					},
 					{
 						"condition": {"Any": [
-							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it"]},
+							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it", "pin.it"]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
@@ -92,13 +92,6 @@
 					}
 				]
 			}
-		},
-
-
-
-		{
-			"condition": {"PartContains": {"part": "Domain", "where": "End", "value": ".tumblr.com.tumblr.com"}},
-			"mapper": {"CopyPart": {"from": {"DomainSegment": 0}, "to": "Subdomain"}}
 		},
 
 
@@ -152,6 +145,9 @@
 				]
 			}
 		},
+
+
+
 		{
 			"condition": {"PartIs": {"part": "Scheme", "value": "http"}},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
@@ -159,6 +155,10 @@
 
 
 
+		{
+			"condition": {"PartContains": {"part": "Domain", "where": "End", "value": ".tumblr.com.tumblr.com"}},
+			"mapper": {"CopyPart": {"from": {"DomainSegment": 0}, "to": "Subdomain"}}
+		},
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "tumblr.com"},
@@ -406,6 +406,16 @@
 				{"PartContains": {"part": "Domain", "where": "End", "value": ".onion"}}
 			]},
 			"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web"}}}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"UnqualifiedAnyTld": "pinterest"},
+				{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}}
+			]},
+			"mapper": "RemoveQuery"
 		}
 	]
 }
