@@ -54,8 +54,9 @@ const fn get_true() -> bool {true}
 impl FromStr for RegexParts {
     type Err=Box<RegexSyntaxError>;
 
-    fn from_str(str: &str) -> Result<Self, Self::Err> {
-        Self::new(str)
+    /// Simply treats the string as a regex and defaults the config.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::new(s)
     }
 }
 

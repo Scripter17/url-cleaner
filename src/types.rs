@@ -35,7 +35,7 @@ pub enum CleaningError {
     IoError(#[from] IoError)
 }
 
-/// Miscelanious errors that can happen when handling strings.
+/// Miscellaneous errors that can happen when handling strings.
 #[derive(Debug, Error)]
 pub enum StringError {
     /// The requested slice was either not on a UTF-8 boundary or out of bounds.

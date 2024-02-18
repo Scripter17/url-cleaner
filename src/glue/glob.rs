@@ -53,9 +53,10 @@ impl GlobWrapper {
 impl FromStr for GlobWrapper {
     type Err=PatternError;
 
-    fn from_str(str: &str) -> Result<Self, Self::Err> {
+    /// Simply treats the string as a glob and defaults the config.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            pattern: Pattern::from_str(str)?,
+            pattern: Pattern::from_str(s)?,
             options: MatchOptions::default()
         })
     }

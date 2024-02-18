@@ -4,7 +4,7 @@ mod regex;
 mod glob;
 #[cfg(feature = "commands")]
 mod command;
-/// Serializing and deserialzing [`reqwest::header::HeaderMap`].
+/// Serializing and deserializing [`reqwest::header::HeaderMap`].
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 pub mod headermap;
 

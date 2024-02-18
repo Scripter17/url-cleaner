@@ -195,7 +195,7 @@ pub enum Mapper {
     /// Removes the path segments with an index in the specified list.
     /// See [`Url::path_segments`] for details.
     /// # Errors
-    /// If the URL cannot be a base, returms the error [`MapperError::UrlCannotBeABase`].
+    /// If the URL cannot be a base, returns the error [`MapperError::UrlCannotBeABase`].
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
@@ -274,7 +274,7 @@ pub enum Mapper {
         replace: StringSource
     },
 
-    // Miscelanious.
+    // Miscellaneous.
 
     /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
     /// Useful for link shorteners like `bit.ly` and `t.co`.
@@ -509,7 +509,7 @@ impl Mapper {
             Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
             Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|_| r#else.apply(url, params))?,
 
-            // Miscelanious
+            // Miscellaneous
 
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink{headers} => {

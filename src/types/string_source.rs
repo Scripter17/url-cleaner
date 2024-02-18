@@ -23,7 +23,7 @@ pub enum StringSource {
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
-    /// Just a string. The most common varaint.
+    /// Just a string. The most common variant.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;

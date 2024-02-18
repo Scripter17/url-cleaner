@@ -42,7 +42,7 @@ struct CommandParts {
 impl FromStr for CommandParts {
     type Err = Infallible;
 
-    /// Somply treats the string as the command to run.
+    /// Simply treats the string as the command to run.
     fn from_str(x: &str) -> Result<Self, Self::Err> {
         Ok(Self {
             program: x.to_string(),
@@ -86,7 +86,7 @@ impl From<CommandParts> for CommandWrapper {
 impl FromStr for CommandWrapper {
     type Err = Infallible;
 
-    /// Somply treats the string as the command to run.
+    /// Simply treats the string as the path to the executable to run and defaults the output handler.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(CommandParts::from_str(s)?.into())
     }
@@ -236,7 +236,7 @@ impl CommandWrapper {
     /// Runs the command, does the [`OutputHandler`] stuff, removes trailing newlines and carriage returns form the output, then extracts the URL.
     /// # Errors
     /// If the call to [`Self::output`] returns an error, that error is returned.
-    /// If the output cannot be parsed as a URL (give or take trailign newlines and carriage returns), returns the error [`CommandError::ParseError`].
+    /// If the output cannot be parsed as a URL (give or take trailing newlines and carriage returns), returns the error [`CommandError::ParseError`].
     pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
         Ok(Url::parse(self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }

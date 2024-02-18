@@ -497,7 +497,7 @@ impl UrlPart {
             Self::PathSegment(n)   => neg_nth(url.path_segments()?, *n).map(Cow::Borrowed),
             Self::QueryParam(name) => url.query_pairs().find(|(name2, _)| name==name2).map(|(_, v)| v),
 
-            // Miscelanious.
+            // Miscellaneous.
 
             Self::Query                  => url.query().map(Cow::Borrowed),
             Self::Whole                  => Some(Cow::Borrowed(url.as_str())),
@@ -678,8 +678,8 @@ pub enum PartError {
     /// The URL cannot have a path as it is not cannot-be-a-base.
     #[error("The URL cannot have a path as it is not cannot-be-a-base.")]
     UrlCannotHaveAPath,
-    /// Each domain segment must be between 1 and 63 bytes. The url crate erroniously allows empty segments.
-    #[error("Each domain segment must be between 1 and 63 bytes. The url crate erroniously allows empty segments.")]
+    /// Each domain segment must be between 1 and 63 bytes. The [`url`] crate erroneously allows empty segments.
+    #[error("Each domain segment must be between 1 and 63 bytes. The url crate erroneously allows empty segments.")]
     DomainSegmentCannotBeEmpty
 }
 

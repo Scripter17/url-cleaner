@@ -395,7 +395,7 @@ pub enum Condition {
         expected: i32
     },
 
-    // Miscelanious.
+    // Miscellaneous.
 
     /// Passes if the specified rule variable is set to the specified value.
     /// # Examples
@@ -547,7 +547,7 @@ impl Condition {
             Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
             Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?)?,
 
-            // Miscelanious
+            // Miscellaneous
 
             Self::VarIs{name, value, none_to_empty_string} => match value.as_ref() {
                 Some(source) => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get_string(url, params, *none_to_empty_string)?.as_deref(),

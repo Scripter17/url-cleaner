@@ -253,7 +253,7 @@ pub enum StringModification {
     },
     /// [`String::remove`].
     /// # Errors
-    /// If the specified index is out of bounds or not on a UTF-8 character boundary, returns the errorr [`StringError::InvalidIndex`].
+    /// If the specified index is out of bounds or not on a UTF-8 character boundary, returns the error [`StringError::InvalidIndex`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -265,7 +265,7 @@ pub enum StringModification {
     /// assert_eq!(&x, "acde");
     /// ```
     Remove(isize),
-    /// Discards everything outside the spcified range.
+    /// Discards everything outside the specified range.
     /// # Errors
     /// If either end of the specified range is out of bounds or not on a UTF-8 character boundary, returns the error [`StringError::InvalidSlice`].
     /// # Examples
@@ -374,7 +374,7 @@ pub enum StringModification {
     },
     /// Choose which string modification to apply based on of a flag is set.
     IfFlag {
-        /// THe flag to check the setness of.
+        /// The flag to check the setness of.
         flag: String,
         /// The string modification to apply if the flag is set.
         then: Box<Self>,
