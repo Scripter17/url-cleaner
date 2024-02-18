@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-use urlencoding;
 use thiserror::Error;
 
 use super::{StringError, neg_index, neg_range};
@@ -14,26 +13,54 @@ use crate::config::Params;
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq)]
 pub enum StringModification {
+    /// Does nothing.
     None,
-    Error,
-    Debug(Box<Self>),
-    IgnoreError(Box<Self>),
+    /// Always returns the error [`StringModificationError::ExplicitError`].
     /// # Errors
-    /// If `r#else` errors, that error is returned.
+    /// Always returns the error [`StringModificationError::ExplicitError`].
+    Error,
+    /// Prints debugging information about the contained [`Self`] and the details of its application to STDERR.
+    /// Intended primarily for debugging logic errors.
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    Debug(Box<Self>),
+    /// Ignores any error the contained [`Self`] may return.
+    IgnoreError(Box<Self>),
+    /// If `try` returns an error, `else` is applied.
+    /// If `try` does not return an error, `else` is not applied.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
     TryElse {
         r#try: Box<Self>,
         r#else: Box<Self>
     },
+    /// Applies the contained [`Self`]s in order.
     /// # Errors
-    /// If any of the contained [`Self`]s error, returns that error.
+    /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
+    /// # Examples
+    /// # Errors
+    /// If any of the contained [`Self`]s returns an error, returns that error.
     All(Vec<Self>),
+    /// Applies the contained [`Self`]s in order. If an error occurs, the URL remains changed by the previous contained [`Self`]s and the error is returned.
+    /// Technically the name is wrong as [`Self::All`] only actually applies the change after all the contained [`Self`] pass, but this is conceptually simpler.
     /// # Errors
-    /// If any of the contained [`Self`]s error, returns that error.
+    /// If one of the contained [`Self`]s returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
+    /// # Errors
+    /// If any of the contained [`Self`]s returns an error, returns that error.
     AllNoRevert(Vec<Self>),
+    /// If any of the contained [`Self`]s returns an error, the error is ignored and subsequent [`Self`]s are still applied.
+    /// This is equivalent to wrapping every contained [`Self`] in a [`Self::IgnoreError`].
     AllIgnoreError(Vec<Self>),
+    /// Effectively a [`Self::TryElse`] chain but less ugly.
+    /// # Errors
+    /// If every contained [`Self`] errors, returns the last error.
     /// # Errors
     /// If the last [`Self`] errors, returns that error.
     FirstNotError(Vec<Self>),
+
+
+
     /// Replaces the entire target string to the specified string.
     /// # Examples
     /// ```
@@ -367,6 +394,7 @@ pub enum StringModification {
     CommandOutput(CommandWrapper)
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringModificationError {
     #[error(transparent)]
@@ -429,7 +457,7 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
             Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?,
             Self::URLEncode => *to=urlencoding::encode(to).into_owned(),
-            Self::URLDecode => *to=urlencoding::decode(to).map_err(|e| StringError::FromUtf8Error(e))?.into_owned(),
+            Self::URLDecode => *to=urlencoding::decode(to).map_err(StringError::FromUtf8Error)?.into_owned(),
             Self::All(modifications) => {
                 let mut temp_to=to.clone();
                 for modification in modifications {

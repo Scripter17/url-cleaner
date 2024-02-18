@@ -12,15 +12,13 @@ use thiserror::Error;
 use url::{Url, ParseError};
 use std::str::Utf8Error;
 use std::collections::hash_set::HashSet;
-// Used internally by the `url` crate to handle query manipulation.
-// Imported here for faster allow/remove query parts mappers.
-use form_urlencoded;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
 use crate::types::{
     self,
+    UrlPart,
     StringSource, StringSourceError,
     StringMatcher, StringMatcherError,
     StringModification, StringModificationError
@@ -39,20 +37,21 @@ pub enum Mapper {
     /// # Errors
     /// Always returns the error [`MapperError::ExplicitError`].
     Error,
-    /// Prints debugging information about the contained mapper and its effect on the URL to STDERR.
+    /// Prints debugging information about the contained [`Self`] and the details of its application to STDERR.
     /// Intended primarily for debugging logic errors.
-    /// *Can* be used in production as in both bash and batch `x|y` only pipes `x`'s STDOUT, but it'll look ugly.
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained mapper returns an error, that error is returned after the debug info is printed.
+    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
 
     // Error handling.
 
-    /// Ignores any error the contained mapper may return.
+    /// Ignores any error the contained [`Self`] may return.
     IgnoreError(Box<Self>),
-    /// If the `try` mapper returns an error, the `else` mapper is used instead. If the `try` mapper does not error, `else` is not executed.
+    /// If `try` returns an error, `else` is applied.
+    /// If `try` does not return an error, `else` is not applied.
     /// # Errors
-    /// If the `else` mapper returns an error, that error is returned.
+    /// If `else` returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -64,17 +63,17 @@ pub enum Mapper {
     /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
     /// ```
     TryElse {
-        /// The mapper to try first.
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
-        /// If the try mapper fails, instead return the result of this one.
+        /// If `try` returns an error, return the result of this [`Self`].
         r#else: Box<Self>
     },
 
     // Multiple.
 
-    /// Applies the contained mappers in order.
+    /// Applies the contained [`Self`]s in order.
     /// # Errors
-    /// If one of the contained mappers returns an error, the URL is left unchanged and the error is returned.
+    /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -85,10 +84,10 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("www.example.com"));
     /// ```
     All(Vec<Self>),
-    /// Applies the contained mappers in order. If an error occurs that error is returned and the URL is left unchanged.
-    /// Technically the name is wrong as [`super::conditions::Condition::All`] only actually changes the URL after all the mappers pass, but this is conceptually simpler.
+    /// Applies the contained [`Self`]s in order. If an error occurs, the URL remains changed by the previous contained [`Self`]s and the error is returned.
+    /// Technically the name is wrong as [`Self::All`] only actually applies the change after all the contained [`Self`] pass, but this is conceptually simpler.
     /// # Errors
-    /// If one of the contained mappers returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
+    /// If one of the contained [`Self`]s returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -99,8 +98,8 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Self>),
-    /// If one of the contained mappers returns an error, that error is returned and subsequent mappers are still applied.
-    /// This is equivalent to wrapping every contained mapper in a [`Mapper::IgnoreError`].
+    /// If any of the contained [`Self`]s returns an error, the error is ignored and subsequent [`Self`]s are still applied.
+    /// This is equivalent to wrapping every contained [`Self`] in a [`Self::IgnoreError`].
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -111,10 +110,9 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
-    /// Effectively a [`Mapper::TryElse`] chain but less ugly.
-    /// Useful for when a mapper can be implemented in different ways depending the features URL Cleaner was compiled with.
+    /// Effectively a [`Self::TryElse`] chain but less ugly.
     /// # Errors
-    /// If every contained mapper errors, returns the last error.
+    /// If every contained [`Self`] errors, returns the last error.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::mappers::*;
@@ -137,9 +135,10 @@ pub enum Mapper {
     /// Removes the URL's entire query.
     /// Useful for websites that only use the query for tracking.
     RemoveQuery,
-    /// Removes all query parameters whose name exists in the specified [`HashMap`].
+    /// Removes all query parameters whose name exists in the specified [`std::collections::HashMap`].
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
-    /// # Examsatisfied_by// ```
+    /// # Examples
+    /// ```
     /// # use url_cleaner::rules::mappers::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
@@ -167,11 +166,11 @@ pub enum Mapper {
     AllowQueryParams(HashSet<String>),
     /// Removes all query parameters whose name matches the specified [`StringMatcher`].
     /// # Errors
-    /// If the call to [`StringMatcher::matches`] returns an error, that error is returned.
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only the query parameters whose name matches the specified [`StringMatcher`].
     /// # Errors
-    /// If the call to [`StringMatcher::matches`] returns an error, that error is returned.
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     AllowQueryParamsMatching(StringMatcher),
     /// Replace the current URL with the value of the specified query parameter.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
@@ -217,7 +216,7 @@ pub enum Mapper {
     /// If `to` is `None` and `part` cannot be `None` (see [`UrlPart`] for details), returns the error [`types::PartError::PartCannotBeNone`].
     SetPart {
         /// The name of the part to replace.
-        part: types::UrlPart,
+        part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
@@ -232,7 +231,7 @@ pub enum Mapper {
     /// If the modification fails, returns the error [`MapperError::PartError`].
     ModifyPart {
         /// The name of the part to modify.
-        part: types::UrlPart,
+        part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
@@ -245,13 +244,13 @@ pub enum Mapper {
     /// If the part specified by `from` is None, `none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`types::PartError::PartCannotBeNone`].
     CopyPart {
         /// The part to get the value from.
-        from: types::UrlPart,
+        from: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The part to set to `from`'s value.
-        to: types::UrlPart
+        to: UrlPart
     },   
     /// Applies a regular expression substitution to the specified URL part.
     /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
@@ -261,7 +260,7 @@ pub enum Mapper {
     #[cfg(feature = "regex")]
     RegexSubUrlPart {
         /// The name of the part to modify.
-        part: types::UrlPart,
+        part: UrlPart,
         /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
@@ -331,7 +330,7 @@ fn eufp_expand() -> StringSource {StringSource::String("$1".to_string())}
 #[derive(Error, Debug)]
 pub enum MapperError {
     /// The [`Mapper::Error`] mapper always returns this error.
-    #[error("The \"Error\" mapper always returns this error.")]
+    #[error("Mapper::Error was used.")]
     ExplicitError,
     /// Returned when the mapper has `none_to_empty_string` set to `false` and the requested part of the provided URL is `None`.
     #[error("The provided URL does not have the requested part.")]
@@ -378,7 +377,7 @@ pub enum MapperError {
     /// The specified [`StringSource`] returned `None`.
     #[error("The specified StringSource returned None.")]
     StringSourceIsNone,
-    /// The call to [`StringMatcher::matches`] returned an error.
+    /// The call to [`StringMatcher::satisfied_by`] returned an error.
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
     #[error(transparent)]

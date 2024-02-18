@@ -6,7 +6,6 @@ use std::ops::Deref;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use url::Url;
-use psl;
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
 use crate::types::{
@@ -21,11 +20,10 @@ use crate::config::Params;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
-    /// Always passes.
-    Always,
-
     // Testing conditions.
 
+    /// Always passes.
+    Always,
     /// Never passes.
     Never,
     /// Always returns the error [`ConditionError::ExplicitError`].
@@ -39,14 +37,16 @@ pub enum Condition {
     /// assert!(Condition::Error.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     Error,
-    /// Prints debugging information about the contained condition to STDERR.
+    /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// Intended primarily for debugging logic errors.
-    /// *Can* be used in production as bash and batch only have `x | y` pipe STDOUT by default, but it'll look ugly.
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
 
-    // Error handling
+    // Error handling.
 
-    /// If the contained condition returns an error, treat it as a pass.
+    /// If the contained [`Self`] returns an error, treat it as a pass.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -57,7 +57,7 @@ pub enum Condition {
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     TreatErrorAsPass(Box<Self>),
-    /// If the contained condition returns an error, treat it as a fail.
+    /// If the contained [`Self`] returns an error, treat it as a fail.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -68,9 +68,10 @@ pub enum Condition {
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     TreatErrorAsFail(Box<Self>),
-    /// If the `try` condition returns an error, return the result of the `else` condition instead. If the `try` condition does not error, the `else` condition is not executed.
+    /// If `try` returns an error, `else` is executed.
+    /// If `try` does not return an error, `else` is not executed.
     /// # Errors
-    /// If the `else` condition returns an error, that error is returned.
+    /// If `else` returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -95,10 +96,10 @@ pub enum Condition {
 
     // Boolean.
 
-    /// Passes if all of the included conditions pass.
-    /// Like [`Iterator::all`], an empty list of conditions returns `true`.
+    /// Passes if all of the included [`Self`]s pass.
+    /// Like [`Iterator::all`], an empty list passes.
     /// # Errors
-    /// If any contained condition returns an error, that error is returned.
+    /// If any of the contained [`Self`]s returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -115,10 +116,10 @@ pub enum Condition {
     /// assert!(Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     All(Vec<Self>),
-    /// Passes if any of the included conditions pass.
-    /// Like [`Iterator::any`], an empty list of conditions returns `false`.
+    /// Passes if any of the included [`Self`]s pass.
+    /// Like [`Iterator::any`], an empty list fails.
     /// # Errors
-    /// If any contained condition returns an error, that error is returned.
+    /// If any of the contained [`Self`]s returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -135,9 +136,9 @@ pub enum Condition {
     /// assert!(Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     Any(Vec<Self>),
-    /// Passes if the included condition doesn't and vice-versa.
+    /// Passes if the included [`Self`] doesn't and vice-versa.
     /// # Errors
-    /// If the contained condition returns an error, that error is returned.
+    /// If the contained [`Self`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::conditions::Condition;
@@ -343,7 +344,7 @@ pub enum Condition {
 
     /// Passes if the specified part's value matches the specified [`StringMatcher`].
     /// # Errors
-    /// If the call to [`StringMatcher::matches`] returns an error, that error is returned.
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     PartMatches {
         /// The part to check.
         part: UrlPart,
@@ -444,7 +445,7 @@ const fn get_true() -> bool {true}
 #[derive(Error, Debug)]
 pub enum ConditionError {
     /// The [`Condition::Error`] condition always returns this error.
-    #[error("The \"Error\" condition always returns this error.")]
+    #[error("Condition::Error was used.")]
     ExplicitError,
     /// The provided URL does not contain the requested part.
     /// See [`crate::types::UrlPart`] for details.
@@ -463,7 +464,7 @@ pub enum ConditionError {
     /// The specified [`StringSource`] returned `None`.
     #[error("The specified StringSource returned None.")]
     StringSourceIsNone,
-    /// The call to [`StringMatcher::matches`] returned an error.
+    /// The call to [`StringMatcher::satisfied_by`] returned an error.
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
     #[error(transparent)]

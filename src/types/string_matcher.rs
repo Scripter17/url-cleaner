@@ -11,27 +11,49 @@ use crate::glue::string_or_struct;
 /// A general API for matching strings with a variety of methods.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringMatcher {
+    /// Always passes.
     Always,
+    /// Never passes.
     Never,
+    /// Always returns the error [`StringMatcherError::ExplicitError`].
+    /// # Errors
+    /// Always returns the error [`StringMatcherError::ExplicitError`].
     Error,
+    /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// Intended primarily for debugging logic errors.
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] errors, returns that error.
     Debug(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a pass.
     TreatErrorAsPass(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a fail.
     TreatErrorAsFail(Box<Self>),
+    /// If `try` returns an error, `else` is executed.
+    /// If `try` does not return an error, `else` is not executed.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
     TryElse {
         r#try: Box<Self>,
         r#else: Box<Self>
     },
+    /// Passes if all of the included [`Self`]s pass.
+    /// Like [`Iterator::all`], an empty list passes.
     /// # Errors
-    /// If any of the contained [`Self`]s error, returns that error.
+    /// If any of the contained [`Self`]s returns an error, that error is returned.
     All(Vec<Self>),
+    /// Passes if any of the included [`Self`]s pass.
+    /// Like [`Iterator::any`], an empty list fails.
     /// # Errors
-    /// If any of the contained [`Self`]s error, returns that error.
+    /// If any of the contained [`Self`]s returns an error, that error is returned.
     Any(Vec<Self>),
+    /// Passes if the included [`Self`] doesn't and vice-versa.
     /// # Errors
-    /// If the contained [`Self`] errors, returns that error.
+    /// If the contained [`Self`] returns an error, that error is returned.
     Not(Box<Self>),
+
+
+
     /// Uses a [`StringLocation`].
     /// # Errors
     /// If the call to [`StringLocation::satisfied_by`] errors, returns that error.
@@ -65,7 +87,7 @@ pub enum StringMatcher {
     Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper)
 }
 
-/// Enum containing all possible errors [`StringMatcher::matches`] can return.
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringMatcherError {
     /// Returned when [`StringLocation::satisfied_by`] errors.

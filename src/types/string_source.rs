@@ -13,7 +13,15 @@ use crate::glue::box_string_or_struct;
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum StringSource {
+    /// Always returns the error [`StringSourceError::ExplicitError`].
+    /// # Errors
+    /// Always returns the error [`StringSourceError::ExplicitError`].
     Error,
+    /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// Intended primarily for debugging logic errors.
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
     /// Just a string. The most common varaint.
     /// # Examples
@@ -94,6 +102,7 @@ impl FromStr for StringSource {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringSourceError {
     #[error(transparent)]

@@ -7,19 +7,49 @@ use super::{StringError, neg_index, neg_range};
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
+    /// Always passes.
     Always,
+    /// Never passes.
     Never,
+    /// Always returns the error [`StringLocationError::ExplicitError`].
+    /// # Errors
+    /// Always returns the error [`StringLocationError::ExplicitError`].
     Error,
+    /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// Intended primarily for debugging logic errors.
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a pass.
     TreatErrorAsPass(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a fail.
     TreatErrorAsFail(Box<Self>),
+    /// If `try` returns an error, `else` is executed.
+    /// If `try` does not return an error, `else` is not executed.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
     TryElse {
         r#try: Box<Self>,
         r#else: Box<Self>
     },
+    /// Passes if all of the included [`Self`]s pass.
+    /// Like [`Iterator::all`], an empty list passes..
+    /// # Errors
+    /// If any contained [`Self`] returns an error, that error is returned.
     All(Vec<Self>),
+    /// Passes if any of the included [`Self`]s pass.
+    /// Like [`Iterator::any`], an empty list fails..
+    /// # Errors
+    /// If any contained [`Self`] returns an error, that error is returned.
     Any(Vec<Self>),
+    /// Passes if the included [`Self`] doesn't and vice-versa.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned.
     Not(Box<Self>),
+
+
+
     /// Checks if an instance of the needle exists anywhere in the haystack.
     /// # Examples
     /// ```
@@ -134,6 +164,8 @@ pub enum StringLocation {
     /// Meant primarily for use with [`Self::AnySegment`] and [`Self::NthSegment`].
     Equals,
     /// Splits the haystack at every instance of `split` and check if any segment satisfies `location`.
+    /// # Errors
+    /// If `location` returns an error on any segment, that error is returned.
     AnySegment {
         /// The string to split by.
         split: String,
@@ -142,6 +174,9 @@ pub enum StringLocation {
         location: Box<StringLocation>
     },
     /// Splits the haystack at every instance of `split` and check if the `n`th segment satisfies `location`.
+    /// # Errors
+    /// If the `n`th segment doesn't exist, returns the error [`StringError::SegmentNotFound`].
+    /// If `location` returns an error on any segment, that error is returned.
     NthSegment {
         /// The string to split by.
         split: String,
@@ -155,6 +190,7 @@ pub enum StringLocation {
 
 fn box_equals() -> Box<StringLocation> {Box::new(StringLocation::Equals)}
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringLocationError {
     #[error(transparent)]

@@ -7,10 +7,10 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-/// The logic for when to modify a URL.
-pub mod conditions;
-/// The logic for how to modify a URL.
-pub mod mappers;
+mod conditions;
+pub use conditions::*;
+mod mappers;
+pub use mappers::*;
 use crate::config;
 
 /// The core unit describing when and how URLs are modified.
@@ -20,7 +20,7 @@ pub enum Rule {
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, conditions, mappers::Mapper};
+    /// # use url_cleaner::rules::{Rule, Mapper};
     /// # use url_cleaner::config::Params;
     /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
@@ -38,12 +38,12 @@ pub enum Rule {
     /// assert!(rule.apply(&mut url2, &Params::default()).is_ok());
     /// assert_eq!(url2.as_str(), "https://example1.com/");
     /// ```
-    HostMap(HashMap<String, mappers::Mapper>),
+    HostMap(HashMap<String, Mapper>),
     /// Runs all the contained rules until none of their conditions pass.
     /// Runs at most `limit` times. (Defaults to 10).
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, conditions::Condition, mappers::Mapper};
+    /// # use url_cleaner::rules::{Rule, Condition, Mapper};
     /// # use url_cleaner::config::Params;
     /// # use url_cleaner::types::StringSource;
     /// # use url_cleaner::types::UrlPart;
@@ -77,7 +77,7 @@ pub enum Rule {
     /// The basic condition mapper rule type.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, conditions::Condition, mappers::Mapper};
+    /// # use url_cleaner::rules::{Rule, Condition, Mapper};
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
@@ -85,9 +85,9 @@ pub enum Rule {
     #[serde(untagged)]
     Normal {
         /// The condition under which the provided URL is modified.
-        condition: conditions::Condition,
+        condition: Condition,
         /// The mapper used to modify the provided URL.
-        mapper: mappers::Mapper
+        mapper: Mapper
     }
 }
 
@@ -102,10 +102,10 @@ pub enum RuleError {
     FailedCondition,
     /// The condition returned an error.
     #[error(transparent)]
-    ConditionError(#[from] conditions::ConditionError),
+    ConditionError(#[from] ConditionError),
     /// The mapper returned an error.
     #[error(transparent)]
-    MapperError(#[from] mappers::MapperError),
+    MapperError(#[from] MapperError),
     /// Returned when the provided URL doesn't have a host to find in a [`Rule::HostMap`].
     #[error("The provided URL doesn't have a host to find in the hashmap.")]
     UrlHasNoHost,

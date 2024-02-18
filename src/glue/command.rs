@@ -164,6 +164,7 @@ pub enum CommandError {
 
 impl OutputHandler {
     /// Handles a command's output.
+    /// When piping STDOUT/STDERR to another command's STDIN, no UTF-8 checks are done.
     /// # Errors
     /// If the command returns an error, that error is returned.
     /// If the command's STDOUT is not valid UTF-8 when using [`Self::ReturnStdout`] or [`Self::ApplyStdoutUrlTo`], returns the error [`CommandError::Utf8Error`].
@@ -198,7 +199,7 @@ impl CommandWrapper {
     }
 
     /// # Errors
-    /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::Command::ChildStdin::write_all`], or [`std::process::Command::Child::wait_with_output`] returns an error, that error is returned.
+    /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc)]
     #[must_use]

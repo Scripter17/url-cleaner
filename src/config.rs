@@ -72,13 +72,13 @@ impl Config {
     }
 }
 
-/// Configuration options to choose the behaviour of a few select [`crate::rules::conditions::Condition`]s and [`crate::rules::mappers::Mapper`]s.
+/// Configuration options to choose the behaviour of a few select [`crate::rules::Condition`]s and [`crate::rules::Mapper`]s.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Params {
-    /// Works with [`crate::rules::conditions::Condition::RuleVariableIs'`].
+    /// Works with [`crate::rules::Condition::RuleVariableIs'`].
     #[serde(default)]
     pub vars: HashMap<String, String>,
-    /// Works with [`crate::rules::conditions::Condition::FlagIsSet`].
+    /// Works with [`crate::rules::Condition::FlagIsSet`].
     #[serde(default)]
     pub flags: HashSet<String>,
     /// The default headers to send in HTTP requests.

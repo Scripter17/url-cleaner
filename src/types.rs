@@ -17,7 +17,7 @@ mod string_matcher;
 pub use string_matcher::*;
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
-/// Except for if a [`crate::rules::mappers::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
+/// Except for if a [`crate::rules::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
 /// Not only is it a recoverable error, it's an error that doesn't need to be recovered from.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
