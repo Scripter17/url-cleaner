@@ -695,6 +695,7 @@ pub enum PartModificationError {
     /// The error returned when the call to [`UrlPart::set`] fails.
     #[error(transparent)]
     PartError(#[from] PartError),
+    /// Returned by [`UrlPart::modify`].
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError)
 }

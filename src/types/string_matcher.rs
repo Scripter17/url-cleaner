@@ -34,7 +34,9 @@ pub enum StringMatcher {
     /// # Errors
     /// If `else` returns an error, that error is returned.
     TryElse {
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
         r#else: Box<Self>
     },
     /// Passes if all of the included [`Self`]s pass.
@@ -70,7 +72,7 @@ pub enum StringMatcher {
     },
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::{StringMatcher, StringLocation};
+    /// # use url_cleaner::types::StringMatcher;
     /// # use url_cleaner::glue::RegexParts;
     /// assert!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc").is_ok_and(|x| x==true));
     /// ```
@@ -78,7 +80,7 @@ pub enum StringMatcher {
     Regex(#[serde(deserialize_with = "string_or_struct")] RegexWrapper),
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::{StringMatcher, StringLocation};
+    /// # use url_cleaner::types::StringMatcher;
     /// # use url_cleaner::glue::GlobWrapper;
     /// # use std::str::FromStr;
     /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc").is_ok_and(|x| x==true));
@@ -87,14 +89,17 @@ pub enum StringMatcher {
     Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper)
 }
 
+/// An enum of all possible errors a [`StringMatcher`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringMatcherError {
-    /// Returned when [`StringLocation::satisfied_by`] errors.
+    /// A generic string error.
     #[error(transparent)]
     StringError(#[from] StringError),
+    /// Returned by [`StringMatcher::StringLocation`].
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
+    /// Always returned by [`StringMatcher::Error`].
     #[error("StringMatcher::Error was used.")]
     ExplicitError
 }
@@ -138,7 +143,7 @@ impl StringMatcher {
             Self::Never => false,
             Self::Debug(matcher) => {
                 let is_satisfied=matcher.satisfied_by(haystack);
-                eprintln!("=== Debug StringMatcher ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nSatisfied?: {is_satisfied:?}");
+                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
             Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack).or_else(|_| r#else.satisfied_by(haystack))?,

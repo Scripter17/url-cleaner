@@ -30,7 +30,9 @@ pub enum StringLocation {
     /// # Errors
     /// If `else` returns an error, that error is returned.
     TryElse {
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
         r#else: Box<Self>
     },
     /// Passes if all of the included [`Self`]s pass.
@@ -190,11 +192,14 @@ pub enum StringLocation {
 
 fn box_equals() -> Box<StringLocation> {Box::new(StringLocation::Equals)}
 
+/// An enum of all possible errors a [`StringLocation`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringLocationError {
+    /// A generic string error.
     #[error(transparent)]
     StringError(#[from] StringError),
+    /// Always returned by [`StringLocation::Error`].
     #[error("StringLocation::Error was used.")]
     ExplicitError
 }

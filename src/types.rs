@@ -1,6 +1,5 @@
 use std::io::Error as IoError;
 use std::ops::Bound;
-use std::string::FromUtf8Error;
 
 use url::ParseError;
 use thiserror::Error;
@@ -36,6 +35,7 @@ pub enum CleaningError {
     IoError(#[from] IoError)
 }
 
+/// Miscelanious errors that can happen when handling strings.
 #[derive(Debug, Error)]
 pub enum StringError {
     /// The requested slice was either not on a UTF-8 boundary or out of bounds.
@@ -53,8 +53,6 @@ pub enum StringError {
     /// The provided string did not end with the requested prefix.
     #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
     SuffixNotFound,
-    #[error(transparent)]
-    FromUtf8Error(#[from] FromUtf8Error),
 }
 
 /// Loops negative `index`es around similar to Python.

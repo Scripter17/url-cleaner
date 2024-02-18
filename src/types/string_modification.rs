@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
@@ -28,11 +30,15 @@ pub enum StringModification {
     /// Ignores any error the contained [`Self`] may return.
     IgnoreError(Box<Self>),
     /// If `try` returns an error, `else` is applied.
-    /// If `try` does not return an error, `else` is not applied.
+    /// If `try` does not return an er
+    /// [`urlencoding::encode`].
     /// # Errors
+    /// [`urlencoding::decode`].
     /// If `else` returns an error, that error is returned.
     TryElse {
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
         r#else: Box<Self>
     },
     /// Applies the contained [`Self`]s in order.
@@ -375,7 +381,9 @@ pub enum StringModification {
         /// The string modification to apply if the flag is not set.
         r#else: Box<Self>
     },
+    /// [`urlencoding::encode`].
     URLEncode,
+    /// [`urlencoding::decode`].
     /// # Errors
     /// If the call to [`urlencoding::decode`] errors, returns that error.
     URLDecode,
@@ -394,15 +402,23 @@ pub enum StringModification {
     CommandOutput(CommandWrapper)
 }
 
+/// An enum of all possible errors a [`StringModification`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringModificationError {
+    /// A generic string error.
     #[error(transparent)]
     StringError(#[from] StringError),
+    /// Returned by [`StringModification::CommandOutput`].
+    #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
+    /// Always returned by [`StringModification::Error`].
     #[error("StringModification::Error was used.")]
-    ExplicitError
+    ExplicitError,
+    /// Returned by [`StringModification::URLDecode`].
+    #[error(transparent)]
+    FromUtf8Error(#[from] FromUtf8Error)
 }
 
 impl StringModification {
@@ -457,7 +473,7 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
             Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?,
             Self::URLEncode => *to=urlencoding::encode(to).into_owned(),
-            Self::URLDecode => *to=urlencoding::decode(to).map_err(StringError::FromUtf8Error)?.into_owned(),
+            Self::URLDecode => *to=urlencoding::decode(to)?.into_owned(),
             Self::All(modifications) => {
                 let mut temp_to=to.clone();
                 for modification in modifications {
@@ -491,6 +507,7 @@ impl StringModification {
                 eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\nParams: {params:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
                 modification_result?;
             },
+            #[cfg(feature = "commands")]
             Self::CommandOutput(command) => *to=command.output(None, Some(to.as_bytes()))?,
             Self::Error => Err(StringModificationError::ExplicitError)?
         };

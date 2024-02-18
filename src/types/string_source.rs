@@ -84,11 +84,14 @@ pub enum StringSource {
         /// If the flag is not set, use this.
         r#else: Box<Self>
     },
+    /// Gets a string with `source`, modifies it with `modification`, and returns the result.
     /// # Errors
     /// If the call to [`StringModification::apply`] errors, returns that error.
     Modified {
+        /// The source to get the string from.
         #[serde(deserialize_with = "box_string_or_struct")]
         source: Box<Self>,
+        /// The modification to apply to the string.
         modification: StringModification
     }
 }
@@ -102,13 +105,17 @@ impl FromStr for StringSource {
     }
 }
 
+/// An enum of all possible errors a [`StringSource`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringSourceError {
+    /// A generic string error.
     #[error(transparent)]
     StringError(#[from] StringError),
+    /// Returned by [`StringSource::Modified`].
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
+    /// Always returned by [`StringSource::Error`].
     #[error("StringSource::Error was used.")]
     ExplicitError
 }
@@ -134,7 +141,7 @@ impl StringSource {
             },
             Self::Debug(source) => {
                 let ret=source.get_string(url, params, none_to_empty_string);
-                eprintln!("=== Debug StringSource ===\nSource: {source:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");
+                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");
                 ret?
             },
             Self::Error => Err(StringSourceError::ExplicitError)?

@@ -54,7 +54,7 @@ pub enum Mapper {
     /// If `else` returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
@@ -65,7 +65,7 @@ pub enum Mapper {
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
-        /// If `try` returns an error, return the result of this [`Self`].
+        /// If `try` fails, instead return the result of this one.
         r#else: Box<Self>
     },
 
@@ -76,7 +76,7 @@ pub enum Mapper {
     /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
@@ -90,7 +90,7 @@ pub enum Mapper {
     /// If one of the contained [`Self`]s returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
@@ -102,7 +102,7 @@ pub enum Mapper {
     /// This is equivalent to wrapping every contained [`Self`] in a [`Self::IgnoreError`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
@@ -115,7 +115,7 @@ pub enum Mapper {
     /// If every contained [`Self`] errors, returns the last error.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
@@ -139,7 +139,7 @@ pub enum Mapper {
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
@@ -156,7 +156,7 @@ pub enum Mapper {
     /// Useful for websites that keep changing their tracking parameters and you're sick of updating your rule set.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
@@ -198,7 +198,7 @@ pub enum Mapper {
     /// If the URL cannot be a base, returms the error [`MapperError::UrlCannotBeABase`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::*;
+    /// # use url_cleaner::rules::*;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
@@ -286,7 +286,7 @@ pub enum Mapper {
     /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::mappers::Mapper;
+    /// # use url_cleaner::rules::Mapper;
     /// # use url_cleaner::config::Params;
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
@@ -380,8 +380,10 @@ pub enum MapperError {
     /// The call to [`StringMatcher::satisfied_by`] returned an error.
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
+    /// The call to [`StringSource::get_string`] returned an error.
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
+    /// The call to [`StringModification::apply`] returned an error.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError)
 }
@@ -548,7 +550,7 @@ impl Mapper {
             Self::Debug(mapper) => {
                 let url_before_mapper=url.clone();
                 let mapper_result=mapper.apply(url, params);
-                eprintln!("=== Debug mapper ===\nMapper: {mapper:?}\nParams: {params:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
+                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nParams: {params:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
                 mapper_result?;
             }
         };
