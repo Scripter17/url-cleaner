@@ -535,6 +535,7 @@ impl UrlPart {
     /// # Errors
     /// TODO
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), PartError> {
+        #[cfg(feature = "debug")]
         println!("PartSet: {self:?}");
         match (self, to) {
             // Ordered hopefully most used to least used.
