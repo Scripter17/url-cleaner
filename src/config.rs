@@ -148,7 +148,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_default_rules() {
+    fn parse_default_config() {
         Config::get_default().unwrap();
     }
 }
