@@ -489,6 +489,8 @@ impl UrlPart {
     /// See [`Self`]'s documentation for which parts return `None` and when.
     #[must_use]
     pub fn get<'a>(&self, url: &'a Url, none_to_empty_string: bool) -> Option<Cow<'a, str>> {
+        #[cfg(feature = "debug")]
+        println!("PartGet: {self:?}");
         let ret = match self {
             // Ordered hopefully most used to least used.
 
@@ -533,6 +535,7 @@ impl UrlPart {
     /// # Errors
     /// TODO
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), PartError> {
+        println!("PartSet: {self:?}");
         match (self, to) {
             // Ordered hopefully most used to least used.
             (Self::Query, _) => url.set_query(to),

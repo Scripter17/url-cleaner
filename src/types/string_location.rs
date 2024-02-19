@@ -158,7 +158,7 @@ pub enum StringLocation {
     /// assert!(StringLocation::Before(0).satisfied_by("abcdef", ""   ).is_ok_and(|x| x==true ));
     /// assert!(StringLocation::Before(1).satisfied_by("abcdef", "a"  ).is_ok_and(|x| x==true ));
     /// assert!(StringLocation::Before(6).satisfied_by("abcdef", "a"  ).is_ok_and(|x| x==true ));
-    /// assert!(StringLocation::Before(4).satisfied_by("abcdef", "def").is_ok_and(|x| x==false ));
+    /// assert!(StringLocation::Before(4).satisfied_by("abcdef", "def").is_ok_and(|x| x==false));
     /// assert!(StringLocation::Before(7).satisfied_by("abcdef", "a"  ).is_err());
     /// ```
     Before(isize),
@@ -173,7 +173,7 @@ pub enum StringLocation {
         split: String,
         /// The location of each segment to look for `needle` in.
         #[serde(default = "box_equals")]
-        location: Box<StringLocation>
+        location: Box<Self>
     },
     /// Splits the haystack at every instance of `split` and check if the `n`th segment satisfies `location`.
     /// # Errors
@@ -186,7 +186,7 @@ pub enum StringLocation {
         n: isize,
         /// The location of the `n`th segment to look for `needle` in.
         #[serde(default = "box_equals")]
-        location: Box<StringLocation>
+        location: Box<Self>
     }
 }
 
@@ -207,8 +207,10 @@ pub enum StringLocationError {
 impl StringLocation {
     /// Checks if `needle` exists in `haystack` according to `self`'s rules.
     /// # Errors
-    /// If only part of the haystack is searched and that part either is out of bounds or splits a UTF-8 codepoint, returns the error [`super::StringError::InvalidSlice`].
+    /// See the documentation for [`Self`]'s variants for details.
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringLocationError> {
+        #[cfg(feature = "debug")]
+        println!("Location: {self:?}");
         Ok(match self {
             Self::Start                => haystack.starts_with(needle),
             Self::End                  => haystack.ends_with  (needle),

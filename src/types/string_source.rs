@@ -123,8 +123,10 @@ pub enum StringSourceError {
 impl StringSource {
     /// Gets the string from the source.
     /// # Errors
-    /// If `self` is [`Self::Modified`] and the call to [`StringModification::apply`] errors, that error is returned.
+    /// See the documentation for [`Self`]'s variants for details.
     pub fn get_string<'a>(&'a self, url: &'a Url, params: &'a Params, none_to_empty_string: bool) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+        #[cfg(feature = "debug")]
+        println!("Source: {self:?}");
         let ret = Ok(match self {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
             Self::Part(x) => x.get(url, none_to_empty_string),

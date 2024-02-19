@@ -4,3 +4,4 @@
 /benchmarking/stdin
 /benchmarking/output-*
 massif*
+callgrind*

@@ -402,6 +402,8 @@ impl Mapper {
     /// If the mapper has an error, that error is returned.
     /// See [`Mapper`]'s documentation for details.
     pub fn apply(&self, url: &mut Url, params: &crate::config::Params) -> Result<(), MapperError> {
+        #[cfg(feature = "debug")]
+        println!("Mapper: {self:?}");
         match self {
 
             // Boolean

@@ -49,6 +49,7 @@ minify-included-strings = ["dep:const-str"]
 regex = ["dep:regex"]
 # Enables [`url_cleaner::glue::GlobWrapper`].
 glob = ["dep:glob"]
+debug = []
 
 # https://stackoverflow.com/a/54842093/10720231
 [profile.release]

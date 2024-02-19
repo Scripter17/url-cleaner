@@ -424,8 +424,10 @@ pub enum StringModificationError {
 impl StringModification {
     /// Apply the modification in-place using the provided [`Params`].
     /// # Errors
-    /// See the docs for each [`Self`] variant for details on which operations error and when.
+    /// See the documentation for [`Self`]'s variants for details.
     pub fn apply(&self, to: &mut String, params: &Params) -> Result<(), StringModificationError> {
+        #[cfg(feature = "debug")]
+        println!("Modification: {self:?}");
         match self {
             Self::None                               => {},
             Self::Set(value)                         => *to=value.clone(),

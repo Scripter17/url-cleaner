@@ -106,8 +106,10 @@ pub enum StringMatcherError {
 
 impl StringMatcher {
     /// # Errors
-    /// See [`Self`]'s documentation for details.
+    /// See the documentation for [`Self`]'s variants for details.
     pub fn satisfied_by(&self, haystack: &str) -> Result<bool, StringMatcherError> {
+        #[cfg(feature = "debug")]
+        println!("Matcher: {self:?}");
         Ok(match self {
             Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,
             #[cfg(feature = "regex")]

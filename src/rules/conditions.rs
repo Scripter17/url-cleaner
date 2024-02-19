@@ -278,7 +278,6 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::rules::Condition;
     /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
     /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com"   ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com/"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
@@ -322,7 +321,6 @@ pub enum Condition {
     /// # use url::Url;
     /// # use url_cleaner::rules::Condition;
     /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::types::StringSource;
     /// # use url_cleaner::types::UrlPart;
     /// # use url_cleaner::types::StringLocation;
     /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -481,13 +479,15 @@ impl Condition {
     /// If the condition has an error, that error is returned.
     /// See [`Condition`]'s documentation for details.
     pub fn satisfied_by(&self, url: &Url, params: &Params) -> Result<bool, ConditionError> {
+        #[cfg(feature = "debug")]
+        println!("Condition: {self:?}");
         Ok(match self {
             // Domain conditions
 
             Self::UnqualifiedDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
             Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
             Self::QualifiedDomain(domain) => url.domain()==Some(domain),
-            Self::HostIsOneOf(hosts) => url.host_str().map(|host| host.strip_prefix("www.").unwrap_or(host)).is_some_and(|url_host| hosts.contains(url_host)),
+            Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
             Self::UnqualifiedAnyTld(middle) => url.domain()
                 .is_some_and(|url_domain| url_domain.rsplit_once(middle)
                     .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')

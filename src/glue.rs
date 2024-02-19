@@ -47,11 +47,11 @@ where
             formatter.write_str("string or map")
         }
 
-        fn visit_str<E: de::Error>(self, value: &str) -> Result<T, E> {
+        fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
             FromStr::from_str(value).map_err(|_| E::custom("The provided string could not be parsed."))
         }
 
-        fn visit_map<M: MapAccess<'de>>(self, map: M) -> Result<T, M::Error> {
+        fn visit_map<M: MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
             // `MapAccessDeserializer` is a wrapper that turns a `MapAccess`
             // into a `Deserializer`, allowing it to be used as the input to T's
             // `Deserialize` implementation. T then deserializes itself using
@@ -69,9 +69,9 @@ where
     D: Deserializer<'de>,
     <T as FromStr>::Err: fmt::Debug
 {
-    struct OptionalStringOrStruct<T>(PhantomData<fn() -> Option<T>>);
+    struct OptionalStringOrStruct<T>(PhantomData<fn() -> T>);
 
-    impl<'de, T> Visitor<'de> for OptionalStringOrStruct<Option<T>>
+    impl<'de, T> Visitor<'de> for OptionalStringOrStruct<T>
     where
         T: Deserialize<'de> + FromStr,
         <T as FromStr>::Err: fmt::Debug
@@ -79,7 +79,7 @@ where
         type Value = Option<T>;
 
         fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("string or map")
+            formatter.write_str("string or null or map")
         }
 
         fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
@@ -108,9 +108,9 @@ where
     D: Deserializer<'de>,
     <T as FromStr>::Err: fmt::Debug
 {
-    struct OptionalStringOrStruct<T>(PhantomData<fn() -> Option<T>>);
+    struct OptionalStringOrStruct<T>(PhantomData<fn() -> T>);
 
-    impl<'de, T> Visitor<'de> for OptionalStringOrStruct<Option<T>>
+    impl<'de, T> Visitor<'de> for OptionalStringOrStruct<T>
     where
         T: Deserialize<'de> + FromStr,
         <T as FromStr>::Err: fmt::Debug
@@ -156,5 +156,18 @@ mod tests {
         serde_json::from_str::<A>(r#"{"a": {"String": "/"}}"#).unwrap();
         serde_json::from_str::<A>(r#"{"a": {"Part": "Path"}}"#).unwrap();
         serde_json::from_str::<A>(r#"{"a": {"Var": "path"}}"#).unwrap();
+    }
+
+    #[derive(Deserialize)]
+    struct B {
+        #[serde(deserialize_with = "box_string_or_struct")]
+        b: Box<crate::types::StringSource>
+    }
+    #[test]
+    fn box_string_or_struct_test() {
+        serde_json::from_str::<B>(r#"{"b": "/"}"# ).unwrap();
+        serde_json::from_str::<B>(r#"{"b": {"String": "/"}}"#).unwrap();
+        serde_json::from_str::<B>(r#"{"b": {"Part": "Path"}}"#).unwrap();
+        serde_json::from_str::<B>(r#"{"b": {"Var": "path"}}"#).unwrap();
     }
 }
