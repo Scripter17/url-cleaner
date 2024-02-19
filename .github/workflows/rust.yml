@@ -23,4 +23,4 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Run tests no default features
-      run: cargo test --verbose --no-default-features
+      run: cargo test --verbose --no-default-features -- --skip parse_default_config
