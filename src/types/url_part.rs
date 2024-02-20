@@ -240,12 +240,23 @@ pub enum UrlPart {
     /// assert!(UrlPart::Domain.set(&mut url, None).is_err());
     /// ```
     Domain,
-    /// For `a.b.c.example.co.uk`, `subdomain` handles `a.b.c`, `name` handles `example`, and `suffix` handles `co.uk`.
-    DomainPart {
-        subdomain: bool,
-        name: bool,
-        suffix: bool
-    },
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// # use std::borrow::Cow;
+    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.com"   ).unwrap(), false), Some(Cow::Borrowed("com"  )));
+    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.com."  ).unwrap(), false), Some(Cow::Borrowed("com"  )));
+    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.co.uk" ).unwrap(), false), Some(Cow::Borrowed("co.uk")));
+    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.co.uk.").unwrap(), false), Some(Cow::Borrowed("co.uk")));
+    /// 
+    /// let mut url = Url::parse("https://example.com.").unwrap();
+    /// assert!(UrlPart::DomainSuffix.set(&mut url, Some("co.uk")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.co.uk/");
+    /// assert!(UrlPart::DomainSuffix.set(&mut url, None).is_ok());
+    /// assert_eq!(url.as_str(), "https://example/");
+    /// ```
+    DomainSuffix,
     /// Useful only for appending a domain segment to a URL as the getter is always `None`.
     /// # Getting
     /// Is always `None`.
@@ -514,33 +525,7 @@ impl UrlPart {
                 .and_then(|domain| domain.strip_suffix(psl::domain_str(domain)?).map(|subdomain_dot| Cow::Borrowed(subdomain_dot.strip_suffix('.').unwrap_or(subdomain_dot)))),
             Self::NotSubdomain           => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
             Self::Domain                 => url.domain().map(Cow::Borrowed),
-            Self::DomainPart {subdomain, name, suffix} => {
-                match (subdomain, name, suffix) {
-                    (false, false, false) => Some(Cow::Borrowed("")),
-                    (false, false, true ) => url.domain().and_then(psl::suffix_str).map(Cow::Borrowed),
-                    (false, true , false) => {
-                        let name_dot_suffix=psl::domain_str(url.domain()?)?;
-                        let suffix=psl::suffix_str(name_dot_suffix)?;
-                        let name_dot=name_dot_suffix.strip_suffix(suffix)?;
-                        Some(Cow::Borrowed(name_dot.strip_suffix('.').unwrap_or(name_dot)))
-                    },
-                    (false, true , true ) => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
-                    (true , false, false) => {
-                        let subdomain_dot_name_dot_suffix=url.domain()?;
-                        let name_dot_suffix=psl::domain_str(subdomain_dot_name_dot_suffix)?;
-                        let subdomain_dot=subdomain_dot_name_dot_suffix.strip_suffix(name_dot_suffix)?;
-                        Some(Cow::Borrowed(subdomain_dot.strip_suffix('.').unwrap_or(subdomain_dot)))
-                    },
-                    (true , false, true ) => None,
-                    (true , true , false) => {
-                        let subdomain_dot_name_dot_suffix=url.domain()?;
-                        let suffix=psl::suffix_str(subdomain_dot_name_dot_suffix)?;
-                        let subdomain_dot_name_dot=subdomain_dot_name_dot_suffix.strip_suffix(suffix)?;
-                        Some(Cow::Borrowed(subdomain_dot_name_dot.strip_suffix('.').unwrap_or(subdomain_dot_name_dot)))
-                    },
-                    (true , true , true ) => url.domain().map(Cow::Borrowed)
-                }
-            },
+            Self::DomainSuffix           => url.domain().and_then(psl::suffix_str).map(Cow::Borrowed),
             Self::Port                   => url.port_or_known_default().map(|port| Cow::Owned(port.to_string())), // I cannot be bothered to add number handling.
             Self::Path                   => if url.cannot_be_a_base() {None} else {Some(Cow::Borrowed(url.path()))},
 
@@ -566,6 +551,7 @@ impl UrlPart {
     /// If this method returns an error, `url` is left unchanged.
     /// # Errors
     /// TODO
+    #[allow(clippy::missing_panics_doc)]
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), SetPartError> {
         #[cfg(feature = "debug")]
         println!("PartSet: {self:?}");
@@ -608,24 +594,18 @@ impl UrlPart {
                 url.set_host(Some(&new_domain))?;
             },
             (Self::Domain        , _) => url.set_host(to)?,
-            (Self::DomainPart {subdomain, name, suffix}, _) => {
-                url.set_host(match (subdomain, name, suffix, to) {
-                    (false, false, false, None    ) => todo!(),
-                    (false, false, false, Some(to)) => todo!(),
-                    (false, false, true , None    ) => todo!(),
-                    (false, false, true , Some(to)) => todo!(),
-                    (false, true , false, None    ) => todo!(),
-                    (false, true , false, Some(to)) => todo!(),
-                    (false, true , true , None    ) => todo!(),
-                    (false, true , true , Some(to)) => todo!(),
-                    (true , false, false, None    ) => todo!(),
-                    (true , false, false, Some(to)) => todo!(),
-                    (true , false, true , _       ) => Err(SetPartError::CannotSetUnconnectedSegments)?,
-                    (true , true , false, None    ) => todo!(),
-                    (true , true , false, Some(to)) => todo!(),
-                    (true , true , true , None    ) => todo!(),
-                    (true , true , true , Some(to)) => todo!()
-                })?
+            (Self::DomainSuffix  , _) => {
+                let domain=url.domain().ok_or(GetPartError::HostIsNotADomain)?;
+                let suffix=psl::suffix_str(domain).expect("All domains to have a suffix.");
+                let domain_without_suffix=domain.rsplit_once(suffix).expect("All domains to end in their suffixes.").0;
+                let to=match to {
+                    Some(to) => format!("{}{}", domain_without_suffix, to),
+                    None => domain_without_suffix.strip_suffix('.').unwrap_or(domain_without_suffix).to_string()
+                };
+                match &*to {
+                    "" => url.set_host(None),
+                    d => url.set_host(Some(d))
+                }?
             },
             (Self::NextDomainSegment, _) => if let Some(to) = to {
                 if to.is_empty() {Err(SetPartError::DomainSegmentCannotBeEmpty)?;}
