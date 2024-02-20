@@ -708,7 +708,7 @@ pub enum PartModificationError {
 mod tests {
     use super::*;
 
-    const URLS: [&str; 2] = [
+    const URLS: [&str; 3] = [
         "https://example.com",
         "https://example.com?a=2",
         "https://abc.example.com/d/e?f=g&h=i#j"
