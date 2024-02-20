@@ -4,8 +4,7 @@ use url::{Url, ParseError};
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
-use super::{neg_nth, neg_index};
-use super::{StringModification, StringModificationError};
+use crate::types::*;
 use crate::config::Params;
 
 /// Getters and setters for various parts of a URL.
@@ -610,7 +609,7 @@ impl UrlPart {
             },
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::DomainPart {subdomain, name, suffix}, _) => {
-                match (subdomain, name, suffix, to) {
+                url.set_host(match (subdomain, name, suffix, to) {
                     (false, false, false, None    ) => todo!(),
                     (false, false, false, Some(to)) => todo!(),
                     (false, false, true , None    ) => todo!(),
@@ -626,7 +625,7 @@ impl UrlPart {
                     (true , true , false, Some(to)) => todo!(),
                     (true , true , true , None    ) => todo!(),
                     (true , true , true , Some(to)) => todo!()
-                }
+                })?
             },
             (Self::NextDomainSegment, _) => if let Some(to) = to {
                 if to.is_empty() {Err(SetPartError::DomainSegmentCannotBeEmpty)?;}
@@ -687,6 +686,7 @@ impl UrlPart {
     /// If [`UrlPart::get`] returns an error, that error is returned.
     /// If the string modification returns an error, that error is returned.
     /// If [`UrlPart::set`] returns an error, that error is returned.
+    #[cfg(feature = "string-modification")]
     pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &StringModification, params: &Params) -> Result<(), PartModificationError> {
         let mut new_part=self.get(url, none_to_empty_string).ok_or(PartModificationError::PartIsNone)?.into_owned();
         how.apply(&mut new_part, params)?;
@@ -749,6 +749,7 @@ pub enum SetPartError {
 }
 
 /// The enum of all possible errors that can occur when applying a [`super::StringModification`] to a [`UrlPart`] using [`UrlPart::modify`].
+#[cfg(feature = "string-modification")]
 #[derive(Debug, Error)]
 pub enum PartModificationError {
     /// The error returned when the call to [`UrlPart::get`] returns `None` and `none_to_empty_string` is `false`

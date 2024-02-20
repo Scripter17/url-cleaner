@@ -6,18 +6,18 @@ use thiserror::Error;
 
 mod url_part;
 pub use url_part::*;
-mod string_location;
-pub use string_location::*;
-mod string_modification;
-pub use string_modification::*;
-mod string_source;
-pub use string_source::*;
-mod string_matcher;
-pub use string_matcher::*;
-mod string_cmp;
-pub use string_cmp::*;
-mod bool_source;
-pub use bool_source::*;
+#[cfg(feature = "string-location"    )] mod string_location;
+#[cfg(feature = "string-location"    )] pub use string_location::*;
+#[cfg(feature = "string-modification")] mod string_modification;
+#[cfg(feature = "string-modification")] pub use string_modification::*;
+#[cfg(feature = "string-source"      )] mod string_source;
+#[cfg(feature = "string-source"      )] pub use string_source::*;
+#[cfg(feature = "string-matcher"     )] mod string_matcher;
+#[cfg(feature = "string-matcher"     )] pub use string_matcher::*;
+#[cfg(feature = "string-cmp"         )] mod string_cmp;
+#[cfg(feature = "string-cmp"         )] pub use string_cmp::*;
+#[cfg(feature = "bool-source"        )] mod bool_source;
+#[cfg(feature = "bool-source"        )] pub use bool_source::*;
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
 /// Except for if a [`crate::rules::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.

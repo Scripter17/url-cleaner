@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use super::{StringError, neg_index, neg_range};
+use super::*;
 
 /// A wrapper around [`str`]'s various substring searching functions.
 /// [`isize`] is used to allow Python-style negative indexing.

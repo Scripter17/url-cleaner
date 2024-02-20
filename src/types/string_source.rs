@@ -6,7 +6,7 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 use thiserror::Error;
 
-use super::{UrlPart, StringModification, StringModificationError, StringError};
+use super::*;
 use crate::config::Params;
 use crate::glue::box_string_or_struct;
 
@@ -87,6 +87,7 @@ pub enum StringSource {
     /// Gets a string with `source`, modifies it with `modification`, and returns the result.
     /// # Errors
     /// If the call to [`StringModification::apply`] errors, returns that error.
+    #[cfg(feature = "string-modification")]
     Modified {
         /// The source to get the string from.
         #[serde(deserialize_with = "box_string_or_struct")]
@@ -113,6 +114,7 @@ pub enum StringSourceError {
     #[error(transparent)]
     StringError(#[from] StringError),
     /// Returned by [`StringSource::Modified`].
+    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Always returned by [`StringSource::Error`].
@@ -132,6 +134,7 @@ impl StringSource {
             Self::Part(x) => x.get(url, none_to_empty_string),
             Self::Var(x) => params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
             Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.get_string(url, params, none_to_empty_string)?} else {r#else.get_string(url, params, none_to_empty_string)?},
+            #[cfg(feature = "string-modification")]
             Self::Modified {source, modification} => {
                 let x=source.as_ref().get_string(url, params, none_to_empty_string)?.map(Cow::into_owned);
                 if let Some(mut x) = x {

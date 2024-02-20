@@ -321,6 +321,7 @@ pub enum Condition {
     /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
+    #[cfg(feature = "string-location")]
     PartContains {
         /// The name of the part to check.
         part: UrlPart,
@@ -338,6 +339,7 @@ pub enum Condition {
     /// Passes if the specified part's value matches the specified [`StringMatcher`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    #[cfg(feature = "string-matcher")]
     PartMatches {
         /// The part to check.
         part: UrlPart,
@@ -406,6 +408,7 @@ pub enum Condition {
     /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string())), none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: None                                       , none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
     /// ```
+    #[cfg(feature = "string-source")]
     VarIs {
         /// The name of the variable to check.
         #[serde(deserialize_with = "string_or_struct")]
@@ -413,10 +416,15 @@ pub enum Condition {
         /// The expected value of the variable.
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
-        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to just pretend it's an empty string.
+        /// If `value.get_string` returns `None`, pretend it's an empty string.
         /// Defaults to [`false`].
         #[serde(default)]
         none_to_empty_string: bool
+    },
+    #[cfg(not(feature = "string-source"))]
+    VarIs {
+        name: String,
+        value: Option<String>
     },
 
     /// Passes if the specified rule flag is set.
@@ -430,6 +438,7 @@ pub enum Condition {
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
     FlagIsSet(String),
+    #[cfg(all(feature = "string-source", feature = "string-cmp"))]
     StringSourceCmp {
         #[serde(deserialize_with = "string_or_struct")]
         l: StringSource,
@@ -441,7 +450,13 @@ pub enum Condition {
         r_none_to_empty_string: bool,
         cmp: StringCmp
     },
-    If(BoolSource)
+    #[cfg(feature = "bool-source")]
+    BoolSource(BoolSource),
+    If {
+        condition: Box<Self>,
+        then: Box<Self>,
+        r#else: Box<Self>
+    }
 }
 
 const fn get_true() -> bool {true}
@@ -466,17 +481,22 @@ pub enum ConditionError {
     #[error(transparent)]
     GetPartError(#[from] GetPartError),
     /// The specified [`StringSource`] returned `None`.
+    #[cfg(feature = "string-source")]
     #[error("The specified StringSource returned None.")]
     StringSourceIsNone,
     /// The call to [`StringMatcher::satisfied_by`] returned an error.
+    #[cfg(feature = "string-matcher")]
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
     /// The call to [`StringLocation::satisfied_by`] returned an error.
+    #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
     /// The call to [`StringSource::get_string`] returned an error.
+    #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
+    #[cfg(feature = "bool-source")]
     #[error(transparent)]
     BoolSourceError(#[from] BoolSourceError)
 }
@@ -552,21 +572,26 @@ impl Condition {
             // General parts
 
             Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
-            Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
-            Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?)?,
+            #[cfg(feature = "string-location")] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
+            #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?)?,
 
             // Miscellaneous
 
-            Self::VarIs{name, value, none_to_empty_string} => match value.as_ref() {
+            #[cfg(feature = "string-source")]
+            Self::VarIs {name, value, none_to_empty_string} => match value.as_ref() {
                 Some(source) => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get_string(url, params, *none_to_empty_string)?.as_deref(),
                 None => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
             },
+            #[cfg(not(feature = "string-source"))]
+            Self::VarIs {name, value} => params.vars.get(name)==value.as_ref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
+            #[cfg(all(feature = "string-source", feature = "string-cmp"))]
             Self::StringSourceCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
                 &l.get_string(url, params, *l_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?,
                 &r.get_string(url, params, *r_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?
             ),
-            Self::If(bool_source) => bool_source.satisfied_by(url, params)?,
+            #[cfg(feature = "bool-source")] Self::BoolSource(bool_source) => bool_source.satisfied_by(url, params)?,
+            Self::If {condition, then, r#else} => if condition.satisfied_by(url, params)? {then} else {r#else}.satisfied_by(url, params)?,
 
             // Should only ever be used once
 

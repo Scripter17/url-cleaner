@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use super::{StringLocation, StringLocationError, StringCmp, StringError};
+use super::*;
 #[cfg(feature = "regex")]
 use crate::glue::RegexWrapper;
 #[cfg(feature = "glob")]
@@ -64,6 +64,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::{StringMatcher, StringLocation};
     /// assert!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc").is_ok_and(|x| x==true));
     /// ```
+    #[cfg(feature = "string-location")]
     StringLocation {
         /// The location to check for `value` at.
         location: StringLocation,
@@ -87,6 +88,7 @@ pub enum StringMatcher {
     /// ```
     #[cfg(feature = "glob")]
     Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
+    #[cfg(feature = "string-cmp")]
     StringCmp {
         cmp: StringCmp,
         r: String
@@ -101,6 +103,7 @@ pub enum StringMatcherError {
     #[error(transparent)]
     StringError(#[from] StringError),
     /// Returned by [`StringMatcher::StringLocation`].
+    #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
     /// Always returned by [`StringMatcher::Error`].
@@ -115,6 +118,7 @@ impl StringMatcher {
         #[cfg(feature = "debug")]
         println!("Matcher: {self:?}");
         Ok(match self {
+            #[cfg(feature = "string-location")]
             Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,
             #[cfg(feature = "regex")]
             Self::Regex(regex) => regex.is_match(haystack),
@@ -154,6 +158,7 @@ impl StringMatcher {
             },
             Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack).or_else(|_| r#else.satisfied_by(haystack))?,
             Self::Error => Err(StringMatcherError::ExplicitError)?,
+            #[cfg(feature = "string-cmp")]
             Self::StringCmp {cmp, r} => cmp.satisfied_by(haystack, r)
         })
     }

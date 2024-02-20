@@ -161,10 +161,12 @@ pub enum Mapper {
     /// Removes all query parameters whose name matches the specified [`StringMatcher`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    #[cfg(feature = "string-matcher")]
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only the query parameters whose name matches the specified [`StringMatcher`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    #[cfg(feature = "string-matcher")]
     AllowQueryParamsMatching(StringMatcher),
     /// Replace the current URL with the value of the specified query parameter.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
@@ -201,13 +203,17 @@ pub enum Mapper {
     /// ```
     RemovePathSegments(Vec<usize>),
     /// [`Url::join`].
+    #[cfg(feature = "string-source")]
     Join(#[serde(deserialize_with = "string_or_struct")] StringSource),
+    #[cfg(not(feature = "string-source"))]
+    Join(String),
 
     // Generic part handling.
 
     /// Sets the specified URL part to `to`.
     /// # Errors
     /// If `to` is `None` and `part` cannot be `None` (see [`UrlPart`] for details), returns the error [`types::PartError::PartCannotBeNone`].
+    #[cfg(feature = "string-source")]
     SetPart {
         /// The name of the part to replace.
         part: UrlPart,
@@ -219,10 +225,22 @@ pub enum Mapper {
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>
     },
+    #[cfg(not(feature = "string-source"))]
+    SetPart {
+        /// The name of the part to replace.
+        part: UrlPart,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
+        /// The value to set the part to.
+        value: Option<String>
+    },
     /// Modifies the specified part of the URL.
     /// # Errors
     /// If `how` is `StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
     /// If the modification fails, returns the error [`MapperError::PartError`].
+    #[cfg(feature = "string-modification")]
     ModifyPart {
         /// The name of the part to modify.
         part: UrlPart,
@@ -251,7 +269,7 @@ pub enum Mapper {
     /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
     /// # Errors
     /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`MapperError::UrlPartNotFound`].
-    #[cfg(feature = "regex")]
+    #[cfg(all(feature = "regex", feature = "string-source"))]
     RegexSubUrlPart {
         /// The name of the part to modify.
         part: UrlPart,
@@ -266,6 +284,22 @@ pub enum Mapper {
         /// See [`regex::Regex::replace`] for details.
         #[serde(deserialize_with = "string_or_struct", default = "eufp_expand")]
         replace: StringSource
+    },
+    #[cfg(all(feature = "regex", not(feature = "string-source")))]
+    RegexSubUrlPart {
+        /// The name of the part to modify.
+        part: UrlPart,
+        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`super::conditions::ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
+        /// The regex that is used to match and extract parts of the selected part.
+        #[serde(deserialize_with = "string_or_struct")]
+        regex: glue::RegexWrapper,
+        /// The pattern the extracted parts are put into.
+        /// See [`regex::Regex::replace`] for details.
+        #[serde(default = "efup_expand")]
+        replace: String
     },
 
     // Miscellaneous.
@@ -295,7 +329,7 @@ pub enum Mapper {
         headers: HeaderMap
     },
     /// Gets the URL as a webpage, uses `regex` to find a URL, and uses `expand` to join the regex capture's groups.
-    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm"), feature = "string-source"))]
     ExtractUrlFromPage {
         /// The headers to send alongside the param's default headers.
         #[serde(default, with = "crate::glue::headermap")]
@@ -308,6 +342,19 @@ pub enum Mapper {
         #[serde(deserialize_with = "string_or_struct", default = "eufp_expand")]
         expand: StringSource
     },
+    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm"), not(feature = "string-source")))]
+    ExtractUrlFromPage {
+        /// The headers to send alongside the param's default headers.
+        #[serde(default, with = "crate::glue::headermap")]
+        headers: HeaderMap,
+        /// The pattern to search for in the page.
+        #[serde(deserialize_with = "string_or_struct")]
+        regex: glue::RegexWrapper,
+        /// Used for [`regex::Captures::expand`].
+        /// Defaults to `"$1"`.
+        #[serde(default = "efup_expand")]
+        expand: String
+    },
     /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
     /// Useful when what you want to do is really specific and niche.
     /// # Errors
@@ -317,8 +364,10 @@ pub enum Mapper {
 }
 
 const fn get_true() -> bool {true}
-#[cfg(feature = "regex")]
+#[cfg(all(feature = "regex", feature = "string-source"))]
 fn eufp_expand() -> StringSource {StringSource::String("$1".to_string())}
+#[cfg(all(feature = "regex", not(feature = "string-source")))]
+fn eufp_expand() -> String {"$1".to_string()}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Error, Debug)]
@@ -354,6 +403,7 @@ pub enum MapperError {
     #[error(transparent)]
     StringError(#[from] StringError),
     /// The part modification failed.
+    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     PartModificationError(#[from] PartModificationError),
     #[error(transparent)]
@@ -371,12 +421,15 @@ pub enum MapperError {
     #[error("The specified StringSource returned None.")]
     StringSourceIsNone,
     /// The call to [`StringMatcher::satisfied_by`] returned an error.
+    #[cfg(feature = "string-matcher")]
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
     /// The call to [`StringSource::get_string`] returned an error.
+    #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
     /// The call to [`StringModification::apply`] returned an error.
+    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError)
 }
@@ -438,6 +491,7 @@ impl Mapper {
                 let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
                 url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
+            #[cfg(feature = "string-matcher")]
             Self::RemoveQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
                 for (name, value) in url.query_pairs() {
@@ -448,6 +502,7 @@ impl Mapper {
                 let x = new_query.finish();
                 url.set_query((!x.is_empty()).then_some(&x));
             },
+            #[cfg(feature = "string-matcher")]
             Self::AllowQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
                 for (name, value) in url.query_pairs() {
@@ -475,14 +530,18 @@ impl Mapper {
 
             Self::SetHost(new_host) => url.set_host(Some(new_host))?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
+            #[cfg(feature = "string-source")]
             Self::Join(with) => if let Some(value) = with.get_string(url, params, false)? {
                 *url=url.join(&value)?;
             } else {
                 Err(MapperError::StringSourceIsNone)?
             },
+            #[cfg(not(feature = "string-source"))]
+            Self::Join(with) => *url=url.join(with)?,
 
             // Generic part handling
 
+            #[cfg(feature = "string-source")]
             Self::SetPart{part, value, none_to_empty_string} => match value.as_ref() {
                 Some(source) => {
                     let temp=source.get_string(url, params, *none_to_empty_string)?.map(|x| x.into_owned());
@@ -490,6 +549,9 @@ impl Mapper {
                 },
                 None => part.set(url, None)
             }?,
+            #[cfg(not(feature = "string-source"))]
+            Self::SetPart{part, value, none_to_empty_string} => part.set(url, value.as_deref())?,
+            #[cfg(feature = "string-modification")]
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how, params)?,
             Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
             #[cfg(feature = "regex")]

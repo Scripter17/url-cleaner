@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 
-use super::{StringError, neg_index, neg_range};
+use super::*;
 #[cfg(feature = "regex")]
 use crate::glue::RegexWrapper;
 #[cfg(feature = "commands")]
