@@ -1,14 +1,14 @@
 #!/usr/bin/bash
 
-rm -f output*
+rm -f hyperfine* callgrind*
 
 URLS=("https://x.com?a=2" "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id" "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8")
 COMMAND="../target/release/url-cleaner --config ../default-config.json"
 
-# cargo build -r
-# cargo build -r --no-default-features --features stdin
+cargo build -r --config profile.release.strip=false
+# cargo build -r --no-default-features --features stdin --config profile.release.strip=false
 
-hyperfine -N -n "No URL - 0" -w 10 "$COMMAND" --export-json "output-No URL-0"
+# hyperfine -N -n "No URL - 0" -w 10 "$COMMAND" --export-json "hyperfine-No URL-0"
 
 for url in "${URLS[@]}"; do
   echo IN : $url
@@ -17,7 +17,12 @@ for url in "${URLS[@]}"; do
     yes $url | head -n $((100**$num)) > stdin
 
     lines=$(cat stdin | wc -l)
-    out="output-$(echo $url | rg / -r=-)-$lines"
-    hyperfine -N -n "$url - $lines" -w 10 --input ./stdin "$COMMAND" --export-json "$out"
+    out="$(echo $url | rg / -r=-)-$lines"
+
+    # hyperfine -N -n "$url - $lines" -w 10 --input ./stdin "$COMMAND" --export-json "hyperfine-$out"
+    rm -f callgrind.out*
+    cat stdin | valgrind --tool=callgrind "../target/release/url-cleaner"
+    gprof2dot --format=callgrind callgrind.out* --output "callgrind-$out.dot"
+    dot -Tpng "callgrind-$out.dot" -o "callgrind-$out.png"
   done
 done

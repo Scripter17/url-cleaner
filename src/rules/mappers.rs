@@ -16,13 +16,7 @@ use std::collections::hash_set::HashSet;
 use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
-use crate::types::{
-    self,
-    UrlPart,
-    StringSource, StringSourceError,
-    StringMatcher, StringMatcherError,
-    StringModification, StringModificationError
-};
+use crate::types::*;
 
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -349,9 +343,6 @@ pub enum MapperError {
     #[cfg(feature = "cache-redirects")]
     #[error(transparent)]
     IoError(#[from] IoError),
-    /// Returned when a part replacement fails.
-    #[error(transparent)]
-    PartError(#[from] types::PartError),
     /// UTF-8 error.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
@@ -361,10 +352,12 @@ pub enum MapperError {
     CommandError(#[from] glue::CommandError),
     /// A string operation failed.
     #[error(transparent)]
-    StringError(#[from] types::StringError),
+    StringError(#[from] StringError),
     /// The part modification failed.
     #[error(transparent)]
-    PartModificationError(#[from] types::PartModificationError),
+    PartModificationError(#[from] PartModificationError),
+    #[error(transparent)]
+    SetPartError(#[from] SetPartError),
     /// The URL cannot be a base.
     #[error("The URL cannot be a base.")]
     UrlCannotBeABase,

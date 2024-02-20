@@ -33,12 +33,14 @@ impl From<RegexParts> for RegexWrapper {
 impl FromStr for RegexWrapper {
     type Err = Box<RegexSyntaxError>;
 
+    /// [`RegexParts::from_str`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        RegexParts::new(s).map(Into::into)
+        RegexParts::from_str(s).map(Into::into)
     }
 }
 
 impl PartialEq for RegexWrapper {
+    /// [`RegexParts::eq`].
     fn eq(&self, other: &Self) -> bool {
         self.parts.eq(&other.parts)
     }
@@ -54,11 +56,11 @@ impl From<RegexWrapper> for RegexParts {
 impl RegexWrapper {
     /// Gets the cached compiled regex and compiles it first if it's not already cached.
     /// # Panics
-    /// Although the regex is guaranteed to be syntactically valid, it is possible to exceed the default DFA size limit. In that case, this method will panic.
+    /// Although the regex is guaranteed to be syntactically valid, it is possible it will exceed the default DFA size limit. In that case, this method will panic.
     /// For the sake of API design, I consider that a niche enough case that this warning is sufficient.
     pub fn get_regex(&self) -> &Regex {
         self.regex.get_or_init(|| self.parts.build()
-            .expect("The regex to have been validated during `RegexParts::new` and not exceed the size limit."))
+            .expect("The regex to not exceed the DFA size limit."))
     }
 
     /// Gets the contained [`RegexParts`].

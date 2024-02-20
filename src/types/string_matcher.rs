@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use super::{StringLocation, StringLocationError, StringError};
+use super::{StringLocation, StringLocationError, StringCmp, StringError};
 #[cfg(feature = "regex")]
 use crate::glue::RegexWrapper;
 #[cfg(feature = "glob")]
@@ -86,7 +86,11 @@ pub enum StringMatcher {
     /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc").is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "glob")]
-    Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper)
+    Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
+    StringCmp {
+        cmp: StringCmp,
+        r: String
+    }
 }
 
 /// An enum of all possible errors a [`StringMatcher`] can return.
@@ -149,7 +153,8 @@ impl StringMatcher {
                 is_satisfied?
             },
             Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack).or_else(|_| r#else.satisfied_by(haystack))?,
-            Self::Error => Err(StringMatcherError::ExplicitError)?
+            Self::Error => Err(StringMatcherError::ExplicitError)?,
+            Self::StringCmp {cmp, r} => cmp.satisfied_by(haystack, r)
         })
     }
 }

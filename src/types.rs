@@ -14,6 +14,10 @@ mod string_source;
 pub use string_source::*;
 mod string_matcher;
 pub use string_matcher::*;
+mod string_cmp;
+pub use string_cmp::*;
+mod bool_source;
+pub use bool_source::*;
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
 /// Except for if a [`crate::rules::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.

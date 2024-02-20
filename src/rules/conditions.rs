@@ -8,12 +8,7 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 
 use crate::glue::{self, string_or_struct, optional_string_or_struct};
-use crate::types::{
-    UrlPart, PartError,
-    StringLocation, StringLocationError,
-    StringSource, StringSourceError,
-    StringMatcher, StringMatcherError
-};
+use crate::types::*;
 use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
@@ -434,7 +429,19 @@ pub enum Condition {
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
-    FlagIsSet(String)
+    FlagIsSet(String),
+    StringSourceCmp {
+        #[serde(deserialize_with = "string_or_struct")]
+        l: StringSource,
+        #[serde(deserialize_with = "string_or_struct")]
+        r: StringSource,
+        #[serde(default = "get_true")]
+        l_none_to_empty_string: bool,
+        #[serde(default = "get_true")]
+        r_none_to_empty_string: bool,
+        cmp: StringCmp
+    },
+    If(BoolSource)
 }
 
 const fn get_true() -> bool {true}
@@ -456,9 +463,8 @@ pub enum ConditionError {
     /// Returned when a string condition fails.
     #[error(transparent)]
     StringError(#[from] crate::types::StringError),
-    /// Returned when a [`UrlPart`] method returns an error.
     #[error(transparent)]
-    PartError(#[from] PartError),
+    GetPartError(#[from] GetPartError),
     /// The specified [`StringSource`] returned `None`.
     #[error("The specified StringSource returned None.")]
     StringSourceIsNone,
@@ -470,7 +476,9 @@ pub enum ConditionError {
     StringLocationError(#[from] StringLocationError),
     /// The call to [`StringSource::get_string`] returned an error.
     #[error(transparent)]
-    StringSourceError(#[from] StringSourceError)
+    StringSourceError(#[from] StringSourceError),
+    #[error(transparent)]
+    BoolSourceError(#[from] BoolSourceError)
 }
 
 impl Condition {
@@ -536,7 +544,7 @@ impl Condition {
             // Path
 
             Self::PathIs(value) => if url.cannot_be_a_base() {
-                Err(PartError::UrlDoesNotHaveAPath)?
+                Err(GetPartError::UrlDoesNotHaveAPath)?
             } else {
                 url.path()==value
             },
@@ -554,6 +562,11 @@ impl Condition {
                 None => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
             },
             Self::FlagIsSet(name) => params.flags.contains(name),
+            Self::StringSourceCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
+                &l.get_string(url, params, *l_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?,
+                &r.get_string(url, params, *r_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?
+            ),
+            Self::If(bool_source) => bool_source.satisfied_by(url, params)?,
 
             // Should only ever be used once
 

@@ -18,17 +18,9 @@
 							}
 						}}
 					},
-					{
-						"condition": {"All": [
-							{"MaybeWWWDomain": "pixiv.net"},
-							{"PathIs": "/member.php"}
-						]},
-						"mapper": {"All": [
-							{"SetPart": {"part": "Path", "value": "/users"}},
-							{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
-							"RemoveQuery"
-						]}
-					},
+
+
+
 					{
 						"condition": {"All": [
 							{"UnqualifiedDomain": "deviantart.com"},
@@ -44,10 +36,16 @@
 							}
 						}}
 					},
+
+
+
 					{
 						"condition": {"QualifiedDomain": "t.umblr.com"},
 						"mapper": {"GetUrlFromQueryParam": "z"}
 					},
+
+
+
 					{
 						"condition": {"Any": [
 							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it", "pin.it"]},
@@ -58,6 +56,9 @@
 						]},
 						"mapper": {"ExpandShortLink": {}}
 					},
+
+
+
 					{
 						"condition": {"All": [
 							{"MaybeWWWDomain": "steamcommunity.com"},
@@ -96,12 +97,23 @@
 
 
 
+		{
+			"condition": {"PartIs": {"part": "Scheme", "value": "http"}},
+			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
+		},
 
 
 
 		{
-			"condition": {"PartIs": {"part": "Scheme", "value": "http"}},
-			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
+			"condition": {"All": [
+				{"MaybeWWWDomain": "pixiv.net"},
+				{"PathIs": "/member.php"}
+			]},
+			"mapper": {"All": [
+				{"SetPart": {"part": "Path", "value": "/users"}},
+				{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
+				"RemoveQuery"
+			]}
 		},
 
 
@@ -133,6 +145,7 @@
 		{
 			"condition": {"All": [
 				{"FlagIsSet": "youtube-unshort"},
+				{"MaybeWWWDomain": "youtube.com"},
 				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
 			]},
 			"mapper": {"All": [

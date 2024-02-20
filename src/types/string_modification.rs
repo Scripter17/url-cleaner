@@ -1,7 +1,8 @@
-use std::string::FromUtf8Error;
+use std::str::Utf8Error;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
+use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 
 use super::{StringError, neg_index, neg_range};
 #[cfg(feature = "regex")]
@@ -381,11 +382,27 @@ pub enum StringModification {
         /// The string modification to apply if the flag is not set.
         r#else: Box<Self>
     },
-    /// [`urlencoding::encode`].
+    /// Uses [`percent_encoding::utf8_percent_encode`] to percent encode all bytes that are not alphanumeric ASCII.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// # use url_cleaner::config::Params;
+    /// let mut x = "a/b/c".to_string();
+    /// assert!(StringModification::URLEncode.apply(&mut x, &Params::default()).is_ok());
+    /// assert_eq!(&x, "a%2Fb%2Fc");
+    /// ```
     URLEncode,
-    /// [`urlencoding::decode`].
+    /// [`percent_encoding::percent_decode_str`]
     /// # Errors
     /// If the call to [`urlencoding::decode`] errors, returns that error.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringModification;
+    /// # use url_cleaner::config::Params;
+    /// let mut x = "a%2fb%2Fc".to_string();
+    /// assert!(StringModification::URLDecode.apply(&mut x, &Params::default()).is_ok());
+    /// assert_eq!(&x, "a/b/c");
+    /// ```
     URLDecode,
     /// Runs the contained command with the provided string as the STDIN.
     /// # Examples
@@ -418,7 +435,7 @@ pub enum StringModificationError {
     ExplicitError,
     /// Returned by [`StringModification::URLDecode`].
     #[error(transparent)]
-    FromUtf8Error(#[from] FromUtf8Error)
+    FromUtf8Error(#[from] Utf8Error)
 }
 
 impl StringModification {
@@ -474,8 +491,8 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to=regex.replace_all(to,     replace).to_string(),
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
             Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?,
-            Self::URLEncode => *to=urlencoding::encode(to).into_owned(),
-            Self::URLDecode => *to=urlencoding::decode(to)?.into_owned(),
+            Self::URLEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
+            Self::URLDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             Self::All(modifications) => {
                 let mut temp_to=to.clone();
                 for modification in modifications {
