@@ -710,6 +710,7 @@ mod tests {
 
     const URLS: [&str; 2] = [
         "https://example.com",
+        "https://example.com?a=2",
         "https://abc.example.com/d/e?f=g&h=i#j"
     ];
 

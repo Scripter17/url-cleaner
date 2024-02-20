@@ -44,17 +44,28 @@ Tips for people who don't know Rust's syntax:
 - If a field's type is `Box<...>` you don't need to worry about it. `Box`es are just used to let things contain other things of the same type. They have no bearing on JSON serialization.
 - `Vec<...>` and `HashSet<...>` are written as lists in JSON.
 - `HashMap<..., ...>` and `HeaderMap` are written as dictionaries in JSON.
-- Fields preceeded by `#[serde(default)]` or `#[serde(default = "...")]` can be omitted from config files. The defaults are almost always what you want.
+- Fields preceded by `#[serde(default)]` or `#[serde(default = "...")]` can be omitted from config files. The defaults are almost always what you want.
 - `u8`, `u16`, `u32`, `u64`, `u128`, and `usize` are unsigned (non-negative) integers. `i8`, `i16`, `i32`, `i64`, `i128`, and `isize` are signed integers. `usize` is a `u32` on 32-bit computers and `u64` on 64-bit computers. Likewise `isize` is `i32` and `i64` under the same conditions. Basically if a number makes sense to be used in a field then it'll fit.
 - A `StringSource` is usually just written as a string. To see how it can be used to get URL parts or variables see [`string_source.rs`](src/types/string_source.rs).
 - If a field starts with `r#` (like `r#else`) you write it without the `r#` (like `"else"`). The `r#` is just Rust syntax for "this isn't a keyword".
+
+### Custom rule performance
+
+A few commits before the one that added this text, I moved a rule in the default config. The rule in question was the big ol' "always remove these query parameters" one and I moved it to the bottom.  
+That cut the runtime for amazon URLs in half.
+
+The reason is fairly simple: Instead of removing some of the query then removing all of it, if you remove all of it first then the "remove these parameters" does nothing.
+
+While I have done my best to ensure URL Cleaner is as fast as I can get it, that does not mean you shouldn't be careful with rule order.
+
+I know to most people in most cases, 10k URLs in 120ms versus 10k URLs in 60ms is barely noticeable, but that kind of thinking is why video games require mortgages.
 
 ## Anonymity
 
 Because most people don't use URL Cleaner, using URL Cleaner can let websites correlate information similar to URL tracking parameters.  
 If you're the only person without a tracking parameter in links, it's fairly easy to distinguish you from everyone else.
 
-As with Tor, protests, and, really, everyting, safety comes in numbers.
+As with Tor, protests, and, really, everything, safety comes in numbers.
 
 ## MSRV
 
