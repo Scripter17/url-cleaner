@@ -48,13 +48,23 @@
 
 					{
 						"condition": {"Any": [
-							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it", "pin.it"]},
+							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it"]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
 							]}
 						]},
 						"mapper": {"ExpandShortLink": {}}
+					},
+
+
+
+					{
+						"condition": {"All": [
+							{"QualifiedDomain": "api.linkr.bio"},
+							{"PathIs": "/callbacks/go"}
+						]},
+						"mapper": {"GetUrlFromQueryParam": "url"}
 					},
 
 
@@ -105,11 +115,11 @@
 
 
 		{
-			"condition": {"PartContains": {
+			"condition": {"TreatErrorAsFail": {"PartContains": {
 				"part": {"PartSegments": {"part": "Domain", "split": ".", "start": 1, "end": null}},
 				"where": "Start",
 				"value": {"Join": {"sources": [{"Part": "NotSubdomain"}, {"String": "."}]}}
-			}},
+			}}},
 			"mapper": {"SetPart": {"part": "NotSubdomain", "value": null}}
 		},
 
@@ -183,7 +193,8 @@
 				"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 				"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
 				"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
-				"tumblr.com"        : "RemoveQuery"
+				"tumblr.com"        : "RemoveQuery",
+				"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]}
 			}
 		},
 

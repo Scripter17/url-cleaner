@@ -341,6 +341,7 @@ pub enum Condition {
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
     /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// If `value.get` returns `None`, returns the error [`ConditionError::StringSourceIsNone`].
     /// # Examples
     /// ```
     /// # use url::Url;
