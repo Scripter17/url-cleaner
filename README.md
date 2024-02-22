@@ -23,7 +23,7 @@ Variables let you specify runtime behaviour.
 
 Like variables except the only defined as "set" and "not set", various flags are included in the default config for things I want to do frequently.
 
-- `discord-compatibility`: Turns `twitter.com` and `deviantart` URLs into `vxtwitter.com` and `fxdeviantart` URLs.
+- `discord-compatibility`: Turns `twitter.com` URLs into `vxtwitter.com` URLs.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
 - `tumblr-strip-reblogs`: Replace tumblr reblog links with the original post. Does not care about reblog chains so maybe don't set this in your keyboard shortcut.
 - `antifandom`: Turns `abc.fandom.com` URLs into `antifandom.com/abc` URLs.

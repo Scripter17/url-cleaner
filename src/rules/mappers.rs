@@ -424,7 +424,7 @@ pub enum MapperError {
     #[cfg(feature = "string-matcher")]
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
-    /// The call to [`StringSource::get_string`] returned an error.
+    /// The call to [`StringSource::get`] returned an error.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
@@ -495,7 +495,7 @@ impl Mapper {
             Self::RemoveQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
                 for (name, value) in url.query_pairs() {
-                    if !matcher.satisfied_by(&name)? {
+                    if !matcher.satisfied_by(&name, params)? {
                         new_query.append_pair(&name, &value);
                     }
                 }
@@ -506,7 +506,7 @@ impl Mapper {
             Self::AllowQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
                 for (name, value) in url.query_pairs() {
-                    if matcher.satisfied_by(&name)? {
+                    if matcher.satisfied_by(&name, params)? {
                         new_query.append_pair(&name, &value);
                     }
                 }
@@ -531,7 +531,7 @@ impl Mapper {
             Self::SetHost(new_host) => url.set_host(Some(new_host))?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlCannotBeABase)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
             #[cfg(feature = "string-source")]
-            Self::Join(with) => if let Some(value) = with.get_string(url, params, false)? {
+            Self::Join(with) => if let Some(value) = with.get(url, params, false)? {
                 *url=url.join(&value)?;
             } else {
                 Err(MapperError::StringSourceIsNone)?
@@ -544,7 +544,7 @@ impl Mapper {
             #[cfg(feature = "string-source")]
             Self::SetPart{part, value, none_to_empty_string} => match value.as_ref() {
                 Some(source) => {
-                    let temp=source.get_string(url, params, *none_to_empty_string)?.map(|x| x.into_owned());
+                    let temp=source.get(url, params, *none_to_empty_string)?.map(|x| x.into_owned());
                     part.set(url, temp.as_deref())
                 },
                 None => part.set(url, None)
@@ -558,7 +558,7 @@ impl Mapper {
             Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
                 let old_part_value=part.get(url, *none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
                 #[allow(clippy::unnecessary_to_owned)]
-                part.set(url, Some(&regex.replace(&old_part_value, replace.get_string(url, params, false)?.ok_or(MapperError::StringSourceIsNone)?).into_owned()))?;
+                part.set(url, Some(&regex.replace(&old_part_value, replace.get(url, params, false)?.ok_or(MapperError::StringSourceIsNone)?).into_owned()))?;
             },
 
             // Error handling
@@ -590,7 +590,7 @@ impl Mapper {
                 *url=new_url.clone();
             },
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
-            Self::ExtractUrlFromPage{headers, regex, expand} => if let Some(expand) = expand.get_string(url, params, false)? {
+            Self::ExtractUrlFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
                 let mut ret = String::new();
                 regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::PatternNotFound)?.expand(&expand, &mut ret);
                 *url=Url::parse(&ret)?;

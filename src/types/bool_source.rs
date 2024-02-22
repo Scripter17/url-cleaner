@@ -54,7 +54,7 @@ pub enum BoolSource {
 
 
     #[cfg(all(feature = "string-source", feature = "string-cmp"))]
-    StringSourceCmp {
+    StringCmp {
         #[serde(deserialize_with = "string_or_struct")]
         l: StringSource,
         #[serde(deserialize_with = "string_or_struct")]
@@ -66,19 +66,19 @@ pub enum BoolSource {
         cmp: StringCmp
     },
     #[cfg(all(feature = "string-source", feature = "string-location"))]
-    StringSourceLocation {
+    StringLocation {
         #[serde(deserialize_with = "string_or_struct")]
-        l: StringSource,
+        haystack: StringSource,
         #[serde(deserialize_with = "string_or_struct")]
-        r: StringSource,
+        needle: StringSource,
         #[serde(default = "get_true")]
-        l_none_to_empty_string: bool,
+        haystack_none_to_empty_string: bool,
         #[serde(default = "get_true")]
-        r_none_to_empty_string: bool,
+        needle_none_to_empty_string: bool,
         location: StringLocation
     },
     #[cfg(all(feature = "string-source", feature = "string-matcher"))]
-    StringSourceMatcher {
+    StringMatcher {
         #[serde(deserialize_with = "string_or_struct")]
         string: StringSource,
         #[serde(default = "get_true")]
@@ -94,9 +94,7 @@ pub enum BoolSource {
     },
     #[cfg(not(feature = "string-source"))]
     FlagIsSet {
-        name: String,
-        #[serde(default)]
-        none_to_empty_string: bool
+        name: String
     }
 }
 
@@ -123,22 +121,22 @@ pub enum BoolSourceError {
 impl BoolSource {
     /// # Errors
     /// See [`Self`]'s documentation for details.
-    pub fn satisfied_by(&self, url: &Url, params: &Params) -> Result<bool, BoolSourceError> {
+    pub fn get(&self, url: &Url, params: &Params) -> Result<bool, BoolSourceError> {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
             Self::Error => Err(BoolSourceError::ExplicitError)?,
             Self::Debug(bool_source) => {
-                let is_satisfied=bool_source.satisfied_by(url, params);
-                eprintln!("=== BoolSource::Debug ===\nBoolSource: {bool_source:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
-                is_satisfied?
+                let ret=bool_source.get(url, params);
+                eprintln!("=== BoolSource::Debug ===\nBoolSource: {bool_source:?}\nURL: {url:?}\nParams: {params:?}\nRet: {ret:?}");
+                ret?
             },
-            Self::TreatErrorAsPass(bool_source) => bool_source.satisfied_by(url, params).unwrap_or(true),
-            Self::TreatErrorAsFail(bool_source) => bool_source.satisfied_by(url, params).unwrap_or(false),
-            Self::TryElse {r#try, r#else} => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
+            Self::TreatErrorAsPass(bool_source) => bool_source.get(url, params).unwrap_or(true),
+            Self::TreatErrorAsFail(bool_source) => bool_source.get(url, params).unwrap_or(false),
+            Self::TryElse {r#try, r#else} => r#try.get(url, params).or_else(|_| r#else.get(url, params))?,
             Self::All(bool_sources) => {
                 for bool_source in bool_sources {
-                    if !bool_source.satisfied_by(url, params)? {
+                    if !bool_source.get(url, params)? {
                         return Ok(false);
                     }
                 }
@@ -146,32 +144,33 @@ impl BoolSource {
             },
             Self::Any(bool_sources) => {
                 for bool_source in bool_sources {
-                    if bool_source.satisfied_by(url, params)? {
+                    if bool_source.get(url, params)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Not(bool_source) => !bool_source.satisfied_by(url, params)?,
+            Self::Not(bool_source) => !bool_source.get(url, params)?,
 
             #[cfg(feature = "string-source")]
-            Self::StringSourceCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
-                &l.get_string(url, params, *l_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
-                &r.get_string(url, params, *r_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?
+            Self::StringCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
+                &l.get(url, params, *l_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
+                &r.get(url, params, *r_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?
             ),
             #[cfg(feature = "string-location")]
-            Self::StringSourceLocation {l, r, l_none_to_empty_string, r_none_to_empty_string, location} => location.satisfied_by(
-                &l.get_string(url, params, *l_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
-                &r.get_string(url, params, *r_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?
+            Self::StringLocation {haystack, needle, haystack_none_to_empty_string, needle_none_to_empty_string, location} => location.satisfied_by(
+                &haystack.get(url, params, *haystack_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
+                &needle  .get(url, params, *needle_none_to_empty_string  )?.ok_or(BoolSourceError::StringSourceIsNone)?
             )?,
             #[cfg(feature = "string-matcher")]
-            Self::StringSourceMatcher {string, none_to_empty_string, matcher} => matcher.satisfied_by(
-                &string.get_string(url, params, *none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?
+            Self::StringMatcher {string, none_to_empty_string, matcher} => matcher.satisfied_by(
+                &string.get(url, params, *none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
+                params
             )?,
             #[cfg(feature = "string-source")]
-            Self::FlagIsSet {name, none_to_empty_string} => params.flags.contains(&name.get_string(url, params, *none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.into_owned()),
+            Self::FlagIsSet {name, none_to_empty_string} => params.flags.contains(&name.get(url, params, *none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.into_owned()),
             #[cfg(not(feature = "string-source"))]
-            Self::FlagIsSet {name, none_to_empty_string} => params.flags.contains(name)
+            Self::FlagIsSet {name} => params.flags.contains(name)
         })
     }
 }

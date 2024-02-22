@@ -21,8 +21,6 @@ pub enum StringCmp {
 }
 
 impl StringCmp {
-    /// # Errors
-    /// See [`Self`]'s documentation for details.
     pub fn satisfied_by(&self, l: &str, r: &str) -> bool {
         match self {
             Self::Lt => l< r,
@@ -54,8 +52,6 @@ pub enum LengthCmp {
 }
 
 impl LengthCmp {
-    /// # Errors
-    /// See [`Self`]'s documentation for details.
     pub fn satisfied_by(&self, l: usize, r: usize) -> bool {
         match self {
             Self::Lt => l< r,
@@ -76,8 +72,6 @@ pub struct DiffCmp {
 }
 
 impl DiffCmp {
-    /// # Errors
-    /// See [`Self`]'s documentation for details.
     pub fn satisfied_by(&self, diff: isize) -> bool {
         self.cmp.satisfied_by(diff, self.r)
     }
@@ -100,8 +94,6 @@ pub enum Cmp {
 }
 
 impl Cmp {
-    /// # Errors
-    /// See [`Self`]'s documentation for details.
     pub fn satisfied_by<T: Ord>(&self, l: T, r: T) -> bool {
         match self {
             Self::Lt => l< r,

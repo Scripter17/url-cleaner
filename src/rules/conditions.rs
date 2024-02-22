@@ -416,7 +416,7 @@ pub enum Condition {
         /// The expected value of the variable.
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
-        /// If `value.get_string` returns `None`, pretend it's an empty string.
+        /// If `value.get` returns `None`, pretend it's an empty string.
         /// Defaults to [`false`].
         #[serde(default)]
         none_to_empty_string: bool
@@ -439,7 +439,7 @@ pub enum Condition {
     /// ```
     FlagIsSet(String),
     #[cfg(all(feature = "string-source", feature = "string-cmp"))]
-    StringSourceCmp {
+    StringCmp {
         #[serde(deserialize_with = "string_or_struct")]
         l: StringSource,
         #[serde(deserialize_with = "string_or_struct")]
@@ -492,7 +492,7 @@ pub enum ConditionError {
     #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
-    /// The call to [`StringSource::get_string`] returned an error.
+    /// The call to [`StringSource::get`] returned an error.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
@@ -573,24 +573,24 @@ impl Condition {
 
             Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
             #[cfg(feature = "string-location")] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
-            #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?)?,
+            #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, params)?,
 
             // Miscellaneous
 
             #[cfg(feature = "string-source")]
             Self::VarIs {name, value, none_to_empty_string} => match value.as_ref() {
-                Some(source) => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get_string(url, params, *none_to_empty_string)?.as_deref(),
-                None => params.vars.get(&name.get_string(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
+                Some(source) => params.vars.get(&name.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get(url, params, *none_to_empty_string)?.as_deref(),
+                None => params.vars.get(&name.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]
             Self::VarIs {name, value} => params.vars.get(name)==value.as_ref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
             #[cfg(all(feature = "string-source", feature = "string-cmp"))]
-            Self::StringSourceCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
-                &l.get_string(url, params, *l_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?,
-                &r.get_string(url, params, *r_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?
+            Self::StringCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
+                &l.get(url, params, *l_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?,
+                &r.get(url, params, *r_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?
             ),
-            #[cfg(feature = "bool-source")] Self::BoolSource(bool_source) => bool_source.satisfied_by(url, params)?,
+            #[cfg(feature = "bool-source")] Self::BoolSource(bool_source) => bool_source.get(url, params)?,
             Self::If {condition, then, r#else} => if condition.satisfied_by(url, params)? {then} else {r#else}.satisfied_by(url, params)?,
 
             // Should only ever be used once

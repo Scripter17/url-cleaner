@@ -185,7 +185,8 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://127.0.0.1"      ).unwrap(), false), None);
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://www.example.com").unwrap(), false), Some(Cow::Borrowed("www")));
     /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://a.b.example.com").unwrap(), false), Some(Cow::Borrowed("a.b")));
-    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://example.com"    ).unwrap(), false), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://example.com"    ).unwrap(), false), None);
+    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://.example.com"   ).unwrap(), false), Some(Cow::Borrowed("")));
     ///
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// assert!(UrlPart::Subdomain.set(&mut url, Some("abc")).is_ok());
@@ -214,11 +215,55 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://example.com"    ).unwrap(), false), Some(Cow::Borrowed("example.com")));
     ///
     /// let mut url = Url::parse("https://abc.example.com").unwrap();
-    /// assert!(UrlPart::Domain.set(&mut url, Some("example.co.uk")).is_ok());
-    /// assert_eq!(url.as_str(), "https://example.co.uk/");
-    /// assert!(UrlPart::Domain.set(&mut url, None).is_err());
+    /// assert!(UrlPart::NotSubdomain.set(&mut url, Some("example.co.uk")).is_ok());
+    /// assert_eq!(url.as_str(), "https://abc.example.co.uk/");
+    /// assert!(UrlPart::NotSubdomain.set(&mut url, None).is_err());
     /// ```
     NotSubdomain,
+    /// The `example` in `abc.example.com`.
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`, though the sensibility of the result is questionable.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// # use std::borrow::Cow;
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://example.com"     ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://example.com."    ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://example.co.uk"   ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://example.co.uk."  ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://a.example.com"   ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://a.example.com."  ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://a.example.co.uk" ).unwrap(), false), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::NotSubdomainNotSuffix.get(&Url::parse("https://a.example.co.uk.").unwrap(), false), Some(Cow::Borrowed("example")));
+    /// 
+    /// let mut url = Url::parse("https://example.com.").unwrap();
+    /// assert!(UrlPart::NotSubdomainNotSuffix.set(&mut url, Some("example2")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example2.com./");
+    /// 
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert!(UrlPart::NotSubdomainNotSuffix.set(&mut url, Some("example2")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example2.com/");
+    /// 
+    /// let mut url = Url::parse("https://.example.com.").unwrap();
+    /// assert!(UrlPart::NotSubdomainNotSuffix.set(&mut url, Some("example2")).is_ok());
+    /// assert_eq!(url.as_str(), "https://.example2.com./");
+    /// 
+    /// let mut url = Url::parse("https://.example.com").unwrap();
+    /// assert!(UrlPart::NotSubdomainNotSuffix.set(&mut url, Some("example2")).is_ok());
+    /// assert_eq!(url.as_str(), "https://.example2.com/");
+    /// 
+    /// let mut url = Url::parse("https://a.example.com.").unwrap();
+    /// assert!(UrlPart::NotSubdomainNotSuffix.set(&mut url, Some("example2")).is_ok());
+    /// assert_eq!(url.as_str(), "https://a.example2.com./");
+    /// 
+    /// let mut url = Url::parse("https://a.example.com").unwrap();
+    /// assert!(UrlPart::NotSubdomainNotSuffix.set(&mut url, Some("example2")).is_ok());
+    /// assert_eq!(url.as_str(), "https://a.example2.com/");
+    /// ```
+    NotSubdomainNotSuffix,
     /// The domain. Corresponds to [`Url::domain`].
     /// # Getting
     /// Can be `None`.
@@ -505,9 +550,18 @@ impl UrlPart {
     /// See [`Self`]'s documentation for which parts return `None` and when.
     #[must_use]
     pub fn get<'a>(&self, url: &'a Url, none_to_empty_string: bool) -> Option<Cow<'a, str>> {
+        let ret=self._get(url);
+        if none_to_empty_string {
+            ret.or(Some(Cow::Borrowed("")))
+        } else {
+            ret
+        }
+    }
+
+    fn _get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         #[cfg(feature = "debug")]
         println!("PartGet: {self:?}");
-        let ret = match self {
+        match self {
             // Ordered hopefully most used to least used.
 
             // No shortcut conditions/mappers.
@@ -521,9 +575,20 @@ impl UrlPart {
             Self::Whole                  => Some(Cow::Borrowed(url.as_str())),
             Self::Host                   => url.host_str().map(Cow::Borrowed),
             Self::DomainSegment(n)       => neg_nth(url.domain()?.split('.'), *n).map(Cow::Borrowed),
-            Self::Subdomain              => url.domain()
-                .and_then(|domain| domain.strip_suffix(psl::domain_str(domain)?).map(|subdomain_dot| Cow::Borrowed(subdomain_dot.strip_suffix('.').unwrap_or(subdomain_dot)))),
+            Self::Subdomain              => {
+                let url_domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
+                Some(Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.rsplit_once('.')?.0))
+            },
             Self::NotSubdomain           => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
+            Self::NotSubdomainNotSuffix  => {
+                // let domain_dot_suffix = psl::domain_str(url.domain()?)?;
+                // let suffix = psl::suffix_str(domain_dot_suffix)?;
+                // let domain_dot=domain_dot_suffix.strip_suffix(suffix)?;
+                // Some(Cow::Borrowed(domain_dot.strip_suffix('.').unwrap_or(domain_dot)))
+                let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
+                let suffix=psl::suffix_str(domain)?;
+                domain.strip_suffix(suffix)?.rsplit('.').nth(1).map(Cow::Borrowed)
+            },
             Self::Domain                 => url.domain().map(Cow::Borrowed),
             Self::DomainSuffix           => url.domain().and_then(psl::suffix_str).map(Cow::Borrowed),
             Self::Port                   => url.port_or_known_default().map(|port| Cow::Owned(port.to_string())), // I cannot be bothered to add number handling.
@@ -539,11 +604,6 @@ impl UrlPart {
             Self::NextDomainSegment      => None,
             Self::BeforePathSegment(_)   => None,
             Self::NextPathSegment        => None
-        };
-        if none_to_empty_string {
-            ret.or(Some(Cow::Borrowed("")))
-        } else {
-            ret
         }
     }
 
@@ -588,10 +648,37 @@ impl UrlPart {
                 }
             },
             (Self::NotSubdomain, Some(to)) => {
-                let mut new_domain=Self::Subdomain.get(url, false).ok_or(GetPartError::HostIsNotADomain)?.to_string();
-                new_domain.push('.');
+                println!("{url:?}, {to:?}");
+                println!("{:?}", Self::Subdomain.get(url, true));
+                let mut new_domain=Self::Subdomain.get(url, true).ok_or(GetPartError::HostIsNotADomain)?.to_string();
+                if !new_domain.is_empty() {
+                    new_domain.push('.');
+                }
                 new_domain.push_str(to);
+                println!("{new_domain:?}");
                 url.set_host(Some(&new_domain))?;
+            },
+            (Self::NotSubdomainNotSuffix, _) => {
+                #[allow(clippy::useless_format)]
+                url.set_host(Some(&match (Self::Subdomain.get(url, false), to, Self::DomainSuffix.get(url, false), Self::Domain.get(url, false).ok_or(GetPartError::HostIsNotADomain)?.ends_with('.')) {
+                    // I do not know or care if any of these are impossible.
+                    (Some(subdomain), Some(to), Some(suffix), true ) => format!("{subdomain}.{to}.{suffix}."),
+                    (Some(subdomain), Some(to), Some(suffix), false) => format!("{subdomain}.{to}.{suffix}"),
+                    (Some(subdomain), Some(to), None        , true ) => format!("{subdomain}.{to}."),
+                    (Some(subdomain), Some(to), None        , false) => format!("{subdomain}.{to}"),
+                    (Some(subdomain), None    , Some(suffix), true ) => format!("{subdomain}.{suffix}."),
+                    (Some(subdomain), None    , Some(suffix), false) => format!("{subdomain}.{suffix}"),
+                    (Some(subdomain), None    , None        , true ) => format!("{subdomain}."),
+                    (Some(subdomain), None    , None        , false) => format!("{subdomain}"),
+                    (None           , Some(to), Some(suffix), true ) => format!("{to}.{suffix}."),
+                    (None           , Some(to), Some(suffix), false) => format!("{to}.{suffix}"),
+                    (None           , Some(to), None        , true ) => format!("{to}."),
+                    (None           , Some(to), None        , false) => format!("{to}"),
+                    (None           , None    , Some(suffix), true ) => format!("{suffix}."),
+                    (None           , None    , Some(suffix), false) => format!("{suffix}"),
+                    (None           , None    , None        , true ) => format!("."),
+                    (None           , None    , None        , false) => format!("")
+                }))?;
             },
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::DomainSuffix  , _) => {

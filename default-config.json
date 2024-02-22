@@ -249,14 +249,6 @@
 				{"SetPart": {"part": "Subdomain", "value": null}}
 			]}
 		},
-		{
-			"condition": {"All": [
-				{"FlagIsSet": "discord-compatibility"},
-				{"UnqualifiedDomain": "deviantart.com"},
-				{"PartIs": {"part": {"PathSegment": 1}, "value": "art"}}
-			]},
-			"mapper": {"SetHost": "fxdeviantart.com"}
-		},
 
 
 

@@ -19,7 +19,7 @@ for url in "${URLS[@]}"; do
     lines=$(cat stdin | wc -l)
     out="$(echo $url | rg / -r=-)-$lines"
 
-    # hyperfine -N -n "$url - $lines" -w 10 --input ./stdin "$COMMAND" --export-json "hyperfine-$out"
+    hyperfine -N -n "$url - $lines" -w 10 --input ./stdin "$COMMAND" --export-json "hyperfine-$out"
     rm -f callgrind.out*
     cat stdin | valgrind --tool=callgrind "../target/release/url-cleaner"
     gprof2dot --format=callgrind callgrind.out* --output "callgrind-$out.dot"

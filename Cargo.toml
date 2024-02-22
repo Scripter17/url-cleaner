@@ -50,17 +50,17 @@ regex = ["dep:regex"]
 # Enables [`url_cleaner::glue::GlobWrapper`].
 glob = ["dep:glob"]
 debug = []
-# Enables [`types::string_location`].
+# Enables [`types::StringLocation`].
 string-location = []
-# Enables [`types::string_matcher`].
+# Enables [`types::StringMatcher`].
 string-matcher = []
-# Enables [`types::string_modification`].
+# Enables [`types::StringModification`].
 string-modification = []
-# Enables [`types::string_source`].
+# Enables [`types::StringSource`].
 string-source = []
-# Enables [`types::string_cmp`].
+# Enables [`types::StringCmp`].
 string-cmp = []
-# Enables [`types::bool_source`].
+# Enables [`types::BoolSource`].
 bool-source = []
 
 # https://stackoverflow.com/a/54842093/10720231

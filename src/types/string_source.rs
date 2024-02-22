@@ -31,7 +31,7 @@ pub enum StringSource {
     /// # use url_cleaner::config::Params;
     /// # use std::borrow::Cow;
     /// let url = Url::parse("https://example.com").unwrap();
-    /// assert!(StringSource::String("abc".to_string()).get_string(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("abc"))));
+    /// assert!(StringSource::String("abc".to_string()).get(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("abc"))));
     /// ```
     String(String),
     /// Gets the specified URL part.
@@ -44,7 +44,7 @@ pub enum StringSource {
     /// # use url_cleaner::types::UrlPart;
     /// let url = Url::parse("https://example.com").unwrap();
     /// let params = Params::default();
-    /// assert!(StringSource::Part(UrlPart::Domain).get_string(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("example.com"))));
+    /// assert!(StringSource::Part(UrlPart::Domain).get(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("example.com"))));
     /// ```
     Part(UrlPart),
     /// Gets the specified variable's value.
@@ -57,7 +57,7 @@ pub enum StringSource {
     /// # use std::collections::HashMap;
     /// let url = Url::parse("https://example.com").unwrap();
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// assert!(StringSource::Var("abc".to_string()).get_string(&url, &params, false).is_ok_and(|x| x==Some(Cow::Borrowed("xyz"))));
+    /// assert!(StringSource::Var("abc".to_string()).get(&url, &params, false).is_ok_and(|x| x==Some(Cow::Borrowed("xyz"))));
     /// ```
     Var(String),
     /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
@@ -73,8 +73,8 @@ pub enum StringSource {
     /// let params_1 = Params::default();
     /// let params_2 = Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()};
     /// let x = StringSource::IfFlag {flag: "abc".to_string(), then: Box::new(StringSource::String("xyz".to_string())), r#else: Box::new(StringSource::Part(UrlPart::Domain))};
-    /// assert!(x.get_string(&url, &params_1, false).is_ok_and(|x| x==Some(Cow::Borrowed("example.com"))));
-    /// assert!(x.get_string(&url, &params_2, false).is_ok_and(|x| x==Some(Cow::Borrowed("xyz"))));
+    /// assert!(x.get(&url, &params_1, false).is_ok_and(|x| x==Some(Cow::Borrowed("example.com"))));
+    /// assert!(x.get(&url, &params_2, false).is_ok_and(|x| x==Some(Cow::Borrowed("xyz"))));
     /// ```
     IfFlag {
         /// The name of the flag to check.
@@ -126,17 +126,17 @@ impl StringSource {
     /// Gets the string from the source.
     /// # Errors
     /// See the documentation for [`Self`]'s variants for details.
-    pub fn get_string<'a>(&'a self, url: &'a Url, params: &'a Params, none_to_empty_string: bool) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'a>(&'a self, url: &'a Url, params: &'a Params, none_to_empty_string: bool) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         #[cfg(feature = "debug")]
         println!("Source: {self:?}");
         let ret = Ok(match self {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
             Self::Part(x) => x.get(url, none_to_empty_string),
             Self::Var(x) => params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.get_string(url, params, none_to_empty_string)?} else {r#else.get_string(url, params, none_to_empty_string)?},
+            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.get(url, params, none_to_empty_string)?} else {r#else.get(url, params, none_to_empty_string)?},
             #[cfg(feature = "string-modification")]
             Self::Modified {source, modification} => {
-                let x=source.as_ref().get_string(url, params, none_to_empty_string)?.map(Cow::into_owned);
+                let x=source.as_ref().get(url, params, none_to_empty_string)?.map(Cow::into_owned);
                 if let Some(mut x) = x {
                     modification.apply(&mut x, params)?;
                     Some(Cow::Owned(x))
@@ -145,7 +145,7 @@ impl StringSource {
                 }
             },
             Self::Debug(source) => {
-                let ret=source.get_string(url, params, none_to_empty_string);
+                let ret=source.get(url, params, none_to_empty_string);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");
                 ret?
             },
