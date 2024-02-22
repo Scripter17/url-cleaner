@@ -105,6 +105,17 @@
 
 
 		{
+			"condition": {"PartContains": {
+				"part": {"PartSegments": {"part": "Domain", "split": ".", "start": 1, "end": null}},
+				"where": "Start",
+				"value": {"Join": {"sources": [{"Part": "NotSubdomain"}, {"String": "."}]}}
+			}},
+			"mapper": {"SetPart": {"part": "NotSubdomain", "value": null}}
+		},
+
+
+
+		{
 			"condition": {"All": [
 				{"MaybeWWWDomain": "pixiv.net"},
 				{"PathIs": "/member.php"}
@@ -118,10 +129,6 @@
 
 
 
-		{
-			"condition": {"PartContains": {"part": "Domain", "where": "End", "value": ".tumblr.com.tumblr.com"}},
-			"mapper": {"CopyPart": {"from": {"DomainSegment": 0}, "to": "Subdomain"}}
-		},
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "tumblr.com"},

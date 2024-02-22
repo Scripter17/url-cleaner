@@ -220,6 +220,25 @@ pub enum UrlPart {
     /// assert!(UrlPart::NotSubdomain.set(&mut url, None).is_err());
     /// ```
     NotSubdomain,
+    /// # Getting
+    /// Can be `None`.
+    /// # Setting
+    /// Can be `None`.
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use std::borrow::Cow;
+    /// assert_eq!(UrlPart::NotDomainSuffix.get(&Url::parse("https://abc.example.com").unwrap(), false), Some(Cow::Borrowed("abc.example")));
+    /// assert_eq!(UrlPart::NotDomainSuffix.get(&Url::parse("https://com").unwrap()            , false), None);
+    /// 
+    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// assert!(UrlPart::NotDomainSuffix.set(&mut url, Some("a")).is_ok());
+    /// assert_eq!(url.as_str(), "https://a.com/");
+    /// assert!(UrlPart::NotDomainSuffix.set(&mut url, None).is_ok());
+    /// assert_eq!(url.as_str(), "https://com/");
+    /// ```
+    NotDomainSuffix,
     /// The `example` in `abc.example.com`.
     /// # Getting
     /// Can be `None`.
@@ -445,8 +464,9 @@ pub enum UrlPart {
     /// ```
     NextPathSegment,
     /// The path. Corresponds to [`Url::path`].
-    /// Please note that for URLs that are not cannot-be-a-base, the path is always `Some` and starts with `/`.
-    /// If a URL is cannot-be-a-base, getting the path will always return `None`. `Url::path` doesn't but given it's described as "an arbitrary string" in this case I believe returning `None` is less surprising behaviour.
+    /// Please note that all URLs with a path always have the path start with `/`.
+    /// This is abstracted away in [`Self::PathSegment`] but not here.
+    /// If a URL is cannot-be-a-base, getting the path will always return `None`. `Url::path` doesn't but given it's described as "an arbitrary string" I believe returning `None` is less surprising behaviour.
     /// # Getting
     /// Will be `None` when the URL is cannot-be-a-base.
     /// # Setting
@@ -541,7 +561,28 @@ pub enum UrlPart {
     /// assert!(UrlPart::Fragment.set(&mut url, None).is_ok());
     /// assert_eq!(url.fragment(), None);
     /// ```
-    Fragment
+    Fragment,
+    /// Please note that all URLs with a path always have the path start with `/`.
+    /// This is abstracted away in [`Self::PathSegment`] but not here.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// # use std::borrow::Cow;
+    /// let part = UrlPart::PartSegments {part: Box::new(UrlPart::Path), split: "/".to_string(), start: Some(1), end: Some(-1)};
+    /// let mut url = Url::parse("https://example.com/a/b/c/d/e").unwrap();
+    /// 
+    /// assert_eq!(part.get(&url, false), Some(Cow::Owned("a/b/c/d".to_string())));
+    /// 
+    /// assert!(part.set(&mut url, Some("x/y")).is_ok());
+    /// assert_eq!(url.as_str(), "https://example.com/x/y/e");
+    /// ```
+    PartSegments {
+        part: Box<Self>,
+        split: String,
+        start: Option<isize>,
+        end: Option<isize>
+    }
 }
 
 impl UrlPart {
@@ -580,6 +621,13 @@ impl UrlPart {
                 Some(Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.rsplit_once('.')?.0))
             },
             Self::NotSubdomain           => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
+            Self::NotDomainSuffix        => {
+                let domain=url.domain().map(|x| x.strip_suffix(".").unwrap_or(x))?;
+                match domain.strip_suffix(psl::suffix_str(domain)?).map(|x| Cow::Borrowed(x.strip_suffix(".").unwrap_or(x))) {
+                    Some(Cow::Borrowed("")) => None,
+                    nds => nds
+                }
+            },
             Self::NotSubdomainNotSuffix  => {
                 // let domain_dot_suffix = psl::domain_str(url.domain()?)?;
                 // let suffix = psl::suffix_str(domain_dot_suffix)?;
@@ -593,6 +641,10 @@ impl UrlPart {
             Self::DomainSuffix           => url.domain().and_then(psl::suffix_str).map(Cow::Borrowed),
             Self::Port                   => url.port_or_known_default().map(|port| Cow::Owned(port.to_string())), // I cannot be bothered to add number handling.
             Self::Path                   => if url.cannot_be_a_base() {None} else {Some(Cow::Borrowed(url.path()))},
+
+            Self::PartSegments {part, split, start, end} => {
+                Some(Cow::Owned(neg_vec_keep(part._get(url)?.split(split), *start, *end)?.join(split)))
+            },
 
             // The things that are likely very rarely used.
 
@@ -647,16 +699,22 @@ impl UrlPart {
                     }
                 }
             },
-            (Self::NotSubdomain, Some(to)) => {
-                println!("{url:?}, {to:?}");
-                println!("{:?}", Self::Subdomain.get(url, true));
-                let mut new_domain=Self::Subdomain.get(url, true).ok_or(GetPartError::HostIsNotADomain)?.to_string();
-                if !new_domain.is_empty() {
-                    new_domain.push('.');
+            (Self::NotSubdomain, _) => match to {
+                Some(to) => {
+                    let mut new_domain=Self::Subdomain.get(url, true).ok_or(GetPartError::HostIsNotADomain)?.to_string();
+                    if !new_domain.is_empty() {
+                        new_domain.push('.');
+                    }
+                    new_domain.push_str(to);
+                    url.set_host(Some(&new_domain))?;
+                },
+                None => {
+                    url.set_host(Some(&Self::Subdomain.get(url, true).ok_or(GetPartError::HostIsNotADomain)?.to_string()))?;
                 }
-                new_domain.push_str(to);
-                println!("{new_domain:?}");
-                url.set_host(Some(&new_domain))?;
+            },
+            (Self::NotDomainSuffix, _) => match to {
+                Some(to) => url.set_host(Some(&format!("{}.{}", to, Self::DomainSuffix.get(url, false).ok_or(GetPartError::HostIsNotADomain)?)))?,
+                None     => url.set_host(Some(&Self::DomainSuffix.get(url, false).ok_or(GetPartError::HostIsNotADomain)?.to_string()))?
             },
             (Self::NotSubdomainNotSuffix, _) => {
                 #[allow(clippy::useless_format)]
@@ -736,6 +794,13 @@ impl UrlPart {
                 }
             }
 
+            (Self::PartSegments {part, split, start, end}, _) => {
+                let temp=part._get(url).ok_or(GetPartError::PartIsNone)?;
+                let mut temp2=temp.split(split).collect::<Vec<_>>();
+                temp2.splice(neg_range(*start, *end, temp2.len()).ok_or(GetPartError::SegmentRangeNotFound)?, to.into_iter());
+                part.set(url, Some(&temp2.join(split)))?;
+            },
+
             // The things that are likely very rarely used.
 
             (Self::Whole   , Some(to)) => *url=Url::parse(to)?,
@@ -773,8 +838,10 @@ pub enum GetPartError {
     /// Returned when setting a [`UrlPart::DomainSegment`], [`UrlPart::PathSegment`], or [`UrlPart::BeforePathSegment`] when the index isn't in the relevant part's segments.
     #[error("The requested segment was not found.")]
     SegmentNotFound,
-    #[error("Cannot get unconnected segments.")]
-    CannotGetUnconnectedSegments
+    #[error("The requested part was None.")]
+    PartIsNone,
+    #[error("The requested segment range was not found.")]
+    SegmentRangeNotFound
 }
 
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -810,9 +877,7 @@ pub enum SetPartError {
     InvalidPort,
     /// Each domain segment must be between 1 and 63 bytes. The [`url`] crate erroneously allows empty segments.
     #[error("Each domain segment must be between 1 and 63 bytes. The url crate erroneously allows empty segments.")]
-    DomainSegmentCannotBeEmpty,
-    #[error("Cannot set unconnected segments.")]
-    CannotSetUnconnectedSegments
+    DomainSegmentCannotBeEmpty
 }
 
 /// The enum of all possible errors that can occur when applying a [`super::StringModification`] to a [`UrlPart`] using [`UrlPart::modify`].

@@ -102,6 +102,11 @@ pub(crate) fn neg_range(start: Option<isize>, end: Option<isize>, len: usize) ->
     ))
 }
 
+pub(crate) fn neg_vec_keep<I: IntoIterator>(iter: I, start: Option<isize>, end: Option<isize>) -> Option<Vec<I::Item>> {
+    let mut ret=iter.into_iter().collect::<Vec<_>>();
+    Some(ret.drain(neg_range(start, end, ret.len())?).collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

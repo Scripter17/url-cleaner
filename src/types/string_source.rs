@@ -94,6 +94,11 @@ pub enum StringSource {
         source: Box<Self>,
         /// The modification to apply to the string.
         modification: StringModification
+    },
+    Join {
+        sources: Vec<Self>,
+        #[serde(default)]
+        join: String
     }
 }
 
@@ -144,6 +149,7 @@ impl StringSource {
                     x.map(Cow::Owned)
                 }
             },
+            Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params, none_to_empty_string)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             Self::Debug(source) => {
                 let ret=source.get(url, params, none_to_empty_string);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");
