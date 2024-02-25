@@ -451,6 +451,10 @@ pub enum Condition {
         /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default)]
+        name_none_to_empty_string: bool,
+        /// Decides if getting the variable should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
+        #[serde(default)]
         none_to_empty_string: bool
     },
     /// Passes if the specified rule variable is set to the specified value.
@@ -463,18 +467,22 @@ pub enum Condition {
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("2".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: None                                       , none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("2".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), value: None                 , none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     #[cfg(not(feature = "string-source"))]
     VarIs {
         /// The name of the variable
         name: String,
         /// The expected value of the variable.
-        value: Option<String>
+        value: Option<String>,
+        /// Decides if getting the variable should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
+        #[serde(default)]
+        none_to_empty_string: bool
     },
 
     /// Passes if the specified rule flag is set.
@@ -653,9 +661,26 @@ impl Condition {
             Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
             Self::QualifiedDomain(domain) => url.domain()==Some(domain),
             Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
-            Self::UnqualifiedAnyTld(middle) => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotSubdomainNotSuffix.get(url, false).as_deref()==Some(middle),
-            Self::MaybeWWWAnyTld(middle)    => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref().map(|x| x.strip_prefix("www.").unwrap_or(x))==Some(middle),
-            Self::QualifiedAnyTld(start)    => url.domain().is_some_and(|domain| domain.starts_with(start)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref()==Some(start),
+            Self::UnqualifiedAnyTld(middle) => url.domain()
+                .is_some_and(|url_domain| url_domain.rsplit_once(middle)
+                    .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')
+                        .is_some_and(|suffix| psl::suffix_str(suffix)
+                            .is_some_and(|psl_suffix| psl_suffix==suffix)
+                        )
+                    )
+                ),
+            Self::MaybeWWWAnyTld(middle) => url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))
+                .is_some_and(|domain| domain.strip_prefix(middle)
+                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
+                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
+                    )
+                ),
+            Self::QualifiedAnyTld(parts) => url.domain()
+                .is_some_and(|domain| domain.strip_prefix(parts)
+                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
+                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
+                    )
+                ),
 
             // Specific parts.
 
@@ -677,12 +702,12 @@ impl Condition {
             // Miscellaneous.
 
             #[cfg(feature = "string-source")]
-            Self::VarIs {name, value, none_to_empty_string} => match value.as_ref() {
-                Some(source) => params.vars.get(&name.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get(url, params, *none_to_empty_string)?.as_deref(),
-                None => params.vars.get(&name.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
+            Self::VarIs {name, value, none_to_empty_string, name_none_to_empty_string} => match value.as_ref() {
+                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get(url, params, *none_to_empty_string)?.as_deref(),
+                None => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]
-            Self::VarIs {name, value} => params.vars.get(name)==value.as_ref(),
+            Self::VarIs {name, value, none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *none_to_empty_string {Some("")} else {None})==value.as_deref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
             #[cfg(all(feature = "string-source", feature = "string-cmp"))]
             Self::StringCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(

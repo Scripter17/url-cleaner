@@ -756,18 +756,20 @@ impl UrlPart {
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::DomainSuffix  , _) => {
                 let not_suffix=Self::NotDomainSuffix.get(url, false).ok_or(GetPartError::PartIsNone)?;
-                let fqdn=url.domain().ok_or(GetPartError::HostIsNotADomain)?.ends_with('.');
-                match &*match (to, fqdn) {
-                    (Some(to), true ) => format!("{}{}.", not_suffix, to),
-                    (Some(to), false) => format!("{}{}" , not_suffix, to),
-                    (None, _) => not_suffix.to_string()
+                match &*match to {
+                    Some(to) => format!("{}.{}", not_suffix, to),
+                    None     => not_suffix.to_string()
                 } {
                     "" => url.set_host(None),
                     d => url.set_host(Some(d))
                 }?;
             },
             (Self::NextDomainSegment, _) => if let Some(to) = to {
-                url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".")))?
+                if to.is_empty() {
+                    Err(SetPartError::DomainSegmentCannotBeEmpty)?
+                } else {
+                    url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".")))?
+                }
             },
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetPartError::InvalidPort)).transpose()?).map_err(|()| SetPartError::CannotSetPort)?,
             (Self::Origin, Some(to)) => if let Origin::Tuple(scheme, host, port) = Url::parse(to)?.origin() {
@@ -900,7 +902,10 @@ pub enum SetPartError {
     UrlMustHaveAPath,
     /// Returned when attempting to set the part of a URL that cannot have a path.
     #[error("The URL cannot have a path as it is not cannot-be-a-base.")]
-    UrlCannotHaveAPath
+    UrlCannotHaveAPath,
+    /// Returned when attempting to set a domain segment to `Some("")`.
+    #[error("A domain segment cannot be empty.")]
+    DomainSegmentCannotBeEmpty
 }
 
 /// The enum of all possible errors [`UrlPart::modify`] can return.
@@ -913,7 +918,7 @@ pub enum PartModificationError {
     /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
     StringError(#[from] StringError),
-    /// Returned ehen a [`SetPartError`] is encountered.
+    /// Returned when a [`SetPartError`] is encountered.
     #[error(transparent)]
     SetPartError(#[from] SetPartError),
     /// Returned when a [`StringModificationError`] is encountered.

@@ -106,7 +106,7 @@ pub enum BoolSource {
         /// The haystack to search for `needle` in.
         #[serde(deserialize_with = "string_or_struct")]
         haystack: StringSource,
-        /// The needle to seatch for in `haystack`.
+        /// The needle to search for in `haystack`.
         #[serde(deserialize_with = "string_or_struct")]
         needle: StringSource,
         /// Decides if `haystack`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
@@ -122,7 +122,7 @@ pub enum BoolSource {
     },
     /// Checks if `string` matches `matcher`.
     /// # Errors
-    /// If `string`'s call ot [`StringSource::get`] returns `None` because `none_to_empty_string` is `false`, returns the error [`BoolSourceError::StringSourceIsNone`].
+    /// If `string`'s call to [`StringSource::get`] returns `None` because `none_to_empty_string` is `false`, returns the error [`BoolSourceError::StringSourceIsNone`].
     #[cfg(all(feature = "string-source", feature = "string-matcher"))]
     StringMatcher {
         /// The string to match against.

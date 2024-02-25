@@ -163,7 +163,7 @@ impl FromStr for StringSource {
 impl TryFrom<&str> for StringSource {
     type Error = <Self as FromStr>::Err;
 
-    /// Why doesn't the standard library do `implt<T: FromStr> TryFrom<&str> for T`?
+    /// Why doesn't the standard library do `impl<T: FromStr> TryFrom<&str> for T`?
     fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
         Self::from_str(s)
     }

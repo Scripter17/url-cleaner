@@ -69,7 +69,8 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::{StringMatcher, StringLocation};
     /// # use url_cleaner::config::Params;
-    /// assert!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc", &Params::default()).is_ok_and(|x| x==true));
+    /// # use url::Url;
+    /// assert!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "string-location")]
     StringLocation {
@@ -83,7 +84,8 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::StringMatcher;
     /// # use url_cleaner::glue::RegexParts;
     /// # use url_cleaner::config::Params;
-    /// assert!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Params::default()).is_ok_and(|x| x==true));
+    /// # use url::Url;
+    /// assert!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "regex")]
     Regex(#[serde(deserialize_with = "string_or_struct")] RegexWrapper),
@@ -92,8 +94,9 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::StringMatcher;
     /// # use url_cleaner::glue::GlobWrapper;
     /// # use url_cleaner::config::Params;
+    /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Params::default()).is_ok_and(|x| x==true));
+    /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "glob")]
     Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
@@ -123,7 +126,7 @@ pub enum StringMatcher {
     /// Modifies the provided string then matches it.
     #[cfg(feature = "string-modification")]
     Modified {
-        /// THe modification to apply.
+        /// The modification to apply.
         modification: StringModification,
         /// The matcher to test the modified string with.
         matcher: Box<Self>
@@ -142,7 +145,7 @@ pub enum StringMatcherError {
     /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
     StringError(#[from] StringError),
-    /// Returned wehn a [`StringLocationError`] is encountered.
+    /// Returned when a [`StringLocationError`] is encountered.
     #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),

@@ -205,6 +205,7 @@ pub enum Mapper {
     /// [`Url::join`].
     #[cfg(feature = "string-source")]
     Join(#[serde(deserialize_with = "string_or_struct")] StringSource),
+    /// [`Url::join`].
     #[cfg(not(feature = "string-source"))]
     Join(String),
 
@@ -212,12 +213,13 @@ pub enum Mapper {
 
     /// Sets the specified URL part to `to`.
     /// # Errors
-    /// If `to` is `None` and `part` cannot be `None` (see [`UrlPart`] for details), returns the error [`SetPartError::PartCannotBeNone`].
+    /// If the call to [`StringSource::get`] return's an error, that error is returned.
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
     #[cfg(feature = "string-source")]
     SetPart {
         /// The name of the part to replace.
         part: UrlPart,
-        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
+        /// Decides if `part`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
@@ -225,14 +227,13 @@ pub enum Mapper {
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>
     },
+    /// Sets the specified URL part to `to`.
+    /// # Errors
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
     #[cfg(not(feature = "string-source"))]
     SetPart {
         /// The name of the part to replace.
         part: UrlPart,
-        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
-        #[serde(default = "get_true")]
-        none_to_empty_string: bool,
         /// The value to set the part to.
         value: Option<String>
     },
@@ -551,7 +552,7 @@ impl Mapper {
                 None => part.set(url, None)
             }?,
             #[cfg(not(feature = "string-source"))]
-            Self::SetPart{part, value, none_to_empty_string} => part.set(url, value.as_deref())?,
+            Self::SetPart{part, value} => part.set(url, value.as_deref())?,
             #[cfg(feature = "string-modification")]
             Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how, params)?,
             Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
