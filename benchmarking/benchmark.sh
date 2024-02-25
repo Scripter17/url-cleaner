@@ -8,6 +8,8 @@ COMMAND="../target/release/url-cleaner --config ../default-config.json"
 cargo build -r --config profile.release.strip=false
 # cargo build -r --no-default-features --features stdin --config profile.release.strip=false
 
+if [ $? -ne 0 ]; then exit; fi
+
 # hyperfine -N -n "No URL - 0" -w 10 "$COMMAND" --export-json "hyperfine-No URL-0"
 
 for url in "${URLS[@]}"; do

@@ -78,9 +78,7 @@ That said, if you find something to be unnecessarily unsafe, please open an issu
 
 ## Backwards compatibility
 
-Although URL Cleaner is currently in beta, I will do my best to not make breaking changed without good reasons. This includes making things that error no longer error.
-
-Changes to the default config that makes partial feature sets not work is not considered a breaking change. The default config will always assume all default features are enabled.
+URL Cleaner is currently in heavy flux so expect library APIs and the rule JSON schema to change at any time for any reason.
 
 ## Default config sources
 

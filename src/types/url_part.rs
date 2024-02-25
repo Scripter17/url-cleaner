@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use url::{Url, ParseError};
+use url::{Url, Origin, ParseError};
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
@@ -52,6 +52,14 @@ pub enum UrlPart {
     /// assert!(UrlPart::Scheme.set(&mut url, None).is_err());
     /// ```
     Scheme,
+    /// The scheme, host, and port
+    /// # Getting
+    /// Is never `None`.
+    /// # Setting
+    /// Cannot be `None`.
+    /// The port is only set if [`Url::port_or_known_default`] does not equal the port in the origin.
+    /// This means setting a URL's origin never adds a redundant port to it.
+    Origin,
     /// The username. Corresponds to [`Url::username`].
     /// # Getting
     /// Is never `None`.
@@ -217,7 +225,8 @@ pub enum UrlPart {
     /// let mut url = Url::parse("https://abc.example.com").unwrap();
     /// assert!(UrlPart::NotSubdomain.set(&mut url, Some("example.co.uk")).is_ok());
     /// assert_eq!(url.as_str(), "https://abc.example.co.uk/");
-    /// assert!(UrlPart::NotSubdomain.set(&mut url, None).is_err());
+    /// assert!(UrlPart::NotSubdomain.set(&mut url, None).is_ok());
+    /// assert_eq!(url.as_str(), "https://abc/");
     /// ```
     NotSubdomain,
     /// # Getting
@@ -448,9 +457,9 @@ pub enum UrlPart {
     /// assert_eq!(url.path(), "/a");
     /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("b")).is_ok());
     /// assert_eq!(url.path(), "/a/b");
-    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("") ).is_ok());
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("" )).is_ok());
     /// assert_eq!(url.path(), "/a/b/");
-    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("") ).is_ok());
+    /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("" )).is_ok());
     /// assert_eq!(url.path(), "/a/b/");
     /// assert!(UrlPart::NextPathSegment.set(&mut url, Some("c")).is_ok());
     /// assert_eq!(url.path(), "/a/b/c");
@@ -589,8 +598,11 @@ impl UrlPart {
     /// Extracts the specified part of the provided URL.
     /// # Errors
     /// See [`Self`]'s documentation for which parts return `None` and when.
+    /// If `none_to_empty_string` is `true`, this always returns `Some`.
     #[must_use]
     pub fn get<'a>(&self, url: &'a Url, none_to_empty_string: bool) -> Option<Cow<'a, str>> {
+        #[cfg(feature = "debug")]
+        println!("PartGet: {self:?}");
         let ret=self._get(url);
         if none_to_empty_string {
             ret.or(Some(Cow::Borrowed("")))
@@ -601,7 +613,7 @@ impl UrlPart {
 
     fn _get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         #[cfg(feature = "debug")]
-        println!("PartGet: {self:?}");
+        println!("_PartGet: {self:?}");
         match self {
             // Ordered hopefully most used to least used.
 
@@ -622,25 +634,22 @@ impl UrlPart {
             },
             Self::NotSubdomain           => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
             Self::NotDomainSuffix        => {
-                let domain=url.domain().map(|x| x.strip_suffix(".").unwrap_or(x))?;
-                match domain.strip_suffix(psl::suffix_str(domain)?).map(|x| Cow::Borrowed(x.strip_suffix(".").unwrap_or(x))) {
+                let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
+                match domain.strip_suffix(psl::suffix_str(domain)?).map(|x| Cow::Borrowed(x.strip_suffix('.').unwrap_or(x))) {
                     Some(Cow::Borrowed("")) => None,
                     nds => nds
                 }
             },
             Self::NotSubdomainNotSuffix  => {
-                // let domain_dot_suffix = psl::domain_str(url.domain()?)?;
-                // let suffix = psl::suffix_str(domain_dot_suffix)?;
-                // let domain_dot=domain_dot_suffix.strip_suffix(suffix)?;
-                // Some(Cow::Borrowed(domain_dot.strip_suffix('.').unwrap_or(domain_dot)))
-                let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
-                let suffix=psl::suffix_str(domain)?;
-                domain.strip_suffix(suffix)?.rsplit('.').nth(1).map(Cow::Borrowed)
+                url.domain().map(|x| x.strip_suffix('.').unwrap_or(x).strip_suffix(psl::suffix_str(x)?))??
+                    .rsplit('.').nth(1).map(Cow::Borrowed)
             },
             Self::Domain                 => url.domain().map(Cow::Borrowed),
             Self::DomainSuffix           => url.domain().and_then(psl::suffix_str).map(Cow::Borrowed),
             Self::Port                   => url.port_or_known_default().map(|port| Cow::Owned(port.to_string())), // I cannot be bothered to add number handling.
             Self::Path                   => if url.cannot_be_a_base() {None} else {Some(Cow::Borrowed(url.path()))},
+
+            Self::Origin => Some(Cow::Owned(url.origin().unicode_serialization())),
 
             Self::PartSegments {part, split, start, end} => {
                 Some(Cow::Owned(neg_vec_keep(part._get(url)?.split(split), *start, *end)?.join(split)))
@@ -709,9 +718,11 @@ impl UrlPart {
                     url.set_host(Some(&new_domain))?;
                 },
                 None => {
+                    #[allow(clippy::unnecessary_to_owned)]
                     url.set_host(Some(&Self::Subdomain.get(url, true).ok_or(GetPartError::HostIsNotADomain)?.to_string()))?;
                 }
             },
+            #[allow(clippy::unnecessary_to_owned)]
             (Self::NotDomainSuffix, _) => match to {
                 Some(to) => url.set_host(Some(&format!("{}.{}", to, Self::DomainSuffix.get(url, false).ok_or(GetPartError::HostIsNotADomain)?)))?,
                 None     => url.set_host(Some(&Self::DomainSuffix.get(url, false).ok_or(GetPartError::HostIsNotADomain)?.to_string()))?
@@ -720,6 +731,7 @@ impl UrlPart {
                 #[allow(clippy::useless_format)]
                 url.set_host(Some(&match (Self::Subdomain.get(url, false), to, Self::DomainSuffix.get(url, false), Self::Domain.get(url, false).ok_or(GetPartError::HostIsNotADomain)?.ends_with('.')) {
                     // I do not know or care if any of these are impossible.
+                    // Future me here: I care slightly. I'm pretty sure `(Some(_), None, Some(_), _)` can't happen.
                     (Some(subdomain), Some(to), Some(suffix), true ) => format!("{subdomain}.{to}.{suffix}."),
                     (Some(subdomain), Some(to), Some(suffix), false) => format!("{subdomain}.{to}.{suffix}"),
                     (Some(subdomain), Some(to), None        , true ) => format!("{subdomain}.{to}."),
@@ -757,6 +769,14 @@ impl UrlPart {
                 url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".")))?
             },
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetPartError::InvalidPort)).transpose()?).map_err(|()| SetPartError::CannotSetPort)?,
+            (Self::Origin, Some(to)) => if let Origin::Tuple(scheme, host, port) = Url::parse(to)?.origin() {
+                url.set_scheme(&scheme).map_err(|_| SetPartError::CannotSetScheme)?;
+                #[allow(clippy::unnecessary_to_owned)]
+                url.set_host(Some(&host.to_string()))?;
+                if url.port_or_known_default()!=Some(port) {
+                    url.set_port(Some(port));
+                }
+            },
             (Self::BeforePathSegment(n), _) => if let Some(to) = to {
                 let fixed_n=neg_index(*n, url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.count()).ok_or(GetPartError::SegmentNotFound)?;
                 if fixed_n==url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.count() {Err(GetPartError::SegmentNotFound)?;}
@@ -797,7 +817,7 @@ impl UrlPart {
             (Self::PartSegments {part, split, start, end}, _) => {
                 let temp=part._get(url).ok_or(GetPartError::PartIsNone)?;
                 let mut temp2=temp.split(split).collect::<Vec<_>>();
-                temp2.splice(neg_range(*start, *end, temp2.len()).ok_or(GetPartError::SegmentRangeNotFound)?, to.into_iter());
+                temp2.splice(neg_range(*start, *end, temp2.len()).ok_or(GetPartError::SegmentRangeNotFound)?, to);
                 part.set(url, Some(&temp2.join(split)))?;
             },
 

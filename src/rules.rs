@@ -22,7 +22,6 @@ pub enum Rule {
     /// ```
     /// # use url_cleaner::rules::{Rule, Mapper};
     /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let rule=Rule::HostMap(HashMap::from_iter([
@@ -45,9 +44,9 @@ pub enum Rule {
     /// ```
     /// # use url_cleaner::rules::{Rule, Condition, Mapper};
     /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::types::StringSource;
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
+    /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// assert!(Rule::RepeatUntilNonePass {
     ///     rules: vec![
@@ -56,7 +55,7 @@ pub enum Rule {
     ///             mapper: Mapper::SetPart {
     ///                 part: UrlPart::NextPathSegment,
     ///                 none_to_empty_string: false,
-    ///                 value: Some(StringSource::String("a".to_string()))
+    ///                 value: Some(FromStr::from_str("a").unwrap())
     ///             }
     ///         }
     ///     ],

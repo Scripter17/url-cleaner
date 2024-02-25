@@ -3,12 +3,14 @@ use std::convert::Infallible;
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use url::Url;
+use url::{Url, ParseError};
 use thiserror::Error;
+#[cfg(all(feature = "http", not(target_family = "wasm")))]
+use reqwest::{Error as ReqwestError, header::{HeaderMap, ToStrError}};
 
 use super::*;
 use crate::config::Params;
-use crate::glue::box_string_or_struct;
+use crate::glue::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -99,6 +101,25 @@ pub enum StringSource {
         sources: Vec<Self>,
         #[serde(default)]
         join: String
+    },
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    HeaderValue {
+        name: String,
+        #[serde(default, with = "crate::glue::headermap")]
+        headers: HeaderMap
+    },
+    ExtractPart {
+        source: Box<Self>,
+        part: UrlPart
+    },
+    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+    ExtractFromPage {
+        #[serde(default, with = "crate::glue::headermap")]
+        headers: HeaderMap,
+        #[serde(deserialize_with = "string_or_struct")]
+        regex: RegexWrapper,
+        #[serde(deserialize_with = "box_string_or_struct")]
+        expand: Box<Self>
     }
 }
 
@@ -108,6 +129,15 @@ impl FromStr for StringSource {
     /// Simply encase the provided string in a [`StringSource::String`] since it's the most common variant.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::String(s.to_string()))
+    }
+}
+
+impl TryFrom<&str> for StringSource {
+    type Error = <Self as FromStr>::Err;
+
+    /// Why doesn't the standard library do `implt<T: FromStr> TryFrom<&str> for T`?
+    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
+        Self::from_str(s)
     }
 }
 
@@ -124,7 +154,23 @@ pub enum StringSourceError {
     StringModificationError(#[from] StringModificationError),
     /// Always returned by [`StringSource::Error`].
     #[error("StringSource::Error was used.")]
-    ExplicitError
+    ExplicitError,
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[error(transparent)]
+    ReqwestError(#[from] ReqwestError),
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[error("The HTTP request response did not contain the requested header.")]
+    HeaderNotFound,
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[error(transparent)]
+    ToStrError(#[from] ToStrError),
+    #[error(transparent)]
+    ParseError(#[from] ParseError),
+    #[error("The regex pattern did not find any matches.")]
+    #[cfg(feature = "regex")]
+    PatternNotFound,
+    #[error("...")]
+    StringSourceIsNone
 }
 
 impl StringSource {
@@ -150,6 +196,17 @@ impl StringSource {
                 }
             },
             Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params, none_to_empty_string)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            #[cfg(all(feature = "http", not(target_family = "wasm")))]
+            Self::HeaderValue{name, headers} => Some(Cow::Owned(params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.headers().get(name).ok_or(StringSourceError::HeaderNotFound)?.to_str()?.to_string())),
+            Self::ExtractPart{source, part} => source.get(url, params, false)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x, none_to_empty_string).map(|x| Cow::Owned(x.into_owned()))),
+            #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+            Self::ExtractFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
+                let mut ret=String::new();
+                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(StringSourceError::PatternNotFound)?.expand(&expand, &mut ret);
+                Some(Cow::Owned(ret))
+            } else {
+                Err(StringSourceError::StringSourceIsNone)?
+            },
             Self::Debug(source) => {
                 let ret=source.get(url, params, none_to_empty_string);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");

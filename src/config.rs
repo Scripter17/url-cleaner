@@ -16,11 +16,11 @@ use crate::rules::Rules;
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
+    /// The conditions and mappers that modify the URLS.
+    pub rules: Rules,
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default)]
-    pub params: Params,
-    /// The conditions and mappers that modify the URLS.
-    pub rules: Rules
+    pub params: Params
 }
 
 impl Config {
@@ -87,18 +87,6 @@ pub struct Params {
     pub default_http_headers: HeaderMap
 }
 
-#[cfg(all(feature = "http", not(target_family = "wasm")))]
-impl Params {
-    /// Gets an HTTP client with [`self`]'s configuration pre-applied.
-    /// # Errors
-    /// Errors if [`reqwest::blocking::ClientBuilder::build`] errors.
-    pub fn http_client(&self) -> reqwest::Result<reqwest::blocking::Client> {
-        reqwest::blocking::ClientBuilder::new()
-            .default_headers(self.default_http_headers.clone())
-            .build()
-    }
-}
-
 impl Params {
     /// Overwrites part of `self` with `from`.
     pub fn merge(&mut self, from: Self) {
@@ -106,6 +94,16 @@ impl Params {
         self.flags.extend(from.flags);
         #[cfg(all(feature = "http", not(target_family = "wasm")))]
         self.default_http_headers.extend(from.default_http_headers);
+    }
+
+    /// Gets an HTTP client with [`self`]'s configuration pre-applied.
+    /// # Errors
+    /// Errors if [`reqwest::blocking::ClientBuilder::build`] errors.
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    pub fn http_client(&self) -> reqwest::Result<reqwest::blocking::Client> {
+        reqwest::blocking::ClientBuilder::new()
+            .default_headers(self.default_http_headers.clone())
+            .build()
     }
 }
 

@@ -291,12 +291,12 @@ pub enum Condition {
     /// # use url_cleaner::config::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
-    /// assert!(Condition::PartIs{part: UrlPart::Username      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Password      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::Path          , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Username      , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Password      , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Path          , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     #[cfg(feature = "string-source")]
     PartIs {
@@ -349,8 +349,8 @@ pub enum Condition {
     /// # use url_cleaner::config::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url_cleaner::types::StringLocation;
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".try_into().unwrap(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".try_into().unwrap(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     #[cfg(all(feature = "string-source", feature = "string-location"))]
     PartContains {
@@ -576,26 +576,9 @@ impl Condition {
             Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
             Self::QualifiedDomain(domain) => url.domain()==Some(domain),
             Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
-            Self::UnqualifiedAnyTld(middle) => url.domain()
-                .is_some_and(|url_domain| url_domain.rsplit_once(middle)
-                    .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')
-                        .is_some_and(|suffix| psl::suffix_str(suffix)
-                            .is_some_and(|psl_suffix| psl_suffix==suffix)
-                        )
-                    )
-                ),
-            Self::MaybeWWWAnyTld(middle) => url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))
-                .is_some_and(|domain| domain.strip_prefix(middle)
-                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
-                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
-                    )
-                ),
-            Self::QualifiedAnyTld(parts) => url.domain()
-                .is_some_and(|domain| domain.strip_prefix(parts)
-                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
-                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
-                    )
-                ),
+            Self::UnqualifiedAnyTld(middle) => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotSubdomainNotSuffix.get(url, false).as_deref()==Some(middle),
+            Self::MaybeWWWAnyTld(middle)    => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref().map(|x| x.strip_prefix("www.").unwrap_or(x))==Some(middle),
+            Self::QualifiedAnyTld(start)    => url.domain().is_some_and(|domain| domain.starts_with(start)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref()==Some(start),
 
             // Meta conditions
 
@@ -631,10 +614,8 @@ impl Condition {
 
             // General parts
 
-            #[cfg(feature = "string-source")]
-            Self::PartIs{part, none_to_empty_string, value, value_none_to_empty_string} => value.as_ref().map(|source| source.get(url, params, *value_none_to_empty_string)).transpose()?.flatten().as_deref()==part.get(url, *none_to_empty_string).as_deref(),
-            #[cfg(not(feature = "string-source"))]
-            Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
+            #[cfg(    feature = "string-source") ] Self::PartIs{part, none_to_empty_string, value, value_none_to_empty_string} => value.as_ref().map(|source| source.get(url, params, *value_none_to_empty_string)).transpose()?.flatten().as_deref()==part.get(url, *none_to_empty_string).as_deref(),
+            #[cfg(not(feature = "string-source"))] Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
             #[cfg(all(    feature = "string-source" , feature = "string-location"))] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, &value.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?)?,
             #[cfg(all(not(feature = "string-source"), feature = "string-location"))] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
             #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, params)?,
