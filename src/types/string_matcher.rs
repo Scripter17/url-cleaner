@@ -1,6 +1,8 @@
+use std::collections::HashSet;
+
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use std::collections::HashSet;
+use url::Url;
 
 use super::*;
 #[cfg(feature = "regex")]
@@ -58,6 +60,7 @@ pub enum StringMatcher {
 
 
 
+    /// Passes if the provided string is contained in the specified [`HashSet`].
     InHashSet(HashSet<String>),
     /// Uses a [`StringLocation`].
     /// # Errors
@@ -94,41 +97,71 @@ pub enum StringMatcher {
     /// ```
     #[cfg(feature = "glob")]
     Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
-    #[cfg(feature = "string-cmp")]
+    /// Compares the provided string as the left hand side of the specified [`StringCmp`]
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, returns that error.
+    /// If the call to [`StringSource::get`] returns `None` and `none_to_empty_string` is `false`, returns the error [`StringMatcherError::StringSourceIsNone`].
+    #[cfg(all(feature = "string-cmp", feature = "string-source"))]
     StringCmp {
+        /// The string comparison to use.
         cmp: StringCmp,
+        /// If `cmp` returns `None`, this decides whether or not to treat it as an empty string.
+        #[serde(default = "get_true")]
+        none_to_empty_string: bool,
+        /// The right hand side of the comparison.
+        #[serde(deserialize_with = "string_or_struct")]
+        r: StringSource
+    },
+    /// Compares the provided string as the left hand side of the specified [`StringCmp`]
+    #[cfg(all(feature = "string-cmp", not(feature = "string-source")))]
+    StringCmp {
+        /// The string comparison to use.
+        cmp: StringCmp,
+        /// The right hand side of the comparison.
         r: String
     },
+    /// Modifies the provided string then matches it.
     #[cfg(feature = "string-modification")]
     Modified {
+        /// THe modification to apply.
         modification: StringModification,
+        /// The matcher to test the modified string with.
         matcher: Box<Self>
     }
 }
 
-/// An enum of all possible errors a [`StringMatcher`] can return.
+const fn get_true() -> bool {true}
+
+/// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringMatcherError {
-    /// A generic string error.
+    /// Returned when [`StringMatcher::Error`] is used.
+    #[error("StringMatcher::Error was used.")]
+    ExplicitError,
+    /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
     StringError(#[from] StringError),
-    /// Returned by [`StringMatcher::StringLocation`].
+    /// Returned wehn a [`StringLocationError`] is encountered.
     #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
+    /// Returned when a [`StringModificationError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    /// Always returned by [`StringMatcher::Error`].
-    #[error("StringMatcher::Error was used.")]
-    ExplicitError
+    /// Returned when a [`StringSourceError`] is encountered.
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError),
+    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
+    #[error("The specified StringSource returned None where it had to be Some.")]
+    StringSourceIsNone
 }
 
 impl StringMatcher {
     /// # Errors
     /// See the documentation for [`Self`]'s variants for details.
-    pub fn satisfied_by(&self, haystack: &str, params: &Params) -> Result<bool, StringMatcherError> {
+    pub fn satisfied_by(&self, haystack: &str, url: &Url, params: &Params) -> Result<bool, StringMatcherError> {
         #[cfg(feature = "debug")]
         println!("Matcher: {self:?}");
         Ok(match self {
@@ -136,16 +169,16 @@ impl StringMatcher {
             Self::Never => false,
             Self::Error => Err(StringMatcherError::ExplicitError)?,
             Self::Debug(matcher) => {
-                let is_satisfied=matcher.satisfied_by(haystack, params);
-                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=matcher.satisfied_by(haystack, url, params);
+                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
-            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, params).unwrap_or(true),
-            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, params).or_else(|_| r#else.satisfied_by(haystack, params))?,
+            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(true),
+            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(false),
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|_| r#else.satisfied_by(haystack, url, params))?,
             Self::All(matchers) => {
                 for matcher in matchers {
-                    if !matcher.satisfied_by(haystack, params)? {
+                    if !matcher.satisfied_by(haystack, url, params)? {
                         return Ok(false);
                     }
                 }
@@ -153,20 +186,21 @@ impl StringMatcher {
             },
             Self::Any(matchers) => {
                 for matcher in matchers {
-                    if matcher.satisfied_by(haystack, params)? {
+                    if matcher.satisfied_by(haystack, url, params)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Not(matcher) => !matcher.satisfied_by(haystack, params)?,
+            Self::Not(matcher) => !matcher.satisfied_by(haystack, url, params)?,
 
             Self::InHashSet(hash_set) => hash_set.contains(haystack),
             #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,
             #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
-            #[cfg(feature = "string-cmp"         )] Self::StringCmp {cmp, r} => cmp.satisfied_by(haystack, r),
-            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, params)?; temp}, params)?
+            #[cfg(all(feature = "string-cmp", feature = "string-source"))] Self::StringCmp {cmp, none_to_empty_string, r} => cmp.satisfied_by(haystack, &r.get(url, params, *none_to_empty_string)?.ok_or(StringMatcherError::StringSourceIsNone)?),
+            #[cfg(all(feature = "string-cmp", not(feature = "string-source")))] Self::StringCmp {cmp, r} => cmp.satisfied_by(haystack, r),
+            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, params)?; temp}, url, params)?
         })
     }
 }

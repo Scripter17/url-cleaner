@@ -7,7 +7,7 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use url::Url;
 
-use crate::glue::{self, string_or_struct, optional_string_or_struct};
+use crate::glue::*;
 use crate::types::*;
 use crate::config::Params;
 
@@ -15,7 +15,7 @@ use crate::config::Params;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
-    // Testing conditions.
+    // Debug/constants.
 
     /// Always passes.
     Always,
@@ -89,8 +89,34 @@ pub enum Condition {
         r#else: Box<Self>
     },
 
-    // Boolean.
+    // Conditional.
 
+    /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
+    /// # Errors
+    /// If `r#if` returns an error, that error is returned.
+    /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// If `r#if` fails and `r#else` returns an error, that error is returned.
+    If {
+        /// The [`Self`] that decides if `then` or `r#else` is used.
+        r#if: Box<Self>,
+        /// The [`Self`] to use if `r#if` passes.
+        then: Box<Self>,
+        /// The [`Self`] to use if `r#if` fails.
+        r#else: Box<Self>
+    },
+    /// Passes if the included [`Self`] doesn't and vice-versa.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::Condition;
+    /// # use url_cleaner::config::Params;
+    /// # use url::Url;
+    /// assert!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::Not(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// ```
+    Not(Box<Self>),
     /// Passes if all of the included [`Self`]s pass.
     /// Like [`Iterator::all`], an empty list passes.
     /// # Errors
@@ -131,19 +157,6 @@ pub enum Condition {
     /// assert!(Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     Any(Vec<Self>),
-    /// Passes if the included [`Self`] doesn't and vice-versa.
-    /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
-    /// # use url::Url;
-    /// assert!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::Not(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// ```
-    Not(Box<Self>),
 
     // Domain conditions.
 
@@ -252,7 +265,7 @@ pub enum Condition {
     /// ```
     QualifiedAnyTld(String),
 
-    // Query.
+    // Specific parts.
 
     /// Passes if the URL has a query of the specified name.
     /// # Examples
@@ -265,9 +278,6 @@ pub enum Condition {
     /// assert!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     QueryHasParam(String),
-
-    // Path.
-
     /// Passes if the URL's path is the specified string.
     /// # Examples
     /// ```
@@ -302,13 +312,15 @@ pub enum Condition {
     PartIs {
         /// The name of the part to check.
         part: UrlPart,
-        /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
-        /// Defaults to `true` for the sake of simplicity.
+        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
+        /// Decides if `value`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `false`.
         #[serde(default = "get_false")]
         value_none_to_empty_string: bool
     },
@@ -331,8 +343,8 @@ pub enum Condition {
     PartIs {
         /// The name of the part to check.
         part: UrlPart,
-        /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
-        /// Defaults to `true` for the sake of simplicity.
+        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The expected value of the part.
@@ -356,8 +368,8 @@ pub enum Condition {
     PartContains {
         /// The name of the part to check.
         part: UrlPart,
-        /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
-        /// Defaults to `true` for the sake of simplicity.
+        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The value to look for.
@@ -384,8 +396,8 @@ pub enum Condition {
     PartContains {
         /// The name of the part to check.
         part: UrlPart,
-        /// If the chosen URL part's getter returns `None`, this determines if that should be interpreted as an empty string.
-        /// Defaults to `true` for the sake of simplicity.
+        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The value to look for.
@@ -402,51 +414,12 @@ pub enum Condition {
     PartMatches {
         /// The part to check.
         part: UrlPart,
-        /// If the relevant [`Url`] part getter returns [`None`], this decides whether to return a [`ConditionError::UrlPartNotFound`] or pretend it's just an empty string and check that.
-        /// Defaults to [`true`].
+        /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
         #[serde(default = "get_true")]
         none_to_empty_string: bool,
         /// The [`StringMatcher`] used to check the part's value.
         matcher: StringMatcher
-    },
-
-    // Commands.
-
-    /// Checks the contained command's [`glue::CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::glue::CommandWrapper;
-    /// # use url::Url;
-    /// # use std::str::FromStr;
-    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// ```
-    #[cfg(feature = "commands")]
-    CommandExists(glue::CommandWrapper),
-    /// Runs the specified [`glue::CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
-    /// # Errors
-    /// If the command is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::glue::CommandWrapper;
-    /// # use url::Url;
-    /// # use std::str::FromStr;
-    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_err());
-    /// ```
-    #[cfg(feature = "commands")]
-    CommandExitStatus {
-        /// The [`glue::CommandWrapper`] to execute.
-        command: glue::CommandWrapper,
-        /// The expected [`std::process::ExitStatus`]. Defaults to `0`.
-        #[serde(default)]
-        expected: i32
     },
 
     // Miscellaneous.
@@ -475,14 +448,32 @@ pub enum Condition {
         /// The expected value of the variable.
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
-        /// If `value.get` returns `None`, pretend it's an empty string.
-        /// Defaults to [`false`].
+        /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
         #[serde(default)]
         none_to_empty_string: bool
     },
+    /// Passes if the specified rule variable is set to the specified value.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::Condition;
+    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::StringSource;
+    /// # use url::Url;
+    /// # use std::collections::HashMap;
+    /// let url=Url::parse("https://example.com").unwrap();
+    /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
+    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("2".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: Some("a".to_string()), value: None                                       , none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
+    /// ```
     #[cfg(not(feature = "string-source"))]
     VarIs {
+        /// The name of the variable
         name: String,
+        /// The expected value of the variable.
         value: Option<String>
     },
 
@@ -497,24 +488,71 @@ pub enum Condition {
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
     FlagIsSet(String),
+    /// Get two strings them compare them.
+    /// Passes if the comparison returns `true`.
+    /// # Errors
+    /// If either `l` or `r` return an error, that error is returned.
+    /// If either `l` or `r` return `None` because the respective `none_to_empty_string` is `false`, returns the error [`ConditionError::StringSourceIsNone`].
     #[cfg(all(feature = "string-source", feature = "string-cmp"))]
     StringCmp {
+        /// The source of the left hand side of the comparison.
         #[serde(deserialize_with = "string_or_struct")]
         l: StringSource,
+        /// The source of the right hand side of the comparison.
         #[serde(deserialize_with = "string_or_struct")]
         r: StringSource,
+        /// If `l` returns `None` and this is `true`, pretend `l` returned `Some("")`.
         #[serde(default = "get_true")]
         l_none_to_empty_string: bool,
+        /// If `r` returns `None` and this is `true`, pretend `r` returned `Some("")`.
         #[serde(default = "get_true")]
         r_none_to_empty_string: bool,
+        /// How to compare the strings from `l` and `r`.
         cmp: StringCmp
     },
+    /// Get a boolean value and pass if it's `true`.
+    /// # Errors
+    /// If the call to [`BoolSource::get`] returns an error, that error is returned.
     #[cfg(feature = "bool-source")]
     BoolSource(BoolSource),
-    If {
-        condition: Box<Self>,
-        then: Box<Self>,
-        r#else: Box<Self>
+
+    // Commands.
+
+    /// Checks the contained command's [`CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::Condition;
+    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// ```
+    #[cfg(feature = "commands")]
+    CommandExists(CommandWrapper),
+    /// Runs the specified [`CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
+    /// # Errors
+    /// If the command is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::rules::Condition;
+    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_err());
+    /// ```
+    #[cfg(feature = "commands")]
+    CommandExitStatus {
+        /// The [`CommandWrapper`] to execute.
+        command: CommandWrapper,
+        /// The expected [`std::process::ExitStatus`]. Defaults to `0`.
+        #[serde(default)]
+        expected: i32
     }
 }
 
@@ -524,38 +562,39 @@ const fn get_false() -> bool {false}
 /// An enum of all possible errors a [`Condition`] can return.
 #[derive(Error, Debug)]
 pub enum ConditionError {
-    /// The [`Condition::Error`] condition always returns this error.
+    /// Returned when [`Condition::Error`] is used.
     #[error("Condition::Error was used.")]
     ExplicitError,
-    /// The provided URL does not contain the requested part.
-    /// See [`crate::types::UrlPart`] for details.
-    #[error("The provided URL does not contain the requested part.")]
+    /// Returned when a call to [`UrlPart::get`] returns `None` where it has to return `Some`.
+    #[error("The provided URL does not have the requested part.")]
     UrlPartNotFound,
-    /// Returned when the specified command failed to run.
+    /// Returned when a [`CommandError`] is encountered.
     #[cfg(feature = "commands")]
     #[error(transparent)]
-    CommandError(#[from] glue::CommandError),
-    /// Returned when a string condition fails.
+    CommandError(#[from] CommandError),
+    /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
-    StringError(#[from] crate::types::StringError),
+    StringError(#[from] StringError),
+    /// Returned when a [`GetPartError`] is encountered.
     #[error(transparent)]
     GetPartError(#[from] GetPartError),
-    /// The specified [`StringSource`] returned `None`.
+    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[cfg(feature = "string-source")]
     #[error("The specified StringSource returned None.")]
     StringSourceIsNone,
-    /// The call to [`StringMatcher::satisfied_by`] returned an error.
+    /// Returned when a [`StringMatcherError`] is encountered.
     #[cfg(feature = "string-matcher")]
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
-    /// The call to [`StringLocation::satisfied_by`] returned an error.
+    /// Returned when a [`StringLocationError`] is encountered.
     #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
-    /// The call to [`StringSource::get`] returned an error.
+    /// Returned when a [`StringSourceError`] is encountered.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
+    /// Returned when a [`BoolSourceError`] is encountered.
     #[cfg(feature = "bool-source")]
     #[error(transparent)]
     BoolSourceError(#[from] BoolSourceError)
@@ -570,18 +609,27 @@ impl Condition {
         #[cfg(feature = "debug")]
         println!("Condition: {self:?}");
         Ok(match self {
-            // Domain conditions
+            // Debug/constants.
 
-            Self::UnqualifiedDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
-            Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
-            Self::QualifiedDomain(domain) => url.domain()==Some(domain),
-            Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
-            Self::UnqualifiedAnyTld(middle) => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotSubdomainNotSuffix.get(url, false).as_deref()==Some(middle),
-            Self::MaybeWWWAnyTld(middle)    => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref().map(|x| x.strip_prefix("www.").unwrap_or(x))==Some(middle),
-            Self::QualifiedAnyTld(start)    => url.domain().is_some_and(|domain| domain.starts_with(start)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref()==Some(start),
+            Self::Always => true,
+            Self::Never => false,
+            Self::Error => Err(ConditionError::ExplicitError)?,
+            Self::Debug(condition) => {
+                let is_satisfied=condition.satisfied_by(url, params);
+                eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
+                is_satisfied?
+            },
 
-            // Meta conditions
+            // Error handling.
 
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by(url, params).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by(url, params).unwrap_or(false),
+            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
+
+            // Conditional.
+
+            Self::If {r#if, then, r#else} => if r#if.satisfied_by(url, params)? {then} else {r#else}.satisfied_by(url, params)?,
+            Self::Not(condition) => !condition.satisfied_by(url, params)?,
             Self::All(conditions) => {
                 for condition in conditions {
                     if !condition.satisfied_by(url, params)? {
@@ -598,29 +646,35 @@ impl Condition {
                 }
                 false
             },
-            Self::Not(condition) => !condition.satisfied_by(url, params)?,
 
-            // Query
+            // Domain conditions.
+
+            Self::UnqualifiedDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
+            Self::MaybeWWWDomain(domain_suffix) => url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
+            Self::QualifiedDomain(domain) => url.domain()==Some(domain),
+            Self::HostIsOneOf(hosts) => url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
+            Self::UnqualifiedAnyTld(middle) => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotSubdomainNotSuffix.get(url, false).as_deref()==Some(middle),
+            Self::MaybeWWWAnyTld(middle)    => url.domain().is_some_and(|domain| domain.contains  (middle)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref().map(|x| x.strip_prefix("www.").unwrap_or(x))==Some(middle),
+            Self::QualifiedAnyTld(start)    => url.domain().is_some_and(|domain| domain.starts_with(start)) && UrlPart::NotDomainSuffix      .get(url, false).as_deref()==Some(start),
+
+            // Specific parts.
 
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
-
-            // Path
-
             Self::PathIs(value) => if url.cannot_be_a_base() {
                 Err(GetPartError::UrlDoesNotHaveAPath)?
             } else {
                 url.path()==value
             },
 
-            // General parts
+            // General parts.
 
             #[cfg(    feature = "string-source") ] Self::PartIs{part, none_to_empty_string, value, value_none_to_empty_string} => value.as_ref().map(|source| source.get(url, params, *value_none_to_empty_string)).transpose()?.flatten().as_deref()==part.get(url, *none_to_empty_string).as_deref(),
             #[cfg(not(feature = "string-source"))] Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
             #[cfg(all(    feature = "string-source" , feature = "string-location"))] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, &value.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?)?,
             #[cfg(all(not(feature = "string-source"), feature = "string-location"))] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
-            #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, params)?,
+            #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, url, params)?,
 
-            // Miscellaneous
+            // Miscellaneous.
 
             #[cfg(feature = "string-source")]
             Self::VarIs {name, value, none_to_empty_string} => match value.as_ref() {
@@ -635,33 +689,13 @@ impl Condition {
                 &l.get(url, params, *l_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?,
                 &r.get(url, params, *r_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?
             ),
-            #[cfg(feature = "bool-source")] Self::BoolSource(bool_source) => bool_source.get(url, params)?,
-            Self::If {condition, then, r#else} => if condition.satisfied_by(url, params)? {then} else {r#else}.satisfied_by(url, params)?,
+            #[cfg(feature = "bool-source")]
+            Self::BoolSource(bool_source) => bool_source.get(url, params)?,
 
-            // Should only ever be used once
-
-            Self::Always => true,
-
-            // Commands
+            // Commands.
 
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
             #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url)?==expected},
-
-            // Error handling
-
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by(url, params).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by(url, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
-
-            // Debug
-
-            Self::Never => false,
-            Self::Error => Err(ConditionError::ExplicitError)?,
-            Self::Debug(condition) => {
-                let is_satisfied=condition.satisfied_by(url, params);
-                eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
-                is_satisfied?
-            }
         })
     }
 }

@@ -157,7 +157,7 @@ pub enum UrlPart {
     /// # Setting
     /// Can be `None`, but that's a no-op.
     /// # Set-get identity.
-    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`PartError::SegmentNotFound`].
+    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`GetPartError::SegmentNotFound`].
     /// This may be changed to a different error and/or work for some inputs that currently error.
     /// # Examples
     /// ```
@@ -416,7 +416,7 @@ pub enum UrlPart {
     /// # Setting
     /// Can be `None`.
     /// # Set-get identity.
-    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`PartError::SegmentNotFound`].
+    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`GetPartError::SegmentNotFound`].
     /// This may be changed to a different error and/or work for some inputs that currently error.
     /// # Examples
     /// ```
@@ -587,9 +587,13 @@ pub enum UrlPart {
     /// assert_eq!(url.as_str(), "https://example.com/x/y/e");
     /// ```
     PartSegments {
+        /// The part to get.
         part: Box<Self>,
+        /// The string to split and join the part on and with.
         split: String,
+        /// The start of the range of segments to get.
         start: Option<isize>,
+        /// The end of the range of segments to get.
         end: Option<isize>
     }
 }
@@ -681,7 +685,6 @@ impl UrlPart {
             (Self::Query, _) => url.set_query(to),
             (Self::Host , _) => url.set_host (to)?,
             (Self::BeforeDomainSegment(n), _) => if let Some(to) = to {
-                if to.is_empty() {Err(SetPartError::DomainSegmentCannotBeEmpty)?;}
                 let fixed_n=neg_index(*n, url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetPartError::SegmentNotFound)?;
                 if fixed_n==url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count() {Err(GetPartError::SegmentNotFound)?;}
                 url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').take(fixed_n).chain([to]).chain(url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').skip(fixed_n)).collect::<Vec<_>>().join(".")))?;
@@ -693,7 +696,7 @@ impl UrlPart {
                     Some(to) => url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join(".")))?,
                     None     => url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join(".")))?
                 }
-            }
+            },
             (Self::Subdomain, _) => {
                 match to {
                     Some(to) => {
@@ -752,20 +755,18 @@ impl UrlPart {
             },
             (Self::Domain        , _) => url.set_host(to)?,
             (Self::DomainSuffix  , _) => {
-                let domain=url.domain().ok_or(GetPartError::HostIsNotADomain)?;
-                let suffix=psl::suffix_str(domain).expect("All domains to have a suffix.");
-                let domain_without_suffix=domain.rsplit_once(suffix).expect("All domains to end in their suffixes.").0;
-                let to=match to {
-                    Some(to) => format!("{}{}", domain_without_suffix, to),
-                    None => domain_without_suffix.strip_suffix('.').unwrap_or(domain_without_suffix).to_string()
-                };
-                match &*to {
+                let not_suffix=Self::NotDomainSuffix.get(url, false).ok_or(GetPartError::PartIsNone)?;
+                let fqdn=url.domain().ok_or(GetPartError::HostIsNotADomain)?.ends_with('.');
+                match &*match (to, fqdn) {
+                    (Some(to), true ) => format!("{}{}.", not_suffix, to),
+                    (Some(to), false) => format!("{}{}" , not_suffix, to),
+                    (None, _) => not_suffix.to_string()
+                } {
                     "" => url.set_host(None),
                     d => url.set_host(Some(d))
-                }?
+                }?;
             },
             (Self::NextDomainSegment, _) => if let Some(to) = to {
-                if to.is_empty() {Err(SetPartError::DomainSegmentCannotBeEmpty)?;}
                 url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".")))?
             },
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetPartError::InvalidPort)).transpose()?).map_err(|()| SetPartError::CannotSetPort)?,
@@ -774,7 +775,7 @@ impl UrlPart {
                 #[allow(clippy::unnecessary_to_owned)]
                 url.set_host(Some(&host.to_string()))?;
                 if url.port_or_known_default()!=Some(port) {
-                    url.set_port(Some(port));
+                    url.set_port(Some(port)).map_err(|()| SetPartError::CannotSetPort)?;
                 }
             },
             (Self::BeforePathSegment(n), _) => if let Some(to) = to {
@@ -847,6 +848,7 @@ impl UrlPart {
     }
 }
 
+/// The enum of all possible errors [`UrlPart::set`] can return when getting a URL part.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum GetPartError {
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
@@ -855,64 +857,66 @@ pub enum GetPartError {
     /// Urls that are cannot-be-a-base don't have a path.
     #[error("Urls that are cannot-be-a-base don't have a path.")]
     UrlDoesNotHaveAPath,
-    /// Returned when setting a [`UrlPart::DomainSegment`], [`UrlPart::PathSegment`], or [`UrlPart::BeforePathSegment`] when the index isn't in the relevant part's segments.
+    /// Returned when the requested segment is not found.
     #[error("The requested segment was not found.")]
     SegmentNotFound,
-    #[error("The requested part was None.")]
-    PartIsNone,
+    /// Returned when the requested segment range is not found.
     #[error("The requested segment range was not found.")]
-    SegmentRangeNotFound
+    SegmentRangeNotFound,
+    /// Returned when [`UrlPart::get`] returns `None` where it has to return `Some`.
+    #[error("The requested part was None.")]
+    PartIsNone
 }
 
+/// The enum of all possible errors [`UrlPart::set`] can return.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SetPartError {
-    /// Attempted replacement would not produce a valid URL.
+    /// Returned when a [`ParseError`] is encountered.
     #[error(transparent)]
     ParseError(#[from] ParseError),
+    /// Returned when a [`GetPartError`] is encountered.
     #[error(transparent)]
     GetPartError(#[from] GetPartError),
-    /// [`UrlPart::set`] attempted to set a part that cannot be None to None.
-    #[error("UrlPart::set attempted to set a part that cannot be None to None.")]
+    /// Returned when attempting to set a [`UrlPart`] that cannot be `None` to `None`.
+    #[error("Attempted to set a part that cannot be None to None.")]
     PartCannotBeNone,
-    /// The provided scheme would not have produced a valid URL.
+    /// Returned when a call to [`Url::set_scheme`] returns an error.
     #[error("The provided scheme would not have produced a valid URL.")]
     CannotSetScheme,
-    /// Cannot set port for this URL. Either because it is cannot-be-a-base, does not have a host, or has the file scheme.
+    /// Returned when attempting to set a port that is not a value [`u16`].
+    #[error("The provided port is not a number, less than 0, or greater than 65535.")]
+    InvalidPort,
+    /// Returned when a call to [`Url::set_port`] returns an error.
     #[error("Cannot set port for this URL. Either because it is cannot-be-a-base, does not have a host, or has the file scheme.")]
     CannotSetPort,
-    /// Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.
+    /// Returned when a call to [`Url::set_username`] returns an error.
     #[error("Cannot set username for this URL. Either because it is cannot-be-a-base or does not have a host.")]
     CannotSetUsername,
-    /// Cannot set password for this URL. Either because it is cannot-be-a-base or does not have a host.
+    /// Returned when a call to [`Url::set_password`] returns an error.
     #[error("Cannot set password for this URL. Either because it is cannot-be-a-base or does not have a host.")]
     CannotSetPassword,
-    /// The URL must have a path as it is not cannot-be-a-base.
+    /// Returned when attempting to remove the path of a URL that has to have a path.
     #[error("The URL must have a path as it is not cannot-be-a-base.")]
     UrlMustHaveAPath,
-    /// The URL cannot have a path as it is not cannot-be-a-base.
+    /// Returned when attempting to set the part of a URL that cannot have a path.
     #[error("The URL cannot have a path as it is not cannot-be-a-base.")]
-    UrlCannotHaveAPath,
-    /// The provided port is not a number.
-    #[error("The provided port is not a number.")]
-    InvalidPort,
-    /// Each domain segment must be between 1 and 63 bytes. The [`url`] crate erroneously allows empty segments.
-    #[error("Each domain segment must be between 1 and 63 bytes. The url crate erroneously allows empty segments.")]
-    DomainSegmentCannotBeEmpty
+    UrlCannotHaveAPath
 }
 
-/// The enum of all possible errors that can occur when applying a [`super::StringModification`] to a [`UrlPart`] using [`UrlPart::modify`].
+/// The enum of all possible errors [`UrlPart::modify`] can return.
 #[cfg(feature = "string-modification")]
 #[derive(Debug, Error)]
 pub enum PartModificationError {
-    /// The error returned when the call to [`UrlPart::get`] returns `None` and `none_to_empty_string` is `false`
-    #[error("Cannot modify the part's value because it doesn't have a value.")]
+    /// Returned when the requested part is `None`.
+    #[error("Cannot modify the requested part because it doesn't have a value.")]
     PartIsNone,
-    /// The error returned when the call to [`super::StringModification::apply`] fails.
+    /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
-    StringError(#[from] super::StringError),
+    StringError(#[from] StringError),
+    /// Returned ehen a [`SetPartError`] is encountered.
     #[error(transparent)]
     SetPartError(#[from] SetPartError),
-    /// Returned by [`UrlPart::modify`].
+    /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError)
 }

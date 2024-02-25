@@ -2,6 +2,7 @@ use std::cmp::Ord;
 
 use serde::{Serialize, Deserialize};
 
+/// Compare two strings.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringCmp {
     /// `l<r`.
@@ -21,6 +22,7 @@ pub enum StringCmp {
 }
 
 impl StringCmp {
+    /// Apply the comparison.
     pub fn satisfied_by(&self, l: &str, r: &str) -> bool {
         match self {
             Self::Lt => l< r,
@@ -34,6 +36,7 @@ impl StringCmp {
     }
 }
 
+/// Compare the lengths of two strings.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum LengthCmp {
     /// `l<r`.
@@ -48,10 +51,12 @@ pub enum LengthCmp {
     Gt,
     /// `l!=r`.
     Ne,
+    /// Compare the difference of the lengths of `l` and `r`.
     Diff(DiffCmp)
 }
 
 impl LengthCmp {
+    /// Apply the comparison.
     pub fn satisfied_by(&self, l: usize, r: usize) -> bool {
         match self {
             Self::Lt => l< r,
@@ -65,18 +70,23 @@ impl LengthCmp {
     }
 }
 
+/// Compare the difference in the lengths of two strings with `r`
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DiffCmp {
-    cmp: Cmp,
-    r: isize
+    /// The comparison to apply.
+    pub cmp: Cmp,
+    /// The right hand side of the comparison.
+    pub r: isize
 }
 
 impl DiffCmp {
+    /// Apply the comparison.
     pub fn satisfied_by(&self, diff: isize) -> bool {
         self.cmp.satisfied_by(diff, self.r)
     }
 }
 
+/// Compare two things.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Cmp {
     /// `l<r`.
@@ -94,6 +104,7 @@ pub enum Cmp {
 }
 
 impl Cmp {
+    /// Apply the comparison.
     pub fn satisfied_by<T: Ord>(&self, l: T, r: T) -> bool {
         match self {
             Self::Lt => l< r,

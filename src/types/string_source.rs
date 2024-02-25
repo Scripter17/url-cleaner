@@ -97,34 +97,62 @@ pub enum StringSource {
         /// The modification to apply to the string.
         modification: StringModification
     },
+    /// Joins a list of strings.
+    /// By default, `join` is `""` so the strings are concatenated.
     Join {
+        /// The list of string sources to join.
         sources: Vec<Self>,
+        /// The value to join `sources` with.
         #[serde(default)]
         join: String
     },
+    /// Sends an HTTP GET request to the URL being cleaned and returns the value of the specified response header.
+    /// # Errors
+    /// If the call to [`Params::http_client`] returns an error, that error is returned.
+    /// If the call to [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
+    /// If the specified header isn't found, returns the error [`StringSourceError::HeaderNotFound`].
+    /// If the call to [`reqwest::header::HeaderValue::to_str`] returns an error, that error is returned.
+    /// Note that, as I write this, [`reqwest::header::HeaderValue::to_str`] only works if the result is valid ASCII.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     HeaderValue {
+        /// The name of the response header to get the value of.
         name: String,
+        /// The headers to send in the HTTP GET request.
         #[serde(default, with = "crate::glue::headermap")]
         headers: HeaderMap
     },
+    /// Parses `source` as a URL and gets the specified value.
+    /// Useful when used with [`Self::HeaderValue`].
     ExtractPart {
+        /// The string to parse and extract `part` from.
         source: Box<Self>,
+        /// The part to extract from `source`.
         part: UrlPart
     },
+    /// Sends an HTTP GET request to the URL being cleaned and extracts a string from the response's body.
+    /// # Errors
+    /// If the call to [`Params::http_client`] returns an error, that error is returned.
+    /// If the call to [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
+    /// If the call to [`reqwest::Response::text`] returns an error, that error is returned.
     #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
     ExtractFromPage {
+        /// The headers to send in the HTTP GET request.
         #[serde(default, with = "crate::glue::headermap")]
         headers: HeaderMap,
+        /// The regex to use to extract part of the response body.
         #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
-        #[serde(deserialize_with = "box_string_or_struct")]
+        /// The substitution for use in [`regex::Captures::expand`].
+        /// Defaults to `"$1"`.
+        #[serde(deserialize_with = "box_string_or_struct", default = "box_efp_expand")]
         expand: Box<Self>
     }
 }
 
+fn box_efp_expand() -> Box<StringSource> {Box::new(StringSource::String("$1".to_string()))}
+
 impl FromStr for StringSource {
-    type Err=Infallible;
+    type Err = Infallible;
 
     /// Simply encase the provided string in a [`StringSource::String`] since it's the most common variant.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -141,35 +169,41 @@ impl TryFrom<&str> for StringSource {
     }
 }
 
-/// An enum of all possible errors a [`StringSource`] can return.
+/// The enum of all possible errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringSourceError {
-    /// A generic string error.
+    /// Returned when [`StringSource::Error`] is used.
+    #[error("StringSource::Error was used.")]
+    ExplicitError,
+    /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
     StringError(#[from] StringError),
-    /// Returned by [`StringSource::Modified`].
+    /// Returned when a [`StringModificationError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    /// Always returned by [`StringSource::Error`].
-    #[error("StringSource::Error was used.")]
-    ExplicitError,
+    /// Returned when [`ReqwestError`] is returned.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
     ReqwestError(#[from] ReqwestError),
+    /// Returned when a requested HTTP response header is not found.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error("The HTTP request response did not contain the requested header.")]
     HeaderNotFound,
+    /// Returned when a [`ToStrError`] is encountered.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
     ToStrError(#[from] ToStrError),
+    /// Returned when a [`ParseError`] is returned.
     #[error(transparent)]
     ParseError(#[from] ParseError),
-    #[error("The regex pattern did not find any matches.")]
+    /// Returned when a regex does not find any matches.
+    #[error("A regex pattern did not find any matches.")]
     #[cfg(feature = "regex")]
-    PatternNotFound,
-    #[error("...")]
+    NoRegexMatchesFound,
+    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
+    #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone
 }
 
@@ -202,7 +236,7 @@ impl StringSource {
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
             Self::ExtractFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
                 let mut ret=String::new();
-                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(StringSourceError::PatternNotFound)?.expand(&expand, &mut ret);
+                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(StringSourceError::NoRegexMatchesFound)?.expand(&expand, &mut ret);
                 Some(Cow::Owned(ret))
             } else {
                 Err(StringSourceError::StringSourceIsNone)?

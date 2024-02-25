@@ -192,16 +192,16 @@ pub enum StringLocation {
 
 fn box_equals() -> Box<StringLocation> {Box::new(StringLocation::Equals)}
 
-/// An enum of all possible errors a [`StringLocation`] can return.
+/// The enum of all possible errors [`StringLocation::satisfied_by`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringLocationError {
-    /// A generic string error.
-    #[error(transparent)]
-    StringError(#[from] StringError),
-    /// Always returned by [`StringLocation::Error`].
+    /// Returned when [`StringLocation::Error`] is used.
     #[error("StringLocation::Error was used.")]
-    ExplicitError
+    ExplicitError,
+    /// Returned when a [`StringError`] is encountered.
+    #[error(transparent)]
+    StringError(#[from] StringError)
 }
 
 impl StringLocation {

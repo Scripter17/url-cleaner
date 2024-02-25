@@ -32,9 +32,7 @@ pub enum StringModification {
     IgnoreError(Box<Self>),
     /// If `try` returns an error, `else` is applied.
     /// If `try` does not return an er
-    /// [`urlencoding::encode`].
     /// # Errors
-    /// [`urlencoding::decode`].
     /// If `else` returns an error, that error is returned.
     TryElse {
         /// The [`Self`] to try first.
@@ -394,7 +392,7 @@ pub enum StringModification {
     URLEncode,
     /// [`percent_encoding::percent_decode_str`]
     /// # Errors
-    /// If the call to [`urlencoding::decode`] errors, returns that error.
+    /// If the call to [`percent_encoding::percent_decode_str`] errors, returns that error.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -419,21 +417,21 @@ pub enum StringModification {
     CommandOutput(CommandWrapper)
 }
 
-/// An enum of all possible errors a [`StringModification`] can return.
+/// The enum of all possible errors [`StringModification::apply`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum StringModificationError {
-    /// A generic string error.
+    /// Returned when [`StringModification::Error`] is used.
+    #[error("StringModification::Error was used.")]
+    ExplicitError,
+    /// Returned when a [`StringError`] is encountered.
     #[error(transparent)]
     StringError(#[from] StringError),
-    /// Returned by [`StringModification::CommandOutput`].
+    /// Returned when a [`CommandError`] is encountered.
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
-    /// Always returned by [`StringModification::Error`].
-    #[error("StringModification::Error was used.")]
-    ExplicitError,
-    /// Returned by [`StringModification::URLDecode`].
+    /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
     FromUtf8Error(#[from] Utf8Error)
 }
