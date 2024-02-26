@@ -170,12 +170,36 @@
 		},
 
 
+
 		{
 			"condition": {"All": [
 				{"Not": {"FlagIsSet": "no-https"}},
 				{"PartIs": {"part": "Scheme", "value": "http"}}
 			]},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
+		},
+
+
+
+		{
+			"condition": {"All": [
+				{"FlagIsSet": "unmobile"},
+				{"Any": [
+					{"PartIs": {"part": {"DomainSegment": 0}, "value": "m"}},
+					{"PartIs": {"part": {"DomainSegment": 0}, "value": "mobile"}}
+				]}
+			]},
+			"mapper": {"SetPart": {"part": {"DomainSegment": 0}, "value": null}}
+		},
+		{
+			"condition": {"All": [
+				{"FlagIsSet": "unmobile"},
+				{"Any": [
+					{"PartIs": {"part": {"DomainSegment": 1}, "value": "m"}},
+					{"PartIs": {"part": {"DomainSegment": 1}, "value": "mobile"}}
+				]}
+			]},
+			"mapper": {"SetPart": {"part": {"DomainSegment": 1}, "value": null}}
 		},
 
 
