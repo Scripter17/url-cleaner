@@ -112,6 +112,13 @@
 							{"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}
 						]},
 						"mapper": {"ExtractUrlFromPage": {"regex": {"pattern": "let url = \\\"(.+)\\\""}}}
+					},
+
+
+
+					{
+						"condition": {"QualifiedDomain": "l.threads.com"},
+						"mapper": {"GetUrlFromQueryParam": "u"}
 					}
 				]
 			}
@@ -230,10 +237,10 @@
 				"teespring.com": "RemoveQuery",
 				"instagram.com": "RemoveQuery",
 				"vxtwitter.com": {"SetHost": "twitter.com"},
+				"fixvx.com"    : {"SetHost": "twitter.com"},
 				"fxtwitter.com": {"SetHost": "twitter.com"},
 				"x.com"        : {"SetHost": "twitter.com"},
-				"youtube.com"  : {"RemoveQueryParams": ["si"]},
-				"l.threads.net": {"GetUrlFromQueryParam": "u"},
+				"youtube.com"  : {"RemoveQueryParams": ["si", "feature"]},
 				"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
 				"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
 				"youtu.be"     : {"All": [
@@ -246,6 +253,13 @@
 				"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
 				"tumblr.com"        : "RemoveQuery"
 			}
+		},
+
+
+
+		{
+			"condition": {"UnqualifiedDomain": "yahoo.com"},
+			"mapper": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]}
 		},
 
 
