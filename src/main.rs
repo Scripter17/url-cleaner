@@ -11,7 +11,7 @@ use url::Url;
 mod rules;
 mod glue;
 mod types;
-mod config;
+mod util;
 
 #[derive(Parser)]
 struct Args {
@@ -24,20 +24,20 @@ struct Args {
     flag: Vec<String>
 }
 
-impl TryFrom<Args> for (Vec<Url>, config::Config) {
-    type Error=config::GetConfigError;
+impl TryFrom<Args> for (Vec<Url>, types::Config) {
+    type Error=types::GetConfigError;
 
     fn try_from(args: Args) -> Result<Self, Self::Error> {
-        let mut config=config::Config::get_default_or_load(args.config.as_deref())?.into_owned();
+        let mut config=types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
         config.params.merge(
             #[allow(clippy::needless_update)]
-            config::Params {
+            types::Params {
                 vars: args.var
                     .into_iter()
                     .filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)}))
                     .collect(),
                 flags: args.flag.into_iter().collect(),
-                ..config::Params::default()
+                ..types::Params::default()
             }
         );
         Ok((args.urls, config))
@@ -45,7 +45,7 @@ impl TryFrom<Args> for (Vec<Url>, config::Config) {
 }
 
 fn main() -> Result<(), types::CleaningError> {
-    let (urls, config): (Vec<Url>, config::Config)=Args::parse().try_into()?;
+    let (urls, config): (Vec<Url>, types::Config)=Args::parse().try_into()?;
 
     for mut url in urls {
         match config.apply(&mut url) {

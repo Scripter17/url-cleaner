@@ -9,7 +9,6 @@ use url::Url;
 
 use crate::glue::*;
 use crate::types::*;
-use crate::config::Params;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -27,7 +26,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::Error.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
@@ -45,7 +44,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -56,7 +55,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -70,7 +69,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -110,7 +109,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -124,7 +123,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -144,7 +143,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -164,7 +163,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -177,7 +176,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -188,7 +187,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -202,7 +201,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::collections::HashSet;
     /// assert!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -216,7 +215,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -237,7 +236,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -252,7 +251,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -271,7 +270,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -282,7 +281,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com"   ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com/"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
@@ -298,15 +297,15 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
-    /// assert!(Condition::PartIs{part: UrlPart::Username      , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Password      , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::Path          , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Username      , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Password      , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Path          , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     #[cfg(feature = "string-source")]
     PartIs {
@@ -315,7 +314,7 @@ pub enum Condition {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// The expected value of the part.
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
@@ -329,15 +328,15 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
-    /// assert!(Condition::PartIs{part: UrlPart::Username      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Password      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::Path          , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , none_to_empty_string: false, value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Username      , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Password      , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartIs{part: UrlPart::Path          , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , part_none_to_empty_string: false, value: None, value_none_to_empty_string: false}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     #[cfg(not(feature = "string-source"))]
     PartIs {
@@ -346,23 +345,27 @@ pub enum Condition {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// The expected value of the part.
-        value: Option<String>
+        value: Option<String>,
+        /// Does nothing; Only here to fix tests between feature flags.
+        /// Defaults to `false`.
+        #[serde(default = "get_false")]
+        value_none_to_empty_string: bool
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
-    /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// If the specified part is `None` and `part_none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     /// If `value.get` returns `None`, returns the error [`ConditionError::StringSourceIsNone`].
     /// # Examples
     /// ```
     /// # use url::Url;
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url_cleaner::types::StringLocation;
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".try_into().unwrap(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".try_into().unwrap(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, part_none_to_empty_string: true, value: "ple".try_into().unwrap(), value_none_to_empty_string: false, r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, part_none_to_empty_string: true, value: "ple".try_into().unwrap(), value_none_to_empty_string: false, r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     #[cfg(all(feature = "string-source", feature = "string-location"))]
     PartContains {
@@ -371,26 +374,30 @@ pub enum Condition {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// The value to look for.
         #[serde(deserialize_with = "string_or_struct")]
         value: StringSource,
+        /// Decides if `value`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
+        #[serde(default)]
+        value_none_to_empty_string: bool,
         /// Where to look for the value.
         #[serde(default)]
         r#where: StringLocation
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
-    /// If the specified part is `None` and `none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// If the specified part is `None` and `part_none_to_empty_string` is set to `false`, returns the error [`ConditionError::UrlPartNotFound`].
     /// # Examples
     /// ```
     /// # use url::Url;
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url_cleaner::types::StringLocation;
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, none_to_empty_string: true, value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, part_none_to_empty_string: true, value: "ple".to_string(), value_none_to_empty_string: false, r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::PartContains {part: UrlPart::Domain, part_none_to_empty_string: true, value: "ple".to_string(), value_none_to_empty_string: false, r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     #[cfg(all(not(feature = "string-source"), feature = "string-location"))]
     PartContains {
@@ -399,9 +406,13 @@ pub enum Condition {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// The value to look for.
         value: String,
+        /// Does nothing; Only here to fix tests between feature flags.
+        /// Defaults to `true`.
+        #[serde(default)]
+        value_none_to_empty_string: bool,
         /// Where to look for the value.
         #[serde(default)]
         r#where: StringLocation
@@ -428,61 +439,64 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("2".to_string())), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string())), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string())), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string())), none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: None                                       , none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), name_none_to_empty_string: false, value: Some(StringSource::String("2".to_string())), value_none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), name_none_to_empty_string: false, value: Some(StringSource::String("3".to_string())), value_none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), name_none_to_empty_string: false, value: Some(StringSource::String("3".to_string())), value_none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), name_none_to_empty_string: false, value: Some(StringSource::String("3".to_string())), value_none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), name_none_to_empty_string: false, value: None                                       , value_none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     #[cfg(feature = "string-source")]
     VarIs {
         /// The name of the variable to check.
         #[serde(deserialize_with = "string_or_struct")]
         name: StringSource,
-        /// The expected value of the variable.
-        #[serde(deserialize_with = "optional_string_or_struct")]
-        value: Option<StringSource>,
         /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default)]
         name_none_to_empty_string: bool,
+        /// The expected value of the variable.
+        #[serde(deserialize_with = "optional_string_or_struct")]
+        value: Option<StringSource>,
         /// Decides if getting the variable should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default)]
-        none_to_empty_string: bool
+        value_none_to_empty_string: bool
     },
     /// Passes if the specified rule variable is set to the specified value.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
-    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("2".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string()), none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: None                 , none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: "a".to_string(), name_none_to_empty_string: false, value: Some("2".to_string()), value_none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
+    /// assert!(Condition::VarIs{name: "a".to_string(), name_none_to_empty_string: false, value: Some("3".to_string()), value_none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), name_none_to_empty_string: false, value: Some("3".to_string()), value_none_to_empty_string: false}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), name_none_to_empty_string: false, value: Some("3".to_string()), value_none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::VarIs{name: "a".to_string(), name_none_to_empty_string: false, value: None                 , value_none_to_empty_string: false}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
     /// ```
     #[cfg(not(feature = "string-source"))]
     VarIs {
         /// The name of the variable
         name: String,
-        /// The expected value of the variable.
-        value: Option<String>,
-        /// Decides if getting the variable should return `Some("")` instead of `None`.
+        /// Does nothing; Only here for compatibility between feature flags.
         /// Defaults to `true`.
         #[serde(default)]
-        none_to_empty_string: bool
+        name_none_to_empty_string: bool,
+        /// The expected value of the variable.
+        value: Option<String>,
+        /// Does nothing; Only here to fix tests between feature flags.
+        /// Defaults to `true`.
+        #[serde(default)]
+        value_none_to_empty_string: bool
     },
 
     /// Passes if the specified rule flag is set.
@@ -491,7 +505,7 @@ pub enum Condition {
     /// # use std::collections::HashSet;
     /// # use url::Url;
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
@@ -506,12 +520,12 @@ pub enum Condition {
         /// The source of the left hand side of the comparison.
         #[serde(deserialize_with = "string_or_struct")]
         l: StringSource,
-        /// The source of the right hand side of the comparison.
-        #[serde(deserialize_with = "string_or_struct")]
-        r: StringSource,
         /// If `l` returns `None` and this is `true`, pretend `l` returned `Some("")`.
         #[serde(default = "get_true")]
         l_none_to_empty_string: bool,
+        /// The source of the right hand side of the comparison.
+        #[serde(deserialize_with = "string_or_struct")]
+        r: StringSource,
         /// If `r` returns `None` and this is `true`, pretend `r` returned `Some("")`.
         #[serde(default = "get_true")]
         r_none_to_empty_string: bool,
@@ -530,7 +544,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::glue::CommandWrapper;
     /// # use url::Url;
     /// # use std::str::FromStr;
@@ -546,7 +560,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::glue::CommandWrapper;
     /// # use url::Url;
     /// # use std::str::FromStr;
@@ -693,21 +707,21 @@ impl Condition {
 
             // General parts.
 
-            #[cfg(    feature = "string-source") ] Self::PartIs{part, none_to_empty_string, value, value_none_to_empty_string} => value.as_ref().map(|source| source.get(url, params, *value_none_to_empty_string)).transpose()?.flatten().as_deref()==part.get(url, *none_to_empty_string).as_deref(),
-            #[cfg(not(feature = "string-source"))] Self::PartIs{part, none_to_empty_string, value} => value.as_deref()==part.get(url, *none_to_empty_string).as_deref(),
-            #[cfg(all(    feature = "string-source" , feature = "string-location"))] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, &value.get(url, params, false)?.ok_or(ConditionError::StringSourceIsNone)?)?,
-            #[cfg(all(not(feature = "string-source"), feature = "string-location"))] Self::PartContains{part, none_to_empty_string, value, r#where} => r#where.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
+            #[cfg(    feature = "string-source") ] Self::PartIs{part, part_none_to_empty_string, value, value_none_to_empty_string} => value.as_ref().map(|source| source.get(url, params, *value_none_to_empty_string)).transpose()?.flatten().as_deref()==part.get(url, *part_none_to_empty_string).as_deref(),
+            #[cfg(not(feature = "string-source"))] Self::PartIs{part, part_none_to_empty_string, value, value_none_to_empty_string: _} => value.as_deref()==part.get(url, *part_none_to_empty_string).as_deref(),
+            #[cfg(all(    feature = "string-source" , feature = "string-location"))] Self::PartContains{part, part_none_to_empty_string, value, value_none_to_empty_string, r#where} => r#where.satisfied_by(&part.get(url, *part_none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, &value.get(url, params, *value_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?)?,
+            #[cfg(all(not(feature = "string-source"), feature = "string-location"))] Self::PartContains{part, part_none_to_empty_string, value, value_none_to_empty_string, r#where} => r#where.satisfied_by(&part.get(url, *part_none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, value)?,
             #[cfg(feature = "string-matcher" )] Self::PartMatches {part, none_to_empty_string, matcher} => matcher.satisfied_by(&part.get(url, *none_to_empty_string).ok_or(ConditionError::UrlPartNotFound)?, url, params)?,
 
             // Miscellaneous.
 
             #[cfg(feature = "string-source")]
-            Self::VarIs {name, value, none_to_empty_string, name_none_to_empty_string} => match value.as_ref() {
-                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get(url, params, *none_to_empty_string)?.as_deref(),
+            Self::VarIs {name, name_none_to_empty_string, value, value_none_to_empty_string} => match value.as_ref() {
+                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get(url, params, *value_none_to_empty_string)?.as_deref(),
                 None => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]
-            Self::VarIs {name, value, none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *none_to_empty_string {Some("")} else {None})==value.as_deref(),
+            Self::VarIs {name, name_none_to_empty_string: _, value, value_none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *value_none_to_empty_string {Some("")} else {None})==value.as_deref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
             #[cfg(all(feature = "string-source", feature = "string-cmp"))]
             Self::StringCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(

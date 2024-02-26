@@ -49,7 +49,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
     /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
@@ -71,7 +71,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url, &Params::default()).is_err());
@@ -85,7 +85,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).is_err());
@@ -97,7 +97,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
@@ -110,7 +110,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
@@ -134,7 +134,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
@@ -151,7 +151,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
@@ -195,7 +195,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
     /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url, &Params::default()).is_ok());
@@ -219,13 +219,13 @@ pub enum Mapper {
     SetPart {
         /// The name of the part to replace.
         part: UrlPart,
-        /// Decides if `part`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
-        #[serde(default = "get_true")]
-        none_to_empty_string: bool,
         /// The value to set the part to.
         #[serde(deserialize_with = "optional_string_or_struct")]
-        value: Option<StringSource>
+        value: Option<StringSource>,
+        /// Decides if `value`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        value_none_to_empty_string: bool,
     },
     /// Sets the specified URL part to `to`.
     /// # Errors
@@ -235,7 +235,11 @@ pub enum Mapper {
         /// The name of the part to replace.
         part: UrlPart,
         /// The value to set the part to.
-        value: Option<String>
+        value: Option<String>,
+        /// Does nothing; Only here to fix tests between feature flags.
+        /// Defaults to `true`.
+        #[serde(default = "get_true")]
+        value_none_to_empty_string: bool,
     },
     /// Modifies the specified part of the URL.
     /// # Errors
@@ -248,28 +252,28 @@ pub enum Mapper {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// How exactly to modify the part.
         how: StringModification
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
-    /// If the part specified by `from` is None, `none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`SetPartError::PartCannotBeNone`].
+    /// If the part specified by `from` is None, `from_none_to_empty_string` is `false`, and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`SetPartError::PartCannotBeNone`].
     CopyPart {
         /// The part to get the value from.
         from: UrlPart,
         /// Decides if `from`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        from_none_to_empty_string: bool,
         /// The part to set to `from`'s value.
         to: UrlPart
     },   
     /// Applies a regular expression substitution to the specified URL part.
-    /// if `none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
+    /// if `part_none_to_empty_string` is `false`, then getting the password, host, domain, port, query, or fragment may result in a [`super::conditions::ConditionError::UrlPartNotFound`] error.
     /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
     /// # Errors
-    /// If chosen part's getter returns `None` and `none_to_empty_string` is set to `false`, returns the error [`MapperError::UrlPartNotFound`].
+    /// If chosen part's getter returns `None` and `part_none_to_empty_string` is set to `false`, returns the error [`MapperError::UrlPartNotFound`].
     #[cfg(all(feature = "regex", feature = "string-source"))]
     RegexSubUrlPart {
         /// The name of the part to modify.
@@ -277,7 +281,7 @@ pub enum Mapper {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// The regex that is used to match and extract parts of the selected part.
         #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
@@ -293,7 +297,7 @@ pub enum Mapper {
         /// Decides if `part`'s call to [`UrlPart::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default = "get_true")]
-        none_to_empty_string: bool,
+        part_none_to_empty_string: bool,
         /// The regex that is used to match and extract parts of the selected part.
         #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
@@ -316,7 +320,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Mapper;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
@@ -416,7 +420,7 @@ pub enum MapperError {
     /// Returned when a regex does not find any matches.
     #[error("A regex pattern did not find any matches.")]
     NoRegexMatchesFound,
-    /// Returned when the requested variable is not found in [`crate::config::Params::vars`].
+    /// Returned when the requested variable is not found in [`Params::vars`].
     #[error("A variable was requested but not found at runtime.")]
     VarNotFound,
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
@@ -449,7 +453,7 @@ impl Mapper {
     /// # Errors
     /// If the mapper has an error, that error is returned.
     /// See [`Mapper`]'s documentation for details.
-    pub fn apply(&self, url: &mut Url, params: &crate::config::Params) -> Result<(), MapperError> {
+    pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), MapperError> {
         #[cfg(feature = "debug")]
         println!("Mapper: {self:?}");
         match self {
@@ -544,21 +548,21 @@ impl Mapper {
             // Generic part handling
 
             #[cfg(feature = "string-source")]
-            Self::SetPart{part, value, none_to_empty_string} => match value.as_ref() {
+            Self::SetPart{part, value, value_none_to_empty_string} => match value.as_ref() {
                 Some(source) => {
-                    let temp=source.get(url, params, *none_to_empty_string)?.map(|x| x.into_owned());
+                    let temp=source.get(url, params, *value_none_to_empty_string)?.map(|x| x.into_owned());
                     part.set(url, temp.as_deref())
                 },
                 None => part.set(url, None)
             }?,
             #[cfg(not(feature = "string-source"))]
-            Self::SetPart{part, value} => part.set(url, value.as_deref())?,
+            Self::SetPart{part, value, value_none_to_empty_string: _} => part.set(url, value.as_deref())?,
             #[cfg(feature = "string-modification")]
-            Self::ModifyPart{part, none_to_empty_string, how} => part.modify(url, *none_to_empty_string, how, params)?,
-            Self::CopyPart{from, none_to_empty_string, to} => to.set(url, from.get(url, *none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
+            Self::ModifyPart{part, part_none_to_empty_string, how} => part.modify(url, *part_none_to_empty_string, how, params)?,
+            Self::CopyPart{from, from_none_to_empty_string, to} => to.set(url, from.get(url, *from_none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
             #[cfg(feature = "regex")]
-            Self::RegexSubUrlPart {part, none_to_empty_string, regex, replace} => {
-                let old_part_value=part.get(url, *none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
+            Self::RegexSubUrlPart {part, part_none_to_empty_string, regex, replace} => {
+                let old_part_value=part.get(url, *part_none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
                 #[allow(clippy::unnecessary_to_owned)]
                 part.set(url, Some(&regex.replace(&old_part_value, replace.get(url, params, false)?.ok_or(MapperError::StringSourceIsNone)?).into_owned()))?;
             },

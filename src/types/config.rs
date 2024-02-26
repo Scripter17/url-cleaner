@@ -113,10 +113,10 @@ impl Params {
 /// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
 /// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]
-pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../default-config.json"));
+pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../../default-config.json"));
 /// The non-minified config loaded into URL Cleaner at compile time.
 #[cfg(all(feature = "default-config", not(feature = "minify-included-strings")))]
-pub static DEFAULT_CONFIG_STR: &str=include_str!("../default-config.json");
+pub static DEFAULT_CONFIG_STR: &str=include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 pub static DEFAULT_CONFIG: OnceLock<Config>=OnceLock::new();
@@ -150,3 +150,4 @@ mod tests {
         Config::get_default().unwrap();
     }
 }
+

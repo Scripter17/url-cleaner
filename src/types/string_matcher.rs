@@ -4,13 +4,8 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::Url;
 
-use super::*;
-#[cfg(feature = "regex")]
-use crate::glue::RegexWrapper;
-#[cfg(feature = "glob")]
-use crate::glue::GlobWrapper;
-use crate::glue::string_or_struct;
-use crate::config::Params;
+use crate::types::*;
+use crate::glue::*;
 
 /// A general API for matching strings with a variety of methods.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -68,7 +63,7 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::{StringMatcher, StringLocation};
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
@@ -83,7 +78,7 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::StringMatcher;
     /// # use url_cleaner::glue::RegexParts;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
@@ -93,7 +88,7 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::StringMatcher;
     /// # use url_cleaner::glue::GlobWrapper;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));

@@ -11,7 +11,8 @@ mod conditions;
 pub use conditions::*;
 mod mappers;
 pub use mappers::*;
-use crate::config;
+
+pub use crate::types::*;
 
 /// The core unit describing when and how URLs are modified.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -21,7 +22,7 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::{Rule, Mapper};
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let rule=Rule::HostMap(HashMap::from_iter([
@@ -43,7 +44,7 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::{Rule, Condition, Mapper};
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
     /// # use std::str::FromStr;
@@ -54,8 +55,8 @@ pub enum Rule {
     ///             condition: Condition::Always,
     ///             mapper: Mapper::SetPart {
     ///                 part: UrlPart::NextPathSegment,
-    ///                 none_to_empty_string: false,
-    ///                 value: Some(FromStr::from_str("a").unwrap())
+    ///                 value: Some(FromStr::from_str("a").unwrap()),
+    ///                 value_none_to_empty_string: false
     ///             }
     ///         }
     ///     ],
@@ -77,7 +78,7 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::{Rule, Condition, Mapper};
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
@@ -119,7 +120,7 @@ impl Rule {
     /// If the rule is a [`Self::Normal`] and the contained condition or mapper returns an error, that error is returned.
     /// If the rule is a [`Self::HostMap`] and the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
     /// If the rule is a [`Self::HostMap`] and the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
-    pub fn apply(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
+    pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by(url, params)? {
                 mapper.apply(url, params)?;
@@ -175,7 +176,7 @@ impl Rules {
     /// If an error is returned, `url` is left unmodified.
     /// # Errors
     /// If the error [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, it is ignored.
-    pub fn apply(&self, url: &mut Url, params: &config::Params) -> Result<(), RuleError> {
+    pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in &**self {
             match rule.apply(&mut temp_url, params) {

@@ -8,8 +8,7 @@ use thiserror::Error;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::{Error as ReqwestError, header::{HeaderMap, ToStrError}};
 
-use super::*;
-use crate::config::Params;
+use crate::types::*;
 use crate::glue::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
@@ -30,7 +29,7 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// let url = Url::parse("https://example.com").unwrap();
     /// assert!(StringSource::String("abc".to_string()).get(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("abc"))));
@@ -41,7 +40,7 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// # use url_cleaner::types::UrlPart;
     /// let url = Url::parse("https://example.com").unwrap();
@@ -54,7 +53,7 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
     /// let url = Url::parse("https://example.com").unwrap();
@@ -67,7 +66,7 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::StringSource;
     /// # use url::Url;
-    /// # use url_cleaner::config::Params;
+    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// # use url_cleaner::types::UrlPart;
     /// # use std::collections::HashSet;

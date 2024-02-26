@@ -2,9 +2,8 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::Url;
 
-use super::*;
-use crate::glue::string_or_struct;
-use crate::config::Params;
+use crate::types::*;
+use crate::glue::*;
 
 /// Various possible ways to get a boolean value.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

@@ -1,4 +1,16 @@
 {
+	"docs": {
+		"flags": {
+			"no-unmangle": "...",
+			"...": ["..."]
+		},
+		"vars": {
+			"...": [
+				"...",
+				"...2"
+			]
+		}
+	},
 	"rules": [
 		{
 			"RepeatUntilNonePass": {
@@ -108,19 +120,55 @@
 
 
 		{
-			"condition": {"PartIs": {"part": "Scheme", "value": "http"}},
-			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
+			"comment": "https://abc.com/https://abc.com/user",
+			"condition": {"All": [
+				{"Not": {"FlagIsSet": "no-unmangle"}},
+				{"Any": [
+					{"PartContains": {"part": "Path", "where": "Start", "value": "/http:"}},
+					{"PartContains": {"part": "Path", "where": "Start", "value": "/https:"}}
+				]}
+			]},
+			"mapper": {"SetPart": {
+				"part": "Whole",
+				"value": {"Modified": {"source": {"Part": "Path"}, "modification": {"StripPrefix": "/"}}}
+			}}
+		},
+		{
+			"comment": "https://abc.com/profile/https://abc.com/profile/user",
+			"comment2": "The general case requires conditions and mappers to talk to each other and would break the WayBack machine.",
+			"condition": {"All": [
+				{"Not": {"FlagIsSet": "no-unmangle"}},
+				{"Any": [
+					{"PartIs": {"part": {"PathSegment": 1}, "value": "http:"}},
+					{"PartIs": {"part": {"PathSegment": 1}, "value": "https:"}}
+				]}
+			]},
+			"mapper": {"SetPart": {
+				"part": "Whole",
+				"value": {"Part": {"PartSegments": {"part": "Path", "split": "/", "start": 2, "end": null}}}
+			}}
+		},
+
+		{
+			"comment": "https://profile.abc.com.abc.com",
+			"condition": {"All": [
+				{"Not": {"FlagIsSet": "no-unmangle"}},
+				{"TreatErrorAsFail": {"PartContains": {
+					"part": {"PartSegments": {"part": "Domain", "split": ".", "start": 1, "end": null}},
+					"where": "Start",
+					"value": {"Join": {"sources": [{"Part": "NotSubdomain"}, {"String": "."}]}}
+				}}}
+			]},
+			"mapper": {"SetPart": {"part": "NotSubdomain", "value": null}}
 		},
 
 
-
 		{
-			"condition": {"TreatErrorAsFail": {"PartContains": {
-				"part": {"PartSegments": {"part": "Domain", "split": ".", "start": 1, "end": null}},
-				"where": "Start",
-				"value": {"Join": {"sources": [{"Part": "NotSubdomain"}, {"String": "."}]}}
-			}}},
-			"mapper": {"SetPart": {"part": "NotSubdomain", "value": null}}
+			"condition": {"All": [
+				{"Not": {"FlagIsSet": "no-https"}},
+				{"PartIs": {"part": "Scheme", "value": "http"}}
+			]},
+			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 		},
 
 
@@ -132,7 +180,7 @@
 			]},
 			"mapper": {"All": [
 				{"SetPart": {"part": "Path", "value": "/users"}},
-				{"CopyPart": {"from": {"QueryParam": "id"}, "none_to_empty_string": false, "to": "NextPathSegment"}},
+				{"CopyPart": {"from": {"QueryParam": "id"}, "from_none_to_empty_string": false, "to": "NextPathSegment"}},
 				"RemoveQuery"
 			]}
 		},

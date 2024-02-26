@@ -5,7 +5,7 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
-use crate::config::Params;
+use crate::util::*;
 
 /// Getters and setters for various parts of a URL.
 /// In general (except for [`Self::DomainSegment`] and [`Self::PathSegment`]), setting a part to its own value is a no-op.
@@ -592,8 +592,10 @@ pub enum UrlPart {
         /// The string to split and join the part on and with.
         split: String,
         /// The start of the range of segments to get.
+        #[serde(default)]
         start: Option<isize>,
         /// The end of the range of segments to get.
+        #[serde(default)]
         end: Option<isize>
     }
 }

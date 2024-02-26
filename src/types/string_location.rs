@@ -1,7 +1,8 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use super::*;
+use crate::types::*;
+use crate::util::*;
 
 /// A wrapper around [`str`]'s various substring searching functions.
 /// [`isize`] is used to allow Python-style negative indexing.
@@ -233,7 +234,7 @@ impl StringLocation {
                 }
                 return Ok(false)
             },
-            Self::NthSegment {split, n, location} => location.satisfied_by(super::neg_nth(haystack.split(split), *n).ok_or(StringError::SegmentNotFound)?, needle)?,
+            Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringError::SegmentNotFound)?, needle)?,
 
             Self::All(locations) => {
                 for location in locations {

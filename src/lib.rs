@@ -10,10 +10,9 @@ pub mod rules;
 pub mod glue;
 /// Types that don't fit in the other modules.
 pub mod types;
-/// Deserializing and handling configuration.
-pub mod config;
+pub(crate) mod util;
 
-/// Takes a URL, an optional [`config::Config`], an optional [`config::Params`], and returns the result of applying the config and params to the URL.
+/// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
 /// This function's name is set to `clean_url` in WASM for API simplicity.
 /// # Errors
 /// If the config or params can't be parsed, returns the parsing error.
@@ -25,30 +24,30 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params: wasm_bin
     Ok(JsValue::from_str(url.as_str()))
 }
 
-/// Takes a URL, an optional [`config::Config`], an optional [`config::Params`], and returns the result of applying the config and params to the URL.
+/// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
 /// # Errors
 /// If applying the rules returns an error, that error is returned.
-pub fn clean_url(url: &mut Url, config: Option<&config::Config>, params: Option<&config::Params>) -> Result<(), types::CleaningError> {
+pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params: Option<&types::Params>) -> Result<(), types::CleaningError> {
     let mut config=match config {
         Some(config) => config.clone(),
-        None => config::Config::get_default()?.clone()
+        None => types::Config::get_default()?.clone()
     };
     if let Some(params) = params {config.params.merge(params.clone());}
     config.apply(url)?;
     Ok(())
 }
 
-fn js_value_to_config(config: wasm_bindgen::JsValue) -> Result<Cow<'static, config::Config>, JsError> {
+fn js_value_to_config(config: wasm_bindgen::JsValue) -> Result<Cow<'static, types::Config>, JsError> {
     Ok(if config.is_null() {
-        Cow::Borrowed(config::Config::get_default()?)
+        Cow::Borrowed(types::Config::get_default()?)
     } else {
         Cow::Owned(serde_wasm_bindgen::from_value(config)?)
     })
 }
 
-fn js_value_to_params(params: wasm_bindgen::JsValue) -> Result<config::Params, JsError> {
+fn js_value_to_params(params: wasm_bindgen::JsValue) -> Result<types::Params, JsError> {
     Ok(if params.is_null() {
-        config::Params::default()
+        types::Params::default()
     } else {
         serde_wasm_bindgen::from_value(params)?
     })
