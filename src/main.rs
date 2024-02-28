@@ -21,7 +21,9 @@ struct Args {
     #[arg(short, long)]
     var: Vec<String>,
     #[arg(short, long)]
-    flag: Vec<String>
+    flag: Vec<String>,
+    #[arg(short = 'A', long)]
+    amnesia: bool
 }
 
 impl TryFrom<Args> for (Vec<Url>, types::Config) {
@@ -37,6 +39,7 @@ impl TryFrom<Args> for (Vec<Url>, types::Config) {
                     .filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)}))
                     .collect(),
                 flags: args.flag.into_iter().collect(),
+                amnesia: args.amnesia,
                 ..types::Params::default()
             }
         );

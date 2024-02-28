@@ -590,8 +590,10 @@ impl Mapper {
                 let new_url=params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.url().clone();
                 // Intentionally ignore any and all file writing errors.
                 #[cfg(feature = "cache-redirects")]
-                if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
-                    let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
+                if !params.amnesia {
+                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
+                        let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
+                    }
                 }
                 *url=new_url.clone();
             },

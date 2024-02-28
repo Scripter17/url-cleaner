@@ -15,20 +15,28 @@ Since these are somewhat common when social media sites have dedicated fields fo
 
 ## Variables
 
-Variables let you specify runtime behaviour.
+Variables let you specify behaviour with the `--var name=value --var name2=value2` command line syntax.
+Various variables are included in the default config for things I want to do frequently.
 
-- `tor2web`: The domain suffix to append to `**.onion` URLs to allow accessing the onionsite without Tor. Does work if the suffix has multiple segments but the exact way it works is really just a bug. It is intended behaviour though.
+- `twitter-embed-domain`: The domain to use for twitter URLs when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
+- `breezewiki-domain`: The domain to use to turn `fandom.com` URLs into [BreezeWiki](https://breezewiki.com/) URLs. Defaults to `breezewiki.com`
+- `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is set. Should not start with `.` as that's added automatically. Left unset by default.
 
 ## Flags
 
-Like variables except the only defined as "set" and "not set", various flags are included in the default config for things I want to do frequently.
+Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
+Various flags are included in the default config for things I want to do frequently.
 
-- `discord-compatibility`: Turns `twitter.com` URLs into `vxtwitter.com` URLs.
+- `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc`/`https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
+- `no-https`: Disable replacing `http://` URLs with `https://` URLs.
+- `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
-- `tumblr-strip-reblogs`: Replace tumblr reblog links with the original post. Does not care about reblog chains so maybe don't set this in your keyboard shortcut.
-- `antifandom`: Turns `abc.fandom.com` URLs into `antifandom.com/abc` URLs.
-- `unfix-domains`: Replace `antifandom.com` URLs with `fandom.com` URLs.
-- `tor2web2tor`: Replace `**.onion.*` domains with `*.onion`. Currently does not work if the domain suffix is more than one segment.
+- `discord-compatibility`: Turns `twitter.com` URLs into `vxtwitter.com` URLs.
+- `breezewiki`: Turn `fandom.com` and [BreezeWiki](https://breezewiki.com/) URLs into [BreezeWiki](https://breezewiki.com/) URLs using the domain specified by the `breezewiki-domain` variable.
+- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) URLs into `fandom.com` URLs.
+- `onion-location`: Send an HTTP GET request to the url and apply the [`Onion-Location`](https://community.torproject.org/onion-services/advanced/onion-location/) response header if found.
+- `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
+- `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 
 Flags can be added to configs by using the `FlagSet` condition and specified at runtime by doing `--flag flag1 --flag flag2`.
 

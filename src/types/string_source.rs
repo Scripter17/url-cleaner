@@ -163,6 +163,7 @@ impl TryFrom<&str> for StringSource {
     type Error = <Self as FromStr>::Err;
 
     /// Why doesn't the standard library do `impl<T: FromStr> TryFrom<&str> for T`?
+    /// Anyway this is implemented just to make [`crate::rules::Rule::RepeatUntilNonePass`]'s test easoer tp write.
     fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
         Self::from_str(s)
     }

@@ -1,14 +1,8 @@
 {
-	"docs": {
-		"flags": {
-			"no-unmangle": "...",
-			"...": ["..."]
-		},
+	"params": {
 		"vars": {
-			"...": [
-				"...",
-				"...2"
-			]
+			"twitter-embed-domain": "vxtwitter.com",
+			"breezewiki-domain": "breezewiki.com"
 		}
 	},
 	"rules": [
@@ -335,7 +329,7 @@
 				{"QualifiedDomain": "twitter.com"},
 				{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
 			]},
-			"mapper": {"SetHost": "vxtwitter.com"}
+			"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
 		},
 
 
@@ -360,24 +354,35 @@
 
 		{
 			"condition": {"All": [
-				{"FlagIsSet": "antifandom"},
-				{"UnqualifiedDomain": "fandom.com"}
-			]},
-			"mapper": {"All": [
-				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-				{"SetHost": "antifandom.com"}
-			]}
-		},
-		{
-			"condition": {"All": [
-				{"FlagIsSet": "unfix-domains"},
-				{"MaybeWWWDomain": "antifandom.com"},
+				{"Any": [
+					{"FlagIsSet": "breezewiki"},
+					{"FlagIsSet": "unbreezewiki"}
+				]},
+				{"HostIsOneOf": [
+					"breezewiki.com", "antifandom.com", "breezewiki.pussthecat.org", "bw.hamstro.dev",
+					"bw.projectsegfau.lt", "breeze.hostux.net", "bw.artemislena.eu", "nerd.whatever.social",
+					"breezewiki.frontendfriendly.xyz", "breeze.nohost.network", "breeze.whateveritworks.org",
+					"z.opnxng.com", "breezewiki.hyperreal.coffee", "breezewiki.catsarch.com",
+					"breeze.mint.lgbt", "breezewiki.woodland.cafe", "breezewiki.nadeko.net",
+					"bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
+					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion"
+				]},
 				{"Not": {"PathIs": "/"}}
 			]},
 			"mapper": {"All": [
 				{"SetHost": "fandom.com"},
 				{"CopyPart": {"from": {"PathSegment": 0}, "to": "Subdomain"}},
 				{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+			]}
+		},
+		{
+			"condition": {"All": [
+				{"FlagIsSet": "breezewiki"},
+				{"UnqualifiedDomain": "fandom.com"}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
+				{"SetPart": {"part": "Host", "value": {"Var": "breezewiki-domain"}}}
 			]}
 		},
 
@@ -473,7 +478,7 @@
 			"condition": {"All": [
 				{"Any": [
 					{"FlagIsSet": "tor2web2tor"},
-					{"Not": {"VarIs": {"name": "tor2web", "value": null}}}
+					{"FlagIsSet": "tor2web"}
 				]},
 				{"PartIs": {"part": "NotSubdomainNotSuffix", "value": "onion"}}
 			]},
@@ -481,10 +486,10 @@
 		},
 		{
 			"condition": {"All": [
-				{"Not": {"VarIs": {"name": "tor2web", "value": null}}},
-				{"PartContains": {"part": "Domain", "where": "End", "value": ".onion"}}
+				{"FlagIsSet": "tor2web"},
+				{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
 			]},
-			"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web"}}}
+			"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web-suffix"}}}
 		},
 
 

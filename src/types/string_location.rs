@@ -169,6 +169,11 @@ pub enum StringLocation {
     /// Splits the haystack at every instance of `split` and check if any segment satisfies `location`.
     /// # Errors
     /// If `location` returns an error on any segment, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringLocation;
+    /// assert!(StringLocation::AnySegment {split: "/".to_string(), location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==true);
+    /// ```
     AnySegment {
         /// The string to split by.
         split: String,
@@ -180,6 +185,14 @@ pub enum StringLocation {
     /// # Errors
     /// If the `n`th segment doesn't exist, returns the error [`StringError::SegmentNotFound`].
     /// If `location` returns an error on any segment, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringLocation;
+    /// assert!(StringLocation::NthSegment {split: "/".to_string(), n:0, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==false);
+    /// assert!(StringLocation::NthSegment {split: "/".to_string(), n:1, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==true);
+    /// assert!(StringLocation::NthSegment {split: "/".to_string(), n:2, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==false);
+    /// assert!(StringLocation::NthSegment {split: "/".to_string(), n:3, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").is_err());
+    /// ```
     NthSegment {
         /// The string to split by.
         split: String,

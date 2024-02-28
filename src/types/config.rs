@@ -67,7 +67,7 @@ impl Config {
     /// # Errors
     /// If the call to `Rules::apply` returns an error, that error is returned.
     #[allow(dead_code)]
-    pub fn apply(&self, url: &mut Url,) -> Result<(), crate::rules::RuleError> {
+    pub fn apply(&self, url: &mut Url) -> Result<(), crate::rules::RuleError> {
         self.rules.apply(url, &self.params)
     }
 }
@@ -84,7 +84,10 @@ pub struct Params {
     /// The default headers to send in HTTP requests.
     #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
     #[serde(default, with = "crate::glue::headermap")]
-    pub default_http_headers: HeaderMap
+    pub default_http_headers: HeaderMap,
+    /// If `true`, disables all form of logging to disk.
+    /// Currently just caching HTTP redirects.
+    pub amnesia: bool
 }
 
 impl Params {
@@ -96,7 +99,7 @@ impl Params {
         self.default_http_headers.extend(from.default_http_headers);
     }
 
-    /// Gets an HTTP client with [`self`]'s configuration pre-applied.
+    /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
     /// # Errors
     /// Errors if [`reqwest::blocking::ClientBuilder::build`] errors.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -149,5 +152,49 @@ mod tests {
     fn parse_default_config() {
         Config::get_default().unwrap();
     }
-}
 
+    macro_rules! test_config {
+        ($c:expr, $f:expr, $t:expr) => {{
+            let mut url = Url::parse($f).unwrap();
+            $c.apply(&mut url).unwrap();
+            assert_eq!(url.as_str(), $t);
+        }}
+    }
+
+    macro_rules! set_var    {($c:expr, $n:expr, $v:expr) => {$c.params.vars .insert($n.to_string(), $v.to_string());}}
+    macro_rules! unset_var  {($c:expr, $n:expr         ) => {$c.params.vars .remove($n                            );}}
+    macro_rules! set_flag   {($c:expr, $n:expr         ) => {$c.params.flags.insert($n.to_string()                );}}
+    macro_rules! unset_flag {($c:expr, $n:expr         ) => {$c.params.flags.remove($n                            );}}
+
+    #[test]
+    fn test_default_config() {
+        let mut config = Config::get_default().unwrap().clone();
+
+        test_config!(config, "https://x.com?t=a&s=b", "https://twitter.com/");
+
+        set_var!    (config, "tor2web-suffix", "example");
+        test_config!(config, "https://example.onion", "https://example.onion/");
+        set_flag!   (config, "tor2web");
+        test_config!(config, "https://example.onion", "https://example.onion.example/");
+        test_config!(config, "https://example.onion.example2", "https://example.onion.example/");
+        unset_flag! (config, "tor2web");
+        set_flag!   (config, "tor2web2tor");
+        test_config!(config, "https://example.onion.example", "https://example.onion/");
+        unset_var!  (config, "tor2web-suffix");
+        
+        test_config!(config, "https://x.com?a=2", "https://twitter.com/");
+        test_config!(config, "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "https://example.com/");
+        test_config!(config, "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
+            "https://www.amazon.ca/dp/B0C6DX66TN");
+
+        set_flag!   (config, "unbreezewiki");
+        test_config!(config, "https://antifandom.com/tardis/wiki/Genocide", "https://tardis.fandom.com/wiki/Genocide");
+        unset_flag! (config, "unbreezewiki");
+        set_flag!   (config, "breezewiki");
+        test_config!(config, "https://antifandom.com/tardis/wiki/Genocide", "https://breezewiki.com/tardis/wiki/Genocide");
+        test_config!(config, "https://tardis.fandom.com/wiki/Genocide"    , "https://breezewiki.com/tardis/wiki/Genocide");
+        unset_flag! (config, "breezewiki");
+
+        config.apply(&mut Url::parse("https://127.0.0.1").unwrap()).unwrap();
+    }
+}
