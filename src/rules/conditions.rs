@@ -435,7 +435,7 @@ pub enum Condition {
 
     // Miscellaneous.
 
-    /// Passes if the specified rule variable is set to the specified value.
+    /// Passes if the specified variable is set to the specified value.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
@@ -464,11 +464,11 @@ pub enum Condition {
         #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
         /// Decides if getting the variable should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
+        /// Defaults to `false`.
         #[serde(default)]
         value_none_to_empty_string: bool
     },
-    /// Passes if the specified rule variable is set to the specified value.
+    /// Passes if the specified variable is set to the specified value.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
@@ -494,7 +494,7 @@ pub enum Condition {
         /// The expected value of the variable.
         value: Option<String>,
         /// Does nothing; Only here to fix tests between feature flags.
-        /// Defaults to `true`.
+        /// Defaults to `false`.
         #[serde(default)]
         value_none_to_empty_string: bool
     },

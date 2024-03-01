@@ -139,7 +139,41 @@ pub enum BoolSource {
     FlagIsSet(#[serde(deserialize_with = "string_or_struct")] StringSource),
     /// Checks if the specified flag is set.
     #[cfg(not(feature = "string-source"))]
-    FlagIsSet(String)
+    FlagIsSet(String),
+    /// Checks if the specified variable's value is the specified value.
+    #[cfg(feature = "string-source")]
+    VarIs {
+        /// The name of the variable to check.
+        #[serde(deserialize_with = "string_or_struct")]
+        name: StringSource,
+        /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
+        /// Defaults to `true`.
+        #[serde(default)]
+        name_none_to_empty_string: bool,
+        /// The expected value of the variable.
+        #[serde(deserialize_with = "optional_string_or_struct")]
+        value: Option<StringSource>,
+        /// Decides if getting the variable should return `Some("")` instead of `None`.
+        /// Defaults to `false`.
+        #[serde(default)]
+        value_none_to_empty_string: bool
+    },
+    /// Checks if the specified variable's value is the specified value.
+    #[cfg(not(feature = "string-source"))]
+    VarIs {
+        /// The name of the variable
+        name: String,
+        /// Does nothing; Only here for compatibility between feature flags.
+        /// Defaults to `true`.
+        #[serde(default)]
+        name_none_to_empty_string: bool,
+        /// The expected value of the variable.
+        value: Option<String>,
+        /// Does nothing; Only here to fix tests between feature flags.
+        /// Defaults to `false`.
+        #[serde(default)]
+        value_none_to_empty_string: bool
+    },
 }
 
 const fn get_true() -> bool {true}
@@ -231,7 +265,15 @@ impl BoolSource {
             #[cfg(feature = "string-source")]
             Self::FlagIsSet(name) => params.flags.contains(&name.get(url, params, false)?.ok_or(BoolSourceError::StringSourceIsNone)?.into_owned()),
             #[cfg(not(feature = "string-source"))]
-            Self::FlagIsSet(name) => params.flags.contains(name)
+            Self::FlagIsSet(name) => params.flags.contains(name),
+
+            #[cfg(feature = "string-source")]
+            Self::VarIs {name, name_none_to_empty_string, value, value_none_to_empty_string} => match value.as_ref() {
+                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).map(|x| &**x)==source.get(url, params, *value_none_to_empty_string)?.as_deref(),
+                None => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).is_none()
+            },
+            #[cfg(not(feature = "string-source"))]
+            Self::VarIs {name, name_none_to_empty_string: _, value, value_none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *value_none_to_empty_string {Some("")} else {None})==value.as_deref()
         })
     }
 }

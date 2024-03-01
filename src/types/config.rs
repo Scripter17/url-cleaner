@@ -16,11 +16,11 @@ use crate::rules::Rules;
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
-    /// The conditions and mappers that modify the URLS.
-    pub rules: Rules,
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default)]
-    pub params: Params
+    pub params: Params,
+    /// The conditions and mappers that modify the URLS.
+    pub rules: Rules
 }
 
 impl Config {
@@ -87,6 +87,7 @@ pub struct Params {
     pub default_http_headers: HeaderMap,
     /// If `true`, disables all form of logging to disk.
     /// Currently just caching HTTP redirects.
+    #[serde(default)]
     pub amnesia: bool
 }
 
@@ -181,11 +182,10 @@ mod tests {
         set_flag!   (config, "tor2web2tor");
         test_config!(config, "https://example.onion.example", "https://example.onion/");
         unset_var!  (config, "tor2web-suffix");
-        
+
         test_config!(config, "https://x.com?a=2", "https://twitter.com/");
         test_config!(config, "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "https://example.com/");
-        test_config!(config, "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
-            "https://www.amazon.ca/dp/B0C6DX66TN");
+        test_config!(config, "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "https://www.amazon.ca/dp/B0C6DX66TN");
 
         set_flag!   (config, "unbreezewiki");
         test_config!(config, "https://antifandom.com/tardis/wiki/Genocide", "https://tardis.fandom.com/wiki/Genocide");
@@ -194,6 +194,10 @@ mod tests {
         test_config!(config, "https://antifandom.com/tardis/wiki/Genocide", "https://breezewiki.com/tardis/wiki/Genocide");
         test_config!(config, "https://tardis.fandom.com/wiki/Genocide"    , "https://breezewiki.com/tardis/wiki/Genocide");
         unset_flag! (config, "breezewiki");
+
+        set_flag!   (config, "unmobile");
+        test_config!(config, "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell");
+        unset_flag! (config, "unmobile");
 
         config.apply(&mut Url::parse("https://127.0.0.1").unwrap()).unwrap();
     }

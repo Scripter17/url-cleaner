@@ -11,6 +11,16 @@
 				"rules": [
 					{
 						"condition": {"All": [
+							{"Not": {"FlagIsSet": "no-https"}},
+							{"PartIs": {"part": "Scheme", "value": "http"}}
+						]},
+						"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
+					},
+
+
+
+					{
+						"condition": {"All": [
 							{"MaybeWWWDomain": "pixiv.net"},
 							{"PathIs": "/jump.php"}
 						]},
@@ -54,7 +64,10 @@
 
 					{
 						"condition": {"Any": [
-							{"HostIsOneOf": ["t.co", "bit.ly", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it"]},
+							{"HostIsOneOf": [
+								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
+								"cfl.re", "goo.gl", "ow.ly"
+							]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
@@ -113,6 +126,22 @@
 					{
 						"condition": {"QualifiedDomain": "l.threads.com"},
 						"mapper": {"GetUrlFromQueryParam": "u"}
+					},
+
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "bypass.vip"},
+							{"HostIsOneOf": [
+								"adf.ly", "adfoc.us", "ay.live", "aylink.co", "bc.vc", "bcvc.live", "bitly.com", 
+								"boost.fusedgt.com", "boost.ink", "boostme.link", "cutt.ly", "eio.io", "exe.app", "exe.io",
+								"exee.io", "exey.io", "fc-lc.com", "fc.lc", "freehottip.com", "gestyy.com", "justpaste.it",
+								"letsboost.net", "mboost.me", "onlyme.ga", "ouo.io", "ouo.press", "ph.apps2app.com",
+								"rekonise.com", "sh.st", "shortconnect.com", "shorte.st", "shrto.ml", "social-unlock.com",
+								"steps2unlock.com", "sub2get.com", "sub2unlock.com", "sub2unlock.net", "sub4unlock.com",
+								"youtube.com", "ytsubme.com", "za.gl", "za.uy", "zee.gl"
+							]}
+						]},
+						"mapper": "BypassVip"
 					}
 				]
 			}
@@ -212,6 +241,13 @@
 
 
 
+		{
+			"condition": {"QualifiedDomain": "at.tumblr.com"},
+			"mapper": {"All": [
+				{"SetHost": "www.tumblr.com"},
+				{"SetPart": {"part": {"PathSegment": 1}, "value": null}}
+			]}
+		},
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "tumblr.com"},
@@ -433,6 +469,13 @@
 			]},
 			"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
 		},
+		{
+			"condition": {"All": [
+				{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
+				{"UnqualifiedAnyTld": "amazon"}
+			]},
+			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+		},
 
 
 
@@ -468,7 +511,7 @@
 					"value": {
 						"ExtractPart": {
 							"part": "Origin",
-							"source": {"HeaderValue": {"name": "Onion-Location"}}
+							"source": {"ResponseHeader": {"name": "Onion-Location"}}
 						}
 					}
 				}}

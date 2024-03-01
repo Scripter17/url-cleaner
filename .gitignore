@@ -7,3 +7,4 @@ massif*
 callgrind*
 hyperfine*
 *.zip
+mprocs.yaml

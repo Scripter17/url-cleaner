@@ -7,13 +7,15 @@ use std::{
     fs::{OpenOptions, File}
 };
 
+use std::str::Utf8Error;
+use std::collections::hash_set::HashSet;
+use std::collections::HashMap;
+
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
-use std::str::Utf8Error;
-use std::collections::hash_set::HashSet;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
-use reqwest::{self, Error as ReqwestError, header::HeaderMap};
+use reqwest::{self, Error as ReqwestError, header::{HeaderMap, HeaderName, HeaderValue}};
 
 use crate::glue::*;
 use crate::types::*;
@@ -365,7 +367,13 @@ pub enum Mapper {
     /// # Errors
     /// Returns the error [`CommandError`] if the command fails.
     #[cfg(feature = "commands")]
-    ReplaceWithCommandOutput(CommandWrapper)
+    ReplaceWithCommandOutput(CommandWrapper),
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    /// Uses [bypass.vip](https://bypass.vip/) to bypass various link shorteners too complex for URL Cleaner.
+    /// ```Python
+    /// requests.post("https://api.bypass.vip/", data="url={URL_GOES_HERE}", headers={"Origin": "https://bypass.vip", "Content-Type": "application/x-www-form-urlencoded"}).json()["destination"]
+    /// ```
+    BypassVip
 }
 
 const fn get_true() -> bool {true}
@@ -437,7 +445,13 @@ pub enum MapperError {
     /// Returned when a [`StringModificationError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
-    StringModificationError(#[from] StringModificationError)
+    StringModificationError(#[from] StringModificationError),
+    #[error("ResponseJsonIsNotAMap")]
+    ResponseJsonIsNotAMap,
+    #[error("ResponseJsonMapDoesNotHaveKey")]
+    ResponseJsonMapDoesNotHaveKey,
+    #[error("ResponseJsonIsNotAStr")]
+    ResponseJsonIsNotAStr
 }
 
 #[cfg(feature = "cache-redirects")]
@@ -595,7 +609,7 @@ impl Mapper {
                         let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
                     }
                 }
-                *url=new_url.clone();
+                *url=new_url;
             },
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
             Self::ExtractUrlFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
@@ -607,6 +621,36 @@ impl Mapper {
             },
             #[cfg(feature = "commands")]
             Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(Some(url))?;},
+
+            Self::BypassVip => {
+                // requests.post("https://api.bypass.vip/", data="url=https://t.co/3XdBbanQpQ", headers={"Origin": "https://bypass.vip", "Content-Type": "application/x-www-form-urlencoded"}).json()["destination"]g
+                #[cfg(feature = "cache-redirects")]
+                if let Ok(lines) = read_lines("redirect-cache.txt") {
+                    for line in lines.map_while(Result::ok) {
+                        if let Some((short, long)) = line.split_once('\t') {
+                            if url.as_str()==short {
+                                *url=Url::parse(long)?;
+                                return Ok(());
+                            }
+                        }
+                    }
+                }
+                let new_url=Url::parse(params.http_client()?.post("https://api.bypass.vip")
+                    .form(&HashMap::<&str, &str>::from_iter([("url", url.as_str())]))
+                    .headers(HeaderMap::from_iter([(HeaderName::from_static("origin"), HeaderValue::from_static("https://bypass.vip"))]))
+                    .send()?
+                    .json::<serde_json::value::Value>()?
+                    .as_object().ok_or(MapperError::ResponseJsonIsNotAMap)?
+                    .get("destination").ok_or(MapperError::ResponseJsonMapDoesNotHaveKey)?
+                    .as_str().ok_or(MapperError::ResponseJsonIsNotAStr)?)?;
+                #[cfg(feature = "cache-redirects")]
+                if !params.amnesia {
+                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
+                        let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
+                    }
+                }
+                *url=new_url;
+            },
 
             // Testing
 

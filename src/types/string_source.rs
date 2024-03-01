@@ -113,7 +113,7 @@ pub enum StringSource {
     /// If the call to [`reqwest::header::HeaderValue::to_str`] returns an error, that error is returned.
     /// Note that, as I write this, [`reqwest::header::HeaderValue::to_str`] only works if the result is valid ASCII.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    HeaderValue {
+    ResponseHeader {
         /// The name of the response header to get the value of.
         name: String,
         /// The headers to send in the HTTP GET request.
@@ -121,7 +121,7 @@ pub enum StringSource {
         headers: HeaderMap
     },
     /// Parses `source` as a URL and gets the specified value.
-    /// Useful when used with [`Self::HeaderValue`].
+    /// Useful when used with [`Self::ResponseHeader`].
     ExtractPart {
         /// The string to parse and extract `part` from.
         source: Box<Self>,
@@ -231,7 +231,7 @@ impl StringSource {
             },
             Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params, none_to_empty_string)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
-            Self::HeaderValue{name, headers} => Some(Cow::Owned(params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.headers().get(name).ok_or(StringSourceError::HeaderNotFound)?.to_str()?.to_string())),
+            Self::ResponseHeader{name, headers} => Some(Cow::Owned(params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.headers().get(name).ok_or(StringSourceError::HeaderNotFound)?.to_str()?.to_string())),
             Self::ExtractPart{source, part} => source.get(url, params, false)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x, none_to_empty_string).map(|x| Cow::Owned(x.into_owned()))),
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
             Self::ExtractFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
