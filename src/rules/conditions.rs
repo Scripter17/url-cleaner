@@ -510,28 +510,6 @@ pub enum Condition {
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
     FlagIsSet(String),
-    /// Get two strings them compare them.
-    /// Passes if the comparison returns `true`.
-    /// # Errors
-    /// If either `l` or `r` return an error, that error is returned.
-    /// If either `l` or `r` return `None` because the respective `none_to_empty_string` is `false`, returns the error [`ConditionError::StringSourceIsNone`].
-    #[cfg(all(feature = "string-source", feature = "string-cmp"))]
-    StringCmp {
-        /// The source of the left hand side of the comparison.
-        #[serde(deserialize_with = "string_or_struct")]
-        l: StringSource,
-        /// If `l` returns `None` and this is `true`, pretend `l` returned `Some("")`.
-        #[serde(default = "get_true")]
-        l_none_to_empty_string: bool,
-        /// The source of the right hand side of the comparison.
-        #[serde(deserialize_with = "string_or_struct")]
-        r: StringSource,
-        /// If `r` returns `None` and this is `true`, pretend `r` returned `Some("")`.
-        #[serde(default = "get_true")]
-        r_none_to_empty_string: bool,
-        /// How to compare the strings from `l` and `r`.
-        cmp: StringCmp
-    },
     /// Get a boolean value and pass if it's `true`.
     /// # Errors
     /// If the call to [`BoolSource::get`] returns an error, that error is returned.
@@ -723,11 +701,6 @@ impl Condition {
             #[cfg(not(feature = "string-source"))]
             Self::VarIs {name, name_none_to_empty_string: _, value, value_none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *value_none_to_empty_string {Some("")} else {None})==value.as_deref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
-            #[cfg(all(feature = "string-source", feature = "string-cmp"))]
-            Self::StringCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
-                &l.get(url, params, *l_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?,
-                &r.get(url, params, *r_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?
-            ),
             #[cfg(feature = "bool-source")]
             Self::BoolSource(bool_source) => bool_source.get(url, params)?,
 

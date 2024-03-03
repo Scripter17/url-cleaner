@@ -1,12 +1,5 @@
 //! The logic for how to modify a URL.
 
-#[cfg(feature = "cache-redirects")]
-use std::{
-    path::Path,
-    io::{self, BufRead, Write, Error as IoError},
-    fs::{OpenOptions, File}
-};
-
 use std::str::Utf8Error;
 use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
@@ -305,7 +298,7 @@ pub enum Mapper {
         regex: RegexWrapper,
         /// The pattern the extracted parts are put into.
         /// See [`regex::Regex::replace`] for details.
-        #[serde(default = "efup_expand")]
+        #[serde(default = "eufp_expand")]
         replace: String
     },
 
@@ -313,12 +306,13 @@ pub enum Mapper {
 
     /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
     /// Useful for link shorteners like `bit.ly` and `t.co`.
-    /// # Errors
-    /// If URL Cleaner is compiled with the feature `cache-redirects`, the provided URL is found in the cache, but its cached result cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
-    /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
-    /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
+    /// This mapper only works on non-WASM targets.
     /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
     /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
+    /// # Errors
+    /// If the call to [`Params::get_url_from_cache`] returns an error, that error is returned.
+    /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
+    /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Mapper;
@@ -359,7 +353,7 @@ pub enum Mapper {
         regex: RegexWrapper,
         /// The substitution for use in [`regex::Captures::expand`].
         /// Defaults to `"$1"`.
-        #[serde(default = "efup_expand")]
+        #[serde(default = "eufp_expand")]
         expand: String
     },
     /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
@@ -401,10 +395,6 @@ pub enum MapperError {
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
     ReqwestError(#[from] ReqwestError),
-    /// Returned when an [`IoError`] is encountered.
-    #[cfg(feature = "cache-redirects")]
-    #[error(transparent)]
-    IoError(#[from] IoError),
     /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
@@ -446,19 +436,16 @@ pub enum MapperError {
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    #[error("ResponseJsonIsNotAMap")]
-    ResponseJsonIsNotAMap,
-    #[error("ResponseJsonMapDoesNotHaveKey")]
-    ResponseJsonMapDoesNotHaveKey,
-    #[error("ResponseJsonIsNotAStr")]
-    ResponseJsonIsNotAStr
-}
-
-#[cfg(feature = "cache-redirects")]
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
+    /// Returned by Mapper::BypassVip when an unexpected API response is returned.
+    #[cfg(feature = "bypass-vip")]
+    #[error("Returned by Mapper::BypassVip when an unexpected API response is returned.")]
+    UnexpectedBypassVipResponse,
+    /// Returned when a [`ReadCacheError`] is encountered.
+    #[error(transparent)]
+    ReadCacheError(#[from] ReadCacheError),
+    /// Returned when a [`WriteCacheError`] is encountered.
+    #[error(transparent)]
+    WriteCacheError(#[from] WriteCacheError)
 }
 
 impl Mapper {
@@ -574,11 +561,17 @@ impl Mapper {
             #[cfg(feature = "string-modification")]
             Self::ModifyPart{part, part_none_to_empty_string, how} => part.modify(url, *part_none_to_empty_string, how, params)?,
             Self::CopyPart{from, from_none_to_empty_string, to} => to.set(url, from.get(url, *from_none_to_empty_string).map(|x| x.into_owned()).as_deref())?,
-            #[cfg(feature = "regex")]
+            #[cfg(all(feature = "regex", feature = "string-source"))]
             Self::RegexSubUrlPart {part, part_none_to_empty_string, regex, replace} => {
                 let old_part_value=part.get(url, *part_none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
                 #[allow(clippy::unnecessary_to_owned)]
                 part.set(url, Some(&regex.replace(&old_part_value, replace.get(url, params, false)?.ok_or(MapperError::StringSourceIsNone)?).into_owned()))?;
+            },
+            #[cfg(all(feature = "regex", not(feature = "string-source")))]
+            Self::RegexSubUrlPart {part, part_none_to_empty_string, regex, replace} => {
+                let old_part_value=part.get(url, *part_none_to_empty_string).ok_or(MapperError::UrlPartNotFound)?;
+                #[allow(clippy::unnecessary_to_owned)]
+                part.set(url, Some(&regex.replace(&old_part_value, replace).to_string()))?;
             },
 
             // Error handling
@@ -590,28 +583,15 @@ impl Mapper {
 
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink{headers} => {
-                #[cfg(feature = "cache-redirects")]
-                if let Ok(lines) = read_lines("redirect-cache.txt") {
-                    for line in lines.map_while(Result::ok) {
-                        if let Some((short, long)) = line.split_once('\t') {
-                            if url.as_str()==short {
-                                *url=Url::parse(long)?;
-                                return Ok(());
-                            }
-                        }
-                    }
+                if let Some(cached_result) = params.get_url_from_cache(url)? {
+                    *url = cached_result;
+                    return Ok(())
                 }
                 let new_url=params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.url().clone();
-                // Intentionally ignore any and all file writing errors.
-                #[cfg(feature = "cache-redirects")]
-                if !params.amnesia {
-                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
-                        let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
-                    }
-                }
+                params.write_url_map_to_cache(url, &new_url)?;
                 *url=new_url;
             },
-            #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+            #[cfg(all(feature = "http", not(target_family = "wasm"), feature = "regex", feature = "string-source"))]
             Self::ExtractUrlFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
                 let mut ret = String::new();
                 regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::NoRegexMatchesFound)?.expand(&expand, &mut ret);
@@ -619,36 +599,31 @@ impl Mapper {
             } else {
                 Err(MapperError::StringSourceIsNone)?
             },
+            #[cfg(all(feature = "http", not(target_family = "wasm"), feature = "regex", not(feature = "string-source")))]
+            Self::ExtractUrlFromPage{headers, regex, expand} => {
+                let mut ret = String::new();
+                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::NoRegexMatchesFound)?.expand(expand, &mut ret);
+                *url=Url::parse(&ret)?;
+            },
             #[cfg(feature = "commands")]
             Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(Some(url))?;},
 
+            #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::BypassVip => {
                 // requests.post("https://api.bypass.vip/", data="url=https://t.co/3XdBbanQpQ", headers={"Origin": "https://bypass.vip", "Content-Type": "application/x-www-form-urlencoded"}).json()["destination"]g
-                #[cfg(feature = "cache-redirects")]
-                if let Ok(lines) = read_lines("redirect-cache.txt") {
-                    for line in lines.map_while(Result::ok) {
-                        if let Some((short, long)) = line.split_once('\t') {
-                            if url.as_str()==short {
-                                *url=Url::parse(long)?;
-                                return Ok(());
-                            }
-                        }
-                    }
+                if let Some(cached_result) = params.get_url_from_cache(url)? {
+                    *url = cached_result;
+                    return Ok(())
                 }
                 let new_url=Url::parse(params.http_client()?.post("https://api.bypass.vip")
                     .form(&HashMap::<&str, &str>::from_iter([("url", url.as_str())]))
                     .headers(HeaderMap::from_iter([(HeaderName::from_static("origin"), HeaderValue::from_static("https://bypass.vip"))]))
                     .send()?
                     .json::<serde_json::value::Value>()?
-                    .as_object().ok_or(MapperError::ResponseJsonIsNotAMap)?
-                    .get("destination").ok_or(MapperError::ResponseJsonMapDoesNotHaveKey)?
-                    .as_str().ok_or(MapperError::ResponseJsonIsNotAStr)?)?;
-                #[cfg(feature = "cache-redirects")]
-                if !params.amnesia {
-                    if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
-                        let _=x.write(format!("\n{}\t{}", url.as_str(), new_url.as_str()).as_bytes());
-                    }
-                }
+                    .as_object().ok_or(MapperError::UnexpectedBypassVipResponse)?
+                    .get("destination").ok_or(MapperError::UnexpectedBypassVipResponse)?
+                    .as_str().ok_or(MapperError::UnexpectedBypassVipResponse)?)?;
+                params.write_url_map_to_cache(url, &new_url)?;
                 *url=new_url;
             },
 

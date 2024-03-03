@@ -150,6 +150,17 @@
 
 
 		{
+			"comment": "https://https//example.com/example.com/abc -> https://example.com/abc",
+			"condition": {"All": [
+				{"Not": {"FlagIsSet": "no-unmangle"}},
+				{"HostIsOneOf": ["http", "https"]}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": {"PathSegment": 2}, "to": "Host"}},
+				{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 4}}, "to": "Path"}}
+			]}
+		},
+		{
 			"comment": "https://abc.com/https://abc.com/user",
 			"condition": {"All": [
 				{"Not": {"FlagIsSet": "no-unmangle"}},

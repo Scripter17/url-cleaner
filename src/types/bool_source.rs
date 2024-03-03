@@ -74,28 +74,6 @@ pub enum BoolSource {
 
     // Non-meta.
 
-    /// Get two strings them compare them.
-    /// Passes if the comparison returns `true`.
-    /// # Errors
-    /// If either `l` or `r` return an error, that error is returned.
-    /// If either `l` or `r` return `None` because the respective `none_to_empty_string` is `false`, returns the error [`BoolSourceError::StringSourceIsNone`].
-    #[cfg(all(feature = "string-source", feature = "string-cmp"))]
-    StringCmp {
-        /// The source of the left hand side of the comparison.
-        #[serde(deserialize_with = "string_or_struct")]
-        l: StringSource,
-        /// The source of the right hand side of the comparison.
-        #[serde(deserialize_with = "string_or_struct")]
-        r: StringSource,
-        /// If `l` returns `None` and this is `true`, pretend `l` returned `Some("")`.
-        #[serde(default = "get_true")]
-        l_none_to_empty_string: bool,
-        /// If `r` returns `None` and this is `true`, pretend `r` returned `Some("")`.
-        #[serde(default = "get_true")]
-        r_none_to_empty_string: bool,
-        /// How to compare the strings from `l` and `r`.
-        cmp: StringCmp
-    },
     /// Checks if `needle` exists in `haystack` according to `location`.
     /// # Errors
     /// If either `haystack`'s or `needle`;s call to [`StringSource::get`] returns `None` because their respective `none_to_empty_string` is `false`, returns the error [`BoolSourceError::StringSourceIsNone`].
@@ -247,11 +225,6 @@ impl BoolSource {
 
             // Non-meta.
 
-            #[cfg(feature = "string-source")]
-            Self::StringCmp {l, r, l_none_to_empty_string, r_none_to_empty_string, cmp} => cmp.satisfied_by(
-                &l.get(url, params, *l_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
-                &r.get(url, params, *r_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?
-            ),
             #[cfg(all(feature = "string-source", feature = "string-location"))]
             Self::StringLocation {haystack, needle, haystack_none_to_empty_string, needle_none_to_empty_string, location} => location.satisfied_by(
                 &haystack.get(url, params, *haystack_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,

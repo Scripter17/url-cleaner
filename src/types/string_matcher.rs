@@ -95,29 +95,6 @@ pub enum StringMatcher {
     /// ```
     #[cfg(feature = "glob")]
     Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
-    /// Compares the provided string as the left hand side of the specified [`StringCmp`]
-    /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, returns that error.
-    /// If the call to [`StringSource::get`] returns `None` and `none_to_empty_string` is `false`, returns the error [`StringMatcherError::StringSourceIsNone`].
-    #[cfg(all(feature = "string-cmp", feature = "string-source"))]
-    StringCmp {
-        /// The string comparison to use.
-        cmp: StringCmp,
-        /// If `cmp` returns `None`, this decides whether or not to treat it as an empty string.
-        #[serde(default = "get_true")]
-        none_to_empty_string: bool,
-        /// The right hand side of the comparison.
-        #[serde(deserialize_with = "string_or_struct")]
-        r: StringSource
-    },
-    /// Compares the provided string as the left hand side of the specified [`StringCmp`]
-    #[cfg(all(feature = "string-cmp", not(feature = "string-source")))]
-    StringCmp {
-        /// The string comparison to use.
-        cmp: StringCmp,
-        /// The right hand side of the comparison.
-        r: String
-    },
     /// Modifies the provided string then matches it.
     #[cfg(feature = "string-modification")]
     Modified {
@@ -127,8 +104,6 @@ pub enum StringMatcher {
         matcher: Box<Self>
     }
 }
-
-const fn get_true() -> bool {true}
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
 #[allow(clippy::enum_variant_names)]
@@ -149,6 +124,7 @@ pub enum StringMatcherError {
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when a [`StringSourceError`] is encountered.
+    #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
@@ -196,8 +172,6 @@ impl StringMatcher {
             #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,
             #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
-            #[cfg(all(feature = "string-cmp", feature = "string-source"))] Self::StringCmp {cmp, none_to_empty_string, r} => cmp.satisfied_by(haystack, &r.get(url, params, *none_to_empty_string)?.ok_or(StringMatcherError::StringSourceIsNone)?),
-            #[cfg(all(feature = "string-cmp", not(feature = "string-source")))] Self::StringCmp {cmp, r} => cmp.satisfied_by(haystack, r),
             #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, params)?; temp}, url, params)?
         })
     }

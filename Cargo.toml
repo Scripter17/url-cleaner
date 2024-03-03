@@ -32,13 +32,13 @@ percent-encoding = "2.3.1"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["http", "commands", "cache-redirects", "stdin", "default-config", "minify-included-strings", "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "string-cmp", "bool-source"]
+default = ["http", "commands", "cache-redirects", "stdin", "default-config", "minify-included-strings", "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "bool-source", "bypass-vip"]
 # Enables HTTP stuff. DOES NOT WORK ON WASM.
 http = ["dep:reqwest"]
 # Enables [`url_cleaner::glue::CommandWrapper`].
 commands = []
 # Write the result of [`url_cleaner::rules::mappers::Mapper::ExpandShortLink`] to redirect-cache.txt.
-cache-redirects = []
+cache-redirects = ["http"]
 # Allow reading URLs from STDIN.
 stdin = ["dep:atty"]
 # Include default-config.json in the binary.
@@ -58,10 +58,10 @@ string-matcher = []
 string-modification = []
 # Enables [`types::StringSource`].
 string-source = []
-# Enables [`types::StringCmp`].
-string-cmp = []
 # Enables [`types::BoolSource`].
 bool-source = []
+# Enables [`rules::Mapper::BypassVip`]
+bypass-vip = ["http"]
 
 # https://stackoverflow.com/a/54842093/10720231
 [profile.release]

@@ -4,10 +4,15 @@ use std::path::Path;
 use std::borrow::Cow;
 #[cfg(feature = "default-config")]
 use std::sync::OnceLock;
+#[cfg(feature = "cache-redirects")]
+use std::{
+    io::{self, BufRead, Write, Error as IoError},
+    fs::{OpenOptions, File}
+};
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use url::Url;
+use url::{Url, ParseError};
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::header::HeaderMap;
 
@@ -82,7 +87,7 @@ pub struct Params {
     #[serde(default)]
     pub flags: HashSet<String>,
     /// The default headers to send in HTTP requests.
-    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[serde(default, with = "crate::glue::headermap")]
     pub default_http_headers: HeaderMap,
     /// If `true`, disables all form of logging to disk.
@@ -90,6 +95,27 @@ pub struct Params {
     #[serde(default)]
     pub amnesia: bool
 }
+
+#[derive(Debug, Error)]
+pub enum ReadCacheError {
+    #[error(transparent)]
+    UrlParseError(#[from] ParseError)
+}
+
+#[derive(Debug, Error)]
+pub enum WriteCacheError {
+    #[cfg(feature = "cache-redirects")]
+    #[error(transparent)]
+    IoError(#[from] IoError)
+}
+
+#[cfg(feature = "cache-redirects")]
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where P: AsRef<Path>, {
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
 
 impl Params {
     /// Overwrites part of `self` with `from`.
@@ -108,6 +134,34 @@ impl Params {
         reqwest::blocking::ClientBuilder::new()
             .default_headers(self.default_http_headers.clone())
             .build()
+    }
+
+    /// # Errors
+    /// If a cache line starting with `url` is found but the map isn't parseable as a URL, returns the error [`ReadCacheError::UrlParseError`].
+    pub fn get_url_from_cache(&self, before: &Url) -> Result<Option<Url>, ReadCacheError> {
+        #[cfg(feature = "cache-redirects")]
+        if let Ok(lines) = read_lines("redirect-cache.txt") {
+            for line in lines.map_while(Result::ok) {
+                if let Some((short, long)) = line.split_once('\t') {
+                    if before.as_str()==short {
+                        return Ok(Some(Url::parse(long)?));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    /// # Errors
+    /// If the cache line cannot be written, returns [`WriteCacheError::IoError`].
+    pub fn write_url_map_to_cache(&self, before: &Url, after: &Url) -> Result<(), WriteCacheError> {
+        #[cfg(feature = "cache-redirects")]
+        if !self.amnesia {
+            if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
+                x.write_all(format!("\n{}\t{}", before.as_str(), after.as_str()).as_bytes())?;
+            }
+        }
+        Ok(())
     }
 }
 
