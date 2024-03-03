@@ -342,7 +342,6 @@ pub enum StringModification {
     #[cfg(feature = "regex")]
     RegexReplace {
         /// The regex to do replacement with.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The replacement string.
         replace: String
@@ -351,7 +350,6 @@ pub enum StringModification {
     #[cfg(feature = "regex")]
     RegexReplaceAll {
         /// The regex to do replacement with.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The replacement string.
         replace: String
@@ -360,7 +358,6 @@ pub enum StringModification {
     #[cfg(feature = "regex")]
     RegexReplacen {
         /// The regex to do replacement with.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The number of replacements to do.
         n: usize,

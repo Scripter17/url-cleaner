@@ -83,7 +83,7 @@ pub enum StringMatcher {
     /// assert!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "regex")]
-    Regex(#[serde(deserialize_with = "string_or_struct")] RegexWrapper),
+    Regex(RegexWrapper),
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringMatcher;
@@ -94,7 +94,7 @@ pub enum StringMatcher {
     /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// ```
     #[cfg(feature = "glob")]
-    Glob(#[serde(deserialize_with = "string_or_struct")] GlobWrapper),
+    Glob(GlobWrapper),
     /// Modifies the provided string then matches it.
     #[cfg(feature = "string-modification")]
     Modified {

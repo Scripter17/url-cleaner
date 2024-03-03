@@ -316,7 +316,6 @@ pub enum Condition {
         #[serde(default = "get_true")]
         part_none_to_empty_string: bool,
         /// The expected value of the part.
-        #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
         /// Decides if `value`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `false`.
@@ -376,7 +375,6 @@ pub enum Condition {
         #[serde(default = "get_true")]
         part_none_to_empty_string: bool,
         /// The value to look for.
-        #[serde(deserialize_with = "string_or_struct")]
         value: StringSource,
         /// Decides if `value`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
@@ -454,14 +452,12 @@ pub enum Condition {
     #[cfg(feature = "string-source")]
     VarIs {
         /// The name of the variable to check.
-        #[serde(deserialize_with = "string_or_struct")]
         name: StringSource,
         /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default)]
         name_none_to_empty_string: bool,
         /// The expected value of the variable.
-        #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
         /// Decides if getting the variable should return `Some("")` instead of `None`.
         /// Defaults to `false`.

@@ -8,11 +8,13 @@ use thiserror::Error;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::{Error as ReqwestError, header::{HeaderMap, ToStrError}};
 
+use crate::string_or_struct_magic;
 use crate::types::*;
 use crate::glue::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(remote = "Self")]
 pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].
     /// # Errors
@@ -91,7 +93,6 @@ pub enum StringSource {
     #[cfg(feature = "string-modification")]
     Modified {
         /// The source to get the string from.
-        #[serde(deserialize_with = "box_string_or_struct")]
         source: Box<Self>,
         /// The modification to apply to the string.
         modification: StringModification
@@ -139,11 +140,10 @@ pub enum StringSource {
         #[serde(default, with = "crate::glue::headermap")]
         headers: HeaderMap,
         /// The regex to use to extract part of the response body.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The substitution for use in [`regex::Captures::expand`].
         /// Defaults to `"$1"`.
-        #[serde(deserialize_with = "box_string_or_struct", default = "box_efp_expand")]
+        #[serde(default = "box_efp_expand")]
         expand: Box<Self>
     }
 }
@@ -158,6 +158,8 @@ impl FromStr for StringSource {
         Ok(Self::String(s.to_string()))
     }
 }
+
+string_or_struct_magic!(StringSource);
 
 impl TryFrom<&str> for StringSource {
     type Error = <Self as FromStr>::Err;

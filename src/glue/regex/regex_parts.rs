@@ -4,16 +4,21 @@ use serde::{Serialize, Deserialize};
 use regex::{Regex, RegexBuilder, Error as RegexError};
 use regex_syntax::{ParserBuilder, Error as RegexSyntaxError};
 
+use crate::string_or_struct_magic;
+
 /// The enabled form of `RegexParts`.
 /// Contains the rules for constructing a [`Regex`].
 /// The pattern can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(remote = "Self")]
 pub struct RegexParts {
     /// The pattern passed into [`RegexBuilder::new`].
     pattern: String,
     #[serde(flatten)]
     config: RegexConfig
 }
+
+string_or_struct_magic!(RegexParts);
 
 impl AsRef<RegexConfig> for RegexParts {
     fn as_ref(&self) -> &RegexConfig {

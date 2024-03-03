@@ -199,7 +199,7 @@ pub enum Mapper {
     RemovePathSegments(Vec<usize>),
     /// [`Url::join`].
     #[cfg(feature = "string-source")]
-    Join(#[serde(deserialize_with = "string_or_struct")] StringSource),
+    Join(StringSource),
     /// [`Url::join`].
     #[cfg(not(feature = "string-source"))]
     Join(String),
@@ -215,7 +215,6 @@ pub enum Mapper {
         /// The name of the part to replace.
         part: UrlPart,
         /// The value to set the part to.
-        #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
         /// Decides if `value`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
@@ -278,11 +277,10 @@ pub enum Mapper {
         #[serde(default = "get_true")]
         part_none_to_empty_string: bool,
         /// The regex that is used to match and extract parts of the selected part.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The pattern the extracted parts are put into.
         /// See [`regex::Regex::replace`] for details.
-        #[serde(deserialize_with = "string_or_struct", default = "eufp_expand")]
+        #[serde(default = "eufp_expand")]
         replace: StringSource
     },
     #[cfg(all(feature = "regex", not(feature = "string-source")))]
@@ -294,7 +292,6 @@ pub enum Mapper {
         #[serde(default = "get_true")]
         part_none_to_empty_string: bool,
         /// The regex that is used to match and extract parts of the selected part.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The pattern the extracted parts are put into.
         /// See [`regex::Regex::replace`] for details.
@@ -336,11 +333,10 @@ pub enum Mapper {
         #[serde(default, with = "headermap")]
         headers: HeaderMap,
         /// The pattern to search for in the page.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// Used for [`regex::Captures::expand`].
         /// Defaults to `"$1"`.
-        #[serde(deserialize_with = "string_or_struct", default = "eufp_expand")]
+        #[serde(default = "eufp_expand")]
         expand: StringSource
     },
     #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm"), not(feature = "string-source")))]
@@ -349,7 +345,6 @@ pub enum Mapper {
         #[serde(default, with = "headermap")]
         headers: HeaderMap,
         /// The pattern to search for in the page.
-        #[serde(deserialize_with = "string_or_struct")]
         regex: RegexWrapper,
         /// The substitution for use in [`regex::Captures::expand`].
         /// Defaults to `"$1"`.

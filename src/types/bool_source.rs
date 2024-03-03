@@ -3,7 +3,6 @@ use thiserror::Error;
 use url::Url;
 
 use crate::types::*;
-use crate::glue::*;
 
 /// Various possible ways to get a boolean value.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -81,10 +80,8 @@ pub enum BoolSource {
     #[cfg(all(feature = "string-source", feature = "string-location"))]
     StringLocation {
         /// The haystack to search for `needle` in.
-        #[serde(deserialize_with = "string_or_struct")]
         haystack: StringSource,
         /// The needle to search for in `haystack`.
-        #[serde(deserialize_with = "string_or_struct")]
         needle: StringSource,
         /// Decides if `haystack`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
@@ -103,7 +100,6 @@ pub enum BoolSource {
     #[cfg(all(feature = "string-source", feature = "string-matcher"))]
     StringMatcher {
         /// The string to match against.
-        #[serde(deserialize_with = "string_or_struct")]
         string: StringSource,
         /// Decides if `string`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
@@ -114,7 +110,7 @@ pub enum BoolSource {
     },
     /// Checks if the specified flag is set.
     #[cfg(feature = "string-source")]
-    FlagIsSet(#[serde(deserialize_with = "string_or_struct")] StringSource),
+    FlagIsSet(StringSource),
     /// Checks if the specified flag is set.
     #[cfg(not(feature = "string-source"))]
     FlagIsSet(String),
@@ -122,14 +118,12 @@ pub enum BoolSource {
     #[cfg(feature = "string-source")]
     VarIs {
         /// The name of the variable to check.
-        #[serde(deserialize_with = "string_or_struct")]
         name: StringSource,
         /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
         /// Defaults to `true`.
         #[serde(default)]
         name_none_to_empty_string: bool,
         /// The expected value of the variable.
-        #[serde(deserialize_with = "optional_string_or_struct")]
         value: Option<StringSource>,
         /// Decides if getting the variable should return `Some("")` instead of `None`.
         /// Defaults to `false`.

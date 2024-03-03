@@ -8,38 +8,30 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env;
 use std::convert::Infallible;
+use std::ffi::OsString;
 
-use serde::{
-    Serialize, Deserialize,
-    ser::{Error as _, Serializer, SerializeStruct},
-    de::Deserializer
-};
+use serde::{Serialize, Deserialize};
+
+use crate::string_or_struct_magic;
 
 /// The enabled form of the wrapper around [`Command`].
 /// Only the necessary methods are exposed for the sake of simplicity.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(remote= "Self")]
 pub struct CommandWrapper {
-    /// The command being wrapped around.
-    #[serde(flatten, serialize_with = "serialize_command")]
-    pub inner: Command,
+    pub program: String,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub current_dir: Option<PathBuf>,
+    #[serde(default)]
+    pub envs: HashMap<String, String>,
     /// The rule for how the command's output is handled and returned in [`CommandWrapper::get_url`].
+    #[serde(default)]
     pub output_handler: OutputHandler
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct CommandParts {
-    program: String,
-    #[serde(default)]
-    args: Vec<String>,
-    #[serde(default)]
-    current_dir: Option<PathBuf>,
-    #[serde(default)]
-    envs: HashMap<String, String>,
-    #[serde(default)]
-    output_handler: OutputHandler
-}
-
-impl FromStr for CommandParts {
+impl FromStr for CommandWrapper {
     type Err = Infallible;
 
     /// Simply treats the string as the command to run.
@@ -54,56 +46,7 @@ impl FromStr for CommandParts {
     }
 }
 
-impl<'de> Deserialize<'de> for CommandWrapper {
-    /// TODO: Deserializing from a list.
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let parts: CommandParts = crate::glue::string_or_struct(deserializer)?;
-        Ok(parts.into())
-    }
-}
-
-impl From<CommandParts> for Command {
-    fn from(parts: CommandParts) -> Self {
-        let mut ret=Self::new(parts.program);
-        ret.args(parts.args);
-        if let Some(dir) = parts.current_dir {
-            ret.current_dir(dir);
-        }
-        ret.envs(parts.envs);
-        ret
-    }
-}
-
-impl From<CommandParts> for CommandWrapper {
-    fn from(parts: CommandParts) -> Self {
-        Self {
-            output_handler: parts.output_handler.clone(),
-            inner: parts.into()
-        }
-    }
-}
-
-impl FromStr for CommandWrapper {
-    type Err = Infallible;
-
-    /// Simply treats the string as the path to the executable to run and defaults the output handler.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(CommandParts::from_str(s)?.into())
-    }
-}
-
-fn serialize_command<S: Serializer>(command: &Command, serializer: S) -> Result<S::Ok, S::Error> {
-    let mut state = serializer.serialize_struct("Command", 3)?;
-    state.serialize_field("program", command.get_program().to_str().ok_or_else(|| S::Error::custom("The command's program name/path is not UTF-8"))?)?;
-    state.serialize_field("args", &command.get_args().map(|x| x.to_str()).collect::<Option<Vec<_>>>().ok_or_else(|| S::Error::custom("One of the command's arguments isn't UTF-8"))?)?;
-    state.serialize_field("envs", &command.get_envs().filter_map(
-        |(k, v)| match (k.to_str(), v.map(|x| x.to_str())) {
-            (Some(k), Some(Some(v))) => Some((k, v)),
-            _ => None
-        }
-    ).collect::<HashMap<_, _>>())?;
-    state.end()
-}
+string_or_struct_magic!{CommandWrapper}
 
 /// The enabled form of `OutputHandler`.
 /// Before a [`CommandWrapper`] returns its output, it passes it through this to allow for piping and control flow.
@@ -184,18 +127,46 @@ impl OutputHandler {
 }
 
 impl CommandWrapper {
+    pub fn make_command(&self, url: Option<&Url>) -> Command {
+        let mut ret = Command::new(&self.program);
+        match url {
+            Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {Cow::Owned(OsString::from(url.as_str()))} else {Cow::Owned(OsString::from(arg))}));},
+            None => {ret.args(self.args.iter().map(|arg| Cow::Owned(OsString::from(arg))));}
+        }
+        if let Some(current_dir) = &self.current_dir {
+            ret.current_dir(current_dir);
+        }
+        ret.envs(self.envs.clone());
+        ret
+    }
+    // fn apply_url(self, url: Option<&Url>) -> Self {
+    //     if let Some(url) = url {
+    //         // Why doesn't std::process::Command have a clear_args method?
+    //         // More broadly why does the Command API suck?
+    //         let mut ret=Command::new(&self.program);
+    //         ret.args(self.args.iter().map(|arg| if Some(&**arg)==Some("{}") {Cow::Owned(OsString::from(url.as_str()))} else {Cow::Owned(OsString::from(arg))}));
+    //         if let Some(dir) = &self.current_dir {
+    //             ret.current_dir(dir);
+    //         }
+    //         ret.envs(self.envs.clone());
+    //         Self {inner: ret, output_handler: self.output_handler.clone()}
+    //     } else {
+    //         self
+    //     }
+    // }
+    
     /// Checks if the command's [`std::process::Command::get_program`] exists. Checks the system's PATH.
     /// Uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the PATH.
     #[must_use]
     pub fn exists(&self) -> bool {
-        PathBuf::from(self.inner.get_program()).exists() || find_it(self.inner.get_program()).is_some()
+        PathBuf::from(&self.program).exists() || find_it(&self.program).is_some()
     }
 
     /// Runs the command and gets the exit code.
     /// # Errors
     /// If the command returns no exit code, returns the error [`Err(CommandError::SignalTermination)`].
     pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
-        self.clone().apply_url(Some(url)).inner.status()?.code().ok_or(CommandError::SignalTermination)
+        self.make_command(Some(url)).status()?.code().ok_or(CommandError::SignalTermination)
     }
 
     /// # Errors
@@ -206,8 +177,8 @@ impl CommandWrapper {
         match (url, stdin) {
             (url @ Some(_), Some(stdin)) => {
                 // https://stackoverflow.com/a/49597789/10720231
-                let mut cloned=self.clone().apply_url(url);
-                let mut child=cloned.inner
+                let mut command=self.make_command(url);
+                let mut child=command
                     .stdin(Stdio::piped())
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
@@ -216,11 +187,11 @@ impl CommandWrapper {
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)
             },
-            (url @ Some(_), None) => self.output_handler.handle(url, self.clone().apply_url(url).inner.output()?),
+            (url @ Some(_), None) => self.output_handler.handle(url, self.make_command(url).output()?),
             (None, Some(stdin)) => {
                 // https://stackoverflow.com/a/49597789/10720231
-                let mut cloned=self.clone();
-                let mut child=cloned.inner
+                let mut command=self.make_command(url);
+                let mut child=command
                     .stdin(Stdio::piped())
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
@@ -229,7 +200,7 @@ impl CommandWrapper {
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)
             },
-            (None, None) => self.output_handler.handle(url, self.clone().inner.output()?) 
+            (None, None) => self.output_handler.handle(url, self.make_command(url).output()?) 
         }
     }
 
@@ -238,37 +209,9 @@ impl CommandWrapper {
     /// If the call to [`Self::output`] returns an error, that error is returned.
     /// If the output cannot be parsed as a URL (give or take trailing newlines and carriage returns), returns the error [`CommandError::ParseError`].
     pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
-        Ok(Url::parse(self.clone().apply_url(url).output(url, None)?.trim_end_matches(&['\r', '\n']))?)
+        Ok(Url::parse(self.output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }
 
-    /// A very messy function that puts the URL in the command arguments.
-    fn apply_url(self, url: Option<&Url>) -> Self {
-        if let Some(url) = url {
-            // Why doesn't std::process::Command have a clear_args method?
-            // More broadly why does the Command API suck?
-            let mut ret=Command::new(self.inner.get_program());
-            ret.args(self.inner.get_args().map(|arg| if arg.to_str()==Some("{}") {Cow::Owned(url.as_str().to_string().into())} else {Cow::Borrowed(arg)}));
-            if let Some(dir) = self.inner.get_current_dir() {
-                ret.current_dir(dir);
-            }
-            ret.envs(self.inner.get_envs().filter_map(|(k, v)| v.map(|v| (k, v))));
-            Self {inner: ret, output_handler: self.output_handler.clone()}
-        } else {
-            self
-        }
-    }
-}
-
-impl Clone for CommandWrapper {
-    fn clone(&self) -> Self {
-        let mut ret=Command::new(self.inner.get_program());
-        ret.args(self.inner.get_args());
-        if let Some(dir) = self.inner.get_current_dir() {
-            ret.current_dir(dir);
-        }
-        ret.envs(self.inner.get_envs().filter_map(|(k, v)| v.map(|v| (k, v))));
-        Self {inner: ret, output_handler: self.output_handler.clone()}
-    }
 }
 
 impl PartialEq for CommandWrapper {
