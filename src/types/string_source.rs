@@ -146,8 +146,15 @@ pub enum StringSource {
         #[serde(default = "box_efp_expand")]
         expand: Box<Self>
     },
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    HttpRequest(Box<RequestConfig>)
+    #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+    HttpRequest {
+        config: Box<RequestConfig>,
+        #[serde(default)]
+        response_handler: Box<ResponseHandler>
+    },
+    /// Some parts of URL cleaner assume that erroring when [`Self::get`] returns `None` is always wanted.
+    /// This exists to circumvent that assumption.
+    NoneToEmptyString(Box<Self>)
 }
 
 fn box_efp_expand() -> Box<StringSource> {Box::new(StringSource::String("$1".to_string()))}
@@ -209,14 +216,12 @@ pub enum StringSourceError {
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
+    #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     #[error(transparent)]
-    RequestConfigError(Box<RequestConfigError>)
-}
-
-impl From<RequestConfigError> for StringSourceError {
-    fn from(value: RequestConfigError) -> Self {
-        Self::RequestConfigError(Box::new(value))
-    }
+    RequestConfigError(#[from] RequestConfigError),
+    #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+    #[error(transparent)]
+    ReponseHandlerError(#[from] ResponseHandlerError)
 }
 
 impl StringSource {
@@ -253,7 +258,9 @@ impl StringSource {
             } else {
                 Err(StringSourceError::StringSourceIsNone)?
             },
-            Self::HttpRequest(config) => Some(Cow::Owned(config.make(url, params)?.send()?.text()?)),
+            #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+            Self::HttpRequest {config, response_handler} => Some(Cow::Owned(response_handler.handle(url, params, config.make(url, params)?.send()?)?)),
+            Self::NoneToEmptyString(source) => source.get(url, params, true)?,
             Self::Debug(source) => {
                 let ret=source.get(url, params, none_to_empty_string);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");

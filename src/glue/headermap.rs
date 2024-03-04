@@ -8,7 +8,7 @@ use reqwest::header::HeaderMap;
 /// If one of the keys or values aren't a valid header key or value, this function errors.
 pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderMap, D::Error> {
     let temp: HashMap<String, String> = Deserialize::deserialize(d)?;
-    (&temp).try_into().map_err(|e| D::Error::custom(e))
+    (&temp).try_into().map_err(D::Error::custom)
 }
 
 /// Serializes [`HeaderMap`].

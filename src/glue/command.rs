@@ -136,7 +136,7 @@ impl CommandWrapper {
             Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsStr::from_bytes(url.as_str().as_bytes())} else {OsStr::from_bytes(arg.as_bytes())}));},
             #[cfg(not(target_family = "unix"))]
             Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsString::from(url.as_str())} else {OsString::from(arg)}));},
-            None => {ret.args(self.args.iter().map(|arg| OsString::from(arg)));}
+            None => {ret.args(self.args.iter().map(OsString::from));}
         }
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);

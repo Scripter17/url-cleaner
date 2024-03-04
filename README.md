@@ -31,6 +31,7 @@ Various flags are included in the default config for things I want to do frequen
 - `no-https`: Disable replacing `http://` URLs with `https://` URLs.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
+- `discord-external`: Replcae `images-ext-1.discordapp.net` URLs with the original images they refer to.
 - `discord-compatibility`: Turns `twitter.com` URLs into `vxtwitter.com` URLs.
 - `breezewiki`: Turn `fandom.com` and [BreezeWiki](https://breezewiki.com/) URLs into [BreezeWiki](https://breezewiki.com/) URLs using the domain specified by the `breezewiki-domain` variable.
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) URLs into `fandom.com` URLs.

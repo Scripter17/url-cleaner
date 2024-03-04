@@ -2,13 +2,12 @@
 
 use std::str::Utf8Error;
 use std::collections::hash_set::HashSet;
-use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::{Url, ParseError};
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
-use reqwest::{self, Error as ReqwestError, header::{HeaderMap, HeaderName, HeaderValue}};
+use reqwest::{self, Error as ReqwestError, header::HeaderMap};
 
 use crate::glue::*;
 use crate::types::*;

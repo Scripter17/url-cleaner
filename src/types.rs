@@ -17,8 +17,8 @@ pub use config::*;
 #[cfg(feature = "string-matcher"     )] pub use string_matcher::*;
 #[cfg(feature = "bool-source"        )] mod bool_source;
 #[cfg(feature = "bool-source"        )] pub use bool_source::*;
-#[cfg(feature = "http"               )] mod request_config;
-#[cfg(feature = "http"               )] pub use request_config::*;
+#[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] mod advanced_requests;
+#[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] pub use advanced_requests::*;
 
 /// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
 /// Except for if a [`crate::rules::Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.

@@ -40,7 +40,7 @@ const fn is_false(x: &bool) -> bool {!*x}
 
 fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern: String=Deserialize::deserialize(deserializer)?;
-    Pattern::new(&pattern).map_err(|e| D::Error::custom(e))
+    Pattern::new(&pattern).map_err(D::Error::custom)
 }
 
 fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<S::Ok, S::Error> {

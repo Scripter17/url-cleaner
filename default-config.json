@@ -145,10 +145,12 @@
 							"part": "Whole",
 							"value": {"Modified": {
 								"source": {"HttpRequest": {
-									"url": "https://api.bypass.vip",
-									"method": "POST",
-									"headers": {"origin": "https://bypass.vip"},
-									"body": {"Form": {"url": {"Part": "Whole"}}}
+									"config": {
+										"url": "https://api.bypass.vip",
+										"method": "POST",
+										"headers": {"origin": "https://bypass.vip"},
+										"body": {"Form": {"url": {"Part": "Whole"}}}
+									}
 								}},
 								"modification": {"JsonPointer": "/destination"}
 							}}
@@ -329,6 +331,26 @@
 				"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
 				"tumblr.com"        : "RemoveQuery"
 			}
+		},
+
+
+
+		{
+			"comment": "Discord embeds images using dedicated \"external images\" server(s). This gets the original image.",
+			"condition": {"All": [
+				{"FlagIsSet": "discord-external"},
+				{"Any": [
+					{"QualifiedDomain": "images-ext-1.discordapp.net"},
+					{"QualifiedDomain": "images-ext-2.discordapp.net"},
+					{"QualifiedDomain": "images-ext-3.discordapp.net"}
+				]}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
+				{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
+				{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}},
+				"RemoveQuery"
+			]}
 		},
 
 

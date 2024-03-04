@@ -31,7 +31,7 @@ macro_rules! string_or_struct_magic {
                     }
 
                     fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
-                        <$type>::from_str(s).map_err(|e| E::custom(e))
+                        <$type>::from_str(s).map_err(E::custom)
                     }
 
                     fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
