@@ -9,7 +9,7 @@
 pub mod headermap;
 
 /// What the fuck.
-/// See https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210 for details.
+/// See [https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 #[macro_export]
 macro_rules! string_or_struct_magic {
     ($type:ty) => {

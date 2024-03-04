@@ -1,6 +1,7 @@
 use std::str::Utf8Error;
 
 use serde::{Serialize, Deserialize};
+use serde_json::Error as SerdeJsonError;
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 
@@ -407,7 +408,11 @@ pub enum StringModification {
     /// assert_eq!(&x, "abc\n");
     /// ````
     #[cfg(feature = "commands")]
-    CommandOutput(CommandWrapper)
+    CommandOutput(CommandWrapper),
+    /// Please see [`serde_json::Value::pointer`] for details.
+    /// # Errros
+    /// TODO
+    JsonPointer(String)
 }
 
 /// The enum of all possible errors [`StringModification::apply`] can return.
@@ -426,7 +431,13 @@ pub enum StringModificationError {
     CommandError(#[from] CommandError),
     /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
-    FromUtf8Error(#[from] Utf8Error)
+    FromUtf8Error(#[from] Utf8Error),
+    #[error(transparent)]
+    SerdeJsonError(#[from] SerdeJsonError),
+    #[error("TODO")]
+    JsonValueIsNone,
+    #[error("TODO")]
+    JsonValueIsNotAString
 }
 
 impl StringModification {
@@ -519,7 +530,7 @@ impl StringModification {
             },
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => *to=command.output(None, Some(to.as_bytes()))?,
-            Self::Error => Err(StringModificationError::ExplicitError)?
+            Self::JsonPointer(pointer) => *to=serde_json::from_str::<serde_json::Value>(to)?.pointer(pointer).ok_or(StringModificationError::JsonValueIsNone)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),            Self::Error => Err(StringModificationError::ExplicitError)?
         };
         Ok(())
     }

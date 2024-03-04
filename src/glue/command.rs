@@ -8,7 +8,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env;
 use std::convert::Infallible;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+#[cfg(target_family = "unix")]
+use std::os::unix::ffi::OsStrExt;
 
 use serde::{Serialize, Deserialize};
 
@@ -46,7 +48,7 @@ impl FromStr for CommandWrapper {
     }
 }
 
-string_or_struct_magic!{CommandWrapper}
+string_or_struct_magic!(CommandWrapper);
 
 /// The enabled form of `OutputHandler`.
 /// Before a [`CommandWrapper`] returns its output, it passes it through this to allow for piping and control flow.
@@ -130,8 +132,11 @@ impl CommandWrapper {
     pub fn make_command(&self, url: Option<&Url>) -> Command {
         let mut ret = Command::new(&self.program);
         match url {
-            Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {Cow::Owned(OsString::from(url.as_str()))} else {Cow::Owned(OsString::from(arg))}));},
-            None => {ret.args(self.args.iter().map(|arg| Cow::Owned(OsString::from(arg))));}
+            #[cfg(target_family = "unix")]
+            Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsStr::from_bytes(url.as_str().as_bytes())} else {OsStr::from_bytes(arg.as_bytes())}));},
+            #[cfg(not(target_family = "unix"))]
+            Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsString::from(url.as_str())} else {OsString::from(arg)}));},
+            None => {ret.args(self.args.iter().map(|arg| OsString::from(arg)));}
         }
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
@@ -139,21 +144,6 @@ impl CommandWrapper {
         ret.envs(self.envs.clone());
         ret
     }
-    // fn apply_url(self, url: Option<&Url>) -> Self {
-    //     if let Some(url) = url {
-    //         // Why doesn't std::process::Command have a clear_args method?
-    //         // More broadly why does the Command API suck?
-    //         let mut ret=Command::new(&self.program);
-    //         ret.args(self.args.iter().map(|arg| if Some(&**arg)==Some("{}") {Cow::Owned(OsString::from(url.as_str()))} else {Cow::Owned(OsString::from(arg))}));
-    //         if let Some(dir) = &self.current_dir {
-    //             ret.current_dir(dir);
-    //         }
-    //         ret.envs(self.envs.clone());
-    //         Self {inner: ret, output_handler: self.output_handler.clone()}
-    //     } else {
-    //         self
-    //     }
-    // }
     
     /// Checks if the command's [`std::process::Command::get_program`] exists. Checks the system's PATH.
     /// Uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the PATH.

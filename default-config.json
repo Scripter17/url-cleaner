@@ -132,7 +132,7 @@
 						"condition": {"All": [
 							{"FlagIsSet": "bypass.vip"},
 							{"HostIsOneOf": [
-								"adf.ly", "adfoc.us", "ay.live", "aylink.co", "bc.vc", "bcvc.live", "bitly.com", 
+								"adf.ly", "adfoc.us", "ay.live", "aylink.co", "bc.vc", "bcvc.live",
 								"boost.fusedgt.com", "boost.ink", "boostme.link", "cutt.ly", "eio.io", "exe.app", "exe.io",
 								"exee.io", "exey.io", "fc-lc.com", "fc.lc", "freehottip.com", "gestyy.com", "justpaste.it",
 								"letsboost.net", "mboost.me", "onlyme.ga", "ouo.io", "ouo.press", "ph.apps2app.com",
@@ -141,7 +141,18 @@
 								"youtube.com", "ytsubme.com", "za.gl", "za.uy", "zee.gl"
 							]}
 						]},
-						"mapper": "BypassVip"
+						"mapper": {"SetPart": {
+							"part": "Whole",
+							"value": {"Modified": {
+								"source": {"HttpRequest": {
+									"url": "https://api.bypass.vip",
+									"method": "POST",
+									"headers": {"origin": "https://bypass.vip"},
+									"body": {"Form": {"url": {"Part": "Whole"}}}
+								}},
+								"modification": {"JsonPointer": "/destination"}
+							}}
+						}}
 					}
 				]
 			}

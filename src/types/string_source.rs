@@ -145,7 +145,9 @@ pub enum StringSource {
         /// Defaults to `"$1"`.
         #[serde(default = "box_efp_expand")]
         expand: Box<Self>
-    }
+    },
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    HttpRequest(Box<RequestConfig>)
 }
 
 fn box_efp_expand() -> Box<StringSource> {Box::new(StringSource::String("$1".to_string()))}
@@ -206,7 +208,15 @@ pub enum StringSourceError {
     NoRegexMatchesFound,
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone
+    StringSourceIsNone,
+    #[error(transparent)]
+    RequestConfigError(Box<RequestConfigError>)
+}
+
+impl From<RequestConfigError> for StringSourceError {
+    fn from(value: RequestConfigError) -> Self {
+        Self::RequestConfigError(Box::new(value))
+    }
 }
 
 impl StringSource {
@@ -243,6 +253,7 @@ impl StringSource {
             } else {
                 Err(StringSourceError::StringSourceIsNone)?
             },
+            Self::HttpRequest(config) => Some(Cow::Owned(config.make(url, params)?.send()?.text()?)),
             Self::Debug(source) => {
                 let ret=source.get(url, params, none_to_empty_string);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");

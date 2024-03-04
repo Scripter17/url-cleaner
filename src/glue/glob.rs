@@ -7,9 +7,12 @@ use serde::{
     de::{Error as _, Deserializer}
 };
 
+use crate::string_or_struct_magic;
+
 /// The enabled form of the wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
 /// Only the necessary methods are exposed for the sake of simplicity.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(remote= "Self")]
 pub struct GlobWrapper {
     /// The pattern used to match stuff.
     #[serde(flatten, serialize_with = "serialize_pattern", deserialize_with = "deserialize_pattern")]
@@ -18,6 +21,8 @@ pub struct GlobWrapper {
     #[serde(flatten, with = "SerdeMatchOptions")]
     pub options: MatchOptions
 }
+
+string_or_struct_magic!(GlobWrapper);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(remote = "MatchOptions")]
@@ -35,7 +40,7 @@ const fn is_false(x: &bool) -> bool {!*x}
 
 fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern: String=Deserialize::deserialize(deserializer)?;
-    Pattern::new(&pattern).map_err(|_| D::Error::custom(format!("Invalid glob pattern: {pattern:?}.")))
+    Pattern::new(&pattern).map_err(|e| D::Error::custom(e))
 }
 
 fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<S::Ok, S::Error> {

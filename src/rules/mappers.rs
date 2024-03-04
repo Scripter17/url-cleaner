@@ -356,13 +356,7 @@ pub enum Mapper {
     /// # Errors
     /// Returns the error [`CommandError`] if the command fails.
     #[cfg(feature = "commands")]
-    ReplaceWithCommandOutput(CommandWrapper),
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    /// Uses [bypass.vip](https://bypass.vip/) to bypass various link shorteners too complex for URL Cleaner.
-    /// ```Python
-    /// requests.post("https://api.bypass.vip/", data="url={URL_GOES_HERE}", headers={"Origin": "https://bypass.vip", "Content-Type": "application/x-www-form-urlencoded"}).json()["destination"]
-    /// ```
-    BypassVip
+    ReplaceWithCommandOutput(CommandWrapper)
 }
 
 const fn get_true() -> bool {true}
@@ -431,10 +425,6 @@ pub enum MapperError {
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    /// Returned by Mapper::BypassVip when an unexpected API response is returned.
-    #[cfg(feature = "bypass-vip")]
-    #[error("Returned by Mapper::BypassVip when an unexpected API response is returned.")]
-    UnexpectedBypassVipResponse,
     /// Returned when a [`ReadCacheError`] is encountered.
     #[error(transparent)]
     ReadCacheError(#[from] ReadCacheError),
@@ -602,25 +592,6 @@ impl Mapper {
             },
             #[cfg(feature = "commands")]
             Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(Some(url))?;},
-
-            #[cfg(all(feature = "http", not(target_family = "wasm")))]
-            Self::BypassVip => {
-                // requests.post("https://api.bypass.vip/", data="url=https://t.co/3XdBbanQpQ", headers={"Origin": "https://bypass.vip", "Content-Type": "application/x-www-form-urlencoded"}).json()["destination"]g
-                if let Some(cached_result) = params.get_url_from_cache(url)? {
-                    *url = cached_result;
-                    return Ok(())
-                }
-                let new_url=Url::parse(params.http_client()?.post("https://api.bypass.vip")
-                    .form(&HashMap::<&str, &str>::from_iter([("url", url.as_str())]))
-                    .headers(HeaderMap::from_iter([(HeaderName::from_static("origin"), HeaderValue::from_static("https://bypass.vip"))]))
-                    .send()?
-                    .json::<serde_json::value::Value>()?
-                    .as_object().ok_or(MapperError::UnexpectedBypassVipResponse)?
-                    .get("destination").ok_or(MapperError::UnexpectedBypassVipResponse)?
-                    .as_str().ok_or(MapperError::UnexpectedBypassVipResponse)?)?;
-                params.write_url_map_to_cache(url, &new_url)?;
-                *url=new_url;
-            },
 
             // Testing
 
