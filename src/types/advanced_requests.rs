@@ -1,44 +1,64 @@
 use std::str::FromStr;
 use std::collections::HashMap;
 
-use url::{Url, ParseError};
+use url::Url;
 use serde::{Deserialize, Serialize, de::{Deserializer, Error as _}, ser::Serializer};
 use serde_json::value::Value;
-use reqwest::{Method, header::{HeaderMap, ToStrError}, blocking::RequestBuilder, Error as ReqwestError, blocking::Response};
+use reqwest::{Method, header::HeaderMap};
 use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
 
+/// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct RequestConfig {
+    /// The URL to send the request to. If [`None`], uses the URL being cleaned.
     #[cfg(feature = "string-source")]
     #[serde(default)]
     pub url: Option<StringSource>,
+    /// The URL to send the request to. If [`None`], uses the URL being cleaned.
     #[cfg(not(feature = "string-source"))]
     #[serde(default)]
     pub url: Option<String>,
-    #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method")]
+    /// The HTTP method to use.
+    #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method", default = "get")]
     pub method: Method,
+    /// The headers to send in the request in addition to the default headers provided by [`Params::default_http_headers`].
     #[serde(with = "headermap")]
     pub headers: HeaderMap,
-    pub body: Option<RequestBody>
+    /// The request body to send. Works with all methods but intended only for [`Method::POST`] requests.
+    pub body: Option<RequestBody>,
+    /// The method [`Self::response`] uses to get a [`String`] from the [`reqwest::blocking::Response`]
+    #[serde(default)]
+    pub response_handler: ResponseHandler
 }
 
+const fn get() -> Method {Method::GET}
+
+/// The enum of all possible errors [`RequestConfig::make`] and [`RequestConfig::response`] can return.
 #[derive(Debug, Error)]
 pub enum RequestConfigError {
+    /// Returned when a [`reqwest::Error`] is encountered.
     #[error(transparent)]
-    ReqwestError(#[from] ReqwestError),
+    ReqwestError(#[from] reqwest::Error),
+    /// Returned when a [`RequestBodyError`] is encountered.
     #[error(transparent)]
     RequestBodyError(#[from] RequestBodyError),
+    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to be [`Some`].
     #[cfg(feature = "string-source")]
-    #[error("TODO")]
+    #[error("A StringSource was None where it has to be Some.")]
     StringSourceIsNone,
+    /// Returned when a [`StringSourceError`] is encountered.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(Box<StringSourceError>),
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    UrlParseError(#[from] ParseError)
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`ResponseHandlerError`] is encountered.
+    #[error(transparent)]
+    ResponseHandlerError(#[from] ResponseHandlerError)
 }
 
 #[cfg(feature = "string-source")]
@@ -57,10 +77,11 @@ fn serialize_method<S: Serializer>(method: &Method, s: S) -> Result<S::Ok, S::Er
 }
 
 impl RequestConfig {
+    /// Makes a [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
-    pub fn make(&self, url: &Url, params: &Params) -> Result<RequestBuilder, RequestConfigError> {
+    pub fn make(&self, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
         #[cfg(feature = "string-source")]
         let mut ret=params.http_client()?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(&source.get(url, params, false)?.ok_or(RequestConfigError::StringSourceIsNone)?)?, None => url.clone()});
         #[cfg(not(feature = "string-source"))]
@@ -70,31 +91,53 @@ impl RequestConfig {
         if let Some(body) = &self.body {ret=body.apply(ret, url, params)?;}
         Ok(ret)
     }
+
+    /// Sends the request then uses [`Self::response_handler`] to get a [`String`] from the [`reqwest::blocking::Response`].
+    /// # Errors
+    /// If the call to [`Self::make`] returns an error, that error is returned.
+    /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
+    /// If the call to [`ResponseHandler`] returns an error, that error is returned.
+    pub fn response(&self, url: &Url, params: &Params) -> Result<String, RequestConfigError> {
+        Ok(self.response_handler.handle(self.make(url, params)?.send()?, url, params)?)
+    }
 }
 
+/// The ways one can set the body in an HTTP request.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum RequestBody {
+    /// [`reqwest::blocking::RequestBuilder::body`].
     /// # Errors
-    /// TODO
+    /// If the call to [`StringSource::get`] returns an error, that error is returned in a [`RequestBodyError::StringSourceError`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`RequestBodyError::StringSourceIsNone`]`.
     #[cfg(feature = "string-source")]
     Text(StringSource),
+    /// [`reqwest::blocking::RequestBuilder::body`].
     #[cfg(not(feature = "string-source"))]
     Text(String),
+    /// [`reqwest::blocking::RequestBuilder::form`].
     /// # Errors
-    /// TODO
+    /// If a call to [`StringSource::get`] returns an error, that error is returned in a [`RequestBodyError::StringSourceError`].
+    /// If a call to [`StringSource::get`] returns [`None`], returns the error [`RequestBodyError::StringSourceIsNone`]`.
     #[cfg(feature = "string-source")]
     Form(HashMap<String, StringSource>),
+    /// [`reqwest::blocking::RequestBuilder::form`].
     #[cfg(not(feature = "string-source"))]
     Form(HashMap<String, String>),
+    /// [`reqwest::blocking::RequestBuilder::json`].
     Json(Value)
 }
 
+/// The enum of all possible errors [`RequestBody::apply`] can return.
 #[derive(Debug, Error)]
 pub enum RequestBodyError {
+    /// Returned when a [`StringSourceError`] is encountered.
+    /// [`Box`]ed to avoid recursive types.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(Box<StringSourceError>),
-    #[error("TODO")]
+    /// Returned when a call to [`StringSource::get`] returns [`None`] when it has to be [`Some`].
+    #[cfg(feature = "string-source")]
+    #[error("A StringSource was None where it has to be Some.")]
     StringSourceIsNone
 }
 
@@ -106,9 +149,10 @@ impl From<StringSourceError> for RequestBodyError {
 }
 
 impl RequestBody {
+    /// Applies the specified body to the provided [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// See [`RequestBody`]'s documentation for details.
-    pub fn apply(&self, request: RequestBuilder, url: &Url, params: &Params) -> Result<RequestBuilder, RequestBodyError> {
+    pub fn apply(&self, request: reqwest::blocking::RequestBuilder, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
         Ok(match self {
             #[cfg(feature = "string-source")]
             Self::Text(source) => request.body(source.get(url, params, false)?.ok_or(RequestBodyError::StringSourceIsNone)?.into_owned()),
@@ -131,36 +175,50 @@ impl RequestBody {
     }
 }
 
+/// The ways one can get a [`String`] from a [`reqwest::blocking::Response`].
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub enum ResponseHandler {
+    /// [`reqwest::blocking::Response::text`].
     #[default]
     Body,
+    /// [`reqwest::blocking::Response::headers`].
     #[cfg(feature = "string-source")]
-    HeaderValue(StringSource),
+    Header(StringSource),
+    /// [`reqwest::blocking::Response::headers`].
     #[cfg(not(feature = "string-source"))]
-    HeaderValue(String),
+    Header(String),
+    /// [`reqwest::blocking::Response::url`].
     Url,
+    /// [`reqwest::blocking::Response::cookies`].
     #[cfg(feature = "string-source")]
     Cookie(StringSource),
+    /// [`reqwest::blocking::Response::cookies`].
     #[cfg(not(feature = "string-source"))]
     Cookie(String)
 }
 
+/// The enum of all possible errors [`ResponseHandler::handle`] can return.
 #[derive(Debug, Error)]
 pub enum ResponseHandlerError {
+    /// Returned when a [`reqwest::Error`] is encountered.
     #[error(transparent)]
-    ReqwestError(#[from] ReqwestError),
+    ReqwestError(#[from] reqwest::Error),
+    /// Returned when a [`StringSourceError`] is encountered.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(Box<StringSourceError>),
+    /// Returned when a call to [`StringSource::get`] returns [`None`] when it has to be [`Some`].
     #[cfg(feature = "string-source")]
-    #[error("TODO")]
+    #[error("A StringSource was None where it has to be Some.")]
     StringSourceIsNone,
-    #[error("TODO")]
+    /// Returned when the requested header is not found.
+    #[error("The requested header wes not found.")]
     HeaderNotFound,
+    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[error(transparent)]
-    ToStrError(#[from] ToStrError),
-    #[error("TODO")]
+    ToStrError(#[from] reqwest::header::ToStrError),
+    /// Returned when the requested cookie is not found.
+    #[error("The requested cookie was not found.")]
     CookieNotFound
 }
 
@@ -172,15 +230,16 @@ impl From<StringSourceError> for ResponseHandlerError {
 }
 
 impl ResponseHandler {
+    /// Returns a string from the requested part of the response.
     /// # Errors
-    /// TODO
-    pub fn handle(&self, url: &Url, params: &Params, response: Response) -> Result<String, ResponseHandlerError> {
+    /// See [`ResponseHandler`]'s docs for details.
+    pub fn handle(&self, response: reqwest::blocking::Response, url: &Url, params: &Params) -> Result<String, ResponseHandlerError> {
         Ok(match self {
             Self::Body => response.text()?,
             #[cfg(feature = "string-source")]
-            Self::HeaderValue(source) => response.headers().get(&*source.get(url, params, false)?.ok_or(ResponseHandlerError::StringSourceIsNone)?).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
+            Self::Header(source) => response.headers().get(&*source.get(url, params, false)?.ok_or(ResponseHandlerError::StringSourceIsNone)?).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             #[cfg(not(feature = "string-source"))]
-            Self::HeaderValue(name) => response.headers().get(name).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
+            Self::Header(name) => response.headers().get(name).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             Self::Url => response.url().as_str().to_string(),
             #[cfg(feature = "string-source")]
             Self::Cookie(source) => {

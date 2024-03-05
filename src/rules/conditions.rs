@@ -1,7 +1,6 @@
 //! The logic for when to modify a URL.
 
 use std::collections::hash_set::HashSet;
-use std::ops::Deref;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
@@ -514,38 +513,38 @@ pub enum Condition {
 
     // Commands.
 
-    /// Checks the contained command's [`CommandWrapper::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
+    /// Checks the contained command's [`CommandConfig::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
     /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExists (CommandWrapper::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
     #[cfg(feature = "commands")]
-    CommandExists(CommandWrapper),
-    /// Runs the specified [`CommandWrapper`] and passes if its exit code equals `expected` (which defaults to `0`).
+    CommandExists(CommandConfig),
+    /// Runs the specified [`CommandConfig`] and passes if its exit code equals `expected` (which defaults to `0`).
     /// # Errors
     /// If the command is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
     /// # Examples
     /// ```
     /// # use url_cleaner::rules::Condition;
     /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::CommandExitStatus {command: CommandWrapper::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_err());
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_err());
     /// ```
     #[cfg(feature = "commands")]
     CommandExitStatus {
-        /// The [`CommandWrapper`] to execute.
-        command: CommandWrapper,
+        /// The [`CommandConfig`] to execute.
+        command: CommandConfig,
         /// The expected [`std::process::ExitStatus`]. Defaults to `0`.
         #[serde(default)]
         expected: i32
@@ -568,9 +567,6 @@ pub enum ConditionError {
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError),
     /// Returned when a [`GetPartError`] is encountered.
     #[error(transparent)]
     GetPartError(#[from] GetPartError),
@@ -691,7 +687,7 @@ impl Condition {
 
             #[cfg(feature = "string-source")]
             Self::VarIs {name, name_none_to_empty_string, value, value_none_to_empty_string} => match value.as_ref() {
-                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| x.deref())==source.get(url, params, *value_none_to_empty_string)?.as_deref(),
+                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| &**x)==source.get(url, params, *value_none_to_empty_string)?.as_deref(),
                 None => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]

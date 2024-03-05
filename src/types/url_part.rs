@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use url::{Url, Origin, ParseError};
+use url::{Url, Origin};
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
@@ -844,8 +844,8 @@ impl UrlPart {
     /// If the string modification returns an error, that error is returned.
     /// If [`UrlPart::set`] returns an error, that error is returned.
     #[cfg(feature = "string-modification")]
-    pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &StringModification, params: &Params) -> Result<(), PartModificationError> {
-        let mut new_part=self.get(url, none_to_empty_string).ok_or(PartModificationError::PartIsNone)?.into_owned();
+    pub fn modify(&self, url: &mut Url, none_to_empty_string: bool, how: &StringModification, params: &Params) -> Result<(), UrlPartModificationError> {
+        let mut new_part=self.get(url, none_to_empty_string).ok_or(UrlPartModificationError::PartIsNone)?.into_owned();
         how.apply(&mut new_part, params)?;
         self.set(url, Some(&new_part))?;
         Ok(())
@@ -875,9 +875,9 @@ pub enum GetPartError {
 /// The enum of all possible errors [`UrlPart::set`] can return.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SetPartError {
-    /// Returned when a [`ParseError`] is encountered.
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    ParseError(#[from] ParseError),
+    ParseError(#[from] url::ParseError),
     /// Returned when a [`GetPartError`] is encountered.
     #[error(transparent)]
     GetPartError(#[from] GetPartError),
@@ -913,13 +913,10 @@ pub enum SetPartError {
 /// The enum of all possible errors [`UrlPart::modify`] can return.
 #[cfg(feature = "string-modification")]
 #[derive(Debug, Error)]
-pub enum PartModificationError {
+pub enum UrlPartModificationError {
     /// Returned when the requested part is `None`.
     #[error("Cannot modify the requested part because it doesn't have a value.")]
     PartIsNone,
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError),
     /// Returned when a [`SetPartError`] is encountered.
     #[error(transparent)]
     SetPartError(#[from] SetPartError),

@@ -1,6 +1,5 @@
-use std::io::Error as IoError;
+use std::io;
 
-use url::ParseError;
 use thiserror::Error;
 
 mod url_part;
@@ -26,36 +25,19 @@ pub use config::*;
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
 pub enum CleaningError {
-    /// There was an error getting the config.
+    /// Returned when a [`GetConfigError`] os encountered.
     #[error(transparent)]
-    GetConfigError(#[from] config::GetConfigError),
-    /// There was an error executing a rule.
+    GetConfigError(#[from] GetConfigError),
+    /// Returned when a [`crate::rules::RuleError`] is encountered.
     #[error(transparent)]
     RuleError(#[from] crate::rules::RuleError),
-    /// There was an error parsing the URL.
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    UrlParseError(#[from] ParseError),
-    /// IO error.
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when an [`io::Error`] is encountered.
     #[error(transparent)]
-    IoError(#[from] IoError)
-}
-
-/// Miscellaneous errors that can happen when handling strings.
-#[derive(Debug, Error)]
-pub enum StringError {
-    /// The requested slice was either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
-    InvalidSlice,
-    /// The requested index was either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
-    InvalidIndex,
-    /// The requested segment was not found.
-    #[error("The requested segment was not found.")]
-    SegmentNotFound,
-    /// The provided string did not start with the requested prefix.
-    #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
-    PrefixNotFound,
-    /// The provided string did not end with the requested prefix.
-    #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
-    SuffixNotFound,
+    IoError(#[from] io::Error),
+    /// Returned when a [`serde_json::Error`] is encountered.
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error)
 }

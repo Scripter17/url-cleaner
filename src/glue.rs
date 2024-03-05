@@ -8,14 +8,14 @@
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 pub mod headermap;
 
-/// What the fuck.
-/// See [https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
+/// Macro that allows types to be have [`serde::Deserialize`] use [`std::str::FromStr`] as a fallback.
+/// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 #[macro_export]
 macro_rules! string_or_struct_magic {
     ($type:ty) => {
         impl Serialize for $type {
             fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-                todo!()
+                <$type>::serialize(self, serializer)
             }
         }
 
@@ -40,6 +40,14 @@ macro_rules! string_or_struct_magic {
                 }
 
                 deserializer.deserialize_any(V)
+            }
+        }
+
+        impl TryFrom<&str> for $type {
+            type Error = <$type as FromStr>::Err;
+
+            fn try_from(value: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
+                <$type>::from_str(value)
             }
         }
     }

@@ -146,6 +146,12 @@ pub enum BoolSource {
         #[serde(default)]
         value_none_to_empty_string: bool
     },
+    /// Returns [`true`] if [`Url::parse`] returns [`Ok`].
+    #[cfg(feature = "string-source")]
+    IsValidUrl(StringSource),
+    /// Returns [`true`] if [`Url::parse`] returns [`Ok`].
+    #[cfg(not(feature = "string-source"))]
+    IsValidUrl(String)
 }
 
 const fn get_true() -> bool {true}
@@ -240,7 +246,12 @@ impl BoolSource {
                 None => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]
-            Self::VarIs {name, name_none_to_empty_string: _, value, value_none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *value_none_to_empty_string {Some("")} else {None})==value.as_deref()
+            Self::VarIs {name, name_none_to_empty_string: _, value, value_none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *value_none_to_empty_string {Some("")} else {None})==value.as_deref(),
+
+            #[cfg(feature = "string-source")]
+            Self::IsValidUrl(source) => Url::parse(&source.get(url, params, false)?.ok_or(BoolSourceError::StringSourceIsNone)?).is_ok(),
+            #[cfg(not(feature = "string-source"))]
+            Self::IsValidUrl(string) => Url::parse(string).is_ok()
         })
     }
 }

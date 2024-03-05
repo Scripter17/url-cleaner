@@ -128,6 +128,8 @@
 						"mapper": {"GetUrlFromQueryParam": "u"}
 					},
 
+
+
 					{
 						"condition": {"All": [
 							{"FlagIsSet": "bypass.vip"},
@@ -145,12 +147,10 @@
 							"part": "Whole",
 							"value": {"Modified": {
 								"source": {"HttpRequest": {
-									"config": {
-										"url": "https://api.bypass.vip",
-										"method": "POST",
-										"headers": {"origin": "https://bypass.vip"},
-										"body": {"Form": {"url": {"Part": "Whole"}}}
-									}
+									"url": "https://api.bypass.vip",
+									"method": "POST",
+									"headers": {"origin": "https://bypass.vip"},
+									"body": {"Form": {"url": {"Part": "Whole"}}}
 								}},
 								"modification": {"JsonPointer": "/destination"}
 							}}
@@ -489,9 +489,9 @@
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "reddit.com"},
-				{"Not": {"PathIs": "search"}}
+				{"Not": {"PathIs": "/search"}}
 			]},
-			"mapper": "RemoveQuery"
+			"mapper": {"AllowQueryParams": ["f"]}
 		},
 
 
@@ -552,12 +552,10 @@
 			"mapper": {"IgnoreError":
 				{"SetPart": {
 					"part": "Origin",
-					"value": {
-						"ExtractPart": {
-							"part": "Origin",
-							"source": {"ResponseHeader": {"name": "Onion-Location"}}
-						}
-					}
+					"value": {"ExtractPart": {
+						"part": "Origin",
+						"source": {"ResponseHeader": {"name": "Onion-Location"}}
+					}}
 				}}
 			}
 		},
@@ -636,7 +634,8 @@
 						"vero_id", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
 						"ymid", "ysclid", "_zucks_suid",
 
-						"icid", "_trkparms", "_trksid", "ref", "source", "referer"]},
+						"icid", "_trkparms", "_trksid", "ref", "source", "referer"
+					]},
 					{"StringLocation": {"location": "Start", "value": "utm_"}}
 				]}
 			}

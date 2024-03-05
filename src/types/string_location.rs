@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use crate::types::*;
 use crate::util::*;
 
 /// A wrapper around [`str`]'s various substring searching functions.
@@ -183,7 +182,7 @@ pub enum StringLocation {
     },
     /// Splits the haystack at every instance of `split` and check if the `n`th segment satisfies `location`.
     /// # Errors
-    /// If the `n`th segment doesn't exist, returns the error [`StringError::SegmentNotFound`].
+    /// If the `n`th segment doesn't exist, returns the error [`StringLocationError::SegmentNotFound`].
     /// If `location` returns an error on any segment, that error is returned.
     /// # Examples
     /// ```
@@ -213,9 +212,15 @@ pub enum StringLocationError {
     /// Returned when [`StringLocation::Error`] is used.
     #[error("StringLocation::Error was used.")]
     ExplicitError,
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError)
+    /// Returned when the requested slice is either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidSlice,
+    /// Returned when the requested index is either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidIndex,
+    /// Returned when the requested segment is not found.
+    #[error("The requested segment was not found.")]
+    SegmentNotFound
 }
 
 impl StringLocation {
@@ -230,13 +235,13 @@ impl StringLocation {
             Self::End                  => haystack.ends_with  (needle),
             Self::Anywhere             => haystack.contains   (needle),
 
-            Self::RangeIs {start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringError::InvalidSlice)?  ).ok_or(StringError::InvalidSlice)?==needle,
-            Self::StartsAt(start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringError::InvalidIndex)?..).ok_or(StringError::InvalidSlice)?.starts_with(needle),
-            Self::EndsAt  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringError::InvalidIndex)?  ).ok_or(StringError::InvalidSlice)?.ends_with(needle),
+            Self::RangeIs {start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?  ).ok_or(StringLocationError::InvalidSlice)?==needle,
+            Self::StartsAt(start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.starts_with(needle),
+            Self::EndsAt  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.ends_with(needle),
 
-            Self::RangeHas{start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringError::InvalidSlice)?  ).ok_or(StringError::InvalidSlice)?.contains(needle),
-            Self::After   (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringError::InvalidIndex)?..).ok_or(StringError::InvalidSlice)?.contains(needle),
-            Self::Before  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringError::InvalidIndex)?  ).ok_or(StringError::InvalidSlice)?.contains(needle),
+            Self::RangeHas{start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+            Self::After   (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+            Self::Before  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
 
             Self::Equals               => haystack==needle,
             Self::AnySegment {split, location} => {
@@ -247,7 +252,7 @@ impl StringLocation {
                 }
                 return Ok(false)
             },
-            Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringError::SegmentNotFound)?, needle)?,
+            Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?,
 
             Self::All(locations) => {
                 for location in locations {

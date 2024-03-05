@@ -112,9 +112,6 @@ pub enum StringMatcherError {
     /// Returned when [`StringMatcher::Error`] is used.
     #[error("StringMatcher::Error was used.")]
     ExplicitError,
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError),
     /// Returned when a [`StringLocationError`] is encountered.
     #[cfg(feature = "string-location")]
     #[error(transparent)]

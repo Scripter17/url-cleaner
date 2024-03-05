@@ -1,12 +1,12 @@
 # Url Cleaner
 
-A configurable URL cleaner built in Rust
+A configurable URL cleaner built in Rust.
 
 ## Basic usage
 
 By default, compiling URL Cleaner includes the [`default-config.json`](default-config.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
 
-The default config shouldn't ever change the semantics of a URL. Opening a URL before and after cleaning should always give the same result.  
+The default config shouldn't ever change the semantics of a URL. Opening a URL before and after cleaning should always give the same result. (except for stuff like the categories amazon puts in one of its 7 billion navbars but do you *really* care about that?)  
 Because websites tend to not document what parts of their URLs are and aren't necessary, the default config almost certainly runs into issues when trying to clean niche URLs like advanced search queries or API endpoints.  
 If you find any instance of the default config changing the meaning/result of a URL, please open an [issue](https://github.com/Scripter17/url-cleaner/issues).
 
@@ -27,6 +27,7 @@ Various variables are included in the default config for things I want to do fre
 Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
 Various flags are included in the default config for things I want to do frequently.
 
+- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand various link shorteners that are too complex and/or obscure for me to implement.
 - `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc`/`https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
 - `no-https`: Disable replacing `http://` URLs with `https://` URLs.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
@@ -57,6 +58,7 @@ Tips for people who don't know Rust's syntax:
 - `u8`, `u16`, `u32`, `u64`, `u128`, and `usize` are unsigned (non-negative) integers. `i8`, `i16`, `i32`, `i64`, `i128`, and `isize` are signed integers. `usize` is a `u32` on 32-bit computers and `u64` on 64-bit computers. Likewise `isize` is `i32` and `i64` under the same conditions. Basically if a number makes sense to be used in a field then it'll fit.
 - A `StringSource` is usually just written as a string. To see how it can be used to get URL parts or variables see [`string_source.rs`](src/types/string_source.rs).
 - If a field starts with `r#` (like `r#else`) you write it without the `r#` (like `"else"`). The `r#` is just Rust syntax for "this isn't a keyword".
+- `StringSource`, `GlobWrapper`, `RegexWrapper`, `RegexParts`, and `CommandWrapper` types can be either strings or structs. It behaves exactly as one would expect.
 
 ### Custom rule performance
 
@@ -85,9 +87,11 @@ The Minimum Supported Rust Version is the latest stable release. URL Cleaner may
 Although URL Cleaner has various feature flags that can be disabled to make handling untrusted input safer, no guarantees are made. Especially if the config file being used is untrusted.  
 That said, if you find something to be unnecessarily unsafe, please open an issue so it can be fixed.
 
+(Note that URL Cleaner doesn't use any `unsafe` code. I mean safety in terms of IP leaks and stuff.)
+
 ## Backwards compatibility
 
-URL Cleaner is currently in heavy flux so expect library APIs and the rule JSON schema to change at any time for any reason.
+URL Cleaner is currently in heavy flux so expect library APIs and the config schema to change at any time for any reason.
 
 ## Default config sources
 

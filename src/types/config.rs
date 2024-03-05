@@ -2,17 +2,18 @@ use std::collections::{HashMap, HashSet};
 use std::fs::read_to_string;
 use std::path::Path;
 use std::borrow::Cow;
+use std::io;
 #[cfg(feature = "default-config")]
 use std::sync::OnceLock;
-#[cfg(feature = "cache-redirects")]
+#[cfg(feature = "cache")]
 use std::{
-    io::{self, BufRead, Write, Error as IoError},
+    io::{BufRead, Write},
     fs::{OpenOptions, File}
 };
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use url::{Url, ParseError};
+use url::Url;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::header::HeaderMap;
 
@@ -31,10 +32,10 @@ pub struct Config {
 impl Config {
     /// Loads and parses the specified file.
     /// # Errors
-    /// If the specified file can't be loaded, returns the error [`GetConfigError::CantLoadFile`].
-    /// If the config contained in the specified file can't be parsed, returns the error [`GetConfigError::CantParseFile`].
+    /// If the specified file can't be loaded, returns the error [`GetConfigError::CantLoadConfigFile`].
+    /// If the config contained in the specified file can't be parsed, returns the error [`GetConfigError::CantParseConfigFile`].
     pub fn load_from_file(path: &Path) -> Result<Self, GetConfigError> {
-        Ok(serde_json::from_str(&read_to_string(path).or(Err(GetConfigError::CantLoadFile))?)?)
+        serde_json::from_str(&read_to_string(path).map_err(GetConfigError::CantLoadConfigFile)?).map_err(GetConfigError::CantParseConfigFile)
     }
 
     /// Gets the config compiled into the URL Cleaner binary.
@@ -90,26 +91,33 @@ pub struct Params {
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[serde(default, with = "crate::glue::headermap")]
     pub default_http_headers: HeaderMap,
-    /// If `true`, disables all form of logging to disk.
-    /// Currently just caching HTTP redirects.
+    /// If [`true`], disables reading from caches.
     #[serde(default)]
-    pub amnesia: bool
+    pub no_read_cache: bool,
+    /// If [`true`], disables writing to caches.
+    #[serde(default)]
+    pub no_write_cache: bool
 }
 
+/// The enum of all errors [`Params::get_redirect_from_cache`] can return.
+#[cfg(feature = "cache")]
 #[derive(Debug, Error)]
 pub enum ReadCacheError {
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    UrlParseError(#[from] ParseError)
+    UrlParseError(#[from] url::ParseError)
 }
 
+/// The enum of all errors [`Params::write_redirect_to_cache`] can return.
 #[derive(Debug, Error)]
 pub enum WriteCacheError {
-    #[cfg(feature = "cache-redirects")]
+    /// Returned when an [`io::Error`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
-    IoError(#[from] IoError)
+    IoError(#[from] io::Error)
 }
 
-#[cfg(feature = "cache-redirects")]
+#[cfg(feature = "cache")]
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
@@ -138,13 +146,15 @@ impl Params {
 
     /// # Errors
     /// If a cache line starting with `url` is found but the map isn't parseable as a URL, returns the error [`ReadCacheError::UrlParseError`].
-    pub fn get_url_from_cache(&self, before: &Url) -> Result<Option<Url>, ReadCacheError> {
-        #[cfg(feature = "cache-redirects")]
-        if let Ok(lines) = read_lines("redirect-cache.txt") {
-            for line in lines.map_while(Result::ok) {
-                if let Some((short, long)) = line.split_once('\t') {
-                    if before.as_str()==short {
-                        return Ok(Some(Url::parse(long)?));
+    #[cfg(feature = "cache-redirects")]
+    pub fn get_redirect_from_cache(&self, before: &Url) -> Result<Option<Url>, ReadCacheError> {
+        if !self.no_read_cache {
+            if let Ok(lines) = read_lines("redirect-cache.txt") {
+                for line in lines.map_while(Result::ok) {
+                    if let Some((short, long)) = line.split_once('\t') {
+                        if before.as_str()==short {
+                            return Ok(Some(Url::parse(long)?));
+                        }
                     }
                 }
             }
@@ -154,9 +164,9 @@ impl Params {
 
     /// # Errors
     /// If the cache line cannot be written, returns [`WriteCacheError::IoError`].
-    pub fn write_url_map_to_cache(&self, before: &Url, after: &Url) -> Result<(), WriteCacheError> {
-        #[cfg(feature = "cache-redirects")]
-        if !self.amnesia {
+    #[cfg(feature = "cache-redirects")]
+    pub fn write_redirect_to_cache(&self, before: &Url, after: &Url) -> Result<(), WriteCacheError> {
+        if !self.no_write_cache {
             if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
                 x.write_all(format!("\n{}\t{}", before.as_str(), after.as_str()).as_bytes())?;
             }
@@ -182,19 +192,19 @@ pub static DEFAULT_CONFIG: OnceLock<Config>=OnceLock::new();
 /// An enum containing all possible errors that can happen when loading/parsing a rules into a [`Rules`]
 #[derive(Error, Debug)]
 pub enum GetConfigError {
-    /// Could not load the specified rules file.
-    #[error("Could not load the specified rules file.")]
-    CantLoadFile,
-    /// The loaded file did not contain valid JSON.
-    #[error("Can't parse config file: `{0}`.")]
-    CantParseFile(#[from] serde_json::Error),
-    /// URL Cleaner was compiled without default rules.
+    /// Could not load the specified config file.
+    #[error(transparent)]
+    CantLoadConfigFile(io::Error),
+    /// The loaded config file did not contain valid JSON.
+    #[error(transparent)]
+    CantParseConfigFile(serde_json::Error),
+    /// URL Cleaner was compiled without default config.
     #[allow(dead_code)]
     #[error("URL Cleaner was compiled without default config.")]
     NoDefaultConfig,
-    /// The default rules compiled into URL Cleaner aren't valid JSON.
+    /// The default cpnfig compiled into URL Cleaner isn't valid JSON.
     #[allow(dead_code)]
-    #[error("Can't parse default config: `{0}`.")]
+    #[error(transparent)]
     CantParseDefaultConfig(serde_json::Error)
 }
 
@@ -204,8 +214,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_default_config() {
+    fn deserialize_default_config() {
         Config::get_default().unwrap();
+    }
+
+    #[test]
+    fn reserialize_default_config() {
+        serde_json::to_string(&Config::get_default().unwrap()).unwrap();
     }
 
     macro_rules! test_config {

@@ -1,7 +1,4 @@
-use std::str::Utf8Error;
-
 use serde::{Serialize, Deserialize};
-use serde_json::Error as SerdeJsonError;
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 
@@ -110,7 +107,7 @@ pub enum StringModification {
     },
     /// Replace the specified range with `replace`.
     /// # Errors
-    /// If either end of the specified range is out of bounds or not on a UTF-8 character boundary, returns the error [`StringError::InvalidSlice`].
+    /// If either end of the specified range is out of bounds or not on a UTF-8 character boundary, returns the error [`StringModificationError::InvalidSlice`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -157,7 +154,7 @@ pub enum StringModification {
     Uppercase,
     /// [`str::strip_prefix`].
     /// # Errors
-    /// If the target string doesn't begin with the specified prefix, returns the error [`StringError::PrefixNotFound`].
+    /// If the target string doesn't begin with the specified prefix, returns the error [`StringModificationError::PrefixNotFound`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -171,7 +168,7 @@ pub enum StringModification {
     StripPrefix(String),
     /// Mimics [`str::strip_suffix`] using [`str::ends_with`] and [`String::truncate`]. Should be faster due to not needing an additional heap allocation.
     /// # Errors
-    /// If the target string doesn't end with the specified suffix, returns the error [`StringError::SuffixNotFound`].
+    /// If the target string doesn't end with the specified suffix, returns the error [`StringModificationError::SuffixNotFound`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -228,7 +225,7 @@ pub enum StringModification {
     },
     /// [`String::insert_str`].
     /// # Errors
-    /// If `where` is out of bounds or not on a UTF-8 character boundary, returns the error [`StringError::InvalidIndex`].
+    /// If `where` is out of bounds or not on a UTF-8 character boundary, returns the error [`StringModificationError::InvalidIndex`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -249,7 +246,7 @@ pub enum StringModification {
     },
     /// [`String::remove`].
     /// # Errors
-    /// If the specified index is out of bounds or not on a UTF-8 character boundary, returns the error [`StringError::InvalidIndex`].
+    /// If the specified index is out of bounds or not on a UTF-8 character boundary, returns the error [`StringModificationError::InvalidIndex`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -263,7 +260,7 @@ pub enum StringModification {
     Remove(isize),
     /// Discards everything outside the specified range.
     /// # Errors
-    /// If either end of the specified range is out of bounds or not on a UTF-8 character boundary, returns the error [`StringError::InvalidSlice`].
+    /// If either end of the specified range is out of bounds or not on a UTF-8 character boundary, returns the error [`StringModificationError::InvalidSlice`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -286,7 +283,7 @@ pub enum StringModification {
     },
     /// Splits the provided string by `split`, replaces the `n`th segment with `value` or removes the segment if `value` is `None`, then joins the string back together.
     /// # Errors
-    /// If `n` is not in the range of of segments, returns the error [`StringError::SegmentNotFound`].
+    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
@@ -313,7 +310,7 @@ pub enum StringModification {
     },
     /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
     /// # Errors
-    /// If `n` is not in the range of of segments, returns the error [`StringError::SegmentNotFound`].
+    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
     /// Please note that trying to append a new segment at the end still errors.
     /// # Examples
     /// ```
@@ -400,15 +397,15 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringModification;
-    /// # use url_cleaner::glue::CommandWrapper;
+    /// # use url_cleaner::glue::CommandConfig;
     /// # use url_cleaner::types::Params;
     /// # use std::str::FromStr;
     /// let mut x = "abc\n".to_string();
-    /// StringModification::CommandOutput(CommandWrapper::from_str("cat").unwrap()).apply(&mut x, &Params::default());
+    /// StringModification::CommandOutput(CommandConfig::from_str("cat").unwrap()).apply(&mut x, &Params::default());
     /// assert_eq!(&x, "abc\n");
     /// ````
     #[cfg(feature = "commands")]
-    CommandOutput(CommandWrapper),
+    CommandOutput(CommandConfig),
     /// Please see [`serde_json::Value::pointer`] for details.
     /// # Errros
     /// TODO
@@ -422,22 +419,37 @@ pub enum StringModificationError {
     /// Returned when [`StringModification::Error`] is used.
     #[error("StringModification::Error was used.")]
     ExplicitError,
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError),
     /// Returned when a [`CommandError`] is encountered.
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
-    /// Returned when a [`Utf8Error`] is encountered.
+    /// Returned when a [`std::str::Utf8Error`] is encountered.
     #[error(transparent)]
-    FromUtf8Error(#[from] Utf8Error),
+    FromUtf8Error(#[from] std::str::Utf8Error),
+    /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
-    SerdeJsonError(#[from] SerdeJsonError),
-    #[error("TODO")]
-    JsonValueIsNone,
-    #[error("TODO")]
-    JsonValueIsNotAString
+    SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when [`serde_json::Value::pointer`] returns [`None`].
+    #[error("The requested JSON value was not found.")]
+    JsonValueNotFound,
+    /// Returned when [`serde_json::Value::pointer`] returns a value that is not a string.
+    #[error("The requested JSON value was not a string.")]
+    JsonValueIsNotAString,
+    /// Returned when the requested slice is either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidSlice,
+    /// Returned when the requested index is either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidIndex,
+    /// Returned when the requested segment is not found.
+    #[error("The requested segment was not found.")]
+    SegmentNotFound,
+    /// Returned when the provided string does not start with the requested prefix.
+    #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
+    PrefixNotFound,
+    /// Returned when the provided string does not end with the requested prefix.
+    #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
+    SuffixNotFound
 }
 
 impl StringModification {
@@ -454,29 +466,29 @@ impl StringModification {
             Self::Prepend(value)                     => {let mut ret=value.to_string(); ret.push_str(to); *to=ret;},
             Self::Replace{find, replace}             => *to=to.replace(find, replace),
             Self::ReplaceRange{start, end, replace}  => {
-                let range=neg_range(*start, *end, to.len()).ok_or(StringError::InvalidSlice)?;
+                let range=neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?;
                 if to.get(range).is_some() {
                     to.replace_range(range, replace);
                 } else {
-                    Err(StringError::InvalidSlice)?;
+                    Err(StringModificationError::InvalidSlice)?;
                 }
             },
             Self::Lowercase                          => *to=to.to_lowercase(),
             Self::Uppercase                          => *to=to.to_uppercase(),
-            Self::StripPrefix(prefix)                => if to.starts_with(prefix) {to.drain(..prefix.len());} else {Err(StringError::PrefixNotFound)?;},
+            Self::StripPrefix(prefix)                => if to.starts_with(prefix) {to.drain(..prefix.len());} else {Err(StringModificationError::PrefixNotFound)?;},
             #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
-            Self::StripSuffix(suffix)                => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringError::SuffixNotFound)?;},
+            Self::StripSuffix(suffix)                => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;},
             Self::StripMaybePrefix(prefix)           => if to.starts_with(prefix) {to.drain(..prefix.len());},
             #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
             Self::StripMaybeSuffix(suffix)           => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len());},
             Self::Replacen{find, replace, count}     => *to=to.replacen(find, replace, *count),
-            Self::Insert{r#where, value}             => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?, value);} else {Err(StringError::InvalidIndex)?;},
-            Self::Remove(r#where)                    => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?) {to.remove    (neg_index(*r#where, to.len()).ok_or(StringError::InvalidIndex)?       );} else {Err(StringError::InvalidIndex)?;},
-            Self::KeepRange{start, end}              => *to=to.get(neg_range(*start, *end, to.len()).ok_or(StringError::InvalidSlice)?).ok_or(StringError::InvalidSlice)?.to_string(),
+            Self::Insert{r#where, value}             => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, value);} else {Err(StringModificationError::InvalidIndex)?;},
+            Self::Remove(r#where)                    => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?       );} else {Err(StringModificationError::InvalidIndex)?;},
+            Self::KeepRange{start, end}              => *to=to.get(neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
             Self::SetNthSegment{split, n, value} => {
                 let mut temp=to.split(split.as_str()).collect::<Vec<_>>();
-                let fixed_n=neg_index(*n, temp.len()).ok_or(StringError::SegmentNotFound)?;
-                if fixed_n==temp.len() {Err(StringError::SegmentNotFound)?;}
+                let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                if fixed_n==temp.len() {Err(StringModificationError::SegmentNotFound)?;}
                 match value {
                     Some(value) => temp[fixed_n]=value.as_str(),
                     None        => {temp.remove(fixed_n);}
@@ -485,14 +497,14 @@ impl StringModification {
             },
             Self::InsertSegmentBefore{split, n, value} => {
                 let mut temp=to.split(split.as_str()).collect::<Vec<_>>();
-                let fixed_n=neg_index(*n, temp.len()).ok_or(StringError::SegmentNotFound)?;
+                let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 temp.insert(fixed_n, value.as_str());
                 *to=temp.join(split);
             },
             #[cfg(feature = "regex")] Self::RegexReplace    {regex,    replace} => *to=regex.replace    (to,     replace).to_string(),
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to=regex.replace_all(to,     replace).to_string(),
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to=regex.replacen   (to, *n, replace).to_string(),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.apply(to, params)} else {r#else.apply(to, params)}?,
+            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then} else {r#else}.apply(to, params)?,
             Self::URLEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
             Self::URLDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             Self::All(modifications) => {
@@ -530,7 +542,7 @@ impl StringModification {
             },
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => *to=command.output(None, Some(to.as_bytes()))?,
-            Self::JsonPointer(pointer) => *to=serde_json::from_str::<serde_json::Value>(to)?.pointer(pointer).ok_or(StringModificationError::JsonValueIsNone)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),            Self::Error => Err(StringModificationError::ExplicitError)?
+            Self::JsonPointer(pointer) => *to=serde_json::from_str::<serde_json::Value>(to)?.pointer(pointer).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),            Self::Error => Err(StringModificationError::ExplicitError)?
         };
         Ok(())
     }

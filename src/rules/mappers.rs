@@ -5,9 +5,9 @@ use std::collections::hash_set::HashSet;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use url::{Url, ParseError};
+use url::Url;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
-use reqwest::{self, Error as ReqwestError, header::HeaderMap};
+use reqwest::header::HeaderMap;
 
 use crate::glue::*;
 use crate::types::*;
@@ -236,8 +236,8 @@ pub enum Mapper {
     },
     /// Modifies the specified part of the URL.
     /// # Errors
-    /// If `how` is `StringModification::ReplaceAt` and the specified range is either out of bounds or not on UTF-8 boundaries, returns the error [`MapperError::StringError`].
-    /// If the modification fails, returns the error [`MapperError::PartModificationError`].
+    /// If the call to [`StringModification::apply`] returns an error, that error is returned in a [`MapperError::StringModificationError`].
+    /// If the call to [`UrlPart::modify`] returns an error, that error is returned in a [`MapperError::UrlPartModificationError`].
     #[cfg(feature = "string-modification")]
     ModifyPart {
         /// The name of the part to modify.
@@ -306,7 +306,7 @@ pub enum Mapper {
     /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
     /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
     /// # Errors
-    /// If the call to [`Params::get_url_from_cache`] returns an error, that error is returned.
+    /// If the call to [`Params::get_redirect_from_cache`] returns an error, that error is returned.
     /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
     /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
     /// # Examples
@@ -355,7 +355,7 @@ pub enum Mapper {
     /// # Errors
     /// Returns the error [`CommandError`] if the command fails.
     #[cfg(feature = "commands")]
-    ReplaceWithCommandOutput(CommandWrapper)
+    ReplaceWithCommandOutput(CommandConfig)
 }
 
 const fn get_true() -> bool {true}
@@ -376,13 +376,13 @@ pub enum MapperError {
     /// Returned when the provided URL does not contain the requested query parameter.
     #[error("The provided URL does not contain the requested query parameter.")]
     CannotFindQueryParam,
-    /// Returned when a [`ParseError`] is encountered.
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    UrlParseError(#[from] ParseError),
-    /// Returned when a [`ReqwestError`] is encountered.
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`reqwest::Error`] is encountered.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
-    ReqwestError(#[from] ReqwestError),
+    ReqwestError(#[from] reqwest::Error),
     /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
@@ -390,13 +390,10 @@ pub enum MapperError {
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError),
-    /// Returned when a [`PartModificationError`] is encountered.
+    /// Returned when a [`UrlPartModificationError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
-    PartModificationError(#[from] PartModificationError),
+    UrlPartModificationError(#[from] UrlPartModificationError),
     /// Returned when a [`SetPartError`] is encountered.
     #[error(transparent)]
     SetPartError(#[from] SetPartError),
@@ -425,9 +422,11 @@ pub enum MapperError {
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when a [`ReadCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadCacheError(#[from] ReadCacheError),
     /// Returned when a [`WriteCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteCacheError(#[from] WriteCacheError)
 }
@@ -567,12 +566,14 @@ impl Mapper {
 
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink{headers} => {
-                if let Some(cached_result) = params.get_url_from_cache(url)? {
+                #[cfg(feature = "cache-redirects")]
+                if let Some(cached_result) = params.get_redirect_from_cache(url)? {
                     *url = cached_result;
                     return Ok(())
                 }
                 let new_url=params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.url().clone();
-                params.write_url_map_to_cache(url, &new_url)?;
+                #[cfg(feature = "cache-redirects")]
+                params.write_redirect_to_cache(url, &new_url)?;
                 *url=new_url;
             },
             #[cfg(all(feature = "http", not(target_family = "wasm"), feature = "regex", feature = "string-source"))]

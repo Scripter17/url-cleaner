@@ -3,10 +3,10 @@ use std::convert::Infallible;
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use url::{Url, ParseError};
+use url::Url;
 use thiserror::Error;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
-use reqwest::{Error as ReqwestError, header::{HeaderMap, ToStrError}};
+use reqwest::header::HeaderMap;
 
 use crate::string_or_struct_magic;
 use crate::types::*;
@@ -146,12 +146,9 @@ pub enum StringSource {
         #[serde(default = "box_efp_expand")]
         expand: Box<Self>
     },
+    /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
-    HttpRequest {
-        config: Box<RequestConfig>,
-        #[serde(default)]
-        response_handler: Box<ResponseHandler>
-    },
+    HttpRequest(Box<RequestConfig>),
     /// Some parts of URL cleaner assume that erroring when [`Self::get`] returns `None` is always wanted.
     /// This exists to circumvent that assumption.
     NoneToEmptyString(Box<Self>)
@@ -170,16 +167,6 @@ impl FromStr for StringSource {
 
 string_or_struct_magic!(StringSource);
 
-impl TryFrom<&str> for StringSource {
-    type Error = <Self as FromStr>::Err;
-
-    /// Why doesn't the standard library do `impl<T: FromStr> TryFrom<&str> for T`?
-    /// Anyway this is implemented just to make [`crate::rules::Rule::RepeatUntilNonePass`]'s test easoer tp write.
-    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
-        Self::from_str(s)
-    }
-}
-
 /// The enum of all possible errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
@@ -187,28 +174,25 @@ pub enum StringSourceError {
     /// Returned when [`StringSource::Error`] is used.
     #[error("StringSource::Error was used.")]
     ExplicitError,
-    /// Returned when a [`StringError`] is encountered.
-    #[error(transparent)]
-    StringError(#[from] StringError),
     /// Returned when a [`StringModificationError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    /// Returned when [`ReqwestError`] is returned.
+    /// Returned when [`reqwest::Error`] is encountered.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
-    ReqwestError(#[from] ReqwestError),
+    ReqwestError(#[from] reqwest::Error),
     /// Returned when a requested HTTP response header is not found.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error("The HTTP request response did not contain the requested header.")]
     HeaderNotFound,
-    /// Returned when a [`ToStrError`] is encountered.
+    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
-    ToStrError(#[from] ToStrError),
-    /// Returned when a [`ParseError`] is returned.
+    HeaderToStrError(#[from] reqwest::header::ToStrError),
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    ParseError(#[from] ParseError),
+    UrlParseError(#[from] url::ParseError),
     /// Returned when a regex does not find any matches.
     #[error("A regex pattern did not find any matches.")]
     #[cfg(feature = "regex")]
@@ -216,9 +200,11 @@ pub enum StringSourceError {
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
+    /// Returned when a [`RequestConfigError`] is encountered.
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     #[error(transparent)]
     RequestConfigError(#[from] RequestConfigError),
+    /// Returned when a [`ResponseHandlerError`] is encountered.
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     #[error(transparent)]
     ReponseHandlerError(#[from] ResponseHandlerError)
@@ -235,15 +221,16 @@ impl StringSource {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
             Self::Part(x) => x.get(url, none_to_empty_string),
             Self::Var(x) => params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then.get(url, params, none_to_empty_string)?} else {r#else.get(url, params, none_to_empty_string)?},
+            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then} else {r#else}.get(url, params, none_to_empty_string)?,
             #[cfg(feature = "string-modification")]
             Self::Modified {source, modification} => {
-                let x=source.as_ref().get(url, params, none_to_empty_string)?.map(Cow::into_owned);
-                if let Some(mut x) = x {
-                    modification.apply(&mut x, params)?;
-                    Some(Cow::Owned(x))
-                } else {
-                    x.map(Cow::Owned)
+                match source.as_ref().get(url, params, none_to_empty_string)? {
+                    Some(x) => {
+                        let mut x = x.into_owned();
+                        modification.apply(&mut x, params)?;
+                        Some(Cow::Owned(x))
+                    },
+                    None => None
                 }
             },
             Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params, none_to_empty_string)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
@@ -259,7 +246,7 @@ impl StringSource {
                 Err(StringSourceError::StringSourceIsNone)?
             },
             #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
-            Self::HttpRequest {config, response_handler} => Some(Cow::Owned(response_handler.handle(url, params, config.make(url, params)?.send()?)?)),
+            Self::HttpRequest(config) => Some(Cow::Owned(config.response(url, params)?)),
             Self::NoneToEmptyString(source) => source.get(url, params, true)?,
             Self::Debug(source) => {
                 let ret=source.get(url, params, none_to_empty_string);

@@ -1,4 +1,4 @@
-//! URL Cleaner - A tool to remove tracking garbage from URLs.
+//! URL Cleaner originally started as a project to remove tracking garbage from URLs but has since grown into a very powerful URL manipulation tool.
 
 use std::path::PathBuf;
 
@@ -22,8 +22,12 @@ struct Args {
     var: Vec<String>,
     #[arg(short, long)]
     flag: Vec<String>,
-    #[arg(short = 'A', long)]
-    amnesia: bool
+    #[arg(long)]
+    no_read_cache: bool,
+    #[arg(long)]
+    no_write_cache: bool,
+    #[arg(long)]
+    print_config: bool
 }
 
 impl TryFrom<Args> for (Vec<Url>, types::Config) {
@@ -39,7 +43,8 @@ impl TryFrom<Args> for (Vec<Url>, types::Config) {
                     .filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)}))
                     .collect(),
                 flags: args.flag.into_iter().collect(),
-                amnesia: args.amnesia,
+                no_read_cache: args.no_read_cache,
+                no_write_cache: args.no_write_cache,
                 ..types::Params::default()
             }
         );
@@ -48,7 +53,15 @@ impl TryFrom<Args> for (Vec<Url>, types::Config) {
 }
 
 fn main() -> Result<(), types::CleaningError> {
-    let (urls, config): (Vec<Url>, types::Config)=Args::parse().try_into()?;
+    let args = Args::parse();
+
+    if args.print_config {
+        let (_, config): (Vec<Url>, types::Config)=args.try_into()?;
+        println!("{}", serde_json::to_string(&config)?);
+        std::process::exit(0);
+    }
+    
+    let (urls, config): (Vec<Url>, types::Config)=args.try_into()?;
 
     for mut url in urls {
         match config.apply(&mut url) {
