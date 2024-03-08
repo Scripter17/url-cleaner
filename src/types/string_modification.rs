@@ -66,7 +66,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::Set("ghi".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Set("ghi".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "ghi");
     /// ```
     Set(String),
@@ -76,7 +76,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::Append("ghi".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Append("ghi".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "abcdefghi");
     /// ```
     Append(String),
@@ -86,7 +86,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::Prepend("ghi".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Prepend("ghi".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "ghiabcdef");
     /// ```
     Prepend(String),
@@ -96,7 +96,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcabc".to_string();
-    /// assert!(StringModification::Replace{find: "ab".to_string(), replace: "xy".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Replace{find: "ab".to_string(), replace: "xy".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "xycxyc");
     /// ```
     Replace {
@@ -113,15 +113,15 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::ReplaceRange{start: Some( 6), end: Some( 7), replace: "123" .to_string()}.apply(&mut x, &Params::default()).is_err());
+    /// StringModification::ReplaceRange{start: Some( 6), end: Some( 7), replace: "123" .to_string()}.apply(&mut x, &Params::default()).is_err();
     /// assert_eq!(&x, "abcdef");
-    /// assert!(StringModification::ReplaceRange{start: Some( 1), end: Some( 4), replace: "ab"  .to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::ReplaceRange{start: Some( 1), end: Some( 4), replace: "ab"  .to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "aabef");
-    /// assert!(StringModification::ReplaceRange{start: Some(-3), end: Some(-1), replace: "abcd".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::ReplaceRange{start: Some(-3), end: Some(-1), replace: "abcd".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "aaabcdf");
-    /// assert!(StringModification::ReplaceRange{start: Some(-3), end: None    , replace: "efg" .to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::ReplaceRange{start: Some(-3), end: None    , replace: "efg" .to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "aaabefg");
-    /// assert!(StringModification::ReplaceRange{start: Some(-8), end: None    , replace: "hij" .to_string()}.apply(&mut x, &Params::default()).is_err());
+    /// StringModification::ReplaceRange{start: Some(-8), end: None    , replace: "hij" .to_string()}.apply(&mut x, &Params::default()).is_err();
     /// assert_eq!(&x, "aaabefg");
     /// ```
     ReplaceRange {
@@ -138,7 +138,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "ABCdef".to_string();
-    /// assert!(StringModification::Lowercase.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Lowercase.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "abcdef");
     /// ```
     Lowercase,
@@ -148,7 +148,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcDEF".to_string();
-    /// assert!(StringModification::Uppercase.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Uppercase.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "ABCDEF");
     /// ```
     Uppercase,
@@ -160,9 +160,9 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::StripPrefix("abc".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::StripPrefix("abc".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "def");
-    /// assert!(StringModification::StripPrefix("abc".to_string()).apply(&mut x, &Params::default()).is_err());
+    /// StringModification::StripPrefix("abc".to_string()).apply(&mut x, &Params::default()).is_err();
     /// assert_eq!(&x, "def");
     /// ```
     StripPrefix(String),
@@ -174,9 +174,9 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::StripSuffix("def".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::StripSuffix("def".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "abc");
-    /// assert!(StringModification::StripSuffix("def".to_string()).apply(&mut x, &Params::default()).is_err());
+    /// StringModification::StripSuffix("def".to_string()).apply(&mut x, &Params::default()).is_err();
     /// assert_eq!(&x, "abc");
     /// ```
     StripSuffix(String),
@@ -186,9 +186,9 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "def");
-    /// assert!(StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::StripMaybePrefix("abc".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "def");
     /// ```
     StripMaybePrefix(String),
@@ -198,9 +198,9 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "abc");
-    /// assert!(StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::StripMaybeSuffix("def".to_string()).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "abc");
     /// ```
     StripMaybeSuffix(String),
@@ -210,9 +210,9 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "aaaaa".to_string();
-    /// assert!(StringModification::Replacen{find: "a" .to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Replacen{find: "a" .to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "xxaaa");
-    /// assert!(StringModification::Replacen{find: "xa".to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Replacen{find: "xa".to_string(), replace: "x".to_string(), count: 2}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "xxaa");
     /// ```
     Replacen {
@@ -231,11 +231,11 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abc".to_string();
-    /// assert!(StringModification::Insert{r#where:  0, value: "def".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Insert{r#where:  0, value: "def".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "defabc");
-    /// assert!(StringModification::Insert{r#where:  2, value: "ghi".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Insert{r#where:  2, value: "ghi".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "deghifabc");
-    /// assert!(StringModification::Insert{r#where: -1, value: "jhk".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Insert{r#where: -1, value: "jhk".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "deghifabjhkc");
     /// ```
     Insert {
@@ -252,9 +252,9 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdef".to_string();
-    /// assert!(StringModification::Remove( 1).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Remove( 1).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "acdef");
-    /// assert!(StringModification::Remove(-1).apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::Remove(-1).apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "acde");
     /// ```
     Remove(isize),
@@ -266,13 +266,13 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "abcdefghi".to_string();
-    /// assert!(StringModification::KeepRange{start: Some( 1), end: Some( 8)}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::KeepRange{start: Some( 1), end: Some( 8)}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "bcdefgh");
-    /// assert!(StringModification::KeepRange{start: None    , end: Some( 6)}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::KeepRange{start: None    , end: Some( 6)}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "bcdefg");
-    /// assert!(StringModification::KeepRange{start: Some(-3), end: None    }.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::KeepRange{start: Some(-3), end: None    }.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "efg");
-    /// assert!(StringModification::KeepRange{start: Some(-3), end: Some(-1)}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::KeepRange{start: Some(-3), end: Some(-1)}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "ef");
     /// ```
     KeepRange {
@@ -289,15 +289,15 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "a.b.c.d.e.f".to_string();
-    /// assert!(StringModification::SetNthSegment{split: ".".to_string(), n:  1, value: Some( "1".to_string())}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::SetNthSegment{split: ".".to_string(), n:  1, value: Some( "1".to_string())}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a.1.c.d.e.f");
-    /// assert!(StringModification::SetNthSegment{split: ".".to_string(), n: -1, value: Some("-1".to_string())}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::SetNthSegment{split: ".".to_string(), n: -1, value: Some("-1".to_string())}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a.1.c.d.e.-1");
-    /// assert!(StringModification::SetNthSegment{split: ".".to_string(), n: -2, value: None}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::SetNthSegment{split: ".".to_string(), n: -2, value: None}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a.1.c.d.-1");
-    /// assert!(StringModification::SetNthSegment{split: ".".to_string(), n:  5, value: Some( "E".to_string())}.apply(&mut x, &Params::default()).is_err());
-    /// assert!(StringModification::SetNthSegment{split: ".".to_string(), n: -6, value: Some( "E".to_string())}.apply(&mut x, &Params::default()).is_err());
-    /// assert!(StringModification::SetNthSegment{split: ".".to_string(), n: -5, value: Some("-5".to_string())}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::SetNthSegment{split: ".".to_string(), n:  5, value: Some( "E".to_string())}.apply(&mut x, &Params::default()).is_err();
+    /// StringModification::SetNthSegment{split: ".".to_string(), n: -6, value: Some( "E".to_string())}.apply(&mut x, &Params::default()).is_err();
+    /// StringModification::SetNthSegment{split: ".".to_string(), n: -5, value: Some("-5".to_string())}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "-5.1.c.d.-1");
     /// ```
     SetNthSegment {
@@ -317,15 +317,15 @@ pub enum StringModification {
     /// use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "a.b.c".to_string();
-    /// assert!(StringModification::InsertSegmentBefore{split: ".".to_string(), n:  1, value:  "1".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::InsertSegmentBefore{split: ".".to_string(), n:  1, value:  "1".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a.1.b.c");
-    /// assert!(StringModification::InsertSegmentBefore{split: ".".to_string(), n: -1, value: "-1".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::InsertSegmentBefore{split: ".".to_string(), n: -1, value: "-1".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a.1.b.-1.c");
-    /// assert!(StringModification::InsertSegmentBefore{split: ".".to_string(), n:  5, value:  "5".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::InsertSegmentBefore{split: ".".to_string(), n:  5, value:  "5".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a.1.b.-1.c.5");
-    /// assert!(StringModification::InsertSegmentBefore{split: ".".to_string(), n:  7, value:  "E".to_string()}.apply(&mut x, &Params::default()).is_err());
-    /// assert!(StringModification::InsertSegmentBefore{split: ".".to_string(), n: -7, value:  "E".to_string()}.apply(&mut x, &Params::default()).is_err());
-    /// assert!(StringModification::InsertSegmentBefore{split: ".".to_string(), n: -6, value: "-6".to_string()}.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::InsertSegmentBefore{split: ".".to_string(), n:  7, value:  "E".to_string()}.apply(&mut x, &Params::default()).is_err();
+    /// StringModification::InsertSegmentBefore{split: ".".to_string(), n: -7, value:  "E".to_string()}.apply(&mut x, &Params::default()).is_err();
+    /// StringModification::InsertSegmentBefore{split: ".".to_string(), n: -6, value: "-6".to_string()}.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "-6.a.1.b.-1.c.5");
     /// ```
     InsertSegmentBefore {
@@ -377,7 +377,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "a/b/c".to_string();
-    /// assert!(StringModification::URLEncode.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::URLEncode.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a%2Fb%2Fc");
     /// ```
     URLEncode,
@@ -389,7 +389,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::StringModification;
     /// # use url_cleaner::types::Params;
     /// let mut x = "a%2fb%2Fc".to_string();
-    /// assert!(StringModification::URLDecode.apply(&mut x, &Params::default()).is_ok());
+    /// StringModification::URLDecode.apply(&mut x, &Params::default()).is_ok();
     /// assert_eq!(&x, "a/b/c");
     /// ```
     URLDecode,

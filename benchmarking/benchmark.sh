@@ -22,9 +22,9 @@ for url in "${URLS[@]}"; do
     out="$(echo $url | rg / -r=-)-$lines"
 
     hyperfine -N -n "$url - $lines" -w 10 --input ./stdin "$COMMAND" --export-json "hyperfine-$out"
-    rm -f callgrind.out*
     cat stdin | valgrind --tool=callgrind "../target/release/url-cleaner" > /dev/null
-    gprof2dot --format=callgrind callgrind.out* --output "callgrind-$out.dot"
+    mv callgrind.out.* "callgrind-$out.out"
+    gprof2dot --format=callgrind "callgrind-$out.out" --output "callgrind-$out.dot"
     dot -Tpng "callgrind-$out.dot" -o "callgrind-$out.png"
   done
 done

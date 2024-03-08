@@ -1,14 +1,14 @@
 use std::process::{Command, Output as CommandOutput, Stdio};
-use std::io::{Write, Error as IoError};
+use std::io::Write;
 use std::path::PathBuf;
-use std::str::{from_utf8, FromStr, Utf8Error};
+use std::str::{from_utf8, FromStr};
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::ffi::{OsStr, OsString};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
 
-use url::{Url, ParseError};
+use url::Url;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use which::which;
@@ -57,15 +57,15 @@ string_or_struct_magic!(CommandConfig);
 /// The enum of all possible errors [`CommandConfig::exit_code`], [`CommandConfig::output`], and [`CommandConfig::get_url`] can return.
 #[derive(Debug, Error)]
 pub enum CommandError {
-    /// I/O error.
+    /// Returned when a [`std::io::Error`] is encountered.
     #[error(transparent)]
-    IoError(#[from] IoError),
-    /// UTF-8 error.
+    IoError(#[from] std::io::Error),
+    /// Returned when a [`std::str::Utf8Error`] is encountered.
     #[error(transparent)]
-    Utf8Error(#[from] Utf8Error),
-    /// URL parsing error.
+    Utf8Error(#[from] std::str::Utf8Error),
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
-    ParseError(#[from] ParseError),
+    UrlParseError(#[from] url::ParseError),
     /// The command was terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
     SignalTermination,
@@ -147,7 +147,7 @@ impl CommandConfig {
     /// Runs the command, does the [`OutputHandler`] stuff, removes trailing newlines and carriage returns form the output, then extracts the URL.
     /// # Errors
     /// If the call to [`Self::output`] returns an error, that error is returned.
-    /// If the output cannot be parsed as a URL (give or take trailing newlines and carriage returns), returns the error [`CommandError::ParseError`].
+    /// If the output cannot be parsed as a URL (give or take trailing newlines and carriage returns), returns the error [`CommandError::UrlParseError`].
     pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }

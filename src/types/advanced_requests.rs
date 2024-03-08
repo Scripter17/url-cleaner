@@ -83,7 +83,7 @@ impl RequestConfig {
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
         #[cfg(feature = "string-source")]
-        let mut ret=params.http_client()?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(&source.get(url, params, false)?.ok_or(RequestConfigError::StringSourceIsNone)?)?, None => url.clone()});
+        let mut ret=params.http_client()?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(&source.get(url, params)?.ok_or(RequestConfigError::StringSourceIsNone)?)?, None => url.clone()});
         #[cfg(not(feature = "string-source"))]
         let mut ret=params.http_client()?.request(self.method.clone(), match self.url {Some(ref url) => Url::parse(url)?, None => url.clone()});
 
@@ -155,12 +155,12 @@ impl RequestBody {
     pub fn apply(&self, request: reqwest::blocking::RequestBuilder, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
         Ok(match self {
             #[cfg(feature = "string-source")]
-            Self::Text(source) => request.body(source.get(url, params, false)?.ok_or(RequestBodyError::StringSourceIsNone)?.into_owned()),
+            Self::Text(source) => request.body(source.get(url, params)?.ok_or(RequestBodyError::StringSourceIsNone)?.into_owned()),
             #[cfg(not(feature = "string-source"))]
             Self::Text(text) => request.body(text.clone()),
             #[cfg(feature = "string-source")]
             Self::Form(map) => request.form(&map.iter()
-                .map(|(k, source)| source.get(url, params, false)
+                .map(|(k, source)| source.get(url, params)
                     .map(|maybe_string| maybe_string
                         .map(|string| (k, string.into_owned()))
                     )
@@ -237,13 +237,13 @@ impl ResponseHandler {
         Ok(match self {
             Self::Body => response.text()?,
             #[cfg(feature = "string-source")]
-            Self::Header(source) => response.headers().get(&*source.get(url, params, false)?.ok_or(ResponseHandlerError::StringSourceIsNone)?).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
+            Self::Header(source) => response.headers().get(&*source.get(url, params)?.ok_or(ResponseHandlerError::StringSourceIsNone)?).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             #[cfg(not(feature = "string-source"))]
             Self::Header(name) => response.headers().get(name).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             Self::Url => response.url().as_str().to_string(),
             #[cfg(feature = "string-source")]
             Self::Cookie(source) => {
-                let name = source.get(url, params, false)?.ok_or(ResponseHandlerError::StringSourceIsNone)?;
+                let name = source.get(url, params)?.ok_or(ResponseHandlerError::StringSourceIsNone)?;
                 response.cookies().find(|cookie| cookie.name()==name).ok_or(ResponseHandlerError::CookieNotFound)?.value().to_string()
             }
             #[cfg(not(feature = "string-source"))]

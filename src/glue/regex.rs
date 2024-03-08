@@ -14,6 +14,7 @@ use regex::{Regex, Replacer, Match, Captures};
 /// This is because converting a [`Regex`] into a [`RegexParts`] is extremely complicated and because it allows lazy compilation of regexes.
 /// Because the contained regex and regex parts have to always be in sync, the fields of this struct are unfortunately private.
 /// In place of public fields, various [`Into`]'s and getters are defined for this type.
+/// This does not implement [`std::ops::Deref`] or [`std::convert::AsRef`]`<`[`Regex`]`>` because [`Self::get_regex`] can panic, which is disallowed in [`std::ops::Deref::deref`] and [`std::convert::AsRef::as_ref`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(from = "RegexParts", into = "RegexParts")]
 pub struct RegexWrapper {
@@ -50,6 +51,12 @@ impl Eq for RegexWrapper {}
 impl From<RegexWrapper> for RegexParts {
     fn from(value: RegexWrapper) -> Self {
         value.parts
+    }
+}
+
+impl AsRef<RegexParts> for RegexWrapper {
+    fn as_ref(&self) -> &RegexParts {
+        &self.parts
     }
 }
 

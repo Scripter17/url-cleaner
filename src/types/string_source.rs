@@ -34,7 +34,7 @@ pub enum StringSource {
     /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// let url = Url::parse("https://example.com").unwrap();
-    /// assert!(StringSource::String("abc".to_string()).get(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("abc"))));
+    /// StringSource::String("abc".to_string()).get(&url, &Params::default()).is_ok_and(|x| x==Some(Cow::Borrowed("abc")));
     /// ```
     String(String),
     /// Gets the specified URL part.
@@ -47,7 +47,7 @@ pub enum StringSource {
     /// # use url_cleaner::types::UrlPart;
     /// let url = Url::parse("https://example.com").unwrap();
     /// let params = Params::default();
-    /// assert!(StringSource::Part(UrlPart::Domain).get(&url, &Params::default(), false).is_ok_and(|x| x==Some(Cow::Borrowed("example.com"))));
+    /// StringSource::Part(UrlPart::Domain).get(&url, &Params::default()).is_ok_and(|x| x==Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
     /// Gets the specified variable's value.
@@ -60,7 +60,7 @@ pub enum StringSource {
     /// # use std::collections::HashMap;
     /// let url = Url::parse("https://example.com").unwrap();
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// assert!(StringSource::Var("abc".to_string()).get(&url, &params, false).is_ok_and(|x| x==Some(Cow::Borrowed("xyz"))));
+    /// StringSource::Var("abc".to_string()).get(&url, &params).is_ok_and(|x| x==Some(Cow::Borrowed("xyz")));
     /// ```
     Var(String),
     /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
@@ -76,8 +76,8 @@ pub enum StringSource {
     /// let params_1 = Params::default();
     /// let params_2 = Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()};
     /// let x = StringSource::IfFlag {flag: "abc".to_string(), then: Box::new(StringSource::String("xyz".to_string())), r#else: Box::new(StringSource::Part(UrlPart::Domain))};
-    /// assert!(x.get(&url, &params_1, false).is_ok_and(|x| x==Some(Cow::Borrowed("example.com"))));
-    /// assert!(x.get(&url, &params_2, false).is_ok_and(|x| x==Some(Cow::Borrowed("xyz"))));
+    /// x.get(&url, &params_1).is_ok_and(|x| x==Some(Cow::Borrowed("example.com")));
+    /// x.get(&url, &params_2).is_ok_and(|x| x==Some(Cow::Borrowed("xyz")));
     /// ```
     IfFlag {
         /// The name of the flag to check.
@@ -149,8 +149,7 @@ pub enum StringSource {
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     HttpRequest(Box<RequestConfig>),
-    /// Some parts of URL cleaner assume that erroring when [`Self::get`] returns `None` is always wanted.
-    /// This exists to circumvent that assumption.
+    /// If the contained [`Self`] returns `None`, instead return `Some(Cow::Borrowed(""))`
     NoneToEmptyString(Box<Self>)
 }
 
@@ -214,17 +213,17 @@ impl StringSource {
     /// Gets the string from the source.
     /// # Errors
     /// See the documentation for [`Self`]'s variants for details.
-    pub fn get<'a>(&'a self, url: &'a Url, params: &'a Params, none_to_empty_string: bool) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'a>(&'a self, url: &'a Url, params: &'a Params) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         #[cfg(feature = "debug")]
         println!("Source: {self:?}");
-        let ret = Ok(match self {
+        Ok(match self {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
-            Self::Part(x) => x.get(url, none_to_empty_string),
+            Self::Part(x) => x.get(url),
             Self::Var(x) => params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then} else {r#else}.get(url, params, none_to_empty_string)?,
+            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then} else {r#else}.get(url, params)?,
             #[cfg(feature = "string-modification")]
             Self::Modified {source, modification} => {
-                match source.as_ref().get(url, params, none_to_empty_string)? {
+                match source.as_ref().get(url, params)? {
                     Some(x) => {
                         let mut x = x.into_owned();
                         modification.apply(&mut x, params)?;
@@ -233,12 +232,12 @@ impl StringSource {
                     None => None
                 }
             },
-            Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params, none_to_empty_string)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ResponseHeader{name, headers} => Some(Cow::Owned(params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.headers().get(name).ok_or(StringSourceError::HeaderNotFound)?.to_str()?.to_string())),
-            Self::ExtractPart{source, part} => source.get(url, params, false)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x, none_to_empty_string).map(|x| Cow::Owned(x.into_owned()))),
+            Self::ExtractPart{source, part} => source.get(url, params)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x).map(|x| Cow::Owned(x.into_owned()))),
             #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
-            Self::ExtractFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params, false)? {
+            Self::ExtractFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params)? {
                 let mut ret=String::new();
                 regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(StringSourceError::NoRegexMatchesFound)?.expand(&expand, &mut ret);
                 Some(Cow::Owned(ret))
@@ -247,18 +246,13 @@ impl StringSource {
             },
             #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(url, params)?)),
-            Self::NoneToEmptyString(source) => source.get(url, params, true)?,
+            Self::NoneToEmptyString(source) => source.get(url, params)?.or(Some(Cow::Borrowed(""))),
             Self::Debug(source) => {
-                let ret=source.get(url, params, none_to_empty_string);
-                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nnone_to_empty_string: {none_to_empty_string:?}\nret: {ret:?}");
+                let ret=source.get(url, params);
+                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nret: {ret:?}");
                 ret?
             },
             Self::Error => Err(StringSourceError::ExplicitError)?
-        });
-        if none_to_empty_string {
-            ret.map(|x| x.or(Some(Cow::Borrowed(""))))
-        } else {
-            ret
-        }
+        })
     }
 }

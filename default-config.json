@@ -130,6 +130,16 @@
 
 
 
+          {
+						"condition": {"All": [
+							{"UnqualifiedAnyTld": "google"},
+							{"PathIs": "/url"}
+						]},
+						"mapper": {"GetUrlFromQueryParam": "q"}
+					},
+
+
+
 					{
 						"condition": {"All": [
 							{"FlagIsSet": "bypass.vip"},
@@ -202,7 +212,6 @@
 				"value": {"Part": {"PartSegments": {"part": "Path", "split": "/", "start": 2, "end": null}}}
 			}}
 		},
-
 		{
 			"comment": "https://profile.example1.com.example2.com -> https://profile1.example1.com",
 			"condition": {"All": [
@@ -252,26 +261,51 @@
 
 
 		{
+			"HostMap": {
+				"theonion.com" : "RemoveQuery",
+				"teespring.com": "RemoveQuery",
+				"instagram.com": "RemoveQuery",
+				"vxtwitter.com": {"SetHost": "twitter.com"},
+				"fixvx.com"    : {"SetHost": "twitter.com"},
+				"fxtwitter.com": {"SetHost": "twitter.com"},
+				"x.com"        : {"SetHost": "twitter.com"},
+				"youtube.com"  : {"RemoveQueryParams": ["si", "feature"]},
+				"youtu.be"     : {"All": [
+					{"SetHost" : "youtube.com"},
+					{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
+					{"SetPart" : {"part": "Path", "value": "watch"}},
+					{"RemoveQueryParams": ["si", "feature"]}
+				]},
+				"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
+				"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
+				"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
+				"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
+				"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
+				"tumblr.com"        : "RemoveQuery",
+				"at.tumblr.com"     : {"All": [
+					{"SetHost": "www.tumblr.com"},
+					{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
+					"RemoveQuery"
+				]}
+			}
+		},
+
+
+
+		{
 			"condition": {"All": [
 				{"MaybeWWWDomain": "pixiv.net"},
 				{"PathIs": "/member.php"}
 			]},
 			"mapper": {"All": [
 				{"SetPart": {"part": "Path", "value": "/users"}},
-				{"CopyPart": {"from": {"QueryParam": "id"}, "from_none_to_empty_string": false, "to": "NextPathSegment"}},
+				{"CopyPart": {"from": {"QueryParam": "id"}, "to": "NextPathSegment"}},
 				"RemoveQuery"
 			]}
 		},
 
 
 
-		{
-			"condition": {"QualifiedDomain": "at.tumblr.com"},
-			"mapper": {"All": [
-				{"SetHost": "www.tumblr.com"},
-				{"SetPart": {"part": {"PathSegment": 1}, "value": null}}
-			]}
-		},
 		{
 			"condition": {"All": [
 				{"UnqualifiedDomain": "tumblr.com"},
@@ -305,32 +339,6 @@
 				{"CopyPart": {"from": {"PathSegment": 1} , "to": {"QueryParam": "v"}}},
 				{"SetPart": {"part": "Path", "value": "watch"}}
 			]}
-		},
-
-
-
-		{
-			"HostMap": {
-				"theonion.com" : "RemoveQuery",
-				"teespring.com": "RemoveQuery",
-				"instagram.com": "RemoveQuery",
-				"vxtwitter.com": {"SetHost": "twitter.com"},
-				"fixvx.com"    : {"SetHost": "twitter.com"},
-				"fxtwitter.com": {"SetHost": "twitter.com"},
-				"x.com"        : {"SetHost": "twitter.com"},
-				"youtube.com"  : {"RemoveQueryParams": ["si", "feature"]},
-				"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
-				"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
-				"youtu.be"     : {"All": [
-					{"SetHost" : "youtube.com"},
-					{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
-					{"SetPart" : {"part": "Path", "value": "watch"}}
-				]},
-				"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
-				"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
-				"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
-				"tumblr.com"        : "RemoveQuery"
-			}
 		},
 
 

@@ -26,26 +26,38 @@ impl AsRef<RegexConfig> for RegexParts {
     }
 }
 
+impl AsRef<String> for RegexParts {
+    fn as_ref(&self) -> &String {
+        &self.pattern
+    }
+}
+
+impl AsRef<str> for RegexParts {
+    fn as_ref(&self) -> &str {
+        &self.pattern
+    }
+}
+
 /// The configuration determining how a regular expression works.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexConfig {
-    /// The flag that decides if [`RegexBuilder::case_insensitive`] is set. Defaults to `false`. This flags character is `'i'`.
+    /// The passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,
-    /// The flag that decides if [`RegexBuilder::crlf`] is set. Defaults to `false`. This flags character is `'R'`.
+    /// The passed into [`RegexBuilder::crlf`]. Defaults to `false`. This flags character is `'R'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub crlf: bool,
-    /// The flag that decides if [`RegexBuilder::dot_matches_new_line`] is set. Defaults to `false`. This flags character is `'s'`.
+    /// The passed into [`RegexBuilder::dot_matches_new_line`]. Defaults to `false`. This flags character is `'s'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub dot_matches_new_line: bool,
-    /// The flag that decides if [`RegexBuilder::ignore_whitespace`] is set. Defaults to `false`. This flags character is `'x'`.
+    /// The passed into [`RegexBuilder::ignore_whitespace`]. Defaults to `false`. This flags character is `'x'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace: bool,
-    /// The flag that decides if [`RegexBuilder::line_terminator`] is set. Defaults to `b'\n'` (`10`).
+    /// The passed into [`RegexBuilder::line_terminator`]. Defaults to `b'\n'` (`10`).
     #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator: u8,
-    /// The flag that decides if [`RegexBuilder::multi_line`] is set. Defaults to `false`. This flags character is `'m'`.
+    /// The passed into [`RegexBuilder::multi_line`]. Defaults to `false`. This flags character is `'m'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub multi_line: bool,
-    /// The flag that decides if [`RegexBuilder::octal`] is set. Defaults to `false`. This flags character is `'o'` because the `regex` crate forgot and I said so.
+    /// The passed into [`RegexBuilder::octal`]. Defaults to `false`. This flags character is `'o'` because the `regex` crate forgot and I said so.
     #[serde(default               , skip_serializing_if = "is_false")] pub octal: bool,
-    /// The flag that decides if [`RegexBuilder::swap_greed`] is set. Defaults to `false`. This flags character is `'U'`.
+    /// The passed into [`RegexBuilder::swap_greed`]. Defaults to `false`. This flags character is `'U'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed: bool,
-    /// The flag that decides if [`RegexBuilder::unicode`] is set. Defaults to `true`. This flags character is `'u'`.
+    /// The passed into [`RegexBuilder::unicode`]. Defaults to `true`. This flags character is `'u'`.
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
 }
 

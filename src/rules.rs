@@ -55,8 +55,7 @@ pub enum Rule {
     ///             condition: Condition::Always,
     ///             mapper: Mapper::SetPart {
     ///                 part: UrlPart::NextPathSegment,
-    ///                 value: Some(FromStr::from_str("a").unwrap()),
-    ///                 value_none_to_empty_string: false
+    ///                 value: Some(FromStr::from_str("a").unwrap())
     ///             }
     ///         }
     ///     ],

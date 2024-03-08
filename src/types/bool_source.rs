@@ -75,7 +75,7 @@ pub enum BoolSource {
 
     /// Checks if `needle` exists in `haystack` according to `location`.
     /// # Errors
-    /// If either `haystack`'s or `needle`;s call to [`StringSource::get`] returns `None` because their respective `none_to_empty_string` is `false`, returns the error [`BoolSourceError::StringSourceIsNone`].
+    /// If either `haystack`'s or `needle`;s call to [`StringSource::get`] returns `None`, returns the error [`BoolSourceError::StringSourceIsNone`].
     /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     #[cfg(all(feature = "string-source", feature = "string-location"))]
     StringLocation {
@@ -83,28 +83,16 @@ pub enum BoolSource {
         haystack: StringSource,
         /// The needle to search for in `haystack`.
         needle: StringSource,
-        /// Decides if `haystack`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
-        #[serde(default = "get_true")]
-        haystack_none_to_empty_string: bool,
-        /// Decides if `needle`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
-        #[serde(default = "get_true")]
-        needle_none_to_empty_string: bool,
         /// The location to search for `needle` at in `haystack`.
         location: StringLocation
     },
     /// Checks if `string` matches `matcher`.
     /// # Errors
-    /// If `string`'s call to [`StringSource::get`] returns `None` because `none_to_empty_string` is `false`, returns the error [`BoolSourceError::StringSourceIsNone`].
+    /// If `string`'s call to [`StringSource::get`] returns `None`, returns the error [`BoolSourceError::StringSourceIsNone`].
     #[cfg(all(feature = "string-source", feature = "string-matcher"))]
     StringMatcher {
         /// The string to match against.
         string: StringSource,
-        /// Decides if `string`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
-        #[serde(default = "get_true")]
-        none_to_empty_string: bool,
         /// The matcher to check `string` against.
         matcher: StringMatcher
     },
@@ -119,32 +107,16 @@ pub enum BoolSource {
     VarIs {
         /// The name of the variable to check.
         name: StringSource,
-        /// Decides if `name`'s call to [`StringSource::get`] should return `Some("")` instead of `None`.
-        /// Defaults to `true`.
-        #[serde(default)]
-        name_none_to_empty_string: bool,
         /// The expected value of the variable.
-        value: Option<StringSource>,
-        /// Decides if getting the variable should return `Some("")` instead of `None`.
-        /// Defaults to `false`.
-        #[serde(default)]
-        value_none_to_empty_string: bool
+        value: Option<StringSource>
     },
     /// Checks if the specified variable's value is the specified value.
     #[cfg(not(feature = "string-source"))]
     VarIs {
         /// The name of the variable
         name: String,
-        /// Does nothing; Only here for compatibility between feature flags.
-        /// Defaults to `true`.
-        #[serde(default)]
-        name_none_to_empty_string: bool,
         /// The expected value of the variable.
-        value: Option<String>,
-        /// Does nothing; Only here to fix tests between feature flags.
-        /// Defaults to `false`.
-        #[serde(default)]
-        value_none_to_empty_string: bool
+        value: Option<String>
     },
     /// Returns [`true`] if [`Url::parse`] returns [`Ok`].
     #[cfg(feature = "string-source")]
@@ -153,8 +125,6 @@ pub enum BoolSource {
     #[cfg(not(feature = "string-source"))]
     IsValidUrl(String)
 }
-
-const fn get_true() -> bool {true}
 
 /// The enum of all possible errors [`BoolSource::get`] can return.
 #[derive(Debug, Error)]
@@ -226,30 +196,30 @@ impl BoolSource {
             // Non-meta.
 
             #[cfg(all(feature = "string-source", feature = "string-location"))]
-            Self::StringLocation {haystack, needle, haystack_none_to_empty_string, needle_none_to_empty_string, location} => location.satisfied_by(
-                &haystack.get(url, params, *haystack_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
-                &needle  .get(url, params, *needle_none_to_empty_string  )?.ok_or(BoolSourceError::StringSourceIsNone)?
+            Self::StringLocation {haystack, needle, location} => location.satisfied_by(
+                &haystack.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?,
+                &needle  .get(url, params  )?.ok_or(BoolSourceError::StringSourceIsNone)?
             )?,
             #[cfg(all(feature = "string-source", feature = "string-matcher"))]
-            Self::StringMatcher {string, none_to_empty_string, matcher} => matcher.satisfied_by(
-                &string.get(url, params, *none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?,
+            Self::StringMatcher {string, matcher} => matcher.satisfied_by(
+                &string.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?,
                 url, params
             )?,
             #[cfg(feature = "string-source")]
-            Self::FlagIsSet(name) => params.flags.contains(&name.get(url, params, false)?.ok_or(BoolSourceError::StringSourceIsNone)?.into_owned()),
+            Self::FlagIsSet(name) => params.flags.contains(&name.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?.into_owned()),
             #[cfg(not(feature = "string-source"))]
             Self::FlagIsSet(name) => params.flags.contains(name),
 
             #[cfg(feature = "string-source")]
-            Self::VarIs {name, name_none_to_empty_string, value, value_none_to_empty_string} => match value.as_ref() {
-                Some(source) => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).map(|x| &**x)==source.get(url, params, *value_none_to_empty_string)?.as_deref(),
-                None => params.vars.get(&name.get(url, params, *name_none_to_empty_string)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).is_none()
+            Self::VarIs {name, value} => match value.as_ref() {
+                Some(source) => params.vars.get(&name.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).map(|x| &**x)==source.get(url, params)?.as_deref(),
+                None => params.vars.get(&name.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]
-            Self::VarIs {name, name_none_to_empty_string: _, value, value_none_to_empty_string} => params.vars.get(name).map(|x| &**x).or(if *value_none_to_empty_string {Some("")} else {None})==value.as_deref(),
+            Self::VarIs {name: _, value} => params.vars.get(name).map(|x| &**x)==value.as_deref(),
 
             #[cfg(feature = "string-source")]
-            Self::IsValidUrl(source) => Url::parse(&source.get(url, params, false)?.ok_or(BoolSourceError::StringSourceIsNone)?).is_ok(),
+            Self::IsValidUrl(source) => Url::parse(&source.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?).is_ok(),
             #[cfg(not(feature = "string-source"))]
             Self::IsValidUrl(string) => Url::parse(string).is_ok()
         })

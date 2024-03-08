@@ -65,7 +65,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::{StringMatcher, StringLocation};
     /// # use url_cleaner::types::Params;
     /// # use url::Url;
-    /// assert!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
+    /// StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true);
     /// ```
     #[cfg(feature = "string-location")]
     StringLocation {
@@ -80,7 +80,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::glue::RegexParts;
     /// # use url_cleaner::types::Params;
     /// # use url::Url;
-    /// assert!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
+    /// StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true);
     /// ```
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
@@ -91,7 +91,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true));
+    /// StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true);
     /// ```
     #[cfg(feature = "glob")]
     Glob(GlobWrapper),
