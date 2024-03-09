@@ -8,8 +8,8 @@ use crate::types::*;
 use crate::util::*;
 
 /// Getters and setters for various parts of a URL.
-/// In general (except for [`Self::DomainSegment`] and [`Self::PathSegment`]), setting a part to its own value is a no-op.
-/// __Some parts may behave in unusual ways. Please check the documentation of parts you use to make sure you understand them.__
+/// In general (except for domain parts on non-domain URLs and [`Self::PathSegment`]), setting a part to its own value is a no-op.
+/// **Some parts may behave in unusual ways. Please check the documentation of parts you use to make sure you understand them.**
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum UrlPart {
     /// The whole URL. Corresponds to [`Url::as_str`].
@@ -129,6 +129,8 @@ pub enum UrlPart {
     /// Is always `None`.
     /// # Setting
     /// Can be `None`, but that's a no-op.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -185,6 +187,8 @@ pub enum UrlPart {
     /// Can be `None`.
     /// # Setting
     /// Can be `None`.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -212,6 +216,8 @@ pub enum UrlPart {
     /// Can be `None`.
     /// # Setting
     /// Can be `None`.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -233,6 +239,8 @@ pub enum UrlPart {
     /// Can be `None`.
     /// # Setting
     /// Can be `None`.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -253,6 +261,8 @@ pub enum UrlPart {
     /// Can be `None`.
     /// # Setting
     /// Can be `None`, though the sensibility of the result is questionable.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::UrlPart;
@@ -297,6 +307,8 @@ pub enum UrlPart {
     /// Can be `None`.
     /// # Setting
     /// Can be `None`.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -313,6 +325,8 @@ pub enum UrlPart {
     /// UrlPart::Domain.set(&mut url, None).is_err();
     /// ```
     Domain,
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::UrlPart;
@@ -335,6 +349,8 @@ pub enum UrlPart {
     /// Is always `None`.
     /// # Setting
     /// Can be `None`, but that's a no-op.
+    /// # Set-get identity.
+    /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -647,6 +663,7 @@ impl UrlPart {
             Self::Origin => Some(Cow::Owned(url.origin().unicode_serialization())),
 
             Self::PartSegments {part, split, start, end} => {
+                // TODO: Change to always borrow.
                 Some(Cow::Owned(neg_vec_keep(part.get(url)?.split(split), *start, *end)?.join(split)))
             },
 
@@ -660,7 +677,7 @@ impl UrlPart {
             Self::NextDomainSegment      => None,
             Self::BeforePathSegment(_)   => None,
             Self::NextPathSegment        => None,
-            Self::NoneToEmptyString(part) => part.get(url).or(Some(Cow::Borrowed(""))),
+            Self::NoneToEmptyString(part) => part.get(url).or(Some(Cow::Borrowed("")))
         }
     }
 
@@ -679,14 +696,14 @@ impl UrlPart {
             (Self::BeforeDomainSegment(n), _) => if let Some(to) = to {
                 let fixed_n=neg_index(*n, url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetPartError::SegmentNotFound)?;
                 if fixed_n==url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count() {Err(GetPartError::SegmentNotFound)?;}
-                url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').take(fixed_n).chain([to]).chain(url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').skip(fixed_n)).collect::<Vec<_>>().join(".")))?;
+                set_domain(url, &url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').take(fixed_n).chain([to]).chain(url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').skip(fixed_n)).collect::<Vec<_>>().join("."))?;
             },
             (Self::DomainSegment(n), _) => {
                 let fixed_n=neg_index(*n, url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetPartError::SegmentNotFound)?;
                 if fixed_n==url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count() {Err(GetPartError::SegmentNotFound)?;}
                 match to {
-                    Some(to) => url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join(".")))?,
-                    None     => url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join(".")))?
+                    Some(to) => set_domain(url, &url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("."))?,
+                    None     => set_domain(url, &url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("."))?
                 }
             },
             (Self::Subdomain, _) => {
@@ -695,11 +712,11 @@ impl UrlPart {
                         let mut new_domain=to.to_string();
                         new_domain.push('.');
                         new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?);
-                        url.set_host(Some(&new_domain))?;
+                        set_domain(url, &new_domain)?;
                     },
                     None => {
                         #[allow(clippy::unnecessary_to_owned)]
-                        url.set_host(Some(&Self::NotSubdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?.into_owned()))?;
+                        set_domain(url, &Self::NotSubdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?.into_owned())?;
                     }
                 }
             },
@@ -710,21 +727,24 @@ impl UrlPart {
                         new_domain.push('.');
                     }
                     new_domain.push_str(to);
-                    url.set_host(Some(&new_domain))?;
+                    set_domain(url, &new_domain)?;
                 },
                 None => {
                     #[allow(clippy::unnecessary_to_owned)]
-                    url.set_host(Some(&Self::Subdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?.to_string()))?;
+                    set_domain(url, &Self::Subdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?.to_string())?;
                 }
             },
             #[allow(clippy::unnecessary_to_owned)]
-            (Self::NotDomainSuffix, _) => match to {
-                Some(to) => url.set_host(Some(&format!("{}.{}", to, Self::DomainSuffix.get(url).ok_or(GetPartError::HostIsNotADomain)?)))?,
-                None     => url.set_host(Some(&Self::DomainSuffix.get(url).ok_or(GetPartError::HostIsNotADomain)?.to_string()))?
+            (Self::NotDomainSuffix, _) => {
+                let domain = match to {
+                    Some(to) => format!("{}.{}", to, Self::DomainSuffix.get(url).ok_or(GetPartError::HostIsNotADomain)?),
+                    None     => Self::DomainSuffix.get(url).ok_or(GetPartError::HostIsNotADomain)?.to_string()
+                };
+                set_domain(url, &domain)?;
             },
             (Self::NotSubdomainNotSuffix, _) => {
                 #[allow(clippy::useless_format)]
-                url.set_host(Some(&match (Self::Subdomain.get(url), to, Self::DomainSuffix.get(url), Self::Domain.get(url).ok_or(GetPartError::HostIsNotADomain)?.ends_with('.')) {
+                set_domain(url, &match (Self::Subdomain.get(url), to, Self::DomainSuffix.get(url), Self::Domain.get(url).ok_or(GetPartError::HostIsNotADomain)?.ends_with('.')) {
                     // I do not know or care if any of these are impossible.
                     // Future me here: I care slightly. I'm pretty sure `(Some(_), None, Some(_), _)` can't happen.
                     (Some(subdomain), Some(to), Some(suffix), true ) => format!("{subdomain}.{to}.{suffix}."),
@@ -743,24 +763,25 @@ impl UrlPart {
                     (None           , None    , Some(suffix), false) => format!("{suffix}"),
                     (None           , None    , None        , true ) => format!("."),
                     (None           , None    , None        , false) => format!("")
-                }))?;
+                })?;
             },
-            (Self::Domain        , _) => url.set_host(to)?,
+            (Self::Domain        , Some(to)) => set_domain(url, to)?,
             (Self::DomainSuffix  , _) => {
                 let not_suffix=Self::NotDomainSuffix.get(url).ok_or(GetPartError::PartIsNone)?;
                 match &*match to {
                     Some(to) => format!("{}.{}", not_suffix, to),
                     None     => not_suffix.to_string()
                 } {
-                    "" => url.set_host(None),
-                    d => url.set_host(Some(d))
-                }?;
+                    "" => url.set_host(None)?,
+                    domain => set_domain(url, domain)?
+                };
             },
             (Self::NextDomainSegment, _) => if let Some(to) = to {
                 if to.is_empty() {
                     Err(SetPartError::DomainSegmentCannotBeEmpty)?
                 } else {
-                    url.set_host(Some(&url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".")))?
+                    let domain = url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".");
+                    set_domain(url, &domain)?;
                 }
             },
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetPartError::InvalidPort)).transpose()?).map_err(|()| SetPartError::CannotSetPort)?,
@@ -782,7 +803,7 @@ impl UrlPart {
                 match to {
                     // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
                     Some(to) => url.set_path(&url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("/")),
-                    None     => url.set_path(&url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("/")),
+                    None     => url.set_path(&url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("/"))
                 }
             },
             (Self::NextPathSegment, _) => if let Some(to) = to {url.path_segments_mut().map_err(|()| GetPartError::UrlDoesNotHaveAPath)?.pop_if_empty().push(to);},
@@ -843,7 +864,24 @@ impl UrlPart {
     }
 }
 
+fn is_valid_domain(domain: &str) -> bool {
+    let mut temp = Url::parse("https://example.com").expect("https://example.com to be a valid URL");
+    temp.set_host(Some(domain)).is_ok() && temp.domain().is_some()
+}
+
+/// When setting a domain it is generally ideal to make sure it's actually a domain.
+/// Unfortunately [`Url`] doesn't have a `set_domain` method.
+fn set_domain(url: &mut Url, domain: &str) -> Result<(), SetPartError> {
+    if is_valid_domain(domain) {
+        url.set_host(Some(domain))?;
+    } else {
+        Err(SetPartError::InvalidDomain)?;
+    }
+    Ok(())
+}
+
 /// The enum of all possible errors [`UrlPart::set`] can return when getting a URL part.
+/// [`UrlPart::get`] returns an [`Option`], but it's still conceptually useful to keep this separate from [`SetPartError`].
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum GetPartError {
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
@@ -898,7 +936,10 @@ pub enum SetPartError {
     UrlCannotHaveAPath,
     /// Returned when attempting to set a domain segment to `Some("")`.
     #[error("A domain segment cannot be empty.")]
-    DomainSegmentCannotBeEmpty
+    DomainSegmentCannotBeEmpty,
+    /// Returned when setting [`UrlPart::Domain`] to a non-domain value.
+    #[error("Attempted to set a URL's domain to an invalid domain. Perhaps trying to set the host instead would help?")]
+    InvalidDomain
 }
 
 /// The enum of all possible errors [`UrlPart::modify`] can return.
@@ -916,54 +957,101 @@ pub enum UrlPartModificationError {
     StringModificationError(#[from] StringModificationError)
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const URLS: [&str; 4] = [
+    const DOMAIN_URLS: [&str; 4] = [
         "https://example.com",
         "https://example.com?a=2",
         "https://abc.example.com/d/e?f=g&h=i#j",
         "http://abc.xyz.example.onion.co.uk/awawa/eeeee///AAAAA?l=g&b=t#q+"
     ];
 
+    const IP_URLS: [&str; 2] = [
+        "https://127.0.0.1",
+        "https://127.0.0.1/awawa/eeeee///AAAAA?l=g&b=t#q+"
+    ];
+
     macro_rules! identity_check {
-        ($part:ident) => {
-            for mut url in URLS.iter().map(|url| Url::parse(url).unwrap()) {
-                println!("{:?}: {url:?}", UrlPart::$part);
-                let old=UrlPart::$part.get(&url).map(Cow::into_owned);
-                UrlPart::$part.set(&mut url, old.as_deref()).unwrap();
-                assert_eq!(UrlPart::$part.get(&url).as_deref(), old.as_deref());
-            }
+        ($urls:expr, $($part:ident),+) => {
+            identity_check_2!($urls, $(UrlPart::$part),+)
         };
-        ($part:ident, $($parts:ident),+) => {{
-            identity_check!($part);
-            identity_check!($($parts),+);
-        }};
     }
 
     macro_rules! identity_check_2 {
-        ($expr:expr) => {
-            for mut url in URLS.iter().map(|url| Url::parse(url).unwrap()) {
+        ($urls:expr, $($expr:expr),+) => {
+            $(for mut url in $urls.iter().map(|url| Url::parse(url).unwrap()) {
                 println!("{:?}: {url:?}", $expr);
                 let old=$expr.get(&url).map(Cow::into_owned);
                 $expr.set(&mut url, old.as_deref()).unwrap();
                 assert_eq!($expr.get(&url).as_deref(), old.as_deref());
-            }
+            })+
         };
-        ($expr:expr, $($exprs:expr),+) => {{
-            identity_check_2!($expr);
-            identity_check_2!($($exprs),+);
-        }};
     }
-    
+
     #[test]
     fn set_to_get_identity() {
-        identity_check!(Whole, Scheme, Username, Password, Host, Subdomain, NotSubdomain, Domain, Port, NextPathSegment, Path, Query, Fragment);
+        identity_check!(
+            DOMAIN_URLS,
+            Whole, Scheme, Username, Password, Host,
+            Subdomain, NotSubdomain, NotDomainSuffix, NotSubdomainNotSuffix, Domain, DomainSuffix, NextDomainSegment,
+            Port, NextPathSegment, Path, Query, Fragment
+        );
+        identity_check!(
+            IP_URLS, 
+            Whole, Scheme, Username, Password, Host,
+
+            Port, NextPathSegment, Path, Query, Fragment
+        );
         identity_check_2!(
-            // UrlPart::DomainSegment(0), UrlPart::DomainSegment(1), UrlPart::DomainSegment(2),
-            // UrlPart::PathSegment(0), UrlPart::PathSegment(1), UrlPart::PathSegment(2),
+            DOMAIN_URLS,
+            UrlPart::BeforeDomainSegment(0),
+            UrlPart::BeforeDomainSegment(1),
+            UrlPart::DomainSegment(0),
+            UrlPart::DomainSegment(1),
+            UrlPart::BeforePathSegment(0),
+            UrlPart::BeforePathSegment(1),
+            UrlPart::PathSegment(0),
+            UrlPart::PathSegment(1),
             UrlPart::QueryParam("a".to_string())
         );
+        identity_check_2!(
+            IP_URLS,
+            UrlPart::BeforePathSegment(0),
+            UrlPart::BeforePathSegment(1),
+            UrlPart::PathSegment(0),
+            UrlPart::PathSegment(1),
+            UrlPart::QueryParam("a".to_string())
+        );
+    }
+
+    const MAYBE_DOMAINS: [(&str, bool); 4] = [
+        ("example.com", true ),
+        ("127.0.0.1"  , false),
+        ("a/b/c"      , false),
+        ("a?"         , false),
+    ];
+
+    #[test]
+    fn domain_validation() {
+        for (maybe_domain, is_domain) in MAYBE_DOMAINS {
+            assert_eq!(is_valid_domain(maybe_domain), is_domain);
+        }
+    }
+
+    #[test]
+    fn setting_domains() {
+        for (maybe_domain, is_domain) in MAYBE_DOMAINS {
+            let mut url = Url::parse("https://example.com").unwrap();
+            if set_domain(&mut url, maybe_domain).is_ok() {
+                assert!(is_domain);
+                assert_eq!(url.domain(), Some(maybe_domain));
+            } else {
+                assert!(!is_domain);
+                assert_eq!(url.domain(), Some("example.com"))
+            }
+        }
     }
 }

@@ -216,7 +216,7 @@ impl BoolSource {
                 None => params.vars.get(&name.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?.to_string()).is_none()
             },
             #[cfg(not(feature = "string-source"))]
-            Self::VarIs {name: _, value} => params.vars.get(name).map(|x| &**x)==value.as_deref(),
+            Self::VarIs {name, value} => params.vars.get(name).map(|x| &**x)==value.as_deref(),
 
             #[cfg(feature = "string-source")]
             Self::IsValidUrl(source) => Url::parse(&source.get(url, params)?.ok_or(BoolSourceError::StringSourceIsNone)?).is_ok(),

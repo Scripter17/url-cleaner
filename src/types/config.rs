@@ -25,6 +25,9 @@ pub struct Config {
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default)]
     pub params: Params,
+    /// The tests to make sure the config is working as intended.
+    #[serde(default)]
+    pub tests: Vec<ConfigTest>,
     /// The conditions and mappers that modify the URLS.
     pub rules: Rules
 }
@@ -76,6 +79,20 @@ impl Config {
     pub fn apply(&self, url: &mut Url) -> Result<(), crate::rules::RuleError> {
         self.rules.apply(url, &self.params)
     }
+
+    /// # Panics
+    /// Panics if a test fails.
+    pub fn run_tests(mut self) {
+        let original_params = self.params.clone();
+        for test in self.tests.clone() {
+            self.params.apply_diff(test.params_diff);
+            for [mut before, after] in test.pairs {
+                self.apply(&mut before).expect("The URL to be modified without errors.");
+                assert_eq!(before, after);
+            }
+            self.params = original_params.clone();
+        }
+    }
 }
 
 /// Configuration options to choose the behaviour of a few select [`crate::rules::Condition`]s and [`crate::rules::Mapper`]s.
@@ -92,11 +109,30 @@ pub struct Params {
     #[serde(default, with = "crate::glue::headermap")]
     pub default_http_headers: HeaderMap,
     /// If [`true`], disables reading from caches.
-    #[serde(default)]
-    pub no_read_cache: bool,
+    #[serde(default = "get_true")]
+    pub read_cache: bool,
     /// If [`true`], disables writing to caches.
-    #[serde(default)]
-    pub no_write_cache: bool
+    #[serde(default = "get_true")]
+    pub write_cache: bool
+}
+
+const fn get_true() -> bool {true}
+
+/// Allows changing [`Config::params`].
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct ParamsDiff {
+    /// Adds to [`Params::vars`].
+    #[serde(default)] pub vars  : HashMap<String, String>,
+    /// Removes from [`Params::vars`].
+    #[serde(default)] pub unvars: HashSet<String>,
+    /// Adds to [`Params::flags`].
+    #[serde(default)] pub flags  : HashSet<String>,
+    /// Removes from [`Params::flags`]
+    #[serde(default)] pub unflags: HashSet<String>,
+    /// If [`Some`], sets [`Params::read_cache`].
+    #[serde(default)] pub read_cache : Option<bool>,
+    /// If [`Some`], sets [`Params::write_cache`].
+    #[serde(default)] pub write_cache: Option<bool>
 }
 
 /// The enum of all errors [`Params::get_redirect_from_cache`] can return.
@@ -109,10 +145,10 @@ pub enum ReadCacheError {
 }
 
 /// The enum of all errors [`Params::write_redirect_to_cache`] can return.
+#[cfg(feature = "cache")]
 #[derive(Debug, Error)]
 pub enum WriteCacheError {
     /// Returned when an [`io::Error`] is encountered.
-    #[cfg(feature = "cache")]
     #[error(transparent)]
     IoError(#[from] io::Error)
 }
@@ -124,14 +160,15 @@ where P: AsRef<Path>, {
     Ok(io::BufReader::new(file).lines())
 }
 
-
 impl Params {
     /// Overwrites part of `self` with `from`.
-    pub fn merge(&mut self, from: Self) {
-        self.vars.extend(from.vars);
-        self.flags.extend(from.flags);
-        #[cfg(all(feature = "http", not(target_family = "wasm")))]
-        self.default_http_headers.extend(from.default_http_headers);
+    pub fn apply_diff(&mut self, diff: ParamsDiff) {
+        self.vars.extend(diff.vars);
+        for var in diff.unvars {self.vars.remove(&var);}
+        self.flags.extend(diff.flags);
+        for flag in diff.unflags {self.flags.remove(&flag);}
+        if let Some(x) = diff.read_cache {self.read_cache=x;}
+        if let Some(x) = diff.write_cache {self.write_cache=x;}
     }
 
     /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
@@ -148,7 +185,7 @@ impl Params {
     /// If a cache line starting with `url` is found but the map isn't parseable as a URL, returns the error [`ReadCacheError::UrlParseError`].
     #[cfg(feature = "cache-redirects")]
     pub fn get_redirect_from_cache(&self, before: &Url) -> Result<Option<Url>, ReadCacheError> {
-        if !self.no_read_cache {
+        if self.read_cache {
             if let Ok(lines) = read_lines("redirect-cache.txt") {
                 for line in lines.map_while(Result::ok) {
                     if let Some((short, long)) = line.split_once('\t') {
@@ -166,7 +203,7 @@ impl Params {
     /// If the cache line cannot be written, returns [`WriteCacheError::IoError`].
     #[cfg(feature = "cache-redirects")]
     pub fn write_redirect_to_cache(&self, before: &Url, after: &Url) -> Result<(), WriteCacheError> {
-        if !self.no_write_cache {
+        if self.write_cache {
             if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
                 x.write_all(format!("\n{}\t{}", before.as_str(), after.as_str()).as_bytes())?;
             }
@@ -208,6 +245,16 @@ pub enum GetConfigError {
     CantParseDefaultConfig(serde_json::Error)
 }
 
+/// Tests to make sure a [`Config`] is working as intended.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigTest {
+    /// The [`ParamsDiff`] to apply to the [`Config::Params`] for this test.
+    #[serde(default)]
+    pub params_diff: ParamsDiff,
+    /// A list of URLs to test and the expected results.
+    pub pairs: Vec<[Url; 2]>
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -223,51 +270,8 @@ mod tests {
         serde_json::to_string(&Config::get_default().unwrap()).unwrap();
     }
 
-    macro_rules! test_config {
-        ($c:expr, $f:expr, $t:expr) => {{
-            let mut url = Url::parse($f).unwrap();
-            $c.apply(&mut url).unwrap();
-            assert_eq!(url.as_str(), $t);
-        }}
-    }
-
-    macro_rules! set_var    {($c:expr, $n:expr, $v:expr) => {$c.params.vars .insert($n.to_string(), $v.to_string());}}
-    macro_rules! unset_var  {($c:expr, $n:expr         ) => {$c.params.vars .remove($n                            );}}
-    macro_rules! set_flag   {($c:expr, $n:expr         ) => {$c.params.flags.insert($n.to_string()                );}}
-    macro_rules! unset_flag {($c:expr, $n:expr         ) => {$c.params.flags.remove($n                            );}}
-
     #[test]
     fn test_default_config() {
-        let mut config = Config::get_default().unwrap().clone();
-
-        test_config!(config, "https://x.com?t=a&s=b", "https://twitter.com/");
-
-        set_var!    (config, "tor2web-suffix", "example");
-        test_config!(config, "https://example.onion", "https://example.onion/");
-        set_flag!   (config, "tor2web");
-        test_config!(config, "https://example.onion", "https://example.onion.example/");
-        test_config!(config, "https://example.onion.example2", "https://example.onion.example/");
-        unset_flag! (config, "tor2web");
-        set_flag!   (config, "tor2web2tor");
-        test_config!(config, "https://example.onion.example", "https://example.onion/");
-        unset_var!  (config, "tor2web-suffix");
-
-        test_config!(config, "https://x.com?a=2", "https://twitter.com/");
-        test_config!(config, "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "https://example.com/");
-        test_config!(config, "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "https://www.amazon.ca/dp/B0C6DX66TN");
-
-        set_flag!   (config, "unbreezewiki");
-        test_config!(config, "https://antifandom.com/tardis/wiki/Genocide", "https://tardis.fandom.com/wiki/Genocide");
-        unset_flag! (config, "unbreezewiki");
-        set_flag!   (config, "breezewiki");
-        test_config!(config, "https://antifandom.com/tardis/wiki/Genocide", "https://breezewiki.com/tardis/wiki/Genocide");
-        test_config!(config, "https://tardis.fandom.com/wiki/Genocide"    , "https://breezewiki.com/tardis/wiki/Genocide");
-        unset_flag! (config, "breezewiki");
-
-        set_flag!   (config, "unmobile");
-        test_config!(config, "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell");
-        unset_flag! (config, "unmobile");
-
-        config.apply(&mut Url::parse("https://127.0.0.1").unwrap()).unwrap();
+        Config::get_default().unwrap().clone().run_tests();
     }
 }

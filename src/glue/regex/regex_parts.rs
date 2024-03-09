@@ -41,23 +41,23 @@ impl AsRef<str> for RegexParts {
 /// The configuration determining how a regular expression works.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RegexConfig {
-    /// The passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
+    /// The value passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,
-    /// The passed into [`RegexBuilder::crlf`]. Defaults to `false`. This flags character is `'R'`.
+    /// The value passed into [`RegexBuilder::crlf`]. Defaults to `false`. This flags character is `'R'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub crlf: bool,
-    /// The passed into [`RegexBuilder::dot_matches_new_line`]. Defaults to `false`. This flags character is `'s'`.
+    /// The value passed into [`RegexBuilder::dot_matches_new_line`]. Defaults to `false`. This flags character is `'s'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub dot_matches_new_line: bool,
-    /// The passed into [`RegexBuilder::ignore_whitespace`]. Defaults to `false`. This flags character is `'x'`.
+    /// The value passed into [`RegexBuilder::ignore_whitespace`]. Defaults to `false`. This flags character is `'x'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace: bool,
-    /// The passed into [`RegexBuilder::line_terminator`]. Defaults to `b'\n'` (`10`).
+    /// The value passed into [`RegexBuilder::line_terminator`]. Defaults to `b'\n'` (`10`).
     #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator: u8,
-    /// The passed into [`RegexBuilder::multi_line`]. Defaults to `false`. This flags character is `'m'`.
+    /// The value passed into [`RegexBuilder::multi_line`]. Defaults to `false`. This flags character is `'m'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub multi_line: bool,
-    /// The passed into [`RegexBuilder::octal`]. Defaults to `false`. This flags character is `'o'` because the `regex` crate forgot and I said so.
+    /// The value passed into [`RegexBuilder::octal`]. Defaults to `false`. This flags character is `'o'` because the `regex` crate forgot and I said so.
     #[serde(default               , skip_serializing_if = "is_false")] pub octal: bool,
-    /// The passed into [`RegexBuilder::swap_greed`]. Defaults to `false`. This flags character is `'U'`.
+    /// The value passed into [`RegexBuilder::swap_greed`]. Defaults to `false`. This flags character is `'U'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed: bool,
-    /// The passed into [`RegexBuilder::unicode`]. Defaults to `true`. This flags character is `'u'`.
+    /// The value passed into [`RegexBuilder::unicode`]. Defaults to `true`. This flags character is `'u'`.
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
 }
 
@@ -92,12 +92,11 @@ impl RegexParts {
     /// If the pattern is invalid, the error encountered by the parser is returned.
     /// The error is boxed because it's massive.
     pub fn new_with_config(pattern: &str, config: RegexConfig) -> Result<Self, Box<RegexSyntaxError>> {
-        let ret=Self {
+        Into::<ParserBuilder>::into(&config).build().parse(pattern).map_err(Box::new)?;
+        Ok(Self {
             pattern: pattern.to_string(),
             config
-        };
-        Into::<ParserBuilder>::into(&ret.config).build().parse(&ret.pattern).map_err(Box::new)?;
-        Ok(ret)
+        })
     }
 
     /// Creates the regex.

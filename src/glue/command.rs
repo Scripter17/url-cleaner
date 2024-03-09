@@ -4,9 +4,11 @@ use std::path::PathBuf;
 use std::str::{from_utf8, FromStr};
 use std::collections::HashMap;
 use std::convert::Infallible;
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStrExt;
+#[cfg(not(target_family = "unix"))]
+use std::ffi::OsString;
 
 use url::Url;
 use thiserror::Error;
@@ -86,6 +88,9 @@ impl CommandConfig {
             Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsStr::from_bytes(url.as_str().as_bytes())} else {OsStr::from_bytes(arg.as_bytes())}));},
             #[cfg(not(target_family = "unix"))]
             Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsString::from(url.as_str())} else {OsString::from(arg)}));},
+            #[cfg(target_family = "unix")]
+            None => {ret.args(self.args.iter().map(|arg| OsStr::from_bytes(arg.as_bytes())));},
+            #[cfg(not(target_family = "unix"))]
             None => {ret.args(self.args.iter().map(OsString::from));}
         }
         if let Some(current_dir) = &self.current_dir {
@@ -94,7 +99,7 @@ impl CommandConfig {
         ret.envs(self.envs.clone());
         ret
     }
-    
+
     /// Checks if the command's [`std::process::Command::get_program`] exists. Checks the system's PATH.
     /// Uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the PATH.
     #[must_use]

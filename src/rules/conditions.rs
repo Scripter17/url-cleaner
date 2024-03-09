@@ -623,7 +623,7 @@ impl Condition {
             // General parts.
 
             #[cfg(    feature = "string-source") ] Self::PartIs{part, value} => value.as_ref().map(|source| source.get(url, params)).transpose()?.flatten().as_deref()==part.get(url).as_deref(),
-            #[cfg(not(feature = "string-source"))] Self::PartIs{part, value: _} => value.as_deref()==part.get(url).as_deref(),
+            #[cfg(not(feature = "string-source"))] Self::PartIs{part, value} => value.as_deref()==part.get(url).as_deref(),
             #[cfg(all(    feature = "string-source" , feature = "string-location"))] Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, &value.get(url, params)?.ok_or(ConditionError::StringSourceIsNone)?)?,
             #[cfg(all(not(feature = "string-source"), feature = "string-location"))] Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, value)?,
             #[cfg(feature = "string-matcher" )] Self::PartMatches {part, matcher} => matcher.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, url, params)?,

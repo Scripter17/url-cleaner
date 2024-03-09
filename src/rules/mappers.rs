@@ -514,7 +514,7 @@ impl Mapper {
                 None => part.set(url, None)
             }?,
             #[cfg(not(feature = "string-source"))]
-            Self::SetPart{part, value: _} => part.set(url, value.as_deref())?,
+            Self::SetPart{part, value} => part.set(url, value.as_deref())?,
             #[cfg(feature = "string-modification")]
             Self::ModifyPart{part, how} => part.modify(url, how, params)?,
             Self::CopyPart{from, to} => to.set(url, from.get(url).map(|x| x.into_owned()).as_deref())?,

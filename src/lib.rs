@@ -22,9 +22,9 @@ pub(crate) mod util;
 /// If applying the rules returns an error, that error is returned.
 #[cfg(target_family = "wasm")]
 #[wasm_bindgen(js_name = clean_url)]
-pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
+pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params_diff: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
     let mut url=Url::parse(url)?;
-    clean_url(&mut url, Some(js_value_to_config(config)?.as_ref()), Some(&js_value_to_params(params)?))?;
+    clean_url(&mut url, Some(js_value_to_config(config)?.as_ref()), js_value_to_params_diff(params_diff)?)?;
     Ok(JsValue::from_str(url.as_str()))
 }
 
@@ -35,12 +35,12 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params: wasm_bin
 /// If applying the rules returns an error, that error is returned.
 /// Please note that if an error is returned, the URL is left in a partially modified state.
 /// [`rules::Mapper::All`] doesn't apply changes until all the contained mappers work without errors, so at the very least you don't need to worry about that.
-pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params: Option<&types::Params>) -> Result<(), types::CleaningError> {
+pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params_diff: Option<types::ParamsDiff>) -> Result<(), types::CleaningError> {
     let mut config=match config {
         Some(config) => config.clone(),
         None => types::Config::get_default()?.clone()
     };
-    if let Some(params) = params {config.params.merge(params.clone());}
+    if let Some(params_diff) = params_diff {config.params.apply_diff(params_diff);}
     config.apply(url)?;
     Ok(())
 }
@@ -55,10 +55,10 @@ fn js_value_to_config(config: wasm_bindgen::JsValue) -> Result<Cow<'static, type
 }
 
 #[cfg(target_family = "wasm")]
-fn js_value_to_params(params: wasm_bindgen::JsValue) -> Result<types::Params, JsError> {
-    Ok(if params.is_null() {
-        types::Params::default()
+fn js_value_to_params_diff(params_diff: wasm_bindgen::JsValue) -> Result<Option<types::ParamsDiff>, JsError> {
+    Ok(if params_diff.is_null() {
+        None
     } else {
-        serde_wasm_bindgen::from_value(params)?
+        serde_wasm_bindgen::from_value(params_diff)?
     })
 }

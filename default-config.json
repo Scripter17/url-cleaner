@@ -5,6 +5,41 @@
 			"breezewiki-domain": "breezewiki.com"
 		}
 	},
+	"tests": [
+		{"pairs": [
+			["https://x.com?t=a&s=b", "https://twitter.com/"],
+			["https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "https://example.com/"],
+			["https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "https://www.amazon.ca/dp/B0C6DX66TN"],
+			["http://example.com", "https://example.com/"]
+		]},
+		{
+			"params_diff": {"vars": {"tor2web-suffix": "example"}, "flags": ["tor2web"]},
+			"pairs": [["https://example.onion", "https://example.onion.example"]]
+		},
+		{
+			"params_diff": {"flags": ["tor2web2tor"]},
+			"pairs": [
+				["https://example.onion.com", "https://example.onion"],
+				["https://example.onion.co.uk", "https://example.onion"]
+			]
+		},
+		{
+			"params_diff": {"flags": ["unbreezewiki"]},
+			"pairs": [["https://antifandom.com/tardis/wiki/Genocide", "https://tardis.fandom.com/wiki/Genocide"]]
+		},
+		{
+			"params_diff": {"flags": ["breezewiki"]},
+			"pairs": [
+				["https://antifandom.com/tardis/wiki/Genocide", "https://breezewiki.com/tardis/wiki/Genocide"],
+				["https://tardis.fandom.com/wiki/Genocide"    , "https://breezewiki.com/tardis/wiki/Genocide"]
+			]
+		},
+		{
+			"params_diff": {"flags": ["unmobile"]},
+			"pairs": [["https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"]]
+		},
+		{"pairs": [["https://127.0.0.1", "https://127.0.0.1"]]}
+	],
 	"rules": [
 		{
 			"RepeatUntilNonePass": {
@@ -66,7 +101,7 @@
 						"condition": {"Any": [
 							{"HostIsOneOf": [
 								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
-								"cfl.re", "goo.gl", "ow.ly", "shorturl.at"
+								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com"
 							]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
@@ -213,7 +248,7 @@
 			}}
 		},
 		{
-			"comment": "https://profile.example1.com.example2.com -> https://profile1.example1.com",
+			"comment": "https://profile.example.com.example.com -> https://profile.example.com",
 			"condition": {"All": [
 				{"Not": {"FlagIsSet": "no-unmangle"}},
 				{"TreatErrorAsFail": {"PartContains": {
@@ -286,7 +321,9 @@
 					{"SetHost": "www.tumblr.com"},
 					{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
 					"RemoveQuery"
-				]}
+				]},
+				"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
+				"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]}
 			}
 		},
 
@@ -336,7 +373,7 @@
 				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
 			]},
 			"mapper": {"All": [
-				{"CopyPart": {"from": {"PathSegment": 1} , "to": {"QueryParam": "v"}}},
+				{"CopyPart": {"from": {"PathSegment": 1}, "to": {"QueryParam": "v"}}},
 				{"SetPart": {"part": "Path", "value": "watch"}}
 			]}
 		},
