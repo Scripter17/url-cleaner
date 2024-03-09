@@ -16,16 +16,15 @@ mod util;
 #[derive(Debug, Clone, Parser, Default)]
 struct Args {
     urls: Vec<Url>,
-    #[arg(short, long)]
-    config: Option<PathBuf>,
+    #[arg(short      , long)] config: Option<PathBuf>,
     #[arg(short      , long)] var   : Vec<String>,
     #[arg(short = 'V', long)] unvar : Vec<String>,
     #[arg(short      , long)] flag  : Vec<String>,
     #[arg(short = 'F', long)] unflag: Vec<String>,
-    #[arg(long)] read_cache  : Option<bool>,
-    #[arg(long)] write_cache : Option<bool>,
-    #[arg(long)] print_config: bool,
-    #[arg(long)] test_config : bool
+    #[cfg(feature = "cache")] #[arg(long)] read_cache  : Option<bool>,
+    #[cfg(feature = "cache")] #[arg(long)] write_cache : Option<bool>,
+    #[arg(             long)] print_config: bool,
+    #[arg(             long)] test_config : bool
 }
 
 impl From<Args> for (Vec<Url>, types::ParamsDiff) {
@@ -33,22 +32,22 @@ impl From<Args> for (Vec<Url>, types::ParamsDiff) {
         (
             args.urls,
             types::ParamsDiff {
-                vars: args.var.into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
-                unvars: args.unvar.into_iter().collect(),
-                flags: args.flag.into_iter().collect(),
-                unflags: args.unflag.into_iter().collect(),
-                read_cache: args.read_cache,
-                write_cache: args.write_cache
+                vars       : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
+                unvars     : args.unvar .into_iter().collect(),
+                flags      : args.flag  .into_iter().collect(),
+                unflags    : args.unflag.into_iter().collect(),
+                #[cfg(feature = "cache")] read_cache : args.read_cache,
+                #[cfg(feature = "cache")] write_cache: args.write_cache
             }
         )
     }
 }
 
 impl TryFrom<Args> for (Vec<Url>, types::Config) {
-    type Error=types::GetConfigError;
+    type Error = types::GetConfigError;
 
     fn try_from(args: Args) -> Result<Self, Self::Error> {
-        let mut config=types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
+        let mut config = types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
         let (urls, params_diff) = args.into();
         config.params.apply_diff(params_diff);
         Ok((urls, config))
@@ -58,19 +57,12 @@ impl TryFrom<Args> for (Vec<Url>, types::Config) {
 fn main() -> Result<(), types::CleaningError> {
     let args = Args::parse();
 
-    if args.print_config {
-        let (_, config): (Vec<Url>, types::Config) = args.try_into()?;
-        println!("{}", serde_json::to_string(&config)?);
-        std::process::exit(0);
-    }
+    let print_config = args.print_config;
+    let test_config = args.test_config;
+    let (urls, config): (Vec<Url>, types::Config) = args.try_into()?;
 
-    if args.test_config {
-        let (_, config): (Vec<Url>, types::Config) = args.try_into()?;
-        config.run_tests();
-        std::process::exit(0);
-    }
-
-    let (urls, config): (Vec<Url>, types::Config)=args.try_into()?;
+    if print_config {println!("{}", serde_json::to_string(&config)?);}
+    if test_config {config.clone().run_tests();}
 
     for mut url in urls {
         match config.apply(&mut url) {

@@ -81,7 +81,7 @@ impl Config {
     }
 
     /// # Panics
-    /// Panics if a test fails.
+    /// Panics if a call to [`Self::apply`] or a test fails.
     pub fn run_tests(mut self) {
         let original_params = self.params.clone();
         for test in self.tests.clone() {
@@ -108,10 +108,12 @@ pub struct Params {
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[serde(default, with = "crate::glue::headermap")]
     pub default_http_headers: HeaderMap,
-    /// If [`true`], disables reading from caches.
+    /// If [`true`], enables reading from caches. Defaults to [`true`]
+    #[cfg(feature = "cache")]
     #[serde(default = "get_true")]
     pub read_cache: bool,
-    /// If [`true`], disables writing to caches.
+    /// If [`true`], enables writing to caches. Defaults to [`true`]
+    #[cfg(feature = "cache")]
     #[serde(default = "get_true")]
     pub write_cache: bool
 }
@@ -130,8 +132,10 @@ pub struct ParamsDiff {
     /// Removes from [`Params::flags`]
     #[serde(default)] pub unflags: HashSet<String>,
     /// If [`Some`], sets [`Params::read_cache`].
+    #[cfg(feature = "cache")]
     #[serde(default)] pub read_cache : Option<bool>,
     /// If [`Some`], sets [`Params::write_cache`].
+    #[cfg(feature = "cache")]
     #[serde(default)] pub write_cache: Option<bool>
 }
 
@@ -167,8 +171,8 @@ impl Params {
         for var in diff.unvars {self.vars.remove(&var);}
         self.flags.extend(diff.flags);
         for flag in diff.unflags {self.flags.remove(&flag);}
-        if let Some(x) = diff.read_cache {self.read_cache=x;}
-        if let Some(x) = diff.write_cache {self.write_cache=x;}
+        #[cfg(feature = "cache")] if let Some(read_cache ) = diff.read_cache  {self.read_cache  = read_cache ;}
+        #[cfg(feature = "cache")] if let Some(write_cache) = diff.write_cache {self.write_cache = write_cache;}
     }
 
     /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
@@ -248,7 +252,7 @@ pub enum GetConfigError {
 /// Tests to make sure a [`Config`] is working as intended.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigTest {
-    /// The [`ParamsDiff`] to apply to the [`Config::Params`] for this test.
+    /// The [`ParamsDiff`] to apply to the [`Config::params`] for this test.
     #[serde(default)]
     pub params_diff: ParamsDiff,
     /// A list of URLs to test and the expected results.

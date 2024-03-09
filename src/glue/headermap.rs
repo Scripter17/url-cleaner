@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, ser::{Serializer}, de::{Deserializer, Error as _}};
-use reqwest::header::HeaderMap;
+use serde::{Deserialize, ser::{Serializer, Error as _}, de::{Deserializer, Error as _}};
+#[allow(unused_imports)] // [`headervalue`] is imported for [`serialize`]'s documentation.
+use reqwest::header::{HeaderMap, HeaderValue};
 
 /// Deserializes a [`HeaderMap`]
 /// # Errors
@@ -13,11 +14,7 @@ pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderMap, D::Erro
 
 /// Serializes [`HeaderMap`].
 /// # Errors
-/// Actually just panics when a non-ASCII header value is found.
-/// TODO: Fix that.
-/// # Panics
-/// Panics when a non-ASCII header value is found.
-/// TODO: Fix that.
+/// When the call to [`HeaderValue::to_str`] returns an error, that error is returned.
 pub fn serialize<S: Serializer>(x: &HeaderMap, s: S) -> Result<S::Ok, S::Error> {
-    s.collect_map(x.into_iter().map(|(k, v)| (k.as_str().to_string(), v.to_str().expect("ASCII header value.").to_string())))
+    s.collect_map(x.into_iter().map(|(k, v)| v.to_str().map(|v| (k.as_str().to_string(), v.to_string()))).collect::<Result<HashMap<_, _>, _>>().map_err(S::Error::custom)?)
 }
