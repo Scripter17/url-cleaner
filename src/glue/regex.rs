@@ -31,6 +31,12 @@ impl From<RegexParts> for RegexWrapper {
     }
 }
 
+impl From<RegexWrapper> for (OnceLock<Regex>, RegexParts) {
+    fn from(value: RegexWrapper) -> Self {
+        (value.regex, value.parts)
+    }
+}
+
 impl FromStr for RegexWrapper {
     type Err = Box<RegexSyntaxError>;
 
@@ -77,42 +83,42 @@ impl RegexWrapper {
 
     /// A convenience wrapper around [`Regex::find`].
     /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// Panics whenever [`Self::get_regex`] would as it calls that method.
     pub fn find<'h>(&self, haystack: &'h str) -> Option<Match<'h>> {
         self.get_regex().find(haystack)
     }
 
     /// A convenience wrapper around [`Regex::captures`].
     /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// Panics whenever [`Self::get_regex`] would as it calls that method.
     pub fn captures<'h>(&self, haystack: &'h str) -> Option<Captures<'h>> {
         self.get_regex().captures(haystack)
     }
 
     /// A convenience wrapper around [`Regex::is_match`].
     /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// Panics whenever [`Self::get_regex`] would as it calls that method.
     pub fn is_match(&self, haystack: &str) -> bool {
         self.get_regex().is_match(haystack)
     }
 
     /// A convenience wrapper around [`Regex::replace`].
     /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// Panics whenever [`Self::get_regex`] would as it calls that method.
     pub fn replace<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
         self.get_regex().replace(haystack, rep)
     }
 
     /// A convenience wrapper around [`Regex::replace_all`].
     /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// Panics whenever [`Self::get_regex`] would as it calls that method.
     pub fn replace_all<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
         self.get_regex().replace_all(haystack, rep)
     }
 
     /// A convenience wrapper around [`Regex::replacen`].
     /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that function.
+    /// Panics whenever [`Self::get_regex`] would as it calls that method.
     pub fn replacen<'h, R: Replacer>(&self, haystack: &'h str, limit: usize, rep: R) -> Cow<'h, str> {
         self.get_regex().replacen(haystack, limit, rep)
     }

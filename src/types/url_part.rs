@@ -159,7 +159,7 @@ pub enum UrlPart {
     /// # Setting
     /// Can be `None`, but that's a no-op.
     /// # Set-get identity.
-    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`GetPartError::SegmentNotFound`].
+    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`GetUrlPartError::SegmentNotFound`].
     /// This may be changed to a different error and/or work for some inputs that currently error.
     /// # Examples
     /// ```
@@ -432,7 +432,7 @@ pub enum UrlPart {
     /// # Setting
     /// Can be `None`.
     /// # Set-get identity.
-    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`GetPartError::SegmentNotFound`].
+    /// Trying to set an out-of-range segment to anything (even `None`) returns the error [`GetUrlPartError::SegmentNotFound`].
     /// This may be changed to a different error and/or work for some inputs that currently error.
     /// # Examples
     /// ```
@@ -625,60 +625,63 @@ impl UrlPart {
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         #[cfg(feature = "debug")]
         println!("_PartGet: {self:?}");
-        match self {
+        Some(match self {
             // Ordered hopefully most used to least used.
 
             // No shortcut conditions/mappers.
 
-            Self::PathSegment(n)   => neg_nth(url.path_segments()?, *n).map(Cow::Borrowed),
-            Self::QueryParam(name) => url.query_pairs().find(|(name2, _)| name==name2).map(|(_, v)| v),
+            Self::PathSegment(n)   => Cow::Borrowed(neg_nth(url.path_segments()?, *n)?),
+            Self::QueryParam(name) => url.query_pairs().find(|(name2, _)| name==name2)?.1,
 
             // Miscellaneous.
 
-            Self::Query                  => url.query().map(Cow::Borrowed),
-            Self::Whole                  => Some(Cow::Borrowed(url.as_str())),
-            Self::Host                   => url.host_str().map(Cow::Borrowed),
-            Self::DomainSegment(n)       => neg_nth(url.domain()?.split('.'), *n).map(Cow::Borrowed),
-            Self::Subdomain              => {
+            Self::Query            => Cow::Borrowed(url.query()?),
+            Self::Whole            => Cow::Borrowed(url.as_str()),
+            Self::Host             => Cow::Borrowed(url.host_str()?),
+            Self::DomainSegment(n) => Cow::Borrowed(neg_nth(url.domain()?.split('.'), *n)?),
+            Self::Subdomain        => {
                 let url_domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
-                Some(Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.rsplit_once('.')?.0))
+                Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.strip_suffix('.')?)
             },
-            Self::NotSubdomain           => url.domain().and_then(psl::domain_str).map(Cow::Borrowed),
-            Self::NotDomainSuffix        => {
+            Self::NotSubdomain    => Cow::Borrowed(psl::domain_str(url.domain()?)?),
+            Self::NotDomainSuffix => {
                 let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
-                match domain.strip_suffix(psl::suffix_str(domain)?).map(|x| Cow::Borrowed(x.strip_suffix('.').unwrap_or(x))) {
-                    Some(Cow::Borrowed("")) => None,
-                    nds => nds
-                }
+                Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.strip_suffix('.')?)
             },
-            Self::NotSubdomainNotSuffix  => {
-                url.domain().map(|x| x.strip_suffix('.').unwrap_or(x).strip_suffix(psl::suffix_str(x)?))??
-                    .rsplit('.').nth(1).map(Cow::Borrowed)
+            Self::NotSubdomainNotSuffix => {
+                // Cow::Borrowed(url.domain().map(|x| x.strip_suffix('.').unwrap_or(x).strip_suffix(psl::suffix_str(x)?))??
+                //     .rsplit('.').nth(1)?)
+                // let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
+                // Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.rsplit('.').nth(1)?)
+                Cow::Borrowed(psl::domain_str(url.domain()?)?.split_once('.')?.0)
             },
-            Self::Domain                 => url.domain().map(Cow::Borrowed),
-            Self::DomainSuffix           => url.domain().and_then(psl::suffix_str).map(Cow::Borrowed),
-            Self::Port                   => url.port_or_known_default().map(|port| Cow::Owned(port.to_string())), // I cannot be bothered to add number handling.
-            Self::Path                   => if url.cannot_be_a_base() {None} else {Some(Cow::Borrowed(url.path()))},
+            Self::Domain       => Cow::Borrowed(url.domain()?),
+            Self::DomainSuffix => Cow::Borrowed(url.domain().and_then(psl::suffix_str)?),
+            Self::Port         => Cow::Owned(url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
+            Self::Path         => if url.cannot_be_a_base() {None?} else {Cow::Borrowed(url.path())},
 
-            Self::Origin => Some(Cow::Owned(url.origin().unicode_serialization())),
+            Self::Origin => Cow::Owned(url.origin().unicode_serialization()),
 
             Self::PartSegments {part, split, start, end} => {
                 // TODO: Change to always borrow.
-                Some(Cow::Owned(neg_vec_keep(part.get(url)?.split(split), *start, *end)?.join(split)))
+                Cow::Owned(neg_vec_keep(part.get(url)?.split(split), *start, *end)?.join(split))
             },
 
             // The things that are likely very rarely used.
 
-            Self::Scheme                 => Some(Cow::Borrowed(url.scheme())),
-            Self::Username               => Some(Cow::Borrowed(url.username())),
-            Self::Password               => url.password().map(Cow::Borrowed),
-            Self::Fragment               => url.fragment().map(Cow::Borrowed),
-            Self::BeforeDomainSegment(_) => None,
-            Self::NextDomainSegment      => None,
-            Self::BeforePathSegment(_)   => None,
-            Self::NextPathSegment        => None,
-            Self::NoneToEmptyString(part) => part.get(url).or(Some(Cow::Borrowed("")))
-        }
+            Self::Scheme                  => Cow::Borrowed(url.scheme()),
+            Self::Username                => Cow::Borrowed(url.username()),
+            Self::Password                => Cow::Borrowed(url.password()?),
+            Self::Fragment                => Cow::Borrowed(url.fragment()?),
+            Self::BeforeDomainSegment(_)  => None?,
+            Self::NextDomainSegment       => None?,
+            Self::BeforePathSegment(_)    => None?,
+            Self::NextPathSegment         => None?,
+
+            // Miscellaneous.
+
+            Self::NoneToEmptyString(part) => part.get(url).unwrap_or(Cow::Borrowed(""))
+        })
     }
 
     /// Replaces the specified part of the provided URL with the provided value.
@@ -686,7 +689,7 @@ impl UrlPart {
     /// # Errors
     /// TODO
     #[allow(clippy::missing_panics_doc)]
-    pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), SetPartError> {
+    pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), SetUrlPartError> {
         #[cfg(feature = "debug")]
         println!("PartSet: {self:?}");
         match (self, to) {
@@ -694,16 +697,16 @@ impl UrlPart {
             (Self::Query, _) => url.set_query(to),
             (Self::Host , _) => url.set_host (to)?,
             (Self::BeforeDomainSegment(n), _) => if let Some(to) = to {
-                let fixed_n=neg_index(*n, url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetPartError::SegmentNotFound)?;
-                if fixed_n==url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count() {Err(GetPartError::SegmentNotFound)?;}
-                set_domain(url, &url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').take(fixed_n).chain([to]).chain(url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').skip(fixed_n)).collect::<Vec<_>>().join("."))?;
+                let fixed_n=neg_index(*n, url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetUrlPartError::SegmentNotFound)?;
+                if fixed_n==url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').count() {Err(GetUrlPartError::SegmentNotFound)?;}
+                set_domain(url, &url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').take(fixed_n).chain([to]).chain(url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').skip(fixed_n)).collect::<Vec<_>>().join("."))?;
             },
             (Self::DomainSegment(n), _) => {
-                let fixed_n=neg_index(*n, url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetPartError::SegmentNotFound)?;
-                if fixed_n==url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').count() {Err(GetPartError::SegmentNotFound)?;}
+                let fixed_n=neg_index(*n, url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').count()).ok_or(GetUrlPartError::SegmentNotFound)?;
+                if fixed_n==url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').count() {Err(GetUrlPartError::SegmentNotFound)?;}
                 match to {
-                    Some(to) => set_domain(url, &url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("."))?,
-                    None     => set_domain(url, &url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("."))?
+                    Some(to) => set_domain(url, &url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("."))?,
+                    None     => set_domain(url, &url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("."))?
                 }
             },
             (Self::Subdomain, _) => {
@@ -711,12 +714,12 @@ impl UrlPart {
                     Some(to) => {
                         let mut new_domain=to.to_string();
                         new_domain.push('.');
-                        new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?);
+                        new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(GetUrlPartError::HostIsNotADomain)?);
                         set_domain(url, &new_domain)?;
                     },
                     None => {
                         #[allow(clippy::unnecessary_to_owned)]
-                        set_domain(url, &Self::NotSubdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?.into_owned())?;
+                        set_domain(url, &Self::NotSubdomain.get(url).ok_or(GetUrlPartError::HostIsNotADomain)?.into_owned())?;
                     }
                 }
             },
@@ -731,22 +734,22 @@ impl UrlPart {
                 },
                 None => {
                     #[allow(clippy::unnecessary_to_owned)]
-                    set_domain(url, &Self::Subdomain.get(url).ok_or(GetPartError::HostIsNotADomain)?.to_string())?;
+                    set_domain(url, &Self::Subdomain.get(url).ok_or(GetUrlPartError::HostIsNotADomain)?.to_string())?;
                 }
             },
             #[allow(clippy::unnecessary_to_owned)]
             (Self::NotDomainSuffix, _) => {
                 let domain = match to {
-                    Some(to) => format!("{}.{}", to, Self::DomainSuffix.get(url).ok_or(GetPartError::HostIsNotADomain)?),
-                    None     => Self::DomainSuffix.get(url).ok_or(GetPartError::HostIsNotADomain)?.to_string()
+                    Some(to) => format!("{}.{}", to, Self::DomainSuffix.get(url).ok_or(GetUrlPartError::HostIsNotADomain)?),
+                    None     => Self::DomainSuffix.get(url).ok_or(GetUrlPartError::HostIsNotADomain)?.to_string()
                 };
                 set_domain(url, &domain)?;
             },
             (Self::NotSubdomainNotSuffix, _) => {
                 #[allow(clippy::useless_format)]
-                set_domain(url, &match (Self::Subdomain.get(url), to, Self::DomainSuffix.get(url), Self::Domain.get(url).ok_or(GetPartError::HostIsNotADomain)?.ends_with('.')) {
+                set_domain(url, &match (Self::Subdomain.get(url), to, Self::DomainSuffix.get(url), url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.ends_with('.')) {
                     // I do not know or care if any of these are impossible.
-                    // Future me here: I care slightly. I'm pretty sure `(Some(_), None, Some(_), _)` can't happen.
+                    // Future me here: I care slightly.
                     (Some(subdomain), Some(to), Some(suffix), true ) => format!("{subdomain}.{to}.{suffix}."),
                     (Some(subdomain), Some(to), Some(suffix), false) => format!("{subdomain}.{to}.{suffix}"),
                     (Some(subdomain), Some(to), None        , true ) => format!("{subdomain}.{to}."),
@@ -767,7 +770,7 @@ impl UrlPart {
             },
             (Self::Domain        , Some(to)) => set_domain(url, to)?,
             (Self::DomainSuffix  , _) => {
-                let not_suffix=Self::NotDomainSuffix.get(url).ok_or(GetPartError::PartIsNone)?;
+                let not_suffix=Self::NotDomainSuffix.get(url).ok_or(GetUrlPartError::PartIsNone)?;
                 match &*match to {
                     Some(to) => format!("{}.{}", not_suffix, to),
                     None     => not_suffix.to_string()
@@ -778,39 +781,39 @@ impl UrlPart {
             },
             (Self::NextDomainSegment, _) => if let Some(to) = to {
                 if to.is_empty() {
-                    Err(SetPartError::DomainSegmentCannotBeEmpty)?
+                    Err(SetUrlPartError::DomainSegmentCannotBeEmpty)?
                 } else {
-                    let domain = url.domain().ok_or(GetPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".");
+                    let domain = url.domain().ok_or(GetUrlPartError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".");
                     set_domain(url, &domain)?;
                 }
             },
-            (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetPartError::InvalidPort)).transpose()?).map_err(|()| SetPartError::CannotSetPort)?,
+            (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetUrlPartError::InvalidPort)).transpose()?).map_err(|()| SetUrlPartError::CannotSetPort)?,
             (Self::Origin, Some(to)) => if let Origin::Tuple(scheme, host, port) = Url::parse(to)?.origin() {
-                url.set_scheme(&scheme).map_err(|_| SetPartError::CannotSetScheme)?;
+                url.set_scheme(&scheme).map_err(|_| SetUrlPartError::CannotSetScheme)?;
                 #[allow(clippy::unnecessary_to_owned)]
                 url.set_host(Some(&host.to_string()))?;
                 if url.port_or_known_default()!=Some(port) {
-                    url.set_port(Some(port)).map_err(|()| SetPartError::CannotSetPort)?;
+                    url.set_port(Some(port)).map_err(|()| SetUrlPartError::CannotSetPort)?;
                 }
             },
             (Self::BeforePathSegment(n), _) => if let Some(to) = to {
-                let fixed_n=neg_index(*n, url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.count()).ok_or(GetPartError::SegmentNotFound)?;
-                if fixed_n==url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.count() {Err(GetPartError::SegmentNotFound)?;}
-                url.set_path(&url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.take(fixed_n).chain([to]).chain(url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.skip(fixed_n)).collect::<Vec<_>>().join("/"));
+                let fixed_n=neg_index(*n, url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.count()).ok_or(GetUrlPartError::SegmentNotFound)?;
+                if fixed_n==url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.count() {Err(GetUrlPartError::SegmentNotFound)?;}
+                url.set_path(&url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.take(fixed_n).chain([to]).chain(url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.skip(fixed_n)).collect::<Vec<_>>().join("/"));
             },
             (Self::PathSegment(n), _) => {
-                let fixed_n=neg_index(*n, url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.count()).ok_or(GetPartError::SegmentNotFound)?;
+                let fixed_n=neg_index(*n, url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.count()).ok_or(GetUrlPartError::SegmentNotFound)?;
                 match to {
                     // Apparently `Iterator::intersperse` was stabilized but had issues with itertools. Very annoying.
-                    Some(to) => url.set_path(&url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("/")),
-                    None     => url.set_path(&url.path_segments().ok_or(GetPartError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("/"))
+                    Some(to) => url.set_path(&url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.enumerate().       map(|(i, x)| if i==fixed_n {to} else {x}).collect::<Vec<_>>().join("/")),
+                    None     => url.set_path(&url.path_segments().ok_or(GetUrlPartError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)|   (i!=fixed_n).then_some(x)).collect::<Vec<_>>().join("/"))
                 }
             },
-            (Self::NextPathSegment, _) => if let Some(to) = to {url.path_segments_mut().map_err(|()| GetPartError::UrlDoesNotHaveAPath)?.pop_if_empty().push(to);},
+            (Self::NextPathSegment, _) => if let Some(to) = to {url.path_segments_mut().map_err(|()| GetUrlPartError::UrlDoesNotHaveAPath)?.pop_if_empty().push(to);},
             (Self::Path, _) => match (url.cannot_be_a_base(), to) {
                 (false, Some(to)) => url.set_path(to),
-                (false, None    ) => Err(SetPartError::UrlMustHaveAPath)?,
-                (true , Some(_) ) => Err(SetPartError::UrlCannotHaveAPath)?,
+                (false, None    ) => Err(SetUrlPartError::UrlMustHaveAPath)?,
+                (true , Some(_) ) => Err(SetUrlPartError::UrlCannotHaveAPath)?,
                 (true , None    ) => {}
             },
             (Self::QueryParam(name), _) => {
@@ -831,9 +834,9 @@ impl UrlPart {
             }
 
             (Self::PartSegments {part, split, start, end}, _) => {
-                let temp=part.get(url).ok_or(GetPartError::PartIsNone)?;
+                let temp=part.get(url).ok_or(GetUrlPartError::PartIsNone)?;
                 let mut temp2=temp.split(split).collect::<Vec<_>>();
-                temp2.splice(neg_range(*start, *end, temp2.len()).ok_or(GetPartError::SegmentRangeNotFound)?, to);
+                temp2.splice(neg_range(*start, *end, temp2.len()).ok_or(GetUrlPartError::SegmentRangeNotFound)?, to);
                 part.set(url, Some(&temp2.join(split)))?;
             },
             (Self::NoneToEmptyString(part), _) => part.set(url, to.or(Some("")))?,
@@ -841,11 +844,11 @@ impl UrlPart {
             // The things that are likely very rarely used.
 
             (Self::Whole   , Some(to)) => *url=Url::parse(to)?,
-            (Self::Scheme  , Some(to)) => url.set_scheme  (to).map_err(|()| SetPartError::CannotSetScheme)?,
-            (Self::Username, Some(to)) => url.set_username(to).map_err(|()| SetPartError::CannotSetUsername)?,
-            (Self::Password, _       ) => url.set_password(to).map_err(|()| SetPartError::CannotSetPassword)?,
+            (Self::Scheme  , Some(to)) => url.set_scheme  (to).map_err(|()| SetUrlPartError::CannotSetScheme)?,
+            (Self::Username, Some(to)) => url.set_username(to).map_err(|()| SetUrlPartError::CannotSetUsername)?,
+            (Self::Password, _       ) => url.set_password(to).map_err(|()| SetUrlPartError::CannotSetPassword)?,
             (Self::Fragment, _) => url.set_fragment(to),
-            (_, None) => Err(SetPartError::PartCannotBeNone)?
+            (_, None) => Err(SetUrlPartError::PartCannotBeNone)?
         }
         Ok(())
     }
@@ -864,26 +867,26 @@ impl UrlPart {
     }
 }
 
+#[inline]
 fn is_valid_domain(domain: &str) -> bool {
-    let mut temp = Url::parse("https://example.com").expect("https://example.com to be a valid URL");
-    temp.set_host(Some(domain)).is_ok() && temp.domain().is_some()
+    matches!(url::Host::parse(domain), Ok(url::Host::Domain(_)))
 }
 
 /// When setting a domain it is generally ideal to make sure it's actually a domain.
-/// Unfortunately [`Url`] doesn't have a `set_domain` method.
-fn set_domain(url: &mut Url, domain: &str) -> Result<(), SetPartError> {
+/// Unfortunately [`Url`] doesn't have a `set_domain` method, so this checks if [`url::Host::parse`]ing `domain` returns a [`url::Host::Domain`].
+fn set_domain(url: &mut Url, domain: &str) -> Result<(), SetUrlPartError> {
     if is_valid_domain(domain) {
         url.set_host(Some(domain))?;
     } else {
-        Err(SetPartError::InvalidDomain)?;
+        Err(SetUrlPartError::InvalidDomain)?;
     }
     Ok(())
 }
 
 /// The enum of all possible errors [`UrlPart::set`] can return when getting a URL part.
-/// [`UrlPart::get`] returns an [`Option`], but it's still conceptually useful to keep this separate from [`SetPartError`].
+/// [`UrlPart::get`] returns an [`Option`], but it's still useful to keep this separate from [`SetUrlPartError`] as a kind of sub-error-thing for clarity.
 #[derive(Debug, Error, PartialEq, Eq)]
-pub enum GetPartError {
+pub enum GetUrlPartError {
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
     #[error("The URL's host is not a domain.")]
     HostIsNotADomain,
@@ -903,13 +906,13 @@ pub enum GetPartError {
 
 /// The enum of all possible errors [`UrlPart::set`] can return.
 #[derive(Debug, Error, PartialEq, Eq)]
-pub enum SetPartError {
+pub enum SetUrlPartError {
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-    /// Returned when a [`GetPartError`] is encountered.
+    /// Returned when a [`GetUrlPartError`] is encountered.
     #[error(transparent)]
-    GetPartError(#[from] GetPartError),
+    GetUrlPartError(#[from] GetUrlPartError),
     /// Returned when attempting to set a [`UrlPart`] that cannot be `None` to `None`.
     #[error("Attempted to set a part that cannot be None to None.")]
     PartCannotBeNone,
@@ -949,9 +952,9 @@ pub enum UrlPartModificationError {
     /// Returned when the requested part is `None`.
     #[error("Cannot modify the requested part because it doesn't have a value.")]
     PartIsNone,
-    /// Returned when a [`SetPartError`] is encountered.
+    /// Returned when a [`SetUrlPartError`] is encountered.
     #[error(transparent)]
-    SetPartError(#[from] SetPartError),
+    SetUrlPartError(#[from] SetUrlPartError),
     /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError)
@@ -983,9 +986,8 @@ mod tests {
     macro_rules! identity_check_2 {
         ($urls:expr, $($expr:expr),+) => {
             $(for mut url in $urls.iter().map(|url| Url::parse(url).unwrap()) {
-                println!("{:?}: {url:?}", $expr);
                 let old=$expr.get(&url).map(Cow::into_owned);
-                $expr.set(&mut url, old.as_deref()).unwrap();
+                $expr.set(&mut url, old.as_deref()).expect(&format!("{:?}: {url:?}", $expr));
                 assert_eq!($expr.get(&url).as_deref(), old.as_deref());
             })+
         };

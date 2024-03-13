@@ -13,7 +13,7 @@ use crate::types::*;
 use crate::glue::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(remote = "Self")]
 pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].

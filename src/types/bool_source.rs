@@ -5,7 +5,7 @@ use url::Url;
 use crate::types::*;
 
 /// Various possible ways to get a boolean value.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum BoolSource {
     // Debug/constants.
 

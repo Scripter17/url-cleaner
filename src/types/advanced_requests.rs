@@ -11,7 +11,7 @@ use crate::types::*;
 use crate::glue::*;
 
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct RequestConfig {
     /// The URL to send the request to. If [`None`], uses the URL being cleaned.
     #[cfg(feature = "string-source")]
@@ -22,7 +22,7 @@ pub struct RequestConfig {
     #[serde(default)]
     pub url: Option<String>,
     /// The HTTP method to use.
-    #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method", default = "get")]
+    #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method", default = "get_get")]
     pub method: Method,
     /// The headers to send in the request in addition to the default headers provided by [`Params::default_http_headers`].
     #[serde(with = "headermap")]
@@ -34,7 +34,7 @@ pub struct RequestConfig {
     pub response_handler: ResponseHandler
 }
 
-const fn get() -> Method {Method::GET}
+const fn get_get() -> Method {Method::GET}
 
 /// The enum of all possible errors [`RequestConfig::make`] and [`RequestConfig::response`] can return.
 #[derive(Debug, Error)]
@@ -103,7 +103,7 @@ impl RequestConfig {
 }
 
 /// The ways one can set the body in an HTTP request.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum RequestBody {
     /// [`reqwest::blocking::RequestBuilder::body`].
     /// # Errors
@@ -176,7 +176,7 @@ impl RequestBody {
 }
 
 /// The ways one can get a [`String`] from a [`reqwest::blocking::Response`].
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub enum ResponseHandler {
     /// [`reqwest::blocking::Response::text`].
     #[default]
@@ -212,7 +212,7 @@ pub enum ResponseHandlerError {
     #[error("A StringSource was None where it has to be Some.")]
     StringSourceIsNone,
     /// Returned when the requested header is not found.
-    #[error("The requested header wes not found.")]
+    #[error("The requested header was not found.")]
     HeaderNotFound,
     /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[error(transparent)]

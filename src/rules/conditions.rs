@@ -10,7 +10,7 @@ use crate::glue::*;
 use crate::types::*;
 
 /// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
     // Debug/constants.
@@ -512,9 +512,9 @@ pub enum ConditionError {
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
-    /// Returned when a [`GetPartError`] is encountered.
+    /// Returned when a [`GetUrlPartError`] is encountered.
     #[error(transparent)]
-    GetPartError(#[from] GetPartError),
+    GetUrlPartError(#[from] GetUrlPartError),
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[cfg(feature = "string-source")]
     #[error("The specified StringSource returned None.")]
@@ -615,7 +615,7 @@ impl Condition {
 
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::PathIs(value) => if url.cannot_be_a_base() {
-                Err(GetPartError::UrlDoesNotHaveAPath)?
+                Err(GetUrlPartError::UrlDoesNotHaveAPath)?
             } else {
                 url.path()==value
             },

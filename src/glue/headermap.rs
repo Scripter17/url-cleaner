@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, ser::{Serializer, Error as _}, de::{Deserializer, Error as _}};
-#[allow(unused_imports)] // [`headervalue`] is imported for [`serialize`]'s documentation.
+#[allow(unused_imports)] // [`HeaderValue`] is imported for [`serialize`]'s documentation.
 use reqwest::header::{HeaderMap, HeaderValue};
 
 /// Deserializes a [`HeaderMap`]

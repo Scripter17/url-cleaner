@@ -13,7 +13,7 @@ use crate::glue::*;
 use crate::types::*;
 
 /// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub enum Mapper {
 
@@ -239,7 +239,7 @@ pub enum Mapper {
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
-    /// If the part specified by `from` is None and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`SetPartError::PartCannotBeNone`].
+    /// If the part specified by `from` is None and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`SetUrlPartError::PartCannotBeNone`].
     CopyPart {
         /// The part to get the value from.
         from: UrlPart,
@@ -368,9 +368,9 @@ pub enum MapperError {
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
     UrlPartModificationError(#[from] UrlPartModificationError),
-    /// Returned when a [`SetPartError`] is encountered.
+    /// Returned when a [`SetUrlPartError`] is encountered.
     #[error(transparent)]
-    SetPartError(#[from] SetPartError),
+    SetUrlPartError(#[from] SetUrlPartError),
     /// Returned when the provided URL does not have a path.
     #[error("The URL does not have a path.")]
     UrlDoesNotHaveAPath,

@@ -13,6 +13,7 @@ pub mod rules;
 pub mod glue;
 /// Types that don't fit in the other modules.
 pub mod types;
+/// Various weird internal helpers.
 pub(crate) mod util;
 
 /// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
@@ -29,8 +30,6 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params_diff: was
 }
 
 /// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
-/// Please note that if an error is returned, the URL is left in a partially modified state.
-/// [`rules::Mapper::All`] doesn't apply changes until all the contained mappers work without errors, so at the very least you don't need to worry about that.
 /// # Errors
 /// If applying the rules returns an error, that error is returned.
 /// Please note that if an error is returned, the URL is left in a partially modified state.
@@ -56,9 +55,5 @@ fn js_value_to_config(config: wasm_bindgen::JsValue) -> Result<Cow<'static, type
 
 #[cfg(target_family = "wasm")]
 fn js_value_to_params_diff(params_diff: wasm_bindgen::JsValue) -> Result<Option<types::ParamsDiff>, JsError> {
-    Ok(if params_diff.is_null() {
-        None
-    } else {
-        serde_wasm_bindgen::from_value(params_diff)?
-    })
+    Ok(serde_wasm_bindgen::from_value(params_diff)?)
 }

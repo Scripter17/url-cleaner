@@ -326,7 +326,8 @@
 					"RemoveQuery"
 				]},
 				"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
-				"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]}
+				"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
+				"bbc.com": {"RemoveQueryParamsMatching": {"StringLocation": {"location": "Start", "value": "at_"}}}
 			}
 		},
 

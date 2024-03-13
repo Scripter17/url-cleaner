@@ -15,7 +15,7 @@ pub use mappers::*;
 pub use crate::types::*;
 
 /// The core unit describing when and how URLs are modified.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Rule {
     /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
@@ -148,7 +148,7 @@ impl Rule {
 
 /// A thin wrapper around a vector of rules.
 /// Exists mainly for convenience.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Rules(pub Vec<Rule>);
 
 impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
@@ -171,7 +171,7 @@ impl DerefMut for Rules {
 #[allow(dead_code)]
 impl Rules {
     /// Applies each rule to the provided [`Url`] in order.
-    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`].
+    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], and [`RuleError::HostNotInMap`].
     /// If an error is returned, `url` is left unmodified.
     /// # Errors
     /// If the error [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, it is ignored.

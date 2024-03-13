@@ -20,7 +20,7 @@ use reqwest::header::HeaderMap;
 use crate::rules::Rules;
 
 /// The rules and rule parameters describing how to modify URLs.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default)]
@@ -74,12 +74,13 @@ impl Config {
 
     /// Applies the rules to the provided URL using the parameters contained in [`Self::params`].
     /// # Errors
-    /// If the call to `Rules::apply` returns an error, that error is returned.
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
     #[allow(dead_code)]
     pub fn apply(&self, url: &mut Url) -> Result<(), crate::rules::RuleError> {
         self.rules.apply(url, &self.params)
     }
 
+    /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
     /// Panics if a call to [`Self::apply`] or a test fails.
     pub fn run_tests(mut self) {
@@ -96,7 +97,7 @@ impl Config {
 }
 
 /// Configuration options to choose the behaviour of a few select [`crate::rules::Condition`]s and [`crate::rules::Mapper`]s.
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Params {
     /// Works with [`crate::rules::Condition::RuleVariableIs'`].
     #[serde(default)]
@@ -121,7 +122,7 @@ pub struct Params {
 const fn get_true() -> bool {true}
 
 /// Allows changing [`Config::params`].
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ParamsDiff {
     /// Adds to [`Params::vars`].
     #[serde(default)] pub vars  : HashMap<String, String>,
@@ -165,7 +166,14 @@ where P: AsRef<Path>, {
 }
 
 impl Params {
-    /// Overwrites part of `self` with `from`.
+    /// Applies the differences specified in `diff` to `self`.
+    /// In order:
+    /// 1. Extends `self.vars` with `diff.vars`, overwriting any keys found in both.
+    /// 2. Removes all keys found in `diff.unvars` from `self.vars`.
+    /// 3. Extends `self.flags` with `diff.flags`.
+    /// 4. Removes all flags found in `diff.unflags` from `self.flags`.
+    /// 5. If `diff.read_cache` is [`Some`], sets `self.read_cache` to the contained value.
+    /// 6. If `diff.write_cache` is [`Some`], sets `self.write_cache` to the contained value.
     pub fn apply_diff(&mut self, diff: ParamsDiff) {
         self.vars.extend(diff.vars);
         for var in diff.unvars {self.vars.remove(&var);}
@@ -243,14 +251,14 @@ pub enum GetConfigError {
     #[allow(dead_code)]
     #[error("URL Cleaner was compiled without default config.")]
     NoDefaultConfig,
-    /// The default cpnfig compiled into URL Cleaner isn't valid JSON.
+    /// The default config compiled into URL Cleaner isn't valid JSON.
     #[allow(dead_code)]
     #[error(transparent)]
     CantParseDefaultConfig(serde_json::Error)
 }
 
 /// Tests to make sure a [`Config`] is working as intended.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ConfigTest {
     /// The [`ParamsDiff`] to apply to the [`Config::params`] for this test.
     #[serde(default)]

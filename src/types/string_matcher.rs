@@ -8,7 +8,7 @@ use crate::types::*;
 use crate::glue::*;
 
 /// A general API for matching strings with a variety of methods.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringMatcher {
     /// Always passes.
     Always,

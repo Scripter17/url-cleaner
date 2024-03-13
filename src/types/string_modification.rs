@@ -8,7 +8,7 @@ use crate::util::*;
 
 /// A wrapper around [`str`]'s various substring modification functions.
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone,Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringModification {
     /// Does nothing.
     None,
@@ -406,9 +406,11 @@ pub enum StringModification {
     /// ````
     #[cfg(feature = "commands")]
     CommandOutput(CommandConfig),
-    /// Please see [`serde_json::Value::pointer`] for details.
-    /// # Errros
-    /// TODO
+    /// [`serde_json::Value::pointer`].
+    /// Does not do any string conversions. I should probably add an option for that.
+    /// # Errors
+    /// If the pointer doesn't point to anything, returns the error [`StringModificationError::JsonValueNotFound`].
+    /// If the pointer points to a non-string value, returns the error [`StringModificationError::JsonValueIsNotAString`].
     JsonPointer(String)
 }
 

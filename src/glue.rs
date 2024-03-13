@@ -26,8 +26,8 @@ macro_rules! string_or_struct_magic {
                 impl<'de> serde::de::Visitor<'de> for V {
                     type Value = $type;
 
-                    fn expecting(&self, _f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-                        todo!()
+                    fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+                        f.write_str("Expected a string or a struct.")
                     }
 
                     fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {

@@ -1,3 +1,8 @@
+//! Various math helper function thingies.
+//! Very weird, very jank.
+//! May or may not be made pub if useful.
+//! Which is to say probably not.
+
 use std::ops::Bound;
 
 /// Loops negative `index`es around similar to Python.
@@ -22,7 +27,7 @@ pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
     }
 }
 
-/// `f` but allows for `None` to represent open range ends.
+/// [`neg_index`] but allows for `None` to represent open range ends.
 fn neg_maybe_index(index: Option<isize>, len: usize) -> Option<Option<usize>> {
     index.map(|index| neg_index(index, len))
 }

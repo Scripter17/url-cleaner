@@ -17,13 +17,11 @@ use which::which;
 
 use crate::string_or_struct_magic;
 
-/// The enabled form of the wrapper around [`Command`].
-/// Only the necessary methods are exposed for the sake of simplicity.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// Instructions on how to make and run a [`Command`] object
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]
 pub struct CommandConfig {
     /// The program to run.
-    /// If the path is not found, looks for it in the PATH.
     pub program: String,
     /// The arguments to run [`Self::program`] with
     #[serde(default)]
@@ -76,9 +74,6 @@ pub enum CommandError {
     ExplicitError
 }
 
-// Serde helper functions
-fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
-
 impl CommandConfig {
     /// Creates a [`Command`] using [`Self`]
     pub fn make_command(&self, url: Option<&Url>) -> Command {
@@ -100,8 +95,9 @@ impl CommandConfig {
         ret
     }
 
-    /// Checks if the command's [`std::process::Command::get_program`] exists. Checks the system's PATH.
-    /// Uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the PATH.
+    /// Checks if the path at [`Self::program`] exists.
+    /// Currently does not do any permissions or executability checks.
+    /// Uses [`which::which`] to emulate PATH handling.
     #[must_use]
     pub fn exists(&self) -> bool {
         PathBuf::from(&self.program).exists() || which(&self.program).is_ok()
@@ -109,7 +105,7 @@ impl CommandConfig {
 
     /// Runs the command and gets the exit code.
     /// # Errors
-    /// If the command returns no exit code, returns the error [`Err(CommandError::SignalTermination)`].
+    /// If the command returns no exit code, returns the error [`CommandError::SignalTermination`].
     pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
         self.make_command(Some(url)).status()?.code().ok_or(CommandError::SignalTermination)
     }
@@ -161,10 +157,10 @@ impl CommandConfig {
 
 /// The enabled form of `OutputHandler`.
 /// Before a [`CommandConfig`] returns its output, it passes it through this to allow for piping and control flow.
-/// For the sake of simplicity, [`OutputHandler::handle`] returns a [`Result<String, CommandError>`] instead of [`Result<Vec<u8>, CommandError>`].
-#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
+/// For the sake of simplicity, [`Self::handle`] returns a [`Result<String, CommandError>`] instead of [`Result<Vec<u8>, CommandError>`].
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
 pub enum OutputHandler {
-    /// Return the STDOUT.
+    /// Return the STDOUT. This is the default handler.
     #[default]
     ReturnStdout,
     /// Return the STDERR.
@@ -192,6 +188,9 @@ pub enum OutputHandler {
         r#else: Box<OutputHandler>
     }
 }
+
+// Serde helper functions
+fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
 
 impl OutputHandler {
     /// Returns a string from the requested part of the command's output.
