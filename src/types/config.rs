@@ -17,7 +17,7 @@ use url::Url;
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 use reqwest::header::HeaderMap;
 
-use crate::rules::Rules;
+use crate::types::*;
 
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -76,7 +76,7 @@ impl Config {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     #[allow(dead_code)]
-    pub fn apply(&self, url: &mut Url) -> Result<(), crate::rules::RuleError> {
+    pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
         self.rules.apply(url, &self.params)
     }
 
@@ -96,13 +96,13 @@ impl Config {
     }
 }
 
-/// Configuration options to choose the behaviour of a few select [`crate::rules::Condition`]s and [`crate::rules::Mapper`]s.
+/// Configuration options to choose the behaviour of a few select [`Condition`]s and [`Mapper`]s.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Params {
-    /// Works with [`crate::rules::Condition::RuleVariableIs'`].
+    /// Works with [`Condition::RuleVariableIs'`].
     #[serde(default)]
     pub vars: HashMap<String, String>,
-    /// Works with [`crate::rules::Condition::FlagIsSet`].
+    /// Works with [`Condition::FlagIsSet`].
     #[serde(default)]
     pub flags: HashSet<String>,
     /// The default headers to send in HTTP requests.

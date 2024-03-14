@@ -5,7 +5,7 @@ use crate::util::*;
 
 /// A wrapper around [`str`]'s various substring searching functions.
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
     /// Always passes.
     Always,
@@ -56,40 +56,39 @@ pub enum StringLocation {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::Anywhere.satisfied_by("abcdef", "cde").is_ok_and(|x| x==true );
-    /// StringLocation::Anywhere.satisfied_by("abcdef", "efg").is_ok_and(|x| x==false);
+    /// assert_eq!(StringLocation::Anywhere.satisfied_by("abcdef", "cde").unwrap(), true );
+    /// assert_eq!(StringLocation::Anywhere.satisfied_by("abcdef", "efg").unwrap(), false);
     /// ```
-    #[default]
     Anywhere,
     /// Checks if an instance of the needle exists at the start of the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::Start.satisfied_by("abcdef", "abc").is_ok_and(|x| x==true );
-    /// StringLocation::Start.satisfied_by("abcdef", "bcd").is_ok_and(|x| x==false);
+    /// assert_eq!(StringLocation::Start.satisfied_by("abcdef", "abc").unwrap(), true );
+    /// assert_eq!(StringLocation::Start.satisfied_by("abcdef", "bcd").unwrap(), false);
     /// ```
     Start,
     /// Checks if an instance of the needle exists at the end of the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::End.satisfied_by("abcdef", "def").is_ok_and(|x| x==true );
-    /// StringLocation::End.satisfied_by("abcdef", "cde").is_ok_and(|x| x==false);
+    /// assert_eq!(StringLocation::End.satisfied_by("abcdef", "def").unwrap(), true );
+    /// assert_eq!(StringLocation::End.satisfied_by("abcdef", "cde").unwrap(), false);
     /// ```
     End,
     /// Checks if an instance of the needle starts and ends at the specified range in the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::RangeIs{start: Some( 0), end: Some( 3)}.satisfied_by("abcdef", "abc"   ).is_ok_and(|x| x==true);
-    /// StringLocation::RangeIs{start: Some( 1), end: Some( 4)}.satisfied_by("abcdef", "bcd"   ).is_ok_and(|x| x==true);
-    /// StringLocation::RangeIs{start: Some( 0), end: Some( 6)}.satisfied_by("abcdef", "abcdef").is_ok_and(|x| x==true);
-    /// StringLocation::RangeIs{start: Some( 5), end: Some( 6)}.satisfied_by("abcdef", "f"     ).is_ok_and(|x| x==true);
-    /// StringLocation::RangeIs{start: Some( 6), end: Some( 7)}.satisfied_by("abcdef", "f"     ).is_err();
-    /// StringLocation::RangeIs{start: Some( 6), end: None    }.satisfied_by("abcdef", ""      ).is_ok_and(|x| x==true);
+    /// assert_eq!(StringLocation::RangeIs{start: Some( 0), end: Some( 3)}.satisfied_by("abcdef", "abc"   ).unwrap(), true);
+    /// assert_eq!(StringLocation::RangeIs{start: Some( 1), end: Some( 4)}.satisfied_by("abcdef", "bcd"   ).unwrap(), true);
+    /// assert_eq!(StringLocation::RangeIs{start: Some( 0), end: Some( 6)}.satisfied_by("abcdef", "abcdef").unwrap(), true);
+    /// assert_eq!(StringLocation::RangeIs{start: Some( 5), end: Some( 6)}.satisfied_by("abcdef", "f"     ).unwrap(), true);
+    /// StringLocation::RangeIs{start: Some( 6), end: Some( 7)}.satisfied_by("abcdef", "f"     ).unwrap_err();
+    /// assert_eq!(StringLocation::RangeIs{start: Some( 6), end: None    }.satisfied_by("abcdef", ""      ).unwrap(), true);
     ///
-    /// StringLocation::RangeIs{start: Some(-1), end: None    }.satisfied_by("abcdef", "f"     ).is_ok_and(|x| x==true);
-    /// StringLocation::RangeIs{start: Some(-2), end: Some(-1)}.satisfied_by("abcdef", "e"     ).is_ok_and(|x| x==true);
+    /// assert_eq!(StringLocation::RangeIs{start: Some(-1), end: None    }.satisfied_by("abcdef", "f"     ).unwrap(), true);
+    /// assert_eq!(StringLocation::RangeIs{start: Some(-2), end: Some(-1)}.satisfied_by("abcdef", "e"     ).unwrap(), true);
     /// ```
     RangeIs {
         /// The start of the range to check.
@@ -101,38 +100,38 @@ pub enum StringLocation {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::StartsAt( 0).satisfied_by("abcdef", "abc").is_ok_and(|x| x==true );
-    /// StringLocation::StartsAt( 1).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==true );
-    /// StringLocation::StartsAt( 5).satisfied_by("abcdef", "f"  ).is_ok_and(|x| x==true );
-    /// StringLocation::StartsAt( 0).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==false);
-    /// StringLocation::StartsAt( 1).satisfied_by("abcdef", "cde").is_ok_and(|x| x==false);
-    /// StringLocation::StartsAt( 5).satisfied_by("abcdef", "def").is_ok_and(|x| x==false);
+    /// assert_eq!(StringLocation::StartsAt( 0).satisfied_by("abcdef", "abc").unwrap(), true );
+    /// assert_eq!(StringLocation::StartsAt( 1).satisfied_by("abcdef", "bcd").unwrap(), true );
+    /// assert_eq!(StringLocation::StartsAt( 5).satisfied_by("abcdef", "f"  ).unwrap(), true );
+    /// assert_eq!(StringLocation::StartsAt( 0).satisfied_by("abcdef", "bcd").unwrap(), false);
+    /// assert_eq!(StringLocation::StartsAt( 1).satisfied_by("abcdef", "cde").unwrap(), false);
+    /// assert_eq!(StringLocation::StartsAt( 5).satisfied_by("abcdef", "def").unwrap(), false);
     ///
-    /// StringLocation::StartsAt(-2).satisfied_by("abcdef", "ef" ).is_ok_and(|x| x==true);
+    /// assert_eq!(StringLocation::StartsAt(-2).satisfied_by("abcdef", "ef" ).unwrap(), true);
     /// ```
     StartsAt(isize),
     /// Checks if an instance of the needle ends at the specified point in the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::EndsAt(3).satisfied_by("abcdef", "abc").is_ok_and(|x| x==true );
-    /// StringLocation::EndsAt(4).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==true );
-    /// StringLocation::EndsAt(6).satisfied_by("abcdef", "def").is_ok_and(|x| x==true );
-    /// StringLocation::EndsAt(6).satisfied_by("abcdef", "f"  ).is_ok_and(|x| x==true );
-    /// StringLocation::EndsAt(3).satisfied_by("abcdef", "bcd").is_ok_and(|x| x==false);
-    /// StringLocation::EndsAt(4).satisfied_by("abcdef", "cde").is_ok_and(|x| x==false);
+    /// assert_eq!(StringLocation::EndsAt(3).satisfied_by("abcdef", "abc").unwrap(), true );
+    /// assert_eq!(StringLocation::EndsAt(4).satisfied_by("abcdef", "bcd").unwrap(), true );
+    /// assert_eq!(StringLocation::EndsAt(6).satisfied_by("abcdef", "def").unwrap(), true );
+    /// assert_eq!(StringLocation::EndsAt(6).satisfied_by("abcdef", "f"  ).unwrap(), true );
+    /// assert_eq!(StringLocation::EndsAt(3).satisfied_by("abcdef", "bcd").unwrap(), false);
+    /// assert_eq!(StringLocation::EndsAt(4).satisfied_by("abcdef", "cde").unwrap(), false);
     /// ```
     EndsAt(isize),
     /// Checks if an instance of the needle exists within the specified range of the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::RangeHas{start: Some(0), end: Some(1)}.satisfied_by("abcdef", "a"   ).is_ok_and(|x| x==true );
-    /// StringLocation::RangeHas{start: Some(0), end: Some(2)}.satisfied_by("abcdef", "a"   ).is_ok_and(|x| x==true );
-    /// StringLocation::RangeHas{start: Some(0), end: Some(6)}.satisfied_by("abcdef", "bcde").is_ok_and(|x| x==true );
-    /// StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "a"   ).is_ok_and(|x| x==false);
-    /// StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "f"   ).is_ok_and(|x| x==true );
-    /// StringLocation::RangeHas{start: Some(0), end: Some(7)}.satisfied_by("abcdef", ""    ).is_err();
+    /// assert_eq!(StringLocation::RangeHas{start: Some(0), end: Some(1)}.satisfied_by("abcdef", "a"   ).unwrap(), true );
+    /// assert_eq!(StringLocation::RangeHas{start: Some(0), end: Some(2)}.satisfied_by("abcdef", "a"   ).unwrap(), true );
+    /// assert_eq!(StringLocation::RangeHas{start: Some(0), end: Some(6)}.satisfied_by("abcdef", "bcde").unwrap(), true );
+    /// assert_eq!(StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "a"   ).unwrap(), false);
+    /// assert_eq!(StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "f"   ).unwrap(), true );
+    /// StringLocation::RangeHas{start: Some(0), end: Some(7)}.satisfied_by("abcdef", ""    ).unwrap_err();
     /// ```
     RangeHas {
         /// The start of the range to check.
@@ -144,22 +143,22 @@ pub enum StringLocation {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::After(0).satisfied_by("abcdef", "abcdef").is_ok_and(|x| x==true );
-    /// StringLocation::After(1).satisfied_by("abcdef", "bcdef" ).is_ok_and(|x| x==true );
-    /// StringLocation::After(1).satisfied_by("abcdef", "1"     ).is_ok_and(|x| x==false);
-    /// StringLocation::After(6).satisfied_by("abcdef", "f"     ).is_ok_and(|x| x==false);
-    /// StringLocation::After(7).satisfied_by("abcdef", ""      ).is_err();
+    /// assert_eq!(StringLocation::After(0).satisfied_by("abcdef", "abcdef").unwrap(), true );
+    /// assert_eq!(StringLocation::After(1).satisfied_by("abcdef", "bcdef" ).unwrap(), true );
+    /// assert_eq!(StringLocation::After(1).satisfied_by("abcdef", "1"     ).unwrap(), false);
+    /// assert_eq!(StringLocation::After(6).satisfied_by("abcdef", "f"     ).unwrap(), false);
+    /// StringLocation::After(7).satisfied_by("abcdef", ""      ).unwrap_err();
     /// ```
     After(isize),
     /// Checks if an instance of the needle exists before the specified point in the haystack.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// StringLocation::Before(0).satisfied_by("abcdef", ""   ).is_ok_and(|x| x==true );
-    /// StringLocation::Before(1).satisfied_by("abcdef", "a"  ).is_ok_and(|x| x==true );
-    /// StringLocation::Before(6).satisfied_by("abcdef", "a"  ).is_ok_and(|x| x==true );
-    /// StringLocation::Before(4).satisfied_by("abcdef", "def").is_ok_and(|x| x==false);
-    /// StringLocation::Before(7).satisfied_by("abcdef", "a"  ).is_err();
+    /// assert_eq!(StringLocation::Before(0).satisfied_by("abcdef", ""   ).unwrap(), true );
+    /// assert_eq!(StringLocation::Before(1).satisfied_by("abcdef", "a"  ).unwrap(), true );
+    /// assert_eq!(StringLocation::Before(6).satisfied_by("abcdef", "a"  ).unwrap(), true );
+    /// assert_eq!(StringLocation::Before(4).satisfied_by("abcdef", "def").unwrap(), false);
+    /// StringLocation::Before(7).satisfied_by("abcdef", "a"  ).unwrap_err();
     /// ```
     Before(isize),
     /// Checks equality.
@@ -190,7 +189,7 @@ pub enum StringLocation {
     /// StringLocation::NthSegment {split: "/".to_string(), n:0, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==false;
     /// StringLocation::NthSegment {split: "/".to_string(), n:1, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==true;
     /// StringLocation::NthSegment {split: "/".to_string(), n:2, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap()==false;
-    /// StringLocation::NthSegment {split: "/".to_string(), n:3, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").is_err();
+    /// StringLocation::NthSegment {split: "/".to_string(), n:3, location: Box::new(StringLocation::Start)}.satisfied_by("abc/def/ghi", "d").unwrap_err();
     /// ```
     NthSegment {
         /// The string to split by.

@@ -39,8 +39,13 @@
 			"pairs": [["https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"]]
 		},
 		{
-			"comment": "Just makes sure IP URLs don't cause any errors.",
-			"pairs": [["https://127.0.0.1", "https://127.0.0.1"]]
+			"comment": "Verify weird inputs cause no issues",
+			"pairs": [
+				["https://127.0.0.1", "https://127.0.0.1"],
+				["https://com", "https://com"],
+				["ftp://127.0.0.1", "ftp://127.0.0.1"],
+				["file://a/b/c", "file://a/b/c"]
+			]
 		}
 	],
 	"rules": [
@@ -64,12 +69,10 @@
 						]},
 						"mapper": {"TryElse": {
 							"try": {"GetUrlFromQueryParam": "url"},
-							"else": {
-								"SetPart": {
-									"part": "Whole",
-									"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
-								}
-							}
+							"else": { "SetPart": {
+								"part": "Whole",
+								"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
+							}}
 						}}
 					},
 
@@ -82,12 +85,10 @@
 						]},
 						"mapper": {"TryElse": {
 							"try": {"GetUrlFromQueryParam": "url"},
-							"else": {
-								"SetPart": {
-									"part": "Whole",
-									"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
-								}
-							}
+							"else": {"SetPart": {
+								"part": "Whole",
+								"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
+							}}
 						}}
 					},
 
@@ -156,7 +157,16 @@
 							{"MaybeWWWDomain": "tinyurl.com"},
 							{"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}
 						]},
-						"mapper": {"ExtractUrlFromPage": {"regex": {"pattern": "let url = \\\"(.+)\\\""}}}
+						"mapper": {"SetPart": {
+							"part": "Whole",
+							"value": {"Modified": {
+								"source": {"HttpRequest": {}},
+								"modification": {"RegexCaptures": {
+									"regex": "let url = \\\"(.+)\\\"",
+									"replace": "$1"
+								}}
+							}}
+						}}
 					},
 
 
@@ -440,6 +450,16 @@
 
 		{
 			"condition": {"All": [
+				{"MaybeWWWDomain": "twitter.com"},
+				{"PathIs": "/i/flow/login"}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": {"QueryParam": "redirect_after_login"}, "to": "Path"}},
+				{"SetPart": {"part": "Query", "value": null}}
+			]}
+		},
+		{
+			"condition": {"All": [
 				{"QualifiedDomain": "twitter.com"},
 				{"Not": {"PathIs": "/search"}}
 			]},
@@ -604,7 +624,7 @@
 					"part": "Origin",
 					"value": {"ExtractPart": {
 						"part": "Origin",
-						"source": {"ResponseHeader": {"name": "Onion-Location"}}
+						"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
 					}}
 				}}
 			}

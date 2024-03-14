@@ -7,8 +7,6 @@ use std::borrow::Cow;
 use wasm_bindgen::prelude::*;
 use url::Url;
 
-/// The logic for conditions and mappers.
-pub mod rules;
 /// Wrappers for [`regex::Regex`], [`glob::Pattern`], and [`std::process::Command`].
 pub mod glue;
 /// Types that don't fit in the other modules.
@@ -33,7 +31,7 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params_diff: was
 /// # Errors
 /// If applying the rules returns an error, that error is returned.
 /// Please note that if an error is returned, the URL is left in a partially modified state.
-/// [`rules::Mapper::All`] doesn't apply changes until all the contained mappers work without errors, so at the very least you don't need to worry about that.
+/// [`types::Mapper::All`] doesn't apply changes until all the contained mappers work without errors, so at the very least you don't need to worry about that.
 pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params_diff: Option<types::ParamsDiff>) -> Result<(), types::CleaningError> {
     let mut config=match config {
         Some(config) => config.clone(),

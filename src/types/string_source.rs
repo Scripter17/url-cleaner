@@ -5,8 +5,6 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 use url::Url;
 use thiserror::Error;
-#[cfg(all(feature = "http", not(target_family = "wasm")))]
-use reqwest::header::HeaderMap;
 
 use crate::string_or_struct_magic;
 use crate::types::*;
@@ -34,7 +32,7 @@ pub enum StringSource {
     /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// let url = Url::parse("https://example.com").unwrap();
-    /// StringSource::String("abc".to_string()).get(&url, &Params::default()).is_ok_and(|x| x==Some(Cow::Borrowed("abc")));
+    /// assert_eq!(StringSource::String("abc".to_string()).get(&url, &Params::default()).unwrap(), Some(Cow::Borrowed("abc")));
     /// ```
     String(String),
     /// Gets the specified URL part.
@@ -47,7 +45,7 @@ pub enum StringSource {
     /// # use url_cleaner::types::UrlPart;
     /// let url = Url::parse("https://example.com").unwrap();
     /// let params = Params::default();
-    /// StringSource::Part(UrlPart::Domain).get(&url, &Params::default()).is_ok_and(|x| x==Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&url, &Params::default()).unwrap(), Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
     /// Gets the specified variable's value.
@@ -60,7 +58,7 @@ pub enum StringSource {
     /// # use std::collections::HashMap;
     /// let url = Url::parse("https://example.com").unwrap();
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// StringSource::Var("abc".to_string()).get(&url, &params).is_ok_and(|x| x==Some(Cow::Borrowed("xyz")));
+    /// assert_eq!(StringSource::Var("abc".to_string()).get(&url, &params).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(String),
     /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
@@ -76,8 +74,8 @@ pub enum StringSource {
     /// let params_1 = Params::default();
     /// let params_2 = Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()};
     /// let x = StringSource::IfFlag {flag: "abc".to_string(), then: Box::new(StringSource::String("xyz".to_string())), r#else: Box::new(StringSource::Part(UrlPart::Domain))};
-    /// x.get(&url, &params_1).is_ok_and(|x| x==Some(Cow::Borrowed("example.com")));
-    /// x.get(&url, &params_2).is_ok_and(|x| x==Some(Cow::Borrowed("xyz")));
+    /// assert_eq!(x.get(&url, &params_1).unwrap(), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(x.get(&url, &params_2).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     IfFlag {
         /// The name of the flag to check.
@@ -99,6 +97,27 @@ pub enum StringSource {
     },
     /// Joins a list of strings.
     /// By default, `join` is `""` so the strings are concatenated.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// # use std::borrow::Cow;
+    /// assert_eq!(
+    ///     StringSource::Join {
+    ///         sources: vec![
+    ///             StringSource::String(".".to_string()),
+    ///             StringSource::Part(UrlPart::NotSubdomain)
+    ///         ],
+    ///         join: "".to_string()
+    ///     }.get(
+    ///         &Url::parse("https://abc.example.com.example.com").unwrap(),
+    ///         &Params::default()
+    ///     ).unwrap(),
+    ///     Some(Cow::Owned(".example.com".to_string()))
+    /// );
+    /// ```
     Join {
         /// The list of string sources to join.
         sources: Vec<Self>,
@@ -106,54 +125,47 @@ pub enum StringSource {
         #[serde(default)]
         join: String
     },
-    /// Sends an HTTP GET request to the URL being cleaned and returns the value of the specified response header.
-    /// # Errors
-    /// If the call to [`Params::http_client`] returns an error, that error is returned.
-    /// If the call to [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
-    /// If the specified header isn't found, returns the error [`StringSourceError::HeaderNotFound`].
-    /// If the call to [`reqwest::header::HeaderValue::to_str`] returns an error, that error is returned.
-    /// Note that, as I write this, [`reqwest::header::HeaderValue::to_str`] only works if the result is valid ASCII.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    ResponseHeader {
-        /// The name of the response header to get the value of.
-        name: String,
-        /// The headers to send in the HTTP GET request.
-        #[serde(default, with = "crate::glue::headermap")]
-        headers: HeaderMap
-    },
     /// Parses `source` as a URL and gets the specified value.
-    /// Useful when used with [`Self::ResponseHeader`].
+    /// Useful when used with [`Self::HttpRequest`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::UrlPart;
+    /// # use url::Url;
+    /// # use std::borrow::Cow;
+    /// assert_eq!(
+    ///     StringSource::ExtractPart {
+    ///         source: Box::new(StringSource::String("https://example.com".to_string())),
+    ///         part: UrlPart::Scheme
+    ///     }.get(
+    ///         &Url::parse("https://not-relevant-at-all.com").unwrap(),
+    ///         &Params::default()
+    ///     ).unwrap(),
+    ///     Some(Cow::Borrowed("https"))
+    /// );
+    /// ```
     ExtractPart {
         /// The string to parse and extract `part` from.
         source: Box<Self>,
         /// The part to extract from `source`.
         part: UrlPart
     },
-    /// Sends an HTTP GET request to the URL being cleaned and extracts a string from the response's body.
-    /// # Errors
-    /// If the call to [`Params::http_client`] returns an error, that error is returned.
-    /// If the call to [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
-    /// If the call to [`reqwest::Response::text`] returns an error, that error is returned.
-    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
-    ExtractFromPage {
-        /// The headers to send in the HTTP GET request.
-        #[serde(default, with = "crate::glue::headermap")]
-        headers: HeaderMap,
-        /// The regex to use to extract part of the response body.
-        regex: RegexWrapper,
-        /// The substitution for use in [`regex::Captures::expand`].
-        /// Defaults to `"$1"`.
-        #[serde(default = "box_efp_expand")]
-        expand: Box<Self>
-    },
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     HttpRequest(Box<RequestConfig>),
     /// If the contained [`Self`] returns `None`, instead return `Some(Cow::Borrowed(""))`
-    NoneToEmptyString(Box<Self>)
+    NoneToEmptyString(Box<Self>),
+    /// Run a command and return its output.
+    #[cfg(feature = "commands")]
+    CommandOutput {
+        /// The command to run.
+        command: CommandConfig,
+        /// The STDIN to put into the command.
+        #[serde(default)]
+        stdin: Option<Box<Self>>
+    }
 }
-
-fn box_efp_expand() -> Box<StringSource> {Box::new(StringSource::String("$1".to_string()))}
 
 impl FromStr for StringSource {
     type Err = Infallible;
@@ -206,7 +218,11 @@ pub enum StringSourceError {
     /// Returned when a [`ResponseHandlerError`] is encountered.
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     #[error(transparent)]
-    ReponseHandlerError(#[from] ResponseHandlerError)
+    ReponseHandlerError(#[from] ResponseHandlerError),
+    /// Returned when a [`CommandError`] is encountered.
+    #[cfg(feature = "commands")]
+    #[error(transparent)]
+    CommandError(#[from] CommandError)
 }
 
 impl StringSource {
@@ -233,17 +249,7 @@ impl StringSource {
                 }
             },
             Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
-            #[cfg(all(feature = "http", not(target_family = "wasm")))]
-            Self::ResponseHeader{name, headers} => Some(Cow::Owned(params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.headers().get(name).ok_or(StringSourceError::HeaderNotFound)?.to_str()?.to_string())),
             Self::ExtractPart{source, part} => source.get(url, params)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x).map(|x| Cow::Owned(x.into_owned()))),
-            #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm")))]
-            Self::ExtractFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params)? {
-                let mut ret=String::new();
-                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(StringSourceError::NoRegexMatchesFound)?.expand(&expand, &mut ret);
-                Some(Cow::Owned(ret))
-            } else {
-                Err(StringSourceError::StringSourceIsNone)?
-            },
             #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(url, params)?)),
             Self::NoneToEmptyString(source) => source.get(url, params)?.or(Some(Cow::Borrowed(""))),
@@ -251,6 +257,14 @@ impl StringSource {
                 let ret=source.get(url, params);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nret: {ret:?}");
                 ret?
+            },
+            #[cfg(feature = "commands")]
+            Self::CommandOutput {command, stdin} => match stdin {
+                Some(stdin) => match stdin.get(url, params)? {
+                    Some(stdin) => Some(Cow::Owned(command.output(Some(url), Some(stdin.as_bytes()))?)),
+                    None => Some(Cow::Owned(command.output(Some(url), None)?))
+                },
+                None => Some(Cow::Owned(command.output(Some(url), None)?))
             },
             Self::Error => Err(StringSourceError::ExplicitError)?
         })

@@ -21,8 +21,7 @@ pub enum Rule {
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, Mapper};
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::{Rule, Mapper, Params};
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let rule=Rule::HostMap(HashMap::from_iter([
@@ -43,8 +42,7 @@ pub enum Rule {
     /// Runs at most `limit` times. (Defaults to 10).
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, Condition, Mapper};
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
     /// # use url_cleaner::types::UrlPart;
     /// # use url::Url;
     /// # use std::str::FromStr;
@@ -76,8 +74,7 @@ pub enum Rule {
     /// The basic condition mapper rule type.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::{Rule, Condition, Mapper};
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
     /// # use url::Url;
     /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```

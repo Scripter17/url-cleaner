@@ -13,23 +13,28 @@ use crate::glue::*;
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct RequestConfig {
-    /// The URL to send the request to. If [`None`], uses the URL being cleaned.
+    /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
     #[cfg(feature = "string-source")]
     #[serde(default)]
     pub url: Option<StringSource>,
-    /// The URL to send the request to. If [`None`], uses the URL being cleaned.
+    /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
     #[cfg(not(feature = "string-source"))]
     #[serde(default)]
     pub url: Option<String>,
-    /// The HTTP method to use.
+    /// The HTTP method to use. Defaults to [`Method::GET`].
     #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method", default = "get_get")]
     pub method: Method,
     /// The headers to send in the request in addition to the default headers provided by [`Params::default_http_headers`].
+    /// Defaults to an emprty [`HeaderMap`].
     #[serde(with = "headermap")]
+    #[serde(default)]
     pub headers: HeaderMap,
     /// The request body to send. Works with all methods but intended only for [`Method::POST`] requests.
+    /// Defaults to [`None`].
+    #[serde(default)]
     pub body: Option<RequestBody>,
     /// The method [`Self::response`] uses to get a [`String`] from the [`reqwest::blocking::Response`]
+    /// Defaults to [`ResponseHandler::Body`].
     #[serde(default)]
     pub response_handler: ResponseHandler
 }
@@ -219,7 +224,7 @@ pub enum ResponseHandlerError {
     ToStrError(#[from] reqwest::header::ToStrError),
     /// Returned when the requested cookie is not found.
     #[error("The requested cookie was not found.")]
-    CookieNotFound
+    CookieNotFound,
 }
 
 #[cfg(feature = "string-source")]

@@ -9,7 +9,7 @@ use url::Url;
 use crate::glue::*;
 use crate::types::*;
 
-/// The part of a [`crate::rules::Rule`] that specifies when the rule's mapper will be applied.
+/// The part of a [`crate::types::Rule`] that specifies when the rule's mapper will be applied.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
@@ -24,8 +24,7 @@ pub enum Condition {
     /// Always returns the error [`ConditionError::ExplicitError`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::Error.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
@@ -42,8 +41,7 @@ pub enum Condition {
     /// If the contained [`Self`] returns an error, treat it as a pass.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -53,8 +51,7 @@ pub enum Condition {
     /// If the contained [`Self`] returns an error, treat it as a fail.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -67,8 +64,7 @@ pub enum Condition {
     /// If `else` returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -107,8 +103,7 @@ pub enum Condition {
     /// If the contained [`Self`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -121,8 +116,7 @@ pub enum Condition {
     /// If any of the contained [`Self`]s returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -141,8 +135,7 @@ pub enum Condition {
     /// If any of the contained [`Self`]s returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -161,8 +154,7 @@ pub enum Condition {
     /// Passes if the URL's domain is or is a subdomain of the specified domain.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -174,8 +166,7 @@ pub enum Condition {
     /// `Condition::MaybeWWWDomain("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedDomain("example.com".to_string()), Condition::QualifiedDomain("www.example.com".to_string())])`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -185,8 +176,7 @@ pub enum Condition {
     /// Passes if the URL's domain is the specified domain.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -199,8 +189,7 @@ pub enum Condition {
     /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`Self::UnqualifiedDomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::HashSet;
     /// assert!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -213,8 +202,7 @@ pub enum Condition {
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -234,8 +222,7 @@ pub enum Condition {
     /// `Condition::MaybeWWWAnyTld("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnyTld("example.com".to_string()), Condition::QualifiedAnyTld("www.example.com".to_string())])`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -249,8 +236,7 @@ pub enum Condition {
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
@@ -268,8 +254,7 @@ pub enum Condition {
     /// Passes if the URL has a query of the specified name.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -279,8 +264,7 @@ pub enum Condition {
     /// Passes if the URL's path is the specified string.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com"   ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
     /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com/"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
@@ -295,9 +279,7 @@ pub enum Condition {
     /// Does not error when the specified part is `None`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -317,9 +299,7 @@ pub enum Condition {
     /// Does not error when the specified part is `None`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// assert!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
@@ -341,11 +321,8 @@ pub enum Condition {
     /// If `value.get` returns `None`, returns the error [`ConditionError::StringSourceIsNone`].
     /// # Examples
     /// ```
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::UrlPart;
-    /// # use url_cleaner::types::StringLocation;
     /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".try_into().unwrap(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".try_into().unwrap(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
@@ -356,7 +333,6 @@ pub enum Condition {
         /// The value to look for.
         value: StringSource,
         /// Where to look for the value.
-        #[serde(default)]
         r#where: StringLocation
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
@@ -364,11 +340,8 @@ pub enum Condition {
     /// If the specified part is `None`, returns the error [`ConditionError::UrlPartNotFound`].
     /// # Examples
     /// ```
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::UrlPart;
-    /// # use url_cleaner::types::StringLocation;
     /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
     /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
     /// ```
@@ -379,7 +352,6 @@ pub enum Condition {
         /// The value to look for.
         value: String,
         /// Where to look for the value.
-        #[serde(default)]
         r#where: StringLocation
     },
 
@@ -399,9 +371,7 @@ pub enum Condition {
     /// Passes if the specified variable is set to the specified value.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
@@ -422,8 +392,7 @@ pub enum Condition {
     /// Passes if the specified variable is set to the specified value.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
@@ -445,10 +414,9 @@ pub enum Condition {
     /// Passes if the specified rule flag is set.
     /// # Examples
     /// ```
+    /// # use url_cleaner::types::*;
     /// # use std::collections::HashSet;
     /// # use url::Url;
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
@@ -464,8 +432,7 @@ pub enum Condition {
     /// Checks the contained command's [`CommandConfig::exists`], which uses [this StackOverflow post](https://stackoverflow.com/a/37499032/10720231) to check the system's PATH.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;
@@ -480,8 +447,7 @@ pub enum Condition {
     /// If the command is does not have an exit code (which I'm told only happens when a command is killed by a signal), returns the error [`ConditionError::CommandError`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Condition;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;

@@ -8,7 +8,6 @@ use std::io;
 use clap::Parser;
 use url::Url;
 
-mod rules;
 mod glue;
 mod types;
 mod util;
@@ -32,10 +31,10 @@ impl From<Args> for (Vec<Url>, types::ParamsDiff) {
         (
             args.urls,
             types::ParamsDiff {
-                vars       : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
-                unvars     : args.unvar .into_iter().collect(),
-                flags      : args.flag  .into_iter().collect(),
-                unflags    : args.unflag.into_iter().collect(),
+                vars   : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
+                unvars : args.unvar .into_iter().collect(),
+                flags  : args.flag  .into_iter().collect(),
+                unflags: args.unflag.into_iter().collect(),
                 #[cfg(feature = "cache")] read_cache : args.read_cache,
                 #[cfg(feature = "cache")] write_cache: args.write_cache
             }

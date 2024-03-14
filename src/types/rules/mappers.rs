@@ -12,7 +12,7 @@ use reqwest::header::HeaderMap;
 use crate::glue::*;
 use crate::types::*;
 
-/// The part of a [`crate::rules::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
+/// The part of a [`crate::types::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub enum Mapper {
@@ -42,8 +42,7 @@ pub enum Mapper {
     /// If `else` returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
     /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
@@ -64,8 +63,7 @@ pub enum Mapper {
     /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url, &Params::default()).is_err());
@@ -78,8 +76,7 @@ pub enum Mapper {
     /// If one of the contained [`Self`]s returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).is_err());
@@ -90,8 +87,7 @@ pub enum Mapper {
     /// This is equivalent to wrapping every contained [`Self`] in a [`Self::IgnoreError`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
@@ -103,8 +99,7 @@ pub enum Mapper {
     /// If every contained [`Self`] errors, returns the last error.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
     /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
@@ -127,8 +122,7 @@ pub enum Mapper {
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
@@ -144,8 +138,7 @@ pub enum Mapper {
     /// Useful for websites that keep changing their tracking parameters and you're sick of updating your rule set.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
@@ -188,8 +181,7 @@ pub enum Mapper {
     /// If the URL cannot be a base, returns the error [`MapperError::UrlDoesNotHaveAPath`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::*;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
     /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url, &Params::default()).is_ok());
@@ -246,32 +238,6 @@ pub enum Mapper {
         /// The part to set to `from`'s value.
         to: UrlPart
     },   
-    /// Applies a regular expression substitution to the specified URL part.
-    /// Also note that ports are strings because I can't be bothered to handle numbers for just ports.
-    /// # Errors
-    /// If chosen part's getter returns `None`, returns the error [`MapperError::UrlPartNotFound`].
-    #[cfg(all(feature = "regex", feature = "string-source"))]
-    RegexSubUrlPart {
-        /// The name of the part to modify.
-        part: UrlPart,
-        /// The regex that is used to match and extract parts of the selected part.
-        regex: RegexWrapper,
-        /// The pattern the extracted parts are put into.
-        /// See [`regex::Regex::replace`] for details.
-        #[serde(default = "eufp_expand")]
-        replace: StringSource
-    },
-    #[cfg(all(feature = "regex", not(feature = "string-source")))]
-    RegexSubUrlPart {
-        /// The name of the part to modify.
-        part: UrlPart,
-        /// The regex that is used to match and extract parts of the selected part.
-        regex: RegexWrapper,
-        /// The pattern the extracted parts are put into.
-        /// See [`regex::Regex::replace`] for details.
-        #[serde(default = "eufp_expand")]
-        replace: String
-    },
 
     // Miscellaneous.
 
@@ -286,8 +252,7 @@ pub enum Mapper {
     /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
     /// # Examples
     /// ```
-    /// # use url_cleaner::rules::Mapper;
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
@@ -299,44 +264,8 @@ pub enum Mapper {
         /// The headers to send alongside the param's default headers.
         #[serde(default, with = "headermap")]
         headers: HeaderMap
-    },
-    /// Gets the URL as a webpage, uses `regex` to find a URL, and uses `expand` to join the regex capture's groups.
-    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm"), feature = "string-source"))]
-    ExtractUrlFromPage {
-        /// The headers to send alongside the param's default headers.
-        #[serde(default, with = "headermap")]
-        headers: HeaderMap,
-        /// The pattern to search for in the page.
-        regex: RegexWrapper,
-        /// Used for [`regex::Captures::expand`].
-        /// Defaults to `"$1"`.
-        #[serde(default = "eufp_expand")]
-        expand: StringSource
-    },
-    #[cfg(all(feature = "http", feature = "regex", not(target_family = "wasm"), not(feature = "string-source")))]
-    ExtractUrlFromPage {
-        /// The headers to send alongside the param's default headers.
-        #[serde(default, with = "headermap")]
-        headers: HeaderMap,
-        /// The pattern to search for in the page.
-        regex: RegexWrapper,
-        /// The substitution for use in [`regex::Captures::expand`].
-        /// Defaults to `"$1"`.
-        #[serde(default = "eufp_expand")]
-        expand: String
-    },
-    /// Execute a command and sets the URL to its output. Any argument parameter with the value `"{}"` is replaced with the URL. If the command STDOUT ends in a newline it is stripped.
-    /// Useful when what you want to do is really specific and niche.
-    /// # Errors
-    /// Returns the error [`CommandError`] if the command fails.
-    #[cfg(feature = "commands")]
-    ReplaceWithCommandOutput(CommandConfig)
+    }
 }
-
-#[cfg(all(feature = "regex", feature = "string-source"))]
-fn eufp_expand() -> StringSource {StringSource::String("$1".to_string())}
-#[cfg(all(feature = "regex", not(feature = "string-source")))]
-fn eufp_expand() -> String {"$1".to_string()}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Error, Debug)]
@@ -360,10 +289,6 @@ pub enum MapperError {
     /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
-    /// Returned when a [`CommandError`] is encountered.
-    #[cfg(feature = "commands")]
-    #[error(transparent)]
-    CommandError(#[from] CommandError),
     /// Returned when a [`UrlPartModificationError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
@@ -407,7 +332,7 @@ pub enum MapperError {
 
 impl Mapper {
     /// Applies the mapper to the provided URL.
-    /// Does not check with a [`crate::rules::conditions::Condition`]. You should do that yourself or use [`crate::rules::Rule`].
+    /// Does not check with a [`crate::types::Condition`]. You should do that yourself or use [`crate::types::Rule`].
     /// # Errors
     /// If the mapper has an error, that error is returned.
     /// See [`Mapper`]'s documentation for details.
@@ -518,18 +443,6 @@ impl Mapper {
             #[cfg(feature = "string-modification")]
             Self::ModifyPart{part, how} => part.modify(url, how, params)?,
             Self::CopyPart{from, to} => to.set(url, from.get(url).map(|x| x.into_owned()).as_deref())?,
-            #[cfg(all(feature = "regex", feature = "string-source"))]
-            Self::RegexSubUrlPart {part, regex, replace} => {
-                let old_part_value=part.get(url).ok_or(MapperError::UrlPartNotFound)?;
-                #[allow(clippy::unnecessary_to_owned)]
-                part.set(url, Some(&regex.replace(&old_part_value, replace.get(url, params)?.ok_or(MapperError::StringSourceIsNone)?).into_owned()))?;
-            },
-            #[cfg(all(feature = "regex", not(feature = "string-source")))]
-            Self::RegexSubUrlPart {part, regex, replace} => {
-                let old_part_value=part.get(url).ok_or(MapperError::UrlPartNotFound)?;
-                #[allow(clippy::unnecessary_to_owned)]
-                part.set(url, Some(&regex.replace(&old_part_value, replace).to_string()))?;
-            },
 
             // Error handling
 
@@ -550,22 +463,6 @@ impl Mapper {
                 params.write_redirect_to_cache(url, &new_url)?;
                 *url=new_url;
             },
-            #[cfg(all(feature = "http", not(target_family = "wasm"), feature = "regex", feature = "string-source"))]
-            Self::ExtractUrlFromPage{headers, regex, expand} => if let Some(expand) = expand.get(url, params)? {
-                let mut ret = String::new();
-                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::NoRegexMatchesFound)?.expand(&expand, &mut ret);
-                *url=Url::parse(&ret)?;
-            } else {
-                Err(MapperError::StringSourceIsNone)?
-            },
-            #[cfg(all(feature = "http", not(target_family = "wasm"), feature = "regex", not(feature = "string-source")))]
-            Self::ExtractUrlFromPage{headers, regex, expand} => {
-                let mut ret = String::new();
-                regex.captures(&params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.text()?).ok_or(MapperError::NoRegexMatchesFound)?.expand(expand, &mut ret);
-                *url=Url::parse(&ret)?;
-            },
-            #[cfg(feature = "commands")]
-            Self::ReplaceWithCommandOutput(command) => {*url=command.get_url(Some(url))?;},
 
             // Testing
 
