@@ -36,7 +36,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["http", "commands", "cache-redirects", "stdin", "default-config", "minify-included-strings",
-  "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "bool-source", "advanced-requests"]
+  "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "advanced-requests"]
 # Enables HTTP stuff. DOES NOT WORK ON WASM.
 http = ["dep:reqwest"]
 # Enables [`url_cleaner::glue::CommandWrapper`].
@@ -64,8 +64,6 @@ string-matcher = []
 string-modification = ["dep:percent-encoding"]
 # Enables [`types::StringSource`].
 string-source = []
-# Enables [`types::BoolSource`].
-bool-source = []
 # Enables [`types::RequestConfig`].
 advanced-requests = ["http", "reqwest/json", "reqwest/cookies"]
 

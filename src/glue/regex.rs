@@ -11,10 +11,10 @@ use regex_syntax::Error as RegexSyntaxError;
 use regex::{Regex, Replacer, Match, Captures};
 
 /// A wrapper around both a [`OnceLock`] of a [`Regex`] and a [`RegexParts`].
-/// This is because converting a [`Regex`] into a [`RegexParts`] is extremely complicated and because it allows lazy compilation of regexes.
-/// Because the contained regex and regex parts have to always be in sync, the fields of this struct are unfortunately private.
-/// In place of public fields, various [`Into`]'s and getters are defined for this type.
-/// This does not implement [`std::ops::Deref`] or [`std::convert::AsRef`]`<`[`Regex`]`>` because [`Self::get_regex`] can panic, which is disallowed in [`std::ops::Deref::deref`] and [`std::convert::AsRef::as_ref`].
+/// 
+/// The [`OnceLock`] is because compiling a regex takes a lot of time.
+/// 
+/// Including the [`RegexParts`] is because turning a [`Regex`] into a [`RegexParts`] is extremely complicated and requires a lot of [`unsafe`](https://doc.rust-lang.org/std/keyword.unsafe.html) code.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(from = "RegexParts", into = "RegexParts")]
 pub struct RegexWrapper {
@@ -66,14 +66,20 @@ impl AsRef<RegexParts> for RegexWrapper {
     }
 }
 
+impl AsRef<OnceLock<Regex>> for RegexWrapper {
+    fn as_ref(&self) -> &OnceLock<Regex> {
+        &self.regex
+    }
+}
+
 impl RegexWrapper {
     /// Gets the cached compiled regex and compiles it first if it's not already cached.
     /// # Panics
-    /// Although the regex is guaranteed to be syntactically valid, it is possible it will exceed the default DFA size limit. In that case, this method will panic.
+    /// Although the regex is guaranteed to be syntactically valid, it is possible it will exceed the default [DFA size limit](https://docs.rs/regex/latest/regex/index.html#untrusted-patterns). In that case, this method will panic.
     /// For the sake of API design, I consider that a niche enough case that this warning is sufficient.
     pub fn get_regex(&self) -> &Regex {
         self.regex.get_or_init(|| self.parts.build()
-            .expect("The regex to not exceed the DFA size limit."))
+            .expect("The regex to not exceed the DFA size limit.")) // https://docs.rs/regex/latest/regex/index.html#untrusted-patterns.
     }
 
     /// Gets the contained [`RegexParts`].

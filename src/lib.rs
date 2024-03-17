@@ -15,6 +15,7 @@ pub mod types;
 pub(crate) mod util;
 
 /// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
+/// 
 /// This function's name is set to `clean_url` in WASM for API simplicity.
 /// # Errors
 /// If the config or params can't be parsed, returns the parsing error.
@@ -28,17 +29,22 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params_diff: was
 }
 
 /// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
+/// 
+/// If an error is returned, the `url` is left unmodified.
 /// # Errors
 /// If applying the rules returns an error, that error is returned.
-/// Please note that if an error is returned, the URL is left in a partially modified state.
-/// [`types::Mapper::All`] doesn't apply changes until all the contained mappers work without errors, so at the very least you don't need to worry about that.
 pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params_diff: Option<types::ParamsDiff>) -> Result<(), types::CleaningError> {
-    let mut config=match config {
-        Some(config) => config.clone(),
-        None => types::Config::get_default()?.clone()
+    let config=match config {
+        Some(config) => config,
+        None => types::Config::get_default()?
     };
-    if let Some(params_diff) = params_diff {config.params.apply_diff(params_diff);}
-    config.apply(url)?;
+    if let Some(params_diff) = params_diff {
+        let mut config = config.clone();
+        config.params.apply_diff(params_diff);
+        config.apply(url)?;
+    } else {
+        config.apply(url)?;
+    }
     Ok(())
 }
 

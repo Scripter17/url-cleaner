@@ -1,4 +1,4 @@
-//! The [`rules::Rule`] type is how this crate modifies URLs.
+//! The [`rules::Rule`] type is the primary interface for URL manipulation.
 
 use url::Url;
 use std::ops::{Deref, DerefMut};
@@ -17,8 +17,11 @@ pub use crate::types::*;
 /// The core unit describing when and how URLs are modified.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Rule {
-    /// A faster but slightly less versatile mode that uses a hashmap to save on iterations in [`Rules`].
+    /// A faster but less versatile mode that uses a hashmap to save on iterations in [`Rules`].
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
+    /// # Errors
+    /// If the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
+    /// If the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::{Rule, Mapper, Params};
@@ -40,6 +43,8 @@ pub enum Rule {
     HostMap(HashMap<String, Mapper>),
     /// Runs all the contained rules until none of their conditions pass.
     /// Runs at most `limit` times. (Defaults to 10).
+    /// # Errors
+    /// If a contained [`Self`] returns any error other than [`RuleError::FailedCondition`], that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
@@ -72,6 +77,10 @@ pub enum Rule {
         limit: u8
     },
     /// The basic condition mapper rule type.
+    /// This is the last variant because of the `#[serde(untageed)]` macro.
+    /// # Errors
+    /// If the the contained condition or mapper returns an error, that error is returned.
+    /// If the [`Condition`] doesn't pass, returns the error [`RuleError::FailedCondition`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
@@ -84,7 +93,7 @@ pub enum Rule {
         condition: Condition,
         /// The mapper used to modify the provided URL.
         mapper: Mapper
-    }
+    },
 }
 
 // Serde helpers.
@@ -113,9 +122,7 @@ pub enum RuleError {
 impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
-    /// If the rule is a [`Self::Normal`] and the contained condition or mapper returns an error, that error is returned.
-    /// If the rule is a [`Self::HostMap`] and the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
-    /// If the rule is a [`Self::HostMap`] and the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
+    /// Please see the documentation on each variant of [`Self`].
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by(url, params)? {
@@ -124,6 +131,7 @@ impl Rule {
             } else {
                 Err(RuleError::FailedCondition)
             },
+            Self::HostMap(map) => Ok(map.get(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x)).ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url, params)?),
             Self::RepeatUntilNonePass{rules, limit} => {
                 for _ in 0..*limit {
                     let mut done=true;
@@ -137,8 +145,7 @@ impl Rule {
                     if done {break}
                 }
                 Ok(())
-            },
-            Self::HostMap(map) => Ok(map.get(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x)).ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url, params)?)
+            }
         }
     }
 }
@@ -171,7 +178,7 @@ impl Rules {
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], and [`RuleError::HostNotInMap`].
     /// If an error is returned, `url` is left unmodified.
     /// # Errors
-    /// If the error [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, it is ignored.
+    /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, that error is returned.
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in &**self {

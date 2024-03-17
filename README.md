@@ -31,7 +31,7 @@ Various flags are included in the default config for things I want to do frequen
 
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand various link shorteners that are too complex and/or obscure for me to implement.
 - `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc` and `https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
-- `no-https`: Disable replacing `http://` URLs with `https://` URLs.
+- `no-https-upgrade`: Disable replacing `http://` URLs with `https://` URLs.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
 - `discord-external`: Replace `images-ext-1.discordapp.net` URLs with the original images they refer to.

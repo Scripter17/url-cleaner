@@ -6,13 +6,13 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 use thiserror::Error;
 
-use crate::string_or_struct_magic;
 use crate::types::*;
 use crate::glue::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(remote = "Self")]
+#[serde(deny_unknown_fields)]
 pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].
     /// # Errors
@@ -20,6 +20,7 @@ pub enum StringSource {
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// Intended primarily for debugging logic errors.
+    /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
@@ -36,6 +37,8 @@ pub enum StringSource {
     /// ```
     String(String),
     /// Gets the specified URL part.
+    /// # Errors
+    /// If the call to [`UrlPart::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;
@@ -49,6 +52,8 @@ pub enum StringSource {
     /// ```
     Part(UrlPart),
     /// Gets the specified variable's value.
+    /// 
+    /// Returns [`None`] (NOT an error) if the variable is not set.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;
@@ -62,6 +67,8 @@ pub enum StringSource {
     /// ```
     Var(String),
     /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;
@@ -97,6 +104,8 @@ pub enum StringSource {
     },
     /// Joins a list of strings.
     /// By default, `join` is `""` so the strings are concatenated.
+    /// # Errors
+    /// If any call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;
@@ -121,12 +130,18 @@ pub enum StringSource {
     Join {
         /// The list of string sources to join.
         sources: Vec<Self>,
-        /// The value to join `sources` with.
+        /// The value to join `sources` with. Defaults to an empty string.
         #[serde(default)]
         join: String
     },
     /// Parses `source` as a URL and gets the specified value.
     /// Useful when used with [`Self::HttpRequest`].
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Url::parse`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`UrlPart::get`] reutrns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;
@@ -152,11 +167,17 @@ pub enum StringSource {
         part: UrlPart
     },
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
+    /// # Errors
+    /// If the call to [`RequestConfig::response`] returns an error, that error is returned.
     #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
     HttpRequest(Box<RequestConfig>),
     /// If the contained [`Self`] returns `None`, instead return `Some(Cow::Borrowed(""))`
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
     NoneToEmptyString(Box<Self>),
     /// Run a command and return its output.
+    /// # Errors
+    /// If the call to [`CommandConfig::output`] returns an error, that error is returned.
     #[cfg(feature = "commands")]
     CommandOutput {
         /// The command to run.
@@ -176,7 +197,7 @@ impl FromStr for StringSource {
     }
 }
 
-string_or_struct_magic!(StringSource);
+crate::util::string_or_struct_magic!(StringSource);
 
 /// The enum of all possible errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names)]

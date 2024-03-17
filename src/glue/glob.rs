@@ -1,18 +1,16 @@
 use std::str::FromStr;
 
-pub use glob::{Pattern, MatchOptions, PatternError};
+use glob::{Pattern, MatchOptions, PatternError};
 use serde::{
     Serialize, Deserialize,
     ser::Serializer,
     de::{Error as _, Deserializer}
 };
 
-use crate::string_or_struct_magic;
-
-/// The enabled form of the wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
-/// Only the necessary methods are exposed for the sake of simplicity.
+/// A wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]
+#[serde(deny_unknown_fields)]
 pub struct GlobWrapper {
     /// The pattern used to match stuff.
     #[serde(flatten, serialize_with = "serialize_pattern", deserialize_with = "deserialize_pattern")]
@@ -22,7 +20,7 @@ pub struct GlobWrapper {
     pub options: MatchOptions
 }
 
-string_or_struct_magic!(GlobWrapper);
+crate::util::string_or_struct_magic!(GlobWrapper);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(remote = "MatchOptions")]

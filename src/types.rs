@@ -14,15 +14,10 @@ pub use rules::*;
 #[cfg(feature = "string-source"      )] pub use string_source::*;
 #[cfg(feature = "string-matcher"     )] mod string_matcher;
 #[cfg(feature = "string-matcher"     )] pub use string_matcher::*;
-#[cfg(feature = "bool-source"        )] mod bool_source;
-#[cfg(feature = "bool-source"        )] pub use bool_source::*;
 #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] mod advanced_requests;
 #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] pub use advanced_requests::*;
 
-/// An enum that, if I've done my job properly, contains any possible error that can happen when cleaning a URL.
-/// Except for if a [`Mapper::ExpandShortLink`] response can't be cached. That error is ignored pending a version of [`Result`] that can handle partial errors.
-/// Not only is it a recoverable error, it's an error that doesn't need to be recovered from.
-#[allow(clippy::enum_variant_names)]
+/// An enum that transitively contains any possible error that can happen when cleaning a URL.
 #[derive(Debug, Error)]
 pub enum CleaningError {
     /// Returned when a [`GetConfigError`] os encountered.

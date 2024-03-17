@@ -5,6 +5,9 @@
 
 use std::ops::Bound;
 
+mod macros;
+pub(crate) use macros::*;
+
 /// Loops negative `index`es around similar to Python.
 pub(crate) const fn neg_index(index: isize, len: usize) -> Option<usize> {
     if 0<=index && (index as usize)<=len {

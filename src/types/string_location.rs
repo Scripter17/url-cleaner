@@ -4,8 +4,10 @@ use thiserror::Error;
 use crate::util::*;
 
 /// A wrapper around [`str`]'s various substring searching functions.
+/// 
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub enum StringLocation {
     /// Always passes.
     Always,
@@ -21,18 +23,20 @@ pub enum StringLocation {
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a pass.
-    TreatErrorAsPass(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a fail.
-    TreatErrorAsFail(Box<Self>),
-    /// If `try` returns an error, `else` is executed.
-    /// If `try` does not return an error, `else` is not executed.
+
+    // Logic.
+
+    /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
     /// # Errors
-    /// If `else` returns an error, that error is returned.
-    TryElse {
-        /// The [`Self`] to try first.
-        r#try: Box<Self>,
-        /// If `try` fails, instead return the result of this one.
+    /// If `r#if` returns an error, that error is returned.
+    /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// If `r#if` fails and `r#else` returns an error, that error is returned.
+    If {
+        /// The [`Self`] that decides if `then` or `r#else` is used.
+        r#if: Box<Self>,
+        /// The [`Self`] to use if `r#if` passes.
+        then: Box<Self>,
+        /// The [`Self`] to use if `r#if` fails.
         r#else: Box<Self>
     },
     /// Passes if all of the included [`Self`]s pass.
@@ -50,7 +54,28 @@ pub enum StringLocation {
     /// If the contained [`Self`] returns an error, that error is returned.
     Not(Box<Self>),
 
+    // Error handling.
 
+    /// If the contained [`Self`] returns an error, treat it as a pass.
+    TreatErrorAsPass(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a fail.
+    TreatErrorAsFail(Box<Self>),
+    /// If `try` returns an error, `else` is executed.
+    /// If `try` does not return an error, `else` is not executed.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
+    TryElse {
+        /// The [`Self`] to try first.
+        r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
+        r#else: Box<Self>
+    },
+    /// Effectively a [`Self::TryElse`] chain but less ugly.
+    /// # Errors
+    /// If every contained [`Self`] returns an error, returns the last error.
+    FirstNotError(Vec<Self>),
+
+    // Other.
 
     /// Checks if an instance of the needle exists anywhere in the haystack.
     /// # Examples
@@ -230,6 +255,52 @@ impl StringLocation {
         #[cfg(feature = "debug")]
         println!("Location: {self:?}");
         Ok(match self {
+            Self::Always => true,
+            Self::Never => false,
+            Self::Error => Err(StringLocationError::ExplicitError)?,
+            Self::Debug(location) => {
+                let is_satisfied=location.satisfied_by(haystack, needle);
+                eprintln!("=== StringLocation::Debug ===\nLocation: {location:?}\nHaystack: {haystack:?}\nNeedle: {needle:?}\nSatisfied?: {is_satisfied:?}");
+                is_satisfied?
+            },
+
+            // Logic.
+
+            Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, needle)? {then} else {r#else}.satisfied_by(haystack, needle)?,
+            Self::All(locations) => {
+                for location in locations {
+                    if !location.satisfied_by(haystack, needle)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            },
+            Self::Any(locations) => {
+                for location in locations {
+                    if location.satisfied_by(haystack, needle)? {
+                        return Ok(true);
+                    }
+                }
+                false
+            },
+            Self::Not(location) => !location.satisfied_by(haystack, needle)?,
+
+            // Error handling.
+
+            Self::TreatErrorAsPass(location) => location.satisfied_by(haystack, needle).unwrap_or(true),
+            Self::TreatErrorAsFail(location) => location.satisfied_by(haystack, needle).unwrap_or(false),
+            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack, needle).or_else(|_| r#else.satisfied_by(haystack, needle))?,
+            Self::FirstNotError(locations) => {
+                let mut result = Ok(false); // Initial value doesn't mean anything.
+                for location in locations {
+                    result = location.satisfied_by(haystack, needle);
+                    if result.is_ok() {return result}
+                }
+                result?
+            }
+
+            // Other.
+
             Self::Start                => haystack.starts_with(needle),
             Self::End                  => haystack.ends_with  (needle),
             Self::Anywhere             => haystack.contains   (needle),
@@ -251,36 +322,7 @@ impl StringLocation {
                 }
                 return Ok(false)
             },
-            Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?,
-
-            Self::All(locations) => {
-                for location in locations {
-                    if !location.satisfied_by(haystack, needle)? {
-                        return Ok(false);
-                    }
-                }
-                true
-            },
-            Self::Any(locations) => {
-                for location in locations {
-                    if location.satisfied_by(haystack, needle)? {
-                        return Ok(true);
-                    }
-                }
-                false
-            },
-            Self::Not(location) => !location.satisfied_by(haystack, needle)?,
-            Self::Always => true,
-            Self::Never => false,
-            Self::TreatErrorAsPass(location) => location.satisfied_by(haystack, needle).unwrap_or(true),
-            Self::TreatErrorAsFail(location) => location.satisfied_by(haystack, needle).unwrap_or(false),
-            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack, needle).or_else(|_| r#else.satisfied_by(haystack, needle))?,
-            Self::Debug(location) => {
-                let is_satisfied=location.satisfied_by(haystack, needle);
-                eprintln!("=== StringLocation::Debug ===\nLocation: {location:?}\nHaystack: {haystack:?}\nNeedle: {needle:?}\nSatisfied?: {is_satisfied:?}");
-                is_satisfied?
-            },
-            Self::Error => Err(StringLocationError::ExplicitError)?
+            Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?
         })
     }
 }

@@ -6,9 +6,11 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// A wrapper around [`str`]'s various substring modification functions.
+/// Various ways to modify a string.
+/// 
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub enum StringModification {
     /// Does nothing.
     None,

@@ -277,7 +277,7 @@
 
 		{
 			"condition": {"All": [
-				{"Not": {"FlagIsSet": "no-https"}},
+				{"Not": {"FlagIsSet": "no-https-upgrade"}},
 				{"PartIs": {"part": "Scheme", "value": "http"}}
 			]},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
@@ -291,7 +291,8 @@
 				{"Any": [
 					{"PartIs": {"part": {"DomainSegment": 0}, "value": "m"}},
 					{"PartIs": {"part": {"DomainSegment": 0}, "value": "mobile"}}
-				]}
+				]},
+				{"Not": {"HostIsOneOf": ["mobile.tumblr.com", "mobile.deviantart.com"]}}
 			]},
 			"mapper": {"SetPart": {"part": {"DomainSegment": 0}, "value": null}}
 		},
@@ -526,8 +527,8 @@
 		},
 		{
 			"condition": {"All": [
-				{"FlagIsSet": "breezewiki"},
-				{"UnqualifiedDomain": "fandom.com"}
+				{"Debug": {"FlagIsSet": "breezewiki"}},
+				{"Debug": {"UnqualifiedDomain": "fandom.com"}}
 			]},
 			"mapper": {"All": [
 				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},

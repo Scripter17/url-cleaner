@@ -15,11 +15,10 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use which::which;
 
-use crate::string_or_struct_magic;
-
 /// Instructions on how to make and run a [`Command`] object
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]
+#[serde(deny_unknown_fields)]
 pub struct CommandConfig {
     /// The program to run.
     pub program: String,
@@ -52,7 +51,7 @@ impl FromStr for CommandConfig {
     }
 }
 
-string_or_struct_magic!(CommandConfig);
+crate::util::string_or_struct_magic!(CommandConfig);
 
 /// The enum of all possible errors [`CommandConfig::exit_code`], [`CommandConfig::output`], and [`CommandConfig::get_url`] can return.
 #[derive(Debug, Error)]
@@ -66,10 +65,10 @@ pub enum CommandError {
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-    /// The command was terminated by a signal. See [`std::process::ExitStatus::code`] for details.
+    /// Returned when a command is terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
     SignalTermination,
-    /// The output handler was [`OutputHandler::Error`].
+    /// Returned when The output handler is [`OutputHandler::Error`].
     #[error("The output handler was OutputHandler::Error.")]
     ExplicitError
 }
@@ -110,6 +109,7 @@ impl CommandConfig {
         self.make_command(Some(url)).status()?.code().ok_or(CommandError::SignalTermination)
     }
 
+    /// Run the command from [`Self::make_command`], handle its output using [`Self::output_handler`], and returns the output.
     /// # Errors
     /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
@@ -145,10 +145,10 @@ impl CommandConfig {
         })
     }
 
-    /// Runs the command, does the [`OutputHandler`] stuff, removes trailing newlines and carriage returns form the output, then extracts the URL.
+    /// Runs the command, does the [`OutputHandler`] stuff, trims trailing newlines and carriage returns form the output using [`str::trim_end_matches`], then extracts the URL.
     /// # Errors
     /// If the call to [`Self::output`] returns an error, that error is returned.
-    /// If the output cannot be parsed as a URL (give or take trailing newlines and carriage returns), returns the error [`CommandError::UrlParseError`].
+    /// If the trimmed output cannot be parsed as a URL, returns the error [`CommandError::UrlParseError`].
     pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(url, None)?.trim_end_matches(&['\r', '\n']))?)
     }

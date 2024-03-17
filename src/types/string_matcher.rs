@@ -9,6 +9,7 @@ use crate::glue::*;
 
 /// A general API for matching strings with a variety of methods.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub enum StringMatcher {
     /// Always passes.
     Always,
@@ -24,18 +25,20 @@ pub enum StringMatcher {
     /// # Errors
     /// If the contained [`Self`] errors, returns that error.
     Debug(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a pass.
-    TreatErrorAsPass(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a fail.
-    TreatErrorAsFail(Box<Self>),
-    /// If `try` returns an error, `else` is executed.
-    /// If `try` does not return an error, `else` is not executed.
+
+    // Logic
+
+    /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
     /// # Errors
-    /// If `else` returns an error, that error is returned.
-    TryElse {
-        /// The [`Self`] to try first.
-        r#try: Box<Self>,
-        /// If `try` fails, instead return the result of this one.
+    /// If `r#if` returns an error, that error is returned.
+    /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// If `r#if` fails and `r#else` returns an error, that error is returned.
+    If {
+        /// The [`Self`] that decides if `then` or `r#else` is used.
+        r#if: Box<Self>,
+        /// The [`Self`] to use if `r#if` passes.
+        then: Box<Self>,
+        /// The [`Self`] to use if `r#if` fails.
         r#else: Box<Self>
     },
     /// Passes if all of the included [`Self`]s pass.
@@ -53,7 +56,28 @@ pub enum StringMatcher {
     /// If the contained [`Self`] returns an error, that error is returned.
     Not(Box<Self>),
 
+    // Error handling.
 
+    /// If the contained [`Self`] returns an error, treat it as a pass.
+    TreatErrorAsPass(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a fail.
+    TreatErrorAsFail(Box<Self>),
+    /// If `try` returns an error, `else` is executed.
+    /// If `try` does not return an error, `else` is not executed.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
+    TryElse {
+        /// The [`Self`] to try first.
+        r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
+        r#else: Box<Self>
+    },
+    /// Effectively a [`Self::TryElse`] chain but less ugly.
+    /// # Errors
+    /// If every contained [`Self`] returns an error, returns the last error.
+    FirstNotError(Vec<Self>),
+
+    // Other.
 
     /// Passes if the provided string is contained in the specified [`HashSet`].
     InHashSet(HashSet<String>),
@@ -144,9 +168,10 @@ impl StringMatcher {
                 eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
-            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(true),
-            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|_| r#else.satisfied_by(haystack, url, params))?,
+
+            // Logic.
+
+            Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, url, params)? {then} else {r#else}.satisfied_by(haystack, url, params)?,
             Self::All(matchers) => {
                 for matcher in matchers {
                     if !matcher.satisfied_by(haystack, url, params)? {
@@ -164,6 +189,22 @@ impl StringMatcher {
                 false
             },
             Self::Not(matcher) => !matcher.satisfied_by(haystack, url, params)?,
+
+            // Error handling.
+
+            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(true),
+            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(false),
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|_| r#else.satisfied_by(haystack, url, params))?,
+            Self::FirstNotError(matchers) => {
+                let mut result = Ok(false); // Initial value doesn't mean anything.
+                for matcher in matchers {
+                    result = matcher.satisfied_by(haystack, url, params);
+                    if result.is_ok() {return result}
+                }
+                result?
+            }
+
+            // Other.
 
             Self::InHashSet(hash_set) => hash_set.contains(haystack),
             #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,

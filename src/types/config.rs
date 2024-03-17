@@ -86,10 +86,11 @@ impl Config {
     pub fn run_tests(mut self) {
         let original_params = self.params.clone();
         for test in self.tests.clone() {
+            let serialized_test = serde_json::to_string(&test).unwrap();
             self.params.apply_diff(test.params_diff);
             for [mut before, after] in test.pairs {
-                self.apply(&mut before).expect("The URL to be modified without errors.");
-                assert_eq!(before, after);
+                self.apply(&mut before).expect("The URL to be modified without errors."); // Only applies when testing a config.
+                assert_eq!(before, after, "Test: {serialized_test}");
             }
             self.params = original_params.clone();
         }
@@ -98,6 +99,7 @@ impl Config {
 
 /// Configuration options to choose the behaviour of a few select [`Condition`]s and [`Mapper`]s.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct Params {
     /// Works with [`Condition::RuleVariableIs'`].
     #[serde(default)]
@@ -123,6 +125,7 @@ const fn get_true() -> bool {true}
 
 /// Allows changing [`Config::params`].
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct ParamsDiff {
     /// Adds to [`Params::vars`].
     #[serde(default)] pub vars  : HashMap<String, String>,
@@ -225,9 +228,12 @@ impl Params {
 }
 
 /// The config loaded into URL Cleaner at compile time.
+/// 
 /// When the `minify-included-strings` is enabled, all whitespace is replaced with a single space.
 /// If there are any spaces in a string, this compression will alter how the config works.
+/// 
 /// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
+/// 
 /// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]
 pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../../default-config.json"));
@@ -280,6 +286,19 @@ mod tests {
     #[test]
     fn reserialize_default_config() {
         serde_json::to_string(&Config::get_default().unwrap()).unwrap();
+    }
+
+    /// Does not work when generic.
+    /// <'a, T: Serialize+Deserialize<'a>> throws nonsensical errors like `y.to_owned()` freed while still in use despite being an owned value.
+    fn de_ser(config: &Config) -> Config {
+        serde_json::from_str(&serde_json::to_string(config).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn default_config_de_ser_identity() {
+        assert_eq!(Config::get_default().unwrap(), &de_ser(                Config::get_default().unwrap()  ));
+        assert_eq!(Config::get_default().unwrap(), &de_ser(&de_ser(        Config::get_default().unwrap() )));
+        assert_eq!(Config::get_default().unwrap(), &de_ser(&de_ser(&de_ser(Config::get_default().unwrap()))));
     }
 
     #[test]

@@ -4,10 +4,8 @@ use serde::{Serialize, Deserialize};
 use regex::{Regex, RegexBuilder, Error as RegexError};
 use regex_syntax::{ParserBuilder, Error as RegexSyntaxError};
 
-use crate::string_or_struct_magic;
-
-/// The enabled form of `RegexParts`.
 /// Contains the rules for constructing a [`Regex`].
+/// 
 /// The pattern can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote = "Self")]
@@ -18,7 +16,7 @@ pub struct RegexParts {
     config: RegexConfig
 }
 
-string_or_struct_magic!(RegexParts);
+crate::util::string_or_struct_magic!(RegexParts);
 
 impl AsRef<RegexConfig> for RegexParts {
     fn as_ref(&self) -> &RegexConfig {
@@ -40,6 +38,7 @@ impl AsRef<str> for RegexParts {
 
 /// The configuration determining how a regular expression works.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct RegexConfig {
     /// The value passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,

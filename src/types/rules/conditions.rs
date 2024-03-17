@@ -9,7 +9,7 @@ use url::Url;
 use crate::glue::*;
 use crate::types::*;
 
-/// The part of a [`crate::types::Rule`] that specifies when the rule's mapper will be applied.
+/// The part of a [`Rule`] that specifies when the rule's mapper will be applied.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub enum Condition {
@@ -36,54 +36,7 @@ pub enum Condition {
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
 
-    // Error handling.
-
-    /// If the contained [`Self`] returns an error, treat it as a pass.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// ```
-    TreatErrorAsPass(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a fail.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// ```
-    TreatErrorAsFail(Box<Self>),
-    /// If `try` returns an error, `else` is executed.
-    /// If `try` does not return an error, `else` is not executed.
-    /// # Errors
-    /// If `else` returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// ```
-    TryElse {
-        /// The [`Self`] to try first.
-        r#try: Box<Self>,
-        /// If `try` fails, instead return the result of this one.
-        r#else: Box<Self>
-    },
-
-    // Conditional.
+    // Logic.
 
     /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
     /// # Errors
@@ -148,6 +101,57 @@ pub enum Condition {
     /// assert!(Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     Any(Vec<Self>),
+
+    // Error handling.
+
+    /// If the contained [`Self`] returns an error, treat it as a pass.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// ```
+    TreatErrorAsPass(Box<Self>),
+    /// If the contained [`Self`] returns an error, treat it as a fail.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// ```
+    TreatErrorAsFail(Box<Self>),
+    /// If `try` returns an error, `else` is executed.
+    /// If `try` does not return an error, `else` is not executed.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// ```
+    TryElse {
+        /// The [`Self`] to try first.
+        r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
+        r#else: Box<Self>
+    },
+    /// Effectively a [`Self::TryElse`] chain but less ugly.
+    /// # Errors
+    /// If every contained [`Self`] returns an error, returns the last error.
+    FirstNotError(Vec<Self>),
 
     // Domain conditions.
 
@@ -421,11 +425,6 @@ pub enum Condition {
     /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
     /// ```
     FlagIsSet(String),
-    /// Get a boolean value and pass if it's `true`.
-    /// # Errors
-    /// If the call to [`BoolSource::get`] returns an error, that error is returned.
-    #[cfg(feature = "bool-source")]
-    BoolSource(BoolSource),
 
     // Commands.
 
@@ -478,9 +477,9 @@ pub enum ConditionError {
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(#[from] CommandError),
-    /// Returned when a [`GetUrlPartError`] is encountered.
+    /// Returned when a [`UrlPartGetError`] is encountered.
     #[error(transparent)]
-    GetUrlPartError(#[from] GetUrlPartError),
+    UrlPartGetError(#[from] UrlPartGetError),
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[cfg(feature = "string-source")]
     #[error("The specified StringSource returned None.")]
@@ -496,11 +495,7 @@ pub enum ConditionError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-    /// Returned when a [`BoolSourceError`] is encountered.
-    #[cfg(feature = "bool-source")]
-    #[error(transparent)]
-    BoolSourceError(#[from] BoolSourceError)
+    StringSourceError(#[from] StringSourceError)
 }
 
 impl Condition {
@@ -523,13 +518,7 @@ impl Condition {
                 is_satisfied?
             },
 
-            // Error handling.
-
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by(url, params).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by(url, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
-
-            // Conditional.
+            // Logic.
 
             Self::If {r#if, then, r#else} => if r#if.satisfied_by(url, params)? {then} else {r#else}.satisfied_by(url, params)?,
             Self::Not(condition) => !condition.satisfied_by(url, params)?,
@@ -549,6 +538,20 @@ impl Condition {
                 }
                 false
             },
+
+            // Error handling.
+
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by(url, params).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by(url, params).unwrap_or(false),
+            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
+            Self::FirstNotError(conditions) => {
+                let mut result = Ok(false); // Initial value doesn't mean anything.
+                for condition in conditions {
+                    result = condition.satisfied_by(url, params);
+                    if result.is_ok() {return result}
+                }
+                result?
+            }
 
             // Domain conditions.
 
@@ -581,7 +584,7 @@ impl Condition {
 
             Self::QueryHasParam(name) => url.query_pairs().any(|(ref name2, _)| name2==name),
             Self::PathIs(value) => if url.cannot_be_a_base() {
-                Err(GetUrlPartError::UrlDoesNotHaveAPath)?
+                Err(UrlPartGetError::UrlDoesNotHaveAPath)?
             } else {
                 url.path()==value
             },
@@ -604,8 +607,6 @@ impl Condition {
             #[cfg(not(feature = "string-source"))]
             Self::VarIs {name, value} => params.vars.get(name).map(|x| &**x)==value.as_deref(),
             Self::FlagIsSet(name) => params.flags.contains(name),
-            #[cfg(feature = "bool-source")]
-            Self::BoolSource(bool_source) => bool_source.get(url, params)?,
 
             // Commands.
 

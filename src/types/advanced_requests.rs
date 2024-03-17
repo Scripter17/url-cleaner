@@ -12,6 +12,7 @@ use crate::glue::*;
 
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub struct RequestConfig {
     /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
     #[cfg(feature = "string-source")]

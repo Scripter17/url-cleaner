@@ -12,7 +12,7 @@ use reqwest::header::HeaderMap;
 use crate::glue::*;
 use crate::types::*;
 
-/// The part of a [`crate::types::Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
+/// The part of a [`Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub enum Mapper {
@@ -32,32 +32,21 @@ pub enum Mapper {
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
 
-    // Error handling.
+    // Logic.
 
-    /// Ignores any error the contained [`Self`] may return.
-    IgnoreError(Box<Self>),
-    /// If `try` returns an error, `else` is applied.
-    /// If `try` does not return an error, `else` is not applied.
+    /// If `r#if` passes, apply `then`, otherwise apply `r#else`.
     /// # Errors
-    /// If `else` returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
-    /// ```
-    TryElse {
-        /// The [`Self`] to try first.
-        r#try: Box<Self>,
-        /// If `try` fails, instead return the result of this one.
+    /// If `r#if` returns an error, that error is returned.
+    /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// If `r#if` fails and `r#else` returns an error, that error is returned.
+    IfCondition {
+        /// The [`Condition`] that decides if `then` or `r#else` is used.
+        r#if: Condition,
+        /// The [`Self`] to use if `r#if` passes.
+        then: Box<Self>,
+        /// The [`Self`] to use if `r#if` fails.
         r#else: Box<Self>
     },
-
-    // Multiple.
-
     /// Applies the contained [`Self`]s in order.
     /// # Errors
     /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
@@ -94,9 +83,33 @@ pub enum Mapper {
     /// assert_eq!(url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
+
+    // Error handling.
+
+    /// Ignores any error the contained [`Self`] may return.
+    IgnoreError(Box<Self>),
+    /// If `try` returns an error, `else` is applied.
+    /// If `try` does not return an error, `else` is not applied.
+    /// # Errors
+    /// If `else` returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
+    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
+    /// ```
+    TryElse {
+        /// The [`Self`] to try first.
+        r#try: Box<Self>,
+        /// If `try` fails, instead return the result of this one.
+        r#else: Box<Self>
+    },
     /// Effectively a [`Self::TryElse`] chain but less ugly.
     /// # Errors
-    /// If every contained [`Self`] errors, returns the last error.
+    /// If every contained [`Self`] returns an error, returns the last error.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -221,7 +234,7 @@ pub enum Mapper {
     /// Modifies the specified part of the URL.
     /// # Errors
     /// If the call to [`StringModification::apply`] returns an error, that error is returned in a [`MapperError::StringModificationError`].
-    /// If the call to [`UrlPart::modify`] returns an error, that error is returned in a [`MapperError::UrlPartModificationError`].
+    /// If the call to [`UrlPart::modify`] returns an error, that error is returned in a [`MapperError::UrlPartModifyError`].
     #[cfg(feature = "string-modification")]
     ModifyPart {
         /// The name of the part to modify.
@@ -231,7 +244,7 @@ pub enum Mapper {
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
-    /// If the part specified by `from` is None and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`SetUrlPartError::PartCannotBeNone`].
+    /// If the part specified by `from` is None and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`UrlPartSetError::PartCannotBeNone`].
     CopyPart {
         /// The part to get the value from.
         from: UrlPart,
@@ -289,13 +302,13 @@ pub enum MapperError {
     /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
-    /// Returned when a [`UrlPartModificationError`] is encountered.
+    /// Returned when a [`UrlPartModifyError`] is encountered.
     #[cfg(feature = "string-modification")]
     #[error(transparent)]
-    UrlPartModificationError(#[from] UrlPartModificationError),
-    /// Returned when a [`SetUrlPartError`] is encountered.
+    UrlPartModifyError(#[from] UrlPartModifyError),
+    /// Returned when a [`UrlPartSetError`] is encountered.
     #[error(transparent)]
-    SetUrlPartError(#[from] SetUrlPartError),
+    UrlPartSetError(#[from] UrlPartSetError),
     /// Returned when the provided URL does not have a path.
     #[error("The URL does not have a path.")]
     UrlDoesNotHaveAPath,
@@ -327,7 +340,10 @@ pub enum MapperError {
     /// Returned when a [`WriteCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
-    WriteCacheError(#[from] WriteCacheError)
+    WriteCacheError(#[from] WriteCacheError),
+    /// Returned when a [`ConditionError`] is encountered.
+    #[error(transparent)]
+    ConditionError(#[from] ConditionError)
 }
 
 impl Mapper {
@@ -343,6 +359,7 @@ impl Mapper {
 
             // Boolean
 
+            Self::IfCondition {r#if, then, r#else} => if r#if.satisfied_by(url, params)? {then} else {r#else}.apply(url, params)?,
             Self::All(mappers) => {
                 let mut temp_url=url.clone();
                 for mapper in mappers {
@@ -361,12 +378,12 @@ impl Mapper {
                 }
             },
             Self::FirstNotError(mappers) => {
-                let mut error=Ok(());
+                let mut result = Ok(());
                 for mapper in mappers {
-                    error=mapper.apply(url, params);
-                    if error.is_ok() {break}
+                    result = mapper.apply(url, params);
+                    if result.is_ok() {break}
                 }
-                error?
+                result?
             },
 
             // Query
