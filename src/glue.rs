@@ -6,4 +6,4 @@
 #[cfg(feature = "commands")] pub use command::*;
 /// Serializing and deserializing [`reqwest::header::HeaderMap`].
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
-pub mod headermap;
+pub(crate) mod headermap;

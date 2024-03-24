@@ -8,10 +8,10 @@ use url::Url;
 
 use crate::glue::*;
 use crate::types::*;
+use crate::util::*;
 
 /// The part of a [`Rule`] that specifies when the rule's mapper will be applied.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub enum Condition {
     // Debug/constants.
 
@@ -26,7 +26,7 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::Error.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// Condition::Error.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
     /// ```
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
@@ -58,9 +58,10 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::Not(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// 
+    /// Condition::Not(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
     /// ```
     Not(Box<Self>),
     /// Passes if all of the included [`Self`]s pass.
@@ -71,15 +72,16 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::All(vec![Condition::Always, Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// assert!(Condition::All(vec![Condition::Never , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::All(vec![Condition::Never , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::All(vec![Condition::Never , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::All(vec![Condition::Error , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// assert!(Condition::All(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// assert!(Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// 
+    /// Condition::All(vec![Condition::Always, Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Condition::All(vec![Condition::Error , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Condition::All(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
     /// ```
     All(Vec<Self>),
     /// Passes if any of the included [`Self`]s pass.
@@ -90,15 +92,16 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::Any(vec![Condition::Always, Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::Any(vec![Condition::Never , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::Any(vec![Condition::Never , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::Any(vec![Condition::Never , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// assert!(Condition::Any(vec![Condition::Error , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// assert!(Condition::Any(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
-    /// assert!(Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Never , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Never , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// 
+    /// Condition::Any(vec![Condition::Never , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Condition::Any(vec![Condition::Error , Condition::Always]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Condition::Any(vec![Condition::Error , Condition::Never ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
     /// ```
     Any(Vec<Self>),
 
@@ -109,9 +112,9 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     TreatErrorAsPass(Box<Self>),
     /// If the contained [`Self`] returns an error, treat it as a fail.
@@ -119,9 +122,9 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
     /// ```
     TreatErrorAsFail(Box<Self>),
     /// If `try` returns an error, `else` is executed.
@@ -132,15 +135,15 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap_err();
     /// ```
     TryElse {
         /// The [`Self`] to try first.
@@ -160,10 +163,10 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     UnqualifiedDomain(String),
     /// Similar to [`Condition::UnqualifiedDomain`] but only checks if the subdomain is empty or `www`.
@@ -172,9 +175,9 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://not.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&Url::parse("https://not.example.com").unwrap(), &Params::default()).unwrap(), false);
     /// ```
     MaybeWWWDomain(String),
     /// Passes if the URL's domain is the specified domain.
@@ -182,10 +185,10 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://example.com"    ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     QualifiedDomain(String),
     /// Passes if the URL's host is in the specified set of hosts.
@@ -196,10 +199,10 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::HashSet;
-    /// assert!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example2.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example2.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example.com" ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example2.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&Url::parse("https://example2.com").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     HostIsOneOf(HashSet<String>),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
@@ -208,18 +211,18 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).unwrap(), true );
     /// // Weird edge cases.
-    /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.example.co.uk" ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
-    /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==true));
-    /// assert!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.co.uk"        ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.example.co.uk" ).unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.example.co.uk").unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.aexample.co.uk"        ).unwrap(), &Params::default()).unwrap(), false);
     /// ```
     UnqualifiedAnyTld(String),
     /// Similar to [`Condition::UnqualifiedAnyTld`] but only checks if the subdomain is empty or `www`.
@@ -228,12 +231,12 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://not.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://not.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://not.example.com"  ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&Url::parse("https://not.example.co.uk").unwrap(), &Params::default()).unwrap(), false);
     /// ```
     MaybeWWWAnyTld(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
@@ -242,14 +245,14 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.com"      ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://example.co.uk"    ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.com"  ).unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&Url::parse("https://www.example.co.uk").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     QualifiedAnyTld(String),
 
@@ -260,9 +263,9 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::QueryHasParam("a".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::QueryHasParam("b".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::QueryHasParam("c".to_string()).satisfied_by(&Url::parse("https://example.com?a=2&b=3").unwrap(), &Params::default()).unwrap(), false);
     /// ```
     QueryHasParam(String),
     /// Passes if the URL's path is the specified string.
@@ -270,10 +273,10 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com"   ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
-    /// assert!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com/"  ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
-    /// assert!(Condition::PathIs("/a" .to_string()).satisfied_by(&Url::parse("https://example.com/a" ).unwrap(), &Params::default()).is_ok_and(|x| x==true));
-    /// assert!(Condition::PathIs("/a/".to_string()).satisfied_by(&Url::parse("https://example.com/a/").unwrap(), &Params::default()).is_ok_and(|x| x==true));
+    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com"   ).unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&Url::parse("https://example.com/"  ).unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs("/a" .to_string()).satisfied_by(&Url::parse("https://example.com/a" ).unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs("/a/".to_string()).satisfied_by(&Url::parse("https://example.com/a/").unwrap(), &Params::default()).unwrap(), true);
     /// ```
     PathIs(String),
 
@@ -285,12 +288,12 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     #[cfg(feature = "string-source")]
     PartIs {
@@ -305,12 +308,12 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
     /// ```
     #[cfg(not(feature = "string-source"))]
     PartIs {
@@ -327,33 +330,18 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".try_into().unwrap(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".try_into().unwrap(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), false);
     /// ```
-    #[cfg(all(feature = "string-source", feature = "string-location"))]
+    #[cfg(feature = "string-location")]
     PartContains {
         /// The name of the part to check.
         part: UrlPart,
         /// The value to look for.
+        #[cfg(feature = "string-source")]
         value: StringSource,
-        /// Where to look for the value.
-        r#where: StringLocation
-    },
-    /// Passes if the specified part contains the specified value in a range specified by `where`.
-    /// # Errors
-    /// If the specified part is `None`, returns the error [`ConditionError::UrlPartNotFound`].
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".to_string(), r#where: StringLocation::Anywhere}.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::PartContains {part: UrlPart::Domain, value: "ple".to_string(), r#where: StringLocation::End     }.satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()).is_ok_and(|x| x==false));
-    /// ```
-    #[cfg(all(not(feature = "string-source"), feature = "string-location"))]
-    PartContains {
-        /// The name of the part to check.
-        part: UrlPart,
         /// The value to look for.
+        #[cfg(not(feature = "string-source"))]
         value: String,
         /// Where to look for the value.
         r#where: StringLocation
@@ -380,38 +368,23 @@ pub enum Condition {
     /// # use std::collections::HashMap;
     /// let url=Url::parse("https://example.com").unwrap();
     /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("2".to_string()))}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string()))}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string()))}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: Some(StringSource::String("3".to_string()))}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: StringSource::String("a".to_string()), value: None                                       }.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&url, &params           ).unwrap(), true );
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&url, &params           ).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&url, &params           ).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&url, &Params::default()).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: None            }.satisfied_by(&url, &Params::default()).unwrap(), true );
     /// ```
-    #[cfg(feature = "string-source")]
     VarIs {
         /// The name of the variable to check.
+        #[cfg(feature = "string-source")]
         name: StringSource,
-        /// The expected value of the variable.
-        value: Option<StringSource>
-    },
-    /// Passes if the specified variable is set to the specified value.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// # use std::collections::HashMap;
-    /// let url=Url::parse("https://example.com").unwrap();
-    /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("2".to_string())}.satisfied_by(&url, &params           ).is_ok_and(|x| x==true ));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string())}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string())}.satisfied_by(&url, &params           ).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: Some("3".to_string())}.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==false));
-    /// assert!(Condition::VarIs{name: "a".to_string(), value: None                 }.satisfied_by(&url, &Params::default()).is_ok_and(|x| x==true ));
-    /// ```
-    #[cfg(not(feature = "string-source"))]
-    VarIs {
-        /// The name of the variable
+        #[cfg(not(feature = "string-source"))]
         name: String,
         /// The expected value of the variable.
+        #[cfg(feature = "string-source")]
+        value: Option<StringSource>,
+        /// The expected value of the variable.
+        #[cfg(not(feature = "string-source"))]
         value: Option<String>
     },
 
@@ -421,8 +394,8 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use std::collections::HashSet;
     /// # use url::Url;
-    /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).is_ok_and(|x| x==true ));
-    /// assert!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()}).unwrap(), true );
+    /// assert_eq!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&Url::parse("https://example.com").unwrap(), &Params::default()                                                           ).unwrap(), false);
     /// ```
     FlagIsSet(String),
 
@@ -435,9 +408,9 @@ pub enum Condition {
     /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).is_ok_and(|x| x==false));
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).unwrap(), true );
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&Url::parse("https://url.does/not#matter").unwrap(), &Params::default()).unwrap(), false);
     /// ```
     #[cfg(feature = "commands")]
     CommandExists(CommandConfig),
@@ -591,21 +564,13 @@ impl Condition {
 
             // General parts.
 
-            #[cfg(    feature = "string-source") ] Self::PartIs{part, value} => value.as_ref().map(|source| source.get(url, params)).transpose()?.flatten().as_deref()==part.get(url).as_deref(),
-            #[cfg(not(feature = "string-source"))] Self::PartIs{part, value} => value.as_deref()==part.get(url).as_deref(),
-            #[cfg(all(    feature = "string-source" , feature = "string-location"))] Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, &value.get(url, params)?.ok_or(ConditionError::StringSourceIsNone)?)?,
-            #[cfg(all(not(feature = "string-source"), feature = "string-location"))] Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, value)?,
+            Self::PartIs{part, value} => part.get(url).as_deref()==get_option_string!(value, url, params),
+            #[cfg(feature = "string-location")] Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, get_string!(value, url, params, ConditionError))?,
             #[cfg(feature = "string-matcher" )] Self::PartMatches {part, matcher} => matcher.satisfied_by(&part.get(url).ok_or(ConditionError::UrlPartNotFound)?, url, params)?,
 
             // Miscellaneous.
 
-            #[cfg(feature = "string-source")]
-            Self::VarIs {name, value} => match value.as_ref() {
-                Some(source) => params.vars.get(&name.get(url, params)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).map(|x| &**x)==source.get(url, params)?.as_deref(),
-                None => params.vars.get(&name.get(url, params)?.ok_or(ConditionError::StringSourceIsNone)?.to_string()).is_none()
-            },
-            #[cfg(not(feature = "string-source"))]
-            Self::VarIs {name, value} => params.vars.get(name).map(|x| &**x)==value.as_deref(),
+            Self::VarIs {name, value} => params.vars.get(get_string!(name, url, params, ConditionError)).map(|x| &**x)==get_option_string!(value, url, params),
             Self::FlagIsSet(name) => params.flags.contains(name),
 
             // Commands.

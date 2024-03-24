@@ -12,7 +12,6 @@ use crate::glue::*;
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(remote = "Self")]
-#[serde(deny_unknown_fields)]
 pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].
     /// # Errors
@@ -102,7 +101,7 @@ pub enum StringSource {
         /// The modification to apply to the string.
         modification: StringModification
     },
-    /// Joins a list of strings.
+    /// Joins a list of strings. Effectively a [`Vec::join`].
     /// By default, `join` is `""` so the strings are concatenated.
     /// # Errors
     /// If any call to [`Self::get`] returns an error, that error is returned.
@@ -191,9 +190,16 @@ pub enum StringSource {
 impl FromStr for StringSource {
     type Err = Infallible;
 
-    /// Simply encase the provided string in a [`StringSource::String`] since it's the most common variant.
+    /// Returns a [`Self::String`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::String(s.to_string()))
+    }
+}
+
+impl From<&str> for StringSource {
+    /// Returns a [`Self::String`].
+    fn from(value: &str) -> Self {
+        Self::String(value.into())
     }
 }
 
@@ -263,13 +269,16 @@ impl StringSource {
                 match source.as_ref().get(url, params)? {
                     Some(x) => {
                         let mut x = x.into_owned();
-                        modification.apply(&mut x, params)?;
+                        modification.apply(&mut x, url, params)?;
                         Some(Cow::Owned(x))
                     },
                     None => None
                 }
             },
+            // I love that [`Result`] and [`Option`] implement [`FromIterator`].
+            // It's so silly but it works SO well.
             Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            // Transpose wouldn't need to exist in a world where `.map(|x| x?)` worked.
             Self::ExtractPart{source, part} => source.get(url, params)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x).map(|x| Cow::Owned(x.into_owned()))),
             #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(url, params)?)),

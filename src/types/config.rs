@@ -86,7 +86,8 @@ impl Config {
     pub fn run_tests(mut self) {
         let original_params = self.params.clone();
         for test in self.tests.clone() {
-            let serialized_test = serde_json::to_string(&test).unwrap();
+            let serialized_test = serde_json::to_string(&test)
+                .expect("The test to serialize without errors"); // Only applies when testing a config.
             self.params.apply_diff(test.params_diff);
             for [mut before, after] in test.pairs {
                 self.apply(&mut before).expect("The URL to be modified without errors."); // Only applies when testing a config.
@@ -99,7 +100,6 @@ impl Config {
 
 /// Configuration options to choose the behaviour of a few select [`Condition`]s and [`Mapper`]s.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub struct Params {
     /// Works with [`Condition::RuleVariableIs'`].
     #[serde(default)]
@@ -125,7 +125,6 @@ const fn get_true() -> bool {true}
 
 /// Allows changing [`Config::params`].
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub struct ParamsDiff {
     /// Adds to [`Params::vars`].
     #[serde(default)] pub vars  : HashMap<String, String>,
@@ -188,7 +187,7 @@ impl Params {
 
     /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
     /// # Errors
-    /// Errors if [`reqwest::blocking::ClientBuilder::build`] errors.
+    /// Errors if [`reqwest::ClientBuilder::build`] errors.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     pub fn http_client(&self) -> reqwest::Result<reqwest::blocking::Client> {
         reqwest::blocking::ClientBuilder::new()

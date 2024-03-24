@@ -6,10 +6,10 @@ use url::Url;
 
 use crate::types::*;
 use crate::glue::*;
+use crate::util::*;
 
 /// A general API for matching strings with a variety of methods.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub enum StringMatcher {
     /// Always passes.
     Always,
@@ -89,13 +89,17 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::{StringMatcher, StringLocation};
     /// # use url_cleaner::types::Params;
     /// # use url::Url;
-    /// assert_eq!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".to_string()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
     /// ```
     #[cfg(feature = "string-location")]
     StringLocation {
         /// The location to check for `value` at.
         location: StringLocation,
         /// The value to look for.
+        #[cfg(feature = "string-source")]
+        value: StringSource,
+        /// The value to look for.
+        #[cfg(not(feature = "string-source"))]
         value: String
     },
     /// # Examples
@@ -150,7 +154,11 @@ pub enum StringMatcherError {
     StringSourceError(#[from] StringSourceError),
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone
+    StringSourceIsNone,
+    /// Returned when a [`regex::Error`] is encountered.
+    #[cfg(feature = "regex")]
+    #[error(transparent)]
+    RegexError(#[from] regex::Error)
 }
 
 impl StringMatcher {
@@ -207,10 +215,10 @@ impl StringMatcher {
             // Other.
 
             Self::InHashSet(hash_set) => hash_set.contains(haystack),
-            #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, value)?,
-            #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.is_match(haystack),
+            #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, get_string!(value, url, params, StringMatcherError))?,
+            #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
-            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, params)?; temp}, url, params)?
+            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, url, params)?; temp}, url, params)?
         })
     }
 }

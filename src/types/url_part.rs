@@ -14,7 +14,6 @@ use crate::util::*;
 /// 
 /// In general (except for domain parts on non-domain URLs and [`Self::PathSegment`]), setting a part to its own value is effectively a no-op.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub enum UrlPart {
     /// The whole URL. Corresponds to [`Url::as_str`].
     /// # Getting
@@ -449,7 +448,7 @@ pub enum UrlPart {
     /// ```
     BeforePathSegment(isize),
     /// A specific segment of the URL's path.
-    /// Please note that for URLs that aren't cannot-be-a-base, `PathSegemnt(0)` will always be `Some`. On URLs that look like they don't have a path and/or only have a `/`, the value is `Some("")`.
+    /// Please note that for URLs that aren't [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base), `PathSegemnt(0)` will always be `Some`. On URLs that look like they don't have a path and/or only have a `/`, the value is `Some("")`.
     /// This is potentially unexpected but technically correct.
     /// As far as I know, all cases where this is a problem can be solved using [`crate::types::StringLocation`] on [`Self::Path`] or other combinations of existing tools.
     /// # Getting
@@ -516,11 +515,11 @@ pub enum UrlPart {
     /// The path. Corresponds to [`Url::path`].
     /// Please note that all URLs with a path always have the path start with `/`.
     /// This is abstracted away in [`Self::PathSegment`] but not here.
-    /// If a URL is cannot-be-a-base, getting the path will always return `None`. `Url::path` doesn't but given it's described as "an arbitrary string" I believe returning `None` is less surprising behaviour.
+    /// If a URL is [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base), getting the path will always return `None`. `Url::path` doesn't but given it's described as "an arbitrary string" I believe returning `None` is less surprising behaviour.
     /// # Getting
-    /// Will be `None` when the URL is cannot-be-a-base.
+    /// Will be `None` when the URL is [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base).
     /// # Setting
-    /// Can only be `None` when the URL is cannot-be-a-base (always a no-op as it is already `None`).
+    /// Can only be `None` when the URL is [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base) (always a no-op as it is already `None`).
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -733,7 +732,6 @@ impl UrlPart {
     /// If this method returns an error, `url` is left unchanged.
     /// # Errors
     /// TODO
-    #[allow(clippy::missing_panics_doc)]
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
         #[cfg(feature = "debug")]
         println!("PartSet: {self:?}");
@@ -904,9 +902,9 @@ impl UrlPart {
     /// If the string modification returns an error, that error is returned.
     /// If [`UrlPart::set`] returns an error, that error is returned.
     #[cfg(feature = "string-modification")]
-    pub fn modify(&self, url: &mut Url, how: &StringModification, params: &Params) -> Result<(), UrlPartModifyError> {
+    pub fn modify(&self, how: &StringModification, url: &mut Url, params: &Params) -> Result<(), UrlPartModifyError> {
         let mut new_part=self.get(url).ok_or(UrlPartModifyError::PartIsNone)?.into_owned();
-        how.apply(&mut new_part, params)?;
+        how.apply(&mut new_part, url, params)?;
         self.set(url, Some(&new_part))?;
         Ok(())
     }
@@ -938,7 +936,7 @@ pub enum UrlPartGetError {
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
     #[error("The URL's host is not a domain.")]
     HostIsNotADomain,
-    /// Urls that are cannot-be-a-base don't have a path.
+    /// Urls that are [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base) don't have a path.
     #[error("Urls that are cannot-be-a-base don't have a path.")]
     UrlDoesNotHaveAPath,
     /// Returned when the requested segment is not found.

@@ -1,44 +1,43 @@
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
-use regex::{Regex, RegexBuilder, Error as RegexError};
-use regex_syntax::{ParserBuilder, Error as RegexSyntaxError};
+use regex::{Regex, RegexBuilder};
+use regex_syntax::{ParserBuilder, Parser, Error as RegexSyntaxError};
 
 /// Contains the rules for constructing a [`Regex`].
 /// 
-/// The pattern can be invalid. It only needs to be valid when the [`super::RegexWrapper`] it turns into is created.
+/// The pattern is guaranteed to be valid.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote = "Self")]
 pub struct RegexParts {
     /// The pattern passed into [`RegexBuilder::new`].
     pattern: String,
+    /// The configuration flags.
     #[serde(flatten)]
     config: RegexConfig
 }
 
+impl FromStr for RegexParts {
+    type Err=Box<RegexSyntaxError>;
+
+    /// Simply treats the string as a regex and defaults the config.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::new(s)
+    }
+}
+
+impl TryFrom<&str> for RegexParts {
+    type Error = <Self as FromStr>::Err;
+
+    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
+        Self::from_str(s)
+    }
+}
+
 crate::util::string_or_struct_magic!(RegexParts);
-
-impl AsRef<RegexConfig> for RegexParts {
-    fn as_ref(&self) -> &RegexConfig {
-        &self.config
-    }
-}
-
-impl AsRef<String> for RegexParts {
-    fn as_ref(&self) -> &String {
-        &self.pattern
-    }
-}
-
-impl AsRef<str> for RegexParts {
-    fn as_ref(&self) -> &str {
-        &self.pattern
-    }
-}
 
 /// The configuration determining how a regular expression works.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub struct RegexConfig {
     /// The value passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,
@@ -67,15 +66,6 @@ const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
 const fn newline_u8() -> u8 {b'\n'}
 const fn get_true() -> bool {true}
 
-impl FromStr for RegexParts {
-    type Err=Box<RegexSyntaxError>;
-
-    /// Simply treats the string as a regex and defaults the config.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::new(s)
-    }
-}
-
 #[allow(dead_code)]
 impl RegexParts {
     /// Creates a [`RegexParts`] with the provided pattern. The config is set to its default value.
@@ -86,24 +76,31 @@ impl RegexParts {
         Self::new_with_config(pattern, RegexConfig::default())
     }
 
+    /// Getter for the pattern.
+    pub fn pattern(&self) -> &str {
+        &self.pattern
+    }
+
+    /// Getter for the config.
+    pub fn config(&self) -> &RegexConfig {
+        &self.config
+    }
+
     /// Creates a [`RegexParts`] with the provided pattern and config.
     /// # Errors
     /// If the pattern is invalid, the error encountered by the parser is returned.
     /// The error is boxed because it's massive.
     pub fn new_with_config(pattern: &str, config: RegexConfig) -> Result<Self, Box<RegexSyntaxError>> {
-        Into::<ParserBuilder>::into(&config).build().parse(pattern).map_err(Box::new)?;
+        config.build_parser().parse(pattern).map_err(Box::new)?;
         Ok(Self {
             pattern: pattern.to_string(),
             config
         })
     }
 
-    /// Creates the regex.
-    /// # Errors
-    /// If the regex is larger than the maximum DFA size, this will error.
-    pub fn build(&self) -> Result<Regex, RegexError> {
-        RegexBuilder::new(&self.pattern)
-            .case_insensitive(self.config.case_insensitive)
+    fn make_builder(&self) -> RegexBuilder {
+        let mut ret=RegexBuilder::new(&self.pattern);
+        ret.case_insensitive(self.config.case_insensitive)
             .crlf(self.config.crlf)
             .dot_matches_new_line(self.config.dot_matches_new_line)
             .ignore_whitespace(self.config.ignore_whitespace)
@@ -111,57 +108,20 @@ impl RegexParts {
             .multi_line(self.config.multi_line)
             .octal(self.config.octal)
             .swap_greed(self.config.swap_greed)
-            .unicode(self.config.unicode)
-            .build()
-    }
-}
-
-impl From<RegexParts> for RegexBuilder {
-    fn from(value: RegexParts) -> Self {
-        (&value).into()
-    }
-}
-
-impl From<&RegexParts> for RegexBuilder {
-    fn from(value: &RegexParts) -> Self {
-        let mut ret=Self::new(&value.pattern);
-        ret.case_insensitive(value.config.case_insensitive)
-            .crlf(value.config.crlf)
-            .dot_matches_new_line(value.config.dot_matches_new_line)
-            .ignore_whitespace(value.config.ignore_whitespace)
-            .line_terminator(value.config.line_terminator)
-            .multi_line(value.config.multi_line)
-            .octal(value.config.octal)
-            .swap_greed(value.config.swap_greed)
-            .unicode(value.config.unicode);
+            .unicode(self.config.unicode);
         ret
     }
-}
 
-impl From<&RegexConfig> for ParserBuilder {
-    fn from(value: &RegexConfig) -> Self {
-        let mut ret=Self::new();
-        ret.case_insensitive(value.case_insensitive)
-            .crlf(value.crlf)
-            .dot_matches_new_line(value.dot_matches_new_line)
-            .ignore_whitespace(value.ignore_whitespace)
-            .line_terminator(value.line_terminator)
-            .multi_line(value.multi_line)
-            .octal(value.octal)
-            .swap_greed(value.swap_greed)
-            .utf8(value.unicode);
-        ret
-    }
-}
-
-impl From<RegexConfig> for ParserBuilder {
-    fn from(value: RegexConfig) -> Self {
-        (&value).into()
+    /// Creates the regex.
+    /// # Errors
+    /// If the regex is larger than the maximum DFA size, this will error.
+    pub fn build(&self) -> Result<Regex, regex::Error> {
+        self.make_builder().build()
     }
 }
 
 impl TryFrom<&RegexParts> for Regex {
-    type Error = RegexError;
+    type Error = regex::Error;
     
     fn try_from(value: &RegexParts) -> Result<Self, Self::Error> {
         value.build()
@@ -169,7 +129,7 @@ impl TryFrom<&RegexParts> for Regex {
 }
 
 impl TryFrom<RegexParts> for Regex {
-    type Error = RegexError;
+    type Error = regex::Error;
     
     fn try_from(value: RegexParts) -> Result<Self, Self::Error> {
         (&value).try_into()
@@ -250,5 +210,23 @@ impl RegexConfig {
         if self.swap_greed          {ret.push('U');}
         if self.unicode             {ret.push('u');}
         ret
+    }
+
+    fn make_parser_builder(&self) -> ParserBuilder {
+        let mut ret=ParserBuilder::new();
+        ret.case_insensitive(self.case_insensitive)
+            .crlf(self.crlf)
+            .dot_matches_new_line(self.dot_matches_new_line)
+            .ignore_whitespace(self.ignore_whitespace)
+            .line_terminator(self.line_terminator)
+            .multi_line(self.multi_line)
+            .octal(self.octal)
+            .swap_greed(self.swap_greed)
+            .utf8(self.unicode);
+        ret
+    }
+
+    fn build_parser(&self) -> Parser {
+        self.make_parser_builder().build()
     }
 }

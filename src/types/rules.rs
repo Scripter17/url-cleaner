@@ -1,7 +1,6 @@
 //! The [`rules::Rule`] type is the primary interface for URL manipulation.
 
 use url::Url;
-use std::ops::{Deref, DerefMut};
 use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
@@ -14,7 +13,9 @@ pub use mappers::*;
 
 pub use crate::types::*;
 
-/// The core unit describing when and how URLs are modified.
+/// The main API for modifying URLs.
+/// 
+/// [`Rule::Normal`] is almost always what you want.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Rule {
     /// A faster but less versatile mode that uses a hashmap to save on iterations in [`Rules`].
@@ -77,7 +78,7 @@ pub enum Rule {
         limit: u8
     },
     /// The basic condition mapper rule type.
-    /// This is the last variant because of the `#[serde(untageed)]` macro.
+    /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
     /// # Errors
     /// If the the contained condition or mapper returns an error, that error is returned.
     /// If the [`Condition`] doesn't pass, returns the error [`RuleError::FailedCondition`].
@@ -85,6 +86,8 @@ pub enum Rule {
     /// ```
     /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
     /// # use url::Url;
+    /// // [`RuleError::FailedCondition`] is returned when the condition does not pass.
+    /// // [`Rules`] just ignores them because it's a higher level API.
     /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
     /// ```
     #[serde(untagged)]
@@ -150,27 +153,11 @@ impl Rule {
     }
 }
 
-/// A thin wrapper around a vector of rules.
+/// A wrapper around a vector of rules.
+/// 
 /// Exists mainly for convenience.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Rules(pub Vec<Rule>);
-
-impl From<Vec<Rule>> for Rules {fn from(value: Vec<Rule>) -> Self {Self(value)}}
-impl From<Rules> for Vec<Rule> {fn from(value: Rules    ) -> Self {value.0    }}
-
-impl Deref for Rules {
-    type Target = Vec<Rule>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Rules {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 #[allow(dead_code)]
 impl Rules {
@@ -181,7 +168,7 @@ impl Rules {
     /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, that error is returned.
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
-        for rule in &**self {
+        for rule in &self.0 {
             match rule.apply(&mut temp_url, params) {
                 Err(RuleError::FailedCondition | RuleError::UrlHasNoHost | RuleError::HostNotInMap) => {},
                 e @ Err(_) => e?,

@@ -11,10 +11,10 @@ use reqwest::header::HeaderMap;
 
 use crate::glue::*;
 use crate::types::*;
+use crate::util::*;
 
 /// The part of a [`Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub enum Mapper {
 
     // Testing.
@@ -45,6 +45,7 @@ pub enum Mapper {
         /// The [`Self`] to use if `r#if` passes.
         then: Box<Self>,
         /// The [`Self`] to use if `r#if` fails.
+        #[serde(default = "box_mapper_none")]
         r#else: Box<Self>
     },
     /// Applies the contained [`Self`]s in order.
@@ -55,7 +56,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url, &Params::default()).is_err());
+    /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url, &Params::default()).unwrap_err();
     /// assert_eq!(url.domain(), Some("www.example.com"));
     /// ```
     All(Vec<Self>),
@@ -68,7 +69,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).is_err());
+    /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).unwrap_err();
     /// assert_eq!(url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Self>),
@@ -79,7 +80,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
@@ -96,10 +97,10 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_ok ());
-    /// assert!(Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).is_err());
+    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap_err();
     /// ```
     TryElse {
         /// The [`Self`] to try first.
@@ -115,13 +116,13 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.domain(), Some("1.com"));
-    /// assert!(Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.domain(), Some("3.com"));
-    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.domain(), Some("4.com"));
-    /// assert!(Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url, &Params::default()).is_err());
+    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url, &Params::default()).unwrap_err();
     /// assert_eq!(url.domain(), Some("4.com"));
     /// ```
     FirstNotError(Vec<Self>),
@@ -139,11 +140,11 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.query(), Some("b=3&c=4&d=5"));
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.query(), Some("d=5"));
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.query(), None);
     /// ```
     RemoveQueryParams(HashSet<String>),
@@ -155,7 +156,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// assert!(Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).unwrap();
     /// ```
     AllowQueryParams(HashSet<String>),
     /// Removes all query parameters whose name matches the specified [`StringMatcher`].
@@ -197,7 +198,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-    /// assert!(Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.path(), "/0/2/4");
     /// ```
     RemovePathSegments(Vec<usize>),
@@ -214,21 +215,14 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`StringSource::get`] return's an error, that error is returned.
     /// If the call to [`UrlPart::set`] returns an error, that error is returned.
-    #[cfg(feature = "string-source")]
     SetPart {
         /// The name of the part to replace.
         part: UrlPart,
         /// The value to set the part to.
-        value: Option<StringSource>
-    },
-    /// Sets the specified URL part to `to`.
-    /// # Errors
-    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
-    #[cfg(not(feature = "string-source"))]
-    SetPart {
-        /// The name of the part to replace.
-        part: UrlPart,
+        #[cfg(feature = "string-source")]
+        value: Option<StringSource>,
         /// The value to set the part to.
+        #[cfg(not(feature = "string-source"))]
         value: Option<String>
     },
     /// Modifies the specified part of the URL.
@@ -269,7 +263,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// assert!(Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut url, &Params::default()).is_ok());
+    /// Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -279,6 +273,8 @@ pub enum Mapper {
         headers: HeaderMap
     }
 }
+
+fn box_mapper_none() -> Box<Mapper> {Box::new(Mapper::None)}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Error, Debug)]
@@ -436,29 +432,13 @@ impl Mapper {
 
             Self::SetHost(new_host) => url.set_host(Some(new_host))?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
-            #[cfg(feature = "string-source")]
-            Self::Join(with) => if let Some(value) = with.get(url, params)? {
-                *url=url.join(&value)?;
-            } else {
-                Err(MapperError::StringSourceIsNone)?
-            },
-            #[cfg(not(feature = "string-source"))]
-            Self::Join(with) => *url=url.join(with)?,
+            Self::Join(with) => *url=url.join(get_string!(with, url, params, MapperError))?,
 
             // Generic part handling
 
-            #[cfg(feature = "string-source")]
-            Self::SetPart{part, value} => match value.as_ref() {
-                Some(source) => {
-                    let temp=source.get(url, params)?.map(|x| x.into_owned());
-                    part.set(url, temp.as_deref())
-                },
-                None => part.set(url, None)
-            }?,
-            #[cfg(not(feature = "string-source"))]
-            Self::SetPart{part, value} => part.set(url, value.as_deref())?,
+            Self::SetPart{part, value} => part.set(url, get_option_string!(value, url, params).map(|x| x.to_owned()).as_deref())?,
             #[cfg(feature = "string-modification")]
-            Self::ModifyPart{part, how} => part.modify(url, how, params)?,
+            Self::ModifyPart{part, how} => part.modify(how, url, params)?,
             Self::CopyPart{from, to} => to.set(url, from.get(url).map(|x| x.into_owned()).as_deref())?,
 
             // Error handling

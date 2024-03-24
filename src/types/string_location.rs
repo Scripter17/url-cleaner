@@ -7,7 +7,6 @@ use crate::util::*;
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(deny_unknown_fields)]
 pub enum StringLocation {
     /// Always passes.
     Always,
@@ -101,26 +100,6 @@ pub enum StringLocation {
     /// assert_eq!(StringLocation::End.satisfied_by("abcdef", "cde").unwrap(), false);
     /// ```
     End,
-    /// Checks if an instance of the needle starts and ends at the specified range in the haystack.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::StringLocation;
-    /// assert_eq!(StringLocation::RangeIs{start: Some( 0), end: Some( 3)}.satisfied_by("abcdef", "abc"   ).unwrap(), true);
-    /// assert_eq!(StringLocation::RangeIs{start: Some( 1), end: Some( 4)}.satisfied_by("abcdef", "bcd"   ).unwrap(), true);
-    /// assert_eq!(StringLocation::RangeIs{start: Some( 0), end: Some( 6)}.satisfied_by("abcdef", "abcdef").unwrap(), true);
-    /// assert_eq!(StringLocation::RangeIs{start: Some( 5), end: Some( 6)}.satisfied_by("abcdef", "f"     ).unwrap(), true);
-    /// StringLocation::RangeIs{start: Some( 6), end: Some( 7)}.satisfied_by("abcdef", "f"     ).unwrap_err();
-    /// assert_eq!(StringLocation::RangeIs{start: Some( 6), end: None    }.satisfied_by("abcdef", ""      ).unwrap(), true);
-    ///
-    /// assert_eq!(StringLocation::RangeIs{start: Some(-1), end: None    }.satisfied_by("abcdef", "f"     ).unwrap(), true);
-    /// assert_eq!(StringLocation::RangeIs{start: Some(-2), end: Some(-1)}.satisfied_by("abcdef", "e"     ).unwrap(), true);
-    /// ```
-    RangeIs {
-        /// The start of the range to check.
-        start: Option<isize>,
-        /// The end of the range to check.
-        end: Option<isize>
-    },
     /// Checks if an instance of the needle starts at the specified point in the haystack.
     /// # Examples
     /// ```
@@ -151,18 +130,14 @@ pub enum StringLocation {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringLocation;
-    /// assert_eq!(StringLocation::RangeHas{start: Some(0), end: Some(1)}.satisfied_by("abcdef", "a"   ).unwrap(), true );
-    /// assert_eq!(StringLocation::RangeHas{start: Some(0), end: Some(2)}.satisfied_by("abcdef", "a"   ).unwrap(), true );
-    /// assert_eq!(StringLocation::RangeHas{start: Some(0), end: Some(6)}.satisfied_by("abcdef", "bcde").unwrap(), true );
-    /// assert_eq!(StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "a"   ).unwrap(), false);
-    /// assert_eq!(StringLocation::RangeHas{start: Some(1), end: Some(6)}.satisfied_by("abcdef", "f"   ).unwrap(), true );
-    /// StringLocation::RangeHas{start: Some(0), end: Some(7)}.satisfied_by("abcdef", ""    ).unwrap_err();
     /// ```
-    RangeHas {
+    Range {
         /// The start of the range to check.
         start: Option<isize>,
         /// The end of the range to check.
-        end: Option<isize>
+        end: Option<isize>,
+        /// Where to look in the range
+        location: Box<Self>
     },
     /// Checks if an instance of the needle exists after the specified point in the haystack.
     /// # Examples
@@ -305,13 +280,16 @@ impl StringLocation {
             Self::End                  => haystack.ends_with  (needle),
             Self::Anywhere             => haystack.contains   (needle),
 
-            Self::RangeIs {start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?  ).ok_or(StringLocationError::InvalidSlice)?==needle,
-            Self::StartsAt(start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.starts_with(needle),
-            Self::EndsAt  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.ends_with(needle),
+            Self::StartsAt (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.starts_with(needle),
+            Self::EndsAt   (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.ends_with(needle),
 
-            Self::RangeHas{start, end} => haystack.get(  neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
-            Self::After   (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
-            Self::Before  (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+            Self::After    (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+            Self::Before   (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+
+            Self::Range {start, end, location} => location.satisfied_by(
+                haystack.get(neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?).ok_or(StringLocationError::InvalidSlice)?,
+                needle
+            )?,
 
             Self::Equals               => haystack==needle,
             Self::AnySegment {split, location} => {

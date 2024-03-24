@@ -338,8 +338,16 @@
 				]},
 				"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
 				"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
-				"bbc.com": {"RemoveQueryParamsMatching": {"StringLocation": {"location": "Start", "value": "at_"}}}
+				"bbc.com": {"RemoveQueryParamsMatching": {"StringLocation": {"location": "Start", "value": "at_"}}},
+				"linktr.ee": {"RemoveQueryParams": ["ltsid"]}
 			}
+		},
+
+
+
+		{
+			"condition": {"UnqualifiedDomain": "steampowered.com"},
+			"mapper": {"RemoveQueryParams": ["snr"]}
 		},
 
 
@@ -527,8 +535,8 @@
 		},
 		{
 			"condition": {"All": [
-				{"Debug": {"FlagIsSet": "breezewiki"}},
-				{"Debug": {"UnqualifiedDomain": "fandom.com"}}
+				{"FlagIsSet": "breezewiki"},
+				{"UnqualifiedDomain": "fandom.com"}
 			]},
 			"mapper": {"All": [
 				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},

@@ -3,9 +3,9 @@ redirect-cache.txt
 /konsole*
 /benchmarking/stdin
 /benchmarking/output-*
-massif*
 callgrind*
 hyperfine*
 *.zip
 mprocs.yaml
 bacon.toml
+tests.sh

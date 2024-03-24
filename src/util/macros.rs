@@ -31,15 +31,41 @@ macro_rules! string_or_struct_magic {
                 deserializer.deserialize_any(V)
             }
         }
+    }
+}
 
-        impl TryFrom<&str> for $type {
-            type Error = <$type as FromStr>::Err;
+/// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
+#[cfg(feature = "string-source")]
+macro_rules! get_string {
+    ($value:expr, $url:expr, $params:expr, $error:ty) => {
+        &*$value.get($url, $params)?.ok_or(<$error>::StringSourceIsNone)?
+    }
+}
 
-            fn try_from(value: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
-                <$type>::from_str(value)
-            }
-        }
+/// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
+#[cfg(not(feature = "string-source"))]
+macro_rules! get_string {
+    ($value:expr, $url:expr, $params:expr, $error:ty) => {
+        $value.as_str()
+    }
+}
+
+/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
+#[cfg(feature = "string-source")]
+macro_rules! get_option_string {
+    ($value:expr, $url:expr, $params:expr) => {
+        $value.as_ref().map(|source| source.get($url, $params)).transpose()?.flatten().as_deref()
+    }
+}
+
+/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
+#[cfg(not(feature = "string-source"))]
+macro_rules! get_option_string {
+    ($value:expr, $url:expr, $params:expr) => {
+        $value.as_deref()
     }
 }
 
 pub(crate) use string_or_struct_magic;
+pub(crate) use get_string;
+pub(crate) use get_option_string;

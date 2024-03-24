@@ -3,18 +3,16 @@ pub use regex_parts::*;
 
 use std::str::FromStr;
 use std::sync::OnceLock;
-use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 
 use regex_syntax::Error as RegexSyntaxError;
-use regex::{Regex, Replacer, Match, Captures};
+use regex::Regex;
 
 /// A wrapper around both a [`OnceLock`] of a [`Regex`] and a [`RegexParts`].
 /// 
-/// The [`OnceLock`] is because compiling a regex takes a lot of time.
-/// 
-/// Including the [`RegexParts`] is because turning a [`Regex`] into a [`RegexParts`] is extremely complicated and requires a lot of [`unsafe`](https://doc.rust-lang.org/std/keyword.unsafe.html) code.
+/// Both are included to allow both lazy compilation and turning a [`Self`] back into a [`RegexParts`].
+/// Unfortunately, as they need to always be the same value, the fields of this struct are private.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(from = "RegexParts", into = "RegexParts")]
 pub struct RegexWrapper {
@@ -31,12 +29,6 @@ impl From<RegexParts> for RegexWrapper {
     }
 }
 
-impl From<RegexWrapper> for (OnceLock<Regex>, RegexParts) {
-    fn from(value: RegexWrapper) -> Self {
-        (value.regex, value.parts)
-    }
-}
-
 impl FromStr for RegexWrapper {
     type Err = Box<RegexSyntaxError>;
 
@@ -46,8 +38,23 @@ impl FromStr for RegexWrapper {
     }
 }
 
+impl TryFrom<&str> for RegexWrapper {
+    type Error = <Self as FromStr>::Err;
+
+    /// [`Self::from_str`].
+    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
+        Self::from_str(s)
+    }
+}
+
+impl From<RegexWrapper> for (OnceLock<Regex>, RegexParts) {
+    fn from(value: RegexWrapper) -> Self {
+        (value.regex, value.parts)
+    }
+}
+
 impl PartialEq for RegexWrapper {
-    /// [`RegexParts::eq`].
+    /// Simply calls [`RegexParts::eq`].
     fn eq(&self, other: &Self) -> bool {
         self.parts.eq(&other.parts)
     }
@@ -66,66 +73,28 @@ impl AsRef<RegexParts> for RegexWrapper {
     }
 }
 
-impl AsRef<OnceLock<Regex>> for RegexWrapper {
-    fn as_ref(&self) -> &OnceLock<Regex> {
-        &self.regex
+impl TryFrom<RegexWrapper> for Regex {
+    type Error = regex::Error;
+
+    fn try_from(value: RegexWrapper) -> Result<Self, Self::Error> {
+        value.parts.build()
     }
 }
 
 impl RegexWrapper {
     /// Gets the cached compiled regex and compiles it first if it's not already cached.
-    /// # Panics
-    /// Although the regex is guaranteed to be syntactically valid, it is possible it will exceed the default [DFA size limit](https://docs.rs/regex/latest/regex/index.html#untrusted-patterns). In that case, this method will panic.
-    /// For the sake of API design, I consider that a niche enough case that this warning is sufficient.
-    pub fn get_regex(&self) -> &Regex {
-        self.regex.get_or_init(|| self.parts.build()
-            .expect("The regex to not exceed the DFA size limit.")) // https://docs.rs/regex/latest/regex/index.html#untrusted-patterns.
-    }
-
-    /// Gets the contained [`RegexParts`].
-    pub fn get_regex_parts(&self) -> &RegexParts {
-        &self.parts
-    }
-
-    /// A convenience wrapper around [`Regex::find`].
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that method.
-    pub fn find<'h>(&self, haystack: &'h str) -> Option<Match<'h>> {
-        self.get_regex().find(haystack)
-    }
-
-    /// A convenience wrapper around [`Regex::captures`].
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that method.
-    pub fn captures<'h>(&self, haystack: &'h str) -> Option<Captures<'h>> {
-        self.get_regex().captures(haystack)
-    }
-
-    /// A convenience wrapper around [`Regex::is_match`].
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that method.
-    pub fn is_match(&self, haystack: &str) -> bool {
-        self.get_regex().is_match(haystack)
-    }
-
-    /// A convenience wrapper around [`Regex::replace`].
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that method.
-    pub fn replace<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
-        self.get_regex().replace(haystack, rep)
-    }
-
-    /// A convenience wrapper around [`Regex::replace_all`].
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that method.
-    pub fn replace_all<'h, R: Replacer>(&self, haystack: &'h str, rep: R) -> Cow<'h, str> {
-        self.get_regex().replace_all(haystack, rep)
-    }
-
-    /// A convenience wrapper around [`Regex::replacen`].
-    /// # Panics
-    /// Panics whenever [`Self::get_regex`] would as it calls that method.
-    pub fn replacen<'h, R: Replacer>(&self, haystack: &'h str, limit: usize, rep: R) -> Cow<'h, str> {
-        self.get_regex().replacen(haystack, limit, rep)
+    /// # Errors
+    /// Although regexes are ensured to be syntactically valid when a [`Self`] is created, it is possible for actually compiling a regex to result in a DFA bigger than the default limit in the [`regex`] crate.
+    /// 
+    /// For details, please see the regex crate's documentation on [untrusted patterns](https://docs.rs/regex/latest/regex/index.html#untrusted-patterns) for details.
+    /// 
+    /// The error is in a [`Box`] because it is massive.
+    pub fn get_regex(&self) -> Result<&Regex, regex::Error> {
+        if let Some(regex) = self.regex.get() {
+            Ok(regex)
+        } else {
+            let temp = self.parts.build()?;
+            Ok(self.regex.get_or_init(|| temp))
+        }
     }
 }

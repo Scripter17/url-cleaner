@@ -10,7 +10,6 @@ use serde::{
 /// A wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]
-#[serde(deny_unknown_fields)]
 pub struct GlobWrapper {
     /// The pattern used to match stuff.
     #[serde(flatten, serialize_with = "serialize_pattern", deserialize_with = "deserialize_pattern")]
@@ -18,6 +17,26 @@ pub struct GlobWrapper {
     /// The options used to choose how the pattern matches stuff.
     #[serde(flatten, with = "SerdeMatchOptions")]
     pub options: MatchOptions
+}
+
+impl FromStr for GlobWrapper {
+    type Err=PatternError;
+
+    /// Simply treats the string as a glob and defaults the config.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            pattern: Pattern::from_str(s)?,
+            options: MatchOptions::default()
+        })
+    }
+}
+
+impl TryFrom<&str> for GlobWrapper {
+    type Error = <Self as FromStr>::Err;
+
+    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
+        Self::from_str(s)
+    }
 }
 
 crate::util::string_or_struct_magic!(GlobWrapper);
@@ -50,17 +69,5 @@ impl GlobWrapper {
     #[must_use]
     pub fn matches(&self, str: &str) -> bool {
         self.pattern.matches_with(str, self.options)
-    }
-}
-
-impl FromStr for GlobWrapper {
-    type Err=PatternError;
-
-    /// Simply treats the string as a glob and defaults the config.
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            pattern: Pattern::from_str(s)?,
-            options: MatchOptions::default()
-        })
     }
 }
