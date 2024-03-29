@@ -1,3 +1,5 @@
+//! Provides [`GlobWrapper`], a serializaable/deserializable wrapper around [`Pattern`] and [`MatchOptions`].
+
 use std::str::FromStr;
 
 use glob::{Pattern, MatchOptions, PatternError};
@@ -41,31 +43,40 @@ impl TryFrom<&str> for GlobWrapper {
 
 crate::util::string_or_struct_magic!(GlobWrapper);
 
+/// A serialization/deserialization helper for [`MatchOptions`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(remote = "MatchOptions")]
 struct SerdeMatchOptions {
+    /// [`MatchOptions::case_sensitive`].
     #[serde(default = "get_true" , skip_serializing_if = "is_true" )] case_sensitive: bool,
+    /// [`MatchOptions::require_literal_separator`].
     #[serde(default = "get_false", skip_serializing_if = "is_false")] require_literal_separator: bool,
+    /// [`MatchOptions::require_literal_leading_dot`].
     #[serde(default = "get_true" , skip_serializing_if = "is_true" )] require_literal_leading_dot: bool,
 }
 
-// Serde helper functions
+/// Serde helper function used by [`SerdeMatchOptions`].
 const fn get_true() -> bool {true}
+/// Serde helper function used by [`SerdeMatchOptions`].
 const fn get_false() -> bool {false}
+/// Serde helper function used by [`SerdeMatchOptions`].
 const fn is_true(x: &bool) -> bool {*x}
+/// Serde helper function used by [`SerdeMatchOptions`].
 const fn is_false(x: &bool) -> bool {!*x}
 
+/// Deserializer to turn a string into a [`Pattern`].
 fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern: String=Deserialize::deserialize(deserializer)?;
     Pattern::new(&pattern).map_err(D::Error::custom)
 }
 
+/// Serializaer to turn a [`Pattern`] into a string.
 fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(pattern.as_str())
 }
 
 impl GlobWrapper {
-    /// Wrapper for `glob::Pattern::matches`.
+    /// Wrapper for `glob::Pattern::matches_with`.
     #[must_use]
     pub fn matches(&self, str: &str) -> bool {
         self.pattern.matches_with(str, self.options)

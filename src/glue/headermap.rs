@@ -1,3 +1,5 @@
+//! Provides serialization and deserialization functions for [`HeaderMap`].
+
 use std::collections::HashMap;
 
 use serde::{Deserialize, ser::{Serializer, Error as _}, de::{Deserializer, Error as _}};

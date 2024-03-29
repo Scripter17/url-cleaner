@@ -1,3 +1,5 @@
+//! Provides [`RegexWrapper`], a lazy, serializable/deserializable, and deconstructable wrapper around [`Regex`].
+
 mod regex_parts;
 pub use regex_parts::*;
 
@@ -16,7 +18,9 @@ use regex::Regex;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(from = "RegexParts", into = "RegexParts")]
 pub struct RegexWrapper {
+    /// Allows the [`Regex`] to only be constructed when needed.
     regex: OnceLock<Regex>,
+    /// Instructions for how to create the [`Regex`] to put in [`Self::regex`].
     parts: RegexParts
 }
 

@@ -99,7 +99,7 @@ pub enum Rule {
     },
 }
 
-// Serde helpers.
+/// Serde helper function. The default value of [`Rule::RepeatUntilNonePass::limit`].
 const fn get_10_u8() -> u8 {10}
 
 /// The errors that [`Rule`] can return.

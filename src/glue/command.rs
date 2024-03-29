@@ -1,3 +1,5 @@
+//! Provides [`CommandConfig`] and [`OutputHandler`] to allow usage of external commands.
+
 use std::process::{Command, Output as CommandOutput, Stdio};
 use std::io::Write;
 use std::path::PathBuf;
@@ -14,6 +16,10 @@ use url::Url;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use which::which;
+
+// Used just for documentation.
+#[allow(unused_imports)]
+use crate::types::*;
 
 /// Instructions on how to make and run a [`Command`] object.
 /// 
@@ -136,12 +142,14 @@ impl CommandConfig {
             Some(stdin) => {
                 // https://stackoverflow.com/a/49597789/10720231
                 let mut command=self.make_command(url);
-                let mut child=command
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped())
-                    .spawn()?;
-                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics. If it ever does, so will I.
+                command.stdin(Stdio::piped());
+                match self.output_handler {
+                    OutputHandler::ReturnStdout | OutputHandler::PipeStdout(_) | OutputHandler::ApplyStdoutUrl(_) => {command.stdout(Stdio::piped()); command.stderr(Stdio::null ());},
+                    OutputHandler::ReturnStderr | OutputHandler::PipeStderr(_) | OutputHandler::ApplyStderrUrl(_) => {command.stdout(Stdio::null ()); command.stderr(Stdio::piped());},
+                    _                                                                                             => {command.stdout(Stdio::null ()); command.stderr(Stdio::null ());}
+                }
+                let mut child=command.spawn()?;
+                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)?
             },
@@ -164,13 +172,13 @@ impl CommandConfig {
 /// For the sake of simplicity, [`Self::handle`] returns a [`Result<String, CommandError>`] instead of [`Result<Vec<u8>, CommandError>`].
 #[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
 pub enum OutputHandler {
+    /// Always return the error [`CommandError::ExplicitError`].
+    Error,
     /// Return the STDOUT. This is the default handler.
     #[default]
     ReturnStdout,
     /// Return the STDERR.
     ReturnStderr,
-    /// Always return the error [`CommandError::ExplicitError`].
-    Error,
     /// Pipes the STDOUT into the contained command's STDIN.
     PipeStdout(Box<CommandConfig>),
     /// Pipes the STDERR into the contained command's STDIN.
@@ -193,7 +201,7 @@ pub enum OutputHandler {
     }
 }
 
-// Serde helper functions
+/// The default value of [`OutputHandler::IfExitCode::r#else`].
 fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
 
 impl OutputHandler {
@@ -201,8 +209,10 @@ impl OutputHandler {
     /// When piping STDOUT/STDERR to another command's STDIN, no UTF-8 checks are done.
     /// # Errors
     /// If the command returns an error, that error is returned.
-    /// If the command's STDOUT is not valid UTF-8 when using [`Self::ReturnStdout`] or [`Self::ApplyStdoutUrlTo`], returns the error [`CommandError::Utf8Error`].
-    /// If the command's STDERR is not valid UTF-8 when using [`Self::ReturnStderr`] or [`Self::ApplyStderrUrlTo`], returns the error [`CommandError::Utf8Error`].
+    /// 
+    /// If the command's STDOUT is not valid UTF-8 when using [`Self::ReturnStdout`] or [`Self::ApplyStdoutUrl`], returns the error [`CommandError::Utf8Error`].
+    /// 
+    /// If the command's STDERR is not valid UTF-8 when using [`Self::ReturnStderr`] or [`Self::ApplyStderrUrl`], returns the error [`CommandError::Utf8Error`].
     pub fn handle(&self, url: Option<&Url>, output: CommandOutput) -> Result<String, CommandError> {
         match self {
             Self::ReturnStdout                     => Ok(from_utf8(&output.stdout)?.to_string()),

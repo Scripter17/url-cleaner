@@ -40,7 +40,7 @@ pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params_diff: Opt
     };
     if let Some(params_diff) = params_diff {
         let mut config = config.clone();
-        config.params.apply_diff(params_diff);
+        params_diff.apply(&mut config.params);
         config.apply(url)?;
     } else {
         config.apply(url)?;

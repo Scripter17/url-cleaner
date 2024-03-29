@@ -1,3 +1,5 @@
+//! Provides [`StringMatcher`] which allows for testing if a [`str`] matches a certain rule.
+
 use std::collections::HashSet;
 
 use serde::{Serialize, Deserialize};

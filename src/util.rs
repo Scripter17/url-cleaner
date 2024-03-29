@@ -51,6 +51,7 @@ pub(crate) fn neg_range(start: Option<isize>, end: Option<isize>, len: usize) ->
     ))
 }
 
+/// Makes a [`Vec`] from `iter` then keeps only elements specified by [`neg_range`]ing `start` and `end`.
 pub(crate) fn neg_vec_keep<I: IntoIterator>(iter: I, start: Option<isize>, end: Option<isize>) -> Option<Vec<I::Item>> {
     let mut ret=iter.into_iter().collect::<Vec<_>>();
     Some(ret.drain(neg_range(start, end, ret.len())?).collect())

@@ -1,3 +1,5 @@
+//! "Glue" to make working with types from other crates easier.
+
 #[cfg(feature = "regex"   )] mod regex;
 #[cfg(feature = "regex"   )] pub use regex::*;
 #[cfg(feature = "glob"    )] mod glob;

@@ -1,3 +1,5 @@
+//! Provides [`UrlPart`] which allows for getting and setting various parts of a [`Url`].
+
 use std::borrow::Cow;
 
 use url::{Url, Origin};

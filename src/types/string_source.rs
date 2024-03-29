@@ -1,3 +1,5 @@
+//! Provides [`StringSource`] which allows for getting strings from various parts of URL Cleaner's current state.
+
 use std::str::FromStr;
 use std::convert::Infallible;
 use std::borrow::Cow;
@@ -101,7 +103,7 @@ pub enum StringSource {
         /// The modification to apply to the string.
         modification: StringModification
     },
-    /// Joins a list of strings. Effectively a [`Vec::join`].
+    /// Joins a list of strings. Effectively a [`slice::join`].
     /// By default, `join` is `""` so the strings are concatenated.
     /// # Errors
     /// If any call to [`Self::get`] returns an error, that error is returned.

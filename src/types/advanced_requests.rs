@@ -1,3 +1,5 @@
+//! Provides [`RequestConfig`], [`RequestBody`], and [`ResponseHandler`] which allows for sending HTTP requests and getting strings from their responses.
+
 use std::str::FromStr;
 use std::collections::HashMap;
 
@@ -37,9 +39,13 @@ pub struct RequestConfig {
     /// The method [`Self::response`] uses to get a [`String`] from the [`reqwest::blocking::Response`]
     /// Defaults to [`ResponseHandler::Body`].
     #[serde(default)]
-    pub response_handler: ResponseHandler
+    pub response_handler: ResponseHandler,
+    /// Rules for how to make the HTTP client.
+    #[serde(default)]
+    pub client_config_diff: Option<HttpClientConfigDiff>
 }
 
+/// Serde helper function. The default value of [`RequestConfig::method`].
 const fn get_get() -> Method {Method::GET}
 
 /// The enum of all possible errors [`RequestConfig::make`] and [`RequestConfig::response`] can return.
@@ -74,10 +80,12 @@ impl From<StringSourceError> for RequestConfigError {
     }
 }
 
+/// Deserializer to turn a string into a [`Method`].
 fn deserialize_method<'de, D: Deserializer<'de>>(d: D) -> Result<Method, D::Error> {
     Method::from_str(Deserialize::deserialize(d)?).map_err(D::Error::custom)
 }
 
+/// Serializer to turn a [`Method`] into a string.
 fn serialize_method<S: Serializer>(method: &Method, s: S) -> Result<S::Ok, S::Error> {
     s.serialize_str(method.as_str())
 }
@@ -88,7 +96,7 @@ impl RequestConfig {
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
-        let mut ret=params.http_client()?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(get_string!(source, url, params, RequestConfigError))?, None => url.clone()});
+        let mut ret=params.http_client(self.client_config_diff.as_ref())?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(get_string!(source, url, params, RequestConfigError))?, None => url.clone()});
 
         ret = ret.headers(self.headers.clone());
         if let Some(body) = &self.body {ret=body.apply(ret, url, params)?;}
@@ -182,19 +190,11 @@ pub enum ResponseHandler {
     #[default]
     Body,
     /// [`reqwest::blocking::Response::headers`].
-    #[cfg(feature = "string-source")]
-    Header(StringSource),
-    /// [`reqwest::blocking::Response::headers`].
-    #[cfg(not(feature = "string-source"))]
-    Header(String),
+    Header(#[cfg(feature = "string-source")] StringSource, #[cfg(not(feature = "string-source"))] String),
     /// [`reqwest::blocking::Response::url`].
     Url,
     /// [`reqwest::blocking::Response::cookies`].
-    #[cfg(feature = "string-source")]
-    Cookie(StringSource),
-    /// [`reqwest::blocking::Response::cookies`].
-    #[cfg(not(feature = "string-source"))]
-    Cookie(String)
+    Cookie(#[cfg(feature = "string-source")] StringSource, #[cfg(not(feature = "string-source"))] String)
 }
 
 /// The enum of all possible errors [`ResponseHandler::handle`] can return.

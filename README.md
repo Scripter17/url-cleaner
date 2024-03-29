@@ -13,6 +13,15 @@ If you find any instance of the default config changing the meaning/result of a 
 Additionally, if you find any example of a malformed URL that can be unambiguously transformed into what was intended (`https://abc.tumblr.com.tumblr.com` -> `https://abc.tumblr.com` and `https://bsky.app/profile/abc` -> `https://bsky.app/profile/abc.bsky.social`), please open an issue.  
 Since these are somewhat common when social media sites have dedicated fields for other social medias, it's worth handling these.
 
+## Anonymity
+
+Because most people don't use URL Cleaner, using URL Cleaner can let websites correlate information similar to URL tracking parameters.  
+If you're the only person without a tracking parameter in links, it's fairly easy to distinguish you from everyone else.
+
+However, as URL Cleaner outputs "canonical" URLs, everyone who uses URL Cleaner looks identical, making each other stronger.
+
+As with Tor, protests, and, really, everything, safety comes in numbers.
+
 ## Variables
 
 Variables let you specify behaviour with the `--var name=value --var name2=value2` command line syntax.
@@ -59,16 +68,22 @@ If the URL in your web browser looks like `file:///run/...` and the webpage is w
 
 - [`Option<...>`](https://doc.rust-lang.org/std/option/enum.Option.html) just means a value can be `null` in the JSON. `{"abc": "xyz"}` and `{"abc": null}` are both valid states for a `abc: Option<String>` field.
 - [`Box<...>`](https://doc.rust-lang.org/std/boxed/struct.Box.html) has no bearing on JSON syntax or possible values. It's just used so Rust can put types inside themselves.
-- [`Vec<...>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) and [`HashSet<...>`](https://doc.rust-lang.org/std/collections/struct.HashSet.html) are written as lists in JSON.
+- [`Vec<...>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) and [`HashSet<...>`](https://doc.rust-lang.org/std/collections/struct.HashSet.html) are written as lists.
 - [`[...; N]`](https://doc.rust-lang.org/std/primitive.array.html) is written as a list of length `N`.
-- [`HashMap<..., ...>`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) and [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) are written as dictionaries in JSON. Please note that header names are always lowercase.
+- [`HashMap<..., ...>`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) and [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) are written as maps in JSON.
+    - [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) keys are always lowercase.
 - Fields preceded by [`#[serde(default)]`](https://serde.rs/field-attrs.html#default) or [`#[serde(default = "...")]`](https://serde.rs/field-attrs.html#default--path) can be omitted from config files. The defaults are almost always what you want.
-- [`u8`](https://doc.rust-lang.org/std/primitive.u8.html), [`u16`](https://doc.rust-lang.org/std/primitive.u16.html), [`u32`](https://doc.rust-lang.org/std/primitive.u32.html), [`u64`](https://doc.rust-lang.org/std/primitive.u64.html), [`u128`](https://doc.rust-lang.org/std/primitive.u128.html), and [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) are unsigned (non-negative) integers. [`i8`](https://doc.rust-lang.org/std/primitive.i8.html), [`i16`](https://doc.rust-lang.org/std/primitive.i16.html), [`i32`](https://doc.rust-lang.org/std/primitive.i32.html), [`i64`](https://doc.rust-lang.org/std/primitive.i64.html), [`i128`](https://doc.rust-lang.org/std/primitive.i128.html), and [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) are signed integers. [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) is a [`u32`](https://doc.rust-lang.org/std/primitive.u32.html) on 32-bit computers and [`u64`](https://doc.rust-lang.org/std/primitive.u64.html) on 64-bit computers. Likewise [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) is [`i32`](https://doc.rust-lang.org/std/primitive.i32.html) and [`i64`](https://doc.rust-lang.org/std/primitive.i64.html) under the same conditions. In practice, if a number makes sense to be used in a field then it'll fit.
-- A [`StringSource`](src/types/string_source.rs) is usually just written as a string. To see how it can be used to get URL parts or variables see [`string_source.rs`](src/types/string_source.rs).
+- [`u8`](https://doc.rust-lang.org/std/primitive.u8.html), [`u16`](https://doc.rust-lang.org/std/primitive.u16.html), [`u32`](https://doc.rust-lang.org/std/primitive.u32.html), [`u64`](https://doc.rust-lang.org/std/primitive.u64.html), [`u128`](https://doc.rust-lang.org/std/primitive.u128.html), and [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) are unsigned (never negative) integers. [`i8`](https://doc.rust-lang.org/std/primitive.i8.html), [`i16`](https://doc.rust-lang.org/std/primitive.i16.html), [`i32`](https://doc.rust-lang.org/std/primitive.i32.html), [`i64`](https://doc.rust-lang.org/std/primitive.i64.html), [`i128`](https://doc.rust-lang.org/std/primitive.i128.html), and [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) are signed (maybe negative) integers. [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) is a [`u32`](https://doc.rust-lang.org/std/primitive.u32.html) on 32-bit computers and [`u64`](https://doc.rust-lang.org/std/primitive.u64.html) on 64-bit computers. Likewise [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) is [`i32`](https://doc.rust-lang.org/std/primitive.i32.html) and [`i64`](https://doc.rust-lang.org/std/primitive.i64.html) under the same conditions. In practice, if a number makes sense to be used in a field then it'll fit.
 - If a field starts with [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) (like `r#else`) you write it without the [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) (like `"else"`). [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) is just Rust syntax for "this isn't a keyword".
-- [`StringSource`](src/types/string_source.rs), [`GlobWrapper`](src/glue/glob.rs), [`RegexWrapper`](src/glue/regex.rs), [`RegexParts`](src/glue/regex/regex_parts.rs), and [`CommandWrapper`](src/glue/command.rs) can be either strings or structs. The main limits are that [`RegexWrapper`](src/glue/regex.rs) and [`RegexParts`](src/glue/regex/regex_parts.rs) don't do any handling of [`/.../i`](https://en.wikipedia.org/wiki/Regex#Delimiters)-style syntax and [`CommandWrapper`](src/glue/command.rs) doesn't do any argument parsing. If you need those, use the map syntax.
+- [`StringSource`](src/types/string_source.rs), [`GlobWrapper`](src/glue/glob.rs), [`RegexWrapper`](src/glue/regex.rs), [`RegexParts`](src/glue/regex/regex_parts.rs), and [`CommandWrapper`](src/glue/command.rs) can be written as both strings and maps.
+    - [`RegexWrapper`](src/glue/regex.rs) and [`RegexParts`](src/glue/regex/regex_parts.rs) don't do any handling of [`/.../i`](https://en.wikipedia.org/wiki/Regex#Delimiters)-style syntax.
+    - [`CommandWrapper`](src/glue/command.rs) doesn't do any argument parsing.
+- [`#[serde(default)]`](https://serde.rs/field-attrs.html#default) and [`#[serde(default = "...")]`](https://serde.rs/field-attrs.html#default--path) allow for a field to be omitted when the desired value is almost always the same.
+- [`#[serde(skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if) lets the `--print-config` CLI flag omit uneccesary details (like when a field's value is its default value).
+- [`#[serde(from = "...")]`](https://serde.rs/container-attrs.html#from), [`#[serde(into = "...")]`](https://serde.rs/container-attrs.html#into), [`#[serde(remote = "...")]`](https://serde.rs/container-attrs.html#remote), [`#[serde(serialize_with = "...")]`](https://serde.rs/field-attrs.html#serialize_with), [`#[serde(serialize_with = "...")]`](https://serde.rs/field-attrs.html#serialize_with), and [`#[serde(with = "...")]`](https://serde.rs/field-attrs.html#with) are implementation details that can be mostly ignored.
+- [`#[serde(remote = "Self")]`](https://serde.rs/container-attrs.html#remote) is a very strange way to allow a struct to be deserialized from a map or a string. See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 
-Furthermore, regex support uses the [regex](https://docs.rs/regex/latest/regex/index.html) crate, which does not support look-around and backreferences.  
+Additionally, regex support uses the [regex](https://docs.rs/regex/latest/regex/index.html) crate, which doesn't support look-around and backreferences.  
 Certain common regex operations are not possible to express without those, but this should never come up in practice.
 
 ### Custom rule performance
@@ -81,17 +96,6 @@ The reason is fairly simple: Instead of removing some of the query then removing
 While I have done my best to ensure URL Cleaner is as fast as I can get it, that does not mean you shouldn't be careful with rule order.
 
 I know to most people in most cases, 10k URLs in 120ms versus 10k URLs in 60ms is barely noticeable, but that kind of thinking is why video games require mortgages.
-
-## Anonymity
-
-Because most people don't use URL Cleaner, using URL Cleaner can let websites correlate information similar to URL tracking parameters.  
-If you're the only person without a tracking parameter in links, it's fairly easy to distinguish you from everyone else.
-
-Additionally, expanding short links or otherwise using rules that send HTTP requests could nullify and perceived benefit URL Cleaner provides.  
-If a `t.co` link points to `example.com?utm_source=twitter`, `example.com` will see your IP access `example.com?utm_source=twitter` even though the `utm_source` is removed by a later rule.  
-For specifically link shorteners (other HTTP requests including those used for `bypass.vip` currently don't cache), the cache makes this a one-time-per-link issue, but if you're cleaning untrusted input PLEASE use some form of VPN or proxy. Preferably Tor if none of the websites you clean throw a hissy fit at Tor.
-
-As with Tor, protests, and, really, everything, safety comes in numbers.
 
 ## MSRV
 
@@ -107,6 +111,46 @@ That said, if you find something to be unnecessarily unsafe, please open an issu
 ## Backwards compatibility
 
 URL Cleaner is currently in heavy flux so expect library APIs and the config schema to change at any time for any reason.
+
+## Command line details
+
+### Parsing output
+
+Unless `Mapper::Println` or a `Debug` variant is used, the following should always be true:
+
+1. Input URLs are a list of URLs starting with URLs provided as command line arguments then each line of the STDIN.
+
+2. The nth line of STDOUT corresponds to the nth input URL.
+
+3. If the nth line of STDOUT is empty, then something about reading/parsing/cleaning the URL failed.
+
+4. The nth non-empty line of STDERR corresponds to the nth empty line of STDOUT.
+
+    1. Currently empty STDERR lines are not printed when a URL succeeds. While it would make parsing the output easier it would cause visual clutter on terminals. While this will likely never change by default, parsers should be sure to follow 4 strictly in case this is added as an option.
+
+#### JSON output
+
+There is currently no support for JSON output. This will be added once I can conceptualize it.
+
+### Panic policy
+
+URL Cleaner should only ever panic under the following circumstances:
+
+- Parsing the CLI arguments failed.
+
+- Loading/parsing the config failed.
+
+- Printing the config failed.
+
+- Testing the config failed.
+
+- Reading the STDIN or writing to STDOUT/STDERR has a catastrophic problem that Rust's standard library considers fine a fine excuse to panic.
+
+Outside of these cases, URL Cleaner should never panic. However as this is equivalent to saying "URL Cleaner has no bugs", no guarantees can be made.
+
+## Funding
+
+URL Cleaner does not accept donations. If you feel the need to donate please instead donate to [The Tor Project](https://donate.torproject.org/) and/or [The Internet Archive](https://archive.org/donate/).
 
 ## Default config sources
 

@@ -60,7 +60,7 @@ impl TryFrom<Args> for (Vec<Url>, types::Config) {
     fn try_from(args: Args) -> Result<Self, Self::Error> {
         let mut config = types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
         let (urls, params_diff) = args.into();
-        config.params.apply_diff(params_diff);
+        params_diff.apply(&mut config.params);
         Ok((urls, config))
     }
 }

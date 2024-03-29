@@ -1,8 +1,14 @@
+//! Provides [`RegexParts`] and [`RegexConfig`] which are instructions for how to create a [`Regex`].
+//! 
+//! Used by [`RegexWrapper`].
+
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use regex::{Regex, RegexBuilder};
 use regex_syntax::{ParserBuilder, Parser, Error as RegexSyntaxError};
+#[allow(unused_imports)]
+use super::RegexWrapper;
 
 /// Contains the rules for constructing a [`Regex`].
 /// 
@@ -59,11 +65,15 @@ pub struct RegexConfig {
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
 }
 
-// Serde helper functions
+/// Serde helper function used by [`RegexConfig`].
 const fn is_false(x: &bool) -> bool {!*x} // <&bool as std::ops::Not>::not is not const.
+/// Serde helper function used by [`RegexConfig`].
 const fn is_true(x: &bool) -> bool {*x}
+/// Serde helper function used by [`RegexConfig`].
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
+/// Serde helper function used by [`RegexConfig`].
 const fn newline_u8() -> u8 {b'\n'}
+/// Serde helper function used by [`RegexConfig`].
 const fn get_true() -> bool {true}
 
 #[allow(dead_code)]
@@ -82,7 +92,7 @@ impl RegexParts {
     }
 
     /// Getter for the config.
-    pub fn config(&self) -> &RegexConfig {
+    pub const fn config(&self) -> &RegexConfig {
         &self.config
     }
 
@@ -98,6 +108,7 @@ impl RegexParts {
         })
     }
 
+    /// Creates a [`RegexBuilder`] using the specified pattern and config.
     fn make_builder(&self) -> RegexBuilder {
         let mut ret=RegexBuilder::new(&self.pattern);
         ret.case_insensitive(self.config.case_insensitive)
@@ -212,6 +223,7 @@ impl RegexConfig {
         ret
     }
 
+    /// Makes a [`ParserBuilder`] using the specified config.
     fn make_parser_builder(&self) -> ParserBuilder {
         let mut ret=ParserBuilder::new();
         ret.case_insensitive(self.case_insensitive)
@@ -226,6 +238,7 @@ impl RegexConfig {
         ret
     }
 
+    /// [`ParserBuilder::build`]s [`Self::make_parser:builder`].
     fn build_parser(&self) -> Parser {
         self.make_parser_builder().build()
     }

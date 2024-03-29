@@ -1,3 +1,5 @@
+//! Provides [`StringLocation`] which allows for testing if part of a [`str`] matches a certain rule.
+
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
@@ -202,6 +204,7 @@ pub enum StringLocation {
     }
 }
 
+/// Serde helper function. The default value of [`StringLocation::AnySegment::location`] and [`StringLocation::NthSegment::location`].
 fn box_equals() -> Box<StringLocation> {Box::new(StringLocation::Equals)}
 
 /// The enum of all possible errors [`StringLocation::satisfied_by`] can return.

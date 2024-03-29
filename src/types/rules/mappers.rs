@@ -2,6 +2,7 @@
 
 use std::str::Utf8Error;
 use std::collections::hash_set::HashSet;
+use std::path::PathBuf;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -173,6 +174,7 @@ pub enum Mapper {
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
     /// # Errors
     /// If the specified query parameter cannot be found, returns the error [`MapperError::CannotFindQueryParam`].
+    /// 
     /// If the query parameter is found but its value cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
     GetUrlFromQueryParam(String),
     /// Replace the current URL's path with the value of the specified query parameter.
@@ -214,6 +216,7 @@ pub enum Mapper {
     /// Sets the specified URL part to `to`.
     /// # Errors
     /// If the call to [`StringSource::get`] return's an error, that error is returned.
+    /// 
     /// If the call to [`UrlPart::set`] returns an error, that error is returned.
     SetPart {
         /// The name of the part to replace.
@@ -228,6 +231,7 @@ pub enum Mapper {
     /// Modifies the specified part of the URL.
     /// # Errors
     /// If the call to [`StringModification::apply`] returns an error, that error is returned in a [`MapperError::StringModificationError`].
+    /// 
     /// If the call to [`UrlPart::modify`] returns an error, that error is returned in a [`MapperError::UrlPartModifyError`].
     #[cfg(feature = "string-modification")]
     ModifyPart {
@@ -270,10 +274,53 @@ pub enum Mapper {
     ExpandShortLink {
         /// The headers to send alongside the param's default headers.
         #[serde(default, with = "headermap")]
-        headers: HeaderMap
+        headers: HeaderMap,
+        /// Rules for how to make the HTTP client.
+        #[serde(default)]
+        http_client_config_diff: Option<HttpClientConfigDiff>
+    },
+    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`println`]'s `x`.
+    /// If it returns `Ok(None)`, doesn't print anything.
+    /// Does not change the URL at all.
+    /// # Errors
+    /// If [`StringSource::get`] returns an error, that error is returned.
+    #[cfg(feature = "string-source")]
+    Println(StringSource),
+    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`print`]'s `x`.
+    /// If it returns `Ok(None)`, doesn't print anything.
+    /// Does not change the URL at all.
+    /// # Errors
+    /// If [`StringSource::get`] returns an error, that error is returned.
+    #[cfg(feature = "string-source")]
+    Eprintln(StringSource),
+    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`eprintln`]'s `x`.
+    /// If it returns `Ok(None)`, doesn't print anything.
+    /// Does not change the URL at all.
+    /// # Errors
+    /// If [`StringSource::get`] returns an error, that error is returned.
+    #[cfg(feature = "string-source")]
+    Print(StringSource),
+    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`eprint`]'s `x`.
+    /// If it returns `Ok(None)`, doesn't print anything.
+    /// Does not change the URL at all.
+    /// # Errors
+    /// If [`StringSource::get`] returns an error, that error is returned.
+    #[cfg(feature = "string-source")]
+    Eprint(StringSource),
+    /// Loads a config specified by `path` (or the default config if it's [`None`]) and applies it.
+    /// # Errors
+    /// If the call to [`Config::get_default_or_load`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Config::apply`] returns an error, that error is returned.
+    ApplyConfig {
+        /// The path of the config to load. Loads the default config if [`None`].
+        path: Option<PathBuf>,
+        /// How to modify the config's params.
+        params_diff: ParamsDiff
     }
 }
 
+/// The default value of [`Mapper::IfCondition::r#else`].
 fn box_mapper_none() -> Box<Mapper> {Box::new(Mapper::None)}
 
 /// An enum of all possible errors a [`Mapper`] can return.
@@ -339,7 +386,25 @@ pub enum MapperError {
     WriteCacheError(#[from] WriteCacheError),
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
-    ConditionError(#[from] ConditionError)
+    ConditionError(#[from] ConditionError),
+    /// Returned when a [`GetConfigError`] is encountered.
+    #[error(transparent)]
+    GetConfigError(#[from] GetConfigError),
+    /// Returned when a [`RuleError`] is encountered.
+    #[error(transparent)]
+    RuleError(Box<RuleError>),
+    /// Returned when the requested header is not found.
+    #[error("The requested header was not found.")]
+    HeaderNotFound,
+    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
+    #[error(transparent)]
+    ToStrError(#[from] reqwest::header::ToStrError)
+}
+
+impl From<RuleError> for MapperError {
+    fn from(value: RuleError) -> Self {
+        Self::RuleError(Box::new(value))
+    }
 }
 
 impl Mapper {
@@ -352,8 +417,18 @@ impl Mapper {
         #[cfg(feature = "debug")]
         println!("Mapper: {self:?}");
         match self {
+            // Testing.
 
-            // Boolean
+            Self::None => {},
+            Self::Error => Err(MapperError::ExplicitError)?,
+            Self::Debug(mapper) => {
+                let url_before_mapper=url.clone();
+                let mapper_result=mapper.apply(url, params);
+                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nParams: {params:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
+                mapper_result?;
+            }
+
+            // Logic.
 
             Self::IfCondition {r#if, then, r#else} => if r#if.satisfied_by(url, params)? {then} else {r#else}.apply(url, params)?,
             Self::All(mappers) => {
@@ -373,6 +448,11 @@ impl Mapper {
                     let _=mapper.apply(url, params);
                 }
             },
+
+            // Error handling.
+
+            Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
+            Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|_| r#else.apply(url, params))?,
             Self::FirstNotError(mappers) => {
                 let mut result = Ok(());
                 for mapper in mappers {
@@ -382,7 +462,7 @@ impl Mapper {
                 result?
             },
 
-            // Query
+            // Query.
 
             Self::RemoveQuery => url.set_query(None),
             Self::RemoveQueryParams(names) => {
@@ -428,48 +508,48 @@ impl Mapper {
                 }
             },
 
-            // Other parts
+            // Other parts.
 
             Self::SetHost(new_host) => url.set_host(Some(new_host))?,
             Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
             Self::Join(with) => *url=url.join(get_string!(with, url, params, MapperError))?,
 
-            // Generic part handling
+            // Generic part handling.
 
             Self::SetPart{part, value} => part.set(url, get_option_string!(value, url, params).map(|x| x.to_owned()).as_deref())?,
             #[cfg(feature = "string-modification")]
             Self::ModifyPart{part, how} => part.modify(how, url, params)?,
             Self::CopyPart{from, to} => to.set(url, from.get(url).map(|x| x.into_owned()).as_deref())?,
 
-            // Error handling
-
-            Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
-            Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|_| r#else.apply(url, params))?,
-
-            // Miscellaneous
+            // Miscellaneous.
 
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
-            Self::ExpandShortLink{headers} => {
+            Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
                 if let Some(cached_result) = params.get_redirect_from_cache(url)? {
                     *url = cached_result;
                     return Ok(())
                 }
-                let new_url=params.http_client()?.get(url.as_str()).headers(headers.clone()).send()?.url().clone();
+                let response = params.http_client(http_client_config_diff.as_ref())?.get(url.as_str()).headers(headers.clone()).send()?;
+                let new_url = if response.status() == reqwest::StatusCode::MOVED_PERMANENTLY {
+                    println!("{:?}", response.url());
+                    Url::parse(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.to_str()?)?
+                } else {
+                    response.url().clone()
+                };
                 #[cfg(feature = "cache-redirects")]
                 params.write_redirect_to_cache(url, &new_url)?;
                 *url=new_url;
             },
 
-            // Testing
-
-            Self::None => {},
-            Self::Error => Err(MapperError::ExplicitError)?,
-            Self::Debug(mapper) => {
-                let url_before_mapper=url.clone();
-                let mapper_result=mapper.apply(url, params);
-                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nParams: {params:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
-                mapper_result?;
+            #[cfg(feature = "string-source")] Self::Println (source) => if let Some(x) = source.get(url, params)? {println! ("{x}");},
+            #[cfg(feature = "string-source")] Self::Print   (source) => if let Some(x) = source.get(url, params)? {print!   ("{x}");},
+            #[cfg(feature = "string-source")] Self::Eprintln(source) => if let Some(x) = source.get(url, params)? {eprintln!("{x}");},
+            #[cfg(feature = "string-source")] Self::Eprint  (source) => if let Some(x) = source.get(url, params)? {eprint!  ("{x}");},
+            Self::ApplyConfig {path, params_diff} => {
+                let mut config = Config::get_default_or_load(path.as_deref())?.into_owned();
+                params_diff.apply(&mut config.params);
+                config.apply(url)?;
             }
         };
         Ok(())

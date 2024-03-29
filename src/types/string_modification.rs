@@ -1,7 +1,12 @@
+//! Provides [`StringModification`] which provides an easy API for all the ways one might want to modify a [`String`].
+
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 use url::Url;
+// Used just for documentation.
+#[allow(unused_imports)]
+use regex::Regex;
 
 use crate::types::*;
 use crate::glue::*;
@@ -154,7 +159,7 @@ pub enum StringModification {
     /// assert_eq!(&x, "ABCDEF");
     /// ```
     Uppercase,
-    /// [`str::strip_prefix`].
+    /// Mimics [`str::strip_prefix`] using [`str::starts_with`] and [`String::drain`]. Should be faster due to not needing an additional heap allocation.
     /// # Errors
     /// If the target string doesn't begin with the specified prefix, returns the error [`StringModificationError::PrefixNotFound`].
     /// # Examples
@@ -357,6 +362,32 @@ pub enum StringModification {
         regex: RegexWrapper,
         /// The replacement string to call [`regex::Captures::expand`] with.
         replace: String
+    },
+    /// [`Regex::captures_iter`] and [`regex::Captures::expand`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url_cleaner::glue::*;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// let mut x = "...a2..a3....a4".to_string();
+    /// StringModification::RegexJoinAllCaptures {
+    ///     regex: RegexWrapper::from_str(r"a(\d)").unwrap(),
+    ///     replace: "A$1$1".to_string(),
+    ///     join: "---".to_string()
+    /// }.apply(&mut x, &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap();
+    /// assert_eq!(x, "A22---A33---A44");
+    /// ```
+    /// # Errors
+    /// If the call to [`RegexWrapper::get_regex`] returns an error, that error is returned,
+    #[cfg(feature = "regex")]
+    RegexJoinAllCaptures {
+        /// The regex to search with.
+        regex: RegexWrapper,
+        /// The replacement string to call [`regex::Captures::expand`] with.
+        replace: String,
+        /// The value to join the captures with. Does not default to anything.
+        join: String
     },
     /// [`Regex::find`].
     /// # Errors
@@ -586,7 +617,7 @@ impl StringModification {
                 let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 if fixed_n==temp.len() {Err(StringModificationError::SegmentNotFound)?;}
                 match value {
-                    Some(value) => temp[fixed_n]=value.as_str(),
+                    Some(value) => *temp.get_mut(fixed_n).ok_or(StringModificationError::SegmentNotFound)?=value.as_str(),
                     None        => {temp.remove(fixed_n);}
                 }
                 *to=temp.join(split);
@@ -601,6 +632,21 @@ impl StringModification {
             Self::RegexCaptures {regex, replace} => {
                 let mut temp = "".to_string();
                 regex.get_regex()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
+                *to = temp;
+            },
+            #[cfg(feature = "regex")] Self::RegexJoinAllCaptures {regex, replace, join} => {
+                let mut temp = "".to_string();
+                if join.is_empty() {
+                    for captures in regex.get_regex()?.captures_iter(to) {
+                        captures.expand(replace, &mut temp);
+                    }
+                } else {
+                    let mut iter = regex.get_regex()?.captures_iter(to).peekable();
+                    while let Some(captures) = iter.next() {
+                        captures.expand(replace, &mut temp);
+                        if iter.peek().is_some() {temp.push_str(join);}
+                    }
+                }
                 *to = temp;
             },
             #[cfg(feature = "regex")] Self::RegexFind       (regex            ) => *to = regex.get_regex()?.find       (to             ).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string(),

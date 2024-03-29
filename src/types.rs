@@ -1,3 +1,5 @@
+//! Various types to make URL Cleaner far more powerful.
+
 use thiserror::Error;
 
 mod url_part;
