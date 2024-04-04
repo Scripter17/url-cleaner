@@ -16,7 +16,7 @@ mod util;
 #[command(name = "URL Cleaner")]
 /// URL Cleaner is a tool meant primarily to remove tracking garbage from URLs and more generally is a very powerful URL manipulation library/CLI tool.
 struct Args {
-    /// The URLs to cleam before the URLs in the STDIN.
+    /// The URLs to clean before the URLs in the STDIN.
     urls: Vec<Url>,
     /// The config.json to use. If unspecified, use the config compiled into URL Cleaner
     #[arg(short      , long)] config: Option<PathBuf>,

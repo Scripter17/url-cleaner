@@ -33,7 +33,9 @@ pub enum StringMatcher {
     /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
     /// # Errors
     /// If `r#if` returns an error, that error is returned.
+    /// 
     /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// 
     /// If `r#if` fails and `r#else` returns an error, that error is returned.
     If {
         /// The [`Self`] that decides if `then` or `r#else` is used.
@@ -132,7 +134,9 @@ pub enum StringMatcher {
         modification: StringModification,
         /// The matcher to test the modified string with.
         matcher: Box<Self>
-    }
+    },
+    /// Passes if the provided string only contains the specified [`char`]s.
+    OnlyTheseChars(Vec<char>)
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
@@ -160,7 +164,15 @@ pub enum StringMatcherError {
     /// Returned when a [`regex::Error`] is encountered.
     #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] regex::Error)
+    RegexError(#[from] regex::Error),
+    /// Returned when both the `try` and `else` of a [`StringMatcher::TryElse`] both return errors.
+    #[error("A `StringMatcher::TryElse` had both `try` and `else` return an error.")]
+    TryElseError {
+        /// The errir returned by [`StringMatcher::TryElse::r#try`],
+        try_error: Box<Self>,
+        /// The errir returned by [`StringMatcher::TryElse::r#else`],
+        else_error: Box<Self>
+    }
 }
 
 impl StringMatcher {
@@ -204,7 +216,7 @@ impl StringMatcher {
 
             Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(true),
             Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|_| r#else.satisfied_by(haystack, url, params))?,
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|try_error| r#else.satisfied_by(haystack, url, params).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(matchers) => {
                 let mut result = Ok(false); // Initial value doesn't mean anything.
                 for matcher in matchers {
@@ -220,7 +232,8 @@ impl StringMatcher {
             #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, get_string!(value, url, params, StringMatcherError))?,
             #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
-            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, url, params)?; temp}, url, params)?
+            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, url, params)?; temp}, url, params)?,
+            Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)==""
         })
     }
 }

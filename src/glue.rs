@@ -6,6 +6,10 @@
 #[cfg(feature = "glob"    )] pub use glob::*;
 #[cfg(feature = "commands")] mod command;
 #[cfg(feature = "commands")] pub use command::*;
+#[cfg(all(feature = "http", not(target_family = "wasm")))] pub mod proxy;
+#[cfg(all(feature = "http", not(target_family = "wasm")))] pub use proxy::*;
 /// Serializing and deserializing [`reqwest::header::HeaderMap`].
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
 pub(crate) mod headermap;
+#[cfg(all(feature = "http", not(target_family = "wasm")))]
+pub(crate) mod headervalue;

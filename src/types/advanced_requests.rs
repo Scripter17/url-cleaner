@@ -27,8 +27,8 @@ pub struct RequestConfig {
     /// The HTTP method to use. Defaults to [`Method::GET`].
     #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method", default = "get_get")]
     pub method: Method,
-    /// The headers to send in the request in addition to the default headers provided by [`Params::default_http_headers`].
-    /// Defaults to an emprty [`HeaderMap`].
+    /// The headers to send in the request in addition to the default headers provided by [`Params::http_client_config`] and [`Self::client_config_diff`].
+    /// Defaults to an empty [`HeaderMap`].
     #[serde(with = "headermap")]
     #[serde(default)]
     pub headers: HeaderMap,
@@ -94,6 +94,7 @@ impl RequestConfig {
     /// Makes a [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
+    /// 
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
         let mut ret=params.http_client(self.client_config_diff.as_ref())?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(get_string!(source, url, params, RequestConfigError))?, None => url.clone()});
@@ -106,7 +107,9 @@ impl RequestConfig {
     /// Sends the request then uses [`Self::response_handler`] to get a [`String`] from the [`reqwest::blocking::Response`].
     /// # Errors
     /// If the call to [`Self::make`] returns an error, that error is returned.
+    /// 
     /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
+    /// 
     /// If the call to [`ResponseHandler`] returns an error, that error is returned.
     pub fn response(&self, url: &Url, params: &Params) -> Result<String, RequestConfigError> {
         Ok(self.response_handler.handle(self.make(url, params)?.send()?, url, params)?)
@@ -119,6 +122,7 @@ pub enum RequestBody {
     /// [`reqwest::blocking::RequestBuilder::body`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned in a [`RequestBodyError::StringSourceError`].
+    /// 
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`RequestBodyError::StringSourceIsNone`]`.
     #[cfg(feature = "string-source")]
     Text(StringSource),
@@ -128,6 +132,7 @@ pub enum RequestBody {
     /// [`reqwest::blocking::RequestBuilder::form`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned in a [`RequestBodyError::StringSourceError`].
+    /// 
     /// If a call to [`StringSource::get`] returns [`None`], returns the error [`RequestBodyError::StringSourceIsNone`]`.
     #[cfg(feature = "string-source")]
     Form(HashMap<String, StringSource>),
@@ -219,7 +224,7 @@ pub enum ResponseHandlerError {
     ToStrError(#[from] reqwest::header::ToStrError),
     /// Returned when the requested cookie is not found.
     #[error("The requested cookie was not found.")]
-    CookieNotFound,
+    CookieNotFound
 }
 
 #[cfg(feature = "string-source")]

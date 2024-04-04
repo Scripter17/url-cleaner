@@ -564,8 +564,8 @@
 			"condition": {"All": [
 				{"QualifiedDomain": "bsky.app"},
 				{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
-				{"Not": {"PartContains": {"part": {"PathSegment": 1}, "where": "Anywhere", "value": "."}}},
-				{"Not": {"PartContains": {"part": {"PathSegment": 1}, "where": "Anywhere", "value": ":"}}}
+				{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": "."}}},
+				{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": ":"}}}
 			]},
 			"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "how": {"Append": ".bsky.social"}}}
 		},

@@ -38,7 +38,9 @@ pub enum Mapper {
     /// If `r#if` passes, apply `then`, otherwise apply `r#else`.
     /// # Errors
     /// If `r#if` returns an error, that error is returned.
+    /// 
     /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// 
     /// If `r#if` fails and `r#else` returns an error, that error is returned.
     IfCondition {
         /// The [`Condition`] that decides if `then` or `r#else` is used.
@@ -185,11 +187,9 @@ pub enum Mapper {
 
     // Other parts.
 
-    /// Replaces the URL's host to the provided host.
-    /// Useful for websites that are just a wrapper around another website. For example, `vxtwitter.com`.
+    /// [`Url::set_host`].
     /// # Errors
-    /// If the resulting string cannot be parsed as a URL, returns the error [`MapperError::UrlParseError`].
-    /// See [`Url::set_host`] for details.
+    /// If the call to [`Url::set_host`] reutrns an error, returns that error.
     SetHost(String),
     /// Removes the path segments with an index in the specified list.
     /// See [`Url::path_segments`] for details.
@@ -252,22 +252,44 @@ pub enum Mapper {
 
     // Miscellaneous.
 
-    /// Sends an HTTP request to the current URL and replaces it with the URL the website responds with.
+    /// Sends an HTTP GET request to the current URL and, if the website returns a status code between 300 and 399 (inclusive) (a "3xx" status code), sets the URL to the value found in the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header.
     /// Useful for link shorteners like `bit.ly` and `t.co`.
-    /// This mapper only works on non-WASM targets.
+    /// 
+    /// Please note that some websites (like `tinyurl.com` and `duckduckgo.com`) don't do redirects properly and therefore need to be fixed via more complex methods.
+    /// If you know how to detect when a DDG search query has a bang that DDG will actually use (`"a !g"` doesn't redirect to google), please let me know as that would be immensely useful.
+    /// 
+    /// This mapper (and all HTTP stuff) only works on non-WASM targets.
     /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
     /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
+    /// 
+    /// # Privacy
+    /// 
+    /// Please note that, by default, this mapper recursively expands short links. If a `t.co` link links to a `bit.ly` link, it'll return the page the `bit.ly` link links to.
+    /// However, this means that this mapper will by default send an HTTP GET request to all pages pointed to even if they're not shortlinks.
+    /// 
+    /// The default config handles this by configuring [`Self::ExpandShortLink::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
+    /// And, because it's in a [`Rule::RepeatUntilNonePass`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
     /// If the call to [`Params::get_redirect_from_cache`] returns an error, that error is returned.
-    /// If the [`reqwest::blocking::Client`] is not able to send the HTTP request, returns the error [`MapperError::ReqwestError`].
-    /// All errors regarding caching the redirect to disk are ignored. This may change in the future.
+    /// 
+    /// If the call to [`Params::http_client`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
+    /// 
+    /// (3xx status code) If the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header is not found, returns the error [`MapperError::HeaderNotFound`].
+    /// 
+    /// (3xx status code) If the call to [`reqwest::header::HeaderValue::to_str`] to get the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
+    /// 
+    /// (3xx status code) If the call to [`Url::parse`] to parse the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
+    /// 
+    /// If the call to [`Params::write_redirect_to_cache`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// Mapper::ExpandShortLink{headers: HeaderMap::default()}.apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut url, &Params::default()).unwrap();
     /// assert_eq!(url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -324,7 +346,7 @@ pub enum Mapper {
 fn box_mapper_none() -> Box<Mapper> {Box::new(Mapper::None)}
 
 /// An enum of all possible errors a [`Mapper`] can return.
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum MapperError {
     /// Returned when [`Mapper::Error`] is used.
     #[error("Mapper::Error was used.")]
@@ -394,11 +416,21 @@ pub enum MapperError {
     #[error(transparent)]
     RuleError(Box<RuleError>),
     /// Returned when the requested header is not found.
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error("The requested header was not found.")]
     HeaderNotFound,
     /// Returned when a [`reqwest::header::ToStrError`] is encountered.
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
-    ToStrError(#[from] reqwest::header::ToStrError)
+    ToStrError(#[from] reqwest::header::ToStrError),
+    /// Returned when both the `try` and `else` of a [`MapperError::TryElse`] both return errors.
+    #[error("A `MapperError::TryElse` had both `try` and `else` return an error.")]
+    TryElseError {
+        /// The errir returned by [`MapperError::TryElse::r#try`],
+        try_error: Box<Self>,
+        /// The errir returned by [`MapperError::TryElse::r#else`],
+        else_error: Box<Self>
+    }
 }
 
 impl From<RuleError> for MapperError {
@@ -409,9 +441,9 @@ impl From<RuleError> for MapperError {
 
 impl Mapper {
     /// Applies the mapper to the provided URL.
-    /// Does not check with a [`crate::types::Condition`]. You should do that yourself or use [`crate::types::Rule`].
     /// # Errors
     /// If the mapper has an error, that error is returned.
+    /// 
     /// See [`Mapper`]'s documentation for details.
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), MapperError> {
         #[cfg(feature = "debug")]
@@ -452,7 +484,7 @@ impl Mapper {
             // Error handling.
 
             Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
-            Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|_| r#else.apply(url, params))?,
+            Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|try_error| r#else.apply(url, params).map_err(|else_error2| MapperError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error2)}))?,
             Self::FirstNotError(mappers) => {
                 let mut result = Ok(());
                 for mapper in mappers {
@@ -531,8 +563,7 @@ impl Mapper {
                     return Ok(())
                 }
                 let response = params.http_client(http_client_config_diff.as_ref())?.get(url.as_str()).headers(headers.clone()).send()?;
-                let new_url = if response.status() == reqwest::StatusCode::MOVED_PERMANENTLY {
-                    println!("{:?}", response.url());
+                let new_url = if response.status().is_redirection() {
                     Url::parse(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.to_str()?)?
                 } else {
                     response.url().clone()

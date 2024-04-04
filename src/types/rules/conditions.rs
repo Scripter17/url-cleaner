@@ -41,7 +41,9 @@ pub enum Condition {
     /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
     /// # Errors
     /// If `r#if` returns an error, that error is returned.
+    /// 
     /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// 
     /// If `r#if` fails and `r#else` returns an error, that error is returned.
     If {
         /// The [`Self`] that decides if `then` or `r#else` is used.
@@ -325,6 +327,7 @@ pub enum Condition {
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
     /// If the specified part is `None`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// 
     /// If `value.get` returns `None`, returns the error [`ConditionError::StringSourceIsNone`].
     /// # Examples
     /// ```
@@ -344,6 +347,7 @@ pub enum Condition {
         #[cfg(not(feature = "string-source"))]
         value: String,
         /// Where to look for the value.
+        #[serde(default)]
         r#where: StringLocation
     },
 
@@ -378,6 +382,7 @@ pub enum Condition {
         /// The name of the variable to check.
         #[cfg(feature = "string-source")]
         name: StringSource,
+        /// The name of the variable to check.
         #[cfg(not(feature = "string-source"))]
         name: String,
         /// The expected value of the variable.
@@ -438,7 +443,7 @@ pub enum Condition {
 }
 
 /// An enum of all possible errors a [`Condition`] can return.
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum ConditionError {
     /// Returned when [`Condition::Error`] is used.
     #[error("Condition::Error was used.")]
@@ -468,13 +473,22 @@ pub enum ConditionError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[cfg(feature = "string-source")]
     #[error(transparent)]
-    StringSourceError(#[from] StringSourceError)
+    StringSourceError(#[from] StringSourceError),
+    /// Returned when both the `try` and `else` of a [`Condition::TryElse`] both return errors.
+    #[error("A `Condition::TryElse` had both `try` and `else` return an error.")]
+    TryElseError {
+        /// The errir returned by [`Condition::TryElse::r#try`],
+        try_error: Box<Self>,
+        /// The errir returned by [`Condition::TryElse::r#else`],
+        else_error: Box<Self>
+    }
 }
 
 impl Condition {
     /// Checks whether or not the provided URL passes the condition.
     /// # Errors
     /// If the condition has an error, that error is returned.
+    /// 
     /// See [`Condition`]'s documentation for details.
     pub fn satisfied_by(&self, url: &Url, params: &Params) -> Result<bool, ConditionError> {
         #[cfg(feature = "debug")]
@@ -516,7 +530,7 @@ impl Condition {
 
             Self::TreatErrorAsPass(condition) => condition.satisfied_by(url, params).unwrap_or(true),
             Self::TreatErrorAsFail(condition) => condition.satisfied_by(url, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(url, params).or_else(|_| r#else.satisfied_by(url, params))?,
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(url, params).or_else(|try_error| r#else.satisfied_by(url, params).map_err(|else_error2| ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error2)}))?,
             Self::FirstNotError(conditions) => {
                 let mut result = Ok(false); // Initial value doesn't mean anything.
                 for condition in conditions {

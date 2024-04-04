@@ -901,7 +901,9 @@ impl UrlPart {
     /// Get the part from the provided URL and modify it according to the provided string modification rule.
     /// # Errors
     /// If [`UrlPart::get`] returns an error, that error is returned.
+    /// 
     /// If the string modification returns an error, that error is returned.
+    /// 
     /// If [`UrlPart::set`] returns an error, that error is returned.
     #[cfg(feature = "string-modification")]
     pub fn modify(&self, how: &StringModification, url: &mut Url, params: &Params) -> Result<(), UrlPartModifyError> {

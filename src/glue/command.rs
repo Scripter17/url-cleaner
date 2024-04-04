@@ -99,7 +99,7 @@ impl CommandConfig {
     pub fn make_command(&self, url: Option<&Url>) -> Command {
         let mut ret = Command::new(&self.program);
         match url {
-            // I don't think [`OsStr::from_bytes`] even helps here, but it maoves the problem into [`Command::args`]'s implementation details and it makes me feel better.
+            // I don't think [`OsStr::from_bytes`] even helps here, but it moves the problem into [`Command::args`]'s implementation details and it makes me feel better.
             // It's the electric car model of programming.
             #[cfg(target_family = "unix")]
             Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsStr::from_bytes(url.as_str().as_bytes())} else {OsStr::from_bytes(arg.as_bytes())}));},
@@ -135,6 +135,7 @@ impl CommandConfig {
     /// Run the command from [`Self::make_command`], handle its output using [`Self::output_handler`], and returns the output.
     /// # Errors
     /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
+    /// 
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc)]
     pub fn output(&self, url: Option<&Url>, stdin: Option<&[u8]>) -> Result<String, CommandError> {
@@ -160,6 +161,7 @@ impl CommandConfig {
     /// Runs the command, does the [`OutputHandler`] stuff, trims trailing newlines and carriage returns form the output using [`str::trim_end_matches`], then extracts the URL.
     /// # Errors
     /// If the call to [`Self::output`] returns an error, that error is returned.
+    /// 
     /// If the trimmed output cannot be parsed as a URL, returns the error [`CommandError::UrlParseError`].
     pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(url, None)?.trim_end_matches(&['\r', '\n']))?)

@@ -142,7 +142,7 @@ pub enum StringSource {
     /// 
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     /// 
-    /// If the call to [`UrlPart::get`] reutrns an error, that error is returned.
+    /// If the call to [`UrlPart::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::StringSource;

@@ -81,6 +81,7 @@ impl RegexParts {
     /// Creates a [`RegexParts`] with the provided pattern. The config is set to its default value.
     /// # Errors
     /// If the pattern is invalid, the error encountered by the parser is returned.
+    /// 
     /// The error is boxed because it's massive.
     pub fn new(pattern: &str) -> Result<Self, Box<RegexSyntaxError>> {
         Self::new_with_config(pattern, RegexConfig::default())
@@ -99,6 +100,7 @@ impl RegexParts {
     /// Creates a [`RegexParts`] with the provided pattern and config.
     /// # Errors
     /// If the pattern is invalid, the error encountered by the parser is returned.
+    /// 
     /// The error is boxed because it's massive.
     pub fn new_with_config(pattern: &str, config: RegexConfig) -> Result<Self, Box<RegexSyntaxError>> {
         config.build_parser().parse(pattern).map_err(Box::new)?;

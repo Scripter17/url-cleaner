@@ -21,7 +21,7 @@ atty = { version = "0.2.14", optional = true }
 thiserror = "1.0.58"
 regex = { version = "1.10.4", optional = true }
 glob = { version = "0.3.1", optional = true }
-psl = "2.1.29"
+psl = "2.1.30"
 form_urlencoded = "1.2.1"
 regex-syntax = { version = "0.8.3", optional = true }
 percent-encoding = { version = "2.3.1", optional = true }
@@ -37,7 +37,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["http", "commands", "cache-redirects", "stdin", "default-config", "minify-included-strings",
-  "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "advanced-requests"]
+  "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "advanced-requests", "socks-proxy"]
 # Enables HTTP stuff. DOES NOT WORK ON WASM.
 http = ["dep:reqwest"]
 # Enables [`url_cleaner::glue::CommandWrapper`].
@@ -67,6 +67,8 @@ string-modification = ["dep:percent-encoding"]
 string-source = []
 # Enables [`types::RequestConfig`].
 advanced-requests = ["http", "reqwest/json", "reqwest/cookies"]
+# Enables using SOCKS proxies in [`HttpClientConfig`].
+socks-proxy = ["http", "reqwest/socks"]
 
 # https://stackoverflow.com/a/54842093/10720231
 [profile.release]

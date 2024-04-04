@@ -69,7 +69,6 @@ If the URL in your web browser looks like `file:///run/...` and the webpage is w
 - [`Option<...>`](https://doc.rust-lang.org/std/option/enum.Option.html) just means a value can be `null` in the JSON. `{"abc": "xyz"}` and `{"abc": null}` are both valid states for a `abc: Option<String>` field.
 - [`Box<...>`](https://doc.rust-lang.org/std/boxed/struct.Box.html) has no bearing on JSON syntax or possible values. It's just used so Rust can put types inside themselves.
 - [`Vec<...>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) and [`HashSet<...>`](https://doc.rust-lang.org/std/collections/struct.HashSet.html) are written as lists.
-- [`[...; N]`](https://doc.rust-lang.org/std/primitive.array.html) is written as a list of length `N`.
 - [`HashMap<..., ...>`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) and [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) are written as maps in JSON.
     - [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) keys are always lowercase.
 - Fields preceded by [`#[serde(default)]`](https://serde.rs/field-attrs.html#default) or [`#[serde(default = "...")]`](https://serde.rs/field-attrs.html#default--path) can be omitted from config files. The defaults are almost always what you want.

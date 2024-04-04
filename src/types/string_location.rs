@@ -8,7 +8,7 @@ use crate::util::*;
 /// A wrapper around [`str`]'s various substring searching functions.
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
     /// Always passes.
     Always,
@@ -30,7 +30,9 @@ pub enum StringLocation {
     /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
     /// # Errors
     /// If `r#if` returns an error, that error is returned.
+    /// 
     /// If `r#if` passes and `then` returns an error, that error is returned.
+    /// 
     /// If `r#if` fails and `r#else` returns an error, that error is returned.
     If {
         /// The [`Self`] that decides if `then` or `r#else` is used.
@@ -85,6 +87,7 @@ pub enum StringLocation {
     /// assert_eq!(StringLocation::Anywhere.satisfied_by("abcdef", "cde").unwrap(), true );
     /// assert_eq!(StringLocation::Anywhere.satisfied_by("abcdef", "efg").unwrap(), false);
     /// ```
+    #[default]
     Anywhere,
     /// Checks if an instance of the needle exists at the start of the haystack.
     /// # Examples
@@ -184,6 +187,7 @@ pub enum StringLocation {
     /// Splits the haystack at every instance of `split` and check if the `n`th segment satisfies `location`.
     /// # Errors
     /// If the `n`th segment doesn't exist, returns the error [`StringLocationError::SegmentNotFound`].
+    /// 
     /// If `location` returns an error on any segment, that error is returned.
     /// # Examples
     /// ```
@@ -222,7 +226,15 @@ pub enum StringLocationError {
     InvalidIndex,
     /// Returned when the requested segment is not found.
     #[error("The requested segment was not found.")]
-    SegmentNotFound
+    SegmentNotFound,
+    /// Returned when both the `try` and `else` of a [`StringLocation::TryElse`] both return errors.
+    #[error("A `StringLocation::TryElse` had both `try` and `else` return an error.")]
+    TryElseError {
+        /// The errir returned by [`StringLocation::TryElse::r#try`],
+        try_error: Box<Self>,
+        /// The errir returned by [`StringLocation::TryElse::r#else`],
+        else_error: Box<Self>
+    }
 }
 
 impl StringLocation {
@@ -267,7 +279,7 @@ impl StringLocation {
 
             Self::TreatErrorAsPass(location) => location.satisfied_by(haystack, needle).unwrap_or(true),
             Self::TreatErrorAsFail(location) => location.satisfied_by(haystack, needle).unwrap_or(false),
-            Self::TryElse{r#try, r#else}  => r#try.satisfied_by(haystack, needle).or_else(|_| r#else.satisfied_by(haystack, needle))?,
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, needle).or_else(|try_error| r#else.satisfied_by(haystack, needle).map_err(|else_error| StringLocationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(locations) => {
                 let mut result = Ok(false); // Initial value doesn't mean anything.
                 for location in locations {

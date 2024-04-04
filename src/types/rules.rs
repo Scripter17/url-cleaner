@@ -22,6 +22,7 @@ pub enum Rule {
     /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
     /// # Errors
     /// If the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
+    /// 
     /// If the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
     /// # Examples
     /// ```
@@ -72,8 +73,6 @@ pub enum Rule {
         rules: Vec<Rule>,
         /// The max amount of times to repeat them.
         /// Defaults to 10.
-        /// If you need more than 256 iterations then you actually need a better config.
-        /// If you do actually need more than 256 iterations (again, you don't), I may or may not bump this number up to help you.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
@@ -81,6 +80,7 @@ pub enum Rule {
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
     /// # Errors
     /// If the the contained condition or mapper returns an error, that error is returned.
+    /// 
     /// If the [`Condition`] doesn't pass, returns the error [`RuleError::FailedCondition`].
     /// # Examples
     /// ```
@@ -96,14 +96,14 @@ pub enum Rule {
         condition: Condition,
         /// The mapper used to modify the provided URL.
         mapper: Mapper
-    },
+    }
 }
 
 /// Serde helper function. The default value of [`Rule::RepeatUntilNonePass::limit`].
 const fn get_10_u8() -> u8 {10}
 
 /// The errors that [`Rule`] can return.
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum RuleError {
     /// The URL does not meet the rule's condition.
     #[error("The URL does not meet the rule's condition.")]

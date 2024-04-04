@@ -1,4 +1,4 @@
-//! Provides [`GlobWrapper`], a serializaable/deserializable wrapper around [`Pattern`] and [`MatchOptions`].
+//! Provides [`GlobWrapper`], a serializable/deserializable wrapper around [`Pattern`] and [`MatchOptions`].
 
 use std::str::FromStr;
 
@@ -70,7 +70,7 @@ fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pat
     Pattern::new(&pattern).map_err(D::Error::custom)
 }
 
-/// Serializaer to turn a [`Pattern`] into a string.
+/// Serializer to turn a [`Pattern`] into a string.
 fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(pattern.as_str())
 }

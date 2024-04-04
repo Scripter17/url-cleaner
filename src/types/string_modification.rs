@@ -6,6 +6,7 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC
 use url::Url;
 // Used just for documentation.
 #[allow(unused_imports)]
+#[cfg(feature = "regex")]
 use regex::Regex;
 
 use crate::types::*;
@@ -296,6 +297,26 @@ pub enum StringModification {
         /// The end of the range to keep.
         end: Option<isize>
     },
+    /// Splits the provided string by `split` and keeps only the `n`th segment.
+    /// # Errors
+    /// If the `n`th segment is not found, returns the error [`StringModificationError::SegmentNotFound`].
+    KeepNthSegment {
+        /// The value to split the string by.
+        split: String,
+        /// The index of the segment to keep.
+        n: isize
+    },
+    /// Splits the provided string by `split` and keeps only the segments in the specified range.
+    /// # Errors
+    /// If the segemnt range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
+    KeepSegments {
+        /// The value to split the string by.
+        split: String,
+        /// The start of the range of segments to keep.
+        start: Option<isize>,
+        /// The end of the range of segments to keep.
+        end: Option<isize>
+    },
     /// Splits the provided string by `split`, replaces the `n`th segment with `value` or removes the segment if `value` is `None`, then joins the string back together.
     /// # Errors
     /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
@@ -319,7 +340,7 @@ pub enum StringModification {
     SetNthSegment {
         /// The value to split the string by.
         split: String,
-        /// The segment index to modify.
+        /// The index of the segment to modify.
         n: isize,
         /// The value to place at the segment index. If `None` then the segment is erased.
         value: Option<String>
@@ -327,6 +348,7 @@ pub enum StringModification {
     /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
     /// # Errors
     /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
     /// Please note that trying to append a new segment at the end still errors.
     /// # Examples
     /// ```
@@ -472,7 +494,8 @@ pub enum StringModification {
     /// Does not do any string conversions. I should probably add an option for that.
     /// # Errors
     /// If the pointer doesn't point to anything, returns the error [`StringModificationError::JsonValueNotFound`].
-    /// If the pointer points to a non-string vailue, returns the error [`StringModificationError::JsonValueIsNotAString`].
+    /// 
+    /// If the pointer points to a non-string value, returns the error [`StringModificationError::JsonValueIsNotAString`].
     JsonPointer(String),
     /// [`Url::join`].
     /// # Errors
@@ -512,6 +535,9 @@ pub enum StringModificationError {
     /// Returned when the requested segment is not found.
     #[error("The requested segment was not found.")]
     SegmentNotFound,
+    /// Returned when the requested segments are not found.
+    #[error("The requested segments were not found.")]
+    SegmentRangeNotFound,
     /// Returned when the provided string does not start with the requested prefix.
     #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
     PrefixNotFound,
@@ -535,7 +561,15 @@ pub enum StringModificationError {
     /// Returned when a [`regex::Error`] is encountered.
     #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] regex::Error)
+    RegexError(#[from] regex::Error),
+    /// Returned when both the `try` and `else` of a [`StringModification::TryElse`] both return errors.
+    #[error("A `StringModification::TryElse` had both `try` and `else` return an error.")]
+    TryElseError {
+        /// The errir returned by [`StringModification::TryElse::r#try`],
+        try_error: Box<Self>,
+        /// The errir returned by [`StringModification::TryElse::r#else`],
+        else_error: Box<Self>
+    }
 }
 
 #[cfg(feature = "string-source")]
@@ -562,7 +596,7 @@ impl StringModification {
                 modification_result?;
             },
             Self::IgnoreError(modification) => {let _=modification.apply(to, url, params);},
-            Self::TryElse{r#try, r#else} => r#try.apply(to, url, params).or_else(|_| r#else.apply(to, url, params))?,
+            Self::TryElse{r#try, r#else} => r#try.apply(to, url, params).or_else(|try_error| r#else.apply(to, url, params).map_err(|else_error| StringModificationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::All(modifications) => {
                 let mut temp_to=to.clone();
                 for modification in modifications {
@@ -612,6 +646,8 @@ impl StringModification {
             Self::Insert{r#where, value}             => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, value);} else {Err(StringModificationError::InvalidIndex)?;},
             Self::Remove(r#where)                    => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?       );} else {Err(StringModificationError::InvalidIndex)?;},
             Self::KeepRange{start, end}              => *to=to.get(neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
+            Self::KeepNthSegment {split, n} => *to=neg_nth(to.split(split), *n).ok_or(StringModificationError::SegmentNotFound)?.to_string(),
+            Self::KeepSegments {split, start, end} => *to=neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split),
             Self::SetNthSegment{split, n, value} => {
                 let mut temp=to.split(split.as_str()).collect::<Vec<_>>();
                 let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
@@ -634,7 +670,8 @@ impl StringModification {
                 regex.get_regex()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
                 *to = temp;
             },
-            #[cfg(feature = "regex")] Self::RegexJoinAllCaptures {regex, replace, join} => {
+            #[cfg(feature = "regex")]
+            Self::RegexJoinAllCaptures {regex, replace, join} => {
                 let mut temp = "".to_string();
                 if join.is_empty() {
                     for captures in regex.get_regex()?.captures_iter(to) {
