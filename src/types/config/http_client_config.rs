@@ -10,43 +10,27 @@ use crate::types::*;
 use crate::glue::*;
 
 /// Used by [`Params`] to detail how a [`reqwest::blocking::Client`] should be made.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HttpClientConfig {
-    /// [`reqwest::blocking::ClientBuilder::default_headers`].
+    /// [`reqwest::blocking::ClientBuilder::default_headers`]. Defaults to an empty [`HeaderMap`].
     #[serde(default, with = "crate::glue::headermap")]
     pub default_headers: HeaderMap,
-    /// Roughly corresponds to [`reqwest::redirect::Policy`].
+    /// Roughly corresponds to [`reqwest::redirect::Policy`]. Defaults to [`RedirectPolicy::default`].
     #[serde(default)]
     pub redirect_policy: RedirectPolicy,
-    /// [`reqwest::blocking::ClientBuilder::https_only`].
+    /// [`reqwest::blocking::ClientBuilder::https_only`]. Defaults to [`false`].
     #[serde(default)]
     pub https_only: bool,
-    /// [`reqwest::blocking::ClientBuilder::proxy`].
+    /// [`reqwest::blocking::ClientBuilder::proxy`]. Defaults to an empty [`Vec`].
     #[serde(default)]
     pub proxies: Vec<ProxyConfig>,
-    /// [`reqwest::blocking::ClientBuilder::no_proxy`].
+    /// [`reqwest::blocking::ClientBuilder::no_proxy`]. Applied after and therefore overrides [`Self::proxies`]. Defaults to [`false`].
     #[serde(default)]
     pub no_proxy: bool,
-    /// [`reqwest::blocking::ClientBuilder::referer`].
-    #[serde(default = "get_true")]
+    /// [`reqwest::blocking::ClientBuilder::referer`]. Defaults to [`false`]
+    #[serde(default)]
     pub referer: bool
 }
-
-impl Default for HttpClientConfig {
-    fn default() -> Self {
-        Self {
-            default_headers: HeaderMap::default(),
-            redirect_policy: RedirectPolicy::default(),
-            https_only: false,
-            proxies: Vec::new(),
-            no_proxy: false,
-            referer: true
-        }
-    }
-}
-
-/// Serde helper function.
-const fn get_true() -> bool {true}
 
 /// Bandaid fix until [`reqwest::redirect::Policy`] stops sucking.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -93,32 +77,31 @@ impl HttpClientConfig {
 /// Allows changing [`HttpClientConfig`].
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct HttpClientConfigDiff {
-    /// If [`Some`], overwrites [`HttpClientConfig::redirect_policy`].
+    /// If [`Some`], overwrites [`HttpClientConfig::redirect_policy`]. Defaults to [`None`].
     #[serde(default)]
     pub redirect_policy: Option<RedirectPolicy>,
-    /// Appends headers to [`HttpClientConfig::default_headers`].
+    /// Appends headers to [`HttpClientConfig::default_headers`]. Defaults to an empty [`HeaderMap`].
     #[serde(default, with = "crate::glue::headermap")]
     pub add_default_headers: HeaderMap,
-    /// If [`Some`], overwrites [`HttpClientConfig::https_only`].
+    /// If [`Some`], overwrites [`HttpClientConfig::https_only`]. Defaults to [`None`].
     #[serde(default)]
     pub https_only: Option<bool>,
-    /// If [`Some`], overwrites [`HttpClientConfig::proxies`].
+    /// If [`Some`], overwrites [`HttpClientConfig::proxies`]. Defaults to [`None`].
     #[serde(default)]
     pub set_proxies: Option<Vec<ProxyConfig>>,
-    /// Appends proxies to [`HttpClientConfig::proxies`] after handling [`Self::set_proxies`].
+    /// Appends proxies to [`HttpClientConfig::proxies`] after handling [`Self::set_proxies`]. Defaults to an empty [`Vec`].
     #[serde(default)]
     pub add_proxies: Vec<ProxyConfig>,
-    /// If [`Some`], overwrites [`HttpClientConfig::no_proxy`].
+    /// If [`Some`], overwrites [`HttpClientConfig::no_proxy`]. Defaults to [`None`].
     #[serde(default)]
     pub no_proxy: Option<bool>,
-    /// If [`Some`], overwrites [`HttpClientConfig::referer`].
+    /// If [`Some`], overwrites [`HttpClientConfig::referer`]. Defaults to [`None`].
     #[serde(default)]
     pub referer: Option<bool>
 }
 
 impl HttpClientConfigDiff {
-    /// Applies the differences specified in `self` to `to`.
-    /// In order:
+    /// Applies the differences specified in `self` to `to` in the following order:
     /// 1. If [`Self::redirect_policy`] is [`Some`], overwrite `to`'s [`HttpClientConfig::redirect_policy`].
     /// 2. Append [`Self::add_default_headers`] to `to`'s [`HttpClientConfig::default_headers`].
     /// 3. If [`Self::https_only`] is [`Some`], overwrite `to`'s [`HttpClientConfig::https_only`].

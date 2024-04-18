@@ -908,7 +908,7 @@ impl UrlPart {
     #[cfg(feature = "string-modification")]
     pub fn modify(&self, how: &StringModification, url: &mut Url, params: &Params) -> Result<(), UrlPartModifyError> {
         let mut new_part=self.get(url).ok_or(UrlPartModifyError::PartIsNone)?.into_owned();
-        how.apply(&mut new_part, url, params)?;
+        how.apply(&mut new_part, params)?;
         self.set(url, Some(&new_part))?;
         Ok(())
     }

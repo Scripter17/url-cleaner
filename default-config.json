@@ -9,45 +9,49 @@
 		}
 	},
 	"tests": [
-		{"pairs": [
-			["https://x.com?t=a&s=b", "https://twitter.com/"],
-			["https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "https://example.com/"],
-			["https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "https://www.amazon.ca/dp/B0C6DX66TN"],
-			["http://example.com", "https://example.com/"]
-		]},
+		{
+			"expectations": [
+				{"before": "https://x.com?t=a&s=b", "after": "https://twitter.com/"},
+				{"before": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "after": "https://example.com/"},
+				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/dp/B0C6DX66TN"},
+				{"before": "http://example.com", "after": "https://example.com/"},
+				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
+				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"}
+			]
+		},
 		{
 			"params_diff": {"vars": {"tor2web-suffix": "example"}, "flags": ["tor2web"]},
-			"pairs": [["https://example.onion", "https://example.onion.example"]]
+			"expectations": [{"before": "https://example.onion", "after": "https://example.onion.example"}]
 		},
 		{
 			"params_diff": {"flags": ["tor2web2tor"]},
-			"pairs": [
-				["https://example.onion.com", "https://example.onion"],
-				["https://example.onion.co.uk", "https://example.onion"]
+			"expectations": [
+				{"before": "https://example.onion.com"  , "after": "https://example.onion"},
+				{"before": "https://example.onion.co.uk", "after": "https://example.onion"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unbreezewiki"]},
-			"pairs": [["https://antifandom.com/tardis/wiki/Genocide", "https://tardis.fandom.com/wiki/Genocide"]]
+			"expectations": [{"before": "https://antifandom.com/tardis/wiki/Genocide", "after": "https://tardis.fandom.com/wiki/Genocide"}]
 		},
 		{
 			"params_diff": {"flags": ["breezewiki"]},
-			"pairs": [
-				["https://antifandom.com/tardis/wiki/Genocide", "https://breezewiki.com/tardis/wiki/Genocide"],
-				["https://tardis.fandom.com/wiki/Genocide"    , "https://breezewiki.com/tardis/wiki/Genocide"]
+			"expectations": [
+				{"before": "https://antifandom.com/tardis/wiki/Genocide", "after": "https://breezewiki.com/tardis/wiki/Genocide"},
+				{"before": "https://tardis.fandom.com/wiki/Genocide"    , "after": "https://breezewiki.com/tardis/wiki/Genocide"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unmobile"]},
-			"pairs": [["https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"]]
+			"expectations": [{"before": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "after": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"}]
 		},
 		{
 			"comment": "Verify weird inputs cause no issues",
-			"pairs": [
-				["https://127.0.0.1", "https://127.0.0.1"],
-				["https://com", "https://com"],
-				["ftp://127.0.0.1", "ftp://127.0.0.1"],
-				["file://a/b/c", "file://a/b/c"]
+			"expectations": [
+				{"before": "https://127.0.0.1", "after": "https://127.0.0.1"},
+				{"before": "https://com"      , "after": "https://com"},
+				{"before": "ftp://127.0.0.1"  , "after": "ftp://127.0.0.1"},
+				{"before": "file://a/b/c"     , "after": "file://a/b/c"}
 			]
 		}
 	],
@@ -108,7 +112,7 @@
 						"condition": {"Any": [
 							{"HostIsOneOf": [
 								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
-								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com"
+								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la"
 							]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
@@ -191,35 +195,6 @@
 							{"PathIs": "/url"}
 						]},
 						"mapper": {"GetUrlFromQueryParam": "q"}
-					},
-
-
-
-					{
-						"condition": {"All": [
-							{"FlagIsSet": "bypass.vip"},
-							{"HostIsOneOf": [
-								"adf.ly", "adfoc.us", "ay.live", "aylink.co", "bc.vc", "bcvc.live",
-								"boost.fusedgt.com", "boost.ink", "boostme.link", "cutt.ly", "eio.io", "exe.app", "exe.io",
-								"exee.io", "exey.io", "fc-lc.com", "fc.lc", "freehottip.com", "gestyy.com", "justpaste.it",
-								"letsboost.net", "mboost.me", "onlyme.ga", "ouo.io", "ouo.press", "ph.apps2app.com",
-								"rekonise.com", "sh.st", "shortconnect.com", "shorte.st", "shrto.ml", "social-unlock.com",
-								"steps2unlock.com", "sub2get.com", "sub2unlock.com", "sub2unlock.net", "sub4unlock.com",
-								"youtube.com", "ytsubme.com", "za.gl", "za.uy", "zee.gl"
-							]}
-						]},
-						"mapper": {"SetPart": {
-							"part": "Whole",
-							"value": {"Modified": {
-								"source": {"HttpRequest": {
-									"url": "https://api.bypass.vip",
-									"method": "POST",
-									"headers": {"origin": "https://bypass.vip"},
-									"body": {"Form": {"url": {"Part": "Whole"}}}
-								}},
-								"modification": {"JsonPointer": "/destination"}
-							}}
-						}}
 					}
 				]
 			}
@@ -345,8 +320,9 @@
 				]},
 				"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
 				"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
-				"bbc.com": {"RemoveQueryParamsMatching": {"StringLocation": {"location": "Start", "value": "at_"}}},
-				"linktr.ee": {"RemoveQueryParams": ["ltsid"]}
+				"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "at_"}}},
+				"linktr.ee": {"RemoveQueryParams": ["ltsid"]},
+				"github.com": {"RemoveQueryParams": ["notification_referrer_id"]}
 			}
 		},
 
@@ -587,10 +563,14 @@
 				{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
 				{"UnqualifiedAnyTld": "amazon"}
 			]},
-			"mapper": {"All": [
-				"RemoveQuery",
-				{"RemovePathSegments": [0, 3]}
-			]}
+			"mapper": {"RemovePathSegments": [0, 3]}
+		},
+		{
+			"condition": {"All": [
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "dp"}},
+				{"UnqualifiedAnyTld": "amazon"}
+			]},
+			"mapper": "RemoveQuery"
 		},
 		{
 			"condition": {"All": [
@@ -722,7 +702,7 @@
 
 						"icid", "_trkparms", "_trksid", "ref", "source", "referer"
 					]},
-					{"StringLocation": {"location": "Start", "value": "utm_"}}
+					{"Contains": {"where": "Start", "value": "utm_"}}
 				]}
 			}
 		}

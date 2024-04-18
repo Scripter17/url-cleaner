@@ -12,9 +12,8 @@ mod glue;
 mod types;
 mod util;
 
-#[derive(Debug, Clone, Parser, Default)]
-#[command(name = "URL Cleaner")]
-/// URL Cleaner is a tool meant primarily to remove tracking garbage from URLs and more generally is a very powerful URL manipulation library/CLI tool.
+#[derive(Debug, Clone, Parser)]
+/// URL Cleaner - Explicit non-consent to URL-based tracking.
 struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     urls: Vec<Url>,
@@ -28,14 +27,24 @@ struct Args {
     #[arg(short      , long)] flag  : Vec<String>,
     /// Unset flags set by the config.
     #[arg(short = 'F', long)] unflag: Vec<String>,
-    /// Read stuff from caches. Currently only applies to Mapper::ExpandShortLink. Default value is set by the config (which in turn defaults to true).
-    #[cfg(feature = "cache")] #[arg(long)] read_cache : Option<bool>,
-    /// Write stuff to caches. Currently only applies to Mapper::ExpandShortLink. Default value is set by the config (which in turn defaults to true).
-    #[cfg(feature = "cache")] #[arg(long)] write_cache: Option<bool>,
+    /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
+    #[cfg(feature = "cache")]
+    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    read_cache : Option<bool>,
+    /// Write stuff to caches. Default value is controlled by the config. Omitting a value means true.
+    #[cfg(feature = "cache")]
+    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    write_cache: Option<bool>,
+    /// The proxy to send HTTP requests over. Example: socks5://localhost:9150
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[arg(             long)] http_proxy: Option<Url>,
+    /// Disables all HTTP proxying.
+    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[arg(             long)] no_http_proxy: Option<bool>,
     /// Print the config's contents then exit.
-    #[arg(long)] print_config: bool,
+    #[arg(             long)] print_config: bool,
     /// Run the config's tests then exit.
-    #[arg(long)] test_config : bool
+    #[arg(             long)] test_config : bool
 }
 
 impl From<Args> for (Vec<Url>, types::ParamsDiff) {
@@ -44,11 +53,16 @@ impl From<Args> for (Vec<Url>, types::ParamsDiff) {
             args.urls,
             types::ParamsDiff {
                 vars   : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
-                unvars : args.unvar .into_iter().collect(),
-                flags  : args.flag  .into_iter().collect(),
-                unflags: args.unflag.into_iter().collect(),
+                unvars : args.unvar .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
+                flags  : args.flag  .into_iter().collect(), // It's probably not a good thing to do a global impl for,
+                unflags: args.unflag.into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
                 #[cfg(feature = "cache")] read_cache : args.read_cache,
-                #[cfg(feature = "cache")] write_cache: args.write_cache
+                #[cfg(feature = "cache")] write_cache: args.write_cache,
+                #[cfg(all(feature = "http", not(target_family = "wasm")))] http_client_config_diff: Some(types::HttpClientConfigDiff {
+                    set_proxies: args.http_proxy.map(|x| vec![x.into()]),
+                    no_proxy: args.no_http_proxy,
+                    ..types::HttpClientConfigDiff::default()
+                })
             }
         )
     }

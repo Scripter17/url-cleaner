@@ -1,13 +1,14 @@
 //! Provides [`RequestConfig`], [`RequestBody`], and [`ResponseHandler`] which allows for sending HTTP requests and getting strings from their responses.
 
-use std::str::FromStr;
 use std::collections::HashMap;
 
 use url::Url;
-use serde::{Deserialize, Serialize, de::{Deserializer, Error as _}, ser::Serializer};
+use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 use reqwest::{Method, header::HeaderMap};
 use thiserror::Error;
+#[allow(unused_imports)] // Used for documentation.
+use reqwest::{header::HeaderValue, cookie::Cookie};
 
 use crate::types::*;
 use crate::glue::*;
@@ -25,12 +26,11 @@ pub struct RequestConfig {
     #[serde(default)]
     pub url: Option<String>,
     /// The HTTP method to use. Defaults to [`Method::GET`].
-    #[serde(deserialize_with = "deserialize_method", serialize_with = "serialize_method", default = "get_get")]
+    #[serde(default, with = "method")]
     pub method: Method,
     /// The headers to send in the request in addition to the default headers provided by [`Params::http_client_config`] and [`Self::client_config_diff`].
     /// Defaults to an empty [`HeaderMap`].
-    #[serde(with = "headermap")]
-    #[serde(default)]
+    #[serde(default, with = "headermap")]
     pub headers: HeaderMap,
     /// The request body to send. Works with all methods but intended only for [`Method::POST`] requests.
     /// Defaults to [`None`].
@@ -45,8 +45,18 @@ pub struct RequestConfig {
     pub client_config_diff: Option<HttpClientConfigDiff>
 }
 
-/// Serde helper function. The default value of [`RequestConfig::method`].
-const fn get_get() -> Method {Method::GET}
+impl Default for RequestConfig {
+    fn default() -> Self {
+        Self {
+            url: None,
+            method: Method::GET,
+            headers: HeaderMap::default(),
+            body: None,
+            response_handler: ResponseHandler::default(),
+            client_config_diff: None
+        }
+    }
+}
 
 /// The enum of all possible errors [`RequestConfig::make`] and [`RequestConfig::response`] can return.
 #[derive(Debug, Error)]
@@ -78,16 +88,6 @@ impl From<StringSourceError> for RequestConfigError {
     fn from(value: StringSourceError) -> Self {
         Self::StringSourceError(Box::new(value))
     }
-}
-
-/// Deserializer to turn a string into a [`Method`].
-fn deserialize_method<'de, D: Deserializer<'de>>(d: D) -> Result<Method, D::Error> {
-    Method::from_str(Deserialize::deserialize(d)?).map_err(D::Error::custom)
-}
-
-/// Serializer to turn a [`Method`] into a string.
-fn serialize_method<S: Serializer>(method: &Method, s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_str(method.as_str())
 }
 
 impl RequestConfig {
@@ -173,9 +173,9 @@ impl RequestBody {
             Self::Text(source) => request.body(get_string!(source, url, params, RequestBodyError).to_string()),
             #[cfg(feature = "string-source")]
             Self::Form(map) => request.form(&map.iter()
-                .map(|(k, source)| source.get(url, params)
-                    .map(|maybe_string| maybe_string
-                        .map(|string| (k, string.into_owned()))
+                .map(|(k, v_source)| v_source.get(url, params)
+                    .map(|maybe_v| maybe_v
+                        .map(|v| (k, v.into_owned()))
                     )
                 )
                 .collect::<Result<Option<HashMap<_, _>>, _>>()?
@@ -192,14 +192,40 @@ impl RequestBody {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub enum ResponseHandler {
     /// [`reqwest::blocking::Response::text`].
+    /// # Errors
+    /// If [`reqwest::blocking::Response::text`] returns an error, that error is returned.
     #[default]
     Body,
-    /// [`reqwest::blocking::Response::headers`].
-    Header(#[cfg(feature = "string-source")] StringSource, #[cfg(not(feature = "string-source"))] String),
+    /// Finds the header in [`reqwest::blocking::Response::headers`] with the specified name and returns its value.
+    /// # Errors
+    /// If [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`HeaderMap::get`] returns [`None`], returns the error [`ResponseHandlerError::HeaderNotFound`].
+    /// 
+    /// If the call to [`HeaderValue::to_str`] returns an error, that error is returned.
+    #[cfg(feature = "string-source")]
+    Header(StringSource),
+    /// Finds the header in [`reqwest::blocking::Response::headers`] with the specified name and returns its value.
+    /// # Errors
+    /// If the call to [`HeaderMap::get`] returns [`None`], returns the error [`ResponseHandlerError::HeaderNotFound`].
+    /// 
+    /// If the call to [`HeaderValue::to_str`] returns an error, that error is returned.
+    #[cfg(not(feature = "string-source"))]
+    Header(String),
     /// [`reqwest::blocking::Response::url`].
     Url,
-    /// [`reqwest::blocking::Response::cookies`].
-    Cookie(#[cfg(feature = "string-source")] StringSource, #[cfg(not(feature = "string-source"))] String)
+    /// Finds the cookie in [`reqwest::blocking::Response::cookies`] with the specified name and returns its value.
+    /// # Errors
+    /// If [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If [`reqwest::blocking::Response::cookies`] returns an iterator that does not contain a [`Cookie`] with the specified name, returns the error [`ResponseHandlerError::CookieNotFound`].
+    #[cfg(feature = "string-source")]
+    Cookie(StringSource),
+    /// Finds the cookie in [`reqwest::blocking::Response::cookies`] with the specified name and returns its value.
+    /// # Errors
+    /// If [`reqwest::blocking::Response::cookies`] returns an iterator that does not contain a [`Cookie`] with the specified name, returns the error [`ResponseHandlerError::CookieNotFound`].
+    #[cfg(not(feature = "string-source"))]
+    Cookie(String)
 }
 
 /// The enum of all possible errors [`ResponseHandler::handle`] can return.
@@ -212,7 +238,7 @@ pub enum ResponseHandlerError {
     #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(Box<StringSourceError>),
-    /// Returned when a call to [`StringSource::get`] returns [`None`] when it has to be [`Some`].
+    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to be [`Some`].
     #[cfg(feature = "string-source")]
     #[error("A StringSource was None where it has to be Some.")]
     StringSourceIsNone,

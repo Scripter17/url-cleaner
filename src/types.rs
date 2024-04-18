@@ -6,6 +6,8 @@ mod url_part;
 pub use url_part::*;
 mod config;
 pub use config::*;
+mod tests;
+pub use tests::*;
 mod rules;
 pub use rules::*;
 #[cfg(feature = "string-location"    )] mod string_location;

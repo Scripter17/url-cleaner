@@ -77,22 +77,30 @@ impl AsRef<RegexParts> for RegexWrapper {
     }
 }
 
+impl TryFrom<&RegexWrapper> for Regex {
+    type Error = regex::Error;
+
+    /// [`RegexParts::build`].
+    fn try_from(value: &RegexWrapper) -> Result<Self, Self::Error> {
+        value.parts.build()
+    }
+}
+
 impl TryFrom<RegexWrapper> for Regex {
     type Error = regex::Error;
 
+    /// [`RegexParts::build`].
     fn try_from(value: RegexWrapper) -> Result<Self, Self::Error> {
-        value.parts.build()
+        (&value).try_into()
     }
 }
 
 impl RegexWrapper {
     /// Gets the cached compiled regex and compiles it first if it's not already cached.
     /// # Errors
-    /// Although regexes are ensured to be syntactically valid when a [`Self`] is created, it is possible for actually compiling a regex to result in a DFA bigger than the default limit in the [`regex`] crate.
+    /// Although regexes are ensured to be syntactically valid when a [`Self`] is created, it is possible for actually compiling a regex to result in a DFA bigger than the default limit in the [`regex`] crate which causes an error.
     /// 
     /// For details, please see the regex crate's documentation on [untrusted patterns](https://docs.rs/regex/latest/regex/index.html#untrusted-patterns) for details.
-    /// 
-    /// The error is in a [`Box`] because it is massive.
     pub fn get_regex(&self) -> Result<&Regex, regex::Error> {
         if let Some(regex) = self.regex.get() {
             Ok(regex)

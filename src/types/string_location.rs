@@ -131,19 +131,6 @@ pub enum StringLocation {
     /// assert_eq!(StringLocation::EndsAt(4).satisfied_by("abcdef", "cde").unwrap(), false);
     /// ```
     EndsAt(isize),
-    /// Checks if an instance of the needle exists within the specified range of the haystack.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::StringLocation;
-    /// ```
-    Range {
-        /// The start of the range to check.
-        start: Option<isize>,
-        /// The end of the range to check.
-        end: Option<isize>,
-        /// Where to look in the range
-        location: Box<Self>
-    },
     /// Checks if an instance of the needle exists after the specified point in the haystack.
     /// # Examples
     /// ```
@@ -167,8 +154,22 @@ pub enum StringLocation {
     /// ```
     Before(isize),
     /// Checks equality.
+    /// 
     /// Meant primarily for use with [`Self::AnySegment`] and [`Self::NthSegment`].
     Equals,
+    /// Checks if an instance of the needle exists within the specified range of the haystack.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::StringLocation;
+    /// ```
+    Range {
+        /// The start of the range to check.
+        start: Option<isize>,
+        /// The end of the range to check.
+        end: Option<isize>,
+        /// Where to look in the range
+        location: Box<Self>
+    },
     /// Splits the haystack at every instance of `split` and check if any segment satisfies `location`.
     /// # Errors
     /// If `location` returns an error on any segment, that error is returned.
@@ -181,7 +182,6 @@ pub enum StringLocation {
         /// The string to split by.
         split: String,
         /// The location of each segment to look for `needle` in.
-        #[serde(default = "box_equals")]
         location: Box<Self>
     },
     /// Splits the haystack at every instance of `split` and check if the `n`th segment satisfies `location`.
@@ -203,13 +203,9 @@ pub enum StringLocation {
         /// The index of the segment to search in.
         n: isize,
         /// The location of the `n`th segment to look for `needle` in.
-        #[serde(default = "box_equals")]
         location: Box<Self>
     }
 }
-
-/// Serde helper function. The default value of [`StringLocation::AnySegment::location`] and [`StringLocation::NthSegment::location`].
-fn box_equals() -> Box<StringLocation> {Box::new(StringLocation::Equals)}
 
 /// The enum of all possible errors [`StringLocation::satisfied_by`] can return.
 #[allow(clippy::enum_variant_names)]
@@ -230,9 +226,9 @@ pub enum StringLocationError {
     /// Returned when both the `try` and `else` of a [`StringLocation::TryElse`] both return errors.
     #[error("A `StringLocation::TryElse` had both `try` and `else` return an error.")]
     TryElseError {
-        /// The errir returned by [`StringLocation::TryElse::r#try`],
+        /// The error returned by [`StringLocation::TryElse::try`],
         try_error: Box<Self>,
-        /// The errir returned by [`StringLocation::TryElse::r#else`],
+        /// The error returned by [`StringLocation::TryElse::else`],
         else_error: Box<Self>
     }
 }

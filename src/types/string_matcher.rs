@@ -93,12 +93,12 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::{StringMatcher, StringLocation};
     /// # use url_cleaner::types::Params;
     /// # use url::Url;
-    /// assert_eq!(StringMatcher::StringLocation {location: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
     /// ```
     #[cfg(feature = "string-location")]
-    StringLocation {
+    Contains {
         /// The location to check for `value` at.
-        location: StringLocation,
+        r#where: StringLocation,
         /// The value to look for.
         #[cfg(feature = "string-source")]
         value: StringSource,
@@ -136,7 +136,9 @@ pub enum StringMatcher {
         matcher: Box<Self>
     },
     /// Passes if the provided string only contains the specified [`char`]s.
-    OnlyTheseChars(Vec<char>)
+    OnlyTheseChars(Vec<char>),
+    /// [`str::is_ascii`].
+    IsAscii
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
@@ -168,9 +170,9 @@ pub enum StringMatcherError {
     /// Returned when both the `try` and `else` of a [`StringMatcher::TryElse`] both return errors.
     #[error("A `StringMatcher::TryElse` had both `try` and `else` return an error.")]
     TryElseError {
-        /// The errir returned by [`StringMatcher::TryElse::r#try`],
+        /// The error returned by [`StringMatcher::TryElse::try`],
         try_error: Box<Self>,
-        /// The errir returned by [`StringMatcher::TryElse::r#else`],
+        /// The error returned by [`StringMatcher::TryElse::else`],
         else_error: Box<Self>
     }
 }
@@ -218,10 +220,10 @@ impl StringMatcher {
             Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(false),
             Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|try_error| r#else.satisfied_by(haystack, url, params).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(matchers) => {
-                let mut result = Ok(false); // Initial value doesn't mean anything.
+                let mut result = Ok(false); // The initial value doesn't mean anything.
                 for matcher in matchers {
                     result = matcher.satisfied_by(haystack, url, params);
-                    if result.is_ok() {return result}
+                    if result.is_ok() {return result;}
                 }
                 result?
             }
@@ -229,11 +231,12 @@ impl StringMatcher {
             // Other.
 
             Self::InHashSet(hash_set) => hash_set.contains(haystack),
-            #[cfg(feature = "string-location"    )] Self::StringLocation {location, value} => location.satisfied_by(haystack, get_string!(value, url, params, StringMatcherError))?,
+            #[cfg(feature = "string-location"    )] Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_string!(value, url, params, StringMatcherError))?,
             #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
-            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, url, params)?; temp}, url, params)?,
-            Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)==""
+            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, params)?; temp}, url, params)?,
+            Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)=="",
+            Self::IsAscii => haystack.is_ascii()
         })
     }
 }

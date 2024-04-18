@@ -270,7 +270,7 @@ pub enum Mapper {
     /// The default config handles this by configuring [`Self::ExpandShortLink::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
     /// And, because it's in a [`Rule::RepeatUntilNonePass`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
-    /// If the call to [`Params::get_redirect_from_cache`] returns an error, that error is returned.
+    #[cfg_attr(feature = "cache", doc = "If the call to [`Params::get_redirect_from_cache`] returns an error, that error is returned.")]
     /// 
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
@@ -282,7 +282,7 @@ pub enum Mapper {
     /// 
     /// (3xx status code) If the call to [`Url::parse`] to parse the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
     /// 
-    /// If the call to [`Params::write_redirect_to_cache`] returns an error, that error is returned.
+    #[cfg_attr(feature = "cache", doc = "If the call to [`Params::write_redirect_to_cache`] returns an error, that error is returned.")]
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -342,7 +342,7 @@ pub enum Mapper {
     }
 }
 
-/// The default value of [`Mapper::IfCondition::r#else`].
+/// The default value of [`Mapper::IfCondition::else`].
 fn box_mapper_none() -> Box<Mapper> {Box::new(Mapper::None)}
 
 /// An enum of all possible errors a [`Mapper`] can return.
@@ -423,12 +423,12 @@ pub enum MapperError {
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     #[error(transparent)]
     ToStrError(#[from] reqwest::header::ToStrError),
-    /// Returned when both the `try` and `else` of a [`MapperError::TryElse`] both return errors.
-    #[error("A `MapperError::TryElse` had both `try` and `else` return an error.")]
+    /// Returned when both the `try` and `else` of a [`Mapper::TryElse`] both return errors.
+    #[error("A `Mapper::TryElse` had both `try` and `else` return an error.")]
     TryElseError {
-        /// The errir returned by [`MapperError::TryElse::r#try`],
+        /// The error returned by [`Mapper::TryElse::try`],
         try_error: Box<Self>,
-        /// The errir returned by [`MapperError::TryElse::r#else`],
+        /// The error returned by [`Mapper::TryElse::else`],
         else_error: Box<Self>
     }
 }

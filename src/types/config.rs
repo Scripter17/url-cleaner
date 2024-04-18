@@ -25,7 +25,7 @@ pub struct Config {
     pub params: Params,
     /// The tests to make sure the config is working as intended.
     #[serde(default)]
-    pub tests: Vec<ConfigTest>,
+    pub tests: Vec<TestSet>,
     /// The conditions and mappers that modify the URLS.
     pub rules: Rules
 }
@@ -84,17 +84,9 @@ impl Config {
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
     /// Panics if a call to [`Self::apply`] or a test fails.
-    pub fn run_tests(mut self) {
-        let original_params = self.params.clone();
-        for test in self.tests.clone() {
-            let serialized_test = serde_json::to_string(&test)
-                .expect("The test to serialize without errors"); // Only applies when testing a config.
-            test.params_diff.apply(&mut self.params);
-            for (mut before, after) in test.pairs {
-                self.apply(&mut before).expect("The URL to be modified without errors."); // Only applies when testing a config.
-                assert_eq!(before, after, "Test: {serialized_test}");
-            }
-            self.params = original_params.clone();
+    pub fn run_tests(&self) {
+        for test in &self.tests {
+            test.run(self.clone());
         }
     }
 }
@@ -133,16 +125,6 @@ pub enum GetConfigError {
     #[allow(dead_code)]
     #[error(transparent)]
     CantParseDefaultConfig(serde_json::Error)
-}
-
-/// Tests to make sure a [`Config`] is working as intended.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ConfigTest {
-    /// The [`ParamsDiff`] to apply to the [`Config::params`] for this test.
-    #[serde(default)]
-    pub params_diff: ParamsDiff,
-    /// A list of URLs to test and the expected results.
-    pub pairs: Vec<(Url, Url)>
 }
 
 #[cfg(test)]

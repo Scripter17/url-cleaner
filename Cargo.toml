@@ -12,21 +12,20 @@ license-file = "LICENSE.md"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.115"
+serde = { version = "1.0.198", features = ["derive"] }
+serde_json = "1.0.116"
 url = { version = "2.5.0", features = ["serde"] }
-reqwest = { version = "0.12.2", features = ["blocking"], optional = true }
+reqwest = { version = "0.12.3", features = ["blocking", "socks"], optional = true }
 const-str = { version = "0.5.7", optional = true }
 atty = { version = "0.2.14", optional = true }
 thiserror = "1.0.58"
 regex = { version = "1.10.4", optional = true }
 glob = { version = "0.3.1", optional = true }
-psl = "2.1.30"
+psl = "2.1.33"
 form_urlencoded = "1.2.1"
 regex-syntax = { version = "0.8.3", optional = true }
 percent-encoding = { version = "2.3.1", optional = true }
 which = { version = "6.0.1", optional = true }
-tokio = { version = "1.37.0", features = ["rt", "macros"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 wasm-bindgen = "0.2.92"
@@ -36,27 +35,37 @@ serde-wasm-bindgen = "0.6.5"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["http", "commands", "cache-redirects", "stdin", "default-config", "minify-included-strings",
-  "regex", "glob", "string-location", "string-matcher", "string-modification", "string-source", "advanced-requests", "socks-proxy"]
-# Enables HTTP stuff. DOES NOT WORK ON WASM.
-http = ["dep:reqwest"]
-# Enables [`url_cleaner::glue::CommandWrapper`].
-commands = ["dep:which"]
-# Enables caching.
-cache = ["http"]
-# Read and write the result of [`url_cleaner::rules::mappers::Mapper::ExpandShortLink`] from and to redirect-cache.txt.
-cache-redirects = ["cache"]
+default = [
+  "default-config",
+  "minify-included-strings",
+
+  "stdin",
+
+  "string-location",
+  "string-matcher",
+  "string-modification",
+  "string-source",
+
+  "regex",
+
+  "glob",
+
+  "commands",
+
+  "http",
+  "advanced-requests",
+
+  "cache-redirects"
+]
+
+# Include default-config.json in the binary.
+default-config = ["dep:const-str"]
+# Replace all whitepace in the default config with just one space.
+minify-included-strings = []
+
 # Allow reading URLs from STDIN.
 stdin = ["dep:atty"]
-# Include default-config.json in the binary.
-default-config = []
-# Replace all whitepace in the default config with just one space.
-minify-included-strings = ["dep:const-str"]
-# Enables [`url_cleaner::glue::RegexWrapper`].
-regex = ["dep:regex", "dep:regex-syntax"]
-# Enables [`url_cleaner::glue::GlobWrapper`].
-glob = ["dep:glob"]
-debug = []
+
 # Enables [`types::StringLocation`].
 string-location = []
 # Enables [`types::StringMatcher`].
@@ -65,10 +74,28 @@ string-matcher = []
 string-modification = ["dep:percent-encoding"]
 # Enables [`types::StringSource`].
 string-source = []
+
+# Enables [`url_cleaner::glue::RegexWrapper`].
+regex = ["dep:regex", "dep:regex-syntax"]
+
+# Enables [`url_cleaner::glue::GlobWrapper`].
+glob = ["dep:glob"]
+
+# Enables [`url_cleaner::glue::CommandWrapper`].
+commands = ["dep:which"]
+
+# Enables HTTP stuff. DOES NOT WORK ON WASM.
+http = ["dep:reqwest"]
 # Enables [`types::RequestConfig`].
 advanced-requests = ["http", "reqwest/json", "reqwest/cookies"]
-# Enables using SOCKS proxies in [`HttpClientConfig`].
-socks-proxy = ["http", "reqwest/socks"]
+
+# Enables caching various operations.
+cache = []
+# Read and write the result of [`url_cleaner::types::Mapper::ExpandShortLink`] from and to redirect-cache.txt.
+cache-redirects = ["cache"]
+
+# Print debug info at various points.
+debug = []
 
 # https://stackoverflow.com/a/54842093/10720231
 [profile.release]

@@ -477,9 +477,9 @@ pub enum ConditionError {
     /// Returned when both the `try` and `else` of a [`Condition::TryElse`] both return errors.
     #[error("A `Condition::TryElse` had both `try` and `else` return an error.")]
     TryElseError {
-        /// The errir returned by [`Condition::TryElse::r#try`],
+        /// The error returned by [`Condition::TryElse::try`],
         try_error: Box<Self>,
-        /// The errir returned by [`Condition::TryElse::r#else`],
+        /// The error returned by [`Condition::TryElse::else`],
         else_error: Box<Self>
     }
 }

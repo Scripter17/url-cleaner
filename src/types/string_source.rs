@@ -271,7 +271,7 @@ impl StringSource {
                 match source.as_ref().get(url, params)? {
                     Some(x) => {
                         let mut x = x.into_owned();
-                        modification.apply(&mut x, url, params)?;
+                        modification.apply(&mut x, params)?;
                         Some(Cow::Owned(x))
                     },
                     None => None

@@ -22,6 +22,17 @@ pub struct ProxyConfig {
     pub auth: Option<ProxyAuth>
 }
 
+impl From<Url> for ProxyConfig {
+    /// Creates a [`Self`] with the provided URL, defaulting all other fields.
+    fn from(url: Url) -> Self {
+        Self {
+            url,
+            mode: ProxyMode::default(),
+            auth: None
+        }
+    }
+}
+
 /// The types of traffic to proxy. Defaults to [`Self::All`].
 #[derive(Debug, Clone, Copy, PartialEq, Default, Eq, Serialize, Deserialize)]
 pub enum ProxyMode {
