@@ -487,9 +487,7 @@ pub enum ConditionError {
 impl Condition {
     /// Checks whether or not the provided URL passes the condition.
     /// # Errors
-    /// If the condition has an error, that error is returned.
-    /// 
-    /// See [`Condition`]'s documentation for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, url: &Url, params: &Params) -> Result<bool, ConditionError> {
         #[cfg(feature = "debug")]
         println!("Condition: {self:?}");

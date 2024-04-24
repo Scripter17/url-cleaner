@@ -442,9 +442,7 @@ impl From<RuleError> for MapperError {
 impl Mapper {
     /// Applies the mapper to the provided URL.
     /// # Errors
-    /// If the mapper has an error, that error is returned.
-    /// 
-    /// See [`Mapper`]'s documentation for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), MapperError> {
         #[cfg(feature = "debug")]
         println!("Mapper: {self:?}");

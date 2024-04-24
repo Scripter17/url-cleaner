@@ -4,12 +4,16 @@
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 macro_rules! string_or_struct_magic {
     ($type:ty) => {
+        /// Serialize the object. Although the macro this implementation came from allows [`Self::deserialie`]ing from a string, this currently always serializes to a map, though that may change eventually.
         impl Serialize for $type {
             fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
                 <$type>::serialize(self, serializer)
             }
         }
 
+        /// This particular implementation allows for deserializing from a string using [`Self::from_str`].
+        /// 
+        /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
         impl<'de> Deserialize<'de> for $type {
             fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
                 struct V;
@@ -18,7 +22,7 @@ macro_rules! string_or_struct_magic {
                     type Value = $type;
 
                     fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-                        f.write_str("Expected a string or a struct.")
+                        f.write_str("Expected a string or a map.")
                     }
 
                     fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {

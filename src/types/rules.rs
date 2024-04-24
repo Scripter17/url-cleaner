@@ -115,7 +115,7 @@ pub enum RuleError {
     #[error(transparent)]
     MapperError(#[from] MapperError),
     /// Returned when the provided URL doesn't have a host to find in a [`Rule::HostMap`].
-    #[error("The provided URL doesn't have a host to find in the hashmap.")]
+    #[error("The provided URL doesn't have a host to find in the HashMap.")]
     UrlHasNoHost,
     /// Returned when the provided URL's host isn't in a [`Rule::HostMap`].
     #[error("The provided URL's host was not found in the `Rule::HostMap`.")]
@@ -125,7 +125,7 @@ pub enum RuleError {
 impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
-    /// Please see the documentation on each variant of [`Self`].
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by(url, params)? {

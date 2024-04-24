@@ -179,7 +179,7 @@ pub enum StringMatcherError {
 
 impl StringMatcher {
     /// # Errors
-    /// See the documentation for [`Self`]'s variants for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, haystack: &str, url: &Url, params: &Params) -> Result<bool, StringMatcherError> {
         #[cfg(feature = "debug")]
         println!("Matcher: {self:?}");

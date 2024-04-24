@@ -257,7 +257,7 @@ pub enum StringSourceError {
 impl StringSource {
     /// Gets the string from the source.
     /// # Errors
-    /// See the documentation for [`Self`]'s variants for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn get<'a>(&'a self, url: &'a Url, params: &'a Params) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         #[cfg(feature = "debug")]
         println!("Source: {self:?}");

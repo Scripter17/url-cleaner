@@ -112,7 +112,8 @@
 						"condition": {"Any": [
 							{"HostIsOneOf": [
 								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
-								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la"
+								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la",
+								"shorturl.at", "www.shorturl.at"
 							]},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
@@ -195,6 +196,21 @@
 							{"PathIs": "/url"}
 						]},
 						"mapper": {"GetUrlFromQueryParam": "q"}
+					},
+
+					{
+						"condition": {"UnqualifiedDomain": "href.li"},
+						"mapper": {
+							"SetPart": {
+								"part": "Whole",
+								"value": {
+									"Modified": {
+										"source": {"Part": "Query"},
+										"modification": "URLDecode"
+									}
+								}
+							}
+						}
 					}
 				]
 			}
@@ -359,7 +375,13 @@
 				"RemoveQuery"
 			]}
 		},
-
+		{
+			"condition": {"All": [
+				{"UnqualifiedDomain": "tumblr.com"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "login_required"}}
+			]},
+			"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+		},
 
 
 		{
@@ -367,7 +389,14 @@
 				{"PathIs": "/search"},
 				{"MaybeWWWAnyTld": "google"}
 			]},
-			"mapper": {"AllowQueryParams": ["hl", "q", "tbm"]}
+			"mapper": {"AllowQueryParams": ["hl", "q", "tbm", "p"]}
+		},
+		{
+			"condition": {"All": [
+				{"PathIs": "/setprefs"},
+				{"MaybeWWWAnyTld": "google"}
+			]},
+			"mapper": {"RemoveQueryParams": ["sa", "ved"]}
 		},
 
 
@@ -560,6 +589,17 @@
 
 		{
 			"condition": {"All": [
+				{"PartContains": {"part": "Path", "where": "Start", "value": "/gp/offer-listing/"}},
+				{"UnqualifiedAnyTld": "amazon"}
+			]},
+			"mapper": {"All": [
+				{"SetPart": {"part": {"PathSegment": 0}, "value": "dp"}},
+				{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
+				{"SetPart": {"part": {"QueryParam": "aod"}, "value": "1"}}
+			]}
+		},
+		{
+			"condition": {"All": [
 				{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
 				{"UnqualifiedAnyTld": "amazon"}
 			]},
@@ -570,7 +610,7 @@
 				{"PartIs": {"part": {"PathSegment": 0}, "value": "dp"}},
 				{"UnqualifiedAnyTld": "amazon"}
 			]},
-			"mapper": "RemoveQuery"
+			"mapper": {"AllowQueryParams": ["aod"]}
 		},
 		{
 			"condition": {"All": [
@@ -585,6 +625,10 @@
 				{"UnqualifiedAnyTld": "amazon"}
 			]},
 			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+		},
+		{
+			"condition": {"UnqualifiedAnyTld": "amazon"},
+			"mapper": {"RemoveQueryParams": ["ref", "node", "ie"]}
 		},
 
 

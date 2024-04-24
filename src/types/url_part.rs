@@ -661,7 +661,7 @@ pub enum UrlPart {
 impl UrlPart {
     /// Extracts the specified part of the provided URL.
     /// # Errors
-    /// See [`Self`]'s documentation for which parts return `None` and when.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         #[cfg(feature = "debug")]
         println!("_PartGet: {self:?}");
@@ -733,7 +733,7 @@ impl UrlPart {
     /// Replaces the specified part of the provided URL with the provided value.
     /// If this method returns an error, `url` is left unchanged.
     /// # Errors
-    /// TODO
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
         #[cfg(feature = "debug")]
         println!("PartSet: {self:?}");
@@ -902,7 +902,7 @@ impl UrlPart {
     /// # Errors
     /// If [`UrlPart::get`] returns an error, that error is returned.
     /// 
-    /// If the string modification returns an error, that error is returned.
+    /// If [`StringModification::apply`] returns an error, that error is returned.
     /// 
     /// If [`UrlPart::set`] returns an error, that error is returned.
     #[cfg(feature = "string-modification")]
@@ -915,6 +915,7 @@ impl UrlPart {
 }
 
 /// Checks if the provided string is a valid domain.
+/// 
 /// This is a separate function for the sake of testing.
 #[inline]
 fn is_valid_domain(domain: &str) -> bool {
@@ -922,7 +923,12 @@ fn is_valid_domain(domain: &str) -> bool {
 }
 
 /// When setting a domain it is generally ideal to make sure it's actually a domain.
+/// 
 /// Unfortunately [`Url`] doesn't have a `set_domain` method, so this checks if [`url::Host::parse`]ing `domain` returns a [`url::Host::Domain`].
+/// # Errors
+/// If [`is_valid_domain`] returns [`false`], returns the error [`UrlPartSetError::InvlaidDomain`].
+/// 
+/// If [`is_valid_domain`] returns [`true`] but [`Url::set_host`] somehow returns an error, that error is returned.
 fn set_domain(url: &mut Url, domain: &str) -> Result<(), UrlPartSetError> {
     if is_valid_domain(domain) {
         url.set_host(Some(domain))?;

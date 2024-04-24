@@ -95,6 +95,11 @@ impl Params {
         }?.build()
     }
 
+    /// Read lines from `redirect-cache.txt`.
+    /// 
+    /// If a line that starts with `before` then a tab is found, returns that URL as `Ok(Some(_))`.
+    /// 
+    /// If no such line is found, returns `Ok(None)`.
     /// # Errors
     /// If a cache line starting with `url` is found but the map isn't parseable as a URL, returns the error [`ReadCacheError::UrlParseError`].
     #[cfg(feature = "cache-redirects")]
@@ -113,6 +118,7 @@ impl Params {
         Ok(None)
     }
 
+    /// Writes a newline, `before`, a tab, and `after` to `redirect-cache.txt`.
     /// # Errors
     /// If the cache line cannot be written, returns [`WriteCacheError::IoError`].
     #[cfg(feature = "cache-redirects")]

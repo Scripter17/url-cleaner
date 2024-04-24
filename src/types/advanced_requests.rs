@@ -167,7 +167,7 @@ impl From<StringSourceError> for RequestBodyError {
 impl RequestBody {
     /// Applies the specified body to the provided [`reqwest::blocking::RequestBuilder`].
     /// # Errors
-    /// See [`RequestBody`]'s documentation for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, request: reqwest::blocking::RequestBuilder, url: &Url, params: &Params) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
         Ok(match self {
             Self::Text(source) => request.body(get_string!(source, url, params, RequestBodyError).to_string()),
@@ -263,7 +263,7 @@ impl From<StringSourceError> for ResponseHandlerError {
 impl ResponseHandler {
     /// Returns a string from the requested part of the response.
     /// # Errors
-    /// See [`ResponseHandler`]'s docs for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn handle(&self, response: reqwest::blocking::Response, url: &Url, params: &Params) -> Result<String, ResponseHandlerError> {
         Ok(match self {
             Self::Body => response.text()?,

@@ -236,7 +236,7 @@ pub enum StringLocationError {
 impl StringLocation {
     /// Checks if `needle` exists in `haystack` according to `self`'s rules.
     /// # Errors
-    /// See the documentation for [`Self`]'s variants for details.
+    /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringLocationError> {
         #[cfg(feature = "debug")]
         println!("Location: {self:?}");

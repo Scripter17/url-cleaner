@@ -61,6 +61,7 @@ impl Config {
     }
 
     /// If `path` is `Some`, returns [`Self::load_from_file`].
+    /// 
     /// If `path` is `None`, returns [`Self::get_default`].
     /// # Errors
     /// If `path` is `None` and the call to [`Self::get_default`] returns an error, that error is returned.

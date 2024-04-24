@@ -1,5 +1,7 @@
 //! Proxy support for HTTP and HTTPS requests.
 
+use std::str::FromStr;
+
 use serde::{Serialize, Deserialize};
 use url::Url;
 use reqwest::header::HeaderValue;
@@ -11,6 +13,7 @@ use crate::types::HttpClientConfig;
 
 /// Used by [`HttpClientConfig`] to detail how a [`reqwest::Proxy`] should be made.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(remote = "Self")]
 pub struct ProxyConfig {
     /// The URL to proxy traffic to. Not the URL whose traffic to proxy.
     pub url: Url,
@@ -21,6 +24,26 @@ pub struct ProxyConfig {
     #[serde(default)]
     pub auth: Option<ProxyAuth>
 }
+
+impl FromStr for ProxyConfig {
+    type Err = <Url as FromStr>::Err;
+
+    /// [`Url::from_str`].
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Url::from_str(s)?.into())
+    }
+}
+
+impl TryFrom<&str> for ProxyConfig {
+    type Error = <Self as FromStr>::Err;
+
+    /// [`Url::from_str`].
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
+    }
+}
+
+crate::util::string_or_struct_magic!(ProxyConfig);
 
 impl From<Url> for ProxyConfig {
     /// Creates a [`Self`] with the provided URL, defaulting all other fields.
@@ -59,20 +82,42 @@ pub enum ProxyAuth {
     Custom(#[serde(with = "crate::glue::headervalue")] HeaderValue)
 }
 
-impl ProxyConfig {
+impl TryFrom<&ProxyConfig> for reqwest::Proxy {
+    type Error = reqwest::Error;
+    
     /// Create a [`reqwest::Proxy`].
     /// # Errors
-    /// If the call to [`reqwest::Proxy::all`], [`reqwest::Proxy::https`], or [`reqwest::Proxy::http`] return an error, that error is returned.
-    pub fn make(&self) -> reqwest::Result<reqwest::Proxy> {
-        let temp = match self.mode {
-            ProxyMode::All   => Proxy::all  (self.url.clone()),
-            ProxyMode::Https => Proxy::https(self.url.clone()),
-            ProxyMode::Http  => Proxy::http (self.url.clone())
+    /// If `value`'s [`ProxyConfig::auth`] is [`Some`] and the call to [`reqwest::Proxy::all`], [`reqwest::Proxy::https`], or [`reqwest::Proxy::http`] return an error, that error is returned.
+    fn try_from(value: &ProxyConfig) -> reqwest::Result<Self> {
+        let temp = match value.mode {
+            ProxyMode::All   => Proxy::all  (value.url.clone()),
+            ProxyMode::Https => Proxy::https(value.url.clone()),
+            ProxyMode::Http  => Proxy::http (value.url.clone())
         }?;
-        Ok(match &self.auth {
+        Ok(match &value.auth {
             None => temp,
             Some(ProxyAuth::Basic {username, password}) => temp.basic_auth(username, password),
             Some(ProxyAuth::Custom(value)) => temp.custom_http_auth(value.clone())
         })
+    }
+}
+
+impl TryFrom<ProxyConfig> for reqwest::Proxy {
+    type Error = reqwest::Error;
+
+    /// Create a [`reqwest::Proxy`].
+    /// # Errors
+    /// If `value`'s [`ProxyConfig::auth`] is [`Some`] and the call to [`reqwest::Proxy::all`], [`reqwest::Proxy::https`], or [`reqwest::Proxy::http`] return an error, that error is returned.
+    fn try_from(value: ProxyConfig) -> reqwest::Result<Self> {
+        (&value).try_into()
+    }
+}
+
+impl ProxyConfig {
+    /// Create a [`reqwest::Proxy`].
+    /// # Errors
+    /// If `value`'s [`ProxyConfig::auth`] is [`Some`] and the call to [`reqwest::Proxy::all`], [`reqwest::Proxy::https`], or [`reqwest::Proxy::http`] return an error, that error is returned.
+    pub fn make(&self) -> reqwest::Result<Proxy> {
+        self.try_into()
     }
 }

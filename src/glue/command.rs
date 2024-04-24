@@ -25,13 +25,6 @@ use crate::types::*;
 /// 
 /// If you are making a URL-Cleaner-as-a-service service, you should disable the `commands` feature to block access to this.
 /// I don't care if you use sandboxing. You shouldn't tempt fate.
-/// 
-/// TODO: Pull-based STDIN similar to [`StringSource`].
-/// If you need that, you can do `{"program": "echo", "args": ["your-stdin"], "output_handler": {"PipeStdout": YOUR_COMMAND}}`.
-/// 
-/// Also this whole API needs better [`StringSource`] integration but frankly if you're the kind of person that can stomach ACE you can just make a command do that.
-/// 
-/// The entire point of this is for stuff too complex for URL Cleaner. Which is... not much by now.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]
 pub struct CommandConfig {
@@ -64,9 +57,9 @@ impl From<&str> for CommandConfig {
     fn from(value: &str) -> Self {
         Self {
             program: value.to_string(),
-            args: Vec::new(),
+            args: Vec::default(),
             current_dir: None,
-            envs: HashMap::new(),
+            envs: HashMap::default(),
             output_handler: OutputHandler::default()
         }
     }
@@ -95,7 +88,7 @@ pub enum CommandError {
 }
 
 impl CommandConfig {
-    /// Creates a [`Command`] using [`Self`]
+    /// Creates a [`Command`] using [`Self`].
     pub fn make_command(&self, url: Option<&Url>) -> Command {
         let mut ret = Command::new(&self.program);
         match url {
@@ -150,7 +143,7 @@ impl CommandConfig {
                     _                                                                                             => {command.stdout(Stdio::null ()); command.stderr(Stdio::null ());}
                 }
                 let mut child=command.spawn()?;
-                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
+                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics; [`Command`] just sucks.
                 child_stdin.write_all(stdin)?;
                 self.output_handler.handle(url, child.wait_with_output()?)?
             },

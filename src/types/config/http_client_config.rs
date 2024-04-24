@@ -113,7 +113,7 @@ impl HttpClientConfigDiff {
         if let Some(new_redirect_policy) = &self.redirect_policy {to.redirect_policy = new_redirect_policy.clone();}
         to.default_headers.extend(self.add_default_headers.clone());
         if let Some(https_only) = self.https_only {to.https_only = https_only;}
-        if let Some(set_proxies) = &self.set_proxies {to.proxies = set_proxies.clone();}
+        if let Some(set_proxies) = &self.set_proxies {to.proxies.clone_from(set_proxies);}
         to.proxies.extend(self.add_proxies.clone());
         if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
         if let Some(referer) = self.referer {to.no_proxy = referer;}
