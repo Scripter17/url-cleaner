@@ -70,29 +70,48 @@
 
 
 					{
-						"condition": {"All": [
-							{"MaybeWWWDomain": "pixiv.net"},
-							{"PathIs": "/jump.php"}
+						"condition": {"Any": [
+							{"HostIsOneOf": [
+								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
+								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la",
+								"shorturl.at", "www.shorturl.at"
+							]},
+							{"All": [
+								{"QualifiedDomain": "pawoo.net"},
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
+							]},
+							{"All": [
+								{"QualifiedDomain": "api.pinterest.com"},
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
+							]}
 						]},
-						"mapper": {"TryElse": {
-							"try": {"GetUrlFromQueryParam": "url"},
-							"else": { "SetPart": {
-								"part": "Whole",
-								"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
-							}}
+						"mapper": {"ExpandShortLink": {
+							"http_client_config_diff": {
+								"redirect_policy": "None"
+							}
 						}}
 					},
 
 
 
 					{
-						"condition": {"All": [
-							{"UnqualifiedDomain": "deviantart.com"},
-							{"PathIs": "/users/outgoing"}
+						"condition": {"Any": [
+							{"All": [
+								{"MaybeWWWDomain": "pixiv.net"},
+								{"PathIs": "/jump.php"}
+							]},
+							{"All": [
+								{"UnqualifiedDomain": "deviantart.com"},
+								{"PathIs": "/users/outgoing"}
+							]},
+							{"All": [
+								{"QualifiedDomain": "api.linkr.bio"},
+								{"PathIs": "/callbacks/go"}
+							]}
 						]},
 						"mapper": {"TryElse": {
 							"try": {"GetUrlFromQueryParam": "url"},
-							"else": {"SetPart": {
+							"else": { "SetPart": {
 								"part": "Whole",
 								"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
 							}}
@@ -110,41 +129,33 @@
 
 					{
 						"condition": {"Any": [
-							{"HostIsOneOf": [
-								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
-								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la",
-								"shorturl.at", "www.shorturl.at"
-							]},
 							{"All": [
-								{"QualifiedDomain": "pawoo.net"},
-								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
-							]}
-						]},
-						"mapper": {"ExpandShortLink": {
-							"http_client_config_diff": {
-								"redirect_policy": "None"
-							}
-						}}
-					},
-
-
-
-					{
-						"condition": {"All": [
-							{"QualifiedDomain": "api.linkr.bio"},
-							{"PathIs": "/callbacks/go"}
-						]},
-						"mapper": {"GetUrlFromQueryParam": "url"}
-					},
-
-
-
-					{
-						"condition": {"All": [
-							{"MaybeWWWDomain": "steamcommunity.com"},
-							{"PartIs": {"part": {"PathSegment": 0}, "value": "linkfilter"}}
+								{"MaybeWWWDomain": "steamcommunity.com"},
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "linkfilter"}}
+							]},
+							{"QualifiedDomain": "l.threads.com"}
 						]},
 						"mapper": {"GetUrlFromQueryParam": "u"}
+					},
+
+
+
+					{
+						"condition": {"All": [
+							{"MaybeWWWDomain": "lnk.bio"},
+							{"PathIs": "/go"}
+						]},
+						"mapper": {"GetUrlFromQueryParam": "d"}
+					},
+
+
+
+          {
+						"condition": {"All": [
+							{"UnqualifiedAnyTld": "google"},
+							{"PathIs": "/url"}
+						]},
+						"mapper": {"GetUrlFromQueryParam": "q"}
 					},
 
 
@@ -184,21 +195,6 @@
 
 
 					{
-						"condition": {"QualifiedDomain": "l.threads.com"},
-						"mapper": {"GetUrlFromQueryParam": "u"}
-					},
-
-
-
-          {
-						"condition": {"All": [
-							{"UnqualifiedAnyTld": "google"},
-							{"PathIs": "/url"}
-						]},
-						"mapper": {"GetUrlFromQueryParam": "q"}
-					},
-
-					{
 						"condition": {"UnqualifiedDomain": "href.li"},
 						"mapper": {
 							"SetPart": {
@@ -219,14 +215,30 @@
 
 
 		{
-			"comment": "https://https//example1.com/example2.com/abc -> https://example2.com/abc",
+			"comment-1": "https://https//abc.example1.com/def.example2.com/ghi -> https://def.example2.com/ghi",
+			"comment-2": "https://https//abc.example1.com/user/def.example2.com/ghi unchanged",
 			"condition": {"All": [
 				{"Not": {"FlagIsSet": "no-unmangle"}},
-				{"HostIsOneOf": ["http", "https"]}
+				{"HostIsOneOf": ["http", "https"]},
+				{"PartContains": {"part": {"PathSegment": 2}, "value": "."}}
 			]},
 			"mapper": {"All": [
 				{"CopyPart": {"from": {"PathSegment": 2}, "to": "Host"}},
 				{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 4}}, "to": "Path"}}
+			]}
+		},
+		{
+			"comment-1": "https://https//abc.example1.com/example2.com/ghi unchanged",
+			"comment-2": "https://https//abc.example1.com/user/example2.com/ghi -> https://def.example2.com/ghi",
+			"condition": {"All": [
+				{"Not": {"FlagIsSet": "no-unmangle"}},
+				{"HostIsOneOf": ["http", "https"]},
+				{"Not": {"PartContains": {"part": {"PathSegment": 2}, "value": "."}}},
+				{"PartContains": {"part": {"PathSegment": 3}, "value": "."}}
+			]},
+			"mapper": {"All": [
+				{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
+				{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}}
 			]}
 		},
 		{
@@ -338,7 +350,11 @@
 				"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
 				"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "at_"}}},
 				"linktr.ee": {"RemoveQueryParams": ["ltsid"]},
-				"github.com": {"RemoveQueryParams": ["notification_referrer_id"]}
+				"github.com": {"RemoveQueryParams": ["notification_referrer_id"]},
+				"theguardian.com": {"All": [
+					{"RemoveQueryParams": ["CMP"]},
+					{"SetPart": {"part": "Fragment", "value": null}}
+				]}
 			}
 		},
 
@@ -627,8 +643,16 @@
 			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
 		},
 		{
+			"condition": {"All": [
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "dp"}},
+				{"PartMatches": {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}},
+				{"UnqualifiedAnyTld": "amazon"}
+			]},
+			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+		},
+		{
 			"condition": {"UnqualifiedAnyTld": "amazon"},
-			"mapper": {"RemoveQueryParams": ["ref", "node", "ie"]}
+			"mapper": {"RemoveQueryParams": ["ref", "ref_", "node", "ie"]}
 		},
 
 

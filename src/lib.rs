@@ -7,11 +7,8 @@ use std::borrow::Cow;
 use wasm_bindgen::prelude::*;
 use url::Url;
 
-/// Wrappers for [`regex::Regex`], [`glob::Pattern`], and [`std::process::Command`].
 pub mod glue;
-/// Types that don't fit in the other modules.
 pub mod types;
-/// Various weird internal helpers.
 pub(crate) mod util;
 
 /// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.

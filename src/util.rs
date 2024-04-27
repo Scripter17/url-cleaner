@@ -1,4 +1,4 @@
-//! Various math helper function thingies.
+//! Various helper functions and macros.
 //! Very weird, very jank.
 //! May or may not be made pub if useful.
 //! Which is to say probably not.

@@ -20,6 +20,7 @@ impl TestSet {
     /// # Panics
     /// Panics if a call to [`Config::apply`] or a test fails.
     pub fn run(&self, mut config: Config) {
+        println!("Testing the following test set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable")); // Only applies when testing a config.
         self.params_diff.apply(&mut config.params);
         for expectation in &self.expectations {
             expectation.run(&config);
@@ -41,6 +42,7 @@ impl Expectation {
     /// # Panics
     /// Panics if a call to [`Config::apply`] or a test fails.
     pub fn run(&self, config: &Config) {
+        println!("Testing the following expectation set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable")); // Only applies when testing a config.
         let mut temp = self.before.clone();
         config.apply(&mut temp).expect("The URL to be modified without errors."); // Only applies when testing a config.
         assert_eq!(temp, self.after);
