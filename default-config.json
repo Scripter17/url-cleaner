@@ -71,11 +71,13 @@
 
 					{
 						"condition": {"Any": [
-							{"HostIsOneOf": [
-								"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
-								"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la",
-								"shorturl.at", "www.shorturl.at"
-							]},
+							{
+								"HostIsOneOf": [
+									"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
+									"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la",
+									"shorturl.at", "www.shorturl.at"
+								]
+							},
 							{"All": [
 								{"QualifiedDomain": "pawoo.net"},
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
@@ -85,11 +87,13 @@
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
 							]}
 						]},
-						"mapper": {"ExpandShortLink": {
-							"http_client_config_diff": {
-								"redirect_policy": "None"
+						"mapper": {
+							"ExpandShortLink": {
+								"http_client_config_diff": {
+									"redirect_policy": "None"
+								}
 							}
-						}}
+						}
 					},
 
 
