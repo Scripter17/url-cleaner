@@ -180,13 +180,7 @@ pub enum StringSource {
     /// # Errors
     /// If the call to [`CommandConfig::output`] returns an error, that error is returned.
     #[cfg(feature = "commands")]
-    CommandOutput {
-        /// The command to run.
-        command: CommandConfig,
-        /// The STDIN to put into the command.
-        #[serde(default)]
-        stdin: Option<Box<Self>>
-    }
+    CommandOutput(Box<CommandConfig>)
 }
 
 impl FromStr for StringSource {
@@ -202,6 +196,12 @@ impl From<&str> for StringSource {
     /// Returns a [`Self::String`].
     fn from(value: &str) -> Self {
         Self::String(value.into())
+    }
+}
+
+impl From<String> for StringSource {
+    fn from(value: String) -> Self {
+        Self::String(value)
     }
 }
 
@@ -251,7 +251,16 @@ pub enum StringSourceError {
     /// Returned when a [`CommandError`] is encountered.
     #[cfg(feature = "commands")]
     #[error(transparent)]
-    CommandError(#[from] CommandError)
+    CommandError(Box<CommandError>),
+    /// Returned when the key is not in the map.
+    #[error("The key was not in the map.")]
+    KeyNotInMap
+}
+
+impl From<CommandError> for StringSourceError {
+    fn from(value: CommandError) -> Self {
+        Self::CommandError(Box::new(value))
+    }
 }
 
 impl StringSource {
@@ -291,13 +300,7 @@ impl StringSource {
                 ret?
             },
             #[cfg(feature = "commands")]
-            Self::CommandOutput {command, stdin} => match stdin {
-                Some(stdin) => match stdin.get(url, params)? {
-                    Some(stdin) => Some(Cow::Owned(command.output(Some(url), Some(stdin.as_bytes()))?)),
-                    None => Some(Cow::Owned(command.output(Some(url), None)?))
-                },
-                None => Some(Cow::Owned(command.output(Some(url), None)?))
-            },
+            Self::CommandOutput(command) => Some(Cow::Owned(command.output(url, params)?)),
             Self::Error => Err(StringSourceError::ExplicitError)?
         })
     }

@@ -4,7 +4,7 @@
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 macro_rules! string_or_struct_magic {
     ($type:ty) => {
-        /// Serialize the object. Although the macro this implementation came from allows [`Self::deserialie`]ing from a string, this currently always serializes to a map, though that may change eventually.
+        /// Serialize the object. Although the macro this implementation came from allows [`Self::deserialize`]ing from a string, this currently always serializes to a map, though that may change eventually.
         impl Serialize for $type {
             fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
                 <$type>::serialize(self, serializer)

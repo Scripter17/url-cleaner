@@ -18,31 +18,39 @@ pub use crate::types::*;
 /// [`Rule::Normal`] is almost always what you want.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum Rule {
-    /// A faster but less versatile mode that uses a hashmap to save on iterations in [`Rules`].
-    /// Strips leading `"www."` from the provided URL to act like [`conditions::Condition::MaybeWWWDomain`].
+    /// Gets a certain part of a URL then applies a [`Mapper`] depending on the returned value.
     /// # Errors
-    /// If the provided URL doesn't have a host, returns the error [`RuleError::UrlHasNoHost`].
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::PartValueNotInMap`].
     /// 
-    /// If the provided URL's host isn't in the rule's map, returns the error [`RuleError::HostNotInMap`].
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::{Rule, Mapper, Params};
-    /// # use url::Url;
-    /// # use std::collections::HashMap;
-    /// let rule=Rule::HostMap(HashMap::from_iter([
-    ///     ("example1.com".to_string(), Mapper::SetHost("example2.com".to_string())),
-    ///     ("example2.com".to_string(), Mapper::SetHost("example1.com".to_string()))
-    /// ]));
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    PartMap {
+        /// The part to get.
+        part: UrlPart,
+        /// The map determining which [`Mapper`] to apply.
+        map: HashMap<Option<String>, Mapper>
+    },
+    /// Gets a certain part of a URL then applies a [`Rule`] depending on the returned value.
+    /// # Errors
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::PartValueNotInMap`].
     /// 
-    /// let mut url1 = Url::parse("https://example1.com").unwrap();
-    /// assert!(rule.apply(&mut url1, &Params::default()).is_ok());
-    /// assert_eq!(url1.as_str(), "https://example2.com/");
+    /// If the call to [`Rule::apply`] returns an error, that error is returned.
+    PartRuleMap {
+        /// The part to get.
+        part: UrlPart,
+        /// The map determining which [`Rule`] to apply.
+        map: HashMap<Option<String>, Rule>
+    },
+    /// Gets a certain part of a URL then applies a [`Rules`] depending on the returned value.
+    /// # Errors
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::PartValueNotInMap`].
     /// 
-    /// let mut url2 = Url::parse("https://example2.com").unwrap();
-    /// assert!(rule.apply(&mut url2, &Params::default()).is_ok());
-    /// assert_eq!(url2.as_str(), "https://example1.com/");
-    /// ```
-    HostMap(HashMap<String, Mapper>),
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    PartRulesMap {
+        /// The part to get.
+        part: UrlPart,
+        /// The map determining which [`Rules`] to apply.
+        map: HashMap<Option<String>, Rules>
+    },
     /// Runs all the contained rules until none of their conditions pass.
     /// Runs at most `limit` times. (Defaults to 10).
     /// # Errors
@@ -72,9 +80,23 @@ pub enum Rule {
         /// The rules to repeat.
         rules: Vec<Rule>,
         /// The max amount of times to repeat them.
+        /// 
         /// Defaults to 10.
         #[serde(default = "get_10_u8")]
         limit: u8
+    },
+    /// When many rules share a common condition (such as `{"UnqualifiedAnyTLD": "amazon"}`), it often makes semantic and performance sense to merge them all into one.
+    /// # Errors
+    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Condition::satisfied_by`] retuens `Some(false)`, returns the error [`RuleError::FailedCondition`].
+    /// 
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    CommonCondition {
+        /// The condition they all share. Note that [`Condition::All`] and [`Condition::Any`] can be used to have multiple common conditions.
+        condition: Condition,
+        /// The rules to run if [`Self::CommonCondition::condition`] passes.
+        rules: Rules
     },
     /// The basic condition mapper rule type.
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
@@ -114,12 +136,9 @@ pub enum RuleError {
     /// The mapper returned an error.
     #[error(transparent)]
     MapperError(#[from] MapperError),
-    /// Returned when the provided URL doesn't have a host to find in a [`Rule::HostMap`].
-    #[error("The provided URL doesn't have a host to find in the HashMap.")]
-    UrlHasNoHost,
-    /// Returned when the provided URL's host isn't in a [`Rule::HostMap`].
-    #[error("The provided URL's host was not found in the `Rule::HostMap`.")]
-    HostNotInMap
+    /// Returned when the a part's value isn't found in a rule's [`HashMap`].
+    #[error("The part's value was not found in the rule's HashMap.")]
+    PartValueNotInMap
 }
 
 impl Rule {
@@ -134,8 +153,10 @@ impl Rule {
             } else {
                 Err(RuleError::FailedCondition)
             },
-            Self::HostMap(map) => Ok(map.get(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x)).ok_or(RuleError::UrlHasNoHost)?).ok_or(RuleError::HostNotInMap)?.apply(url, params)?),
-            Self::RepeatUntilNonePass{rules, limit} => {
+            Self::PartMap      {part, map} => Ok(map.get(&part.get(url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(url, params)?),
+            Self::PartRuleMap  {part, map} => Ok(map.get(&part.get(url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(url, params)?),
+            Self::PartRulesMap {part, map} => Ok(map.get(&part.get(url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(url, params)?),
+                        Self::RepeatUntilNonePass{rules, limit} => {
                 for _ in 0..*limit {
                     let mut done=true;
                     for rule in rules {
@@ -148,6 +169,14 @@ impl Rule {
                     if done {break}
                 }
                 Ok(())
+            },
+            Self::CommonCondition{condition, rules} => {
+                if condition.satisfied_by(url, params)? {
+                    rules.apply(url, params)?;
+                    Ok(())
+                } else {
+                    Err(RuleError::FailedCondition)
+                }
             }
         }
     }
@@ -159,18 +188,17 @@ impl Rule {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Rules(pub Vec<Rule>);
 
-#[allow(dead_code)]
 impl Rules {
     /// Applies each rule to the provided [`Url`] in order.
-    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], and [`RuleError::HostNotInMap`].
+    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`] and [`RuleError::PartValueNotInMap`].
     /// If an error is returned, `url` is left unmodified.
     /// # Errors
-    /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`], [`RuleError::UrlHasNoHost`], or [`RuleError::HostNotInMap`] is encountered, that error is returned.
+    /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`] or [`RuleError::PartValueNotInMap`] is encountered, that error is returned.
     pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
         let mut temp_url=url.clone();
         for rule in &self.0 {
             match rule.apply(&mut temp_url, params) {
-                Err(RuleError::FailedCondition | RuleError::UrlHasNoHost | RuleError::HostNotInMap) => {},
+                Err(RuleError::FailedCondition | RuleError::PartValueNotInMap) => {},
                 e @ Err(_) => e?,
                 _ => {}
             }

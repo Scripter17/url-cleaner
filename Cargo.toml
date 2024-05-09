@@ -26,6 +26,7 @@ form_urlencoded = "1.2.1"
 regex-syntax = { version = "0.8.3", optional = true }
 percent-encoding = { version = "2.3.1", optional = true }
 which = { version = "6.0.1", optional = true }
+base64 = { version = "0.22.1", optional = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 wasm-bindgen = "0.2.92"
@@ -71,7 +72,7 @@ string-location = []
 # Enables [`types::StringMatcher`].
 string-matcher = []
 # Enables [`types::StringModification`].
-string-modification = ["dep:percent-encoding"]
+string-modification = ["dep:percent-encoding", "dep:base64"]
 # Enables [`types::StringSource`].
 string-source = []
 

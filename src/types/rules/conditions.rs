@@ -588,7 +588,7 @@ impl Condition {
             // Commands.
 
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
-            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url)?==expected},
+            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(url, params)?==expected},
         })
     }
 }

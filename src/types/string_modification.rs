@@ -9,6 +9,7 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC
 #[allow(unused_imports)]
 #[cfg(feature = "regex")]
 use regex::Regex;
+use base64::prelude::*;
 
 use crate::types::*;
 use crate::glue::*;
@@ -457,19 +458,10 @@ pub enum StringModification {
     /// assert_eq!(&x, "a/b/c");
     /// ```
     URLDecode,
-    /// Runs the contained command with the provided string as the STDIN.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::StringModification;
-    /// # use url_cleaner::glue::CommandConfig;
-    /// # use url_cleaner::types::Params;
-    /// # use std::str::FromStr;
-    /// let mut x = "abc\n".to_string();
-    /// StringModification::CommandOutput(CommandConfig::from_str("cat").unwrap()).apply(&mut x, &Params::default());
-    /// assert_eq!(&x, "abc\n");
-    /// ````
-    #[cfg(feature = "commands")]
-    CommandOutput(CommandConfig),
+    Base64EncodeStandard,
+    Base64DecodeStandard,
+    Base64EncodeUrlSafe,
+    Base64DecodeUrlSafe,
     /// [`serde_json::Value::pointer`].
     /// Does not do any string conversions. I should probably add an option for that.
     /// # Errors
@@ -532,13 +524,9 @@ pub enum StringModificationError {
     /// Returned when [`StringModification::Error`] is used.
     #[error("StringModification::Error was used.")]
     ExplicitError,
-    /// Returned when a [`CommandError`] is encountered.
-    #[cfg(feature = "commands")]
-    #[error(transparent)]
-    CommandError(#[from] CommandError),
     /// Returned when a [`std::str::Utf8Error`] is encountered.
     #[error(transparent)]
-    FromUtf8Error(#[from] std::str::Utf8Error),
+    Utf8Error(#[from] std::str::Utf8Error),
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
@@ -580,7 +568,13 @@ pub enum StringModificationError {
         try_error: Box<Self>,
         /// The error returned by [`StringModification::TryElse::else`],
         else_error: Box<Self>
-    }
+    },
+    /// Returned when a [`base64::DecodeError`] is encountered.
+    #[error(transparent)]
+    Base64DecodeError(#[from] base64::DecodeError),
+    /// Returned when a [`std::string::FromUtf8Error`] is encountered.
+    #[error(transparent)]
+    FromUtf8Error(#[from] std::string::FromUtf8Error)
 }
 
 impl StringModification {
@@ -630,6 +624,7 @@ impl StringModification {
             Self::Append(value)                      => to.push_str(value),
             Self::Prepend(value)                     => {let mut ret=value.to_string(); ret.push_str(to); *to=ret;},
             Self::Replace{find, replace}             => *to=to.replace(find, replace),
+            Self::Replacen{find, replace, count}     => *to=to.replacen(find, replace, *count),
             Self::ReplaceRange{start, end, replace}  => {
                 let range=neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?;
                 if to.get(range).is_some() {
@@ -646,7 +641,6 @@ impl StringModification {
             Self::StripMaybePrefix(prefix)           => if to.starts_with(prefix) {to.drain(..prefix.len());},
             #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
             Self::StripMaybeSuffix(suffix)           => if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len());},
-            Self::Replacen{find, replace, count}     => *to=to.replacen(find, replace, *count),
             Self::Insert{r#where, value}             => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, value);} else {Err(StringModificationError::InvalidIndex)?;},
             Self::Remove(r#where)                    => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?       );} else {Err(StringModificationError::InvalidIndex)?;},
             Self::KeepRange{start, end}              => *to=to.get(neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
@@ -699,8 +693,10 @@ impl StringModification {
             Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then} else {r#else}.apply(to, params)?,
             Self::URLEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
             Self::URLDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
-            #[cfg(feature = "commands")]
-            Self::CommandOutput(command) => *to=command.output(None, Some(to.as_bytes()))?,
+            Self::Base64EncodeStandard => *to = BASE64_STANDARD.encode(to.as_bytes()),
+            Self::Base64DecodeStandard => *to = String::from_utf8(BASE64_STANDARD.decode(to.as_bytes())?)?,
+            Self::Base64EncodeUrlSafe  => *to = BASE64_URL_SAFE.encode(to.as_bytes()),
+            Self::Base64DecodeUrlSafe  => *to = String::from_utf8(BASE64_URL_SAFE.decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => *to=serde_json::from_str::<serde_json::Value>(to)?.pointer(pointer).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
             // fixed_n is guaranteed to be in bounds.
             #[allow(clippy::indexing_slicing)]

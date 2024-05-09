@@ -14,9 +14,6 @@ The default config shouldn't ever change the semantics of a URL. Opening a URL b
 Because websites tend to not document what parts of their URLs are and aren't necessary, the default config almost certainly runs into issues when trying to clean niche URLs like advanced search queries or API endpoints.  
 If you find any instance of the default config changing the meaning/result of a URL, please open an [issue](https://github.com/Scripter17/url-cleaner/issues).
 
-Additionally, if you find any example of a malformed URL that can be unambiguously transformed into what was intended (`https://abc.tumblr.com.tumblr.com` -> `https://abc.tumblr.com` and `https://bsky.app/profile/abc` -> `https://bsky.app/profile/abc.bsky.social`), please open an issue.  
-Since these are somewhat common when social media sites have dedicated fields for other social medias, it's worth handling these.
-
 ## Anonymity
 
 In theory, if you're the only one sharing posts from a website without URL trackers, the website could realize that and track you in the same way.  
@@ -42,11 +39,12 @@ If a variable is specified in a config's `"params"` field, it can be unspecified
 Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
 Various flags are included in the default config for things I want to do frequently.
 
+- `minimize`: Remove non-essential parts of URLs that are likely not tracking related.
 - `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc` and `https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
 - `no-https-upgrade`: Disable replacing `http://` URLs with `https://` URLs.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
-- `discord-external`: Replace `images-ext-1.discordapp.net` URLs with the original images they refer to.
+- `discord-unexternal`: Replace `images-ext-1.discordapp.net` URLs with the original images they refer to.
 - `discord-compatibility`: Sets the domain of `twitter.com` URLs to the domain specified by the `twitter-embed-domain` variable.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) URLs to the domain specified by the `breezewiki-domain` variable.
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) URLs into `fandom.com` URLs.

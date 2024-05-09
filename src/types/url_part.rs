@@ -239,6 +239,14 @@ pub enum UrlPart {
     /// assert_eq!(url.as_str(), "https://example.com/");
     /// ```
     Subdomain,
+    /// Similar to [`Self::NotSubdomain`] but specialized for only when the subdomain is `"www"` or not present.
+    /// 
+    /// Exists to allow simulating the old `Rules::HostMap` behavior.
+    /// # Getting
+    /// Can be `None` when the URL's host is a domain with a subdomain that isn't `None` or `Some("www")`.
+    /// # Setting
+    /// If the URL's subdomain is `None` or `Some("www")`, behaves the same as [`Self::NotSubdomain`].
+    NotWWWDomain,
     /// The domain minus the subdomain. If the domain is `a.b.c.co.uk` value returned/changed by this is `c.co.uk`.
     /// # Getting
     /// Can be `None`.
@@ -683,6 +691,7 @@ impl UrlPart {
                 let url_domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
                 Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.strip_suffix('.')?)
             },
+            Self::NotWWWDomain    => Cow::Borrowed(url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))?),
             Self::NotSubdomain    => Cow::Borrowed(psl::domain_str(url.domain()?)?),
             Self::NotDomainSuffix => {
                 let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
@@ -768,6 +777,10 @@ impl UrlPart {
                     }
                 }
             },
+            (Self::NotWWWDomain, _) => match Self::Subdomain.get(url).as_deref() {
+                Some("www") | None => Self::NotSubdomain.set(url, to), // What did you think "behaves the same" meant? :P
+                _ => Err(UrlPartSetError::HostIsNotMaybeWWWDomain)
+            }?,
             (Self::NotSubdomain, _) => match to {
                 Some(to) => {
                     let mut new_domain=Self::Subdomain.get(url).unwrap_or_default().to_string();
@@ -998,7 +1011,10 @@ pub enum UrlPartSetError {
     DomainSegmentCannotBeEmpty,
     /// Returned when setting [`UrlPart::Domain`] to a non-domain value.
     #[error("Attempted to set a URL's domain to an invalid domain. Perhaps trying to set the host instead would help?")]
-    InvalidDomain
+    InvalidDomain,
+    /// Returned when attempting to set a URL's not WWW domain but the URL's subdomain exists and is not www.
+    #[error("Attempted to set a URL's not WWW domain but the URL's subdomain exists and is not www.")]
+    HostIsNotMaybeWWWDomain
 }
 
 /// The enum of all possible errors [`UrlPart::modify`] can return.

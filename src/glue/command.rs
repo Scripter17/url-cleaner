@@ -1,15 +1,11 @@
 //! Provides [`CommandConfig`] and [`OutputHandler`] to allow usage of external commands.
 
-use std::process::{Command, Output as CommandOutput, Stdio};
+use std::process::{Command, Stdio};
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::{from_utf8, FromStr};
 use std::collections::HashMap;
 use std::convert::Infallible;
-use std::ffi::OsStr;
-#[cfg(target_family = "unix")]
-use std::os::unix::ffi::OsStrExt;
-#[cfg(not(target_family = "unix"))]
 use std::ffi::OsString;
 
 use url::Url;
@@ -20,6 +16,7 @@ use which::which;
 // Used just for documentation.
 #[allow(unused_imports)]
 use crate::types::*;
+use crate::util::*;
 
 /// Instructions on how to make and run a [`Command`] object.
 /// 
@@ -32,6 +29,11 @@ pub struct CommandConfig {
     pub program: String,
     /// The arguments to run [`Self::program`] with
     #[serde(default)]
+    #[cfg(feature = "string-source")]
+    pub args: Vec<StringSource>,
+    /// The arguments to run [`Self::program`] with
+    #[serde(default)]
+    #[cfg(not(feature = "string-source"))]
     pub args: Vec<String>,
     /// The directory to run [`Self::program`] in.
     #[serde(default)]
@@ -39,9 +41,14 @@ pub struct CommandConfig {
     /// The environment arguments to run [`Self::program`] with.
     #[serde(default)]
     pub envs: HashMap<String, String>,
-    /// The rule for how the command's output is handled and returned in [`Self::get_url`].
+    /// The STDIN to feed into the command.
     #[serde(default)]
-    pub output_handler: OutputHandler
+    #[cfg(feature = "string-source")]
+    pub stdin: Option<StringSource>,
+    /// The STDIN to feed into the command.
+    #[serde(default)]
+    #[cfg(not(feature = "string-source"))]
+    pub stdin: Option<String>
 }
 
 impl FromStr for CommandConfig {
@@ -60,7 +67,7 @@ impl From<&str> for CommandConfig {
             args: Vec::default(),
             current_dir: None,
             envs: HashMap::default(),
-            output_handler: OutputHandler::default()
+            stdin: None
         }
     }
 }
@@ -84,34 +91,37 @@ pub enum CommandError {
     SignalTermination,
     /// Returned when The output handler is [`OutputHandler::Error`].
     #[error("The output handler was OutputHandler::Error.")]
-    ExplicitError
+    ExplicitError,
+    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
+    #[error("The specified StringSource returned None where it had to be Some.")]
+    StringSourceIsNone,
+    /// Returned when a [`StringSourceError`] is encountered.
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError)
 }
 
 impl CommandConfig {
     /// Creates a [`Command`] using [`Self`].
-    pub fn make_command(&self, url: Option<&Url>) -> Command {
+    /// 
+    /// DOES NOT APPLY STDIN.
+    /// # Errors
+    /// If a call to [`StringSource::get`] returns an error, that error is returned.
+    pub fn make_command(&self, url: &Url, params: &Params) -> Result<Command, CommandError> {
         let mut ret = Command::new(&self.program);
-        match url {
-            // I don't think [`OsStr::from_bytes`] even helps here, but it moves the problem into [`Command::args`]'s implementation details and it makes me feel better.
-            // It's the electric car model of programming.
-            #[cfg(target_family = "unix")]
-            Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsStr::from_bytes(url.as_str().as_bytes())} else {OsStr::from_bytes(arg.as_bytes())}));},
-            #[cfg(not(target_family = "unix"))]
-            Some(url) => {ret.args(self.args.iter().map(|arg| if &**arg=="{}" {OsString::from(url.as_str())} else {OsString::from(arg)}));},
-            #[cfg(target_family = "unix")]
-            None => {ret.args(self.args.iter().map(|arg| OsStr::from_bytes(arg.as_bytes())));},
-            #[cfg(not(target_family = "unix"))]
-            None => {ret.args(self.args.iter().map(OsString::from));}
+        for arg in self.args.iter() {
+            ret.arg(OsString::from(get_string!(arg, url, params, CommandError)));
         }
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
         }
         ret.envs(self.envs.clone());
-        ret
+        Ok(ret)
     }
 
     /// Checks if the path at [`Self::program`] exists.
+    /// 
     /// Currently does not do any permissions or executability checks.
+    /// 
     /// Uses [`which::which`] to emulate PATH handling.
     #[must_use]
     pub fn exists(&self) -> bool {
@@ -121,8 +131,8 @@ impl CommandConfig {
     /// Runs the command and gets the exit code.
     /// # Errors
     /// If the command returns no exit code, returns the error [`CommandError::SignalTermination`].
-    pub fn exit_code(&self, url: &Url) -> Result<i32, CommandError> {
-        self.make_command(Some(url)).status()?.code().ok_or(CommandError::SignalTermination)
+    pub fn exit_code(&self, url: &Url, params: &Params) -> Result<i32, CommandError> {
+        self.make_command(url, params)?.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
     /// Run the command from [`Self::make_command`], handle its output using [`Self::output_handler`], and returns the output.
@@ -131,24 +141,21 @@ impl CommandConfig {
     /// 
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc)]
-    pub fn output(&self, url: Option<&Url>, stdin: Option<&[u8]>) -> Result<String, CommandError> {
-        Ok(match stdin {
-            Some(stdin) => {
-                // https://stackoverflow.com/a/49597789/10720231
-                let mut command=self.make_command(url);
-                command.stdin(Stdio::piped());
-                match self.output_handler {
-                    OutputHandler::ReturnStdout | OutputHandler::PipeStdout(_) | OutputHandler::ApplyStdoutUrl(_) => {command.stdout(Stdio::piped()); command.stderr(Stdio::null ());},
-                    OutputHandler::ReturnStderr | OutputHandler::PipeStderr(_) | OutputHandler::ApplyStderrUrl(_) => {command.stdout(Stdio::null ()); command.stderr(Stdio::piped());},
-                    _                                                                                             => {command.stdout(Stdio::null ()); command.stderr(Stdio::null ());}
-                }
-                let mut child=command.spawn()?;
-                let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics; [`Command`] just sucks.
-                child_stdin.write_all(stdin)?;
-                self.output_handler.handle(url, child.wait_with_output()?)?
-            },
-            None => self.output_handler.handle(url, self.make_command(url).output()?)?
-        })
+    pub fn output(&self, url: &Url, params: &Params) -> Result<String, CommandError> {
+        // https://stackoverflow.com/a/49597789/10720231
+        let mut command = self.make_command(url, params)?;
+        command.stdout(Stdio::piped());
+        command.stderr(Stdio::null());
+        let child = if let Some(stdin) = &self.stdin {
+            command.stdin(Stdio::piped());
+            let mut child=command.spawn()?;
+            let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
+            child_stdin.write_all(get_string!(stdin, url, params, CommandError).as_bytes())?;
+            child
+        } else {
+            command.spawn()?
+        };
+        Ok(from_utf8(&child.wait_with_output()?.stdout)?.to_string())
     }
 
     /// Runs the command, does the [`OutputHandler`] stuff, trims trailing newlines and carriage returns form the output using [`str::trim_end_matches`], then extracts the URL.
@@ -156,68 +163,7 @@ impl CommandConfig {
     /// If the call to [`Self::output`] returns an error, that error is returned.
     /// 
     /// If the trimmed output cannot be parsed as a URL, returns the error [`CommandError::UrlParseError`].
-    pub fn get_url(&self, url: Option<&Url>) -> Result<Url, CommandError> {
-        Ok(Url::parse(self.output(url, None)?.trim_end_matches(&['\r', '\n']))?)
-    }
-
-}
-
-/// The enabled form of `OutputHandler`.
-/// Before a [`CommandConfig`] returns its output, it passes it through this to allow for piping and control flow.
-/// For the sake of simplicity, [`Self::handle`] returns a [`Result<String, CommandError>`] instead of [`Result<Vec<u8>, CommandError>`].
-#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
-pub enum OutputHandler {
-    /// Always return the error [`CommandError::ExplicitError`].
-    Error,
-    /// Return the STDOUT. This is the default handler.
-    #[default]
-    ReturnStdout,
-    /// Return the STDERR.
-    ReturnStderr,
-    /// Pipes the STDOUT into the contained command's STDIN.
-    PipeStdout(Box<CommandConfig>),
-    /// Pipes the STDERR into the contained command's STDIN.
-    PipeStderr(Box<CommandConfig>),
-    /// Extracts the URL from the STDOUT and applies it to the contained command's arguments.
-    ApplyStdoutUrl(Box<CommandConfig>),
-    /// Extracts the URL from the STDERR and applies it to the contained command's arguments.
-    ApplyStderrUrl(Box<CommandConfig>),
-    /// If the exit code equals `equals`, `then` is used as the handler. Otherwise `else` (Defaults to [`OutputHandler::Error`]) is used.
-    /// Errors if the command is terminated without returning an exit code.
-    IfExitCode {
-        /// The expected exit code. Defaults to zero.
-        #[serde(default)]
-        expect: i32,
-        /// The handler to use if the command's exit code equals `expect`.
-        then: Box<OutputHandler>,
-        /// The handler to use if the command's exit code does not equal expects`
-        #[serde(default = "error_output_handler")]
-        r#else: Box<OutputHandler>
-    }
-}
-
-/// The default value of [`OutputHandler::IfExitCode::r#else`].
-fn error_output_handler() -> Box<OutputHandler> {Box::new(OutputHandler::Error)}
-
-impl OutputHandler {
-    /// Returns a string from the requested part of the command's output.
-    /// When piping STDOUT/STDERR to another command's STDIN, no UTF-8 checks are done.
-    /// # Errors
-    /// If the command returns an error, that error is returned.
-    /// 
-    /// If the command's STDOUT is not valid UTF-8 when using [`Self::ReturnStdout`] or [`Self::ApplyStdoutUrl`], returns the error [`CommandError::Utf8Error`].
-    /// 
-    /// If the command's STDERR is not valid UTF-8 when using [`Self::ReturnStderr`] or [`Self::ApplyStderrUrl`], returns the error [`CommandError::Utf8Error`].
-    pub fn handle(&self, url: Option<&Url>, output: CommandOutput) -> Result<String, CommandError> {
-        match self {
-            Self::ReturnStdout                     => Ok(from_utf8(&output.stdout)?.to_string()),
-            Self::ReturnStderr                     => Ok(from_utf8(&output.stderr)?.to_string()),
-            Self::Error                            => Err(CommandError::ExplicitError),
-            Self::PipeStdout(command)            => command.output(url, Some(&output.stdout)),
-            Self::PipeStderr(command)            => command.output(url, Some(&output.stderr)),
-            Self::ApplyStdoutUrl(command)        => command.output(Some(&Url::parse(from_utf8(&output.stdout)?)?), None),
-            Self::ApplyStderrUrl(command)        => command.output(Some(&Url::parse(from_utf8(&output.stderr)?)?), None),
-            Self::IfExitCode{expect, then, r#else} => if output.status.code().ok_or(CommandError::SignalTermination)?==*expect {then.handle(url, output)} else {r#else.handle(url, output)}
-        }
+    pub fn get_url(&self, url: &Url, params: &Params) -> Result<Url, CommandError> {
+        Ok(Url::parse(self.output(url, params)?.trim_end_matches(&['\r', '\n']))?)
     }
 }

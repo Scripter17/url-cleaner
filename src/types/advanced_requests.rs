@@ -15,7 +15,7 @@ use crate::glue::*;
 use crate::util::*;
 
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct RequestConfig {
     /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
     #[cfg(feature = "string-source")]
@@ -43,19 +43,6 @@ pub struct RequestConfig {
     /// Rules for how to make the HTTP client.
     #[serde(default)]
     pub client_config_diff: Option<HttpClientConfigDiff>
-}
-
-impl Default for RequestConfig {
-    fn default() -> Self {
-        Self {
-            url: None,
-            method: Method::GET,
-            headers: HeaderMap::default(),
-            body: None,
-            response_handler: ResponseHandler::default(),
-            client_config_diff: None
-        }
-    }
 }
 
 /// The enum of all possible errors [`RequestConfig::make`] and [`RequestConfig::response`] can return.
