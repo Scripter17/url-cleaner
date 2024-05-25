@@ -10,6 +10,7 @@ use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
+use crate::util::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -29,12 +30,11 @@ pub enum StringSource {
     /// Just a string. The most common variant.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
-    /// let url = Url::parse("https://example.com").unwrap();
-    /// assert_eq!(StringSource::String("abc".to_string()).get(&url, &Params::default()).unwrap(), Some(Cow::Borrowed("abc")));
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert_eq!(StringSource::String("abc".to_string()).get(&JobState::new(&mut url)).unwrap(), Some(Cow::Borrowed("abc")));
     /// ```
     String(String),
     /// Gets the specified URL part.
@@ -42,14 +42,12 @@ pub enum StringSource {
     /// If the call to [`UrlPart::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
-    /// # use url_cleaner::types::UrlPart;
-    /// let url = Url::parse("https://example.com").unwrap();
+    /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Params::default();
-    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&url, &Params::default()).unwrap(), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&JobState::new(&mut url)).unwrap(), Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
     /// Gets the specified variable's value.
@@ -57,33 +55,31 @@ pub enum StringSource {
     /// Returns [`None`] (NOT an error) if the variable is not set.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
-    /// let url = Url::parse("https://example.com").unwrap();
+    /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// assert_eq!(StringSource::Var("abc".to_string()).get(&url, &params).unwrap(), Some(Cow::Borrowed("xyz")));
+    /// assert_eq!(StringSource::Var("abc".to_string()).get(&JobState::new_with_params(&mut url, &params)).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(String),
+    JobVar(Box<Self>),
     /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringSource;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// # use url_cleaner::types::Params;
     /// # use std::borrow::Cow;
-    /// # use url_cleaner::types::UrlPart;
     /// # use std::collections::HashSet;
-    /// let url = Url::parse("https://example.com").unwrap();
+    /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params_1 = Params::default();
     /// let params_2 = Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()};
     /// let x = StringSource::IfFlag {flag: "abc".to_string(), then: Box::new(StringSource::String("xyz".to_string())), r#else: Box::new(StringSource::Part(UrlPart::Domain))};
-    /// assert_eq!(x.get(&url, &params_1).unwrap(), Some(Cow::Borrowed("example.com")));
-    /// assert_eq!(x.get(&url, &params_2).unwrap(), Some(Cow::Borrowed("xyz")));
+    /// assert_eq!(x.get(&JobState::new_with_params(&mut url, &params_1)).unwrap(), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(x.get(&JobState::new_with_params(&mut url, &params_2)).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     IfFlag {
         /// The name of the flag to check.
@@ -96,12 +92,11 @@ pub enum StringSource {
     /// Gets a string with `source`, modifies it with `modification`, and returns the result.
     /// # Errors
     /// If the call to [`StringModification::apply`] errors, returns that error.
-    #[cfg(feature = "string-modification")]
     Modified {
         /// The source to get the string from.
         source: Box<Self>,
         /// The modification to apply to the string.
-        modification: StringModification
+        modification: Box<StringModification>
     },
     /// Joins a list of strings. Effectively a [`slice::join`].
     /// By default, `join` is `""` so the strings are concatenated.
@@ -109,9 +104,7 @@ pub enum StringSource {
     /// If any call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringSource;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// assert_eq!(
@@ -121,10 +114,7 @@ pub enum StringSource {
     ///             StringSource::Part(UrlPart::NotSubdomain)
     ///         ],
     ///         join: "".to_string()
-    ///     }.get(
-    ///         &Url::parse("https://abc.example.com.example.com").unwrap(),
-    ///         &Params::default()
-    ///     ).unwrap(),
+    ///     }.get(&JobState::new(&mut Url::parse("https://abc.example.com.example.com").unwrap())).unwrap(),
     ///     Some(Cow::Owned(".example.com".to_string()))
     /// );
     /// ```
@@ -145,19 +135,14 @@ pub enum StringSource {
     /// If the call to [`UrlPart::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringSource;
-    /// # use url_cleaner::types::Params;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// assert_eq!(
     ///     StringSource::ExtractPart {
     ///         source: Box::new(StringSource::String("https://example.com".to_string())),
     ///         part: UrlPart::Scheme
-    ///     }.get(
-    ///         &Url::parse("https://not-relevant-at-all.com").unwrap(),
-    ///         &Params::default()
-    ///     ).unwrap(),
+    ///     }.get(&JobState::new(&mut Url::parse("https://not-relevant-at-all.com").unwrap())).unwrap(),
     ///     Some(Cow::Borrowed("https"))
     /// );
     /// ```
@@ -215,7 +200,6 @@ pub enum StringSourceError {
     #[error("StringSource::Error was used.")]
     ExplicitError,
     /// Returned when a [`StringModificationError`] is encountered.
-    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when [`reqwest::Error`] is encountered.
@@ -257,6 +241,7 @@ pub enum StringSourceError {
     KeyNotInMap
 }
 
+#[cfg(feature = "commands")]
 impl From<CommandError> for StringSourceError {
     fn from(value: CommandError) -> Self {
         Self::CommandError(Box::new(value))
@@ -267,20 +252,20 @@ impl StringSource {
     /// Gets the string from the source.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn get<'a>(&'a self, url: &'a Url, params: &'a Params) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'a>(&'a self, job_state: &'a JobState) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         #[cfg(feature = "debug")]
         println!("Source: {self:?}");
         Ok(match self {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
-            Self::Part(x) => x.get(url),
-            Self::Var(x) => params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
-            Self::IfFlag {flag, then, r#else} => if params.flags.contains(flag) {then} else {r#else}.get(url, params)?,
-            #[cfg(feature = "string-modification")]
+            Self::Part(x) => x.get(job_state.url),
+            Self::Var(x) => job_state.params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
+            Self::JobVar(x) => job_state.string_vars.get(get_str!(x, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
+            Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(flag) {then} else {r#else}.get(job_state)?,
             Self::Modified {source, modification} => {
-                match source.as_ref().get(url, params)? {
+                match source.as_ref().get(job_state)? {
                     Some(x) => {
                         let mut x = x.into_owned();
-                        modification.apply(&mut x, params)?;
+                        modification.apply(&mut x, job_state)?;
                         Some(Cow::Owned(x))
                     },
                     None => None
@@ -288,19 +273,19 @@ impl StringSource {
             },
             // I love that [`Result`] and [`Option`] implement [`FromIterator`].
             // It's so silly but it works SO well.
-            Self::Join {sources, join} => sources.iter().map(|source| source.get(url, params)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            Self::Join {sources, join} => sources.iter().map(|source| source.get(job_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             // Transpose wouldn't need to exist in a world where `.map(|x| x?)` worked.
-            Self::ExtractPart{source, part} => source.get(url, params)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x).map(|x| Cow::Owned(x.into_owned()))),
+            Self::ExtractPart{source, part} => source.get(job_state)?.map(|x| Url::parse(&x)).transpose()?.and_then(|x| part.get(&x).map(|x| Cow::Owned(x.into_owned()))),
             #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
-            Self::HttpRequest(config) => Some(Cow::Owned(config.response(url, params)?)),
-            Self::NoneToEmptyString(source) => source.get(url, params)?.or(Some(Cow::Borrowed(""))),
+            Self::HttpRequest(config) => Some(Cow::Owned(config.response(job_state)?)),
+            Self::NoneToEmptyString(source) => source.get(job_state)?.or(Some(Cow::Borrowed(""))),
             Self::Debug(source) => {
-                let ret=source.get(url, params);
-                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nURL: {url:?}\nParams: {params:?}\nret: {ret:?}");
+                let ret=source.get(job_state);
+                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nJob state: {job_state:?}\nret: {ret:?}");
                 ret?
             },
             #[cfg(feature = "commands")]
-            Self::CommandOutput(command) => Some(Cow::Owned(command.output(url, params)?)),
+            Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
             Self::Error => Err(StringSourceError::ExplicitError)?
         })
     }

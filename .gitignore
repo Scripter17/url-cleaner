@@ -6,6 +6,7 @@ redirect-cache.txt
 callgrind*
 hyperfine*
 *.zip
-mprocs.yaml
+*mprocs.yaml
 bacon.toml
 tests.sh
+sync.sh

@@ -1,4 +1,4 @@
-//! Provides [`CommandConfig`] and [`OutputHandler`] to allow usage of external commands.
+//! Provides [`CommandConfig`] to allow usage of external commands.
 
 use std::process::{Command, Stdio};
 use std::io::Write;
@@ -29,12 +29,7 @@ pub struct CommandConfig {
     pub program: String,
     /// The arguments to run [`Self::program`] with
     #[serde(default)]
-    #[cfg(feature = "string-source")]
     pub args: Vec<StringSource>,
-    /// The arguments to run [`Self::program`] with
-    #[serde(default)]
-    #[cfg(not(feature = "string-source"))]
-    pub args: Vec<String>,
     /// The directory to run [`Self::program`] in.
     #[serde(default)]
     pub current_dir: Option<PathBuf>,
@@ -43,12 +38,7 @@ pub struct CommandConfig {
     pub envs: HashMap<String, String>,
     /// The STDIN to feed into the command.
     #[serde(default)]
-    #[cfg(feature = "string-source")]
-    pub stdin: Option<StringSource>,
-    /// The STDIN to feed into the command.
-    #[serde(default)]
-    #[cfg(not(feature = "string-source"))]
-    pub stdin: Option<String>
+    pub stdin: Option<StringSource>
 }
 
 impl FromStr for CommandConfig {
@@ -89,9 +79,6 @@ pub enum CommandError {
     /// Returned when a command is terminated by a signal. See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
     SignalTermination,
-    /// Returned when The output handler is [`OutputHandler::Error`].
-    #[error("The output handler was OutputHandler::Error.")]
-    ExplicitError,
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
@@ -106,10 +93,10 @@ impl CommandConfig {
     /// DOES NOT APPLY STDIN.
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make_command(&self, url: &Url, params: &Params) -> Result<Command, CommandError> {
+    pub fn make_command(&self, job_state: &JobState) -> Result<Command, CommandError> {
         let mut ret = Command::new(&self.program);
         for arg in self.args.iter() {
-            ret.arg(OsString::from(get_string!(arg, url, params, CommandError)));
+            ret.arg(OsString::from(get_string!(arg, job_state, CommandError)));
         }
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
@@ -131,26 +118,26 @@ impl CommandConfig {
     /// Runs the command and gets the exit code.
     /// # Errors
     /// If the command returns no exit code, returns the error [`CommandError::SignalTermination`].
-    pub fn exit_code(&self, url: &Url, params: &Params) -> Result<i32, CommandError> {
-        self.make_command(url, params)?.status()?.code().ok_or(CommandError::SignalTermination)
+    pub fn exit_code(&self, job_state: &JobState) -> Result<i32, CommandError> {
+        self.make_command(job_state)?.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
-    /// Run the command from [`Self::make_command`], handle its output using [`Self::output_handler`], and returns the output.
+    /// Run the command from [`Self::make_command`] and returns the STDOUT.
     /// # Errors
     /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
     /// 
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc)]
-    pub fn output(&self, url: &Url, params: &Params) -> Result<String, CommandError> {
+    pub fn output(&self, job_state: &JobState) -> Result<String, CommandError> {
         // https://stackoverflow.com/a/49597789/10720231
-        let mut command = self.make_command(url, params)?;
+        let mut command = self.make_command(job_state)?;
         command.stdout(Stdio::piped());
         command.stderr(Stdio::null());
         let child = if let Some(stdin) = &self.stdin {
             command.stdin(Stdio::piped());
             let mut child=command.spawn()?;
             let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
-            child_stdin.write_all(get_string!(stdin, url, params, CommandError).as_bytes())?;
+            child_stdin.write_all(get_string!(stdin, job_state, CommandError).as_bytes())?;
             child
         } else {
             command.spawn()?
@@ -158,12 +145,12 @@ impl CommandConfig {
         Ok(from_utf8(&child.wait_with_output()?.stdout)?.to_string())
     }
 
-    /// Runs the command, does the [`OutputHandler`] stuff, trims trailing newlines and carriage returns form the output using [`str::trim_end_matches`], then extracts the URL.
+    /// Runs the command, gets the STDOUT, trims trailing newlines and carriage returns form the output using [`str::trim_end_matches`], then extracts the URL.
     /// # Errors
     /// If the call to [`Self::output`] returns an error, that error is returned.
     /// 
-    /// If the trimmed output cannot be parsed as a URL, returns the error [`CommandError::UrlParseError`].
-    pub fn get_url(&self, url: &Url, params: &Params) -> Result<Url, CommandError> {
-        Ok(Url::parse(self.output(url, params)?.trim_end_matches(&['\r', '\n']))?)
+    /// If the call to [`Url::parse`] returns an error, that error is returned.
+    pub fn get_url(&self, job_state: &JobState) -> Result<Url, CommandError> {
+        Ok(Url::parse(self.output(job_state)?.trim_end_matches(&['\r', '\n']))?)
     }
 }

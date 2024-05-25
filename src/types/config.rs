@@ -79,7 +79,11 @@ impl Config {
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     #[allow(dead_code)]
     pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        self.rules.apply(url, &self.params)
+        self.rules.apply(&mut JobState {
+            url,
+            params: &self.params,
+            string_vars: Default::default()
+        })
     }
 
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.

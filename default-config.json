@@ -84,23 +84,22 @@
 						"condition": {"Any": [
 							{
 								"HostIsOneOf": [
-									"t.co", "bit.ly", "bitly.com", "pixiv.me", "tr.ee", "redd.it", "pin.it", "linkr.it",
-									"cfl.re", "goo.gl", "ow.ly", "shorturl.at", "e.emailalerts.cnn.com", "a.co", "mzl.la",
-									"shorturl.at", "www.shorturl.at", "bbc.in"
+									"a.co", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "cfl.re",
+									"e.emailalerts.cnn.com", "goo.gl", "k00.fr", "linkr.it", "mzl.la", "orlo.uk",
+									"ow.ly", "pin.it", "pixiv.me", "redd.it", "shorturl.at", "shorturl.at", "t.co",
+									"tr.ee", "www.shorturl.at"
 								]
 							},
-							{"All": [
-								{"QualifiedDomain": "pawoo.net"},
-								{"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}}
-							]},
-							{"All": [
-								{"QualifiedDomain": "api.pinterest.com"},
-								{"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
-							]},
-							{"All": [
-								{"QualifiedDomain": "allmylinks.com"},
-								{"PathIs": "/link/out"}
-							]}
+							{
+								"PartMap": {
+									"part": "Host",
+									"map": {
+										"pawoo.net": {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
+										"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
+										"allmylinks.com": {"PathIs": "/link/out"}
+									}
+								}
+							}
 						]},
 						"mapper": {
 							"ExpandShortLink": {
@@ -113,21 +112,22 @@
 
 
 
+
+
+
 					{
-						"condition": {"Any": [
-							{"All": [
-								{"MaybeWWWDomain": "pixiv.net"},
-								{"PathIs": "/jump.php"}
-							]},
-							{"All": [
-								{"UnqualifiedDomain": "deviantart.com"},
-								{"PathIs": "/users/outgoing"}
-							]},
-							{"All": [
-								{"QualifiedDomain": "api.linkr.bio"},
-								{"PathIs": "/callbacks/go"}
-							]}
-						]},
+						"condition": {
+							"PartMap": {
+								"part": "Host",
+								"map": {
+									"pixiv.net"         : {"PathIs": "/jump.php"},
+									"www.pixiv.net"     : {"PathIs": "/jump.php"},
+									"deviantart.com"    : {"PathIs": "/users/outgoing"},
+									"www.deviantart.com": {"PathIs": "/users/outgoing"},
+									"api.linkr.bio"     : {"PathIs": "/callbacks/go"}
+								}
+							}
+						},
 						"mapper": {"TryElse": {
 							"try": {"GetUrlFromQueryParam": "url"},
 							"else": { "SetPart": {
@@ -175,7 +175,8 @@
 								{"MaybeWWWDomain": "steamcommunity.com"},
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "linkfilter"}}
 							]},
-							{"QualifiedDomain": "l.threads.com"}
+							{"QualifiedDomain": "l.threads.com"},
+							{"QualifiedDomain": "l.instagram.com"}
 						]},
 						"mapper": {"GetUrlFromQueryParam": "u"}
 					},
@@ -191,11 +192,16 @@
 					},
 
 
-
           {
-						"condition": {"All": [
-							{"UnqualifiedAnyTld": "google"},
-							{"PathIs": "/url"}
+						"condition": {"Any": [
+							{"All": [
+								{"UnqualifiedAnyTld": "google"},
+								{"PathIs": "/url"}
+							]},
+							{"All": [
+								{"UnqualifiedDomain": "toyhou.se"},
+								{"PathIs": "/~r"}
+							]}
 						]},
 						"mapper": {"GetUrlFromQueryParam": "q"}
 					},
@@ -249,7 +255,24 @@
 								}
 							}
 						}
-					}
+					},
+
+
+
+          {
+          	"condition": {"QualifiedDomain": "instagr.am"},
+          	"mapper": {"SetHost": "instagram.com"}
+          },
+
+
+
+          {
+          	"condition": {"All": [
+          		{"HostIsOneOf": ["duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion"]},
+          		{"PathIs": "/l/"}
+          	]},
+          	"mapper": {"GetUrlFromQueryParam": "uddg"}
+          }
 				]
 			}
 		},
@@ -403,7 +426,7 @@
 						{"RemoveQueryParams": ["si", "feature"]}
 					]},
 					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
-					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh"]},
+					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
 					"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 					"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
 					"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
@@ -434,6 +457,52 @@
 				}
 			}
 		},
+		{
+			"PartRuleMap": {
+				"part": "NotSubdomain",
+				"map": {
+					"reddit.com": {
+						"condition": {"Not": {"PathIs": "/search"}},
+						"mapper": {"AllowQueryParams": ["f"]}
+					},
+					"cnn.com"   : {
+						"condition": {"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "where": "Start"}},
+						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+					},
+					"bell.ca"   : {
+						"condition": {"PartContains": {"part": "Fragment", "where": "Start", "value": "INT="}},
+						"mapper": {"SetPart": {"part": "Fragment", "value": null}}
+					},
+					"pixiv.net": {
+						"condition": {"PathIs": "/member.php"},
+						"mapper": {"All": [
+							{"SetPart": {"part": "Path", "value": "/users"}},
+							{"CopyPart": {"from": {"QueryParam": "id"}, "to": "NextPathSegment"}},
+							"RemoveQuery"
+						]}
+					},
+					"gelbooru.com": {
+						"condition": {"PartIs": {"part": {"QueryParam": "page"}, "value": "post"}},
+						"mapper": {"RemoveQueryParams": ["tags"]}
+					},
+					"inkbunny.net": {
+						"condition": {"PathIs": "/submissionsviewall.php"},
+						"mapper": {"RemoveQueryParams": ["rid"]}
+					}
+				}
+			}
+		},
+		{
+			"PartRuleMap": {
+				"part": "Host",
+				"map": {
+					"danbooru.donmai.us": {
+						"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "posts"}},
+						"mapper": {"RemoveQueryParams": ["q"]}
+					}
+				}
+			}
+		},
 
 
 
@@ -451,20 +520,6 @@
 		{
 			"condition": {"UnqualifiedAnyTld": "bestbuy"},
 			"mapper": {"RemoveQueryParams": ["icmp"]}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"MaybeWWWDomain": "pixiv.net"},
-				{"PathIs": "/member.php"}
-			]},
-			"mapper": {"All": [
-				{"SetPart": {"part": "Path", "value": "/users"}},
-				{"CopyPart": {"from": {"QueryParam": "id"}, "to": "NextPathSegment"}},
-				"RemoveQuery"
-			]}
 		},
 
 
@@ -541,33 +596,6 @@
 				{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}},
 				"RemoveQuery"
 			]}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"QualifiedDomain": "danbooru.donmai.us"},
-				{"PartIs": {"part": {"PathSegment": 0}, "value": "posts"}}
-			]},
-			"mapper": {"RemoveQueryParams": ["q"]}
-		},
-		{
-			"condition": {"All": [
-				{"QualifiedDomain": "gelbooru.com"},
-				{"PartIs": {"part": {"QueryParam": "page"}, "value": "post"}}
-			]},
-			"mapper": {"RemoveQueryParams": ["tags"]}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"QualifiedDomain": "inkbunny.net"},
-				{"PathIs": "/submissionsviewall.php"}
-			]},
-			"mapper": {"RemoveQueryParams": ["rid"]}
 		},
 
 
@@ -655,16 +683,6 @@
 
 
 		{
-			"condition": {"All": [
-				{"UnqualifiedDomain": "reddit.com"},
-				{"Not": {"PathIs": "/search"}}
-			]},
-			"mapper": {"AllowQueryParams": ["f"]}
-		},
-
-
-
-		{
 			"CommonCondition": {
 				"condition": {"UnqualifiedAnyTld": "amazon"},
 				"rules": [
@@ -731,26 +749,6 @@
 
 
 		{
-			"condition": {"All": [
-				{"MaybeWWWDomain": "cnn.com"},
-				{"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "where": "Start"}}
-			]},
-			"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"UnqualifiedDomain": "bell.ca"},
-				{"PartContains": {"part": "Fragment", "where": "Start", "value": "INT="}}
-			]},
-			"mapper": {"SetPart": {"part": "Fragment", "value": null}}
-		},
-
-
-
-		{
 			"condition": {"FlagIsSet": "onion-location"},
 			"mapper": {"IgnoreError":
 				{"SetPart": {
@@ -768,7 +766,7 @@
 					{"FlagIsSet": "tor2web2tor"},
 					{"FlagIsSet": "tor2web"}
 				]},
-				{"PartIs": {"part": "NotSubdomainNotSuffix", "value": "onion"}}
+				{"PartIs": {"part": "DomainMiddle", "value": "onion"}}
 			]},
 			"mapper": {"SetPart": {"part": "DomainSuffix", "value": null}}
 		},

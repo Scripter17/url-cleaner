@@ -59,7 +59,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut url, &Params::default()).unwrap_err();
+    /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut JobState::new(&mut url)).unwrap_err();
     /// assert_eq!(url.domain(), Some("www.example.com"));
     /// ```
     All(Vec<Self>),
@@ -72,7 +72,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).unwrap_err();
+    /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap_err();
     /// assert_eq!(url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Self>),
@@ -83,7 +83,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
@@ -100,10 +100,10 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap ();
-    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap ();
-    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap ();
-    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut Url::parse("https://www.example.com").unwrap(), &Params::default()).unwrap_err();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap_err();
     /// ```
     TryElse {
         /// The [`Self`] to try first.
@@ -119,13 +119,13 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.domain(), Some("1.com"));
-    /// Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.domain(), Some("3.com"));
-    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.domain(), Some("4.com"));
-    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut url, &Params::default()).unwrap_err();
+    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut JobState::new(&mut url)).unwrap_err();
     /// assert_eq!(url.domain(), Some("4.com"));
     /// ```
     FirstNotError(Vec<Self>),
@@ -143,11 +143,11 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.query(), Some("b=3&c=4&d=5"));
-    /// Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.query(), Some("d=5"));
-    /// Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.query(), None);
     /// ```
     RemoveQueryParams(HashSet<String>),
@@ -159,18 +159,16 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
     /// ```
     AllowQueryParams(HashSet<String>),
     /// Removes all query parameters whose name matches the specified [`StringMatcher`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
-    #[cfg(feature = "string-matcher")]
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only the query parameters whose name matches the specified [`StringMatcher`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
-    #[cfg(feature = "string-matcher")]
     AllowQueryParamsMatching(StringMatcher),
     /// Replace the current URL with the value of the specified query parameter.
     /// Useful for websites for have a "are you sure you want to leave?" page with a URL like `https://example.com/outgoing?to=https://example.com`.
@@ -200,16 +198,12 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-    /// Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.path(), "/0/2/4");
     /// ```
     RemovePathSegments(Vec<usize>),
     /// [`Url::join`].
-    #[cfg(feature = "string-source")]
     Join(StringSource),
-    /// [`Url::join`].
-    #[cfg(not(feature = "string-source"))]
-    Join(String),
 
     // Generic part handling.
 
@@ -222,18 +216,13 @@ pub enum Mapper {
         /// The name of the part to replace.
         part: UrlPart,
         /// The value to set the part to.
-        #[cfg(feature = "string-source")]
-        value: Option<StringSource>,
-        /// The value to set the part to.
-        #[cfg(not(feature = "string-source"))]
-        value: Option<String>
+        value: Option<StringSource>
     },
     /// Modifies the specified part of the URL.
     /// # Errors
     /// If the call to [`StringModification::apply`] returns an error, that error is returned in a [`MapperError::StringModificationError`].
     /// 
     /// If the call to [`UrlPart::modify`] returns an error, that error is returned in a [`MapperError::UrlPartModifyError`].
-    #[cfg(feature = "string-modification")]
     ModifyPart {
         /// The name of the part to modify.
         part: UrlPart,
@@ -289,7 +278,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut url, &Params::default()).unwrap();
+    /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut JobState::new(&mut url)).unwrap();
     /// assert_eq!(url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -306,28 +295,24 @@ pub enum Mapper {
     /// Does not change the URL at all.
     /// # Errors
     /// If [`StringSource::get`] returns an error, that error is returned.
-    #[cfg(feature = "string-source")]
     Println(StringSource),
     /// If [`StringSource::get`] returns `Ok(Some(x))`, [`print`]'s `x`.
     /// If it returns `Ok(None)`, doesn't print anything.
     /// Does not change the URL at all.
     /// # Errors
     /// If [`StringSource::get`] returns an error, that error is returned.
-    #[cfg(feature = "string-source")]
     Eprintln(StringSource),
     /// If [`StringSource::get`] returns `Ok(Some(x))`, [`eprintln`]'s `x`.
     /// If it returns `Ok(None)`, doesn't print anything.
     /// Does not change the URL at all.
     /// # Errors
     /// If [`StringSource::get`] returns an error, that error is returned.
-    #[cfg(feature = "string-source")]
     Print(StringSource),
     /// If [`StringSource::get`] returns `Ok(Some(x))`, [`eprint`]'s `x`.
     /// If it returns `Ok(None)`, doesn't print anything.
     /// Does not change the URL at all.
     /// # Errors
     /// If [`StringSource::get`] returns an error, that error is returned.
-    #[cfg(feature = "string-source")]
     Eprint(StringSource),
     /// Loads a config specified by `path` (or the default config if it's [`None`]) and applies it.
     /// # Errors
@@ -339,6 +324,15 @@ pub enum Mapper {
         path: Option<PathBuf>,
         /// How to modify the config's params.
         params_diff: ParamsDiff
+    },
+    SetJobStringVar {
+        name: StringSource,
+        value: StringSource
+    },
+    DeleteJobStringVar(StringSource),
+    ModifyJobStringVar {
+        name: StringSource,
+        modification: StringModification
     }
 }
 
@@ -368,7 +362,6 @@ pub enum MapperError {
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
     /// Returned when a [`UrlPartModifyError`] is encountered.
-    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     UrlPartModifyError(#[from] UrlPartModifyError),
     /// Returned when a [`UrlPartSetError`] is encountered.
@@ -387,15 +380,12 @@ pub enum MapperError {
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
     /// Returned when a [`StringMatcherError`] is encountered.
-    #[cfg(feature = "string-matcher")]
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
     /// Returned when a [`StringSourceError`] is encountered.
-    #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
     /// Returned when a [`StringModificationError`] is encountered.
-    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when a [`ReadCacheError`] is encountered.
@@ -430,7 +420,9 @@ pub enum MapperError {
         try_error: Box<Self>,
         /// The error returned by [`Mapper::TryElse::else`],
         else_error: Box<Self>
-    }
+    },
+    #[error("A JobState var was none.")]
+    JobStateVarIsNone
 }
 
 impl From<RuleError> for MapperError {
@@ -443,7 +435,7 @@ impl Mapper {
     /// Applies the mapper to the provided URL.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), MapperError> {
+    pub fn apply(&self, job_state: &mut JobState) -> Result<(), MapperError> {
         #[cfg(feature = "debug")]
         println!("Mapper: {self:?}");
         match self {
@@ -452,41 +444,54 @@ impl Mapper {
             Self::None => {},
             Self::Error => Err(MapperError::ExplicitError)?,
             Self::Debug(mapper) => {
-                let url_before_mapper=url.clone();
-                let mapper_result=mapper.apply(url, params);
-                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nParams: {params:?}\nURL before mapper: {url_before_mapper:?}\nMapper return value: {mapper_result:?}\nURL after mapper: {url:?}");
+                let mut old_url = job_state.url.clone();
+                let old_params = job_state.params.clone();
+                let old_job_state = JobState {
+                    url: &mut old_url,
+                    params: &old_params,
+                    string_vars: job_state.string_vars.clone()
+                };
+                let mapper_result=mapper.apply(job_state);
+                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld job state: {old_job_state:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
                 mapper_result?;
             }
 
             // Logic.
 
-            Self::IfCondition {r#if, then, r#else} => if r#if.satisfied_by(url, params)? {then} else {r#else}.apply(url, params)?,
+            Self::IfCondition {r#if, then, r#else} => if r#if.satisfied_by(job_state)? {then} else {r#else}.apply(job_state)?,
             Self::All(mappers) => {
-                let mut temp_url=url.clone();
+                let mut temp_url = job_state.url.clone();
+                let temp_params = job_state.params.clone();
+                let mut temp_job_state = JobState {
+                    url: &mut temp_url,
+                    params: &temp_params,
+                    string_vars: job_state.string_vars.clone()
+                };
                 for mapper in mappers {
-                    mapper.apply(&mut temp_url, params)?;
+                    mapper.apply(&mut temp_job_state)?;
                 }
-                *url=temp_url;
+                job_state.string_vars = temp_job_state.string_vars;
+                *job_state.url = temp_url;
             },
             Self::AllNoRevert(mappers) => {
                 for mapper in mappers {
-                    mapper.apply(url, params)?;
+                    mapper.apply(job_state)?;
                 }
             },
             Self::AllIgnoreError(mappers) => {
                 for mapper in mappers {
-                    let _=mapper.apply(url, params);
+                    let _=mapper.apply(job_state);
                 }
             },
 
             // Error handling.
 
-            Self::IgnoreError(mapper) => {let _=mapper.apply(url, params);},
-            Self::TryElse{r#try, r#else} => r#try.apply(url, params).or_else(|try_error| r#else.apply(url, params).map_err(|else_error2| MapperError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error2)}))?,
+            Self::IgnoreError(mapper) => {let _=mapper.apply(job_state);},
+            Self::TryElse{r#try, r#else} => r#try.apply(job_state).or_else(|try_error| r#else.apply(job_state).map_err(|else_error2| MapperError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error2)}))?,
             Self::FirstNotError(mappers) => {
                 let mut result = Ok(());
                 for mapper in mappers {
-                    result = mapper.apply(url, params);
+                    result = mapper.apply(job_state);
                     if result.is_ok() {break}
                 }
                 result?
@@ -494,91 +499,99 @@ impl Mapper {
 
             // Query.
 
-            Self::RemoveQuery => url.set_query(None),
+            Self::RemoveQuery => job_state.url.set_query(None),
             Self::RemoveQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
-                url.set_query((!new_query.is_empty()).then_some(&new_query));
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(job_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
+                job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::AllowQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
-                url.set_query((!new_query.is_empty()).then_some(&new_query));
+                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(job_state.url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
+                job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
-            #[cfg(feature = "string-matcher")]
             Self::RemoveQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
-                for (name, value) in url.query_pairs() {
-                    if !matcher.satisfied_by(&name, url, params)? {
+                for (name, value) in job_state.url.query_pairs() {
+                    if !matcher.satisfied_by(&name, job_state)? {
                         new_query.append_pair(&name, &value);
                     }
                 }
                 let x = new_query.finish();
-                url.set_query((!x.is_empty()).then_some(&x));
+                job_state.url.set_query((!x.is_empty()).then_some(&x));
             },
-            #[cfg(feature = "string-matcher")]
             Self::AllowQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
-                for (name, value) in url.query_pairs() {
-                    if matcher.satisfied_by(&name, url, params)? {
+                for (name, value) in job_state.url.query_pairs() {
+                    if matcher.satisfied_by(&name, job_state)? {
                         new_query.append_pair(&name, &value);
                     }
                 }
                 let x = new_query.finish();
-                url.set_query((!x.is_empty()).then_some(&x));
+                job_state.url.set_query((!x.is_empty()).then_some(&x));
             },
             Self::GetUrlFromQueryParam(name) => {
-                match url.query_pairs().find(|(param_name, _)| param_name==name) {
-                    Some((_, new_url)) => {*url=Url::parse(&new_url)?},
+                match job_state.url.query_pairs().find(|(param_name, _)| param_name==name) {
+                    Some((_, new_url)) => {*job_state.url=Url::parse(&new_url)?},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
             Self::GetPathFromQueryParam(name) => {
-                match url.query_pairs().find(|(param_name, _)| param_name==name) {
-                    Some((_, new_path)) => {#[allow(clippy::unnecessary_to_owned)] url.set_path(&new_path.into_owned());},
+                match job_state.url.query_pairs().find(|(param_name, _)| param_name==name) {
+                    Some((_, new_path)) => {#[allow(clippy::unnecessary_to_owned)] job_state.url.set_path(&new_path.into_owned());},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
 
             // Other parts.
 
-            Self::SetHost(new_host) => url.set_host(Some(new_host))?,
-            Self::RemovePathSegments(indices) => url.set_path(&url.path_segments().ok_or(MapperError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
-            Self::Join(with) => *url=url.join(get_string!(with, url, params, MapperError))?,
+            Self::SetHost(new_host) => job_state.url.set_host(Some(new_host))?,
+            Self::RemovePathSegments(indices) => job_state.url.set_path(&job_state.url.path_segments().ok_or(MapperError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
+            Self::Join(with) => *job_state.url=job_state.url.join(get_str!(with, job_state, MapperError))?,
 
             // Generic part handling.
 
-            Self::SetPart{part, value} => part.set(url, get_option_string!(value, url, params).map(|x| x.to_owned()).as_deref())?,
-            #[cfg(feature = "string-modification")]
-            Self::ModifyPart{part, how} => part.modify(how, url, params)?,
-            Self::CopyPart{from, to} => to.set(url, from.get(url).map(|x| x.into_owned()).as_deref())?,
+            Self::SetPart{part, value} => part.set(job_state.url, get_option_string!(value, job_state).as_deref())?, // The deref is needed for borrow checking reasons.
+            Self::ModifyPart{part, how} => part.modify(how, job_state)?,
+            Self::CopyPart{from, to} => to.set(job_state.url, from.get(job_state.url).map(|x| x.into_owned()).as_deref())?,
 
             // Miscellaneous.
 
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
-                if let Some(cached_result) = params.get_redirect_from_cache(url)? {
-                    *url = cached_result;
+                if let Some(cached_result) = job_state.params.get_redirect_from_cache(job_state.url)? {
+                    *job_state.url = cached_result;
                     return Ok(())
                 }
-                let response = params.http_client(http_client_config_diff.as_ref())?.get(url.as_str()).headers(headers.clone()).send()?;
+                let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
                     Url::parse(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.to_str()?)?
                 } else {
                     response.url().clone()
                 };
                 #[cfg(feature = "cache-redirects")]
-                params.write_redirect_to_cache(url, &new_url)?;
-                *url=new_url;
+                job_state.params.write_redirect_to_cache(job_state.url, &new_url)?;
+                *job_state.url=new_url;
             },
 
-            #[cfg(feature = "string-source")] Self::Println (source) => if let Some(x) = source.get(url, params)? {println! ("{x}");},
-            #[cfg(feature = "string-source")] Self::Print   (source) => if let Some(x) = source.get(url, params)? {print!   ("{x}");},
-            #[cfg(feature = "string-source")] Self::Eprintln(source) => if let Some(x) = source.get(url, params)? {eprintln!("{x}");},
-            #[cfg(feature = "string-source")] Self::Eprint  (source) => if let Some(x) = source.get(url, params)? {eprint!  ("{x}");},
+            Self::Println (source) => if let Some(x) = source.get(job_state)? {println! ("{x}");},
+            Self::Print   (source) => if let Some(x) = source.get(job_state)? {print!   ("{x}");},
+            Self::Eprintln(source) => if let Some(x) = source.get(job_state)? {eprintln!("{x}");},
+            Self::Eprint  (source) => if let Some(x) = source.get(job_state)? {eprint!  ("{x}");},
             Self::ApplyConfig {path, params_diff} => {
                 let mut config = Config::get_default_or_load(path.as_deref())?.into_owned();
                 params_diff.apply(&mut config.params);
-                config.apply(url)?;
+                config.apply(job_state.url)?;
+            },
+            Self::SetJobStringVar {name, value} => {let _ = job_state.string_vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
+            Self::DeleteJobStringVar(name) => {
+                let name = get_string!(name, job_state, MapperError).to_owned();
+                let _ = job_state.string_vars.remove(&name);
+            },
+            Self::ModifyJobStringVar {name, modification} => {
+                let name = get_string!(name, job_state, MapperError).to_owned();
+                let mut temp = job_state.string_vars.get_mut(&name).ok_or(MapperError::JobStateVarIsNone)?.to_owned();
+                modification.apply(&mut temp, job_state)?;
+                let _ = job_state.string_vars.insert(name, temp);
             }
         };
         Ok(())

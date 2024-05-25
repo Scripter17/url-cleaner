@@ -1,6 +1,7 @@
 //! Various macros to make repetitive tasks simpler and cleaner.
 
 /// Macro that allows types to be have [`serde::Deserialize`] use [`std::str::FromStr`] as a fallback.
+/// 
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 macro_rules! string_or_struct_magic {
     ($type:ty) => {
@@ -41,37 +42,35 @@ macro_rules! string_or_struct_magic {
 }
 
 /// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
-#[cfg(feature = "string-source")]
 macro_rules! get_string {
-    ($value:expr, $url:expr, $params:expr, $error:ty) => {
-        &*$value.get($url, $params)?.ok_or(<$error>::StringSourceIsNone)?
+    ($value:expr, $job_state:expr, $error:ty) => {
+        $value.get($job_state)?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
     }
 }
 
 /// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
-#[cfg(not(feature = "string-source"))]
-macro_rules! get_string {
-    ($value:expr, $url:expr, $params:expr, $error:ty) => {
-        $value.as_str()
+macro_rules! get_str {
+    ($value:expr, $job_state:expr, $error:ty) => {
+        &*$value.get($job_state)?.ok_or(<$error>::StringSourceIsNone)?
     }
 }
 
 /// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
-#[cfg(feature = "string-source")]
 macro_rules! get_option_string {
-    ($value:expr, $url:expr, $params:expr) => {
-        $value.as_ref().map(|source| source.get($url, $params)).transpose()?.flatten().as_deref()
+    ($value:expr, $job_state:expr) => {
+        $value.as_ref().map(|source| source.get($job_state)).transpose()?.flatten().map(|x| x.into_owned())
     }
 }
 
 /// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
-#[cfg(not(feature = "string-source"))]
-macro_rules! get_option_string {
-    ($value:expr, $url:expr, $params:expr) => {
-        $value.as_deref()
+macro_rules! get_option_str {
+    ($value:expr, $job_state:expr) => {
+        $value.as_ref().map(|source| source.get($job_state)).transpose()?.flatten().as_deref()
     }
 }
 
 pub(crate) use string_or_struct_magic;
+pub(crate) use get_str;
 pub(crate) use get_string;
+pub(crate) use get_option_str;
 pub(crate) use get_option_string;

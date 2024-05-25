@@ -1,6 +1,5 @@
 //! The [`rules::Rule`] type is the primary interface for URL manipulation.
 
-use url::Url;
 use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
@@ -57,8 +56,7 @@ pub enum Rule {
     /// If a contained [`Self`] returns any error other than [`RuleError::FailedCondition`], that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -73,7 +71,7 @@ pub enum Rule {
     ///         }
     ///     ],
     ///     limit: 10
-    /// }.apply(&mut url, &Params::default()).is_ok());
+    /// }.apply(&mut JobState::new(&mut url)).is_ok());
     /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
     /// ```
     RepeatUntilNonePass {
@@ -106,11 +104,11 @@ pub enum Rule {
     /// If the [`Condition`] doesn't pass, returns the error [`RuleError::FailedCondition`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::{Rule, Condition, Mapper, Params};
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// // [`RuleError::FailedCondition`] is returned when the condition does not pass.
     /// // [`Rules`] just ignores them because it's a higher level API.
-    /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut Url::parse("https://example.com").unwrap(), &Params::default()).is_err());
+    /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut JobState::new(&mut Url::parse("https://example.com").unwrap())).is_err());
     /// ```
     #[serde(untagged)]
     Normal {
@@ -145,22 +143,22 @@ impl Rule {
     /// Apply the rule to the url in-place.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
+    pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         match self {
-            Self::Normal{condition, mapper} => if condition.satisfied_by(url, params)? {
-                mapper.apply(url, params)?;
+            Self::Normal{condition, mapper} => if condition.satisfied_by(job_state)? {
+                mapper.apply(job_state)?;
                 Ok(())
             } else {
                 Err(RuleError::FailedCondition)
             },
-            Self::PartMap      {part, map} => Ok(map.get(&part.get(url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(url, params)?),
-            Self::PartRuleMap  {part, map} => Ok(map.get(&part.get(url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(url, params)?),
-            Self::PartRulesMap {part, map} => Ok(map.get(&part.get(url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(url, params)?),
+            Self::PartMap      {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(job_state)?),
+            Self::PartRuleMap  {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(job_state)?),
+            Self::PartRulesMap {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(job_state)?),
                         Self::RepeatUntilNonePass{rules, limit} => {
                 for _ in 0..*limit {
                     let mut done=true;
                     for rule in rules {
-                        match rule.apply(url, params) {
+                        match rule.apply(job_state) {
                             Err(RuleError::FailedCondition) => {},
                             Ok(()) => done=false,
                             e @ Err(_) => e?
@@ -171,8 +169,8 @@ impl Rule {
                 Ok(())
             },
             Self::CommonCondition{condition, rules} => {
-                if condition.satisfied_by(url, params)? {
-                    rules.apply(url, params)?;
+                if condition.satisfied_by(job_state)? {
+                    rules.apply(job_state)?;
                     Ok(())
                 } else {
                     Err(RuleError::FailedCondition)
@@ -191,19 +189,26 @@ pub struct Rules(pub Vec<Rule>);
 impl Rules {
     /// Applies each rule to the provided [`Url`] in order.
     /// Bubbles up every unignored error except for [`RuleError::FailedCondition`] and [`RuleError::PartValueNotInMap`].
-    /// If an error is returned, `url` is left unmodified.
+    /// If an error is returned, `job_state.url` is left unmodified.
     /// # Errors
     /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`] or [`RuleError::PartValueNotInMap`] is encountered, that error is returned.
-    pub fn apply(&self, url: &mut Url, params: &Params) -> Result<(), RuleError> {
-        let mut temp_url=url.clone();
+    pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
+        let mut temp_url = job_state.url.clone();
+        let temp_params = job_state.params.clone();
+        let mut temp_job_state = JobState {
+            url: &mut temp_url,
+            params: &temp_params,
+            string_vars: job_state.string_vars.clone()
+        };
         for rule in &self.0 {
-            match rule.apply(&mut temp_url, params) {
+            match rule.apply(&mut temp_job_state) {
                 Err(RuleError::FailedCondition | RuleError::PartValueNotInMap) => {},
                 e @ Err(_) => e?,
                 _ => {}
             }
         }
-        *url=temp_url;
+        job_state.string_vars = temp_job_state.string_vars;
+        *job_state.url = temp_url;
         Ok(())
     }
 }

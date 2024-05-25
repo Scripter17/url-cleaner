@@ -4,7 +4,6 @@ use std::collections::HashSet;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use url::Url;
 
 use crate::types::*;
 use crate::glue::*;
@@ -90,45 +89,36 @@ pub enum StringMatcher {
     /// If the call to [`StringLocation::satisfied_by`] errors, returns that error.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::{StringMatcher, StringLocation};
-    /// # use url_cleaner::types::Params;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true);
     /// ```
-    #[cfg(feature = "string-location")]
     Contains {
         /// The location to check for `value` at.
         r#where: StringLocation,
         /// The value to look for.
-        #[cfg(feature = "string-source")]
-        value: StringSource,
-        /// The value to look for.
-        #[cfg(not(feature = "string-source"))]
-        value: String
+        value: StringSource
     },
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringMatcher;
+    /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::RegexParts;
-    /// # use url_cleaner::types::Params;
     /// # use url::Url;
-    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true);
     /// ```
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::StringMatcher;
+    /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::GlobWrapper;
-    /// # use url_cleaner::types::Params;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &Url::parse("https://example.com").unwrap(), &Params::default()).unwrap(), true);
+    /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true);
     /// ```
     #[cfg(feature = "glob")]
     Glob(GlobWrapper),
     /// Modifies the provided string then matches it.
-    #[cfg(feature = "string-modification")]
     Modified {
         /// The modification to apply.
         modification: StringModification,
@@ -149,15 +139,12 @@ pub enum StringMatcherError {
     #[error("StringMatcher::Error was used.")]
     ExplicitError,
     /// Returned when a [`StringLocationError`] is encountered.
-    #[cfg(feature = "string-location")]
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
     /// Returned when a [`StringModificationError`] is encountered.
-    #[cfg(feature = "string-modification")]
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when a [`StringSourceError`] is encountered.
-    #[cfg(feature = "string-source")]
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
@@ -180,7 +167,7 @@ pub enum StringMatcherError {
 impl StringMatcher {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn satisfied_by(&self, haystack: &str, url: &Url, params: &Params) -> Result<bool, StringMatcherError> {
+    pub fn satisfied_by(&self, haystack: &str, job_state: &JobState) -> Result<bool, StringMatcherError> {
         #[cfg(feature = "debug")]
         println!("Matcher: {self:?}");
         Ok(match self {
@@ -188,17 +175,17 @@ impl StringMatcher {
             Self::Never => false,
             Self::Error => Err(StringMatcherError::ExplicitError)?,
             Self::Debug(matcher) => {
-                let is_satisfied=matcher.satisfied_by(haystack, url, params);
-                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nURL: {url:?}\nParams: {params:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=matcher.satisfied_by(haystack, job_state);
+                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nJob state: {job_state:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
 
             // Logic.
 
-            Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, url, params)? {then} else {r#else}.satisfied_by(haystack, url, params)?,
+            Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, job_state)? {then} else {r#else}.satisfied_by(haystack, job_state)?,
             Self::All(matchers) => {
                 for matcher in matchers {
-                    if !matcher.satisfied_by(haystack, url, params)? {
+                    if !matcher.satisfied_by(haystack, job_state)? {
                         return Ok(false);
                     }
                 }
@@ -206,23 +193,23 @@ impl StringMatcher {
             },
             Self::Any(matchers) => {
                 for matcher in matchers {
-                    if matcher.satisfied_by(haystack, url, params)? {
+                    if matcher.satisfied_by(haystack, job_state)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Not(matcher) => !matcher.satisfied_by(haystack, url, params)?,
+            Self::Not(matcher) => !matcher.satisfied_by(haystack, job_state)?,
 
             // Error handling.
 
-            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(true),
-            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, url, params).unwrap_or(false),
-            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, url, params).or_else(|try_error| r#else.satisfied_by(haystack, url, params).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
+            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, job_state).unwrap_or(true),
+            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, job_state).unwrap_or(false),
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, job_state).or_else(|try_error| r#else.satisfied_by(haystack, job_state).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(matchers) => {
                 let mut result = Ok(false); // The initial value doesn't mean anything.
                 for matcher in matchers {
-                    result = matcher.satisfied_by(haystack, url, params);
+                    result = matcher.satisfied_by(haystack, job_state);
                     if result.is_ok() {return result;}
                 }
                 result?
@@ -231,10 +218,10 @@ impl StringMatcher {
             // Other.
 
             Self::InHashSet(hash_set) => hash_set.contains(haystack),
-            #[cfg(feature = "string-location"    )] Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_string!(value, url, params, StringMatcherError))?,
+            Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_str!(value, job_state, StringMatcherError))?,
+            Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, job_state)?; temp}, job_state)?,
             #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
-            #[cfg(feature = "string-modification")] Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, params)?; temp}, url, params)?,
             Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)=="",
             Self::IsAscii => haystack.is_ascii()
         })

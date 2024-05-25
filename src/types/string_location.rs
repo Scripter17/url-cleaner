@@ -291,11 +291,11 @@ impl StringLocation {
             Self::End                  => haystack.ends_with  (needle),
             Self::Anywhere             => haystack.contains   (needle),
 
-            Self::StartsAt (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.starts_with(needle),
-            Self::EndsAt   (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.ends_with(needle),
+            Self::StartsAt (start     ) => haystack.get(  neg_range_boundary(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.starts_with(needle),
+            Self::EndsAt   (       end) => haystack.get(..neg_range_boundary(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.ends_with(needle),
 
-            Self::After    (start     ) => haystack.get(  neg_index(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
-            Self::Before   (       end) => haystack.get(..neg_index(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+            Self::After    (start     ) => haystack.get(  neg_range_boundary(*start,       haystack.len()).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
+            Self::Before   (       end) => haystack.get(..neg_range_boundary(        *end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
 
             Self::Range {start, end, location} => location.satisfied_by(
                 haystack.get(neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?).ok_or(StringLocationError::InvalidSlice)?,
