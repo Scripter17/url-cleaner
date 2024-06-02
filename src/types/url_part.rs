@@ -852,9 +852,6 @@ impl UrlPart {
             Self::Origin => Cow::Owned(url.origin().unicode_serialization()),
 
             Self::PartSegments {part, split, start, end} => {
-                println!("{part:?} {split:?} {start:?} {end:?}");
-                println!("{:?}", part.get(url));
-                println!("{:?}", neg_vec_keep(part.get(url)?.split(split), *start, *end));
                 // TODO: Change to always borrow when possible.
                 Cow::Owned(neg_vec_keep(part.get(url)?.split(split), *start, *end)?.join(split))
             },

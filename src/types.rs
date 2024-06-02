@@ -43,7 +43,7 @@ impl<'a> JobState<'a> {
     pub fn new(url: &'a mut Url) -> JobState<'a> {
         JobState {
             url,
-            params: DEFAULT_PARAMS.get_or_init(|| Params::default()),
+            params: DEFAULT_PARAMS.get_or_init(Params::default),
             string_vars: Default::default()
         }
     }

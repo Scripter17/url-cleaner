@@ -83,7 +83,7 @@ pub enum StringMatcher {
     // Other.
 
     /// Passes if the provided string is contained in the specified [`HashSet`].
-    InHashSet(HashSet<String>),
+    IsOneOf(HashSet<String>),
     /// Uses a [`StringLocation`].
     /// # Errors
     /// If the call to [`StringLocation::satisfied_by`] errors, returns that error.
@@ -128,7 +128,16 @@ pub enum StringMatcher {
     /// Passes if the provided string only contains the specified [`char`]s.
     OnlyTheseChars(Vec<char>),
     /// [`str::is_ascii`].
-    IsAscii
+    IsAscii,
+    NthSegmentMatches {
+        n: isize,
+        split: StringSource,
+        matcher: Box<Self>
+    },
+    AnySegmentMatches {
+        split: StringSource,
+        matcher: Box<Self>
+    }
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
@@ -161,7 +170,10 @@ pub enum StringMatcherError {
         try_error: Box<Self>,
         /// The error returned by [`StringMatcher::TryElse::else`],
         else_error: Box<Self>
-    }
+    },
+    /// Returned when the requested segment is not found.
+    #[error("The requested segment was not found.")]
+    SegmentNotFound
 }
 
 impl StringMatcher {
@@ -217,13 +229,25 @@ impl StringMatcher {
 
             // Other.
 
-            Self::InHashSet(hash_set) => hash_set.contains(haystack),
+            Self::IsOneOf(hash_set) => hash_set.contains(haystack),
             Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_str!(value, job_state, StringMatcherError))?,
             Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, job_state)?; temp}, job_state)?,
             #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
             Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)=="",
-            Self::IsAscii => haystack.is_ascii()
+            Self::IsAscii => haystack.is_ascii(),
+            Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, job_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, job_state)?,
+            // https://github.com/rust-lang/rfcs/pull/3233
+            // Also, yes, this is valid Rust.
+            // Not a very well known feature but it REALLY comes in handy.
+            Self::AnySegmentMatches {split, matcher} => 'a: {
+                for segment in haystack.split(get_str!(split, job_state, StringMatcherError)) {
+                    if matcher.satisfied_by(segment, job_state)? {
+                        break 'a true;
+                    }
+                };
+                break 'a false;
+            }
         })
     }
 }

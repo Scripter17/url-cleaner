@@ -14,6 +14,8 @@ The default config shouldn't ever change the semantics of a URL. Opening a URL b
 Because websites tend to not document what parts of their URLs are and aren't necessary, the default config almost certainly runs into issues when trying to clean niche URLs like advanced search queries or API endpoints.  
 If you find any instance of the default config changing the meaning/result of a URL, please open an [issue](https://github.com/Scripter17/url-cleaner/issues).
 
+Additionally, all modifications to the default config assume all feature flags are enabled with the notable exception of not requiring `commands`.
+
 ## Anonymity
 
 In theory, if you're the only one sharing posts from a website without URL trackers, the website could realize that and track you in the same way.  
@@ -42,17 +44,18 @@ Various flags are included in the default config for things I want to do frequen
 - `minimize`: Remove non-essential parts of URLs that are likely not tracking related.
 - `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc` and `https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
 - `no-https-upgrade`: Disable replacing `http://` URLs with `https://` URLs.
+- `assume-cctld-is-shortlink`: Treat all domains ending in a 2 letter top level domain as shortlinks. Yes this does cause issues with stuff like google.
+- `assume-1-dot-2-is-shortlink`: Treat all domains that are one character followed by a 2 letter top level domain as shortlinks. Let's be real, they all are.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` URLs with the original images they refer to.
 - `discord-compatibility`: Sets the domain of `twitter.com` URLs to the domain specified by the `twitter-embed-domain` variable.
+- `deadname-twitter`: Don't replace `twitter.com` URLs with `x.com` URLs. Since twitter.com now redirects to x.com instead of x.com redirecting to twitter.com, changing it to x.com is now sadly the default behavior.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) URLs to the domain specified by the `breezewiki-domain` variable.
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) URLs into `fandom.com` URLs.
-- `onion-location`: Send an HTTP GET request to the url and apply the [`Onion-Location`](https://community.torproject.org/onion-services/advanced/onion-location/) response header if found.
+- `onion-location`: Send an HTTP GET request to the url and apply the [`Onion-Location`](https://community.torproject.org/onion-services/advanced/onion-location/) response header if found. Because this runs on all URLs and the response isn't cached, it's advised you don't use this.
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
-
-Flags can be added to configs by using the `FlagSet` condition and specified at runtime by doing `--flag flag1 --flag flag2`.
 
 If a flag is set in a config's `"params"` field, it can be unset using `--unflag flag1 --unflag flag1`.
 
@@ -63,7 +66,7 @@ The main files you want to look at are [`conditions.rs`](src/rules/conditions.rs
 Additionally [`url_part.rs`](src/types/url_part.rs), [`string_location.rs`](src/types/string_location.rs), and [`string_modification.rs`](src/types/string_modification.rs) are very important for more advanced rules.
 
 Until I publish URL Cleaner on crates.io/docs.rs, you can read the documentation by `git clone`ing this repository and running `cargo doc --no-deps` in the root directory then viewing the files in `target/doc/url_cleaner` in a web browser.  
-If the URL in your web browser looks like `file:///run/...` and the webpage is white with numbers on the left side, you should run `python3 -m http.server` in the root directory and open `http://localhost:8000/target/doc/url_cleaner/`.
+If the URL in your web browser looks like `file:///run/...` and the webpage is white with numbers on the left side, you should run `python3 -m http.server` in the cloned folder and open `http://localhost:8000/target/doc/url_cleaner/`.
 
 ### Tips for people who don't know Rust's syntax:
 

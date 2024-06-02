@@ -21,7 +21,8 @@
 				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN"},
 				{"before": "http://example.com", "after": "https://example.com/"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
-				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"}
+				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
+				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"}
 			]
 		},
 		{
@@ -72,7 +73,7 @@
 				"rules": [
 					{
 						"condition": {"All": [
-							{"Not": {"FlagIsSet": "no-https"}},
+							{"Not": {"FlagIsSet": "no-https-upgrade"}},
 							{"PartIs": {"part": "Scheme", "value": "http"}}
 						]},
 						"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
@@ -82,13 +83,29 @@
 
 					{
 						"condition": {"Any": [
+              {"All": [
+              	{"FlagIsSet": "assume-cctld-is-shortlink"},
+              	{"PartMatches": {"part": {"DomainSegment": -1}, "matcher": {"Regex": "^..$"}}}
+              ]},
+              {"All": [
+              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
+              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
+              ]},
 							{
-								"HostIsOneOf": [
-									"a.co", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "cfl.re",
-									"e.emailalerts.cnn.com", "goo.gl", "k00.fr", "linkr.it", "mzl.la", "orlo.uk",
-									"ow.ly", "pin.it", "pixiv.me", "redd.it", "shorturl.at", "shorturl.at", "t.co",
-									"tr.ee", "www.shorturl.at"
-								]
+								"StringMatches": {
+									"source": {"Modified": {
+										"source": {"Part": "Host"},
+										"modification": {"StripMaybePrefix": "www."}
+									}},
+									"matcher": {
+										"IsOneOf": [
+											"a.co", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "cfl.re",
+											"cnb.cx", "dlvr.it", "e.emailalerts.cnn.com", "goo.gl", "k00.fr", "linkr.it",
+											"lnk.to", "mzl.la", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "redd.it",
+											"reurl.cc", "shorturl.at", "shorturl.at", "spoti.fi", "t.co", "tr.ee"
+										]
+									}
+								}
 							},
 							{
 								"PartMap": {
@@ -389,7 +406,12 @@
 								{"PartIs": {"part": {"DomainSegment": 0}, "value": "m"}},
 								{"PartIs": {"part": {"DomainSegment": 0}, "value": "mobile"}}
 							]},
-							{"Not": {"HostIsOneOf": ["mobile.tumblr.com", "mobile.deviantart.com"]}}
+							{"Not": {
+								"PartMatches": {
+									"part": "NotSubdomain",
+									"matcher": {"IsOneOf": ["mobile.tumblr.com", "mobile.deviantart.com"]}
+								}
+							}}
 						]},
 						"mapper": {"SetPart": {"part": {"DomainSegment": 0}, "value": null}}
 					},
@@ -430,11 +452,6 @@
 					"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 					"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
 					"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
-					"at.tumblr.com"     : {"All": [
-						{"SetHost": "www.tumblr.com"},
-						{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
-						"RemoveQuery"
-					]},
 					"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
 					"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
 					"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "at_"}}},
@@ -454,6 +471,18 @@
 					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
 					"bell.ca": {"RemoveQueryParams": ["INT"]},
 					"fxdeviantart.com": {"SetPart": {"part": "NotSubdomain", "value": "deviantart.com"}}
+				}
+			}
+		},
+		{
+			"PartMap": {
+				"part": "Host",
+				"map": {
+					"at.tumblr.com": {"All": [
+						{"SetHost": "www.tumblr.com"},
+						{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
+						"RemoveQuery"
+					]}
 				}
 			}
 		},
@@ -625,6 +654,10 @@
 							{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
 						]},
 						"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
+					},
+					{
+						"condition": {"Not": {"FlagIsSet": "deadname-twitter"}},
+						"mapper": {"SetHost": "x.com"}
 					}
 				]
 			}
@@ -744,6 +777,13 @@
 					}
 				]
 			}
+		},
+		{
+			"condition": {"All": [
+				{"MaybeWWWAnyTld": "ebay"},
+				{"PartIs": {"part": {"PathSegment": 0}, "value": "itm"}}
+			]},
+			"mapper": "RemoveQuery"
 		},
 
 
