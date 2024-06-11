@@ -17,6 +17,14 @@ use crate::util::*;
 /// In general (except for domain parts on non-domain URLs and [`Self::PathSegment`]), setting a part to its own value is effectively a no-op.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum UrlPart {
+    /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// 
+    /// Intended primarily for debugging logic errors.
+    /// 
+    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    Debug(Box<Self>),
     /// The whole URL. Corresponds to [`Url::as_str`].
     /// # Getting
     /// Is never `None`.
@@ -243,6 +251,12 @@ pub enum UrlPart {
     /// ```
     AfterDomainSegment(isize),
     /// The subdomain. If the domain is `a.b.c.co.uk`, the value returned/changed by this is `a.b`.
+    /// 
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::Subdomain`] of `https://blogspot.com` returns `None`, `https://name.blogspot.com` returns also returns `None`, and `https://abc.name.blogspot.com` returns `Some("abc")`.
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Can be `None`.
     /// # Setting
@@ -272,6 +286,12 @@ pub enum UrlPart {
     /// ```
     Subdomain,
     /// The domain minus the subdomain. If the domain is `a.b.c.co.uk` value returned/changed by this is `c.co.uk`.
+    /// 
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::NotSubdomain`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name.blogspot.com")`].
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Can be `None`.
     /// # Setting
@@ -298,11 +318,22 @@ pub enum UrlPart {
     /// Similar to [`Self::NotSubdomain`] but specialized for only when the subdomain is `"www"` or not present.
     /// 
     /// Exists to allow simulating the old `Rules::HostMap` behavior.
+    /// 
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::WWWNotSubdomain`] of `https://blogspot.com` returns `None` and `https://www.blogspot.com` returns [`Some("www.blogspot.com")`].
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Is `None` when the URL's host is a domain with a subdomain that isn't `None` or `Some("www")`.
     /// # Setting
     /// If the URL's subdomain is `None` or `Some("www")`, behaves the same as [`Self::NotSubdomain`].
     WWWNotSubdomain,
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::NotDomainSuffix`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Can be `None`.
     /// # Setting
@@ -325,6 +356,12 @@ pub enum UrlPart {
     /// ```
     NotDomainSuffix,
     /// The `example` in `abc.example.com`.
+    /// 
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::DomainMiddle`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Can be `None`.
     /// # Setting
@@ -373,6 +410,12 @@ pub enum UrlPart {
     /// Similar to [`Self::DomainMiddle`] but specialized for only when the subdomain is `"www"` or not present.
     /// 
     /// Exists to allow simulating the old `Rules::HostMap` behavior.
+    /// 
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::WWWDomainMiddle`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Is `None` when the URL's host is a domain with a subdomain that isn't `None` or `Some("www")`.
     /// # Setting
@@ -401,6 +444,11 @@ pub enum UrlPart {
     /// UrlPart::Domain.set(&mut url, None).unwrap_err();
     /// ```
     Domain,
+    /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
+    /// 
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::DomainSuffix`] of `https://blogspot.com` returns `Some("blogspot.com")` and `https://name.blogspot.com` returns [`Some("blogspot.com")`].
+    /// 
+    /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Set-get identity.
     /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
@@ -705,21 +753,21 @@ pub enum UrlPart {
         split: String,
         /// The start of the range of segments to get.
         /// 
-        /// Defaults to [`None`].
+        /// Defaults to `None`.
         #[serde(default)]
         start: Option<isize>,
         /// The end of the range of segments to get.
         /// 
-        /// Defaults to [`None`].
+        /// Defaults to `None`.
         #[serde(default)]
         end: Option<isize>
     },
     /// # Getting
-    /// Is always [`None`].
+    /// Is always `None`.
     /// # Setting
-    /// Can be [`None`], but that's a no-op.
+    /// Can be `None`, but that's a no-op.
     /// # Setting errors
-    /// If getting the equivalent [`Self::PartSegment`] would return [`None`], returns the error [`UrlPartGetError::SegmentNotFound`].
+    /// If getting the equivalent [`Self::PartSegment`] would return `None`, returns the error [`UrlPartGetError::SegmentNotFound`].
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -761,11 +809,11 @@ pub enum UrlPart {
         index: isize
     },
     /// # Getting
-    /// Is always [`None`].
+    /// Is always `None`.
     /// # Setting
-    /// Can be [`None`], but that's a no-op.
+    /// Can be `None`, but that's a no-op.
     /// # Setting errors
-    /// If getting the equivalent [`Self::PartSegment`] would return [`None`], returns the error [`UrlPartGetError::SegmentNotFound`].
+    /// If getting the equivalent [`Self::PartSegment`] would return `None`, returns the error [`UrlPartGetError::SegmentNotFound`].
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -790,7 +838,7 @@ pub enum UrlPart {
     /// # Getting
     /// If the contained [`Self`] returns `None`, instead return `Some(Cow::Borrowed(""))`
     /// # Setting
-    /// If the value provided to [`Self::set`] is [`None`], it is replaced with `Some("")`.
+    /// If the value provided to [`Self::set`] is `None`, it is replaced with `Some("")`.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::UrlPart;
@@ -877,7 +925,12 @@ impl UrlPart {
 
             // Miscellaneous.
 
-            Self::NoneToEmptyString(part) => part.get(url).unwrap_or(Cow::Borrowed(""))
+            Self::NoneToEmptyString(part) => part.get(url).unwrap_or(Cow::Borrowed("")),
+            Self::Debug(part) => {
+                let ret = part.get(url);
+                eprintln!("=== UrlPart::Debug ===\nUrlPart: {part:?}\nValue: {ret:?}");
+                ret?
+            }
         })
     }
 
@@ -890,6 +943,11 @@ impl UrlPart {
         println!("PartSet: {self:?}");
         #[allow(clippy::arithmetic_side_effects)]
         match (self, to) {
+            (Self::Debug(part), _) => {
+                let old = part.get(url).to_owned();
+                eprintln!("=== UrlPart::Debug ===\nUrlPart: {part:?}\nOld value: {old:?}\nNew value: {to:?}");
+                part.set(url, to)?;
+            }
             // Ordered hopefully most used to least used.
             (Self::Query, _) => url.set_query(to),
             (Self::Host , _) => url.set_host (to)?,
@@ -1074,7 +1132,7 @@ impl UrlPart {
                 let temp = part.get(url).ok_or(UrlPartGetError::PartIsNone)?;
                 let mut segments = temp.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_index(*index, segments.len()).ok_or(UrlPartGetError::SegmentNotFound)?;
-                if fixed_n==segments.len() {Err(StringModificationError::SegmentNotFound)?;}
+                if fixed_n==segments.len() {Err(UrlPartGetError::SegmentNotFound)?;}
                 // fixed_n is guaranteed to be in bounds.
                 #[allow(clippy::indexing_slicing)]
                 match to {
@@ -1210,9 +1268,7 @@ pub enum UrlPartSetError {
     InvalidDomain,
     /// Returned when attempting to set a URL's not WWW domain but the URL's subdomain exists and is not www.
     #[error("Attempted to set a URL's not WWW domain but the URL's subdomain exists and is not www.")]
-    HostIsNotMaybeWWWDomain,
-    #[error(transparent)]
-    StringModificationError(#[from] StringModificationError)
+    HostIsNotMaybeWWWDomain
 }
 
 /// The enum of all possible errors [`UrlPart::modify`] can return.

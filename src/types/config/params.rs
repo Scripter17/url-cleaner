@@ -15,12 +15,15 @@ use super::*;
 /// Configuration options to choose the behaviour of various URL Cleaner types.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Params {
-    /// Works with [`Condition::RuleVariableIs'`].
-    #[serde(default)]
-    pub vars: HashMap<String, String>,
-    /// Works with [`Condition::FlagIsSet`].
+    /// Booleans variables used to determine behavior.
     #[serde(default)]
     pub flags: HashSet<String>,
+    /// String variables used to determine behavior.
+    #[serde(default)]
+    pub vars: HashMap<String, String>,
+    /// Set variables used to determine behavior.
+    #[serde(default)]
+    pub sets: HashMap<String, HashSet<String>>,
     /// If [`true`], enables reading from caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
     #[serde(default = "get_true")]
@@ -38,8 +41,9 @@ pub struct Params {
 impl Default for Params {
     fn default() -> Self {
         Self {
-            vars: HashMap::default(),
             flags: HashSet::default(),
+            vars: HashMap::default(),
+            sets: HashMap::default(),
             #[cfg(feature = "cache")] read_cache: true,
             #[cfg(feature = "cache")] write_cache: true,
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -135,14 +139,22 @@ impl Params {
 /// Allows changing [`Config::params`].
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ParamsDiff {
-    /// Adds to [`Params::vars`]. Defaults to an empty [`HashMap`].
-    #[serde(default)] pub vars  : HashMap<String, String>,
-    /// Removes from [`Params::vars`]. Defaults to an empty [`HashSet`].
-    #[serde(default)] pub unvars: HashSet<String>,
     /// Adds to [`Params::flags`]. Defaults to an empty [`HashSet`].
     #[serde(default)] pub flags  : HashSet<String>,
     /// Removes from [`Params::flags`] Defaults to an empty [`HashSet`].
     #[serde(default)] pub unflags: HashSet<String>,
+    /// Adds to [`Params::vars`]. Defaults to an empty [`HashMap`].
+    #[serde(default)] pub vars  : HashMap<String, String>,
+    /// Removes from [`Params::vars`]. Defaults to an empty [`HashSet`].
+    #[serde(default)] pub unvars: HashSet<String>,
+    /// Initializes new sets in [`Params::sets`].
+    #[serde(default)] pub init_sets: Vec<String>,
+    /// Initializes new sets in [`Params::sets`] if they don't already exist, then inserts values into them.
+    #[serde(default)] pub insert_into_sets: HashMap<String, Vec<String>>,
+    /// If the sets exist in [`Params::sets`], removes values from them.
+    #[serde(default)] pub remove_from_sets: HashMap<String, Vec<String>>,
+    /// If the sets exist in [`Params::sets`], remove them.
+    #[serde(default)] pub delete_sets: Vec<String>,
     /// If [`Some`], sets [`Params::read_cache`]. Defaults to [`None`].
     #[cfg(feature = "cache")]
     #[serde(default)] pub read_cache : Option<bool>,
@@ -157,35 +169,44 @@ pub struct ParamsDiff {
 impl ParamsDiff {
     /// Applies the differences specified in `self` to `to`.
     /// In order:
-    /// 1. Extends `to.vars` with [`Self::vars`], overwriting any keys found in both.
-    /// 2. Removes all keys found in [`Self::unvars`] from `to.vars`.
-    /// 3. Extends `to.flags` with [`Self::flags`].
-    /// 4. Removes all flags found in [`Self::unflags`] from `to.flags`.
-    /// 5. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
-    /// 6. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
-    /// 7. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
+    /// 1. Extends `to.flags` with [`Self::flags`].
+    /// 2. Removes all flags found in [`Self::unflags`] from `to.flags`.
+    /// 3. Extends `to.vars` with [`Self::vars`], overwriting any keys found in both.
+    /// 4. Removes all keys found in [`Self::unvars`] from `to.vars`.
+    /// 5. Initializes all sets specified by [`Self::init_sets`] to [`HashSet::default`] if they don't exist.
+    /// 6. Inserts all values into sets as specified by [`Self::insert_into_sets`].
+    /// 7. Removes all values from sets as specified by [`Self::remove_from_sets`].
+    /// 8. Deletes all sets specified in [`Self::delete_sets`].
+    /// 9. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
+    /// 10. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
+    /// 11. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
     pub fn apply(&self, to: &mut Params) {
         #[cfg(feature = "debug")]
-        {
-            let old_to = to.clone();
-            to.vars.extend(self.vars.clone());
-            for var in &self.unvars {to.vars.remove(var);}
-            to.flags.extend(self.flags.clone());
-            for flag in &self.unflags {to.flags.remove(flag);}
-            #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
-            #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
-            #[cfg(all(feature = "http", not(target_family = "wasm")))] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
-            eprintln!("=== ParamsDiff::apply ===\nold: {old_to:?}\nDiff: {self:?}\nnew: {to:?}");
+        let old_to = to.clone();
+        to.flags.extend(self.flags.clone());
+        for flag in &self.unflags {to.flags.remove(flag);}
+        to.vars.extend(self.vars.clone());
+        for var in &self.unvars {to.vars.remove(var);}
+        for k in self.init_sets.iter() {
+            if !to.sets.contains_key(k) {to.sets.insert(k.clone(), Default::default());}
         }
-        #[cfg(not(feature = "debug"))]
-        {
-            to.vars.extend(self.vars.clone());
-            for var in &self.unvars {to.vars.remove(var);}
-            to.flags.extend(self.flags.clone());
-            for flag in &self.unflags {to.flags.remove(flag);}
-            #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
-            #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
-            #[cfg(all(feature = "http", not(target_family = "wasm")))] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
+        for (k, v) in self.insert_into_sets.iter() {
+            to.sets.entry(k.clone()).or_default().extend(v.clone());
         }
+        for (k, vs) in self.remove_from_sets.iter() {
+            if let Some(x) = to.sets.get_mut(k) {
+                for v in vs.iter() {
+                    x.remove(v);
+                }
+            }
+        }
+        for k in self.delete_sets.iter() {
+            to.sets.remove(k);
+        }
+        #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
+        #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
+        #[cfg(all(feature = "http", not(target_family = "wasm")))] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
+        #[cfg(feature = "debug")]
+        eprintln!("=== ParamsDiff::apply ===\nold: {old_to:?}\nDiff: {self:?}\nnew: {to:?}");
     }
 }

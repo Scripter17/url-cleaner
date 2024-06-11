@@ -19,7 +19,9 @@ pub enum StringLocation {
     /// Always returns the error [`StringLocationError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// 
     /// Intended primarily for debugging logic errors.
+    /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.

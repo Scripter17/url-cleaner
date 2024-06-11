@@ -27,7 +27,9 @@ pub enum StringModification {
     /// Always returns the error [`StringModificationError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its application to STDERR.
+    /// 
     /// Intended primarily for debugging logic errors.
+    /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
@@ -310,7 +312,7 @@ pub enum StringModification {
         /// The end of the range of segments to keep.
         end: Option<isize>
     },
-    /// Splits the provided string by `split`, replaces the `n`th segment with `value` or removes the segment if `value` is `None`, then joins the string back together.
+    /// Splits the provided string by `split`, replaces the `n`th segment with `value` or removes the segment if `value` is `None`, then joins the segments back together.
     /// # Errors
     /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
     /// # Examples
@@ -337,10 +339,21 @@ pub enum StringModification {
         /// The value to place at the segment index. If `None` then the segment is erased.
         value: Option<StringSource>
     },
+    /// Splits the provided string by `split`, replaces the range of segments specified by `start` and `end` with `value`,  then joins the segments back together.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If there is no segment at `start` (or `0` if `start` is [`None`]), returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
+    /// If the segment range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
     SetSegmentRange {
+        /// The value to split the string by.
         split: StringSource,
+        /// The start of the range of segments to replace.
         start: Option<isize>,
+        /// The end of the range of segments to replace.
         end: Option<isize>,
+        /// The value to replace the segments with.
         value: StringSource
     },
     /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
@@ -633,9 +646,11 @@ pub enum StringModificationError {
     /// Returned when a [`std::string::FromUtf8Error`] is encountered.
     #[error(transparent)]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
+    /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    #[error("TODO")]
+    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
+    #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone
 }
 

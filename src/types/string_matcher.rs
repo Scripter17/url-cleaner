@@ -21,7 +21,9 @@ pub enum StringMatcher {
     /// Always returns the error [`StringMatcherError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// 
     /// Intended primarily for debugging logic errors.
+    /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] errors, returns that error.
@@ -129,15 +131,38 @@ pub enum StringMatcher {
     OnlyTheseChars(Vec<char>),
     /// [`str::is_ascii`].
     IsAscii,
+    /// Passes if the `n`th segment of the string passes specified matcher.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the specified segment isn't found, returns the error [`StringMatcherError::SegmentNotFound`].
+    /// 
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     NthSegmentMatches {
-        n: isize,
+        /// The split used to segment the string.
         split: StringSource,
+        /// The index of the segment to match.
+        n: isize,
+        /// The matcher to test the segment with.
         matcher: Box<Self>
     },
+    /// Passes if any segment passes the specified matcher.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     AnySegmentMatches {
+        /// The split used to segment the string.
         split: StringSource,
+        /// The matcher to test each segment with.
         matcher: Box<Self>
-    }
+    },
+    /// Passes if the string equals the specified value.
+    Equals(StringSource),
+    /// Passes if the string is in the specified [`Params::sets`] set.
+    /// 
+    /// See also: [`Self::IsOneOf`].
+    InSet(StringSource),
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
@@ -232,13 +257,13 @@ impl StringMatcher {
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
             Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_str!(value, job_state, StringMatcherError))?,
             Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, job_state)?; temp}, job_state)?,
-            #[cfg(feature = "regex"              )] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
-            #[cfg(feature = "glob"               )] Self::Glob(glob) => glob.matches(haystack),
+            #[cfg(feature = "regex")] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
+            #[cfg(feature = "glob" )] Self::Glob(glob) => glob.matches(haystack),
             Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)=="",
             Self::IsAscii => haystack.is_ascii(),
             Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, job_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, job_state)?,
             // https://github.com/rust-lang/rfcs/pull/3233
-            // Also, yes, this is valid Rust.
+            // And yes, this is valid Rust.
             // Not a very well known feature but it REALLY comes in handy.
             Self::AnySegmentMatches {split, matcher} => 'a: {
                 for segment in haystack.split(get_str!(split, job_state, StringMatcherError)) {
@@ -247,7 +272,9 @@ impl StringMatcher {
                     }
                 };
                 break 'a false;
-            }
+            },
+            Self::Equals(source) => haystack == get_str!(source, job_state, StringMatcherError),
+            Self::InSet(name) => job_state.params.sets.get(get_str!(name, job_state, StringMatcherError)).is_some_and(|set| set.contains(haystack))
         })
     }
 }

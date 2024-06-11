@@ -194,10 +194,9 @@ impl Rules {
     /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`] or [`RuleError::PartValueNotInMap`] is encountered, that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         let mut temp_url = job_state.url.clone();
-        let temp_params = job_state.params.clone();
         let mut temp_job_state = JobState {
             url: &mut temp_url,
-            params: &temp_params,
+            params: job_state.params,
             string_vars: job_state.string_vars.clone()
         };
         for rule in &self.0 {

@@ -21,6 +21,7 @@ pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// 
     /// Intended primarily for debugging logic errors.
     /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
@@ -64,6 +65,9 @@ pub enum StringSource {
     /// assert_eq!(StringSource::Var("abc".to_string()).get(&JobState::new_with_params(&mut url, &params)).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(String),
+    /// Gets the value of the specified [`JobState::string_vars`].
+    /// 
+    /// Returns [`None`] (NOT an error) if the string var is not set.
     JobVar(Box<Self>),
     /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
     /// # Errors

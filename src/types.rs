@@ -40,6 +40,7 @@ pub struct JobState<'a> {
 static DEFAULT_PARAMS: OnceLock<Params> = OnceLock::new();
 
 impl<'a> JobState<'a> {
+    /// Creates a new [`Self`] using the provided [`Url`] and default values for all other fields.
     pub fn new(url: &'a mut Url) -> JobState<'a> {
         JobState {
             url,
@@ -48,6 +49,7 @@ impl<'a> JobState<'a> {
         }
     }
 
+    /// Creates a new [`Self`] using the provided [`Url`] and [`Params`] and default values for all other fields.
     pub fn new_with_params(url: &'a mut Url, params: &'a Params) -> JobState<'a> {
         JobState {
             url,

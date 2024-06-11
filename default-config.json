@@ -4,6 +4,49 @@
 			"twitter-embed-domain": "vxtwitter.com",
 			"breezewiki-domain": "breezewiki.com"
 		},
+		"sets": {
+			"breezewiki-hosts": [
+				"breezewiki.com", "antifandom.com", "breezewiki.pussthecat.org", "bw.hamstro.dev",
+				"bw.projectsegfau.lt", "breeze.hostux.net", "bw.artemislena.eu", "nerd.whatever.social",
+				"breezewiki.frontendfriendly.xyz", "breeze.nohost.network", "breeze.whateveritworks.org",
+				"z.opnxng.com", "breezewiki.hyperreal.coffee", "breezewiki.catsarch.com",
+				"breeze.mint.lgbt", "breezewiki.woodland.cafe", "breezewiki.nadeko.net",
+				"bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
+				"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion"
+			],
+			"shortlink-hosts": [
+				"a.co", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bloom.bg", "buff.ly", "cbsn.ws", "cfl.re",
+				"cnb.cx", "cnn.it", "cos.lv", "dlvr.it", "e.emailalerts.cnn.com", "flip.it", "forms.gle", "goo.gl", "gum.co",
+				"k00.fr", "linkr.it", "lnk.to", "mzl.la", "on.ft.com", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "redd.it",
+				"reurl.cc", "rzr.to", "shorturl.at", "spoti.fi", "t.co", "tmz.me", "tr.ee", "trib.al"
+			],
+			"utps": [
+				"action_object_map", "action_ref_map", "action_type_map", "adfrom", "adjust_adgroup", "adjust_campaign", 
+				"adjust_creative", "adjust_referrer", "adjust_tracker", "adjust_tracker_limit", "admitad_uid", "af_ad", "af_adset", 
+				"af_click_lookback", "af_force_deeplink", "af_xp", "aiad_clid", "asgtbndr", "at_campaign", "at_campaign_type", 
+				"at_creation", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", 
+				"at_ptr_name", "at_recipient_id", "at_recipient_list", "at_send_date", "awc", "_branch_match_id", "_branch_referrer", 
+				"bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "cjdata", "cjevent", "_clde", "_cldee", 
+				"click", "cm_cr", "cm_me", "cmpid", "cuid", "cx_click", "cx_recsOrder", "cx_recsWidget", "dclid", 
+				"dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", "ebisAdID", "erid", "et_rid", "external_click_id", 
+				"famad_xuid", "fb_action_ids", "fb_action_types", "fbclid", "fb_comment_id", "fb_ref", "fb_source", "_ga", 
+				"gad_source", "gbraid", "gci", "gclid", "gclsrc", "_gl", "gps_adid", "guccounter", "guce_referrer", 
+				"guce_referrer_sig", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", 
+				"hsa_src", "hsa_tgt", "hsa_ver", "hsCtaTracking", "hsctatracking", "_hsenc", "__hsfp", "__hssc", "__hstc", "icid", 
+				"iclid", "__io_lv", "_io_session_id", "ir_adid", "ir_campaignid", "irclickid", "irgwc", "ir_partnerid", 
+				"is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "key", "_kx", 
+				"maf", "mc_eid", "message", "mindbox", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "ml_subscriber", 
+				"ml_subscriber_hash", "msclkid", "mt_link_id", "mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", 
+				"mtm_medium", "mtm_placement", "mtm_source", "nx_source", "oft_c", "oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", 
+				"oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_ope", "_openstat", "oprtrack", "pk_campaign", "pk_cid", "pk_medium", 
+				"pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "__s", "s_cid", "_sgm_action", 
+				"_sgm_campaign", "_sgm_source", "sms_click", "sms_source", "sms_uph", "source", "spot_im_redirect_source", "srsltid", 
+				"sscid", "ss_email_id", "Tcsack", "tduid", "_trkparms", "_trksid", "ttclid", "twclid", "unicorn_click_id", 
+				"user_email_address", "usqp", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", 
+				"vsm_type", "wbraid", "wickedid", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid", "_zucks_suid"
+			],
+			"https-upgrade-host-whitelist": ["orteil.dashnet.org"]
+		},
 		"http_client_config": {
 			"default_headers": {
 				"user-agent": "curl/8.2.1",
@@ -16,13 +59,19 @@
 	"tests": [
 		{
 			"expectations": [
-				{"before": "https://x.com?t=a&s=b", "after": "https://twitter.com/"},
+				{"before": "https://x.com?t=a&s=b", "after": "https://x.com/"},
 				{"before": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "after": "https://example.com/"},
 				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN"},
 				{"before": "http://example.com", "after": "https://example.com/"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
 				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
 				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"}
+			]
+		},
+		{
+			"params_diff": {"flags": ["deadname-twitter"]},
+			"expectations": [
+				{"before": "https://x.com?t=a&s=b", "after": "https://twitter.com/"}
 			]
 		},
 		{
@@ -73,8 +122,9 @@
 				"rules": [
 					{
 						"condition": {"All": [
+							{"PartIs": {"part": "Scheme", "value": "http"}},
 							{"Not": {"FlagIsSet": "no-https-upgrade"}},
-							{"PartIs": {"part": "Scheme", "value": "http"}}
+							{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-whitelist"}}}}
 						]},
 						"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 					},
@@ -97,14 +147,7 @@
 										"source": {"Part": "Host"},
 										"modification": {"StripMaybePrefix": "www."}
 									}},
-									"matcher": {
-										"IsOneOf": [
-											"a.co", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "cfl.re",
-											"cnb.cx", "dlvr.it", "e.emailalerts.cnn.com", "goo.gl", "k00.fr", "linkr.it",
-											"lnk.to", "mzl.la", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "redd.it",
-											"reurl.cc", "shorturl.at", "shorturl.at", "spoti.fi", "t.co", "tr.ee"
-										]
-									}
+									"matcher": {"InSet": "shortlink-hosts"}
 								}
 							},
 							{
@@ -126,9 +169,6 @@
 							}
 						}
 					},
-
-
-
 
 
 
@@ -309,7 +349,7 @@
 						]},
 						"mapper": {"All": [
 							{"CopyPart": {"from": {"PathSegment": 2}, "to": "Host"}},
-							{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 4}}, "to": "Path"}}
+							{"CopyPart": {"from": {"NoneToEmptyString": {"PartSegments": {"part": "Path", "split": "/", "start": 4}}}, "to": "Path"}}
 						]}
 					},
 					{
@@ -327,9 +367,12 @@
 					},
 					{
 						"comment": "https://example1.com/https://example2.com/user -> https://example2.com/abc",
-						"condition": {"Any": [
-							{"PartContains": {"part": "Path", "where": "Start", "value": "/http:"}},
-							{"PartContains": {"part": "Path", "where": "Start", "value": "/https:"}}
+						"condition": {"All": [
+							{"Not": {"FlagIsSet": "no-unmangle-path-is-url"}},
+							{"Any": [
+								{"PartContains": {"part": "Path", "where": "Start", "value": "/http:"}},
+								{"PartContains": {"part": "Path", "where": "Start", "value": "/https:"}}
+							]}
 						]},
 						"mapper": {"SetPart": {
 							"part": "Whole",
@@ -339,9 +382,12 @@
 					{
 						"comment": "https://example1.com/profile/https://example2.com/profile/user -> https://example2.com/profile/user",
 						"comment2": "The general case requires conditions and mappers to talk to each other and would break the WayBack machine.",
-						"condition": {"Any": [
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "http:"}},
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "https:"}}
+						"condition": {"All": [
+							{"Not": {"FlagIsSet": "no-unmangle-second-path-segment-is-url"}},
+							{"Any": [
+								{"PartIs": {"part": {"PathSegment": 1}, "value": "http:"}},
+								{"PartIs": {"part": {"PathSegment": 1}, "value": "https:"}}
+							]}
 						]},
 						"mapper": {
 							"SetPart": {
@@ -369,7 +415,7 @@
 							{"QualifiedDomain": "bsky.app"},
 							{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
 						]},
-						"mapper": {"ModifyPart": {"part": "Path", "how": {"Append": ".social"}}}
+						"mapper": {"ModifyPart": {"part": "Path", "modification": {"Append": ".social"}}}
 					},
 					{
 						"condition": {"All": [
@@ -378,7 +424,16 @@
 							{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": "."}}},
 							{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": ":"}}}
 						]},
-						"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "how": {"Append": ".bsky.social"}}}
+						"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "modification": {"Append": ".bsky.social"}}}
+					},
+
+					{
+						"comment": "https://www.username.example.com -> https://username.example.com",
+						"condition": {"All": [
+							{"Not": {"FlagIsSet": "no-unmangle-subdomain-starting-with-www-segment"}},
+							{"TreatErrorAsFail": {"PartContains": {"part": "Subdomain", "where": "Start", "value": "www."}}}
+						]},
+						"mapper": {"ModifyPart": {"part": "Subdomain", "modification": {"StripPrefix": "www."}}}
 					}
 				]
 			}
@@ -388,8 +443,9 @@
 
 		{
 			"condition": {"All": [
+				{"PartIs": {"part": "Scheme", "value": "http"}},
 				{"Not": {"FlagIsSet": "no-https-upgrade"}},
-				{"PartIs": {"part": "Scheme", "value": "http"}}
+				{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-whitelist"}}}}
 			]},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 		},
@@ -430,16 +486,18 @@
 
 		{
 			"PartMap": {
-				"comment": "The first group is only known to be fine for MaybeWWWDomain. Arbitrary subdomains may cause semantic issues.",
+				"comment-1": "PLEASE NOTE: Some things that by all reasonable reasons should be a domain, like \"blogspot.com\" are considered suffixes by Mozilla's Public Suffix List.",
+				"comment-2": "If a website isn't working here, the next PartMap (the Suffix one) could work.",
+				"comment-3": "The first group is only known to be fine for MaybeWWWDomain. Arbitrary subdomains may cause semantic issues.",
 				"part": "NotSubdomain",
 				"map": {
 					"theonion.com" : "RemoveQuery",
 					"teespring.com": "RemoveQuery",
 					"instagram.com": "RemoveQuery",
-					"vxtwitter.com": {"SetHost": "twitter.com"},
-					"fixvx.com"    : {"SetHost": "twitter.com"},
-					"fxtwitter.com": {"SetHost": "twitter.com"},
-					"x.com"        : {"SetHost": "twitter.com"},
+					"twitter.com"  : {"SetHost": "x.com"},
+					"vxtwitter.com": {"SetHost": "x.com"},
+					"fixvx.com"    : {"SetHost": "x.com"},
+					"fxtwitter.com": {"SetHost": "x.com"},
 					"youtube.com"  : {"RemoveQueryParams": ["si", "feature"]},
 					"youtu.be"     : {"All": [
 						{"SetHost" : "youtube.com"},
@@ -471,6 +529,15 @@
 					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
 					"bell.ca": {"RemoveQueryParams": ["INT"]},
 					"fxdeviantart.com": {"SetPart": {"part": "NotSubdomain", "value": "deviantart.com"}}
+				}
+			}
+		},
+		{
+			"PartMap": {
+				"comment": "For reasons unknown to god, myself, but not google, \"blogspot.com\" is considered a public suffix by Mozilla's Public Suffix List.",
+				"part": "DomainSuffix",
+				"map": {
+					"blogspot.com": {"RemoveQueryParams": ["zx"]}
 				}
 			}
 		},
@@ -631,7 +698,7 @@
 
 		{
 			"CommonCondition": {
-				"condition": {"QualifiedDomain": "twitter.com"},
+				"condition": {"QualifiedDomain": "x.com"},
 				"rules": [
 					{
 						"condition": {"PathIs": "/i/flow/login"},
@@ -656,8 +723,11 @@
 						"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
 					},
 					{
-						"condition": {"Not": {"FlagIsSet": "deadname-twitter"}},
-						"mapper": {"SetHost": "x.com"}
+						"condition": {"All": [
+							{"QualifiedDomain": "x.com"},
+							{"FlagIsSet": "deadname-twitter"}
+						]},
+						"mapper": {"SetHost": "twitter.com"}
 					}
 				]
 			}
@@ -685,15 +755,7 @@
 					{"FlagIsSet": "breezewiki"},
 					{"FlagIsSet": "unbreezewiki"}
 				]},
-				{"HostIsOneOf": [
-					"breezewiki.com", "antifandom.com", "breezewiki.pussthecat.org", "bw.hamstro.dev",
-					"bw.projectsegfau.lt", "breeze.hostux.net", "bw.artemislena.eu", "nerd.whatever.social",
-					"breezewiki.frontendfriendly.xyz", "breeze.nohost.network", "breeze.whateveritworks.org",
-					"z.opnxng.com", "breezewiki.hyperreal.coffee", "breezewiki.catsarch.com",
-					"breeze.mint.lgbt", "breezewiki.woodland.cafe", "breezewiki.nadeko.net",
-					"bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
-					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion"
-				]},
+				{"PartMatches": {"part": "Host", "matcher": {"InSet": "breezewiki-hosts"}}},
 				{"Not": {"PathIs": "/"}}
 			]},
 			"mapper": {"All": [
@@ -732,13 +794,22 @@
 							{"FlagIsSet": "minimize"},
 							{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
 						]},
-						"mapper": {"RemovePathSegments": [0, 3]}
+						"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
 					},
 					{
-						"condition": {"Any": [
-							{"PartIs": {"part": {"PathSegment": 0}, "value": "dp"}},
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
+						"condition": {"All": [
+							{"FlagIsSet": "minimize"},
+							{"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}}
 						]},
+						"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
+					},
+					{
+						"condition": {
+							"PartMatches": {
+								"part": "Path",
+								"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
+							}
+						},
 						"mapper": {"AllowQueryParams": ["aod"]}
 					},
 					{
@@ -746,17 +817,18 @@
 						"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
 					},
 					{
-						"condition": {"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
-						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
-					},
-					{
 						"condition": {"All": [
+							{
+								"PartMatches": {
+									"part": "Path",
+									"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
+								}
+							},
 							{"Any": [
-								{"PartIs": {"part": {"PathSegment": 0}, "value": "dp"}},
-								{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
-							]},
-							{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
-							{"PartMatches": {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
+								{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
+								{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
+								{"PartMatches": {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
+							]}
 						]},
 						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
 					},
@@ -835,41 +907,16 @@
 			"FireFox-Source": "https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html",
 			"Brave-Source": "https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc",
 			"AdGuard-source": "https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections/general_url.txt",
-			"condition": "Always",
-			"mapper": {"All": [
-				{
-					"RemoveQueryParams": [
-						"action_object_map", "action_ref_map", "action_type_map", "adfrom", "adjust_adgroup", "adjust_campaign", 
-						"adjust_creative", "adjust_referrer", "adjust_tracker", "adjust_tracker_limit", "admitad_uid", "af_ad", "af_adset", 
-						"af_click_lookback", "af_force_deeplink", "af_xp", "aiad_clid", "asgtbndr", "at_campaign", "at_campaign_type", 
-						"at_creation", "/^at_custom/", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", 
-						"at_ptr_name", "at_recipient_id", "at_recipient_list", "at_send_date", "awc", "_branch_match_id", "_branch_referrer", 
-						"bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "cjdata", "cjevent", "_clde", "_cldee", 
-						"click", "cm_cr", "cm_me", "/^cm_mmc/", "cmpid", "cuid", "cx_click", "cx_recsOrder", "cx_recsWidget", "dclid", 
-						"dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", "ebisAdID", "erid", "et_rid", "external_click_id", 
-						"famad_xuid", "fb_action_ids", "fb_action_types", "fbclid", "fb_comment_id", "fb_ref", "fb_source", "_ga", 
-						"gad_source", "gbraid", "gci", "gclid", "gclsrc", "_gl", "gps_adid", "guccounter", "guce_referrer", 
-						"guce_referrer_sig", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", 
-						"hsa_src", "hsa_tgt", "hsa_ver", "hsCtaTracking", "hsctatracking", "_hsenc", "__hsfp", "__hssc", "__hstc", "icid", 
-						"iclid", "id", "__io_lv", "_io_session_id", "ir_adid", "ir_campaignid", "irclickid", "irgwc", "ir_partnerid", 
-						"is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "key", "_kx", 
-						"maf", "mc_eid", "message", "mindbox", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "ml_subscriber", 
-						"ml_subscriber_hash", "msclkid", "mt_link_id", "mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", 
-						"mtm_medium", "mtm_placement", "mtm_source", "nx_source", "oft_c", "oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", 
-						"oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_ope", "_openstat", "oprtrack", "pk_campaign", "pk_cid", "pk_medium", 
-						"pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "/^__s", "__s", "s_cid", "_sgm_action", 
-						"_sgm_campaign", "_sgm_source", "sms_click", "sms_source", "sms_uph", "source", "spot_im_redirect_source", "srsltid", 
-						"sscid", "ss_email_id", "Tcsack", "tduid", "_trkparms", "_trksid", "ttclid", "twclid", "unicorn_click_id", 
-						"user_email_address", "usqp", "utm_ad", "utm_adgroup", "utm_affiliate", "utm_brand", "utm_campaign", "utm_campaignid", 
-						"utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid", "utm_emmid", "utm_id", "utm_id_", "utm_keyword", 
-						"utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader", "utm_referrer", "utm_serial", 
-						"utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_supplier", "utm_swu", 
-						"utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", 
-						"vsm_type", "wbraid", "wickedid", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid", "_zucks_suid"
-					]
-				},
-				{"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "utm_"}}}
-			]}
+			"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+			"mapper": {
+				"RemoveQueryParamsMatching": {"Any": [
+					{"InSet": "utps"},
+					{"Contains": {"where": "Start", "value": "cm_mmc"}},
+					{"Contains": {"where": "Start", "value": "__s"}},
+					{"Contains": {"where": "Start", "value": "at_custom"}},
+					{"Contains": {"where": "Start", "value": "utm_"}}
+				]}
+			}
 		}
 	]
 }

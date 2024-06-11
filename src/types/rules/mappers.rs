@@ -27,7 +27,9 @@ pub enum Mapper {
     /// Always returns the error [`MapperError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its application to STDERR.
+    /// 
     /// Intended primarily for debugging logic errors.
+    /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
@@ -189,19 +191,6 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`Url::set_host`] reutrns an error, returns that error.
     SetHost(String),
-    /// Removes the path segments with an index in the specified list.
-    /// See [`Url::path_segments`] for details.
-    /// # Errors
-    /// If the URL cannot be a base, returns the error [`MapperError::UrlDoesNotHaveAPath`].
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url=Url::parse("https://example.com/0/1/2/3/4/5/6").unwrap();
-    /// Mapper::RemovePathSegments(vec![1,3,5,6,8]).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.path(), "/0/2/4");
-    /// ```
-    RemovePathSegments(Vec<usize>),
     /// [`Url::join`].
     Join(StringSource),
 
@@ -227,7 +216,7 @@ pub enum Mapper {
         /// The name of the part to modify.
         part: UrlPart,
         /// How exactly to modify the part.
-        how: StringModification
+        modification: StringModification
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
@@ -325,13 +314,28 @@ pub enum Mapper {
         /// How to modify the config's params.
         params_diff: ParamsDiff
     },
+    /// Sets the current job's `name` string var to `value`.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
     SetJobStringVar {
+        /// The name of the variable to set.
         name: StringSource,
+        /// The value to set the variable to.
         value: StringSource
     },
+    /// Delete the current job's `name` string var.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     DeleteJobStringVar(StringSource),
+    /// Applies a [`StringModification`] to the current job's `name` string var.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
     ModifyJobStringVar {
+        /// The name of the variable to set.
         name: StringSource,
+        /// The modification to apply.
         modification: StringModification
     }
 }
@@ -421,8 +425,9 @@ pub enum MapperError {
         /// The error returned by [`Mapper::TryElse::else`],
         else_error: Box<Self>
     },
-    #[error("A JobState var was none.")]
-    JobStateVarIsNone
+    /// Returned when a [`JobState`] string var is [`None`].
+    #[error("A JobState string var was none.")]
+    JobStateStringVarIsNone
 }
 
 impl From<RuleError> for MapperError {
@@ -445,10 +450,9 @@ impl Mapper {
             Self::Error => Err(MapperError::ExplicitError)?,
             Self::Debug(mapper) => {
                 let mut old_url = job_state.url.clone();
-                let old_params = job_state.params.clone();
                 let old_job_state = JobState {
                     url: &mut old_url,
-                    params: &old_params,
+                    params: job_state.params,
                     string_vars: job_state.string_vars.clone()
                 };
                 let mapper_result=mapper.apply(job_state);
@@ -461,10 +465,9 @@ impl Mapper {
             Self::IfCondition {r#if, then, r#else} => if r#if.satisfied_by(job_state)? {then} else {r#else}.apply(job_state)?,
             Self::All(mappers) => {
                 let mut temp_url = job_state.url.clone();
-                let temp_params = job_state.params.clone();
                 let mut temp_job_state = JobState {
                     url: &mut temp_url,
-                    params: &temp_params,
+                    params: job_state.params,
                     string_vars: job_state.string_vars.clone()
                 };
                 for mapper in mappers {
@@ -544,13 +547,12 @@ impl Mapper {
             // Other parts.
 
             Self::SetHost(new_host) => job_state.url.set_host(Some(new_host))?,
-            Self::RemovePathSegments(indices) => job_state.url.set_path(&job_state.url.path_segments().ok_or(MapperError::UrlDoesNotHaveAPath)?.enumerate().filter_map(|(i, x)| (!indices.contains(&i)).then_some(x)).collect::<Vec<_>>().join("/")),
             Self::Join(with) => *job_state.url=job_state.url.join(get_str!(with, job_state, MapperError))?,
 
             // Generic part handling.
 
             Self::SetPart{part, value} => part.set(job_state.url, get_option_string!(value, job_state).as_deref())?, // The deref is needed for borrow checking reasons.
-            Self::ModifyPart{part, how} => part.modify(how, job_state)?,
+            Self::ModifyPart{part, modification} => part.modify(modification, job_state)?,
             Self::CopyPart{from, to} => to.set(job_state.url, from.get(job_state.url).map(|x| x.into_owned()).as_deref())?,
 
             // Miscellaneous.
@@ -589,7 +591,7 @@ impl Mapper {
             },
             Self::ModifyJobStringVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let mut temp = job_state.string_vars.get_mut(&name).ok_or(MapperError::JobStateVarIsNone)?.to_owned();
+                let mut temp = job_state.string_vars.get_mut(&name).ok_or(MapperError::JobStateStringVarIsNone)?.to_owned();
                 modification.apply(&mut temp, job_state)?;
                 let _ = job_state.string_vars.insert(name, temp);
             }

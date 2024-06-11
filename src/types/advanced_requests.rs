@@ -76,7 +76,15 @@ impl RequestConfig {
     /// 
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, job_state: &JobState) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
-        let mut ret=job_state.params.http_client(self.client_config_diff.as_ref())?.request(self.method.clone(), match self.url {Some(ref source) => Url::parse(get_str!(source, job_state, RequestConfigError))?, None => job_state.url.clone()});
+        let mut ret=job_state.params
+            .http_client(self.client_config_diff.as_ref())?
+            .request(
+                self.method.clone(),
+                match self.url {
+                    Some(ref source) => Url::parse(get_str!(source, job_state, RequestConfigError))?,
+                    None => job_state.url.clone()
+                }
+            );
 
         ret = ret.headers(self.headers.clone());
         if let Some(body) = &self.body {ret=body.apply(ret, job_state)?;}

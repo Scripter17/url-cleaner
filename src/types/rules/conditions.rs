@@ -29,7 +29,9 @@ pub enum Condition {
     /// ```
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
+    /// 
     /// Intended primarily for debugging logic errors.
+    /// 
     /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
@@ -105,8 +107,13 @@ pub enum Condition {
     /// Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
     /// ```
     Any(Vec<Self>),
+    /// Passes if the condition in `map` whose key is the value returned by `part`'s [`UrlPart::get`] passes.
+    /// # Errors
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     PartMap {
+        /// The part to get.
         part: UrlPart,
+        /// The map specifying which values should run which conditions.
         map: HashMap<Option<String>, Self>
     },
 
@@ -239,9 +246,8 @@ pub enum Condition {
     /// ```
     UnqualifiedAnyTld(String),
     /// Similar to [`Condition::UnqualifiedAnyTld`] but only checks if the subdomain is empty or `www`.
-    /// `Condition::MaybeWWWAnyTld("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnyTld("example.com".to_string()), Condition::QualifiedAnyTld("www.example.com".to_string())])`.
     /// 
-    /// Similar to [`UrlPart::`]
+    /// `Condition::MaybeWWWAnyTld("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnyTld("example.com".to_string()), Condition::QualifiedAnyTld("www.example.com".to_string())])`.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -384,23 +390,38 @@ pub enum Condition {
 
     // String source.
 
-    /// Passes if [`Self::StringIs::source`]'s call to [`StringSource::get`] returns the same value as [`Self::StringIs::source`]'s [`Option::flatten`]'d call to [`StringSource::get`].
+    /// Passes if `source` and `value`'s calls to [`StringSource::get`] return the same value.
     /// # Errors
-    /// If [`Self::StringIs::source`]'s call to [`StringSource::get`] returns [`None`], reutrns the error [`ConditionError::StringSourceIsNone`].
+    /// If either call to [`StringSource::get`] reutrns an error, that error is returned.
     StringIs {
-        source: StringSource,
+        /// The left hand side of the `==` operation.
+        source: Option<StringSource>,
+        /// The right hadn side of the `==` operation.`
         value: Option<StringSource>
     },
     /// Passes if [`Self::StringContains::source`] contains [`Self::StringContains::value`] at [`Self::StringContains::where`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     StringContains {
+        /// The haystack to search in.
         source: StringSource,
+        /// The needle to look for.
         value: StringSource,
+        /// Where to look (defaults to [`StringLocation::Anywhere`]).
         #[serde(default)]
         r#where: StringLocation
     },
     /// Passes if [`Self::StringMatches::source`] contains [`Self::StringMatches::matcher`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     StringMatches {
+        /// The string to match.
         source: StringSource,
+        /// The matcher.
         matcher: StringMatcher
     },
 
@@ -587,7 +608,7 @@ impl Condition {
 
             // String source.
 
-            Self::StringIs {source, value} => source.get(job_state)?.as_deref()==get_option_str!(value, job_state),
+            Self::StringIs {source, value} => get_option_str!(source, job_state)==get_option_str!(value, job_state),
             Self::StringContains {source, value, r#where} => r#where.satisfied_by(get_str!(source, job_state, ConditionError), get_str!(value, job_state, ConditionError))?,
             Self::StringMatches {source, matcher} => matcher.satisfied_by(get_str!(source, job_state, ConditionError), job_state)?,
 

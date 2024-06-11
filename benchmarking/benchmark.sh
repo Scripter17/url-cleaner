@@ -13,7 +13,7 @@ if [ $? -ne 0 ]; then exit; fi
 measure () {
   url=$1
   count=$2
-  out=$(echo "$url" | head -c 50 | sed "s/\//-/g" && echo -n "-$count")
+  out=$(echo -n "$url" | head -c 50 | sed "s/\//-/g" && echo -n "-$count")
 
   yes $url | head -n $count > stdin
 
@@ -29,6 +29,8 @@ measure () {
 
 measure "" 0
 for url in "${URLS[@]}"; do
+  echo IN: $url
+  echo OUT: $($COMMAND "$url")
   for count in "${COUNTS[@]}"; do
     measure "$url" $count
   done

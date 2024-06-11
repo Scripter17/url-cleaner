@@ -25,17 +25,6 @@ However, for some websites (such as amazon) URL Cleaner strips more stuff than s
 
 As with Tor, protests, and anything else where privacy matters, safety comes in numbers.
 
-## Variables
-
-Variables let you specify behaviour with the `--var name=value --var name2=value2` command line syntax.
-Various variables are included in the default config for things I want to do frequently.
-
-- `twitter-embed-domain`: The domain to use for twitter URLs when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
-- `breezewiki-domain`: The domain to use to turn `fandom.com` URLs into [BreezeWiki](https://breezewiki.com/) URLs. Defaults to `breezewiki.com`
-- `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is set. Should not start with `.` as that's added automatically. Left unset by default.
-
-If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
-
 ## Flags
 
 Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
@@ -43,6 +32,9 @@ Various flags are included in the default config for things I want to do frequen
 
 - `minimize`: Remove non-essential parts of URLs that are likely not tracking related.
 - `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc` and `https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
+- `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` URLs to `https://example2.com/abc` URLs.
+- `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` URLs to `https://example2.com/profile/user` URLs.
+- `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` URLs to `https://username.example.com` URLs.
 - `no-https-upgrade`: Disable replacing `http://` URLs with `https://` URLs.
 - `assume-cctld-is-shortlink`: Treat all domains ending in a 2 letter top level domain as shortlinks. Yes this does cause issues with stuff like google.
 - `assume-1-dot-2-is-shortlink`: Treat all domains that are one character followed by a 2 letter top level domain as shortlinks. Let's be real, they all are.
@@ -59,6 +51,25 @@ Various flags are included in the default config for things I want to do frequen
 
 If a flag is set in a config's `"params"` field, it can be unset using `--unflag flag1 --unflag flag1`.
 
+## Variables
+
+Variables let you specify behaviour with the `--var name=value --var name2=value2` command line syntax.
+Various variables are included in the default config for things I want to do frequently.
+
+- `twitter-embed-domain`: The domain to use for twitter URLs when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
+- `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki URLs into [BreezeWiki](https://breezewiki.com/) URLs. Defaults to `breezewiki.com`
+- `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is set. Should not start with `.` as that's added automatically. Left unset by default.
+
+If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
+
+## Sets
+
+- `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is set. `fandom.com` is always replaced and is therefore not in this set.
+- `shortlink-hosts`: Hosts that are considered shortlinks in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandShortLink` mapper applied.
+- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
+    Please note that the UTP rule in the default config also removes any parmeter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
+- `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
+
 ## Custom rules
 
 Although proper documentation of the config schema is pending me being bothered to do it, the `url_cleaner` crate itself is well documented and the structs and enums are (I think) fairly easy to understand.  
@@ -67,6 +78,18 @@ Additionally [`url_part.rs`](src/types/url_part.rs), [`string_location.rs`](src/
 
 Until I publish URL Cleaner on crates.io/docs.rs, you can read the documentation by `git clone`ing this repository and running `cargo doc --no-deps` in the root directory then viewing the files in `target/doc/url_cleaner` in a web browser.  
 If the URL in your web browser looks like `file:///run/...` and the webpage is white with numbers on the left side, you should run `python3 -m http.server` in the cloned folder and open `http://localhost:8000/target/doc/url_cleaner/`.
+
+### Footguns
+
+There are various things in/about URL Cleaner that I or many consider stupid but for various reasons cannot/should not be fixed. These include but are not limited to:
+
+- There are various `UrlPart` variants that use "suffix" semantics (treating `google.co.uk` the same as `google.com`).
+    For this, URL Cleaner uses the [`psl`](https://docs.rs/psl/latest/psl/) crate which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/).
+    Mozilla's PSL includes `blogspot.com` which has various counterintuitive side effects that are documented in affected `UrlPart` variants.
+    This is not the fault of the maintainers of the psl crate, arguably not the fault of Mozilla, and slightly less arguably not even the fault of google/the people at google which submitted `blogspot.com` to Mozilla's PSL.
+    Also, this is not the fault of the URL spec as suffix semantics aren't actually a part of them. The TLD of `google.co.uk` *is* `uk`.
+    I have decided to not diverge from the behavior the `psl` crate exhibits and have instead decided to make sure people know about this.
+    I may or may not add a way to remove certain suffixes from the public suffix list URL Cleaner uses.
 
 ### Tips for people who don't know Rust's syntax:
 
