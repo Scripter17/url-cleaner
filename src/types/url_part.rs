@@ -321,14 +321,14 @@ pub enum UrlPart {
     /// 
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
-    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::WWWNotSubdomain`] of `https://blogspot.com` returns `None` and `https://www.blogspot.com` returns [`Some("www.blogspot.com")`].
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::MaybeWWWNotSubdomain`] of `https://blogspot.com` returns `None` and `https://www.blogspot.com` returns [`Some("www.blogspot.com")`].
     /// 
     /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Is `None` when the URL's host is a domain with a subdomain that isn't `None` or `Some("www")`.
     /// # Setting
     /// If the URL's subdomain is `None` or `Some("www")`, behaves the same as [`Self::NotSubdomain`].
-    WWWNotSubdomain,
+    MaybeWWWNotSubdomain,
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::NotDomainSuffix`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
@@ -879,7 +879,7 @@ impl UrlPart {
                 Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.strip_suffix('.')?)
             },
             Self::NotSubdomain    => Cow::Borrowed(psl::domain_str(url.domain()?)?),
-            Self::WWWNotSubdomain => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::NotSubdomain.get(url)} else {None}?,
+            Self::MaybeWWWNotSubdomain => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::NotSubdomain.get(url)} else {None}?,
             Self::NotDomainSuffix => {
                 let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
                 Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.strip_suffix('.')?)
@@ -1001,7 +1001,7 @@ impl UrlPart {
                     set_domain(url, &Self::Subdomain.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?.to_string())?;
                 }
             },
-            (Self::WWWNotSubdomain, _) => match Self::Subdomain.get(url).as_deref() {
+            (Self::MaybeWWWNotSubdomain, _) => match Self::Subdomain.get(url).as_deref() {
                 Some("www") | None => Self::NotSubdomain.set(url, to), // What did you think "behaves the same" meant? :P
                 _ => Err(UrlPartSetError::HostIsNotMaybeWWWDomain)
             }?,

@@ -6,44 +6,43 @@
 		},
 		"sets": {
 			"breezewiki-hosts": [
-				"breezewiki.com", "antifandom.com", "breezewiki.pussthecat.org", "bw.hamstro.dev",
-				"bw.projectsegfau.lt", "breeze.hostux.net", "bw.artemislena.eu", "nerd.whatever.social",
-				"breezewiki.frontendfriendly.xyz", "breeze.nohost.network", "breeze.whateveritworks.org",
-				"z.opnxng.com", "breezewiki.hyperreal.coffee", "breezewiki.catsarch.com",
-				"breeze.mint.lgbt", "breezewiki.woodland.cafe", "breezewiki.nadeko.net",
-				"bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
-				"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion"
+				"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org",
+				"breezewiki.catsarch.com", "breezewiki.com", "breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net",
+				"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe",
+				"bw.artemislena.eu", "bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
+				"nerd.whatever.social", "z.opnxng.com"
 			],
 			"shortlink-hosts": [
-				"a.co", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bloom.bg", "buff.ly", "cbsn.ws", "cfl.re",
-				"cnb.cx", "cnn.it", "cos.lv", "dlvr.it", "e.emailalerts.cnn.com", "flip.it", "forms.gle", "goo.gl", "gum.co",
-				"k00.fr", "linkr.it", "lnk.to", "mzl.la", "on.ft.com", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "redd.it",
-				"reurl.cc", "rzr.to", "shorturl.at", "spoti.fi", "t.co", "tmz.me", "tr.ee", "trib.al"
+				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "blizz.ly", "bloom.bg",
+				"boxd.it", "buff.ly", "buff.ly", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnb.cx", "cnn.it", "cnn.it", "cos.lv",
+				"cutt.ly", "cutt.ly", "db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fb.me", "flip.it", "forms.gle",
+				"g.co", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "k00.fr", "kck.st",
+				"link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ny.ti", "nyti.ms", "nyto.ms",
+				"on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st",
+				"py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi", "sqex.to", "t.co",
+				"t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
 			],
 			"utps": [
-				"action_object_map", "action_ref_map", "action_type_map", "adfrom", "adjust_adgroup", "adjust_campaign", 
-				"adjust_creative", "adjust_referrer", "adjust_tracker", "adjust_tracker_limit", "admitad_uid", "af_ad", "af_adset", 
-				"af_click_lookback", "af_force_deeplink", "af_xp", "aiad_clid", "asgtbndr", "at_campaign", "at_campaign_type", 
-				"at_creation", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", 
-				"at_ptr_name", "at_recipient_id", "at_recipient_list", "at_send_date", "awc", "_branch_match_id", "_branch_referrer", 
-				"bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "cjdata", "cjevent", "_clde", "_cldee", 
-				"click", "cm_cr", "cm_me", "cmpid", "cuid", "cx_click", "cx_recsOrder", "cx_recsWidget", "dclid", 
-				"dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", "ebisAdID", "erid", "et_rid", "external_click_id", 
-				"famad_xuid", "fb_action_ids", "fb_action_types", "fbclid", "fb_comment_id", "fb_ref", "fb_source", "_ga", 
-				"gad_source", "gbraid", "gci", "gclid", "gclsrc", "_gl", "gps_adid", "guccounter", "guce_referrer", 
-				"guce_referrer_sig", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", 
-				"hsa_src", "hsa_tgt", "hsa_ver", "hsCtaTracking", "hsctatracking", "_hsenc", "__hsfp", "__hssc", "__hstc", "icid", 
-				"iclid", "__io_lv", "_io_session_id", "ir_adid", "ir_campaignid", "irclickid", "irgwc", "ir_partnerid", 
-				"is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "key", "_kx", 
-				"maf", "mc_eid", "message", "mindbox", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "ml_subscriber", 
-				"ml_subscriber_hash", "msclkid", "mt_link_id", "mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", 
-				"mtm_medium", "mtm_placement", "mtm_source", "nx_source", "oft_c", "oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", 
-				"oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_ope", "_openstat", "oprtrack", "pk_campaign", "pk_cid", "pk_medium", 
-				"pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "__s", "s_cid", "_sgm_action", 
-				"_sgm_campaign", "_sgm_source", "sms_click", "sms_source", "sms_uph", "source", "spot_im_redirect_source", "srsltid", 
-				"sscid", "ss_email_id", "Tcsack", "tduid", "_trkparms", "_trksid", "ttclid", "twclid", "unicorn_click_id", 
-				"user_email_address", "usqp", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", 
-				"vsm_type", "wbraid", "wickedid", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid", "_zucks_suid"
+				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
+				"_gl", "_hsenc", "_io_session_id", "_kx", "_ope", "_openstat", "_sgm_action", "_sgm_campaign", "_sgm_source", "_trkparms",
+				"_trksid", "_zucks_suid", "action_object_map", "action_ref_map", "action_type_map", "adfrom", "adjust_adgroup", "adjust_campaign",
+				"adjust_creative", "adjust_referrer", "adjust_tracker", "adjust_tracker_limit", "admitad_uid", "af_ad", "af_adset", "af_click_lookback",
+				"af_force_deeplink", "af_xp", "aiad_clid", "asgtbndr", "at_campaign", "at_campaign_type", "at_creation", "at_emailtype", "at_link",
+				"at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id", "at_recipient_list", "at_send_date",
+				"awc", "bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "cjdata", "cjevent", "click", "cm_cr", "cm_me",
+				"cmpid", "cuid", "cx_click", "cx_recsOrder", "cx_recsWidget", "dclid", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source",
+				"ebisAdID", "erid", "et_rid", "external_click_id", "famad_xuid", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref",
+				"fb_source", "fbclid", "gad_source", "gbraid", "gci", "gclid", "gclsrc", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig",
+				"hsCtaTracking", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt",
+				"hsa_ver", "hsctatracking", "icid", "iclid", "ir_adid", "ir_campaignid", "ir_partnerid", "irclickid", "irgwc", "is_retargeting",
+				"itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "key", "maf", "mc_eid", "message", "mindbox",
+				"mindbox-click-id", "mindbox-message-key", "mkt_tok", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mt_link_id", "mtm_campaign",
+				"mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "nx_source", "oft_c", "oft_ck",
+				"oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "pk_campaign", "pk_cid",
+				"pk_medium", "pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "s_cid", "sms_click", "sms_source", "sms_uph", "source",
+				"spot_im_redirect_source", "srsltid", "ss_email_id", "sscid", "tduid", "ttclid", "twclid", "unicorn_click_id", "user_email_address",
+				"usqp", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
+				"ymclid", "ymid", "ysclid"
 			],
 			"https-upgrade-host-whitelist": ["orteil.dashnet.org"]
 		},
@@ -53,7 +52,8 @@
 				"sec-gpc": "1",
 				"dnt": "1"
 			},
-			"referer": false
+			"referer": false,
+			"redirect_policy": "None"
 		}
 	},
 	"tests": [
@@ -124,7 +124,7 @@
 						"condition": {"All": [
 							{"PartIs": {"part": "Scheme", "value": "http"}},
 							{"Not": {"FlagIsSet": "no-https-upgrade"}},
-							{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-whitelist"}}}}
+							{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-blacklist"}}}}
 						]},
 						"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 					},
@@ -151,37 +151,41 @@
 								}
 							},
 							{
-								"PartMap": {
-									"part": "Host",
+								"StringSourceMap": {
+									"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
 									"map": {
 										"pawoo.net": {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
 										"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
-										"allmylinks.com": {"PathIs": "/link/out"}
+										"allmylinks.com": {"PathIs": "/link/out"},
+										"gofundme.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
 									}
 								}
 							}
 						]},
-						"mapper": {
-							"ExpandShortLink": {
-								"http_client_config_diff": {
-									"redirect_policy": "None"
-								}
-							}
-						}
+						"mapper": {"ExpandShortLink": {}}
+					},
+
+
+
+					{
+						"condition": {"UnqualifiedDomain": "gf.me"},
+						"mapper": {"All": [
+							{"SetHost": "www.gofundme.com"},
+							{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "url_shortener"}}
+						]}
 					},
 
 
 
 					{
 						"condition": {
-							"PartMap": {
-								"part": "Host",
+							"StringSourceMap": {
+								"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
 								"map": {
-									"pixiv.net"         : {"PathIs": "/jump.php"},
-									"www.pixiv.net"     : {"PathIs": "/jump.php"},
-									"deviantart.com"    : {"PathIs": "/users/outgoing"},
-									"www.deviantart.com": {"PathIs": "/users/outgoing"},
-									"api.linkr.bio"     : {"PathIs": "/callbacks/go"}
+									"pixiv.net"     : {"PathIs": "/jump.php"},
+									"deviantart.com": {"PathIs": "/users/outgoing"},
+									"api.linkr.bio" : {"PathIs": "/callbacks/go"},
+									"sketchfab.com" : {"PartIs": {"part": {"PathSegment": 0}, "value": "s"}}
 								}
 							}
 						},
@@ -220,8 +224,60 @@
 
 
 					{
-						"condition": {"QualifiedDomain": "t.umblr.com"},
-						"mapper": {"GetUrlFromQueryParam": "z"}
+						"StringSourceMap": {
+							"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+							"map": {
+								"t.umblr.com": {"GetUrlFromQueryParam": "z"},
+								"skfb.ly": {"All": [
+									{"SetHost": "sketchfab.com"},
+									{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "s"}}
+								]},
+								"smarturl.it": {"IfCondition": {
+									"condition": {"Not": {"FlagIsSet": "no-http"}},
+									"mapper": {"SetPart": {
+										"part": "Whole",
+										"value": {"Modified": {
+											"source": {"HttpRequest": {}},
+											"modification": {"All": [
+												{"RegexCaptures": {
+													"regex": "\"originalUrl\":\"(.+?)\"",
+													"replace": "$1"
+												}},
+												{"Replace": {"find": "\\/", "replace": "/"}}
+											]}
+										}}
+									}}
+								}},
+								"href.li": {"SetPart": {
+									"part": "Whole",
+									"value": {"Modified": {
+										"source": {"Part": "Query"},
+										"modification": "URLDecode"
+									}}
+								}},
+								"instagr.am": {"SetHost": "instagram.com"},
+								"bfy.tw": {"IfCondition": {
+									"condition": {"Not": {"FlagIsSet": "no-http"}},
+									"mapper": {"SetPart": {
+										"part": "Whole",
+										"value": {"Modified": {
+											"source": {"HttpRequest": {
+												"http_client_config_diff": {"danger_accept_invalid_certs": true}
+											}},
+											"modification": {"RegexCaptures": {
+												"regex": "href=\"(.+?)\"",
+												"replace": "$1"
+											}}
+										}}
+									}}
+								}},
+								"lmgtfy.com": {"All": [{"SetHost": "google.com"}, {"SetPart": {"part": "Path", "value": "/search"}}]},
+								"lmgtfy.app": {"All": [{"SetHost": "google.com"}, {"SetPart": {"part": "Path", "value": "/search"}}]},
+								"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
+								"buymeacoff.ee": {"SetHost": "buymeacoffee.com"},
+								"cach.me": {"SetHost": "cash.app"}
+							}
+						}
 					},
 
 
@@ -252,7 +308,7 @@
           {
 						"condition": {"Any": [
 							{"All": [
-								{"UnqualifiedAnyTld": "google"},
+								{"UnqualifiedAnySuffix": "google"},
 								{"PathIs": "/url"}
 							]},
 							{"All": [
@@ -282,6 +338,7 @@
 					},
 					{
 						"condition": {"All": [
+							{"Not": {"FlagIsSet": "no-http"}},
 							{"MaybeWWWDomain": "tinyurl.com"},
 							{"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}
 						]},
@@ -296,30 +353,6 @@
 							}}
 						}}
 					},
-
-
-
-					{
-						"condition": {"UnqualifiedDomain": "href.li"},
-						"mapper": {
-							"SetPart": {
-								"part": "Whole",
-								"value": {
-									"Modified": {
-										"source": {"Part": "Query"},
-										"modification": "URLDecode"
-									}
-								}
-							}
-						}
-					},
-
-
-
-          {
-          	"condition": {"QualifiedDomain": "instagr.am"},
-          	"mapper": {"SetHost": "instagram.com"}
-          },
 
 
 
@@ -528,7 +561,12 @@
 					"steampowered.com": {"RemoveQueryParams": ["snr"]},
 					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
 					"bell.ca": {"RemoveQueryParams": ["INT"]},
-					"fxdeviantart.com": {"SetPart": {"part": "NotSubdomain", "value": "deviantart.com"}}
+					"fxdeviantart.com": {"SetPart": {"part": "NotSubdomain", "value": "deviantart.com"}},
+					"hulu.com": {"RemoveQueryParams": ["from"]},
+					"thrn.co": {"All": [
+						{"SetHost": "throne.com"},
+						{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+					]}
 				}
 			}
 		},
@@ -546,7 +584,7 @@
 				"part": "Host",
 				"map": {
 					"at.tumblr.com": {"All": [
-						{"SetHost": "www.tumblr.com"},
+						{"SetHost": "tumblr.com"},
 						{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
 						"RemoveQuery"
 					]}
@@ -603,19 +641,106 @@
 
 
 		{
-			"condition": {"All": [
-				{"FlagIsSet": "minimize"},
-				{"PartIs": {"part": {"PathSegment": 1}, "value": "ip"}},
-				{"UnqualifiedAnyTld": "walmart"}
-			]},
-			"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
+			"CommonCondition": {
+				"condition": {"UnqualifiedAnySuffix": "amazon"},
+				"rules": [
+					{
+						"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/gp/offer-listing/"}},
+						"mapper": {"All": [
+							{"SetPart": {"part": {"PathSegment": 0}, "value": "dp"}},
+							{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
+							{"SetPart": {"part": {"QueryParam": "aod"}, "value": "1"}}
+						]}
+					},
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "minimize"},
+							{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
+						]},
+						"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+					},
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "minimize"},
+							{"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}}
+						]},
+						"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
+					},
+					{
+						"condition": {
+							"PartMatches": {
+								"part": "Path",
+								"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
+							}
+						},
+						"mapper": {"AllowQueryParams": ["aod"]}
+					},
+					{
+						"condition": {"PathIs": "/s"},
+						"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
+					},
+					{
+						"condition": {"All": [
+							{
+								"PartMatches": {
+									"part": "Path",
+									"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
+								}
+							},
+							{"Any": [
+								{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
+								{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
+								{"PartMatches": {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
+							]}
+						]},
+						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+					},
+					{
+						"condition": {"PathIs": "/gp/buyagain"},
+						"mapper": {"AllowQueryParams": ["ats"]}
+					},
+					{
+						"condition": {"Any": [
+							{"PathIs": "/gp/customer-reviews"},
+							{"PartIs": {"part": {"PathSegment": 0}, "value": "product-reviews"}}
+						]},
+						"mapper": "RemoveQuery"
+					},
+					{
+						"condition": "Always",
+						"mapper": {"RemoveQueryParams": ["ref", "ref_", "node", "ie"]}
+					}
+				]
+			}
 		},
 
 
 
 		{
-			"condition": {"UnqualifiedAnyTld": "bestbuy"},
-			"mapper": {"RemoveQueryParams": ["icmp"]}
+			"PartRuleMap": {
+				"part": "DomainMiddle",
+				"map": {
+					"ebay": {
+						"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "itm"}},
+						"mapper": "RemoveQuery"
+					},
+					"pinterest": {
+						"condition": {"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}},
+						"mapper": "RemoveQuery"
+					},
+					"walmart": {
+						"condition": {"All": [
+							{"FlagIsSet": "minimize"},
+							{"PartIs": {"part": {"PathSegment": 1}, "value": "ip"}}
+						]},
+						"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
+					},
+					"bestbuy": {
+						"condition": "Always",
+						"mapper": {"RemoveQueryParams": ["icmp"]}
+					}
+				}
+			}
 		},
 
 
@@ -648,14 +773,14 @@
 		{
 			"condition": {"All": [
 				{"PathIs": "/search"},
-				{"MaybeWWWAnyTld": "google"}
+				{"MaybeWWWAnySuffix": "google"}
 			]},
 			"mapper": {"AllowQueryParams": ["hl", "q", "tbm", "p"]}
 		},
 		{
 			"condition": {"All": [
 				{"PathIs": "/setprefs"},
-				{"MaybeWWWAnyTld": "google"}
+				{"MaybeWWWAnySuffix": "google"}
 			]},
 			"mapper": {"RemoveQueryParams": ["sa", "ved"]}
 		},
@@ -778,90 +903,25 @@
 
 
 		{
-			"CommonCondition": {
-				"condition": {"UnqualifiedAnyTld": "amazon"},
-				"rules": [
-					{
-						"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/gp/offer-listing/"}},
-						"mapper": {"All": [
-							{"SetPart": {"part": {"PathSegment": 0}, "value": "dp"}},
-							{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
-							{"SetPart": {"part": {"QueryParam": "aod"}, "value": "1"}}
-						]}
-					},
-					{
-						"condition": {"All": [
-							{"FlagIsSet": "minimize"},
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
-						]},
-						"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
-					},
-					{
-						"condition": {"All": [
-							{"FlagIsSet": "minimize"},
-							{"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}}
-						]},
-						"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
-					},
-					{
-						"condition": {
-							"PartMatches": {
-								"part": "Path",
-								"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
-							}
-						},
-						"mapper": {"AllowQueryParams": ["aod"]}
-					},
-					{
-						"condition": {"PathIs": "/s"},
-						"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
-					},
-					{
-						"condition": {"All": [
-							{
-								"PartMatches": {
-									"part": "Path",
-									"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
-								}
-							},
-							{"Any": [
-								{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
-								{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
-								{"PartMatches": {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
-							]}
-						]},
-						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
-					},
-					{
-						"condition": {"PathIs": "/gp/buyagain"},
-						"mapper": {"AllowQueryParams": ["ats"]}
-					},
-					{
-						"condition": {"Any": [
-							{"PathIs": "/gp/customer-reviews"},
-							{"PartIs": {"part": {"PathSegment": 0}, "value": "product-reviews"}}
-						]},
-						"mapper": "RemoveQuery"
-					},
-					{
-						"condition": "Always",
-						"mapper": {"RemoveQueryParams": ["ref", "ref_", "node", "ie"]}
-					}
-				]
-			}
+			"condition": {"Any": [
+				{"PartContains": {
+					"part": "DomainMiddle",
+					"value": "disney"
+				}},
+				{"UnqualifiedDomain": "go.com"},
+				{"UnqualifiedDomain": "marvel.com"}
+			]},
+			"mapper": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]}
 		},
+
+
+
 		{
 			"condition": {"All": [
-				{"MaybeWWWAnyTld": "ebay"},
-				{"PartIs": {"part": {"PathSegment": 0}, "value": "itm"}}
+				{"Not": {"FlagIsSet": "no-http"}},
+				{"FlagIsSet": "onion-location"},
+				{"PartIs": {"part": "Scheme", "value": "https"}}
 			]},
-			"mapper": "RemoveQuery"
-		},
-
-
-
-		{
-			"condition": {"FlagIsSet": "onion-location"},
 			"mapper": {"IgnoreError":
 				{"SetPart": {
 					"part": "Origin",
@@ -893,16 +953,6 @@
 
 
 		{
-			"condition": {"All": [
-				{"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}},
-				{"UnqualifiedAnyTld": "pinterest"}
-			]},
-			"mapper": "RemoveQuery"
-		},
-
-
-
-		{
 			"comment": "The query paramaters to always remove.",
 			"FireFox-Source": "https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html",
 			"Brave-Source": "https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc",
@@ -915,8 +965,8 @@
 					{"Contains": {"where": "Start", "value": "__s"}},
 					{"Contains": {"where": "Start", "value": "at_custom"}},
 					{"Contains": {"where": "Start", "value": "utm_"}}
-				]}
-			}
+				]
+			}}
 		}
 	]
 }

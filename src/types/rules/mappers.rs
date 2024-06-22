@@ -37,21 +37,19 @@ pub enum Mapper {
 
     // Logic.
 
-    /// If `r#if` passes, apply `then`, otherwise apply `r#else`.
+    /// If `condition` passes, apply `mapper`, otherwise apply `else_mapper`.
     /// # Errors
-    /// If `r#if` returns an error, that error is returned.
+    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     /// 
-    /// If `r#if` passes and `then` returns an error, that error is returned.
-    /// 
-    /// If `r#if` fails and `r#else` returns an error, that error is returned.
+    /// If either possible call to [`Mapper::apply`] returns an error, that error is returned.
     IfCondition {
-        /// The [`Condition`] that decides if `then` or `r#else` is used.
-        r#if: Condition,
-        /// The [`Self`] to use if `r#if` passes.
-        then: Box<Self>,
-        /// The [`Self`] to use if `r#if` fails.
-        #[serde(default = "box_mapper_none")]
-        r#else: Box<Self>
+        /// The [`Condition`] that decides if `mapper` or `else_mapper` is used.
+        condition: Condition,
+        /// The [`Self`] to use if `conditionf` passes.
+        mapper: Box<Self>,
+        /// The [`Self`] to use if `confition` fails.
+        #[serde(default)]
+        else_mapper: Option<Box<Self>>
     },
     /// Applies the contained [`Self`]s in order.
     /// # Errors
@@ -340,9 +338,6 @@ pub enum Mapper {
     }
 }
 
-/// The default value of [`Mapper::IfCondition::else`].
-fn box_mapper_none() -> Box<Mapper> {Box::new(Mapper::None)}
-
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Debug, Error)]
 pub enum MapperError {
@@ -462,7 +457,11 @@ impl Mapper {
 
             // Logic.
 
-            Self::IfCondition {r#if, then, r#else} => if r#if.satisfied_by(job_state)? {then} else {r#else}.apply(job_state)?,
+            Self::IfCondition {condition, mapper, else_mapper} => if condition.satisfied_by(job_state)? {
+                mapper.apply(job_state)?;
+            } else if let Some(else_mapper) = else_mapper {
+                else_mapper.apply(job_state)?;
+            },
             Self::All(mappers) => {
                 let mut temp_url = job_state.url.clone();
                 let mut temp_job_state = JobState {

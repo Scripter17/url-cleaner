@@ -8,7 +8,7 @@ use crate::util::*;
 /// A wrapper around [`str`]'s various substring searching functions.
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringLocation {
     /// Always passes.
     Always,
@@ -89,7 +89,6 @@ pub enum StringLocation {
     /// assert_eq!(StringLocation::Anywhere.satisfied_by("abcdef", "cde").unwrap(), true );
     /// assert_eq!(StringLocation::Anywhere.satisfied_by("abcdef", "efg").unwrap(), false);
     /// ```
-    #[default]
     Anywhere,
     /// Checks if an instance of the needle exists at the start of the haystack.
     /// # Examples
@@ -209,6 +208,14 @@ pub enum StringLocation {
     }
 }
 
+// The [`Default`] derive macro doesn't say which enum the default is.
+impl Default for StringLocation {
+    /// [`Self::Anywhere`].
+    fn default() -> Self {
+        Self::Anywhere
+    }
+}
+
 /// The enum of all possible errors [`StringLocation::satisfied_by`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
@@ -216,17 +223,17 @@ pub enum StringLocationError {
     /// Returned when [`StringLocation::Error`] is used.
     #[error("StringLocation::Error was used.")]
     ExplicitError,
-    /// Returned when the requested slice is either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
+    /// Returned when the requested slice is either not on a UTF-8 boundary or is out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundary or was out of bounds.")]
     InvalidSlice,
-    /// Returned when the requested index is either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
+    /// Returned when the requested index is either not on a UTF-8 boundary or is out of bounds.
+    #[error("The requested index was either not on a UTF-8 boundary or was out of bounds.")]
     InvalidIndex,
     /// Returned when the requested segment is not found.
     #[error("The requested segment was not found.")]
     SegmentNotFound,
-    /// Returned when both the `try` and `else` of a [`StringLocation::TryElse`] both return errors.
-    #[error("A `StringLocation::TryElse` had both `try` and `else` return an error.")]
+    /// Returned wjem a [`StringLocation::TryElse`] has both its `try` and `else` return an error.
+    #[error("A StringLocation::TryElse had both its `try` and `else` return an error.")]
     TryElseError {
         /// The error returned by [`StringLocation::TryElse::try`],
         try_error: Box<Self>,

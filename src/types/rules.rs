@@ -1,4 +1,4 @@
-//! The [`rules::Rule`] type is the primary interface for URL manipulation.
+//! The part of a config that actually modified URLs.
 
 use std::collections::HashMap;
 
@@ -11,6 +11,7 @@ mod mappers;
 pub use mappers::*;
 
 pub use crate::types::*;
+use crate::util::*;
 
 /// The main API for modifying URLs.
 /// 
@@ -19,7 +20,7 @@ pub use crate::types::*;
 pub enum Rule {
     /// Gets a certain part of a URL then applies a [`Mapper`] depending on the returned value.
     /// # Errors
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::PartValueNotInMap`].
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     PartMap {
@@ -30,7 +31,7 @@ pub enum Rule {
     },
     /// Gets a certain part of a URL then applies a [`Rule`] depending on the returned value.
     /// # Errors
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::PartValueNotInMap`].
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rule::apply`] returns an error, that error is returned.
     PartRuleMap {
@@ -41,7 +42,7 @@ pub enum Rule {
     },
     /// Gets a certain part of a URL then applies a [`Rules`] depending on the returned value.
     /// # Errors
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::PartValueNotInMap`].
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     PartRulesMap {
@@ -50,10 +51,52 @@ pub enum Rule {
         /// The map determining which [`Rules`] to apply.
         map: HashMap<Option<String>, Rules>
     },
-    /// Runs all the contained rules until none of their conditions pass.
+    /// Gets a string from a [`StringSource`] then applies a [`Mapper`] depending on the returned value.
+    /// # Rules
+    /// If the call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// 
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    StringSourceMap {
+        /// The [`StringSource`] to get the string from.
+        source: Option<StringSource>,
+        /// The map determining which [`Mapper`] to apply.
+        map: HashMap<Option<String>, Mapper>
+    },
+    /// Gets a string from a [`StringSource`] then applies a [`Rule`] depending on the returned value.
+    /// # Rules
+    /// If the call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// 
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// 
+    /// If the call to [`Rule::apply`] returns an error, that error is returned.
+    StringSourceRuleMap {
+        /// The [`StringSource`] to get the string from.
+        source: Option<StringSource>,
+        /// The map determining which [`Mapper`] to apply.
+        map: HashMap<Option<String>, Rule>
+    },
+    /// Gets a string from a [`StringSource`] then applies a [`Rules`] depending on the returned value.
+    /// # Rules
+    /// If the call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// 
+    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// 
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    StringSourceRulesMap {
+        /// The [`StringSource`] to get the string from.
+        source: Option<StringSource>,
+        /// The map determining which [`Mapper`] to apply.
+        map: HashMap<Option<String>, Rules>
+    },
+    /// Runs all the contained rules in a loop until none of their conditions pass.
+    /// 
     /// Runs at most `limit` times. (Defaults to 10).
+    /// # Implementation details
+    /// While [`Self::RepeatUntilNonePass`] is a [`Rules`], [`Rules::apply`] is not called due to needing to keep track of if any contained [`Rule`]s... pass. I need a better term for that/
     /// # Errors
-    /// If a contained [`Self`] returns any error other than [`RuleError::FailedCondition`], that error is returned.
+    /// If any call to a [`Self`] contained in the specified [`Rules`] returns an error other than [`RuleError::FailedCondition`] and [`RuleError::ValueNotInMap`], the error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -61,14 +104,14 @@ pub enum Rule {
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// assert!(Rule::RepeatUntilNonePass {
-    ///     rules: vec![
+    ///     rules: Rules(vec![
     ///         Rule::Normal {
     ///             condition: Condition::Always,
     ///             mapper: Mapper::SetPart {
     ///                 part: UrlPart::NextPathSegment,
     ///                 value: Some(FromStr::from_str("a").unwrap())
     ///             }
-    ///         }
+    ///         })
     ///     ],
     ///     limit: 10
     /// }.apply(&mut JobState::new(&mut url)).is_ok());
@@ -76,14 +119,14 @@ pub enum Rule {
     /// ```
     RepeatUntilNonePass {
         /// The rules to repeat.
-        rules: Vec<Rule>,
+        rules: Rules,
         /// The max amount of times to repeat them.
         /// 
         /// Defaults to 10.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
-    /// When many rules share a common condition (such as `{"UnqualifiedAnyTLD": "amazon"}`), it often makes semantic and performance sense to merge them all into one.
+    /// When many rules share a common condition (such as `{"UnqualifiedAnySuffix": "amazon"}`), it often makes semantic and performance sense to merge them all into one.
     /// # Errors
     /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     /// 
@@ -96,12 +139,15 @@ pub enum Rule {
         /// The rules to run if [`Self::CommonCondition::condition`] passes.
         rules: Rules
     },
-    /// The basic condition mapper rule type.
+    /// The most basic type of rule. If the call to [`Condition::satisifed_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
+    /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
     /// # Errors
-    /// If the the contained condition or mapper returns an error, that error is returned.
+    /// If the call to [`Condition::satisifed_by`] returns an error, that error is returned.
     /// 
-    /// If the [`Condition`] doesn't pass, returns the error [`RuleError::FailedCondition`].
+    /// If the call to [`Condition::satisfied_by`] retuens `Some(false)`, returns the error [`RuleError::FailedCondition`].
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -134,9 +180,12 @@ pub enum RuleError {
     /// The mapper returned an error.
     #[error(transparent)]
     MapperError(#[from] MapperError),
-    /// Returned when the a part's value isn't found in a rule's [`HashMap`].
-    #[error("The part's value was not found in the rule's HashMap.")]
-    PartValueNotInMap
+    /// Returned when the requested value isn't found in a rule's [`HashMap`].
+    #[error("The requested value was not found in the rule's HashMap.")]
+    ValueNotInMap,
+    /// Returned when a [`StringSourceError`] is encountered.
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError)
 }
 
 impl Rule {
@@ -151,17 +200,23 @@ impl Rule {
             } else {
                 Err(RuleError::FailedCondition)
             },
-            Self::PartMap      {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(job_state)?),
-            Self::PartRuleMap  {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(job_state)?),
-            Self::PartRulesMap {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::PartValueNotInMap)?.apply(job_state)?),
-                        Self::RepeatUntilNonePass{rules, limit} => {
+            Self::PartMap      {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::PartRuleMap  {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::PartRulesMap {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringSourceMap      {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringSourceRuleMap  {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringSourceRulesMap {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::RepeatUntilNonePass{rules, limit} => {
+
+                // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rules::apply`]!!!
+
                 for _ in 0..*limit {
                     let mut done=true;
-                    for rule in rules {
+                    for rule in rules.0.iter() {
                         match rule.apply(job_state) {
-                            Err(RuleError::FailedCondition) => {},
-                            Ok(()) => done=false,
-                            e @ Err(_) => e?
+                            Err(RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
+                            e @ Err(_) => e?,
+                            _ => done=false
                         }
                     }
                     if done {break}
@@ -187,11 +242,11 @@ impl Rule {
 pub struct Rules(pub Vec<Rule>);
 
 impl Rules {
-    /// Applies each rule to the provided [`Url`] in order.
-    /// Bubbles up every unignored error except for [`RuleError::FailedCondition`] and [`RuleError::PartValueNotInMap`].
-    /// If an error is returned, `job_state.url` is left unmodified.
+    /// Applies each contained [`Rule`] to the provided [`JobState::url`] in order.
+    /// 
+    /// If an error is returned, `job_state.url` and `job_state.string_vars` are left unmodified.
     /// # Errors
-    /// If any contained [`Rule`] returns an error except [`RuleError::FailedCondition`] or [`RuleError::PartValueNotInMap`] is encountered, that error is returned.
+    /// If any contained [`Rule`] returns an error other than [`RuleError::FailedCondition`] or [`RuleError::ValueNotInMap`], that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         let mut temp_url = job_state.url.clone();
         let mut temp_job_state = JobState {
@@ -201,7 +256,7 @@ impl Rules {
         };
         for rule in &self.0 {
             match rule.apply(&mut temp_job_state) {
-                Err(RuleError::FailedCondition | RuleError::PartValueNotInMap) => {},
+                Err(RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
                 e @ Err(_) => e?,
                 _ => {}
             }

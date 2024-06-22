@@ -29,7 +29,10 @@ pub struct HttpClientConfig {
     pub no_proxy: bool,
     /// [`reqwest::blocking::ClientBuilder::referer`]. Defaults to [`false`]
     #[serde(default)]
-    pub referer: bool
+    pub referer: bool,
+    /// [`reqwest::blocking::ClientBuilder::danger_accept_invalid_certs`]. Defaults to [`false`].
+    #[serde(default)]
+    pub danger_accept_invalid_certs: bool
 }
 
 /// Bandaid fix until [`reqwest::redirect::Policy`] stops sucking.
@@ -65,7 +68,8 @@ impl HttpClientConfig {
         let mut temp = client.default_headers(self.default_headers.clone())
             .redirect(self.redirect_policy.clone().into())
             .https_only(self.https_only)
-            .referer(self.referer);
+            .referer(self.referer)
+            .danger_accept_invalid_certs(self.danger_accept_invalid_certs);
         for proxy in &self.proxies {
             temp = temp.proxy(proxy.make()?);
         }
@@ -97,7 +101,10 @@ pub struct HttpClientConfigDiff {
     pub no_proxy: Option<bool>,
     /// If [`Some`], overwrites [`HttpClientConfig::referer`]. Defaults to [`None`].
     #[serde(default)]
-    pub referer: Option<bool>
+    pub referer: Option<bool>,
+    /// IF [`Some`], overwrites [`HttpClientConfig::danger_accept_invalid_certs`]. Defaults to [`None`].
+    #[serde(default)]
+    pub danger_accept_invalid_certs: Option<bool>
 }
 
 impl HttpClientConfigDiff {
@@ -109,6 +116,7 @@ impl HttpClientConfigDiff {
     /// 5. Append [`Self::add_proxies`] to `to`'s [`HttpClientConfig::proxies`].
     /// 6. If [`Self::no_proxy`] is [`Some`], overwrite `to`'s [`HttpClientConfig::no_proxy`].
     /// 7. If [`Self::referer`] is [`Some`], overwrite `to`'s [`HttpClientConfig::referer`].
+    /// 8. If [`Self::danger_accept_invalid_certs`] is [`Some`], overwrite `to`'s [`HttpClientConfig::danger_accept_invalid_certs`].
     pub fn apply(&self, to: &mut HttpClientConfig) {
         if let Some(new_redirect_policy) = &self.redirect_policy {to.redirect_policy = new_redirect_policy.clone();}
         to.default_headers.extend(self.add_default_headers.clone());
@@ -117,5 +125,6 @@ impl HttpClientConfigDiff {
         to.proxies.extend(self.add_proxies.clone());
         if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
         if let Some(referer) = self.referer {to.no_proxy = referer;}
+        if let Some(danger_accept_invalid_certs) = self.danger_accept_invalid_certs {to.danger_accept_invalid_certs = danger_accept_invalid_certs;}
     }
 }

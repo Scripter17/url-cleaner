@@ -116,6 +116,17 @@ pub enum Condition {
         /// The map specifying which values should run which conditions.
         map: HashMap<Option<String>, Self>
     },
+    /// Passes if the condition in `map` whose key is the value returned by `source`'s [`StringSource::get`] passes.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    StringSourceMap {
+        /// The string to index the map with.
+        source: Option<StringSource>,
+        /// The map specifying which values should run which conditions.
+        map: HashMap<Option<String>, Self>
+    },
 
     // Error handling.
 
@@ -186,7 +197,7 @@ pub enum Condition {
     /// Similar to [`Condition::UnqualifiedDomain`] but only checks if the subdomain is empty or `www`.
     /// `Condition::MaybeWWWDomain("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedDomain("example.com".to_string()), Condition::QualifiedDomain("www.example.com".to_string())])`.
     /// 
-    /// Similar to [`UrlPart::WWWNotSubdomain`].
+    /// Similar to [`UrlPart::MaybeWWWNotSubdomain`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -231,51 +242,51 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
     /// // Weird edge cases.
-    /// assert_eq!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.example.co.uk" ).unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.aexample.example.co.uk").unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::UnqualifiedAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.aexample.co.uk"        ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.example.co.uk" ).unwrap())).unwrap(), true);
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.aexample.example.co.uk").unwrap())).unwrap(), true);
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.aexample.co.uk"        ).unwrap())).unwrap(), false);
     /// ```
-    UnqualifiedAnyTld(String),
-    /// Similar to [`Condition::UnqualifiedAnyTld`] but only checks if the subdomain is empty or `www`.
+    UnqualifiedAnySuffix(String),
+    /// Similar to [`Condition::UnqualifiedAnySuffix`] but only checks if the subdomain is empty or `www`.
     /// 
-    /// `Condition::MaybeWWWAnyTld("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnyTld("example.com".to_string()), Condition::QualifiedAnyTld("www.example.com".to_string())])`.
+    /// `Condition::MaybeWWWAnySuffix("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnySuffix("example.com".to_string()), Condition::QualifiedAnySuffix("www.example.com".to_string())])`.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.com"  ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnyTld("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.co.uk").unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.com"  ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.co.uk").unwrap())).unwrap(), false);
     /// ```
-    MaybeWWWAnyTld(String),
+    MaybeWWWAnySuffix(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedAnyTld(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnyTld("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), false);
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
     /// ```
-    QualifiedAnyTld(String),
+    QualifiedAnySuffix(String),
 
     // Specific parts.
 
@@ -339,7 +350,7 @@ pub enum Condition {
         part: UrlPart,
         /// The value to look for.
         value: StringSource,
-        /// Where to look for the value.
+        /// Where to look for the value. Defaults to [`StringLocation::Anywhere`].
         #[serde(default)]
         r#where: StringLocation
     },
@@ -544,6 +555,10 @@ impl Condition {
                 Some(condition) => condition.satisfied_by(job_state)?,
                 None => false
             },
+            Self::StringSourceMap{source, map} => match map.get(&get_option_string!(source, job_state)) {
+                Some(condition) => condition.satisfied_by(job_state)?,
+                None => false
+            },
 
             // Error handling.
 
@@ -565,7 +580,7 @@ impl Condition {
             Self::MaybeWWWDomain(domain_suffix) => job_state.url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
             Self::QualifiedDomain(domain) => job_state.url.domain()==Some(domain),
             Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
-            Self::UnqualifiedAnyTld(middle) => job_state.url.domain()
+            Self::UnqualifiedAnySuffix(middle) => job_state.url.domain()
                 .is_some_and(|url_domain| url_domain.rsplit_once(middle)
                     .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')
                         .is_some_and(|suffix| psl::suffix_str(suffix)
@@ -573,13 +588,13 @@ impl Condition {
                         )
                     )
                 ),
-            Self::MaybeWWWAnyTld(middle) => job_state.url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))
+            Self::MaybeWWWAnySuffix(middle) => job_state.url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))
                 .is_some_and(|domain| domain.strip_prefix(middle)
                     .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
                         .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
                     )
                 ),
-            Self::QualifiedAnyTld(parts) => job_state.url.domain()
+            Self::QualifiedAnySuffix(parts) => job_state.url.domain()
                 .is_some_and(|domain| domain.strip_prefix(parts)
                     .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
                         .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))

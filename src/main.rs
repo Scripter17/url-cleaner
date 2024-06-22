@@ -17,8 +17,10 @@ mod util;
 struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     urls: Vec<Url>,
-    /// The config.json to use. If unspecified, use the config compiled into URL Cleaner
+    /// The config.json to use. If unspecified, use the config compiled into URL Cleaner.
     #[arg(short      , long)] config: Option<PathBuf>,
+    /// Output JSON.
+    #[arg(short      , long)] json: bool,
     /// Additional ParamsDiffs to apply before the rest of the options.
     #[arg(             long)] params_diff: Vec<PathBuf>,
     /// Set flags.
@@ -127,6 +129,8 @@ pub enum CliError {
 fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
+    let json = args.json;
+
     let print_args          = args.print_args;
     let print_params_diffs  = args.print_params_diffs;
     let print_params        = args.print_params;
@@ -155,25 +159,59 @@ fn main() -> Result<(), CliError> {
 
     if no_cleaning {std::process::exit(0);}
 
-    for mut url in urls {
-        match config.apply(&mut url) {
-            Ok(()) => {println!("{url}");},
-            Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
-        }
-    }
+    if json {
+        print!("{{\"urls\":[");
+        let mut first_url = true;
 
-    #[cfg(feature = "stdin")]
-    if atty::isnt(atty::Stream::Stdin) {
-        for maybe_line in io::stdin().lines() {
-            match maybe_line {
-                Ok(line) => match Url::parse(&line) {
-                    Ok(mut url) => match config.apply(&mut url) {
-                        Ok(()) => {println!("{url}");},
-                        Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
+        for mut url in urls {
+            if !first_url {print!(",");}
+            match config.apply(&mut url) {
+                Ok(()) => {print!("{{\"Ok\":{:?}}}", url.as_str());},
+                Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+            }
+            first_url = false;
+        }
+
+        #[cfg(feature = "stdin")]
+        if atty::isnt(atty::Stream::Stdin) {
+            for maybe_line in io::stdin().lines() {
+                if !first_url {print!(",");}
+                match maybe_line {
+                    Ok(line) => match Url::parse(&line) {
+                        Ok(mut url) => match config.apply(&mut url) {
+                            Ok(()) => {print!("{{\"Ok\":{:?}}}", url.as_str());},
+                            Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+                        },
+                        Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
                     },
-                    Err(e) => {println!(); eprintln!("Line parse error: {e:?}");}
-                },
-                Err(e) => {println!(); eprintln!("Line read error: {e:?}");}
+                    Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+                }
+                first_url = false;
+            }
+        }
+
+        print!("]}}");
+    } else {
+        for mut url in urls {
+            match config.apply(&mut url) {
+                Ok(()) => {println!("{url}");},
+                Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
+            }
+        }
+
+        #[cfg(feature = "stdin")]
+        if atty::isnt(atty::Stream::Stdin) {
+            for maybe_line in io::stdin().lines() {
+                match maybe_line {
+                    Ok(line) => match Url::parse(&line) {
+                        Ok(mut url) => match config.apply(&mut url) {
+                            Ok(()) => {println!("{url}");},
+                            Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
+                        },
+                        Err(e) => {println!(); eprintln!("Line parse error: {e:?}");}
+                    },
+                    Err(e) => {println!(); eprintln!("Line read error: {e:?}");}
+                }
             }
         }
     }
