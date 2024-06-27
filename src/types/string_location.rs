@@ -209,6 +209,7 @@ pub enum StringLocation {
 }
 
 // The [`Default`] derive macro doesn't say which enum the default is.
+#[allow(clippy::derivable_impls)] // The derive for [`Default`] doesn't state the default value.
 impl Default for StringLocation {
     /// [`Self::Anywhere`].
     fn default() -> Self {

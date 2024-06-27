@@ -6,7 +6,7 @@ URLS=("https://x.com?a=2" "https://example.com?fb_action_ids&mc_eid&ml_subscribe
 COUNTS=(1 100 10000)
 COMMAND="../target/release/url-cleaner --config ../default-config.json"
 
-# cargo build -r --config profile.release.strip=false --config profile.release.debug=2
+cargo build -r --config profile.release.strip=false --config profile.release.debug=2
 
 if [ $? -ne 0 ]; then exit; fi
 

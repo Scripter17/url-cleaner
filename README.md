@@ -1,20 +1,8 @@
 # URL Cleaner
 
-Websites often put unique identifiers into URLs so that, when you send a tweet to a friend, twitter knows it was you who sent it to them.  
-As 99% of people do not understand and therefore cannot consent to this, it is polite to remove the malicious query parameters before sending URLs to people.  
-URL Cleaner is an extremely versatile tool designed to make this process as fast and easy as possible.
-
-URL Cleaner's default configuration also has a number of options to, for example, change twitter links to vxtwitter links or fandom.com links to breezewiki.com links.
-
-## Basic usage
-
-By default, compiling URL Cleaner includes the [`default-config.json`](default-config.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
-
-The default config shouldn't ever change the semantics of a URL. Opening a URL before and after cleaning should always give the same result. (except for stuff like the categories amazon puts in one of its 7 billion navbars but do you *really* care about that?)  
-Because websites tend to not document what parts of their URLs are and aren't necessary, the default config almost certainly runs into issues when trying to clean niche URLs like advanced search queries or API endpoints.  
-If you find any instance of the default config changing the meaning/result of a URL, please open an [issue](https://github.com/Scripter17/url-cleaner/issues).
-
-Additionally, all modifications to the default config assume all feature flags are enabled with the notable exception of not requiring `commands`.
+Websites often put unique identifiers into URLs so that, when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
+As most people do not understand and therefore cannot consent to this, it is polite to remove the spyware query parameters before sending URLs to people.  
+URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, fast, and easy as possible.
 
 ## Anonymity
 
@@ -25,7 +13,23 @@ However, for some websites the default config strips more stuff than search engi
 
 As with Tor, protests, and anything else where privacy matters, safety comes in numbers.
 
-## Flags
+## Basic usage
+
+By default, compiling URL Cleaner includes the [`default-config.json`](default-config.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
+
+### The default config
+
+The default config is intended to always obey the following rules:
+
+- "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
+- A `UrlPartGetError` should never happen.
+- Outside of long (>10)/cyclic HTTP 3xx redirects, it should always be idempotent.
+
+Currently no guarantees are made.
+
+Additionally, these rules may be changed at any time for any reason.
+
+#### Flags
 
 Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
 
@@ -53,7 +57,7 @@ Various flags are included in the default config for things I want to do frequen
 
 If a flag is enabled in a config's `"params"` field, it can be disabled using `--unflag flag1 --unflag flag1`.
 
-## Variables
+#### Variables
 
 Variables let you specify behaviour with the `--var name=value --var name2=value2` command line syntax.
 
@@ -65,7 +69,7 @@ Various variables are included in the default config for things that have multip
 
 If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
 
-## Sets
+#### Sets
 
 Sets let you check if a string is one of many specific strings very quickly.
 
@@ -77,6 +81,26 @@ Various sets are included in the default config.
     Please note that the UTP rule in the default config also removes any parmeter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
 - `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 - `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
+
+Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
+
+Sets can have elements removed from them using `--remove-from-set name1 value1 value2 --remove-from-set name2 value3 value4`.
+
+#### Lists
+
+Lists allow you to iterate over strings for things like checking if another string contains any of them.
+
+Currently only one list is included in the default config:
+
+- `utp-prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
+
+#### Citations
+
+The people and projects I have stolen various parts of the default config from.
+
+- [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
+- [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)
+- [AdGuard's Tracking Parameters Filter](https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections)
 
 ## Custom rules
 
@@ -93,7 +117,7 @@ There are various things in/about URL Cleaner that I or many consider stupid but
 
 - There are various `UrlPart` variants that use "suffix" semantics (treating `google.co.uk` the same as `google.com`).
     For this, URL Cleaner uses the [`psl`](https://docs.rs/psl/latest/psl/) crate which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/).
-    Mozilla's PSL includes `blogspot.com` which has various counterintuitive side effects that are documented in affected `UrlPart` variants.
+    Mozilla's PSL includes `blogspot.com` (and possibly a few other suffixes one may expect to be a domain) which has various counterintuitive side effects that are documented in affected `UrlPart` variants.
     This is not the fault of the maintainers of the psl crate, arguably not the fault of Mozilla, and slightly less arguably not even the fault of google/the people at google who submitted `blogspot.com` to Mozilla's PSL,
     Also, this is not the fault of the URL spec as suffix semantics aren't actually a part of them. The TLD of `google.co.uk` *is* `uk`.
     I have decided to not diverge from the behavior the `psl` crate exhibits and have instead decided to make sure people know about this.
@@ -121,17 +145,6 @@ There are various things in/about URL Cleaner that I or many consider stupid but
 Additionally, regex support uses the [regex](https://docs.rs/regex/latest/regex/index.html) crate, which doesn't support look-around and backreferences.  
 Certain common regex operations are not possible to express without those, but this should never come up in practice.
 
-### Custom rule performance
-
-A few commits before the one that added this text, I moved the "always remove these query parameters" rule to the bottom.  
-That cut the runtime for amazon URLs in half.
-
-The reason is fairly simple: Instead of removing some of the query then removing all of it, if you remove all of it first then the "remove these parameters" does nothing.
-
-While I have done my best to ensure URL Cleaner is as fast as I can get it, that does not mean you shouldn't be careful with rule order.
-
-I know to most people in most cases, 10k URLs in 120ms versus 10k URLs in 60ms is barely noticeable, but that kind of thinking is why video games require mortgages.
-
 ## MSRV
 
 The Minimum Supported Rust Version is the latest stable release. URL Cleaner may or may not work on older versions, but there's no guarantee.
@@ -147,7 +160,7 @@ That said, if you notice any rules that use but don't actually need HTTP request
 
 URL Cleaner is currently in heavy flux so expect library APIs and the config schema to change at any time for any reason.
 
-## Command line details
+## CLI
 
 ### Parsing output
 
@@ -168,6 +181,8 @@ Unless `Mapper::(e|)Print(ln|)` or a `Debug` variant is used, the following shou
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 
 The format should always be identical to the one [`url-cleaner-site`](https://github.com/Scripter17/url-cleaner-site) uses (assuming the input URLs are ordered in the way specified above).
+
+If a `Mapper::Print(ln|)` is used, this is not guaranteed to be valid JSON.
 
 ## Panic policy
 
@@ -190,11 +205,3 @@ Outside of these cases, URL Cleaner should never panic. However as this is equiv
 ## Funding
 
 URL Cleaner does not accept donations. If you feel the need to donate please instead donate to [The Tor Project](https://donate.torproject.org/) and/or [The Internet Archive](https://archive.org/donate/).
-
-## Default config sources
-
-The people and projects I have stolen various parts of the default config from.
-
-- [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
-- [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)
-- [AdGuard's Tracking Parameters Filter](https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections)

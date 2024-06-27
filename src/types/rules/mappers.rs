@@ -310,7 +310,9 @@ pub enum Mapper {
         /// The path of the config to load. Loads the default config if [`None`].
         path: Option<PathBuf>,
         /// How to modify the config's params.
-        params_diff: ParamsDiff
+        /// 
+        /// Boxed because it's huge.
+        params_diff: Box<ParamsDiff>
     },
     /// Sets the current job's `name` string var to `value`.
     /// # Errors

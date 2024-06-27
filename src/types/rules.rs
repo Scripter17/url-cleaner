@@ -111,8 +111,8 @@ pub enum Rule {
     ///                 part: UrlPart::NextPathSegment,
     ///                 value: Some(FromStr::from_str("a").unwrap())
     ///             }
-    ///         })
-    ///     ],
+    ///         }
+    ///     ]),
     ///     limit: 10
     /// }.apply(&mut JobState::new(&mut url)).is_ok());
     /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
@@ -139,11 +139,11 @@ pub enum Rule {
         /// The rules to run if [`Self::CommonCondition::condition`] passes.
         rules: Rules
     },
-    /// The most basic type of rule. If the call to [`Condition::satisifed_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
+    /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
     /// # Errors
-    /// If the call to [`Condition::satisifed_by`] returns an error, that error is returned.
+    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     /// 
     /// If the call to [`Condition::satisfied_by`] retuens `Some(false)`, returns the error [`RuleError::FailedCondition`].
     /// 

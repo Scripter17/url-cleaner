@@ -24,6 +24,9 @@ pub struct Params {
     /// Set variables used to determine behavior.
     #[serde(default)]
     pub sets: HashMap<String, HashSet<String>>,
+    /// List variables used to determine behavior.
+    #[serde(default)]
+    pub lists: HashMap<String, Vec<String>>,
     /// If [`true`], enables reading from caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
     #[serde(default = "get_true")]
@@ -38,12 +41,14 @@ pub struct Params {
     pub http_client_config: HttpClientConfig
 }
 
+#[allow(clippy::derivable_impls)] // When the `cache` feature is disabled, this can be derived.
 impl Default for Params {
     fn default() -> Self {
         Self {
             flags: HashSet::default(),
-            vars: HashMap::default(),
-            sets: HashMap::default(),
+            vars : HashMap::default(),
+            sets : HashMap::default(),
+            lists: HashMap::default(),
             #[cfg(feature = "cache")] read_cache: true,
             #[cfg(feature = "cache")] write_cache: true,
             #[cfg(all(feature = "http", not(target_family = "wasm")))]

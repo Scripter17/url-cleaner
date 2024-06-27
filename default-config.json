@@ -13,14 +13,14 @@
 				"nerd.whatever.social", "z.opnxng.com"
 			],
 			"shortlink-hosts": [
-				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "blizz.ly", "bloom.bg",
-				"boxd.it", "buff.ly", "buff.ly", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnb.cx", "cnn.it", "cnn.it", "cos.lv",
-				"cutt.ly", "cutt.ly", "db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fb.me", "flip.it", "forms.gle",
-				"g.co", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "k00.fr", "kck.st",
-				"link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ny.ti", "nyti.ms", "nyto.ms",
-				"on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st",
-				"py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi", "sqex.to", "t.co",
-				"t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
+				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bityl.co", "blizz.ly",
+				"bloom.bg", "boxd.it", "buff.ly", "buff.ly", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnb.cx", "cnn.it",
+				"cnn.it", "cos.lv", "cos.lv", "cutt.ly", "cutt.ly", "db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me",
+				"fb.me", "flip.it", "forms.gle", "g.co", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv",
+				"ift.tt", "iwe.one", "k00.fr", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
+				"ny.ti", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it",
+				"pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi",
+				"sqex.to", "t.co", "t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -45,6 +45,11 @@
 				"ymclid", "ymid", "ysclid"
 			],
 			"https-upgrade-host-whitelist": ["orteil.dashnet.org"]
+		},
+		"lists": {
+			"utp-prefixes": [
+				"__s", "at_custom", "cm_mmc", "utm_"
+			]
 		},
 		"http_client_config": {
 			"default_headers": {
@@ -120,6 +125,19 @@
 		{
 			"RepeatUntilNonePass": {
 				"rules": [
+					{
+						"comment": "The query paramaters to always remove.",
+						"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+						"mapper": {
+							"RemoveQueryParamsMatching": {"Any": [
+								{"InSet": "utps"},
+								{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+							]
+						}}
+					},
+
+
+
 					{
 						"condition": {"All": [
 							{"PartIs": {"part": "Scheme", "value": "http"}},
@@ -542,6 +560,7 @@
 					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
 					"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 					"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
+					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion": {"RemoveQueryParams": ["t", "atb", "ia"]},
 					"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
 					"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
 					"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
@@ -904,10 +923,10 @@
 
 		{
 			"condition": {"Any": [
-				{"PartContains": {
+				{"TreatErrorAsFail": {"PartContains": {
 					"part": "DomainMiddle",
 					"value": "disney"
-				}},
+				}}},
 				{"UnqualifiedDomain": "go.com"},
 				{"UnqualifiedDomain": "marvel.com"}
 			]},
@@ -954,17 +973,11 @@
 
 		{
 			"comment": "The query paramaters to always remove.",
-			"FireFox-Source": "https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html",
-			"Brave-Source": "https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc",
-			"AdGuard-source": "https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections/general_url.txt",
 			"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
 			"mapper": {
 				"RemoveQueryParamsMatching": {"Any": [
 					{"InSet": "utps"},
-					{"Contains": {"where": "Start", "value": "cm_mmc"}},
-					{"Contains": {"where": "Start", "value": "__s"}},
-					{"Contains": {"where": "Start", "value": "at_custom"}},
-					{"Contains": {"where": "Start", "value": "utm_"}}
+					{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
 				]
 			}}
 		}

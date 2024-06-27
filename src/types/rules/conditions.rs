@@ -238,6 +238,8 @@ pub enum Condition {
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
     /// 
     /// Similar to [`UrlPart::DomainMiddle`].
+    /// # Footguns
+    /// Please see [`UrlPart::DomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -259,6 +261,10 @@ pub enum Condition {
     /// Similar to [`Condition::UnqualifiedAnySuffix`] but only checks if the subdomain is empty or `www`.
     /// 
     /// `Condition::MaybeWWWAnySuffix("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnySuffix("example.com".to_string()), Condition::QualifiedAnySuffix("www.example.com".to_string())])`.
+    /// 
+    /// Similar to [`UrlPart::MaybeWWWDomainMiddle`].
+    /// # Footguns
+    /// Please see [`UrlPart::MaybeWWWDomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -273,6 +279,10 @@ pub enum Condition {
     MaybeWWWAnySuffix(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
     /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
+    /// 
+    /// Similar to [`UrlPart::NotDomainSuffix`].
+    /// # Footguns
+    /// Please see [`UrlPart::NotDomainSuffix`] for details on how "suffix" semantics can be counterintuitive.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;

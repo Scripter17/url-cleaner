@@ -163,6 +163,21 @@ pub enum StringMatcher {
     /// 
     /// See also: [`Self::IsOneOf`].
     InSet(StringSource),
+    /// Passes if the specified [`StringLocation`] is satisfied by any of the strings in [`Self::ContainsAnyInList::list`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    /// 
+    /// If the call to [`HashMap::get`] to get the list from [`Params::lists`] returns [`None`] returns the error [`StringMatcherError::ListNotFound`].
+    /// 
+    /// If any of the calls to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    ContainsAnyInList {
+        /// The location in `haystack` to look at.
+        r#where: StringLocation,
+        /// The name of the list of strings to look for.
+        list: StringSource
+    }
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
@@ -198,7 +213,10 @@ pub enum StringMatcherError {
     },
     /// Returned when the requested segment is not found.
     #[error("The requested segment was not found.")]
-    SegmentNotFound
+    SegmentNotFound,
+    /// Returned when the requested list is not found.
+    #[error("The requested list was not found.")]
+    ListNotFound
 }
 
 impl StringMatcher {
@@ -274,7 +292,16 @@ impl StringMatcher {
                 break 'a false;
             },
             Self::Equals(source) => haystack == get_str!(source, job_state, StringMatcherError),
-            Self::InSet(name) => job_state.params.sets.get(get_str!(name, job_state, StringMatcherError)).is_some_and(|set| set.contains(haystack))
+            Self::InSet(name) => job_state.params.sets.get(get_str!(name, job_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
+            // Cannot wait for [`Iterator::try_any`] (https://github.com/rust-lang/rfcs/pull/3233)
+            Self::ContainsAnyInList {r#where, list} => {
+                for x in job_state.params.lists.get(get_str!(list, job_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
+                    if r#where.satisfied_by(haystack, x)? {
+                        return Ok(true);
+                    }
+                }
+                false
+            }
         })
     }
 }

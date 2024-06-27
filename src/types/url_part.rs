@@ -251,7 +251,7 @@ pub enum UrlPart {
     /// ```
     AfterDomainSegment(isize),
     /// The subdomain. If the domain is `a.b.c.co.uk`, the value returned/changed by this is `a.b`.
-    /// 
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::Subdomain`] of `https://blogspot.com` returns `None`, `https://name.blogspot.com` returns also returns `None`, and `https://abc.name.blogspot.com` returns `Some("abc")`.
@@ -286,7 +286,7 @@ pub enum UrlPart {
     /// ```
     Subdomain,
     /// The domain minus the subdomain. If the domain is `a.b.c.co.uk` value returned/changed by this is `c.co.uk`.
-    /// 
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::NotSubdomain`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name.blogspot.com")`].
@@ -318,7 +318,7 @@ pub enum UrlPart {
     /// Similar to [`Self::NotSubdomain`] but specialized for only when the subdomain is `"www"` or not present.
     /// 
     /// Exists to allow simulating the old `Rules::HostMap` behavior.
-    /// 
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::MaybeWWWNotSubdomain`] of `https://blogspot.com` returns `None` and `https://www.blogspot.com` returns [`Some("www.blogspot.com")`].
@@ -329,6 +329,7 @@ pub enum UrlPart {
     /// # Setting
     /// If the URL's subdomain is `None` or `Some("www")`, behaves the same as [`Self::NotSubdomain`].
     MaybeWWWNotSubdomain,
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::NotDomainSuffix`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
@@ -356,7 +357,7 @@ pub enum UrlPart {
     /// ```
     NotDomainSuffix,
     /// The `example` in `abc.example.com`.
-    /// 
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::DomainMiddle`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
@@ -410,17 +411,17 @@ pub enum UrlPart {
     /// Similar to [`Self::DomainMiddle`] but specialized for only when the subdomain is `"www"` or not present.
     /// 
     /// Exists to allow simulating the old `Rules::HostMap` behavior.
-    /// 
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
-    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::WWWDomainMiddle`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
+    /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::MaybeWWWDomainMiddle`] of `https://blogspot.com` returns `None` and `https://name.blogspot.com` returns [`Some("name")`].
     /// 
     /// This is stupid, but I can't do anything about it without introducing inconsistencies with other uses of [`psl`], which I currently consider worse.
     /// # Getting
     /// Is `None` when the URL's host is a domain with a subdomain that isn't `None` or `Some("www")`.
     /// # Setting
     /// If the URL's subdomain is `None` or `Some("www")`, behaves the same as [`Self::NotSubdomain`].
-    WWWDomainMiddle,
+    MaybeWWWDomainMiddle,
     /// The domain. Corresponds to [`Url::domain`].
     /// # Getting
     /// Can be `None`.
@@ -444,6 +445,7 @@ pub enum UrlPart {
     /// UrlPart::Domain.set(&mut url, None).unwrap_err();
     /// ```
     Domain,
+    /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
     /// For example, the PSL contains `blogspot.com` as a suffix. This means Getting the [`Self::DomainSuffix`] of `https://blogspot.com` returns `Some("blogspot.com")` and `https://name.blogspot.com` returns [`Some("blogspot.com")`].
@@ -891,7 +893,7 @@ impl UrlPart {
                 // Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.rsplit('.').nth(1)?)
                 Cow::Borrowed(psl::domain_str(url.domain()?)?.split_once('.')?.0)
             },
-            Self::WWWDomainMiddle => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::DomainMiddle.get(url)} else {None}?,
+            Self::MaybeWWWDomainMiddle => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::DomainMiddle.get(url)} else {None}?,
             Self::Domain       => Cow::Borrowed(url.domain()?),
             Self::DomainSuffix => Cow::Borrowed(url.domain().and_then(psl::suffix_str)?),
             Self::Port         => Cow::Owned(url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
@@ -1036,7 +1038,7 @@ impl UrlPart {
                     (None           , None    , None        , false) => format!("")
                 })?;
             },
-            (Self::WWWDomainMiddle, _) => match Self::Subdomain.get(url).as_deref() {
+            (Self::MaybeWWWDomainMiddle, _) => match Self::Subdomain.get(url).as_deref() {
                 Some("www") | None => Self::DomainMiddle.set(url, to), // What did you think "behaves the same" meant? :P
                 _ => Err(UrlPartSetError::HostIsNotMaybeWWWDomain)
             }?,
