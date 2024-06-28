@@ -756,12 +756,12 @@ pub enum UrlPart {
         /// The start of the range of segments to get.
         /// 
         /// Defaults to `None`.
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "is_default")]
         start: Option<isize>,
         /// The end of the range of segments to get.
         /// 
         /// Defaults to `None`.
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "is_default")]
         end: Option<isize>
     },
     /// # Getting

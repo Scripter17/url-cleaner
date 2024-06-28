@@ -7,6 +7,8 @@ use url::Url;
 use reqwest::header::HeaderValue;
 use reqwest::Proxy;
 
+use crate::util::is_default;
+
 // Used for doc links.
 #[allow(unused_imports)]
 use crate::types::HttpClientConfig;
@@ -18,10 +20,10 @@ pub struct ProxyConfig {
     /// The URL to proxy traffic to. Not the URL whose traffic to proxy.
     pub url: Url,
     /// The type of requests to proxy. Defaults to [`ProxyMode::All`] which proxies HTTP and HTTPS requests.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub mode: ProxyMode,
     /// Authentication for the proxy server. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub auth: Option<ProxyAuth>
 }
 

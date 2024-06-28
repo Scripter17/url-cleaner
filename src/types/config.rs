@@ -11,6 +11,7 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 
 use crate::types::*;
+use crate::util::is_default;
 
 mod params;
 pub use params::*;
@@ -21,10 +22,10 @@ pub use params::*;
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
     /// The parameters passed into the rule's conditions and mappers.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
     /// The tests to make sure the config is working as intended.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub tests: Vec<TestSet>,
     /// The conditions and mappers that modify the URLS.
     pub rules: Rules

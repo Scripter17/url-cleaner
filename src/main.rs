@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 #[cfg(feature = "stdin")]
 use std::io;
+use std::borrow::Cow;
 
 use clap::Parser;
 use url::Url;
@@ -126,6 +127,24 @@ pub enum CliError {
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }
 
+fn json_fix_u_escape(s: &str) -> Cow<'_, str> {
+    if !s.contains('\\') {return Cow::Borrowed(s);}
+    let mut last_was_escape = false;
+    let mut skip_next_opening_brace = false;
+    let mut skip_next_closing_brace = false;
+    let mut ret = String::new();
+    for c in s.chars() {
+        if last_was_escape && c == 'u' {skip_next_opening_brace = true; skip_next_closing_brace = true;}
+        if skip_next_opening_brace && c == '{' {skip_next_opening_brace = false; last_was_escape = false; continue;}
+        if skip_next_closing_brace && c == '}' {skip_next_closing_brace = false; last_was_escape = false; continue;}
+        if last_was_escape && c == '\'' {last_was_escape = false;}
+        if last_was_escape {ret.push('\\');}
+        if c != '\\' {ret.push(c)};
+        last_was_escape = c == '\\';
+    }
+    Cow::Owned(ret)
+}
+
 fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
@@ -180,11 +199,11 @@ fn main() -> Result<(), CliError> {
                     Ok(line) => match Url::parse(&line) {
                         Ok(mut url) => match config.apply(&mut url) {
                             Ok(()) => {print!("{{\"Ok\":{:?}}}", url.as_str());},
-                            Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+                            Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source_url\":\"{}\",\"error\":\"{e:?}\"}}}}", json_fix_u_escape(&url.as_str().escape_debug().to_string()));}
                         },
-                        Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+                        Err(e) => {print!("{{\"Err\":{{\"type\":\"LineParseError\",\"source_url\":\"{}\",\"error\":\"{e:?}\"}}}}", json_fix_u_escape(&line.escape_debug().to_string()));}
                     },
-                    Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+                    Err(e) => {print!("{{\"Err\":{{\"type\":\"LineReadError\",\"Error\":\"{e:?}\"}}}}");}
                 }
                 first_url = false;
             }
@@ -195,7 +214,7 @@ fn main() -> Result<(), CliError> {
         for mut url in urls {
             match config.apply(&mut url) {
                 Ok(()) => {println!("{url}");},
-                Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
+                Err(e) => {println!(); eprintln!("Rule error\t{:?}\t{e:?}", url.as_str());}
             }
         }
 
@@ -206,11 +225,11 @@ fn main() -> Result<(), CliError> {
                     Ok(line) => match Url::parse(&line) {
                         Ok(mut url) => match config.apply(&mut url) {
                             Ok(()) => {println!("{url}");},
-                            Err(e) => {println!(); eprintln!("Rule error: {e:?}");}
+                            Err(e) => {println!(); eprintln!("Rule error\t{:?}\t{e:?}", url.as_str());}
                         },
-                        Err(e) => {println!(); eprintln!("Line parse error: {e:?}");}
+                        Err(e) => {println!(); eprintln!("Line parse error\t{line:?}\t{e:?}");}
                     },
-                    Err(e) => {println!(); eprintln!("Line read error: {e:?}");}
+                    Err(e) => {println!(); eprintln!("Line read error\t\t{e:?}");}
                 }
             }
         }

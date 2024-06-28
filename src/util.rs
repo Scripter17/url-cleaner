@@ -8,6 +8,9 @@ use std::ops::Bound;
 mod macros;
 pub(crate) use macros::*;
 
+/// For use with [`#[serde(default, skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if).
+pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {t == &T::default()}
+
 /// Loops negative `index`es around similar to Python.
 pub(crate) const fn neg_index(index: isize, len: usize) -> Option<usize> {
     if 0<=index && (index as usize)<len {

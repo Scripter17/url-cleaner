@@ -11,35 +11,38 @@ use thiserror::Error;
 use url::Url;
 
 use super::*;
+use crate::util::is_default;
 
 /// Configuration options to choose the behaviour of various URL Cleaner types.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Params {
     /// Booleans variables used to determine behavior.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub flags: HashSet<String>,
     /// String variables used to determine behavior.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>,
     /// Set variables used to determine behavior.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub sets: HashMap<String, HashSet<String>>,
     /// List variables used to determine behavior.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub lists: HashMap<String, Vec<String>>,
     /// If [`true`], enables reading from caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
-    #[serde(default = "get_true")]
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub read_cache: bool,
     /// If [`true`], enables writing to caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
-    #[serde(default = "get_true")]
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write_cache: bool,
     /// The default headers to send in HTTP requests.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub http_client_config: HttpClientConfig
 }
+
+const fn is_true(x: &bool) -> bool {!*x}
 
 #[allow(clippy::derivable_impls)] // When the `cache` feature is disabled, this can be derived.
 impl Default for Params {

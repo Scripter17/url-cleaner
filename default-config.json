@@ -126,19 +126,6 @@
 			"RepeatUntilNonePass": {
 				"rules": [
 					{
-						"comment": "The query paramaters to always remove.",
-						"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-						"mapper": {
-							"RemoveQueryParamsMatching": {"Any": [
-								{"InSet": "utps"},
-								{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-							]
-						}}
-					},
-
-
-
-					{
 						"condition": {"All": [
 							{"PartIs": {"part": "Scheme", "value": "http"}},
 							{"Not": {"FlagIsSet": "no-https-upgrade"}},
@@ -150,37 +137,51 @@
 
 
 					{
-						"condition": {"Any": [
-              {"All": [
-              	{"FlagIsSet": "assume-cctld-is-shortlink"},
-              	{"PartMatches": {"part": {"DomainSegment": -1}, "matcher": {"Regex": "^..$"}}}
-              ]},
-              {"All": [
-              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
-              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
-              ]},
-							{
-								"StringMatches": {
-									"source": {"Modified": {
-										"source": {"Part": "Host"},
-										"modification": {"StripMaybePrefix": "www."}
-									}},
-									"matcher": {"InSet": "shortlink-hosts"}
-								}
-							},
-							{
-								"StringSourceMap": {
-									"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
-									"map": {
-										"pawoo.net": {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
-										"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
-										"allmylinks.com": {"PathIs": "/link/out"},
-										"gofundme.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
+						"condition": {"All": [
+							{"Not": {"FlagIsSet": "no-http"}},
+							{"Any": [
+	              {"All": [
+	              	{"FlagIsSet": "assume-cctld-is-shortlink"},
+	              	{"PartMatches": {"part": {"DomainSegment": -1}, "matcher": {"Regex": "^..$"}}}
+	              ]},
+	              {"All": [
+	              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
+	              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
+	              ]},
+								{
+									"StringMatches": {
+										"source": {"Modified": {
+											"source": {"Part": "Host"},
+											"modification": {"StripMaybePrefix": "www."}
+										}},
+										"matcher": {"InSet": "shortlink-hosts"}
+									}
+								},
+								{
+									"StringSourceMap": {
+										"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+										"map": {
+											"pawoo.net": {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
+											"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
+											"allmylinks.com": {"PathIs": "/link/out"},
+											"gofundme.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
+										}
 									}
 								}
-							}
+							]}
 						]},
-						"mapper": {"ExpandShortLink": {}}
+						"mapper": {"All": [
+							{"IfCondition": {
+								"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+								"mapper": {
+									"RemoveQueryParamsMatching": {"Any": [
+										{"InSet": "utps"},
+										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+									]
+								}}
+							}},
+							{"ExpandShortLink": {}}
+						]}
 					},
 
 
@@ -252,19 +253,30 @@
 								]},
 								"smarturl.it": {"IfCondition": {
 									"condition": {"Not": {"FlagIsSet": "no-http"}},
-									"mapper": {"SetPart": {
-										"part": "Whole",
-										"value": {"Modified": {
-											"source": {"HttpRequest": {}},
-											"modification": {"All": [
-												{"RegexCaptures": {
-													"regex": "\"originalUrl\":\"(.+?)\"",
-													"replace": "$1"
-												}},
-												{"Replace": {"find": "\\/", "replace": "/"}}
-											]}
+									"mapper": {"All": [
+										{"IfCondition": {
+											"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+											"mapper": {
+												"RemoveQueryParamsMatching": {"Any": [
+													{"InSet": "utps"},
+													{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+												]
+											}}
+										}},
+										{"SetPart": {
+											"part": "Whole",
+											"value": {"Modified": {
+												"source": {"HttpRequest": {}},
+												"modification": {"All": [
+													{"RegexCaptures": {
+														"regex": "\"originalUrl\":\"(.+?)\"",
+														"replace": "$1"
+													}},
+													{"Replace": {"find": "\\/", "replace": "/"}}
+												]}
+											}}
 										}}
-									}}
+									]}
 								}},
 								"href.li": {"SetPart": {
 									"part": "Whole",
@@ -276,18 +288,29 @@
 								"instagr.am": {"SetHost": "instagram.com"},
 								"bfy.tw": {"IfCondition": {
 									"condition": {"Not": {"FlagIsSet": "no-http"}},
-									"mapper": {"SetPart": {
-										"part": "Whole",
-										"value": {"Modified": {
-											"source": {"HttpRequest": {
-												"http_client_config_diff": {"danger_accept_invalid_certs": true}
-											}},
-											"modification": {"RegexCaptures": {
-												"regex": "href=\"(.+?)\"",
-												"replace": "$1"
+									"mapper": {"All": [
+										{"IfCondition": {
+											"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+											"mapper": {
+												"RemoveQueryParamsMatching": {"Any": [
+													{"InSet": "utps"},
+													{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+												]
+											}}
+										}},
+										{"SetPart": {
+											"part": "Whole",
+											"value": {"Modified": {
+												"source": {"HttpRequest": {
+													"http_client_config_diff": {"danger_accept_invalid_certs": true}
+												}},
+												"modification": {"RegexCaptures": {
+													"regex": "href=\"(.+?)\"",
+													"replace": "$1"
+												}}
 											}}
 										}}
-									}}
+									]}
 								}},
 								"lmgtfy.com": {"All": [{"SetHost": "google.com"}, {"SetPart": {"part": "Path", "value": "/search"}}]},
 								"lmgtfy.app": {"All": [{"SetHost": "google.com"}, {"SetPart": {"part": "Path", "value": "/search"}}]},
@@ -360,16 +383,27 @@
 							{"MaybeWWWDomain": "tinyurl.com"},
 							{"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}
 						]},
-						"mapper": {"SetPart": {
-							"part": "Whole",
-							"value": {"Modified": {
-								"source": {"HttpRequest": {}},
-								"modification": {"RegexCaptures": {
-									"regex": "let url = \\\"(.+)\\\"",
-									"replace": "$1"
+						"mapper": {"All": [
+							{"IfCondition": {
+								"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+								"mapper": {
+									"RemoveQueryParamsMatching": {"Any": [
+										{"InSet": "utps"},
+										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+									]
+								}}
+							}},
+							{"SetPart": {
+								"part": "Whole",
+								"value": {"Modified": {
+									"source": {"HttpRequest": {}},
+									"modification": {"RegexCaptures": {
+										"regex": "let url = \\\"(.+)\\\"",
+										"replace": "$1"
+									}}
 								}}
 							}}
-						}}
+						]}
 					},
 
 
@@ -941,15 +975,26 @@
 				{"FlagIsSet": "onion-location"},
 				{"PartIs": {"part": "Scheme", "value": "https"}}
 			]},
-			"mapper": {"IgnoreError":
-				{"SetPart": {
-					"part": "Origin",
-					"value": {"ExtractPart": {
-						"part": "Origin",
-						"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+			"mapper": {"All": [
+				{"IfCondition": {
+					"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+					"mapper": {
+						"RemoveQueryParamsMatching": {"Any": [
+							{"InSet": "utps"},
+							{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+						]
 					}}
-				}}
-			}
+				}},
+				{"IgnoreError":
+					{"SetPart": {
+						"part": "Origin",
+						"value": {"ExtractPart": {
+							"part": "Origin",
+							"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+						}}
+					}}
+				}
+			]}
 		},
 		{
 			"condition": {"All": [

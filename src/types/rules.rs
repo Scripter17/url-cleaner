@@ -139,6 +139,14 @@ pub enum Rule {
         /// The rules to run if [`Self::CommonCondition::condition`] passes.
         rules: Rules
     },
+    /// Runs the contained [`Self`] then, if no error is returned, returns the error [`RuleError::FailedCondition`],
+    /// 
+    /// Useful for use in [``]
+    /// # Errors 
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// 
+    /// If no error is returned, returns the error [`RuleError::FailedCondition`].
+    PretendFailedCondition(Box<Self>),
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
@@ -230,6 +238,10 @@ impl Rule {
                 } else {
                     Err(RuleError::FailedCondition)
                 }
+            },
+            Self::PretendFailedCondition(rule) => {
+                rule.apply(job_state)?;
+                Err(RuleError::FailedCondition)
             }
         }
     }
@@ -238,7 +250,7 @@ impl Rule {
 /// A wrapper around a vector of rules.
 /// 
 /// Exists mainly for convenience.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Rules(pub Vec<Rule>);
 
 impl Rules {

@@ -15,28 +15,28 @@ use crate::glue::*;
 use crate::util::*;
 
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
-#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct RequestConfig {
     /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub url: Option<StringSource>,
     /// The HTTP method to use. Defaults to [`Method::GET`].
-    #[serde(default, with = "method")]
+    #[serde(default, skip_serializing_if = "is_default", with = "method")]
     pub method: Method,
     /// The headers to send in the request in addition to the default headers provided by [`Params::http_client_config`] and [`Self::client_config_diff`].
     /// Defaults to an empty [`HeaderMap`].
-    #[serde(default, with = "headermap")]
+    #[serde(default, skip_serializing_if = "is_default", with = "headermap")]
     pub headers: HeaderMap,
     /// The request body to send. Works with all methods but intended only for [`Method::POST`] requests.
     /// Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub body: Option<RequestBody>,
     /// The method [`Self::response`] uses to get a [`String`] from the [`reqwest::blocking::Response`]
     /// Defaults to [`ResponseHandler::Body`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub response_handler: ResponseHandler,
     /// Rules for how to make the HTTP client.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub client_config_diff: Option<HttpClientConfigDiff>
 }
 

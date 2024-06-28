@@ -22,8 +22,8 @@ By default, compiling URL Cleaner includes the [`default-config.json`](default-c
 The default config is intended to always obey the following rules:
 
 - "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
-- A `UrlPartGetError` should never happen.
-- Outside of long (>10)/cyclic HTTP 3xx redirects, it should always be idempotent.
+- URLs that are "semantically valid"<sup>[definition?]</sup> should never throe an error.
+- Outside of long (>10)/cyclic redirects/shortlinks, it should always be idempotent.
 
 Currently no guarantees are made.
 
@@ -180,7 +180,7 @@ Unless `Mapper::(e|)Print(ln|)` or a `Debug` variant is used, the following shou
 
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 
-The format should always be identical to the one [`url-cleaner-site`](https://github.com/Scripter17/url-cleaner-site) uses (assuming the input URLs are ordered in the way specified above).
+The exact format is currently in flux.
 
 If a `Mapper::Print(ln|)` is used, this is not guaranteed to be valid JSON.
 

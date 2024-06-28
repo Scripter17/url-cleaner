@@ -126,7 +126,7 @@ pub enum StringSource {
         /// The list of string sources to join.
         sources: Vec<Self>,
         /// The value to join `sources` with. Defaults to an empty string.
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "is_default")]
         join: String
     },
     /// Parses `source` as a URL and gets the specified value.

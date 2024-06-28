@@ -8,30 +8,31 @@ use reqwest::header::HeaderMap;
 #[allow(unused_imports)]
 use crate::types::*;
 use crate::glue::*;
+use crate::util::is_default;
 
 /// Used by [`Params`] to detail how a [`reqwest::blocking::Client`] should be made.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HttpClientConfig {
     /// [`reqwest::blocking::ClientBuilder::default_headers`]. Defaults to an empty [`HeaderMap`].
-    #[serde(default, with = "crate::glue::headermap")]
+    #[serde(default, skip_serializing_if = "is_default", with = "crate::glue::headermap")]
     pub default_headers: HeaderMap,
     /// Roughly corresponds to [`reqwest::redirect::Policy`]. Defaults to [`RedirectPolicy::default`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub redirect_policy: RedirectPolicy,
     /// [`reqwest::blocking::ClientBuilder::https_only`]. Defaults to [`false`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub https_only: bool,
     /// [`reqwest::blocking::ClientBuilder::proxy`]. Defaults to an empty [`Vec`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub proxies: Vec<ProxyConfig>,
     /// [`reqwest::blocking::ClientBuilder::no_proxy`]. Applied after and therefore overrides [`Self::proxies`]. Defaults to [`false`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub no_proxy: bool,
     /// [`reqwest::blocking::ClientBuilder::referer`]. Defaults to [`false`]
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub referer: bool,
     /// [`reqwest::blocking::ClientBuilder::danger_accept_invalid_certs`]. Defaults to [`false`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub danger_accept_invalid_certs: bool
 }
 
@@ -82,28 +83,28 @@ impl HttpClientConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct HttpClientConfigDiff {
     /// If [`Some`], overwrites [`HttpClientConfig::redirect_policy`]. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub redirect_policy: Option<RedirectPolicy>,
     /// Appends headers to [`HttpClientConfig::default_headers`]. Defaults to an empty [`HeaderMap`].
-    #[serde(default, with = "crate::glue::headermap")]
+    #[serde(default, skip_serializing_if = "is_default", with = "crate::glue::headermap")]
     pub add_default_headers: HeaderMap,
     /// If [`Some`], overwrites [`HttpClientConfig::https_only`]. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub https_only: Option<bool>,
     /// If [`Some`], overwrites [`HttpClientConfig::proxies`]. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub set_proxies: Option<Vec<ProxyConfig>>,
     /// Appends proxies to [`HttpClientConfig::proxies`] after handling [`Self::set_proxies`]. Defaults to an empty [`Vec`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub add_proxies: Vec<ProxyConfig>,
     /// If [`Some`], overwrites [`HttpClientConfig::no_proxy`]. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub no_proxy: Option<bool>,
     /// If [`Some`], overwrites [`HttpClientConfig::referer`]. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub referer: Option<bool>,
     /// IF [`Some`], overwrites [`HttpClientConfig::danger_accept_invalid_certs`]. Defaults to [`None`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub danger_accept_invalid_certs: Option<bool>
 }
 

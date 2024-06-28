@@ -31,13 +31,13 @@ pub struct CommandConfig {
     #[serde(default)]
     pub args: Vec<StringSource>,
     /// The directory to run [`Self::program`] in.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub current_dir: Option<PathBuf>,
     /// The environment arguments to run [`Self::program`] with.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub envs: HashMap<String, String>,
     /// The STDIN to feed into the command.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub stdin: Option<StringSource>
 }
 
