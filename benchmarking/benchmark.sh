@@ -1,37 +1,53 @@
 #!/usr/bin/bash
 
+URLS=("https://x.com?a=2" "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id" "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8")
+NUMS=(0 1 10 100 1000 10000 100000)
+
 rm -f hyperfine* callgrind*
 
-URLS=("https://x.com?a=2" "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id" "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8")
-COUNTS=(1 100 10000)
-COMMAND="../target/release/url-cleaner --config ../default-config.json"
+no_compile=false
+json=false
+no_hyperfine=false
+print_desmos_lists=false
+no_valgrind=false
 
-# cargo build -r --config profile.release.strip=false --config profile.release.debug=2
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    "--no-compile") no_compile=true ;;
+    "--json") json=true ;;
+    "--no-hyperfine") no_hyperfine=true ;;
+    "--print-desmos-lists") print_desmos_lists=true ;;
+    "--no-valgrind") no_valgrind=true ;;
+  esac
+done
+
+if [ "$json" == "true" ]; then
+  COMMAND="../target/release/url-cleaner --config ../default-config.json --json"
+else
+  COMMAND="../target/release/url-cleaner --config ../default-config.json"
+fi
+
+if [ "$no_compile" == "false" ]; then cargo build -r --config profile.release.strip=false --config profile.release.debug=2; fi
 
 if [ $? -ne 0 ]; then exit; fi
 
-measure () {
-  url=$1
-  count=$2
-  out=$(echo -n "$url" | head -c 50 | sed "s/\//-/g" && echo -n "-$count")
-
-  yes $url | head -n $count > stdin
-
-  if [ $count -eq 0 ]; then
-    hyperfine -N -n "$url - $count" -w 10 "$COMMAND" --export-json "hyperfine-$out.txt"
-    valgrind --quiet --tool=callgrind $COMMAND > /dev/null
-  else
-    hyperfine -N -n "$url - $count" -w 10 --input ./stdin "$COMMAND" --export-json "hyperfine-$out.txt"
-    cat stdin | valgrind --quiet --tool=callgrind $COMMAND > /dev/null
-  fi
-  mv callgrind.out.* "callgrind.out-$out"
-}
-
-measure "" 0
 for url in "${URLS[@]}"; do
   echo IN: $url
   echo OUT: $($COMMAND "$url")
-  for count in "${COUNTS[@]}"; do
-    measure "$url" $count
-  done
+  file_safe_in_url=$(echo $url | head -c 50 | sed "s/\//-/g")
+  if [ "$no_hyperfine" == "false" ]; then
+    hyperfine -L url "$url" -L num $(echo "${NUMS[@]}" | sed "s/ /,/g") "yes \"$url\" | head -n {num} | $COMMAND" --export-json "hyperfine-$file_safe_in_url.json" --max-runs 100
+    if [ "$print_desmos_lists" == "true" ]; then
+      echo "N=[$(echo "${NUMS[@]}" | sed "s/ /,/g")]"
+      echo -n T= && cat "hyperfine-$file_safe_in_url.json" | jq "[.results[].mean]" -c
+    fi
+  fi
+  if [ "$no_valgrind" == "false" ]; then
+    for num in "${NUMS[@]}"; do
+      echo Valgrind - $num
+      yes $url | head -n $num | valgrind --quiet --tool=callgrind $COMMAND > /dev/null
+      mv callgrind.out.* "callgrind.out-$file_safe_in_url-$num"
+    done
+  fi
 done

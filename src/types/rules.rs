@@ -20,7 +20,7 @@ use crate::util::*;
 pub enum Rule {
     /// Gets a certain part of a URL then applies a [`Mapper`] depending on the returned value.
     /// # Errors
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     PartMap {
@@ -31,7 +31,7 @@ pub enum Rule {
     },
     /// Gets a certain part of a URL then applies a [`Rule`] depending on the returned value.
     /// # Errors
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rule::apply`] returns an error, that error is returned.
     PartRuleMap {
@@ -42,7 +42,7 @@ pub enum Rule {
     },
     /// Gets a certain part of a URL then applies a [`Rules`] depending on the returned value.
     /// # Errors
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     PartRulesMap {
@@ -53,9 +53,9 @@ pub enum Rule {
     },
     /// Gets a string from a [`StringSource`] then applies a [`Mapper`] depending on the returned value.
     /// # Rules
-    /// If the call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     StringSourceMap {
@@ -66,9 +66,9 @@ pub enum Rule {
     },
     /// Gets a string from a [`StringSource`] then applies a [`Rule`] depending on the returned value.
     /// # Rules
-    /// If the call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rule::apply`] returns an error, that error is returned.
     StringSourceRuleMap {
@@ -79,9 +79,9 @@ pub enum Rule {
     },
     /// Gets a string from a [`StringSource`] then applies a [`Rules`] depending on the returned value.
     /// # Rules
-    /// If the call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`HashMap::get`] reutrns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
+    /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     StringSourceRulesMap {
@@ -130,7 +130,7 @@ pub enum Rule {
     /// # Errors
     /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     /// 
-    /// If the call to [`Condition::satisfied_by`] retuens `Some(false)`, returns the error [`RuleError::FailedCondition`].
+    /// If the call to [`Condition::satisfied_by`] returns `Some(false)`, returns the error [`RuleError::FailedCondition`].
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     CommonCondition {
@@ -153,7 +153,7 @@ pub enum Rule {
     /// # Errors
     /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     /// 
-    /// If the call to [`Condition::satisfied_by`] retuens `Some(false)`, returns the error [`RuleError::FailedCondition`].
+    /// If the call to [`Condition::satisfied_by`] returns `Some(false)`, returns the error [`RuleError::FailedCondition`].
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     /// # Examples
@@ -201,6 +201,8 @@ impl Rule {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
+        #[cfg(feature = "debug")]
+        println!("Rule: {self:?}");
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by(job_state)? {
                 mapper.apply(job_state)?;
@@ -260,6 +262,8 @@ impl Rules {
     /// # Errors
     /// If any contained [`Rule`] returns an error other than [`RuleError::FailedCondition`] or [`RuleError::ValueNotInMap`], that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
+        #[cfg(feature = "debug")]
+        println!("Rules: {self:?}");
         let mut temp_url = job_state.url.clone();
         let mut temp_job_state = JobState {
             url: &mut temp_url,

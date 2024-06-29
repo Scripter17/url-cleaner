@@ -28,7 +28,7 @@ pub struct CommandConfig {
     /// The program to run.
     pub program: String,
     /// The arguments to run [`Self::program`] with
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub args: Vec<StringSource>,
     /// The directory to run [`Self::program`] in.
     #[serde(default, skip_serializing_if = "is_default")]
@@ -54,6 +54,18 @@ impl From<&str> for CommandConfig {
     fn from(value: &str) -> Self {
         Self {
             program: value.to_string(),
+            args: Vec::default(),
+            current_dir: None,
+            envs: HashMap::default(),
+            stdin: None
+        }
+    }
+}
+
+impl From<String> for CommandConfig {
+    fn from(value: String) -> Self {
+        Self {
+            program: value,
             args: Vec::default(),
             current_dir: None,
             envs: HashMap::default(),

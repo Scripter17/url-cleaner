@@ -303,7 +303,7 @@ pub enum StringModification {
     },
     /// Splits the provided string by `split` and keeps only the segments in the specified range.
     /// # Errors
-    /// If the segemnt range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
+    /// If the segment range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
     KeepSegmentRange {
         /// The value to split the string by.
         split: StringSource,
@@ -555,7 +555,7 @@ pub enum StringModification {
     /// 
     /// If the modification returns an error, that error is returned.
     ModifyNthSegment {
-        /// The value to split the sring by.
+        /// The value to split the siring by.
         split: StringSource,
         /// The index of the segment to modify.
         n: isize,
@@ -579,7 +579,7 @@ pub enum StringModification {
     /// 
     /// If the modification returns an error, that error is returned.
     ModifySegments {
-        /// The value to split the sring by.
+        /// The value to split the siring by.
         split: StringSource,
         /// The indices of the segments to modify.
         ns: Vec<isize>,

@@ -45,9 +45,9 @@ pub enum Mapper {
     IfCondition {
         /// The [`Condition`] that decides if `mapper` or `else_mapper` is used.
         condition: Condition,
-        /// The [`Self`] to use if `conditionf` passes.
+        /// The [`Self`] to use if `condition` passes.
         mapper: Box<Self>,
-        /// The [`Self`] to use if `confition` fails.
+        /// The [`Self`] to use if `condition` fails.
         #[serde(default)]
         else_mapper: Option<Box<Self>>
     },
@@ -187,7 +187,7 @@ pub enum Mapper {
 
     /// [`Url::set_host`].
     /// # Errors
-    /// If the call to [`Url::set_host`] reutrns an error, returns that error.
+    /// If the call to [`Url::set_host`] returns an error, returns that error.
     SetHost(String),
     /// [`Url::join`].
     Join(StringSource),

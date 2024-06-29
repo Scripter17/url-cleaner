@@ -546,7 +546,7 @@ pub enum UrlPart {
     BeforePathSegment(isize),
     /// A specific segment of the URL's path.
     /// 
-    /// If the path is `"/a/b/c/"`, segment 0 ia `"a`"`, 1 is `"b"`, 2 is `"c"`, and 3 is `""`.
+    /// If the path is `"/a/b/c/"`, segment 0 is `"a`"`, 1 is `"b"`, 2 is `"c"`, and 3 is `""`.
     /// # Getting
     /// Can be `None`.
     /// # Setting

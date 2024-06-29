@@ -28,7 +28,7 @@ impl TestSet {
     }
 }
 
-/// Indidual [`TestSet`] test.
+/// Individual [`TestSet`] test.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Expectation {
     /// The URL to clean.

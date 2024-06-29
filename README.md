@@ -29,6 +29,8 @@ Currently no guarantees are made.
 
 Additionally, these rules may be changed at any time for any reason.
 
+The default config always assumes all default features are enabled when URL Cleaner is compiled except for `commands`.
+
 #### Flags
 
 Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
@@ -78,7 +80,7 @@ Various sets are included in the default config.
 - `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
 - `shortlink-hosts`: Hosts that are considered shortlinks in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandShortLink` mapper applied.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
-    Please note that the UTP rule in the default config also removes any parmeter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
+    Please note that the UTP rule in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
 - `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 - `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
 
@@ -108,22 +110,15 @@ Although proper documentation of the config schema is pending me being bothered 
 The main files you want to look at are [`conditions.rs`](src/rules/conditions.rs) and [`mappers.rs`](src/rules/mappers.rs).  
 Additionally [`url_part.rs`](src/types/url_part.rs), [`string_location.rs`](src/types/string_location.rs), and [`string_modification.rs`](src/types/string_modification.rs) are very important for more advanced rules.
 
-Until I publish URL Cleaner on crates.io/docs.rs, you can read the documentation by `git clone`ing this repository and running `cargo doc --no-deps` in the root directory then viewing the files in `target/doc/url_cleaner` in a web browser.  
-If the URL in your web browser looks like `file:///run/...` and the webpage is white with numbers on the left side, you should run `python3 -m http.server` in the cloned folder and open `http://localhost:8000/target/doc/url_cleaner/`.
-
 ### Footguns
 
 There are various things in/about URL Cleaner that I or many consider stupid but for various reasons cannot/should not be fixed. These include but are not limited to:
 
-- There are various `UrlPart` variants that use "suffix" semantics (treating `google.co.uk` the same as `google.com`).
-    For this, URL Cleaner uses the [`psl`](https://docs.rs/psl/latest/psl/) crate which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/).
-    Mozilla's PSL includes `blogspot.com` (and possibly a few other suffixes one may expect to be a domain) which has various counterintuitive side effects that are documented in affected `UrlPart` variants.
-    This is not the fault of the maintainers of the psl crate, arguably not the fault of Mozilla, and slightly less arguably not even the fault of google/the people at google who submitted `blogspot.com` to Mozilla's PSL,
-    Also, this is not the fault of the URL spec as suffix semantics aren't actually a part of them. The TLD of `google.co.uk` *is* `uk`.
-    I have decided to not diverge from the behavior the `psl` crate exhibits and have instead decided to make sure people know about this.
-    I may or may not add a way to remove certain suffixes from the public suffix list URL Cleaner uses.
+- For `UrlPart`s and `Mapper`s that use "suffix" semantics (the idea that the '.co.uk" in "google.co.uk" is semantically the same as the ".com" in "google.com"'), the [psl] crate is used which in turn uses [Mozilla's Public Suffix List].
+    Various suffixes are included that one may expect to be normal domains, such as blogspot.com.
+    If for some reason a domain isn't working as expected, that may be the issue.
 
-### Referemce for people who don't know Rust's syntax:
+### Reference for people who don't know Rust's syntax:
 
 - [`Option<...>`](https://doc.rust-lang.org/std/option/enum.Option.html) just means a value can be `null` in the JSON. `{"abc": "xyz"}` and `{"abc": null}` are both valid states for a `abc: Option<String>` field.
 - [`Box<...>`](https://doc.rust-lang.org/std/boxed/struct.Box.html) has no bearing on JSON syntax or possible values. It's just used so Rust can put types inside themselves.
@@ -138,7 +133,7 @@ There are various things in/about URL Cleaner that I or many consider stupid but
 - [`#[serde(default)]`](https://serde.rs/field-attrs.html#default) and [`#[serde(default = "...")]`](https://serde.rs/field-attrs.html#default--path) allow for a field to be omitted when the desired value is almost always the same.
     - For [`Option<...>`](https://doc.rust-lang.org/std/option/enum.Option.html) fields, the default is `null`.
     - For [`bool`](https://doc.rust-lang.org/std/primitive.bool.html) fields, the default is `false`.
-- [`#[serde(skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if) lets the `--print-config` CLI flag omit uneccesary details (like when a field's value is its default value).
+- [`#[serde(skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if) lets the `--print-config` CLI flag omit unnecessary details (like when a field's value is its default value).
 - [`#[serde(from = "...")]`](https://serde.rs/container-attrs.html#from), [`#[serde(into = "...")]`](https://serde.rs/container-attrs.html#into), [`#[serde(remote = "...")]`](https://serde.rs/container-attrs.html#remote), [`#[serde(serialize_with = "...")]`](https://serde.rs/field-attrs.html#serialize_with), [`#[serde(deserialize_with = "...")]`](https://serde.rs/field-attrs.html#deserialize_with), and [`#[serde(with = "...")]`](https://serde.rs/field-attrs.html#with) are implementation details that can be mostly ignored.
 - [`#[serde(remote = "Self")]`](https://serde.rs/container-attrs.html#remote) is a very strange way to allow a struct to be deserialized from a map or a string. See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 
@@ -152,13 +147,7 @@ The Minimum Supported Rust Version is the latest stable release. URL Cleaner may
 ## Untrusted input
 
 Although URL Cleaner has various feature flags that can be disabled to make handling untrusted input safer, no guarantees are made. Especially if the config file being used is untrusted.  
-That said, if you notice any rules that use but don't actually need HTTP requests, please let me know.
-
-(Note that URL Cleaner doesn't use any `unsafe` code. I mean safety in terms of IP leaks and stuff.)
-
-## Backwards compatibility
-
-URL Cleaner is currently in heavy flux so expect library APIs and the config schema to change at any time for any reason.
+That said, if you notice any rules that use but don't actually need HTTP requests or other leaky features, please let me know.
 
 ## CLI
 

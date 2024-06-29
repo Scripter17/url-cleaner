@@ -233,7 +233,7 @@ pub enum StringLocationError {
     /// Returned when the requested segment is not found.
     #[error("The requested segment was not found.")]
     SegmentNotFound,
-    /// Returned wjem a [`StringLocation::TryElse`] has both its `try` and `else` return an error.
+    /// Returned when a [`StringLocation::TryElse`] has both its `try` and `else` return an error.
     #[error("A StringLocation::TryElse had both its `try` and `else` return an error.")]
     TryElseError {
         /// The error returned by [`StringLocation::TryElse::try`],

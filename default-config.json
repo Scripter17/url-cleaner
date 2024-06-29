@@ -44,6 +44,7 @@
 				"usqp", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
 				"ymclid", "ymid", "ysclid"
 			],
+			"utps-host-whitelist": [],
 			"https-upgrade-host-whitelist": ["orteil.dashnet.org"]
 		},
 		"lists": {

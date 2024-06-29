@@ -413,11 +413,11 @@ pub enum Condition {
 
     /// Passes if `source` and `value`'s calls to [`StringSource::get`] return the same value.
     /// # Errors
-    /// If either call to [`StringSource::get`] reutrns an error, that error is returned.
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
     StringIs {
         /// The left hand side of the `==` operation.
         source: Option<StringSource>,
-        /// The right hadn side of the `==` operation.`
+        /// The right hand side of the `==` operation.`
         value: Option<StringSource>
     },
     /// Passes if [`Self::StringContains::source`] contains [`Self::StringContains::value`] at [`Self::StringContains::where`].

@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 #[cfg(feature = "stdin")]
 use std::io;
-use std::borrow::Cow;
 
 use clap::Parser;
 use url::Url;
@@ -15,6 +14,32 @@ mod util;
 
 #[derive(Debug, Clone, Parser)]
 /// URL Cleaner - Explicit non-consent to URL-based tracking.
+/// 
+/// Enabled features:
+#[cfg_attr(feature = "default-config"         , doc = "default-config"         )]
+#[cfg_attr(feature = "minify-included-strings", doc = "minify-included-strings")]
+#[cfg_attr(feature = "stdin"                  , doc = "stdin"                  )]
+#[cfg_attr(feature = "regex"                  , doc = "regex"                  )]
+#[cfg_attr(feature = "glob"                   , doc = "glob"                   )]
+#[cfg_attr(feature = "commands"               , doc = "commands"               )]
+#[cfg_attr(feature = "http"                   , doc = "http"                   )]
+#[cfg_attr(feature = "advanced-requests"      , doc = "advanced-requests"      )]
+#[cfg_attr(feature = "cache"                  , doc = "cache"                  )]
+#[cfg_attr(feature = "cache-redirects"        , doc = "cache-redirects"        )]
+#[cfg_attr(feature = "debug"                  , doc = "debug"                  )]
+/// 
+/// Disabled features:
+#[cfg_attr(not(feature = "default-config"         ), doc = "default-config"         )]
+#[cfg_attr(not(feature = "minify-included-strings"), doc = "minify-included-strings")]
+#[cfg_attr(not(feature = "stdin"                  ), doc = "stdin"                  )]
+#[cfg_attr(not(feature = "regex"                  ), doc = "regex"                  )]
+#[cfg_attr(not(feature = "glob"                   ), doc = "glob"                   )]
+#[cfg_attr(not(feature = "commands"               ), doc = "commands"               )]
+#[cfg_attr(not(feature = "http"                   ), doc = "http"                   )]
+#[cfg_attr(not(feature = "advanced-requests"      ), doc = "advanced-requests"      )]
+#[cfg_attr(not(feature = "cache"                  ), doc = "cache"                  )]
+#[cfg_attr(not(feature = "cache-redirects"        ), doc = "cache-redirects"        )]
+#[cfg_attr(not(feature = "debug"                  ), doc = "debug"                  )]
 struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     urls: Vec<Url>,
@@ -32,9 +57,9 @@ struct Args {
     #[arg(short      , long)] var   : Vec<String>,
     /// Unset variables set by the config.
     #[arg(short = 'V', long)] unvar : Vec<String>,
-    /// For each occurence of this option, its first argument is the set name and subsequent arguments are the values to insert.
+    /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to insert.
     #[arg(             long, num_args(2..))] insert_into_set: Vec<Vec<String>>,
-    /// For each occurence of this option, its first argument is the set name and subsequent arguments are the values to remove.
+    /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to remove.
     #[arg(             long, num_args(2..))] remove_from_set: Vec<Vec<String>>,
     /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
     #[cfg(feature = "cache")]
@@ -49,28 +74,29 @@ struct Args {
     #[arg(             long)] http_proxy: Option<glue::ProxyConfig>,
     /// Disables all HTTP proxying.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    #[arg(             long)] no_http_proxy: Option<bool>,
+    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    no_http_proxy: Option<bool>,
     /// Print the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] print_args: bool,
+    #[arg(             long, verbatim_doc_comment)] print_args: bool,
     /// Print the ParamsDiffs loaded from `--params--diff` files and derived from the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] print_params_diffs: bool,
+    #[arg(             long, verbatim_doc_comment)] print_params_diffs: bool,
     /// Print the config's params before applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] print_params: bool,
+    #[arg(             long, verbatim_doc_comment)] print_params: bool,
     /// Print the specified config as JSON before applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] print_config: bool,
+    #[arg(             long, verbatim_doc_comment)] print_config: bool,
     /// Print the config's params after applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] print_diffed_params: bool,
-    /// Print the specified config'as JSON after applying the ParamsDiff.
+    #[arg(             long, verbatim_doc_comment)] print_diffed_params: bool,
+    /// Print the specified config's JSON after applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] print_diffed_config: bool,
+    #[arg(             long, verbatim_doc_comment)] print_diffed_config: bool,
     /// Run the config's tests.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long)] test_config : bool
+    #[arg(             long, verbatim_doc_comment)] test_config : bool
 }
 
 /// The enum of all errors that can occur when converting an [`Args`] to types usable by URL Cleaner.
@@ -127,22 +153,8 @@ pub enum CliError {
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }
 
-fn json_fix_u_escape(s: &str) -> Cow<'_, str> {
-    if !s.contains('\\') {return Cow::Borrowed(s);}
-    let mut last_was_escape = false;
-    let mut skip_next_opening_brace = false;
-    let mut skip_next_closing_brace = false;
-    let mut ret = String::new();
-    for c in s.chars() {
-        if last_was_escape && c == 'u' {skip_next_opening_brace = true; skip_next_closing_brace = true;}
-        if skip_next_opening_brace && c == '{' {skip_next_opening_brace = false; last_was_escape = false; continue;}
-        if skip_next_closing_brace && c == '}' {skip_next_closing_brace = false; last_was_escape = false; continue;}
-        if last_was_escape && c == '\'' {last_was_escape = false;}
-        if last_was_escape {ret.push('\\');}
-        if c != '\\' {ret.push(c)};
-        last_was_escape = c == '\\';
-    }
-    Cow::Owned(ret)
+fn str_to_json_str(s: &str) -> String {
+    serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
 
 fn main() -> Result<(), CliError> {
@@ -186,7 +198,7 @@ fn main() -> Result<(), CliError> {
             if !first_url {print!(",");}
             match config.apply(&mut url) {
                 Ok(()) => {print!("{{\"Ok\":{:?}}}", url.as_str());},
-                Err(e) => {print!("{{\"Err\":\"{e:?}\"}}");}
+                Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source_url\":{},\"error\":{}}}}}", str_to_json_str(url.as_str()), str_to_json_str(&e.to_string()));}
             }
             first_url = false;
         }
@@ -198,12 +210,12 @@ fn main() -> Result<(), CliError> {
                 match maybe_line {
                     Ok(line) => match Url::parse(&line) {
                         Ok(mut url) => match config.apply(&mut url) {
-                            Ok(()) => {print!("{{\"Ok\":{:?}}}", url.as_str());},
-                            Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source_url\":\"{}\",\"error\":\"{e:?}\"}}}}", json_fix_u_escape(&url.as_str().escape_debug().to_string()));}
+                            Ok(()) => {print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));},
+                            Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source_url\":{},\"error\":{}}}}}", str_to_json_str(url.as_str()), str_to_json_str(&e.to_string()));}
                         },
-                        Err(e) => {print!("{{\"Err\":{{\"type\":\"LineParseError\",\"source_url\":\"{}\",\"error\":\"{e:?}\"}}}}", json_fix_u_escape(&line.escape_debug().to_string()));}
+                        Err(e) => {print!("{{\"Err\":{{\"type\":\"LineParseError\",\"source_url\":{},\"error\":{}}}}}", str_to_json_str(&line), str_to_json_str(&e.to_string()));}
                     },
-                    Err(e) => {print!("{{\"Err\":{{\"type\":\"LineReadError\",\"Error\":\"{e:?}\"}}}}");}
+                    Err(e) => {print!("{{\"Err\":{{\"type\":\"LineReadError\",\"Error\":{}}}}}", str_to_json_str(&e.to_string()));}
                 }
                 first_url = false;
             }
