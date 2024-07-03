@@ -18,9 +18,9 @@
 				"cnn.it", "cos.lv", "cos.lv", "cutt.ly", "cutt.ly", "db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me",
 				"fb.me", "flip.it", "forms.gle", "g.co", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv",
 				"ift.tt", "iwe.one", "k00.fr", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
-				"ny.ti", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it",
-				"pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi",
-				"sqex.to", "t.co", "t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
+				"ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly",
+				"pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at",
+				"spoti.fi", "sqex.to", "t.co", "t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -28,13 +28,13 @@
 				"_trksid", "_zucks_suid", "action_object_map", "action_ref_map", "action_type_map", "adfrom", "adjust_adgroup", "adjust_campaign",
 				"adjust_creative", "adjust_referrer", "adjust_tracker", "adjust_tracker_limit", "admitad_uid", "af_ad", "af_adset", "af_click_lookback",
 				"af_force_deeplink", "af_xp", "aiad_clid", "asgtbndr", "at_campaign", "at_campaign_type", "at_creation", "at_emailtype", "at_link",
-				"at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id", "at_recipient_list", "at_send_date",
-				"awc", "bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "cjdata", "cjevent", "click", "cm_cr", "cm_me",
-				"cmpid", "cuid", "cx_click", "cx_recsOrder", "cx_recsWidget", "dclid", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source",
-				"ebisAdID", "erid", "et_rid", "external_click_id", "famad_xuid", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref",
-				"fb_source", "fbclid", "gad_source", "gbraid", "gci", "gclid", "gclsrc", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig",
-				"hsCtaTracking", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt",
-				"hsa_ver", "hsctatracking", "icid", "iclid", "ir_adid", "ir_campaignid", "ir_partnerid", "irclickid", "irgwc", "is_retargeting",
+				"at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id", "at_recipient_list", "at_send_date", "awc",
+				"bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "cjdata", "cjevent", "click", "cm_cr", "cm_me", "cmpid", "cuid",
+				"cx_click", "cx_recsOrder", "cx_recsWidget", "dclid", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", "ebisAdID", "erid",
+				"et_rid", "external_click_id", "famad_xuid", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref", "fb_source", "fbclid",
+				"gad_source", "gbraid", "gci", "gclid", "gclsrc", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig", "hsCtaTracking",
+				"hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt", "hsa_ver",
+				"hsctatracking", "icid", "iclid", "intcmp", "ir_adid", "ir_campaignid", "ir_partnerid", "irclickid", "irgwc", "is_retargeting",
 				"itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "key", "maf", "mc_eid", "message", "mindbox",
 				"mindbox-click-id", "mindbox-message-key", "mkt_tok", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mt_link_id", "mtm_campaign",
 				"mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "nx_source", "oft_c", "oft_ck",
@@ -620,7 +620,9 @@
 					"thrn.co": {"All": [
 						{"SetHost": "throne.com"},
 						{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
-					]}
+					]},
+					"addons.mozilla.org": {"RemoveQueryParams": ["platform", "appver"]},
+					"amtrak.com": {"RemoveQueryParams": ["atv", "cmp"]}
 				}
 			}
 		},

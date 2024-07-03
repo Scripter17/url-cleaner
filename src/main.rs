@@ -211,9 +211,9 @@ fn main() -> Result<(), CliError> {
                     Ok(line) => match Url::parse(&line) {
                         Ok(mut url) => match config.apply(&mut url) {
                             Ok(()) => {print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));},
-                            Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source_url\":{},\"error\":{}}}}}", str_to_json_str(url.as_str()), str_to_json_str(&e.to_string()));}
+                            Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source\":{},\"error\":{}}}}}", str_to_json_str(url.as_str()), str_to_json_str(&e.to_string()));}
                         },
-                        Err(e) => {print!("{{\"Err\":{{\"type\":\"LineParseError\",\"source_url\":{},\"error\":{}}}}}", str_to_json_str(&line), str_to_json_str(&e.to_string()));}
+                        Err(e) => {print!("{{\"Err\":{{\"type\":\"UrlParseError\",\"source\":{},\"error\":{}}}}}", str_to_json_str(&line), str_to_json_str(&e.to_string()));}
                     },
                     Err(e) => {print!("{{\"Err\":{{\"type\":\"LineReadError\",\"Error\":{}}}}}", str_to_json_str(&e.to_string()));}
                 }

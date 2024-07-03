@@ -101,7 +101,6 @@ unused_import_braces = "warn"
 
 [lints.clippy]
 unwrap_used = "deny"
-# expect_used = "warn" # "force-warn" doesn't work in clippy???
 missing_errors_doc = "deny"
 missing_panics_doc = "deny"
 missing_safety_doc = "deny"
