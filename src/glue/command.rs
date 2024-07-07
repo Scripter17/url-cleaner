@@ -21,6 +21,7 @@ use crate::util::*;
 /// Instructions on how to make and run a [`Command`] object.
 /// 
 /// If you are making a URL-Cleaner-as-a-service service, you should disable the `commands` feature to block access to this.
+/// 
 /// I don't care if you use sandboxing. You shouldn't tempt fate.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]

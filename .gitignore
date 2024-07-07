@@ -4,6 +4,7 @@ redirect-cache.txt
 /benchmarking/stdin
 /benchmarking/output-*
 callgrind*
+cachegrind*
 hyperfine*
 *.zip
 *mprocs.yaml

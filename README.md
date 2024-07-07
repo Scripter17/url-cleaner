@@ -37,23 +37,25 @@ Flags let you specify behaviour with the `--flag name --flag name2` command line
 
 Various flags are included in the default config for things I want to do frequently.
 
+- `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-http`: Don't make any HTTP requests.
-- `minimize`: Remove non-essential parts of URLs that are likely not tracking related.
-- `no-unmangle`: Disable turning `https://user.example.com.example.com` into `https://user.example.com` and `https://example.com/https://example.com/abc` and `https://example.com/xyz/https://example.com/abc` into `https://example.com/abc`.
-- `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` URLs to `https://example2.com/abc` URLs.
-- `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` URLs to `https://example2.com/profile/user` URLs.
-- `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` URLs to `https://username.example.com` URLs.
-- `no-https-upgrade`: Disable replacing `http://` URLs with `https://` URLs.
 - `assume-cctld-is-shortlink`: Treat all domains ending in a 2 letter top level domain as shortlinks. Yes this does cause issues with stuff like google.
 - `assume-1-dot-2-is-shortlink`: Treat all that match the Regex `^.\...$` as shortlinks. Let's be real, they all are.
+- `no-unmangle`: Disable unmangling.
+- `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
+- `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
+- `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
+- `no-unmangle-subdomain-ends-in-not-subdomain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
+- `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
-- `youtube-unshort`: Turns `https://youtube.com/shorts/abc` URLs into `https://youtube.com/watch?v=abc` URLs.
-- `discord-unexternal`: Replace `images-ext-1.discordapp.net` URLs with the original images they refer to.
-- `discord-compatibility`: Sets the domain of `twitter.com` URLs to the domain specified by the `twitter-embed-domain` variable.
-- `deadname-twitter`: Change `x.com` URLs to `twitter.com` URLs.
-- `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) URLs to the domain specified by the `breezewiki-domain` variable.
-- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) URLs into `fandom.com` URLs.
-- `onion-location`: Send an HTTP GET request to the url and apply the [`Onion-Location`](https://community.torproject.org/onion-services/advanced/onion-location/) response header if found. Because this runs on all URLs and the response isn't cached, it's advised you don't use this.
+- `minimize`: Remove non-essential parts of that are likely not tracking related.
+- `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
+- `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
+- `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
+- `deadname-twitter`: Change `x.com` to `twitter.com`.
+- `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
+- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.
+- `onion-location`: Send an HTTP GET request to the url and apply the [`Onion-Location`](https://community.torproject.org/onion-services/advanced/onion-location/) response header if found. Because this runs on all and the response isn't cached, it's advised you don't use this.
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 
@@ -65,8 +67,8 @@ Variables let you specify behaviour with the `--var name=value --var name2=value
 
 Various variables are included in the default config for things that have multiple useful values.
 
-- `twitter-embed-domain`: The domain to use for twitter URLs when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
-- `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki URLs into [BreezeWiki](https://breezewiki.com/) URLs. Defaults to `breezewiki.com`
+- `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
+- `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
 - `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
 
 If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
@@ -77,12 +79,14 @@ Sets let you check if a string is one of many specific strings very quickly.
 
 Various sets are included in the default config.
 
-- `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
+- `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
 - `shortlink-hosts`: Hosts that are considered shortlinks in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandShortLink` mapper applied.
+- `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
     Please note that the UTP rule in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
-- `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
-- `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
+- `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
+- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
+- `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
 

@@ -574,7 +574,7 @@ impl Condition {
 
             Self::TreatErrorAsPass(condition) => condition.satisfied_by(job_state).unwrap_or(true),
             Self::TreatErrorAsFail(condition) => condition.satisfied_by(job_state).unwrap_or(false),
-            Self::TryElse{r#try, r#else} => r#try.satisfied_by(job_state).or_else(|try_error| r#else.satisfied_by(job_state).map_err(|else_error2| ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error2)}))?,
+            Self::TryElse{ r#try, r#else } => r#try.satisfied_by(job_state).or_else(|try_error| r#else.satisfied_by(job_state).map_err(|else_error| ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(conditions) => {
                 let mut result = Ok(false); // Initial value doesn't mean anything.
                 for condition in conditions {

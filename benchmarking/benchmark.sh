@@ -5,15 +5,17 @@ URLS=(\
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id"\
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8"\
 )
-NUMS=(0 1 10 100 1000 10000 100000)
+NUMS=(0 1 10 100 1000 10000)
 
-rm -f hyperfine* callgrind*
+rm -f hyperfine* callgrind* cachegrind*
 
 no_compile=false
 json=false
 no_hyperfine=false
 print_desmos_lists=false
 no_valgrind=false
+no_callgrind=false
+no_cachegrind=false
 
 for arg in "$@"; do
   shift
@@ -23,6 +25,9 @@ for arg in "$@"; do
     "--no-hyperfine") no_hyperfine=true ;;
     "--print-desmos-lists") print_desmos_lists=true ;;
     "--no-valgrind") no_valgrind=true ;;
+    "--no-callgrind") no_callgrind=true ;;
+    "--no-cachegrind") no_cachegrind=true ;;
+    *) echo Unknwon option \"$arg\" ;;
   esac
 done
 
@@ -59,9 +64,16 @@ for url in "${URLS[@]}"; do
   fi
   if [ "$no_valgrind" == "false" ]; then
     for num in "${NUMS[@]}"; do
-      echo Valgrind - $num
-      yes $url | head -n $num | valgrind --quiet --tool=callgrind $COMMAND > /dev/null
-      mv callgrind.out.* "callgrind.out-$file_safe_in_url-$num"
+      if [ "$no_callgrind" = "false" ]; then
+        echo "Callgrind  - $num"
+        yes $url | head -n $num | valgrind --quiet --tool=callgrind  $COMMAND > /dev/null
+        mv callgrind.out.* "callgrind.out-$file_safe_in_url-$num"
+      fi
+      if [ "$no_cachegrind" = "false" ]; then
+        echo "Cachegrind - $num"
+        yes $url | head -n $num | valgrind --quiet --tool=cachegrind $COMMAND > /dev/null
+        mv cachegrind.out.* "cachegrind.out-$file_safe_in_url-$num"
+      fi
     done
   fi
 done
