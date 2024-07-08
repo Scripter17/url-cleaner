@@ -83,7 +83,7 @@ impl Config {
         self.rules.apply(&mut JobState {
             url,
             params: &self.params,
-            string_vars: Default::default()
+            vars: Default::default()
         })
     }
 

@@ -248,8 +248,7 @@ impl StringLocation {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringLocationError> {
-        #[cfg(feature = "debug")]
-        println!("Location: {self:?}");
+        debug!("Location: {self:?}");
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

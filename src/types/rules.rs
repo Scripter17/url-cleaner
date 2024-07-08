@@ -147,6 +147,10 @@ pub enum Rule {
     /// 
     /// If no error is returned, returns the error [`RuleError::FailedCondition`].
     PretendFailedCondition(Box<Self>),
+    /// Execites the contained [`Rules`].
+    /// # Errors
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    Rules(Rules),
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
@@ -201,8 +205,7 @@ impl Rule {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        #[cfg(feature = "debug")]
-        println!("Rule: {self:?}");
+        debug!("Rule: {self:?}");
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by(job_state)? {
                 mapper.apply(job_state)?;
@@ -244,7 +247,8 @@ impl Rule {
             Self::PretendFailedCondition(rule) => {
                 rule.apply(job_state)?;
                 Err(RuleError::FailedCondition)
-            }
+            },
+            Self::Rules(rules) => Ok(rules.apply(job_state)?)
         }
     }
 }
@@ -258,17 +262,16 @@ pub struct Rules(pub Vec<Rule>);
 impl Rules {
     /// Applies each contained [`Rule`] to the provided [`JobState::url`] in order.
     /// 
-    /// If an error is returned, `job_state.url` and `job_state.string_vars` are left unmodified.
+    /// If an error is returned, `job_state.url` and `job_state.vars` are left unmodified.
     /// # Errors
     /// If any contained [`Rule`] returns an error other than [`RuleError::FailedCondition`] or [`RuleError::ValueNotInMap`], that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        #[cfg(feature = "debug")]
-        println!("Rules: {self:?}");
+        debug!("Rules: {self:?}");
         let mut temp_url = job_state.url.clone();
         let mut temp_job_state = JobState {
             url: &mut temp_url,
             params: job_state.params,
-            string_vars: job_state.string_vars.clone()
+            vars: job_state.vars.clone()
         };
         for rule in &self.0 {
             match rule.apply(&mut temp_job_state) {
@@ -277,7 +280,7 @@ impl Rules {
                 _ => {}
             }
         }
-        job_state.string_vars = temp_job_state.string_vars;
+        job_state.vars = temp_job_state.vars;
         *job_state.url = temp_url;
         Ok(())
     }

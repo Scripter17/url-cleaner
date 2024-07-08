@@ -11,7 +11,7 @@ use thiserror::Error;
 use url::Url;
 
 use super::*;
-use crate::util::is_default;
+use crate::util::*;
 
 /// Configuration options to choose the behaviour of various URL Cleaner types.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -95,8 +95,7 @@ impl Params {
     /// Errors if [`reqwest::ClientBuilder::build`] errors.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        #[cfg(feature = "debug")]
-        eprintln!("=== Params::http_client ===\nself: {self:?}\nhttp_client_config_diff: {http_client_config_diff:?}");
+        debug!("=== Params::http_client ===\nself: {self:?}\nhttp_client_config_diff: {http_client_config_diff:?}");
         match http_client_config_diff {
             Some(http_client_config_diff) => {
                 let mut temp_http_client_config = self.http_client_config.clone();
@@ -148,30 +147,30 @@ impl Params {
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ParamsDiff {
     /// Adds to [`Params::flags`]. Defaults to an empty [`HashSet`].
-    #[serde(default)] pub flags  : HashSet<String>,
+    #[serde(default, skip_serializing_if = "is_default")] pub flags  : HashSet<String>,
     /// Removes from [`Params::flags`] Defaults to an empty [`HashSet`].
-    #[serde(default)] pub unflags: HashSet<String>,
+    #[serde(default, skip_serializing_if = "is_default")] pub unflags: HashSet<String>,
     /// Adds to [`Params::vars`]. Defaults to an empty [`HashMap`].
-    #[serde(default)] pub vars  : HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "is_default")] pub vars  : HashMap<String, String>,
     /// Removes from [`Params::vars`]. Defaults to an empty [`HashSet`].
-    #[serde(default)] pub unvars: HashSet<String>,
+    #[serde(default, skip_serializing_if = "is_default")] pub unvars: HashSet<String>,
     /// Initializes new sets in [`Params::sets`].
-    #[serde(default)] pub init_sets: Vec<String>,
+    #[serde(default, skip_serializing_if = "is_default")] pub init_sets: Vec<String>,
     /// Initializes new sets in [`Params::sets`] if they don't already exist, then inserts values into them.
-    #[serde(default)] pub insert_into_sets: HashMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_sets: HashMap<String, Vec<String>>,
     /// If the sets exist in [`Params::sets`], removes values from them.
-    #[serde(default)] pub remove_from_sets: HashMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, Vec<String>>,
     /// If the sets exist in [`Params::sets`], remove them.
-    #[serde(default)] pub delete_sets: Vec<String>,
+    #[serde(default, skip_serializing_if = "is_default")] pub delete_sets: Vec<String>,
     /// If [`Some`], sets [`Params::read_cache`]. Defaults to [`None`].
     #[cfg(feature = "cache")]
-    #[serde(default)] pub read_cache : Option<bool>,
+    #[serde(default, skip_serializing_if = "is_default")] pub read_cache : Option<bool>,
     /// If [`Some`], sets [`Params::write_cache`]. Defaults to [`None`].
     #[cfg(feature = "cache")]
-    #[serde(default)] pub write_cache: Option<bool>,
+    #[serde(default, skip_serializing_if = "is_default")] pub write_cache: Option<bool>,
     /// If [`Some`], calls [`HttpClientConfigDiff::apply`] with `to`'s [`HttpClientConfig`]. Defaults to [`None`].
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
-    #[serde(default)] pub http_client_config_diff: Option<HttpClientConfigDiff>
+    #[serde(default, skip_serializing_if = "is_default")] pub http_client_config_diff: Option<HttpClientConfigDiff>
 }
 
 impl ParamsDiff {
@@ -214,7 +213,6 @@ impl ParamsDiff {
         #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
         #[cfg(all(feature = "http", not(target_family = "wasm")))] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
-        #[cfg(feature = "debug")]
-        eprintln!("=== ParamsDiff::apply ===\nold: {old_to:?}\nDiff: {self:?}\nnew: {to:?}");
+        debug!("=== ParamsDiff::apply ===\nold: {old_to:?}\nDiff: {self:?}\nnew: {to:?}");
     }
 }

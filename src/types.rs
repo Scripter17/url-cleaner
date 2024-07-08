@@ -33,7 +33,7 @@ pub struct JobState<'a> {
     /// The flags, variables, etc. defined by the job initiator.
     pub params: &'a Params,
     /// The string vars created and managed by the config.
-    pub string_vars: HashMap<String, String>
+    pub vars: HashMap<String, String>
 }
 
 /// Annoyingly I can't make a `Params::const_default` because `reqwest::header::HeaderMap`'s implementation details.
@@ -45,7 +45,7 @@ impl<'a> JobState<'a> {
         JobState {
             url,
             params: DEFAULT_PARAMS.get_or_init(Params::default),
-            string_vars: Default::default()
+            vars: Default::default()
         }
     }
 
@@ -54,7 +54,7 @@ impl<'a> JobState<'a> {
         JobState {
             url,
             params,
-            string_vars: Default::default()
+            vars: Default::default()
         }
     }
 }

@@ -1,5 +1,35 @@
 //! Various macros to make repetitive tasks simpler and cleaner.
 
+#[cfg(feature = "debug")]
+use std::sync::Mutex;
+
+#[cfg(feature = "debug")]
+pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
+
+#[cfg(feature = "debug")]
+pub(crate) struct Deindenter;
+
+#[cfg(feature = "debug")]
+impl std::ops::Drop for Deindenter {
+    fn drop(&mut self) {
+        *crate::util::DEBUG_INDENT.lock().unwrap()-=1;
+    }
+}
+
+/// Print debugging for the win!
+macro_rules! debug {
+    ($x:expr) => {
+        #[cfg(feature = "debug")]
+        let _deindent = {
+            let mut indent = crate::util::DEBUG_INDENT.lock().unwrap();
+            eprint!("{}", "|   ".repeat(*indent));
+            eprintln!($x);
+            *indent+=1;
+            crate::util::Deindenter
+        };
+    }
+}
+
 /// Macro that allows types to be have [`serde::Deserialize`] use [`std::str::FromStr`] as a fallback.
 /// 
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
@@ -69,6 +99,7 @@ macro_rules! get_option_str {
     }
 }
 
+pub(crate) use debug;
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
 pub(crate) use get_string;

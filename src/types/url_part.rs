@@ -860,8 +860,7 @@ impl UrlPart {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
-        #[cfg(feature = "debug")]
-        println!("_PartGet: {self:?}");
+        debug!("_PartGet: {self:?}");
         Some(match self {
             // Ordered hopefully most used to least used.
 
@@ -941,8 +940,7 @@ impl UrlPart {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
-        #[cfg(feature = "debug")]
-        println!("PartSet: {self:?}");
+        debug!("PartSet: {self:?}");
         #[allow(clippy::arithmetic_side_effects)]
         match (self, to) {
             (Self::Debug(part), _) => {

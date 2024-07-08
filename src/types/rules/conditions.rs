@@ -481,7 +481,11 @@ pub enum Condition {
         /// The expected [`std::process::ExitStatus`]. Defaults to `0`.
         #[serde(default)]
         expected: i32
-    }
+    },
+    /// Passes if the provided [`JobState`]'s [`JobState::params`]'s [`Parasm::flags`] is non-empty.
+    /// 
+    /// A rarely useful optimization but an optimization none the less.
+    AnyFlagIsSet
 }
 
 /// An enum of all possible errors a [`Condition`] can return.
@@ -527,8 +531,7 @@ impl Condition {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, job_state: &JobState) -> Result<bool, ConditionError> {
-        #[cfg(feature = "debug")]
-        println!("Condition: {self:?}");
+        debug!("Condition: {self:?}");
         Ok(match self {
             // Debug/constants.
 
@@ -628,8 +631,9 @@ impl Condition {
 
             // Miscellaneous.
 
-            Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x)==get_option_str!(value, job_state),
             Self::FlagIsSet(name) => job_state.params.flags.contains(name),
+            Self::AnyFlagIsSet => !job_state.params.flags.is_empty(),
+            Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x)==get_option_str!(value, job_state),
 
             // String source.
 

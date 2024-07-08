@@ -22,14 +22,16 @@ By default, compiling URL Cleaner includes the [`default-config.json`](default-c
 The default config is intended to always obey the following rules:
 
 - "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
-- URLs that are "semantically valid"<sup>[definition?]</sup> should never throe an error.
+    - Insignificant details like the navbar amazon listings have full of links to item categories being slightly different are, as previously stated, insignificant.
+- URLs that are "semantically valid" (as defined by whatever website it's a URL for) shouldn't ever throe an error.
+    - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
 - Outside of long (>10)/cyclic redirects/shortlinks, it should always be idempotent.
+- The `command` and `debug` features, as well as any features starting with `experiment-`/`experimental-` are never expected to be enabled.
+    The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, it should be disabled.
 
-Currently no guarantees are made.
+Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 
 Additionally, these rules may be changed at any time for any reason.
-
-The default config always assumes all default features are enabled when URL Cleaner is compiled except for `commands`.
 
 #### Flags
 
@@ -39,7 +41,6 @@ Various flags are included in the default config for things I want to do frequen
 
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-http`: Don't make any HTTP requests.
-- `assume-cctld-is-shortlink`: Treat all domains ending in a 2 letter top level domain as shortlinks. Yes this does cause issues with stuff like google.
 - `assume-1-dot-2-is-shortlink`: Treat all that match the Regex `^.\...$` as shortlinks. Let's be real, they all are.
 - `no-unmangle`: Disable unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
@@ -151,11 +152,13 @@ The Minimum Supported Rust Version is the latest stable release. URL Cleaner may
 ## Untrusted input
 
 Although URL Cleaner has various feature flags that can be disabled to make handling untrusted input safer, no guarantees are made. Especially if the config file being used is untrusted.  
-That said, if you notice any rules that use but don't actually need HTTP requests or other leaky features, please let me know.
+That said, if you notice any rules that use but don't actually need HTTP requests or other data-leaky features, please let me know.
 
 ## CLI
 
 ### Parsing output
+
+Note: [JSON output is supported](#json-output).
 
 Unless `Mapper::(e|)Print(ln|)` or a `Debug` variant is used, the following should always be true:
 
@@ -169,7 +172,7 @@ Unless `Mapper::(e|)Print(ln|)` or a `Debug` variant is used, the following shou
 
     1. Currently empty STDERR lines are not printed when a URL succeeds. While it would make parsing the output easier it would cause visual clutter on terminals. While this will likely never change by default, parsers should be sure to follow 4 strictly in case this is added as an option.
 
-#### JSON output
+### JSON output
 
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 

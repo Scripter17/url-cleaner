@@ -317,7 +317,7 @@ pub enum Mapper {
     /// Sets the current job's `name` string var to `value`.
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    SetJobStringVar {
+    SetVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The value to set the variable to.
@@ -326,18 +326,26 @@ pub enum Mapper {
     /// Delete the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    DeleteJobStringVar(StringSource),
+    DeleteJobVar(StringSource),
     /// Applies a [`StringModification`] to the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringModification::apply`] returns an error, that error is returned.
-    ModifyJobStringVar {
+    ModifyJobVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The modification to apply.
         modification: StringModification
-    }
+    },
+    /// Execites the contained [`Rule`].
+    /// # Errors
+    /// If the call to [`Rule::apply`] returns an error other than [`RuleError::FailedCondition`] and [`RuleError::ValueNotInMap`], returns that error.
+    Rule(Box<Rule>),
+    /// Execites the contained [`Rules`].
+    /// # Errors
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    Rules(Rules)
 }
 
 /// An enum of all possible errors a [`Mapper`] can return.
@@ -438,8 +446,7 @@ impl Mapper {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), MapperError> {
-        #[cfg(feature = "debug")]
-        println!("Mapper: {self:?}");
+        debug!("Mapper: {self:?}");
         match self {
             // Testing.
 
@@ -450,7 +457,7 @@ impl Mapper {
                 let old_job_state = JobState {
                     url: &mut old_url,
                     params: job_state.params,
-                    string_vars: job_state.string_vars.clone()
+                    vars: job_state.vars.clone()
                 };
                 let mapper_result=mapper.apply(job_state);
                 eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld job state: {old_job_state:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
@@ -469,12 +476,12 @@ impl Mapper {
                 let mut temp_job_state = JobState {
                     url: &mut temp_url,
                     params: job_state.params,
-                    string_vars: job_state.string_vars.clone()
+                    vars: job_state.vars.clone()
                 };
                 for mapper in mappers {
                     mapper.apply(&mut temp_job_state)?;
                 }
-                job_state.string_vars = temp_job_state.string_vars;
+                job_state.vars = temp_job_state.vars;
                 *job_state.url = temp_url;
             },
             Self::AllNoRevert(mappers) => {
@@ -585,17 +592,19 @@ impl Mapper {
                 params_diff.apply(&mut config.params);
                 config.apply(job_state.url)?;
             },
-            Self::SetJobStringVar {name, value} => {let _ = job_state.string_vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
-            Self::DeleteJobStringVar(name) => {
+            Self::SetVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
+            Self::DeleteJobVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let _ = job_state.string_vars.remove(&name);
+                let _ = job_state.vars.remove(&name);
             },
-            Self::ModifyJobStringVar {name, modification} => {
+            Self::ModifyJobVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let mut temp = job_state.string_vars.get_mut(&name).ok_or(MapperError::JobStateStringVarIsNone)?.to_owned();
+                let mut temp = job_state.vars.get_mut(&name).ok_or(MapperError::JobStateStringVarIsNone)?.to_owned();
                 modification.apply(&mut temp, job_state)?;
-                let _ = job_state.string_vars.insert(name, temp);
-            }
+                let _ = job_state.vars.insert(name, temp);
+            },
+            Self::Rule(rule) => rule.apply(job_state)?,
+            Self::Rules(rules) => rules.apply(job_state)?
         };
         Ok(())
     }

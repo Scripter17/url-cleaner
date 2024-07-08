@@ -223,8 +223,7 @@ impl StringMatcher {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, haystack: &str, job_state: &JobState) -> Result<bool, StringMatcherError> {
-        #[cfg(feature = "debug")]
-        println!("Matcher: {self:?}");
+        debug!("Matcher: {self:?}");
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

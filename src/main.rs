@@ -1,8 +1,10 @@
 //! URL Cleaner originally started as a project to remove tracking garbage from URLs but has since grown into a very powerful URL manipulation tool.
-use std::path::PathBuf;
 
+use std::path::PathBuf;
 #[cfg(feature = "stdin")]
 use std::io;
+#[cfg(feature = "debug")]
+use std::sync::Mutex;
 
 use clap::Parser;
 use url::Url;
@@ -11,6 +13,9 @@ use thiserror::Error;
 mod glue;
 mod types;
 mod util;
+
+#[cfg(feature = "debug")]
+pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
 
 #[derive(Debug, Clone, Parser)]
 /// URL Cleaner - Explicit non-consent to URL-based tracking.

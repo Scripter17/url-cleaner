@@ -1,5 +1,6 @@
 {
 	"params": {
+		"flags": [],
 		"vars": {
 			"twitter-embed-domain": "vxtwitter.com",
 			"breezewiki-domain": "breezewiki.com"
@@ -20,8 +21,7 @@
 				"ift.tt", "iwe.one", "k00.fr", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
 				"ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly",
 				"pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at",
-				"spoti.fi", "sqex.to", "t.co", "t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
-				
+				"spoti.fi", "sqex.to", "t.co", "t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly", "on.msnbc.com"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -129,19 +129,19 @@
 		{
 			"RepeatUntilNonePass": {
 				"rules": [
-					{
+					{"PretendFailedCondition": {
 						"condition": {"All": [
 							{"PartIs": {"part": "Scheme", "value": "http"}},
 							{"Not": {"FlagIsSet": "no-https-upgrade"}},
 							{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-blacklist"}}}}
 						]},
 						"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
-					},
+					}},
 
 
 
 					{
-						"condition": {"UnqualifiedDomain": "gf.me"},
+						"condition": {"MaybeWWWDomain": "gf.me"},
 						"mapper": {"All": [
 							{"SetHost": "gofundme.com"},
 							{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "url_shortener"}}
@@ -155,18 +155,11 @@
 							{"Not": {"FlagIsSet": "no-http"}},
 							{"Any": [
 	              {"All": [
-	              	{"FlagIsSet": "assume-cctld-is-shortlink"},
-	              	{"PartMatches": {"part": {"DomainSegment": -1}, "matcher": {"Regex": "^..$"}}}
-	              ]},
-	              {"All": [
 	              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
 	              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
 	              ]},
 								{"StringMatches": {
-									"source": {"Modified": {
-										"source": {"Part": "Host"},
-										"modification": {"StripMaybePrefix": "www."}
-									}},
+									"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
 									"matcher": {"InSet": "shortlink-hosts"}
 								}},
 								{"StringSourceMap": {
@@ -397,7 +390,12 @@
 
 		{
 			"CommonCondition": {
-				"condition": {"Not": {"FlagIsSet": "no-unmangle"}},
+				"condition": {"All": [
+					{"Not": {"FlagIsSet": "no-unmangle"}},
+					{"HostIsOneOf": ["http", "https", "bsky.app", "www.bsky.app"]},
+					{"PartContains": {"part": "Path", "value": "http"}},
+					{"Not": {"PartIs": {"part": {"DomainSegment": 4}, "value": null}}}
+				]},
 				"rules": [
 					{
 						"CommonCondition": {
@@ -464,8 +462,8 @@
 						"condition": {"All": [
 							{"Not": {"FlagIsSet": "no-unmangle-second-path-segment-is-url"}},
 							{"Any": [
-								{"PartIs": {"part": {"PathSegment": 1}, "value": "http:"}},
-								{"PartIs": {"part": {"PathSegment": 1}, "value": "https:"}}
+								{"PartContains": {"part": "Path", "where": "Start", "value": "/http:"}},
+								{"PartContains": {"part": "Path", "where": "Start", "value": "/https:"}}
 							]}
 						]},
 						"mapper": {
@@ -493,14 +491,14 @@
 
 					{
 						"condition": {"All": [
-							{"QualifiedDomain": "bsky.app"},
+							{"MaybeWWWDomain": "bsky.app"},
 							{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
 						]},
 						"mapper": {"ModifyPart": {"part": "Path", "modification": {"Append": ".social"}}}
 					},
 					{
 						"condition": {"All": [
-							{"QualifiedDomain": "bsky.app"},
+							{"MaybeWWWDomain": "bsky.app"},
 							{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
 							{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": "."}}},
 							{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": ":"}}}
@@ -569,10 +567,9 @@
 
 		{
 			"PartMap": {
-				"comment-1": "PLEASE NOTE: Some things that by all reasonable reasons should be a domain, like \"blogspot.com\" are considered suffixes by Mozilla's Public Suffix List.",
-				"comment-2": "If a website isn't working here, the next PartMap (the Suffix one) could work.",
-				"comment-3": "The first group is only known to be fine for MaybeWWWDomain. Arbitrary subdomains may cause semantic issues.",
-				"part": {"NoneToEmptyString": "NotSubdomain"},
+				"comment-1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
+				"comment-2": "There's another PartMap below this one for UrlPart::Suffix.",
+				"part": "NotSubdomain",
 				"map": {
 					"theonion.com" : "RemoveQuery",
 					"teespring.com": "RemoveQuery",
@@ -581,7 +578,19 @@
 					"vxtwitter.com": {"SetHost": "x.com"},
 					"fixvx.com"    : {"SetHost": "x.com"},
 					"fxtwitter.com": {"SetHost": "x.com"},
-					"youtube.com"  : {"RemoveQueryParams": ["si", "feature"]},
+					"youtube.com"  : {"All": [
+						{"RemoveQueryParams": ["si", "feature"]},
+						{"IfCondition": {
+							"condition": {"All": [
+								{"FlagIsSet": "youtube-unshort"},
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
+							]},
+							"mapper": {"All": [
+								{"CopyPart": {"from": {"PathSegment": 1}, "to": {"QueryParam": "v"}}},
+								{"SetPart": {"part": "Path", "value": "watch"}}
+							]}
+						}}
+					]},
 					"youtu.be"     : {"All": [
 						{"SetHost" : "youtube.com"},
 						{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
@@ -607,6 +616,8 @@
 					"hp.com": {"RemoveQueryParams": ["jumpid"]},
 					"lenovo.com": {"RemoveQueryParams": ["IPromoID"]},
 					"loblaws.ca": {"RemoveQueryParams": ["navid", "icid", "icta"]},
+
+
 
 					"acer.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "internal_"}}},
 					"steampowered.com": {"RemoveQueryParams": ["snr"]},
@@ -650,13 +661,40 @@
 						"mapper": {"RemoveQueryParams": ["rid"]}
 					}},
 					"go.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
-					"marvel.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]}
+					"marvel.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
+					"deviantart.com": {"IfCondition": {
+						"condition": {"All": [
+							{"Not": {"PartIs": {"part": "Subdomain", "value": "www"}}},
+							{"Not": {"PartIs": {"part": "Subdomain", "value": ""}}}
+						]},
+						"mapper": {"All": [
+							{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
+							{"SetPart": {"part": "Subdomain", "value": null}}
+						]}
+					}},
+					"tumblr.com": {"Rules": [
+						{
+							"condition": {"QueryHasParam": "redirect_to"},
+							"mapper": {"All": [
+								{"GetPathFromQueryParam": "redirect_to"},
+								"RemoveQuery"
+							]}
+						},
+						{
+							"condition": {"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}},
+							"mapper": "RemoveQuery"
+						},
+						{
+							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "login_required"}},
+							"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+						}
+					]}
 				}
 			}
 		},
 		{
 			"PartMap": {
-				"comment": "For reasons unknown to god, myself, but not google, \"blogspot.com\" is considered a public suffix by Mozilla's Public Suffix List.",
+				"comment": "Some things that look like domains are actually considered suffixes by Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart.",
 				"part": "DomainSuffix",
 				"map": {
 					"blogspot.com": {"RemoveQueryParams": ["zx"]}
@@ -664,9 +702,9 @@
 			}
 		},
 		{
-			"PartMap": {
-				"part": "Host",
-				"map": {
+			"StringSourceMap": {
+				"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+					"map": {
 					"at.tumblr.com": {"All": [
 						{"SetHost": "tumblr.com"},
 						{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
@@ -675,89 +713,41 @@
 					"danbooru.donmai.us": {"IfCondition": {
 						"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "posts"}},
 						"mapper": {"RemoveQueryParams": ["q"]}
-					}}
+					}},
+					"x.com": {"Rules": [
+						{
+							"condition": {"PathIs": "/i/flow/login"},
+							"mapper": {"All": [
+								{"CopyPart": {"from": {"QueryParam": "redirect_after_login"}, "to": {"NoneToEmptyString": "Path"}}},
+								{"SetPart": {"part": "Query", "value": null}}
+							]}
+						},
+						{
+							"condition": {"Not": {"PathIs": "/search"}},
+							"mapper": "RemoveQuery"
+						},
+						{
+							"condition": {"PathIs": "/search"},
+							"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
+						},
+						{
+							"condition": {"All": [
+								{"FlagIsSet": "discord-compatibility"},
+								{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
+							]},
+							"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
+						},
+						{
+							"condition": {"All": [
+								{"QualifiedDomain": "x.com"},
+								{"FlagIsSet": "deadname-twitter"}
+							]},
+							"mapper": {"SetHost": "twitter.com"}
+						}
+					]}
 				}
 			}
 		},
-
-
-
-		{
-			"CommonCondition": {
-				"condition": {"UnqualifiedAnySuffix": "amazon"},
-				"rules": [
-					{
-						"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/gp/offer-listing/"}},
-						"mapper": {"All": [
-							{"SetPart": {"part": {"PathSegment": 0}, "value": "dp"}},
-							{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
-							{"SetPart": {"part": {"QueryParam": "aod"}, "value": "1"}}
-						]}
-					},
-					{
-						"condition": {"All": [
-							{"FlagIsSet": "minimize"},
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
-						]},
-						"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
-					},
-					{
-						"condition": {"All": [
-							{"FlagIsSet": "minimize"},
-							{"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}}
-						]},
-						"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
-					},
-					{
-						"condition": {
-							"PartMatches": {
-								"part": "Path",
-								"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
-							}
-						},
-						"mapper": {"AllowQueryParams": ["aod"]}
-					},
-					{
-						"condition": {"PathIs": "/s"},
-						"mapper": {"AllowQueryParams": ["k", "i", "rh", "bbn"]}
-					},
-					{
-						"condition": {"All": [
-							{
-								"PartMatches": {
-									"part": "Path",
-									"matcher": {"AnySegmentMatches": {"split": "/", "matcher": {"Equals": "dp"}}}
-								}
-							},
-							{"Any": [
-								{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
-								{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
-								{"PartMatches" : {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
-							]}
-						]},
-						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
-					},
-					{
-						"condition": {"PathIs": "/gp/buyagain"},
-						"mapper": {"AllowQueryParams": ["ats"]}
-					},
-					{
-						"condition": {"Any": [
-							{"PathIs": "/gp/customer-reviews"},
-							{"PartIs": {"part": {"PathSegment": 0}, "value": "product-reviews"}}
-						]},
-						"mapper": "RemoveQuery"
-					},
-					{
-						"condition": "Always",
-						"mapper": {"RemoveQueryParams": ["ref", "ref_", "node", "ie"]}
-					}
-				]
-			}
-		},
-
-
-
 		{
 			"PartRuleMap": {
 				"part": "DomainMiddle",
@@ -780,172 +770,81 @@
 					"bestbuy": {
 						"condition": "Always",
 						"mapper": {"RemoveQueryParams": ["icmp"]}
-					}
+					},
+					"amazon": {"Rules": [
+						{
+							"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/gp/offer-listing/"}},
+							"mapper": {"All": [
+								{"SetPart": {"part": {"PathSegment": 0}, "value": "dp"}},
+								{"SetPart": {"part": {"PathSegment": 1}, "value": null}},
+								{"SetPart": {"part": {"QueryParam": "aod"}, "value": "1"}}
+							]}
+						},
+						{
+							"condition": {"All": [
+								{"FlagIsSet": "minimize"},
+								{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
+							]},
+							"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+						},
+						{
+							"condition": {"All": [
+								{"FlagIsSet": "minimize"},
+								{"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}}
+							]},
+							"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
+						},
+						{
+							"condition": {"PartContains": {"part": "Path", "value": "/dp/"}},
+							"mapper": {"AllowQueryParams": ["aod"]}
+						},
+						{
+							"condition": {"All": [
+								{"PartContains": {"part": "Path", "value": "/dp/"}},
+								{"Any": [
+									{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
+									{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
+									{"PartMatches" : {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
+								]}
+							]},
+							"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+						},
+						{
+							"PartMap": {
+								"part": "Path",
+								"map": {
+									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn"]},
+									"/gp/buyagain": {"AllowQueryParams": ["ats"]},
+									"/gp/customer-reviews": "RemoveQuery"
+								}
+							}
+						},
+						{
+							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "product-reviews"}},
+							"mapper": "RemoveQuery"
+						},
+						{
+							"condition": "Always",
+							"mapper": {"RemoveQueryParams": ["ref", "ref_", "node", "ie"]}
+						}
+					]},
+					"google": {"Rules": [
+						{
+							"PartMap": {
+								"part": "Path",
+								"map": {
+									"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm"]},
+									"/setprefs": {"RemoveQueryParams": ["sa", "ved"]}
+								}
+							}
+						},
+						{
+							"condition": "Always",
+							"mapper": {"RemoveQueryParams": ["sca_esv"]}
+						}
+					]}
 				}
 			}
-		},
-
-
-
-		{
-			"CommonCondition": {
-				"condition": {"UnqualifiedDomain": "tumblr.com"},
-				"rules": [
-					{
-						"condition": {"QueryHasParam": "redirect_to"},
-						"mapper": {"All": [
-							{"GetPathFromQueryParam": "redirect_to"},
-							"RemoveQuery"
-						]}
-					},
-					{
-						"condition": {"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}},
-						"mapper": "RemoveQuery"
-					},
-					{
-						"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "login_required"}},
-						"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
-					}
-				]
-			}
-		},
-
-
-
-		{
-			"CommonCondition": {
-				"condition": {"MaybeWWWAnySuffix": "google"},
-				"rules": [
-					{
-						"PartMap": {
-							"part": "Path",
-							"map": {
-								"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm"]},
-								"/setprefs": {"RemoveQueryParams": ["sa", "ved"]}
-							}
-						}
-					},
-					{
-						"condition": "Always",
-						"mapper": {"RemoveQueryParams": ["sca_esv"]}
-					}
-				]
-			}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"FlagIsSet": "youtube-unshort"},
-				{"MaybeWWWDomain": "youtube.com"},
-				{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
-			]},
-			"mapper": {"All": [
-				{"CopyPart": {"from": {"PathSegment": 1}, "to": {"QueryParam": "v"}}},
-				{"SetPart": {"part": "Path", "value": "watch"}}
-			]}
-		},
-
-
-
-		{
-			"comment": "Discord embeds images using dedicated \"external images\" server(s). This gets the original image.",
-			"condition": {"All": [
-				{"FlagIsSet": "discord-unexternal"},
-				{"HostIsOneOf": [
-					"images-ext-1.discordapp.net",
-					"images-ext-2.discordapp.net",
-					"images-ext-3.discordapp.net"
-				]}
-			]},
-			"mapper": {"All": [
-				{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
-				{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
-				{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}},
-				"RemoveQuery"
-			]}
-		},
-
-
-
-		{
-			"CommonCondition": {
-				"condition": {"QualifiedDomain": "x.com"},
-				"rules": [
-					{
-						"condition": {"PathIs": "/i/flow/login"},
-						"mapper": {"All": [
-							{"CopyPart": {"from": {"QueryParam": "redirect_after_login"}, "to": {"NoneToEmptyString": "Path"}}},
-							{"SetPart": {"part": "Query", "value": null}}
-						]}
-					},
-					{
-						"condition": {"Not": {"PathIs": "/search"}},
-						"mapper": "RemoveQuery"
-					},
-					{
-						"condition": {"PathIs": "/search"},
-						"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
-					},
-					{
-						"condition": {"All": [
-							{"FlagIsSet": "discord-compatibility"},
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
-						]},
-						"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
-					},
-					{
-						"condition": {"All": [
-							{"QualifiedDomain": "x.com"},
-							{"FlagIsSet": "deadname-twitter"}
-						]},
-						"mapper": {"SetHost": "twitter.com"}
-					}
-				]
-			}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"UnqualifiedDomain": "deviantart.com"},
-				{"Not": {"PartIs": {"part": "Subdomain", "value": "www"}}},
-				{"Not": {"PartIs": {"part": "Subdomain", "value": ""}}}
-			]},
-			"mapper": {"All": [
-				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-				{"SetPart": {"part": "Subdomain", "value": null}}
-			]}
-		},
-
-
-
-		{
-			"condition": {"All": [
-				{"Any": [
-					{"FlagIsSet": "breezewiki"},
-					{"FlagIsSet": "unbreezewiki"}
-				]},
-				{"PartMatches": {"part": "Host", "matcher": {"InSet": "breezewiki-hosts"}}},
-				{"Not": {"PathIs": "/"}}
-			]},
-			"mapper": {"All": [
-				{"SetHost": "fandom.com"},
-				{"CopyPart": {"from": {"PathSegment": 0}, "to": "Subdomain"}},
-				{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
-			]}
-		},
-		{
-			"condition": {"All": [
-				{"FlagIsSet": "breezewiki"},
-				{"UnqualifiedDomain": "fandom.com"}
-			]},
-			"mapper": {"All": [
-				{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-				{"SetPart": {"part": "Host", "value": {"Var": "breezewiki-domain"}}}
-			]}
 		},
 
 
@@ -961,48 +860,103 @@
 
 
 		{
-			"condition": {"All": [
-				{"FlagIsSet": "onion-location"},
-				{"Not": {"FlagIsSet": "no-http"}},
-				{"PartIs": {"part": "Scheme", "value": "https"}}
-			]},
-			"mapper": {"All": [
-				{"IfCondition": {
-					"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-					"mapper": {
-						"RemoveQueryParamsMatching": {"Any": [
-							{"InSet": "utps"},
-							{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-						]
-					}}
-				}},
-				{"IgnoreError":
-					{"SetPart": {
-						"part": "Origin",
-						"value": {"ExtractPart": {
-							"part": "Origin",
-							"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
-						}}
-					}}
-				}
-			]}
-		},
-		{
-			"condition": {"All": [
-				{"Any": [
-					{"FlagIsSet": "tor2web"},
-					{"FlagIsSet": "tor2web2tor"}
-				]},
-				{"PartIs": {"part": "DomainMiddle", "value": "onion"}}
-			]},
-			"mapper": {"SetPart": {"part": "DomainSuffix", "value": null}}
-		},
-		{
-			"condition": {"All": [
-				{"FlagIsSet": "tor2web"},
-				{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
-			]},
-			"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web-suffix"}}}
+			"CommonCondition": {
+				"condition": "AnyFlagIsSet",
+				"rules": [
+					{
+						"comment": "Discord embeds images using dedicated \"external images\" server(s). This gets the original image.",
+						"condition": {"All": [
+							{"FlagIsSet": "discord-unexternal"},
+							{"HostIsOneOf": [
+								"images-ext-1.discordapp.net",
+								"images-ext-2.discordapp.net",
+								"images-ext-3.discordapp.net"
+							]}
+						]},
+						"mapper": {"All": [
+							{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
+							{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
+							{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}},
+							"RemoveQuery"
+						]}
+					},
+
+
+
+					{
+						"condition": {"All": [
+							{"Any": [
+								{"FlagIsSet": "breezewiki"},
+								{"FlagIsSet": "unbreezewiki"}
+							]},
+							{"PartMatches": {"part": "Host", "matcher": {"InSet": "breezewiki-hosts"}}},
+							{"Not": {"PathIs": "/"}}
+						]},
+						"mapper": {"All": [
+							{"SetHost": "fandom.com"},
+							{"CopyPart": {"from": {"PathSegment": 0}, "to": "Subdomain"}},
+							{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+						]}
+					},
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "breezewiki"},
+							{"UnqualifiedDomain": "fandom.com"}
+						]},
+						"mapper": {"All": [
+							{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
+							{"SetPart": {"part": "Host", "value": {"Var": "breezewiki-domain"}}}
+						]}
+					},
+
+
+
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "onion-location"},
+							{"Not": {"FlagIsSet": "no-http"}},
+							{"PartIs": {"part": "Scheme", "value": "https"}}
+						]},
+						"mapper": {"All": [
+							{"IfCondition": {
+								"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+								"mapper": {
+									"RemoveQueryParamsMatching": {"Any": [
+										{"InSet": "utps"},
+										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+									]
+								}}
+							}},
+							{"IgnoreError":
+								{"SetPart": {
+									"part": "Origin",
+									"value": {"ExtractPart": {
+										"part": "Origin",
+										"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+									}}
+								}}
+							}
+						]}
+					},
+					{
+						"condition": {"All": [
+							{"Any": [
+								{"FlagIsSet": "tor2web"},
+								{"FlagIsSet": "tor2web2tor"}
+							]},
+							{"PartIs": {"part": "DomainMiddle", "value": "onion"}}
+						]},
+						"mapper": {"SetPart": {"part": "DomainSuffix", "value": null}}
+					},
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "tor2web"},
+							{"PartIs": {"part": {"DomainSegment": -1}, "value": "onion"}}
+						]},
+						"mapper": {"SetPart": {"part": "NextDomainSegment", "value": {"Var": "tor2web-suffix"}}}
+					}
+				]
+			}
 		},
 
 

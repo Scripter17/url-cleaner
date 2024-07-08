@@ -65,7 +65,7 @@ pub enum StringSource {
     /// assert_eq!(StringSource::Var("abc".to_string()).get(&JobState::new_with_params(&mut url, &params)).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(String),
-    /// Gets the value of the specified [`JobState::string_vars`].
+    /// Gets the value of the specified [`JobState::vars`].
     /// 
     /// Returns [`None`] (NOT an error) if the string var is not set.
     JobVar(Box<Self>),
@@ -257,13 +257,12 @@ impl StringSource {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn get<'a>(&'a self, job_state: &'a JobState) -> Result<Option<Cow<'a, str>>, StringSourceError> {
-        #[cfg(feature = "debug")]
-        println!("Source: {self:?}");
+        debug!("Source: {self:?}");
         Ok(match self {
             Self::String(x) => Some(Cow::Borrowed(x.as_str())),
             Self::Part(x) => x.get(job_state.url),
             Self::Var(x) => job_state.params.vars.get(x).map(|x| Cow::Borrowed(x.as_str())),
-            Self::JobVar(x) => job_state.string_vars.get(get_str!(x, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
+            Self::JobVar(x) => job_state.vars.get(get_str!(x, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(flag) {then} else {r#else}.get(job_state)?,
             Self::Modified {source, modification} => {
                 match source.as_ref().get(job_state)? {
