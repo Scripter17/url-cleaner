@@ -585,7 +585,11 @@ pub enum StringModification {
         ns: Vec<isize>,
         /// The modification to apply.
         modification: Box<Self>
-    }
+    },
+    /// If the provided string is in the specified map, return the value of its corresponding [`StringSource`].
+    /// # Errors
+    /// If the provided string is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
+    Map(HashMap<String, StringSource>)
 }
 
 /// The enum of all possible errors [`StringModification::apply`] can return.
@@ -651,7 +655,10 @@ pub enum StringModificationError {
     StringSourceError(#[from] Box<StringSourceError>),
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone
+    StringSourceIsNone,
+    /// Returned when the provided string is not in the specified map.
+    #[error("The provided string was not in the specified map.")]
+    StringNotInMap
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -843,7 +850,8 @@ impl StringModification {
                     segments[fixed_n] = Cow::Owned(temp);
                 }
                 *to = segments.join(split);
-            }
+            },
+            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError)
         };
         Ok(())
     }

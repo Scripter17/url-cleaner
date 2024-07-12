@@ -326,13 +326,13 @@ pub enum Mapper {
     /// Delete the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    DeleteJobVar(StringSource),
+    DeleteVar(StringSource),
     /// Applies a [`StringModification`] to the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringModification::apply`] returns an error, that error is returned.
-    ModifyJobVar {
+    ModifyVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The modification to apply.
@@ -432,7 +432,7 @@ pub enum MapperError {
     },
     /// Returned when a [`JobState`] string var is [`None`].
     #[error("A JobState string var was none.")]
-    JobStateStringVarIsNone
+    JobVarIsNone
 }
 
 impl From<RuleError> for MapperError {
@@ -593,13 +593,13 @@ impl Mapper {
                 config.apply(job_state.url)?;
             },
             Self::SetVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
-            Self::DeleteJobVar(name) => {
+            Self::DeleteVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
                 let _ = job_state.vars.remove(&name);
             },
-            Self::ModifyJobVar {name, modification} => {
+            Self::ModifyVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let mut temp = job_state.vars.get_mut(&name).ok_or(MapperError::JobStateStringVarIsNone)?.to_owned();
+                let mut temp = job_state.vars.get_mut(&name).ok_or(MapperError::JobVarIsNone)?.to_owned();
                 modification.apply(&mut temp, job_state)?;
                 let _ = job_state.vars.insert(name, temp);
             },

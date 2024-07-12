@@ -50,10 +50,11 @@ for url in "${URLS[@]}"; do
     hyperfine\
       -L url "$url"\
       -L num $(echo "${NUMS[@]}" | sed "s/ /,/g")\
-      --prepare "yes \"$url\" | head -n {num} > stdin"\
+      --prepare "bash -c \"yes '$url' | head -n {num} > stdin\""\
       --max-runs 100\
-      --warmup 5\
+      --warmup 20\
       --input stdin\
+      -N\
       "$COMMAND"\
       --export-json "hyperfine-$file_safe_in_url.json"
     rm stdin

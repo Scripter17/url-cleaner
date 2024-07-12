@@ -151,13 +151,28 @@ pub enum Rule {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     Rules(Rules),
+    /// If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Self::IfElse::mapper`]'s [`Mapper::apply`] on the provided URL, otherwise use [`Self::IfElse::else_mapper`].
+    /// # Errors
+    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Condition::satisfied_by`] returns `Ok(false)`, returns the error [`RuleError::FailedCondition`].
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    IfElse {
+        /// The condition to decide which mapper to use.
+        condition: Condition,
+        /// The mapper to use if the condition passes.
+        mapper: Mapper,
+        /// The mapper to use if the consition fails.
+        else_mapper: Mapper
+    },
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
     /// # Errors
     /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     /// 
-    /// If the call to [`Condition::satisfied_by`] returns `Some(false)`, returns the error [`RuleError::FailedCondition`].
+    /// If the call to [`Condition::satisfied_by`] returns `Ok(false)`, returns the error [`RuleError::FailedCondition`].
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     /// # Examples
@@ -248,7 +263,12 @@ impl Rule {
                 rule.apply(job_state)?;
                 Err(RuleError::FailedCondition)
             },
-            Self::Rules(rules) => Ok(rules.apply(job_state)?)
+            Self::Rules(rules) => Ok(rules.apply(job_state)?),
+            Self::IfElse {condition, mapper, else_mapper} => Ok(if condition.satisfied_by(job_state)? {
+                mapper.apply(job_state)?
+            } else {
+                else_mapper.apply(job_state)?
+            })
         }
     }
 }

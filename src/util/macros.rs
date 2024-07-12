@@ -12,7 +12,7 @@ pub(crate) struct Deindenter;
 #[cfg(feature = "debug")]
 impl std::ops::Drop for Deindenter {
     fn drop(&mut self) {
-        *crate::util::DEBUG_INDENT.lock().unwrap()-=1;
+        *crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.")-=1;
     }
 }
 
@@ -21,7 +21,7 @@ macro_rules! debug {
     ($x:expr) => {
         #[cfg(feature = "debug")]
         let _deindent = {
-            let mut indent = crate::util::DEBUG_INDENT.lock().unwrap();
+            let mut indent = crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.");
             eprint!("{}", "|   ".repeat(*indent));
             eprintln!($x);
             *indent+=1;

@@ -97,6 +97,7 @@ pub enum StringMatcher {
     /// ```
     Contains {
         /// The location to check for `value` at.
+        #[serde(default)]
         r#where: StringLocation,
         /// The value to look for.
         value: StringSource
@@ -177,7 +178,9 @@ pub enum StringMatcher {
         r#where: StringLocation,
         /// The name of the list of strings to look for.
         list: StringSource
-    }
+    },
+    /// Passes if the provided string's length is the specified value.
+    LengthIs(usize)
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.
@@ -300,7 +303,8 @@ impl StringMatcher {
                     }
                 }
                 false
-            }
+            },
+            Self::LengthIs(x) => haystack.len() == *x
         })
     }
 }

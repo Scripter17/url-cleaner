@@ -169,7 +169,33 @@ pub enum StringSource {
     /// # Errors
     /// If the call to [`CommandConfig::output`] returns an error, that error is returned.
     #[cfg(feature = "commands")]
-    CommandOutput(Box<CommandConfig>)
+    CommandOutput(Box<CommandConfig>),
+    /// If [`Self::NoneTo::source`] returns `None`, instead return the value of [`Self::NoneTo::if_none`].
+    /// 
+    /// Please note that [`Self::NoneTo::if_none`] can still return [`None`] and does not return an error when it does so.
+    /// # Errors
+    /// If either call to [`Self::get`] returns an error, that error is returned.
+    NoneTo {
+        /// The [`Self`] to use by default.
+        source: Box<Self>,
+        /// The [`Self`] to use if [`Self::NoneTo::source`] returns [`None`].
+        if_none: Box<Self>
+    },
+    /// Gets the `Option<String>` from [`Self::Map::source`] then, if it exists in [`Self::Map::map`], gets its corresponding [`Self`]'s value.
+    /// 
+    /// The main benefit of this over [`StringModification::Map`] is this can handle [`None`].
+    /// # Errors
+    /// If either call to [`Self::get`] returns an error, that error is returned.
+    /// 
+    /// If string returned by [`Self::Map::source`] is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
+    Map {
+        /// The string to index the map with.
+        source: Option<Box<Self>>,
+        /// The map to map the string with.
+        /// 
+        /// God these docs need a total rewrite.
+        map: HashMap<Option<String>, Self>
+    }
 }
 
 impl FromStr for StringSource {
@@ -242,7 +268,10 @@ pub enum StringSourceError {
     CommandError(Box<CommandError>),
     /// Returned when the key is not in the map.
     #[error("The key was not in the map.")]
-    KeyNotInMap
+    KeyNotInMap,
+    /// Returned when the provided string is not in the specified map.
+    #[error("The provided string was not in the specified map.")]
+    StringNotInMap
 }
 
 #[cfg(feature = "commands")]
@@ -282,6 +311,8 @@ impl StringSource {
             #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(job_state)?)),
             Self::NoneToEmptyString(source) => source.get(job_state)?.or(Some(Cow::Borrowed(""))),
+            Self::NoneTo {source, if_none} => source.get(job_state).transpose().or_else(|| if_none.get(job_state).transpose()).transpose()?,
+            Self::Map {source, map} => map.get(&get_option_string!(source, job_state)).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?,
             Self::Debug(source) => {
                 let ret=source.get(job_state);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nJob state: {job_state:?}\nret: {ret:?}");

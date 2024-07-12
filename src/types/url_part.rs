@@ -860,7 +860,7 @@ impl UrlPart {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
-        debug!("_PartGet: {self:?}");
+        debug!("UrlPartGet: {self:?}");
         Some(match self {
             // Ordered hopefully most used to least used.
 
@@ -940,7 +940,7 @@ impl UrlPart {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
-        debug!("PartSet: {self:?}");
+        debug!("UrlPartSet: {self:?}");
         #[allow(clippy::arithmetic_side_effects)]
         match (self, to) {
             (Self::Debug(part), _) => {
@@ -1171,6 +1171,7 @@ impl UrlPart {
     /// 
     /// If [`UrlPart::set`] returns an error, that error is returned.
     pub fn modify(&self, how: &StringModification, job_state: &mut JobState) -> Result<(), UrlPartModifyError> {
+        debug!("UrlPartModify: {self:?}");
         let mut new_part=self.get(job_state.url).ok_or(UrlPartModifyError::PartIsNone)?.into_owned();
         how.apply(&mut new_part, job_state)?;
         self.set(job_state.url, Some(&new_part))?;
