@@ -18,10 +18,11 @@
 				"bloom.bg", "boxd.it", "buff.ly", "buff.ly", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnb.cx", "cnn.it",
 				"cnn.it", "cos.lv", "cos.lv", "cutt.ly", "cutt.ly", "db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me",
 				"fal.cn", "fb.me", "flip.it", "forms.gle", "g.co", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv",
-				"ift.tt", "iwe.one", "k00.fr", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
-				"ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly",
-				"pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at",
-				"spoti.fi", "sqex.to", "t.co", "t.ly", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly", "on.msnbc.com"
+				"ift.tt", "iwe.one", "k00.fr", "katy.to", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr",
+				"ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la",
+				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it",
+				"reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi", "sqex.to", "t.co", "t.ly", "thecut,io", "thr.cm", "tmz.me", "tr.ee",
+				"trib.al", "wn.nr", "wwdc.io", "xbx.ly"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -48,7 +49,7 @@
 			"utps-host-whitelist": [],
 			"unmangle-path-is-url-host-whitelist": [],
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": [],
-			"https-upgrade-host-blacklist": ["orteil.dashnet.org"],
+			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "127.0.0.1", "0.0.0.0"],
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
 			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgtfy2.com", "lmgt.org"]
 		},
@@ -78,6 +79,12 @@
 				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
 				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
 				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"},
+				{
+					"comment": "It was the only somewhat normal one I could find, okay?",
+					"before": "http://bfy.tw/9ZSk",
+					"after": "https://google.com/search?q=How+does+the+US+government+work"
+				},
+				{"before": "https://https//abc.tumblr.com.tumblr.com", "after": "https://abc.tumblr.com"},
 
 				{"before": "https://https//example.com/abc", "after": "https://example.com/abc"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
@@ -143,7 +150,7 @@
 					    "deviantart.com", "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "gf.me",
 					    "gofundme.com", "gofundme.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com",
 					    "l.threads.com", "lmddgtfy.net", "lnk.bio", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "sketchfab.com", "sketchfab.com",
-					    "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult", "t.umblr.com", "tinyurl.com", "toyhou.se"
+					    "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
 					  ]},
 					  {"InSet": "lmgtfy-hosts"},
 					  {"LengthIs": 4},
@@ -379,7 +386,11 @@
 										"preview.tinyurl.com": {"All": [
 											{"SetPart": {"part": "Subdomain", "value": null}},
 											{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "preview"}}
-										]}
+										]},
+										"youtube.com": {"IfCondition": {
+											"condition": {"PathIs": "/redirect"},
+											"mapper": {"GetUrlFromQueryParam": "q"}
+										}}
 									}
 								}
 							},
@@ -518,7 +529,7 @@
 									"comment-3": "https://https//example1.com/user/example2.com/abc unchanged",
 									"condition": {"TreatErrorAsFail": {"All": [
 										{"PartContains": {"part": {"PathSegment": 1}, "value": "."}},
-										{"Not": {"PartContains": {"part": {"PathSegment": 2}, "value": "."}}},
+										{"Not": {"PartContains": {"part": {"NoneToEmptyString": {"PathSegment": 2}}, "value": "."}}},
 										{"Not": {"PartContains": {"part": {"NoneToEmptyString": {"PathSegment": 3}}, "value": "."}}}
 									]}},
 									"mapper": {"All": [
@@ -921,7 +932,8 @@
 								"map": {
 									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn"]},
 									"/gp/buyagain": {"AllowQueryParams": ["ats"]},
-									"/gp/customer-reviews": "RemoveQuery"
+									"/gp/customer-reviews": "RemoveQuery",
+									"/amazonprime": "RemoveQuery"
 								}
 							}
 						},
@@ -931,7 +943,11 @@
 						},
 						{
 							"condition": "Always",
-							"mapper": {"RemoveQueryParams": ["ref", "ref_", "node", "ie"]}
+							"mapper": {"RemoveQueryParamsMatching": {"Any": [
+								{"IsOneOf": ["ref", "ref_", "node", "ie", "_encoding", "content-id"]},
+								{"Contains": {"value": "pd_", "where": "Start"}},
+								{"Contains": {"value": "pf_", "where": "Start"}}
+							]}}
 						}
 					]},
 					"google": {"Rules": [

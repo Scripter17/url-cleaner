@@ -31,7 +31,7 @@ pub enum StringMatcher {
 
     // Logic
 
-    /// If `r#if` passes, return the result of `then`, otherwise return the value of `r#else`.
+    /// If `r#if` passes, return the result of `then`, otherwise return the result of `r#else`.
     /// # Errors
     /// If `r#if` returns an error, that error is returned.
     /// 
@@ -181,6 +181,20 @@ pub enum StringMatcher {
     },
     /// Passes if the provided string's length is the specified value.
     LengthIs(usize)
+}
+
+#[cfg(feature = "regex")]
+impl From<RegexWrapper> for StringMatcher {
+    fn from(value: RegexWrapper) -> Self {
+        Self::Regex(value)
+    }
+}
+
+#[cfg(feature = "glob")]
+impl From<GlobWrapper> for StringMatcher {
+    fn from(value: GlobWrapper) -> Self {
+        Self::Glob(value)
+    }
 }
 
 /// The enum of all possible errors [`StringMatcher::satisfied_by`] can return.

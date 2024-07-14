@@ -589,7 +589,22 @@ pub enum StringModification {
     /// If the provided string is in the specified map, return the value of its corresponding [`StringSource`].
     /// # Errors
     /// If the provided string is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
-    Map(HashMap<String, StringSource>)
+    Map(HashMap<String, StringSource>),
+    /// A long if-else if chain of [`StringMatcher`]s and [`Self`]s.
+    /// # Errors
+    /// If a call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If a call to [`Self::apply`] returns an error, that error is returned.
+    IfChain(Vec<If>)
+}
+
+/// An element of [`StringModification::IfChain`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct If {
+    /// Checks if [`Self::then`] should be applied.
+    r#if: StringMatcher,
+    /// The [`StringModification`] to apply.
+    then: StringModification
 }
 
 /// The enum of all possible errors [`StringModification::apply`] can return.
@@ -658,12 +673,21 @@ pub enum StringModificationError {
     StringSourceIsNone,
     /// Returned when the provided string is not in the specified map.
     #[error("The provided string was not in the specified map.")]
-    StringNotInMap
+    StringNotInMap,
+    /// Returned when a [`StringMatcherError`] is encountered.
+    #[error(transparent)]
+    StringMatcherError(#[from] Box<StringMatcherError>)
 }
 
 impl From<StringSourceError> for StringModificationError {
     fn from(value: StringSourceError) -> Self {
         Self::StringSourceError(Box::new(value))
+    }
+}
+
+impl From<StringMatcherError> for StringModificationError {
+    fn from(value: StringMatcherError) -> Self {
+        Self::StringMatcherError(Box::new(value))
     }
 }
 
@@ -851,7 +875,15 @@ impl StringModification {
                 }
                 *to = segments.join(split);
             },
-            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError)
+            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError),
+            Self::IfChain(if_chain) => {
+                for r#if in if_chain {
+                    if r#if.r#if.satisfied_by(to, job_state)? {
+                        r#if.then.apply(to, job_state)?;
+                        return Ok(());
+                    }
+                }
+            }
         };
         Ok(())
     }

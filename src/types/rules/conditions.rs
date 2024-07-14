@@ -482,7 +482,7 @@ pub enum Condition {
         #[serde(default)]
         expected: i32
     },
-    /// Passes if the provided [`JobState`]'s [`JobState::params`]'s [`Parasm::flags`] is non-empty.
+    /// Passes if the provided [`JobState`]'s [`JobState::params`]'s [`Params::flags`] is non-empty.
     /// 
     /// A rarely useful optimization but an optimization none the less.
     AnyFlagIsSet

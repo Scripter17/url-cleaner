@@ -88,6 +88,7 @@ Various sets are included in the default config.
 - `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
 - `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
 - `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
+- `lmgtfy-hosts`: Hosts to replace with `google.com`.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
 
@@ -188,13 +189,16 @@ URL Cleaner should only ever panic under the following circumstances:
 
 - Loading/parsing the config failed.
 
-- Printing the config failed.
+- Printing the config failed. (Shouldn't be possible.)
 
 - Testing the config failed.
 
 - Reading from/writing to STDIN/STDOUT/STDERR has a catastrophic error.
 
 - Running out of memory resulting in a standard library function/method panicking. This should be extremely rare.
+
+- (Only possible when the `debug` feature is enabled) The mutex controlling debug printing indenting is poisoned and a lock is attempted.
+    This should only be possible when URL Cleaner is used as a library.
 
 Outside of these cases, URL Cleaner should never panic. However as this is equivalent to saying "URL Cleaner has no bugs", no actual guarantees can be made.
 
