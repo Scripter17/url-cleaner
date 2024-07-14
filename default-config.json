@@ -49,7 +49,7 @@
 			"utps-host-whitelist": [],
 			"unmangle-path-is-url-host-whitelist": [],
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": [],
-			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "127.0.0.1", "0.0.0.0"],
+			"https-upgrade-host-blacklist": ["orteil.dashnet.org"],
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
 			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgtfy2.com", "lmgt.org"]
 		},
@@ -166,7 +166,10 @@
 								"condition": {"All": [
 									{"PartIs": {"part": "Scheme", "value": "http"}},
 									{"Not": {"FlagIsSet": "no-https-upgrade"}},
-									{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-blacklist"}}}}
+									{"Not": {"PartMatches": {"part": "Host", "matcher": {"Any": [
+										{"InSet": "https-upgrade-host-blacklist"},
+										{"Regex": "^((0?10|172\\.(1[6-9]|2\\d|3[0-1])|192\\.168)\\.[\\d.]+|0\\.0\\.0\\.0)$"}
+									]}}}}
 								]},
 								"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 							}},
@@ -645,7 +648,10 @@
 			"condition": {"All": [
 				{"PartIs": {"part": "Scheme", "value": "http"}},
 				{"Not": {"FlagIsSet": "no-https-upgrade"}},
-				{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "https-upgrade-host-blacklist"}}}}
+				{"Not": {"PartMatches": {"part": "Host", "matcher": {"Any": [
+					{"InSet": "https-upgrade-host-blacklist"},
+					{"Regex": "^((0?10|172\\.(1[6-9]|2\\d|3[0-1])|192\\.168)\\.[\\d.]+|0\\.0\\.0\\.0)$"}
+				]}}}}
 			]},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 		},
