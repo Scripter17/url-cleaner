@@ -5,6 +5,9 @@ redirect-cache.txt
 /benchmarking/output-*
 callgrind*
 cachegrind*
+massif*
+dhat*
+memcheck*
 hyperfine*
 *.zip
 *mprocs.yaml

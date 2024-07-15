@@ -7,7 +7,7 @@ URLS=(\
 )
 NUMS=(0 1 10 100 1000 10000)
 
-rm -f hyperfine* callgrind* cachegrind*
+rm -f hyperfine* callgrind* cachegrind* massif* dhat* memcheck*
 
 no_compile=false
 json=false
@@ -16,6 +16,9 @@ print_desmos_lists=false
 no_valgrind=false
 no_callgrind=false
 no_cachegrind=false
+no_massif=false
+no_dhat=false
+no_memcheck=false
 
 for arg in "$@"; do
   shift
@@ -27,6 +30,9 @@ for arg in "$@"; do
     "--no-valgrind") no_valgrind=true ;;
     "--no-callgrind") no_callgrind=true ;;
     "--no-cachegrind") no_cachegrind=true ;;
+    "--no-massif") no_massif=true ;;
+    "--no-dhat") no_dhat=true ;;
+    "--no-memcheck") no_memcheck=true ;;
     *) echo Unknwon option \"$arg\" ;;
   esac
 done
@@ -74,6 +80,20 @@ for url in "${URLS[@]}"; do
         echo "Cachegrind - $num"
         yes $url | head -n $num | valgrind --quiet --tool=cachegrind $COMMAND > /dev/null
         mv cachegrind.out.* "cachegrind.out-$file_safe_in_url-$num"
+      fi
+      if [ "$no_massif" = "false" ]; then
+        echo "Massif     - $num"
+        yes $url | head -n $num | valgrind --quiet --tool=massif $COMMAND > /dev/null
+        mv massif.out.* "massif.out-$file_safe_in_url-$num"
+      fi
+      if [ "$no_dhat" = "false" ]; then
+        echo "Dhat       - $num"
+        yes $url | head -n $num | valgrind --quiet --tool=dhat $COMMAND > /dev/null
+        mv dhat.out.* "dhat.out-$file_safe_in_url-$num"
+      fi
+      if [ "$no_memcheck" = "false" ]; then
+        echo "Memcheck   - $num"
+        yes $url | head -n $num | valgrind --quiet --tool=memcheck $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
       fi
     done
   fi
