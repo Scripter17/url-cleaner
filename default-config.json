@@ -21,8 +21,8 @@
 				"ift.tt", "iwe.one", "k00.fr", "katy.to", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr",
 				"ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la",
 				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it",
-				"reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi", "sqex.to", "t.co", "t.ly", "thecut,io", "thr.cm", "tmz.me", "tr.ee",
-				"trib.al", "wn.nr", "wwdc.io", "xbx.ly"
+				"reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecut,io", "thr.cm", "tmz.me",
+				"tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -402,6 +402,26 @@
 										"youtube.com": {"IfCondition": {
 											"condition": {"PathIs": "/redirect"},
 											"mapper": {"GetUrlFromQueryParam": "q"}
+										}},
+										"linkvertise.com": {"IfCondition": {
+											"condition": {"All": [{"FlagIsSet": "bypass.vip"}, {"Not": {"FlagIsSet": "no-http"}}]},
+											"mapper": {"Cache": {
+												"name": "bypass.vip",
+												"mapper": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"source": {"HttpRequest": {
+															"url": {"Join": {
+																"sources": [
+																	"https://api.bypass.vip/bypass?url=",
+																	{"Modified": {"source": {"Part": "Whole"}, "modification": "URLEncode"}}
+																]
+															}}
+														}},
+														"modification": {"JsonPointer": "/result"}
+													}}
+												}}
+											}}
 										}}
 									}
 								}
