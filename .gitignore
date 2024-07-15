@@ -1,5 +1,5 @@
 /target
-redirect-cache.txt
+*-cache.txt
 /konsole*
 /benchmarking/stdin
 /benchmarking/output-*

@@ -106,21 +106,20 @@ impl Params {
         }?.build()
     }
 
-    /// Read lines from `redirect-cache.txt`.
-    /// 
-    /// If a line that starts with `before` then a tab is found, returns that URL as `Ok(Some(_))`.
-    /// 
-    /// If no such line is found, returns `Ok(None)`.
     /// # Errors
     /// If a cache line starting with `url` is found but the map isn't parseable as a URL, returns the error [`ReadCacheError::UrlParseError`].
-    #[cfg(feature = "cache-redirects")]
-    pub fn get_redirect_from_cache(&self, before: &Url) -> Result<Option<Url>, ReadCacheError> {
+    #[cfg(feature = "cache")]
+    pub fn read_from_cache(&self, name: &str, key: &str) -> Result<Option<Result<Url, ()>>, ReadCacheError> {
         if self.read_cache {
-            if let Ok(lines) = read_lines("redirect-cache.txt") {
+            if let Ok(lines) = read_lines(format!("{name}-cache.txt")) {
                 for line in lines.map_while(Result::ok) {
                     if let Some((short, long)) = line.split_once('\t') {
-                        if before.as_str()==short {
-                            return Ok(Some(Url::parse(long)?));
+                        if short == key {
+                            if long == "Err" {
+                                return Ok(Some(Err(())));
+                            } else {
+                                return Ok(Some(Ok(Url::parse(long)?)));
+                            }
                         }
                     }
                 }
@@ -129,14 +128,13 @@ impl Params {
         Ok(None)
     }
 
-    /// Writes a newline, `before`, a tab, and `after` to `redirect-cache.txt`.
     /// # Errors
     /// If the cache line cannot be written, returns [`WriteCacheError::IoError`].
-    #[cfg(feature = "cache-redirects")]
-    pub fn write_redirect_to_cache(&self, before: &Url, after: &Url) -> Result<(), WriteCacheError> {
+    #[cfg(feature = "cache")]
+    pub fn write_to_cache(&self, name: &str, key: &str, after: Result<&Url, ()>) -> Result<(), WriteCacheError> {
         if self.write_cache {
-            if let Ok(mut x) = OpenOptions::new().create(true).append(true).open("redirect-cache.txt") {
-                x.write_all(format!("\n{}\t{}", before.as_str(), after.as_str()).as_bytes())?;
+            if let Ok(mut x) = OpenOptions::new().create(true).append(true).open(format!("{name}-cache.txt")) {
+                x.write_all(format!("\n{key}\t{}", after.map(|x| x.as_str()).unwrap_or("Err")).as_bytes())?;
             }
         }
         Ok(())

@@ -273,17 +273,20 @@
 														]
 													}}
 												}},
-												{"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"source": {"HttpRequest": {}},
-														"modification": {"All": [
-															{"RegexCaptures": {
-																"regex": "\"originalUrl\":\"(.+?)\"",
-																"replace": "$1"
-															}},
-															{"Replace": {"find": "\\/", "replace": "/"}}
-														]}
+												{"Cache": {
+													"name": "smarturl.it",
+													"mapper": {"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"source": {"HttpRequest": {}},
+															"modification": {"All": [
+																{"RegexCaptures": {
+																	"regex": "\"originalUrl\":\"(.+?)\"",
+																	"replace": "$1"
+																}},
+																{"Replace": {"find": "\\/", "replace": "/"}}
+															]}
+														}}
 													}}
 												}}
 											]}
@@ -308,15 +311,18 @@
 														]}
 													}
 												}},
-												{"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"source": {"HttpRequest": {
-															"http_client_config_diff": {"danger_accept_invalid_certs": true}
-														}},
-														"modification": {"RegexCaptures": {
-															"regex": "href=\"(.+?)\"",
-															"replace": "$1"
+												{"Cache": {
+													"name": "bfy.tw",
+													"mapper": {"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"source": {"HttpRequest": {
+																"http_client_config_diff": {"danger_accept_invalid_certs": true}
+															}},
+															"modification": {"RegexCaptures": {
+																"regex": "href=\"(.+?)\"",
+																"replace": "$1"
+															}}
 														}}
 													}}
 												}}
@@ -334,15 +340,18 @@
 														]}
 													}
 												}},
-												{"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"source": {"HttpRequest": {
-															"http_client_config_diff": {"danger_accept_invalid_certs": true}
-														}},
-														"modification": {"RegexCaptures": {
-															"regex": "window\\.location\\s=\\s\"(.+?)\"",
-															"replace": "$1"
+												{"Cache": {
+													"name": "gprivate.com",
+													"mapper": {"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"source": {"HttpRequest": {
+																"http_client_config_diff": {"danger_accept_invalid_certs": true}
+															}},
+															"modification": {"RegexCaptures": {
+																"regex": "window\\.location\\s=\\s\"(.+?)\"",
+																"replace": "$1"
+															}}
 														}}
 													}}
 												}}
@@ -424,13 +433,16 @@
 											]
 										}}
 									}},
-									{"SetPart": {
-										"part": "Whole",
-										"value": {"Modified": {
-											"source": {"HttpRequest": {}},
-											"modification": {"RegexCaptures": {
-												"regex": "let\\surl\\s=\\s\\\"(.+)\\\"",
-												"replace": "$1"
+									{"Cache": {
+										"name": "tinyurl.com",
+										"mapper": {"SetPart": {
+											"part": "Whole",
+											"value": {"Modified": {
+												"source": {"HttpRequest": {}},
+												"modification": {"RegexCaptures": {
+													"regex": "let\\surl\\s=\\s\\\"(.+)\\\"",
+													"replace": "$1"
+												}}
 											}}
 										}}
 									}}
@@ -1056,11 +1068,18 @@
 								}}
 							}},
 							{"IgnoreError":
-								{"SetPart": {
-									"part": "Origin",
-									"value": {"ExtractPart": {
+								{"Cache": {
+									"name": "onion-location",
+									"key": "Host",
+									"copy_from_result": "Host",
+									"write_to_job": "Host",
+									"cache_errors": true,
+									"mapper": {"SetPart": {
 										"part": "Origin",
-										"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+										"value": {"ExtractPart": {
+											"part": "Origin",
+											"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+										}}
 									}}
 								}}
 							}

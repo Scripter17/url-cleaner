@@ -345,8 +345,53 @@ pub enum Mapper {
     /// Execites the contained [`Rules`].
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
-    Rules(Rules)
+    Rules(Rules),
+    /// If the call to [`Mapper::apply`] is successful, caches the result to disk.
+    /// 
+    /// Please note that `job_state`'s [`Params::read_cache`] and [`Params::write_cache`] can disable reading/writing from/to the cache.
+    /// 
+    /// The exact way this is done is currently considered an implementation detail and especially stable, but currently:
+    /// 
+    /// - The file written to is `{name}-cache.txt` in the directory URL Cleaner is running in.
+    /// - The format of each cache is `\n{before_mapper}\t{after_mapper}`.
+    /// 
+    /// This will likely change to some format that doesn't have O(n) read time.
+    /// # Errors
+    /// If the call to [`StringSource:;get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`]
+    /// 
+    /// If the call to [`Params::read_from_cache`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Params::write_to_cache`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
+    Cache {
+        /// The name of the cache fild.
+        name: StringSource,
+        /// The value to index the cache with.
+        /// 
+        /// Currently restricted to [`UrlPart`] for the sake of not having tabs in the key.
+        /// 
+        /// Defaults to [`UrlPart::Whole`].
+        #[serde(default = "url_part_whole")]
+        key: UrlPart,
+        #[serde(default = "url_part_whole")]
+        copy_from_result: UrlPart,
+        #[serde(default = "url_part_whole")]
+        write_to_job: UrlPart,
+        /// If [`true`], caches errors.
+        /// 
+        /// Defaults to false.
+        #[serde(default)]
+        cache_errors: bool,
+        /// The mapper to cache.
+        mapper: Box<Self>
+    }
 }
+
+const fn url_part_whole() -> UrlPart {UrlPart::Whole}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Debug, Error)]
@@ -432,7 +477,13 @@ pub enum MapperError {
     },
     /// Returned when a [`JobState`] string var is [`None`].
     #[error("A JobState string var was none.")]
-    JobVarIsNone
+    JobVarIsNone,
+    /// Returned when a call to [`UrlPart::get`] returns `None` where it has to be `Some`.
+    #[error("The specified UrlPart returned None where it had to be Some.")]
+    UrlPartIsNone,
+    /// Returned when a cache result is an error.
+    #[error("The cache result was an error.")]
+    CacheResultIsError
 }
 
 impl From<RuleError> for MapperError {
@@ -568,9 +619,9 @@ impl Mapper {
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
-                if let Some(cached_result) = job_state.params.get_redirect_from_cache(job_state.url)? {
-                    *job_state.url = cached_result;
-                    return Ok(())
+                if let Some(cached_result) = job_state.params.read_from_cache("redirect", job_state.url.as_str())? {
+                    *job_state.url = cached_result.map_err(|()| MapperError::CacheResultIsError)?;
+                    return Ok(());
                 }
                 let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
@@ -579,7 +630,7 @@ impl Mapper {
                     response.url().clone()
                 };
                 #[cfg(feature = "cache-redirects")]
-                job_state.params.write_redirect_to_cache(job_state.url, &new_url)?;
+                job_state.params.write_to_cache("redirect", job_state.url.as_str(), Ok(&new_url))?;
                 *job_state.url=new_url;
             },
 
@@ -604,7 +655,25 @@ impl Mapper {
                 let _ = job_state.vars.insert(name, temp);
             },
             Self::Rule(rule) => rule.apply(job_state)?,
-            Self::Rules(rules) => rules.apply(job_state)?
+            Self::Rules(rules) => rules.apply(job_state)?,
+            #[cfg(feature = "cache")]
+            Self::Cache {name, key, copy_from_result, write_to_job, cache_errors, mapper} => {
+                let name = get_string!(name, job_state, MapperError);
+                let key_value = key.get(job_state.url).ok_or(MapperError::UrlPartIsNone)?.to_string();
+                if let Some(cached_result) = job_state.params.read_from_cache(&name, &key_value)? {
+                    write_to_job.set(job_state.url, copy_from_result.get(&cached_result.map_err(|()| MapperError::CacheResultIsError)?).as_deref())?;
+                    return Ok(());
+                }
+                if *cache_errors {
+                    match mapper.apply(job_state) {
+                        Ok(()) => job_state.params.write_to_cache(&name, &key_value, Ok(job_state.url))?,
+                        Err(_) => job_state.params.write_to_cache(&name, &key_value, Err(()))?
+                    }
+                } else {
+                    mapper.apply(job_state)?;
+                    job_state.params.write_to_cache(&name, &key_value, Ok(job_state.url))?;
+                }
+            }
         };
         Ok(())
     }
