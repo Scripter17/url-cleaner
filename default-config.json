@@ -405,23 +405,34 @@
 										}},
 										"linkvertise.com": {"IfCondition": {
 											"condition": {"All": [{"FlagIsSet": "bypass.vip"}, {"Not": {"FlagIsSet": "no-http"}}]},
-											"mapper": {"Cache": {
-												"name": "bypass.vip",
-												"mapper": {"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"source": {"HttpRequest": {
-															"url": {"Join": {
-																"sources": [
-																	"https://api.bypass.vip/bypass?url=",
-																	{"Modified": {"source": {"Part": "Whole"}, "modification": "URLEncode"}}
-																]
-															}}
-														}},
-														"modification": {"JsonPointer": "/result"}
+											"mapper": {"All": [
+												{"IfCondition": {
+													"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+													"mapper": {
+														"RemoveQueryParamsMatching": {"Any": [
+															{"InSet": "utps"},
+															{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+														]}
+													}
+												}},
+												{"Cache": {
+													"name": "bypass.vip",
+													"mapper": {"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"source": {"HttpRequest": {
+																"url": {"Join": {
+																	"sources": [
+																		"https://api.bypass.vip/bypass?url=",
+																		{"Modified": {"source": {"Part": "Whole"}, "modification": "URLEncode"}}
+																	]
+																}}
+															}},
+															"modification": {"JsonPointer": "/result"}
+														}}
 													}}
 												}}
-											}}
+											]}
 										}}
 									}
 								}

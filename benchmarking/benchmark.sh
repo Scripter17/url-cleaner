@@ -33,7 +33,7 @@ for arg in "$@"; do
     "--no-massif") no_massif=true ;;
     "--no-dhat") no_dhat=true ;;
     "--no-memcheck") no_memcheck=true ;;
-    *) echo Unknwon option \"$arg\" ;;
+    *) echo Unknwon option \"$arg\" && exit 1 ;;
   esac
 done
 
@@ -73,27 +73,23 @@ for url in "${URLS[@]}"; do
     for num in "${NUMS[@]}"; do
       if [ "$no_callgrind" = "false" ]; then
         echo "Callgrind  - $num"
-        yes $url | head -n $num | valgrind --quiet --tool=callgrind  $COMMAND > /dev/null
-        mv callgrind.out.* "callgrind.out-$file_safe_in_url-$num"
+        yes "$url" | head -n $num | valgrind --quiet --tool=callgrind --callgrind-out-file="callgrind.out-$file_safe_in_url-$num-%p"  $COMMAND > /dev/null
       fi
       if [ "$no_cachegrind" = "false" ]; then
         echo "Cachegrind - $num"
-        yes $url | head -n $num | valgrind --quiet --tool=cachegrind $COMMAND > /dev/null
-        mv cachegrind.out.* "cachegrind.out-$file_safe_in_url-$num"
+        yes "$url" | head -n $num | valgrind --quiet --tool=cachegrind --cachegrind-out-file="cachegrind.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
       fi
       if [ "$no_massif" = "false" ]; then
         echo "Massif     - $num"
-        yes $url | head -n $num | valgrind --quiet --tool=massif $COMMAND > /dev/null
-        mv massif.out.* "massif.out-$file_safe_in_url-$num"
+        yes "$url" | head -n $num | valgrind --quiet --tool=massif --massif-out-file="massif.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
       fi
       if [ "$no_dhat" = "false" ]; then
         echo "Dhat       - $num"
-        yes $url | head -n $num | valgrind --quiet --tool=dhat $COMMAND > /dev/null
-        mv dhat.out.* "dhat.out-$file_safe_in_url-$num"
+        yes "$url" | head -n $num | valgrind --quiet --tool=dhat --dhat-out-file="dhat.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
       fi
       if [ "$no_memcheck" = "false" ]; then
         echo "Memcheck   - $num"
-        yes $url | head -n $num | valgrind --quiet --tool=memcheck $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
+        yes "$url" | head -n $num | valgrind --quiet --tool=memcheck $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
       fi
     done
   fi

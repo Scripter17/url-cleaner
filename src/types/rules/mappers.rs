@@ -350,7 +350,7 @@ pub enum Mapper {
     /// 
     /// Please note that `job_state`'s [`Params::read_cache`] and [`Params::write_cache`] can disable reading/writing from/to the cache.
     /// 
-    /// The exact way this is done is currently considered an implementation detail and especially stable, but currently:
+    /// The exact way this works is currently crap and, god willing, will be replaced by an SQLite system.
     /// 
     /// - The file written to is `{name}-cache.txt` in the directory URL Cleaner is running in.
     /// - The format of each cache is `\n{before_mapper}\t{after_mapper}`.
@@ -377,8 +377,14 @@ pub enum Mapper {
         /// Defaults to [`UrlPart::Whole`].
         #[serde(default = "url_part_whole")]
         key: UrlPart,
+        /// The [`UrlPart`] to get from the cached result.
+        /// 
+        /// Currently only used by the `onion-location` flag. Will be replaced once the SQLite system is in place.
         #[serde(default = "url_part_whole")]
         copy_from_result: UrlPart,
+        /// The [`UrlPart`] to write to the job's URL.
+        /// 
+        /// Currently only used by the `onion-location` flag. Will be replaced once the SQLite system is in place.
         #[serde(default = "url_part_whole")]
         write_to_job: UrlPart,
         /// If [`true`], caches errors.
