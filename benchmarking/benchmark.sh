@@ -7,7 +7,7 @@ URLS=(\
 )
 NUMS=(0 1 10 100 1000 10000)
 
-rm -f hyperfine* callgrind* cachegrind* massif* dhat* memcheck*
+rm -f *.out*
 
 no_compile=false
 json=false
@@ -62,7 +62,7 @@ for url in "${URLS[@]}"; do
       --input stdin\
       -N\
       "$COMMAND"\
-      --export-json "hyperfine-$file_safe_in_url.json"
+      --export-json "hyperfine.out-$file_safe_in_url.json"
     rm stdin
     if [ "$print_desmos_lists" == "true" ]; then
       echo "N=[$(echo "${NUMS[@]}" | sed "s/ /,/g")]"
@@ -94,3 +94,5 @@ for url in "${URLS[@]}"; do
     done
   fi
 done
+
+tar -czf "benchmarks-$(date +%s).tar.gz" *.out*

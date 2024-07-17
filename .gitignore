@@ -10,6 +10,8 @@ dhat*
 memcheck*
 hyperfine*
 *.zip
+*.tar
+*.gz
 *mprocs.yaml
 bacon.toml
 tests.sh
