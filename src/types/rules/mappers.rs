@@ -301,19 +301,6 @@ pub enum Mapper {
     /// # Errors
     /// If [`StringSource::get`] returns an error, that error is returned.
     Eprint(StringSource),
-    /// Loads a config specified by `path` (or the default config if it's [`None`]) and applies it.
-    /// # Errors
-    /// If the call to [`Config::get_default_or_load`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`Config::apply`] returns an error, that error is returned.
-    ApplyConfig {
-        /// The path of the config to load. Loads the default config if [`None`].
-        path: Option<PathBuf>,
-        /// How to modify the config's params.
-        /// 
-        /// Boxed because it's huge.
-        params_diff: Box<ParamsDiff>
-    },
     /// Sets the current job's `name` string var to `value`.
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
@@ -346,53 +333,9 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     Rules(Rules),
-    /// If the call to [`Mapper::apply`] is successful, caches the result to disk.
-    /// 
-    /// Please note that `job_state`'s [`Params::read_cache`] and [`Params::write_cache`] can disable reading/writing from/to the cache.
-    /// 
-    /// The exact way this works is currently crap and, god willing, will be replaced by an SQLite system.
-    /// 
-    /// - The file written to is `{name}-cache.txt` in the directory URL Cleaner is running in.
-    /// - The format of each cache is `\n{before_mapper}\t{after_mapper}`.
-    /// 
-    /// This will likely change to some format that doesn't have O(n) read time.
-    /// # Errors
-    /// If the call to [`StringSource:;get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`]
-    /// 
-    /// If the call to [`Params::read_from_cache`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`Params::write_to_cache`] returns an error, that error is returned.
-    #[cfg(feature = "cache")]
     Cache {
-        /// The name of the cache fild.
-        name: StringSource,
-        /// The value to index the cache with.
-        /// 
-        /// Currently restricted to [`UrlPart`] for the sake of not having tabs in the key.
-        /// 
-        /// Defaults to [`UrlPart::Whole`].
-        #[serde(default = "url_part_whole")]
-        key: UrlPart,
-        /// The [`UrlPart`] to get from the cached result.
-        /// 
-        /// Currently only used by the `onion-location` flag. Will be replaced once the SQLite system is in place.
-        #[serde(default = "url_part_whole")]
-        copy_from_result: UrlPart,
-        /// The [`UrlPart`] to write to the job's URL.
-        /// 
-        /// Currently only used by the `onion-location` flag. Will be replaced once the SQLite system is in place.
-        #[serde(default = "url_part_whole")]
-        write_to_job: UrlPart,
-        /// If [`true`], caches errors.
-        /// 
-        /// Defaults to false.
-        #[serde(default)]
-        cache_errors: bool,
-        /// The mapper to cache.
+        category: String,
+        key: String,
         mapper: Box<Self>
     }
 }
@@ -448,14 +391,6 @@ pub enum MapperError {
     /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    /// Returned when a [`ReadCacheError`] is encountered.
-    #[cfg(feature = "cache")]
-    #[error(transparent)]
-    ReadCacheError(#[from] ReadCacheError),
-    /// Returned when a [`WriteCacheError`] is encountered.
-    #[cfg(feature = "cache")]
-    #[error(transparent)]
-    WriteCacheError(#[from] WriteCacheError),
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] ConditionError),
@@ -486,10 +421,7 @@ pub enum MapperError {
     JobVarIsNone,
     /// Returned when a call to [`UrlPart::get`] returns `None` where it has to be `Some`.
     #[error("The specified UrlPart returned None where it had to be Some.")]
-    UrlPartIsNone,
-    /// Returned when a cache result is an error.
-    #[error("The cache result was an error.")]
-    CacheResultIsError
+    UrlPartIsNone
 }
 
 impl From<RuleError> for MapperError {
@@ -510,14 +442,10 @@ impl Mapper {
             Self::None => {},
             Self::Error => Err(MapperError::ExplicitError)?,
             Self::Debug(mapper) => {
-                let mut old_url = job_state.url.clone();
-                let old_job_state = JobState {
-                    url: &mut old_url,
-                    params: job_state.params,
-                    vars: job_state.vars.clone()
-                };
+                let old_url = job_state.url.clone();
+                let old_vars = job_state.vars.clone();
                 let mapper_result=mapper.apply(job_state);
-                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld job state: {old_job_state:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
+                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld URL: {old_url:?}\nOld vars: {old_vars:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
                 mapper_result?;
             }
 
@@ -533,7 +461,8 @@ impl Mapper {
                 let mut temp_job_state = JobState {
                     url: &mut temp_url,
                     params: job_state.params,
-                    vars: job_state.vars.clone()
+                    vars: job_state.vars.clone(),
+                    cache: job_state.cache
                 };
                 for mapper in mappers {
                     mapper.apply(&mut temp_job_state)?;
@@ -625,10 +554,7 @@ impl Mapper {
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
-                if let Some(cached_result) = job_state.params.read_from_cache("redirect", job_state.url.as_str())? {
-                    *job_state.url = cached_result.map_err(|()| MapperError::CacheResultIsError)?;
-                    return Ok(());
-                }
+                todo!();
                 let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
                     Url::parse(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.to_str()?)?
@@ -636,7 +562,7 @@ impl Mapper {
                     response.url().clone()
                 };
                 #[cfg(feature = "cache-redirects")]
-                job_state.params.write_to_cache("redirect", job_state.url.as_str(), Ok(&new_url))?;
+                todo!();
                 *job_state.url=new_url;
             },
 
@@ -644,11 +570,6 @@ impl Mapper {
             Self::Print   (source) => if let Some(x) = source.get(job_state)? {print!   ("{x}");},
             Self::Eprintln(source) => if let Some(x) = source.get(job_state)? {eprintln!("{x}");},
             Self::Eprint  (source) => if let Some(x) = source.get(job_state)? {eprint!  ("{x}");},
-            Self::ApplyConfig {path, params_diff} => {
-                let mut config = Config::get_default_or_load(path.as_deref())?.into_owned();
-                params_diff.apply(&mut config.params);
-                config.apply(job_state.url)?;
-            },
             Self::SetVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
             Self::DeleteVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
@@ -662,23 +583,8 @@ impl Mapper {
             },
             Self::Rule(rule) => rule.apply(job_state)?,
             Self::Rules(rules) => rules.apply(job_state)?,
-            #[cfg(feature = "cache")]
-            Self::Cache {name, key, copy_from_result, write_to_job, cache_errors, mapper} => {
-                let name = get_string!(name, job_state, MapperError);
-                let key_value = key.get(job_state.url).ok_or(MapperError::UrlPartIsNone)?.to_string();
-                if let Some(cached_result) = job_state.params.read_from_cache(&name, &key_value)? {
-                    write_to_job.set(job_state.url, copy_from_result.get(&cached_result.map_err(|()| MapperError::CacheResultIsError)?).as_deref())?;
-                    return Ok(());
-                }
-                if *cache_errors {
-                    match mapper.apply(job_state) {
-                        Ok(()) => job_state.params.write_to_cache(&name, &key_value, Ok(job_state.url))?,
-                        Err(_) => job_state.params.write_to_cache(&name, &key_value, Err(()))?
-                    }
-                } else {
-                    mapper.apply(job_state)?;
-                    job_state.params.write_to_cache(&name, &key_value, Ok(job_state.url))?;
-                }
+            Self::Cache {category, key, mapper} => {
+                todo!()
             }
         };
         Ok(())

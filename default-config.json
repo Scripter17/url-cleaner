@@ -1084,40 +1084,6 @@
 
 					{
 						"condition": {"All": [
-							{"FlagIsSet": "onion-location"},
-							{"Not": {"FlagIsSet": "no-http"}},
-							{"PartIs": {"part": "Scheme", "value": "https"}}
-						]},
-						"mapper": {"All": [
-							{"IfCondition": {
-								"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-								"mapper": {
-									"RemoveQueryParamsMatching": {"Any": [
-										{"InSet": "utps"},
-										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-									]
-								}}
-							}},
-							{"IgnoreError":
-								{"Cache": {
-									"name": "onion-location",
-									"key": "Host",
-									"copy_from_result": "Host",
-									"write_to_job": "Host",
-									"cache_errors": true,
-									"mapper": {"SetPart": {
-										"part": "Origin",
-										"value": {"ExtractPart": {
-											"part": "Origin",
-											"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
-										}}
-									}}
-								}}
-							}
-						]}
-					},
-					{
-						"condition": {"All": [
 							{"Any": [
 								{"FlagIsSet": "tor2web"},
 								{"FlagIsSet": "tor2web2tor"}

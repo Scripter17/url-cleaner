@@ -9,6 +9,8 @@ use std::sync::Mutex;
 use clap::Parser;
 use url::Url;
 use thiserror::Error;
+#[cfg(feature = "cache")]
+use diesel::prelude::*;
 
 mod glue;
 mod types;
@@ -104,54 +106,17 @@ struct Args {
     #[arg(             long, verbatim_doc_comment)] test_config : bool
 }
 
-/// The enum of all errors that can occur when converting an [`Args`] to types usable by URL Cleaner.
+/// The enum of all errors that can occur when using the URL Cleaner CLI tool.
 #[derive(Debug, Error)]
-pub enum InterpretArgsError {
+pub enum CliError {
     /// Returned when a [`GetConfigError`] is encountered.
     #[error(transparent)] GetConfigError(#[from] types::GetConfigError),
     /// Returned when URL Cleaner fails to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when URL Cleaner fails to parse a [`ParamsDiff`] file's contents.
-    #[error(transparent)] CantParseParamsDiffFile(serde_json::Error)
-}
-
-impl TryFrom<Args> for (Vec<Url>, types::Config, Vec<types::ParamsDiff>) {
-    type Error = InterpretArgsError;
-
-    fn try_from(args: Args) -> Result<Self, Self::Error> {
-        Ok((
-            args.urls,
-            types::Config::get_default_or_load(args.config.as_deref())?.into_owned(),
-            {
-                let mut ret = args.params_diff.into_iter().map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(InterpretArgsError::CantLoadParamsDiffFile)?).map_err(InterpretArgsError::CantParseParamsDiffFile)).collect::<Result<Vec<_>, _>>()?;
-                ret.push(types::ParamsDiff {
-                    flags  : args.flag  .into_iter().collect(), // It's probably not a good thing to do a global impl for,
-                    unflags: args.unflag.into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
-                    vars   : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
-                    unvars : args.unvar .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
-                    init_sets: Default::default(),
-                    insert_into_sets: args.insert_into_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-                    remove_from_sets: args.remove_from_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-                    delete_sets: Default::default(),
-                    #[cfg(feature = "cache")] read_cache : args.read_cache,
-                    #[cfg(feature = "cache")] write_cache: args.write_cache,
-                    #[cfg(all(feature = "http", not(target_family = "wasm")))] http_client_config_diff: Some(types::HttpClientConfigDiff {
-                        set_proxies: args.http_proxy.map(|x| vec![x]),
-                        no_proxy: args.no_http_proxy,
-                        ..types::HttpClientConfigDiff::default()
-                    })
-                });
-                ret
-            }
-        ))
-    }
-}
-
-/// The enum of all errors that can occur when using the URL Cleaner CLI tool.
-#[derive(Debug, Error)]
-pub enum CliError {
-    /// Returned when an [`InterpretArgsError`] is encountered.
-    #[error(transparent)] InterpretArgsError(#[from] InterpretArgsError),
+    #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
+    #[error("...")] CachePathIsNotUtf8,
+    #[error(transparent)] ConnectionError(#[from] ConnectionError),
     /// Returned when a [`CleaningError`] is encountered.
     #[error(transparent)] CleaningError(#[from] types::CleaningError),
     /// Returned when a [`SerdeJsonError`] is encountered.
@@ -165,89 +130,102 @@ fn str_to_json_str(s: &str) -> String {
 fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
-    let json = args.json;
-
-    let print_args          = args.print_args;
-    let print_params_diffs  = args.print_params_diffs;
-    let print_params        = args.print_params;
-    let print_diffed_params = args.print_diffed_params;
-    let print_config        = args.print_config;
-    let print_diffed_config = args.print_diffed_config;
-    let test_config         = args.test_config;
-
-    let no_cleaning = print_args || print_params_diffs || print_params || print_diffed_params || print_config || print_diffed_config || test_config;
-
-    if print_args {println!("{args:?}");}
-
-    let (urls, mut config, params_diffs) = args.try_into()?;
-
-    if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
-    if print_params {println!("{}", serde_json::to_string(&config.params)?)};
-    if print_config {println!("{}", serde_json::to_string(&config)?);}
-
+    let mut config = types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
+    let mut params_diffs = args.params_diff
+        .into_iter()
+        .map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile))
+        .collect::<Result<Vec<_>, _>>()?;
+    params_diffs.push(types::ParamsDiff {
+        flags  : args.flag  .into_iter().collect(), // It's probably not a good thing to do a global impl for,
+        unflags: args.unflag.into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
+        vars   : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
+        unvars : args.unvar .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
+        init_sets: Default::default(),
+        insert_into_sets: args.insert_into_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+        remove_from_sets: args.remove_from_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+        delete_sets: Default::default(),
+        #[cfg(feature = "cache")] read_cache : args.read_cache,
+        #[cfg(feature = "cache")] write_cache: args.write_cache,
+        #[cfg(all(feature = "http", not(target_family = "wasm")))] http_client_config_diff: Some(types::HttpClientConfigDiff {
+            set_proxies: args.http_proxy.map(|x| vec![x]),
+            no_proxy: args.no_http_proxy,
+            ..types::HttpClientConfigDiff::default()
+        })
+    });
     for params_diff in params_diffs {
         params_diff.apply(&mut config.params);
     }
 
-    if print_diffed_config {println!("{}", serde_json::to_string(&config)?);}
-    if print_diffed_params {println!("{}", serde_json::to_string(&config.params)?)};
-    if test_config {config.run_tests();}
+    let json = args.json;
 
-    if no_cleaning {std::process::exit(0);}
+    // let print_args          = args.print_args;
+    // let print_params_diffs  = args.print_params_diffs;
+    // let print_params        = args.print_params;
+    // let print_diffed_params = args.print_diffed_params;
+    // let print_config        = args.print_config;
+    // let print_diffed_config = args.print_diffed_config;
+    // let test_config         = args.test_config;
+
+    // let no_cleaning = print_args || print_params_diffs || print_params || print_diffed_params || print_config || print_diffed_config || test_config;
+
+    // if print_args {println!("{args:?}");}
+
+    // if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
+    // if print_params {println!("{}", serde_json::to_string(&config.params)?)};
+    // if print_config {println!("{}", serde_json::to_string(&config)?);}
+
+    // for params_diff in params_diffs {
+    //     params_diff.apply(&mut config.params);
+    // }
+
+    // if print_diffed_config {println!("{}", serde_json::to_string(&config)?);}
+    // if print_diffed_params {println!("{}", serde_json::to_string(&config.params)?)};
+    // if test_config {config.run_tests();}
+
+    // if no_cleaning {std::process::exit(0);}
+
+    let mut jobs = types::Jobs {
+        cache: SqliteConnection::establish(config.cache_path.to_str().ok_or(CliError::CachePathIsNotUtf8)?)?,
+        url_source: {
+            let ret = args.urls.into_iter().map(Ok);
+            #[cfg(feature = "stdin")]
+            if atty::isnt(atty::Stream::Stdin) {
+                Box::new(ret.chain(io::stdin().lines().map(|line| match line {
+                    Ok(line) => Url::parse(&line).map_err(Into::into),
+                    Err(e) => Err(e.into())
+                })))
+            } else {
+                Box::new(ret)
+            }
+        },
+        config
+    };
 
     if json {
         print!("{{\"urls\":[");
-        let mut first_url = true;
+        let mut first_job = true;
 
-        for mut url in urls {
-            if !first_url {print!(",");}
-            match config.apply(&mut url) {
-                Ok(()) => {print!("{{\"Ok\":{:?}}}", url.as_str());},
-                Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source_url\":{},\"error\":{}}}}}", str_to_json_str(url.as_str()), str_to_json_str(&e.to_string()));}
+        while let job = jobs.next_job() {
+            if !first_job {print!(",");}
+            match job {
+                Ok(job) => match job.r#do() {
+                    Ok(url) => print!("{{\"Ok\":{:?}}}", url.as_str()),
+                    Err(e) => print!("{{\"Err\":{{\"type\":\"JobError\",\"error\":{}}}}}", str_to_json_str(&e.to_string()))
+                },
+                Err(e) => print!("{{\"Err\":{{\"type\":\"GetJobError\",\"error\":{}}}}}", str_to_json_str(&e.to_string()))
             }
-            first_url = false;
-        }
-
-        #[cfg(feature = "stdin")]
-        if atty::isnt(atty::Stream::Stdin) {
-            for maybe_line in io::stdin().lines() {
-                if !first_url {print!(",");}
-                match maybe_line {
-                    Ok(line) => match Url::parse(&line) {
-                        Ok(mut url) => match config.apply(&mut url) {
-                            Ok(()) => {print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));},
-                            Err(e) => {print!("{{\"Err\":{{\"type\":\"RuleError\",\"source\":{},\"error\":{}}}}}", str_to_json_str(url.as_str()), str_to_json_str(&e.to_string()));}
-                        },
-                        Err(e) => {print!("{{\"Err\":{{\"type\":\"UrlParseError\",\"source\":{},\"error\":{}}}}}", str_to_json_str(&line), str_to_json_str(&e.to_string()));}
-                    },
-                    Err(e) => {print!("{{\"Err\":{{\"type\":\"LineReadError\",\"Error\":{}}}}}", str_to_json_str(&e.to_string()));}
-                }
-                first_url = false;
-            }
+            first_job = false;
         }
 
         print!("]}}");
     } else {
-        for mut url in urls {
-            match config.apply(&mut url) {
-                Ok(()) => {println!("{url}");},
-                Err(e) => {println!(); eprintln!("Rule error\t{:?}\t{e:?}", url.as_str());}
-            }
-        }
-
-        #[cfg(feature = "stdin")]
-        if atty::isnt(atty::Stream::Stdin) {
-            for maybe_line in io::stdin().lines() {
-                match maybe_line {
-                    Ok(line) => match Url::parse(&line) {
-                        Ok(mut url) => match config.apply(&mut url) {
-                            Ok(()) => {println!("{url}");},
-                            Err(e) => {println!(); eprintln!("Rule error\t{:?}\t{e:?}", url.as_str());}
-                        },
-                        Err(e) => {println!(); eprintln!("Line parse error\t{line:?}\t{e:?}");}
-                    },
-                    Err(e) => {println!(); eprintln!("Line read error\t\t{e:?}");}
-                }
+        while let job = jobs.next_job() {
+            match job {
+                Ok(job) => match job.r#do() {
+                    Ok(url) => println!("{url}"),
+                    Err(e) => {println!(); eprintln!("Job error\t{e:?}");}
+                },
+                Err(e) => {println!(); eprintln!("Get job error\t{e:?}");}
             }
         }
     }

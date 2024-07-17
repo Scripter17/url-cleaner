@@ -31,18 +31,19 @@ pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params_diff: was
 /// # Errors
 /// If applying the rules returns an error, that error is returned.
 pub fn clean_url(url: &mut Url, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>) -> Result<(), types::CleaningError> {
-    let config=match config {
-        Some(config) => config,
-        None => types::Config::get_default()?
-    };
-    if let Some(params_diff) = params_diff {
-        let mut config = config.clone();
-        params_diff.apply(&mut config.params);
-        config.apply(url)?;
-    } else {
-        config.apply(url)?;
-    }
-    Ok(())
+    todo!()
+    // let config=match config {
+    //     Some(config) => config,
+    //     None => types::Config::get_default()?
+    // };
+    // if let Some(params_diff) = params_diff {
+    //     let mut config = config.clone();
+    //     params_diff.apply(&mut config.params);
+    //     config.apply(url)?;
+    // } else {
+    //     config.apply(url)?;
+    // }
+    // Ok(())
 }
 
 #[cfg(target_family = "wasm")]
