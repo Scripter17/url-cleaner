@@ -102,7 +102,7 @@ unused_import_braces = "warn"
 
 [lints.clippy]
 unwrap_used = "deny"
-# missing_errors_doc = "deny"
+missing_errors_doc = "deny"
 missing_panics_doc = "deny"
 missing_safety_doc = "deny"
 perf = { level = "warn", priority = -1 }

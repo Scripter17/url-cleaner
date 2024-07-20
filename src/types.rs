@@ -1,10 +1,8 @@
 //! Various types to make URL Cleaner far more powerful.
 
 use std::collections::HashMap;
-use std::sync::OnceLock;
 
 use thiserror::Error;
-use url::Url;
 
 mod url_part;
 pub use url_part::*;
@@ -41,5 +39,8 @@ pub enum CleaningError {
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error)
+    SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a [`crate::glue::MakeCacheHandlerError`] is encountered.
+    #[error(transparent)]
+    MakeCacheHandlerError(#[from] crate::glue::MakeCacheHandlerError)
 }

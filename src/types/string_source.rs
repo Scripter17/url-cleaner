@@ -196,9 +196,25 @@ pub enum StringSource {
         /// God these docs need a total rewrite.
         map: HashMap<Option<String>, Self>
     },
+    /// Read from the cache.
+    /// 
+    /// If an entry is found, return its value.
+    /// 
+    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache, then reutrns it.
+    /// 
+    /// Please note that [`Self::Cache::key`] should be chosen to make all possible collisions intentional.
+    /// # Errors
+    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
     Cache {
+        /// The category to cache in.
         category: String,
+        /// The key to cache with.
         key: String,
+        /// The [`Self`] to cache.
         source: Box<Self>
     }
 }
@@ -280,10 +296,12 @@ pub enum StringSourceError {
     /// Returned when attepting to cache [`None`].
     #[error("Attempted to cache None.")]
     CannotCacheNone,
+    /// Returned when a [`ReadFromCacheError`] is encountered.
     #[error(transparent)]
-    ReadCacheError(#[from] ReadCacheError),
+    ReadFromCacheError(#[from] ReadFromCacheError),
+    /// Returned when a [`WriteToCacheError`] is encountered.
     #[error(transparent)]
-    WriteCacheError(#[from] WriteCacheError)
+    WriteToCacheError(#[from] WriteToCacheError)
 
 }
 
@@ -335,11 +353,11 @@ impl StringSource {
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
             Self::Error => Err(StringSourceError::ExplicitError)?,
             Self::Cache {category, key, source} => {
-                if let Some(ret) = job_state.cache_handler.read_cache(category, key)? {
+                if let Some(ret) = job_state.cache_handler.read_from_cache(category, key)? {
                     return Ok(ret.map(Cow::Owned));
                 }
                 let ret = source.get(job_state)?;
-                job_state.cache_handler.write_cache(category, key, ret.as_deref())?;
+                job_state.cache_handler.write_to_cache(category, key, ret.as_deref())?;
                 ret
             }
         })

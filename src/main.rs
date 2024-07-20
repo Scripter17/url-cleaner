@@ -3,14 +3,12 @@
 use std::path::PathBuf;
 #[cfg(feature = "stdin")]
 use std::io;
-#[cfg(any(feature = "debug", feature = "cache"))]
+#[cfg(feature = "debug")]
 use std::sync::Mutex;
 
 use clap::Parser;
 use url::Url;
 use thiserror::Error;
-#[cfg(feature = "cache")]
-use diesel::prelude::*;
 
 mod glue;
 mod types;
@@ -89,18 +87,12 @@ struct Args {
     /// Print the ParamsDiffs loaded from `--params--diff` files and derived from the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)] print_params_diffs: bool,
-    /// Print the config's params before applying the ParamsDiff.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_params: bool,
-    /// Print the specified config as JSON before applying the ParamsDiff.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_config: bool,
     /// Print the config's params after applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_diffed_params: bool,
-    /// Print the specified config's JSON after applying the ParamsDiff.
+    #[arg(             long, verbatim_doc_comment)] print_params: bool,
+    /// Print the specified config as JSON after applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_diffed_config: bool,
+    #[arg(             long, verbatim_doc_comment)] print_config: bool,
     /// Run the config's tests.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)] test_config : bool
@@ -115,12 +107,12 @@ pub enum CliError {
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when URL Cleaner fails to parse a [`ParamsDiff`] file's contents.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
-    #[error("...")] CachePathIsNotUtf8,
-    #[error(transparent)] ConnectionError(#[from] ConnectionError),
     /// Returned when a [`CleaningError`] is encountered.
     #[error(transparent)] CleaningError(#[from] types::CleaningError),
     /// Returned when a [`SerdeJsonError`] is encountered.
-    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
+    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a [`MakeCacheHandlerError`] is encountered.
+    #[error(transparent)] MakeCacheHandlerError(#[from] glue::MakeCacheHandlerError)
 }
 
 fn str_to_json_str(s: &str) -> String {
@@ -129,6 +121,9 @@ fn str_to_json_str(s: &str) -> String {
 
 fn main() -> Result<(), CliError> {
     let args = Args::parse();
+
+    let print_args = args.print_args;
+    if print_args {println!("{args:?}");}
 
     let mut config = types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
     let mut params_diffs = args.params_diff
@@ -152,40 +147,30 @@ fn main() -> Result<(), CliError> {
             ..types::HttpClientConfigDiff::default()
         })
     });
+
+    let print_params_diffs = args.print_params_diffs;
+    if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
+
     for params_diff in params_diffs {
         params_diff.apply(&mut config.params);
     }
 
     let json = args.json;
 
-    // let print_args          = args.print_args;
-    // let print_params_diffs  = args.print_params_diffs;
-    // let print_params        = args.print_params;
-    // let print_diffed_params = args.print_diffed_params;
-    // let print_config        = args.print_config;
-    // let print_diffed_config = args.print_diffed_config;
-    // let test_config         = args.test_config;
+    let print_params = args.print_params;
+    let print_config = args.print_config;
+    let test_config  = args.test_config;
 
-    // let no_cleaning = print_args || print_params_diffs || print_params || print_diffed_params || print_config || print_diffed_config || test_config;
+    let no_cleaning = print_args || print_params_diffs || print_params || print_config || test_config;
 
-    // if print_args {println!("{args:?}");}
+    if print_config {println!("{}", serde_json::to_string(&config)?);}
+    if print_params {println!("{}", serde_json::to_string(&config.params)?)};
+    if test_config {config.run_tests();}
 
-    // if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
-    // if print_params {println!("{}", serde_json::to_string(&config.params)?)};
-    // if print_config {println!("{}", serde_json::to_string(&config)?);}
-
-    // for params_diff in params_diffs {
-    //     params_diff.apply(&mut config.params);
-    // }
-
-    // if print_diffed_config {println!("{}", serde_json::to_string(&config)?);}
-    // if print_diffed_params {println!("{}", serde_json::to_string(&config.params)?)};
-    // if test_config {config.run_tests();}
-
-    // if no_cleaning {std::process::exit(0);}
+    if no_cleaning {std::process::exit(0);}
 
     let mut jobs = types::Jobs {
-        cache_handler: glue::CacheHandler(Mutex::new(SqliteConnection::establish(config.cache_path.to_str().ok_or(CliError::CachePathIsNotUtf8)?)?)),
+        cache_handler: config.cache_path.as_path().try_into()?,
         url_source: {
             let ret = args.urls.into_iter().map(Ok);
             #[cfg(feature = "stdin")]
@@ -205,7 +190,7 @@ fn main() -> Result<(), CliError> {
         print!("{{\"urls\":[");
         let mut first_job = true;
 
-        while let job = jobs.next_job() {
+        while let Some(job) = jobs.next_job() {
             if !first_job {print!(",");}
             match job {
                 Ok(job) => match job.r#do() {
@@ -219,7 +204,7 @@ fn main() -> Result<(), CliError> {
 
         print!("]}}");
     } else {
-        while let job = jobs.next_job() {
+        while let Some(job) = jobs.next_job() {
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => println!("{url}"),

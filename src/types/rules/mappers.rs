@@ -2,7 +2,6 @@
 
 use std::str::Utf8Error;
 use std::collections::hash_set::HashSet;
-use std::path::PathBuf;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -246,7 +245,7 @@ pub enum Mapper {
     /// The default config handles this by configuring [`Self::ExpandShortLink::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
     /// And, because it's in a [`Rule::RepeatUntilNonePass`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
-    #[cfg_attr(feature = "cache", doc = "If the call to [`Params::get_redirect_from_cache`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache", doc = "If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.")]
     /// 
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
@@ -258,7 +257,7 @@ pub enum Mapper {
     /// 
     /// (3xx status code) If the call to [`Url::parse`] to parse the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
     /// 
-    #[cfg_attr(feature = "cache", doc = "If the call to [`Params::write_redirect_to_cache`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache", doc = "If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.")]
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -333,14 +332,32 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     Rules(Rules),
+    /// Read from the cache using the current [`JobState::url`] as the [`CacheEntry::key`].
+    /// 
+    /// If an entry is found, sets the provided [`JobState::url`] to its value.
+    /// 
+    /// If an entry is not found, calls [`Mapper::apply`] and writes the new [`JobState::url`] to the cache.
+    /// 
+    /// Changes to [`JobState::vars`] are not cached but the resulting URL still is.
+    /// 
+    /// That will hopefully change at some point.
+    /// # Errors
+    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`CacheHandler::read_from_cache`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].
+    /// 
+    /// If the call to [`Url::parse`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
     CacheUrl {
+        /// The category to cache in.
         category: String,
-        key: String,
+        /// The [`Self`] to cache.
         mapper: Box<Self>
     }
 }
-
-const fn url_part_whole() -> UrlPart {UrlPart::Whole}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Debug, Error)]
@@ -422,12 +439,15 @@ pub enum MapperError {
     /// Returned when a call to [`UrlPart::get`] returns `None` where it has to be `Some`.
     #[error("The specified UrlPart returned None where it had to be Some.")]
     UrlPartIsNone,
+    /// Returned when a [`ReadFromCacheError`] is encountered.
     #[error(transparent)]
-    ReadCacheError(#[from] ReadCacheError),
+    ReadFromCacheError(#[from] ReadFromCacheError),
+    /// Returned when a [`WriteToCacheError`] is encountered.
     #[error(transparent)]
-    WriteCacheError(#[from] WriteCacheError),
+    WriteToCacheError(#[from] WriteToCacheError),
+    /// Returned when the cached [`Url`] is [`None`].
     #[error("The cached URL was None.")]
-    CachedUrlWasNone
+    CachedUrlIsNone
 }
 
 impl From<RuleError> for MapperError {
@@ -560,7 +580,10 @@ impl Mapper {
             #[cfg(all(feature = "http", not(target_family = "wasm")))]
             Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
-                todo!();
+                if let Some(new_url) = job_state.cache_handler.read_from_cache("redirect", job_state.url.as_str())? {
+                    *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
+                    return Ok(());
+                }
                 let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
                     Url::parse(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.to_str()?)?
@@ -568,7 +591,7 @@ impl Mapper {
                     response.url().clone()
                 };
                 #[cfg(feature = "cache-redirects")]
-                todo!();
+                job_state.cache_handler.write_to_cache("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
                 *job_state.url=new_url;
             },
 
@@ -590,15 +613,15 @@ impl Mapper {
             Self::Rule(rule) => rule.apply(job_state)?,
             Self::Rules(rules) => rules.apply(job_state)?,
             #[cfg(feature = "cache")]
-            Self::CacheUrl {category, key, mapper} => {
-                if let Some(new_url) = job_state.cache_handler.read_cache(category, key)? {
-                    *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlWasNone)?)?;
+            Self::CacheUrl {category, mapper} => {
+                if let Some(new_url) = job_state.cache_handler.read_from_cache(category, job_state.url.as_str())? {
+                    *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
                     return Ok(());
                 }
                 let old_url = job_state.url.clone();
                 let old_vars = job_state.vars.clone();
                 mapper.apply(job_state)?;
-                if let e @ Err(_) = job_state.cache_handler.write_cache(category, key, Some(job_state.url.as_str())) {
+                if let e @ Err(_) = job_state.cache_handler.write_to_cache(category, old_url.as_str(), Some(job_state.url.as_str())) {
                     *job_state.url = old_url;
                     job_state.vars = old_vars;
                     e?;

@@ -1,14 +1,8 @@
 //! Allows passing additional details into various types in URL Cleaner.
 
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
-#[cfg(feature = "cache")]
-use std::io::{self, BufRead, Write};
-use std::fs::{OpenOptions, File};
 
 use serde::{Serialize, Deserialize};
-use thiserror::Error;
-use url::Url;
 
 use super::*;
 use crate::util::*;

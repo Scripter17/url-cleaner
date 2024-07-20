@@ -8,7 +8,6 @@ use std::io;
 use std::sync::OnceLock;
 
 use serde::{Serialize, Deserialize};
-use url::Url;
 
 use crate::types::*;
 use crate::util::is_default;
@@ -24,10 +23,12 @@ pub struct Config {
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
+    /// The path of the sqlite cache to use.
+    #[cfg(feature = "cache")]
     pub cache_path: PathBuf,
     /// The tests to make sure the config is working as intended.
-    // #[serde(default, skip_serializing_if = "is_default")]
-    // pub tests: Vec<TestSet>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub tests: Vec<TestSet>,
     /// The conditions and mappers that modify the URLS.
     pub rules: Rules
 }
@@ -78,12 +79,11 @@ impl Config {
 
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
-    /// Panics if a call to [`Self::apply`] or a test fails.
+    /// Panics if a call to [`Job::do`] or a test fails.
     pub fn run_tests(&self) {
-        todo!()
-        // for test in &self.tests {
-        //     test.run(self.clone());
-        // }
+        for test in &self.tests {
+            test.run(self.clone());
+        }
     }
 }
 
