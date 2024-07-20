@@ -5,6 +5,7 @@ use thiserror::Error;
 use diesel::SqliteConnection;
 
 use crate::types::*;
+use crate::glue::*;
 
 #[derive(Debug, Error)]
 pub enum UrlSourceError {
@@ -20,7 +21,7 @@ pub struct Jobs {
     pub config: Config,
     /// The cache.
     #[cfg(feature = "cache")]
-    pub cache: SqliteConnection,
+    pub cache_handler: CacheHandler,
     /// The iterator URLs are acquired from.
     pub url_source: Box<dyn Iterator<Item = Result<Url, UrlSourceError>>>,
 }
@@ -30,7 +31,7 @@ impl ::core::fmt::Debug for Jobs {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         f.debug_struct("Jobs")
             .field("config", &self.config)
-            .field("cache", &"...")
+            .field("cache_handler", &self.cache_handler)
             .field("url_source", &"...")
             .finish()
     }
@@ -49,7 +50,7 @@ impl<'a> Jobs {
         Ok(Job {
             url: self.url_source.next().ok_or(GetJobError::NoNextUrl)??,
             config: &self.config,
-            cache: &mut self.cache
+            cache_handler: &mut self.cache_handler
         })
     }
 }
@@ -59,22 +60,12 @@ pub enum JobError {
     #[error(transparent)] RuleError(#[from] RuleError)
 }
 
+#[derive(Debug)]
 pub struct Job<'a> {
     pub url: Url,
     pub config: &'a Config,
     #[cfg(feature = "cache")]
-    pub cache: &'a mut SqliteConnection
-}
-
-impl<'a> ::core::fmt::Debug for Job<'a> {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        f.debug_struct("Job")
-            .field("url", &self.url)
-            .field("config", &self.config)
-            .field("cache", &"...")
-            .finish()
-    }
+    pub cache_handler: &'a CacheHandler
 }
 
 impl Job<'_> {
@@ -83,13 +74,14 @@ impl Job<'_> {
             url: &mut self.url,
             params: &self.config.params,
             vars: Default::default(),
-            cache: self.cache
+            cache_handler: self.cache_handler
         })?;
         Ok(self.url)
     }
 }
 
 /// The current state of the job.
+#[derive(Debug)]
 pub struct JobState<'a> {
     /// The URL being modified.
     pub url: &'a mut Url,
@@ -97,17 +89,5 @@ pub struct JobState<'a> {
     pub params: &'a Params,
     /// The string vars created and managed by the config.
     pub vars: HashMap<String, String>,
-    pub cache: &'a mut SqliteConnection
-}
-
-impl<'a> ::core::fmt::Debug for JobState<'a> {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        f.debug_struct("JobState")
-            .field("url", &self.url)
-            .field("params", &self.params)
-            .field("vars", &self.vars)
-            .field("cache", &"...")
-            .finish()
-    }
+    pub cache_handler: &'a CacheHandler
 }

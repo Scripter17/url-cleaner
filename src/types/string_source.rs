@@ -195,6 +195,11 @@ pub enum StringSource {
         /// 
         /// God these docs need a total rewrite.
         map: HashMap<Option<String>, Self>
+    },
+    Cache {
+        category: String,
+        key: String,
+        source: Box<Self>
     }
 }
 
@@ -271,7 +276,15 @@ pub enum StringSourceError {
     KeyNotInMap,
     /// Returned when the provided string is not in the specified map.
     #[error("The provided string was not in the specified map.")]
-    StringNotInMap
+    StringNotInMap,
+    /// Returned when attepting to cache [`None`].
+    #[error("Attempted to cache None.")]
+    CannotCacheNone,
+    #[error(transparent)]
+    ReadCacheError(#[from] ReadCacheError),
+    #[error(transparent)]
+    WriteCacheError(#[from] WriteCacheError)
+
 }
 
 #[cfg(feature = "commands")]
@@ -320,7 +333,15 @@ impl StringSource {
             },
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
-            Self::Error => Err(StringSourceError::ExplicitError)?
+            Self::Error => Err(StringSourceError::ExplicitError)?,
+            Self::Cache {category, key, source} => {
+                if let Some(ret) = job_state.cache_handler.read_cache(category, key)? {
+                    return Ok(ret.map(Cow::Owned));
+                }
+                let ret = source.get(job_state)?;
+                job_state.cache_handler.write_cache(category, key, ret.as_deref())?;
+                ret
+            }
         })
     }
 }

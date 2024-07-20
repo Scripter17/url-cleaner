@@ -333,7 +333,7 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     Rules(Rules),
-    Cache {
+    CacheUrl {
         category: String,
         key: String,
         mapper: Box<Self>
@@ -421,7 +421,13 @@ pub enum MapperError {
     JobVarIsNone,
     /// Returned when a call to [`UrlPart::get`] returns `None` where it has to be `Some`.
     #[error("The specified UrlPart returned None where it had to be Some.")]
-    UrlPartIsNone
+    UrlPartIsNone,
+    #[error(transparent)]
+    ReadCacheError(#[from] ReadCacheError),
+    #[error(transparent)]
+    WriteCacheError(#[from] WriteCacheError),
+    #[error("The cached URL was None.")]
+    CachedUrlWasNone
 }
 
 impl From<RuleError> for MapperError {
@@ -462,7 +468,7 @@ impl Mapper {
                     url: &mut temp_url,
                     params: job_state.params,
                     vars: job_state.vars.clone(),
-                    cache: job_state.cache
+                    cache_handler: job_state.cache_handler
                 };
                 for mapper in mappers {
                     mapper.apply(&mut temp_job_state)?;
@@ -583,8 +589,20 @@ impl Mapper {
             },
             Self::Rule(rule) => rule.apply(job_state)?,
             Self::Rules(rules) => rules.apply(job_state)?,
-            Self::Cache {category, key, mapper} => {
-                todo!()
+            #[cfg(feature = "cache")]
+            Self::CacheUrl {category, key, mapper} => {
+                if let Some(new_url) = job_state.cache_handler.read_cache(category, key)? {
+                    *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlWasNone)?)?;
+                    return Ok(());
+                }
+                let old_url = job_state.url.clone();
+                let old_vars = job_state.vars.clone();
+                mapper.apply(job_state)?;
+                if let e @ Err(_) = job_state.cache_handler.write_cache(category, key, Some(job_state.url.as_str())) {
+                    *job_state.url = old_url;
+                    job_state.vars = old_vars;
+                    e?;
+                }
             }
         };
         Ok(())

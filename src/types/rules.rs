@@ -292,7 +292,7 @@ impl Rules {
             url: &mut temp_url,
             params: job_state.params,
             vars: job_state.vars.clone(),
-            cache: job_state.cache
+            cache_handler: job_state.cache_handler
         };
         for rule in &self.0 {
             match rule.apply(&mut temp_job_state) {

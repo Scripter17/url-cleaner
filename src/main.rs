@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 #[cfg(feature = "stdin")]
 use std::io;
-#[cfg(feature = "debug")]
+#[cfg(any(feature = "debug", feature = "cache"))]
 use std::sync::Mutex;
 
 use clap::Parser;
@@ -185,7 +185,7 @@ fn main() -> Result<(), CliError> {
     // if no_cleaning {std::process::exit(0);}
 
     let mut jobs = types::Jobs {
-        cache: SqliteConnection::establish(config.cache_path.to_str().ok_or(CliError::CachePathIsNotUtf8)?)?,
+        cache_handler: glue::CacheHandler(Mutex::new(SqliteConnection::establish(config.cache_path.to_str().ok_or(CliError::CachePathIsNotUtf8)?)?)),
         url_source: {
             let ret = args.urls.into_iter().map(Ok);
             #[cfg(feature = "stdin")]
