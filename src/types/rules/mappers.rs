@@ -353,7 +353,7 @@ pub enum Mapper {
     /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
     CacheUrl {
         /// The category to cache in.
-        category: String,
+        category: StringSource,
         /// The [`Self`] to cache.
         mapper: Box<Self>
     }
@@ -614,14 +614,15 @@ impl Mapper {
             Self::Rules(rules) => rules.apply(job_state)?,
             #[cfg(feature = "cache")]
             Self::CacheUrl {category, mapper} => {
-                if let Some(new_url) = job_state.cache_handler.read_from_cache(category, job_state.url.as_str())? {
+                let category = get_string!(category, job_state, MapperError);
+                if let Some(new_url) = job_state.cache_handler.read_from_cache(&category, job_state.url.as_str())? {
                     *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
                     return Ok(());
                 }
                 let old_url = job_state.url.clone();
                 let old_vars = job_state.vars.clone();
                 mapper.apply(job_state)?;
-                if let e @ Err(_) = job_state.cache_handler.write_to_cache(category, old_url.as_str(), Some(job_state.url.as_str())) {
+                if let e @ Err(_) = job_state.cache_handler.write_to_cache(&category, old_url.as_str(), Some(job_state.url.as_str())) {
                     *job_state.url = old_url;
                     job_state.vars = old_vars;
                     e?;

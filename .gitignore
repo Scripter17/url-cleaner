@@ -16,3 +16,4 @@ hyperfine*
 bacon.toml
 tests.sh
 sync.sh
+*.sqlite

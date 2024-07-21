@@ -1,4 +1,5 @@
 {
+	"cache_path": "cache.sqlite",
 	"params": {
 		"flags": [],
 		"vars": {
@@ -22,7 +23,7 @@
 				"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly",
 				"pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at",
 				"spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly",
-				"xhslink.com"
+				"xhslink.com", "x.gd", "glo.bo"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -273,8 +274,8 @@
 														]
 													}}
 												}},
-												{"Cache": {
-													"name": "smarturl.it",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -311,8 +312,8 @@
 														]}
 													}
 												}},
-												{"Cache": {
-													"name": "bfy.tw",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -340,8 +341,8 @@
 														]}
 													}
 												}},
-												{"Cache": {
-													"name": "gprivate.com",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -415,8 +416,8 @@
 														]}
 													}
 												}},
-												{"Cache": {
-													"name": "bypass.vip",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -464,8 +465,8 @@
 											]
 										}}
 									}},
-									{"Cache": {
-										"name": "tinyurl.com",
+									{"CacheUrl": {
+										"category": "redirect",
 										"mapper": {"SetPart": {
 											"part": "Whole",
 											"value": {"Modified": {
@@ -1082,6 +1083,37 @@
 
 
 
+					{
+						"condition": {"All": [
+							{"FlagIsSet": "onion-location"},
+							{"Not": {"FlagIsSet": "no-http"}},
+							{"PartIs": {"part": "Scheme", "value": "https"}}
+						]},
+						"mapper": {"All": [
+							{"IfCondition": {
+								"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+								"mapper": {
+									"RemoveQueryParamsMatching": {"Any": [
+										{"InSet": "utps"},
+										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+									]
+								}}
+							}},
+							{"IgnoreError": {
+								"SetPart": {
+									"part": "Origin",
+									"value": {"Cache": {
+										"category": "onion-location",
+										"key": {"Part": "Origin"},
+										"source": {"ExtractPart": {
+											"part": "Origin",
+											"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+										}}
+									}}
+								}
+							}}
+						]}
+					},
 					{
 						"condition": {"All": [
 							{"Any": [

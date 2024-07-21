@@ -95,7 +95,9 @@ struct Args {
     #[arg(             long, verbatim_doc_comment)] print_config: bool,
     /// Run the config's tests.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] test_config : bool
+    #[arg(             long, verbatim_doc_comment)] test_config : bool,
+    /// Overrides the config's [`Config::cache_path`].
+    #[arg(             long                      )] cache_path: Option<PathBuf>
 }
 
 /// The enum of all errors that can occur when using the URL Cleaner CLI tool.
@@ -170,7 +172,7 @@ fn main() -> Result<(), CliError> {
     if no_cleaning {std::process::exit(0);}
 
     let mut jobs = types::Jobs {
-        cache_handler: config.cache_path.as_path().try_into()?,
+        cache_handler: args.cache_path.as_deref().unwrap_or(config.cache_path.as_path()).try_into()?,
         url_source: {
             let ret = args.urls.into_iter().map(Ok);
             #[cfg(feature = "stdin")]
@@ -208,9 +210,9 @@ fn main() -> Result<(), CliError> {
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => println!("{url}"),
-                    Err(e) => {println!(); eprintln!("Job error\t{e:?}");}
+                    Err(e) => {println!(); eprintln!("JobError\t{e:?}");}
                 },
-                Err(e) => {println!(); eprintln!("Get job error\t{e:?}");}
+                Err(e) => {println!(); eprintln!("GetJobError\t{e:?}");}
             }
         }
     }

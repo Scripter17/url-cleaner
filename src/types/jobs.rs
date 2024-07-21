@@ -26,9 +26,9 @@ pub enum UrlSourceError {
 
 /// A [`Job`] creator.
 /// 
-/// Note: [`Self::cache_handler`] should be created via `config.cache_handler.as_path().try_into()?`.
+/// Note: [`Self::cache_handler`] should be created via `config.cache_handler.as_path().try_into()?` but does not need to be.
 /// 
-/// It is intentionally designed so you don't *need* to do that, but it is generally what the user expects.
+/// This is intentional as it means you can override it using, for example, command line arguments.
 pub struct Jobs {
     /// The [`Config`] tp use.
     pub config: Config,

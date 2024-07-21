@@ -211,9 +211,9 @@ pub enum StringSource {
     /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
     Cache {
         /// The category to cache in.
-        category: String,
+        category: Box<Self>,
         /// The key to cache with.
-        key: String,
+        key: Box<Self>,
         /// The [`Self`] to cache.
         source: Box<Self>
     }
@@ -353,11 +353,13 @@ impl StringSource {
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
             Self::Error => Err(StringSourceError::ExplicitError)?,
             Self::Cache {category, key, source} => {
-                if let Some(ret) = job_state.cache_handler.read_from_cache(category, key)? {
+                let category = get_string!(category, job_state, StringSourceError);
+                let key = get_string!(key, job_state, StringSourceError);
+                if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
                     return Ok(ret.map(Cow::Owned));
                 }
                 let ret = source.get(job_state)?;
-                job_state.cache_handler.write_to_cache(category, key, ret.as_deref())?;
+                job_state.cache_handler.write_to_cache(&category, &key, ret.as_deref())?;
                 ret
             }
         })
