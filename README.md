@@ -56,7 +56,6 @@ Various flags are included in the default config for things I want to do frequen
 - `deadname-twitter`: Change `x.com` to `twitter.com`.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.
-- `onion-location`: Send an HTTP GET request to the url and apply the [`Onion-Location`](https://community.torproject.org/onion-services/advanced/onion-location/) response header if found. Because this runs on all and the response isn't cached, it's advised you don't use this.
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.

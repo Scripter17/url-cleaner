@@ -12,3 +12,5 @@
 #[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod headermap;
 #[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod headervalue;
 #[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod method;
+#[cfg(feature = "cache")] mod caching;
+#[cfg(feature = "cache")] pub use caching::*;

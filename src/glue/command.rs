@@ -163,6 +163,7 @@ impl CommandConfig {
     /// If the call to [`Self::output`] returns an error, that error is returned.
     /// 
     /// If the call to [`Url::parse`] returns an error, that error is returned.
+    #[allow(dead_code)]
     pub fn get_url(&self, job_state: &JobState) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(job_state)?.trim_end_matches(&['\r', '\n']))?)
     }

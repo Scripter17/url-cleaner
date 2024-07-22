@@ -1,4 +1,5 @@
 {
+	"cache_path": "cache.sqlite",
 	"params": {
 		"flags": [],
 		"vars": {
@@ -15,14 +16,14 @@
 			],
 			"shortlink-hosts": [
 				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bityl.co", "blizz.ly",
-				"bloom.bg", "boxd.it", "buff.ly", "buff.ly", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnb.cx", "cnn.it",
-				"cnn.it", "cos.lv", "cos.lv", "cutt.ly", "cutt.ly", "db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me",
-				"fal.cn", "fb.me", "flip.it", "forms.gle", "g.co", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv",
-				"ift.tt", "iwe.one", "k00.fr", "katy.to", "kck.st", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr",
-				"ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la",
-				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it",
-				"reurl.cc", "reut.rs", "rzr.to", "shorturl.at", "spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecut,io", "thr.cm", "tmz.me",
-				"tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly"
+				"bloom.bg", "boxd.it", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me",
+				"dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fal.cn", "fb.me", "flip.it", "forms.gle", "g.co", "go.forbes.com", "go.nasa.gov",
+				"gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "k00.fr", "katy.to", "kck.st", "l.leparisien.fr",
+				"link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm",
+				"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly",
+				"pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at",
+				"spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly",
+				"xhslink.com", "x.gd", "glo.bo"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -273,8 +274,8 @@
 														]
 													}}
 												}},
-												{"Cache": {
-													"name": "smarturl.it",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -311,8 +312,8 @@
 														]}
 													}
 												}},
-												{"Cache": {
-													"name": "bfy.tw",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -340,8 +341,8 @@
 														]}
 													}
 												}},
-												{"Cache": {
-													"name": "gprivate.com",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -415,8 +416,8 @@
 														]}
 													}
 												}},
-												{"Cache": {
-													"name": "bypass.vip",
+												{"CacheUrl": {
+													"category": "redirect",
 													"mapper": {"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
@@ -464,8 +465,8 @@
 											]
 										}}
 									}},
-									{"Cache": {
-										"name": "tinyurl.com",
+									{"CacheUrl": {
+										"category": "redirect",
 										"mapper": {"SetPart": {
 											"part": "Whole",
 											"value": {"Modified": {
@@ -1098,22 +1099,19 @@
 									]
 								}}
 							}},
-							{"IgnoreError":
-								{"Cache": {
-									"name": "onion-location",
-									"key": "Host",
-									"copy_from_result": "Host",
-									"write_to_job": "Host",
-									"cache_errors": true,
-									"mapper": {"SetPart": {
-										"part": "Origin",
-										"value": {"ExtractPart": {
+							{"IgnoreError": {
+								"SetPart": {
+									"part": "Origin",
+									"value": {"Cache": {
+										"category": "onion-location",
+										"key": {"Part": "Origin"},
+										"source": {"ExtractPart": {
 											"part": "Origin",
 											"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
 										}}
 									}}
-								}}
-							}
+								}
+							}}
 						]}
 					},
 					{

@@ -1,14 +1,13 @@
 //! Provides [`Config`] which controls all details of how URL Cleaner works.
 
 use std::fs::read_to_string;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::borrow::Cow;
 use std::io;
 #[cfg(feature = "default-config")]
 use std::sync::OnceLock;
 
 use serde::{Serialize, Deserialize};
-use url::Url;
 
 use crate::types::*;
 use crate::util::is_default;
@@ -24,6 +23,9 @@ pub struct Config {
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
+    /// The path of the sqlite cache to use.
+    #[cfg(feature = "cache")]
+    pub cache_path: PathBuf,
     /// The tests to make sure the config is working as intended.
     #[serde(default, skip_serializing_if = "is_default")]
     pub tests: Vec<TestSet>,
@@ -75,21 +77,9 @@ impl Config {
         })
     }
 
-    /// Applies the rules to the provided URL using the parameters contained in [`Self::params`].
-    /// # Errors
-    /// If the call to [`Rules::apply`] returns an error, that error is returned.
-    #[allow(dead_code)]
-    pub fn apply(&self, url: &mut Url) -> Result<(), RuleError> {
-        self.rules.apply(&mut JobState {
-            url,
-            params: &self.params,
-            vars: Default::default()
-        })
-    }
-
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
-    /// Panics if a call to [`Self::apply`] or a test fails.
+    /// Panics if a call to [`Job::do`] or a test fails.
     pub fn run_tests(&self) {
         for test in &self.tests {
             test.run(self.clone());

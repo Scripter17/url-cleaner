@@ -195,6 +195,27 @@ pub enum StringSource {
         /// 
         /// God these docs need a total rewrite.
         map: HashMap<Option<String>, Self>
+    },
+    /// Read from the cache.
+    /// 
+    /// If an entry is found, return its value.
+    /// 
+    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache, then reutrns it.
+    /// 
+    /// Please note that [`Self::Cache::key`] should be chosen to make all possible collisions intentional.
+    /// # Errors
+    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
+    Cache {
+        /// The category to cache in.
+        category: Box<Self>,
+        /// The key to cache with.
+        key: Box<Self>,
+        /// The [`Self`] to cache.
+        source: Box<Self>
     }
 }
 
@@ -271,7 +292,17 @@ pub enum StringSourceError {
     KeyNotInMap,
     /// Returned when the provided string is not in the specified map.
     #[error("The provided string was not in the specified map.")]
-    StringNotInMap
+    StringNotInMap,
+    /// Returned when attepting to cache [`None`].
+    #[error("Attempted to cache None.")]
+    CannotCacheNone,
+    /// Returned when a [`ReadFromCacheError`] is encountered.
+    #[error(transparent)]
+    ReadFromCacheError(#[from] ReadFromCacheError),
+    /// Returned when a [`WriteToCacheError`] is encountered.
+    #[error(transparent)]
+    WriteToCacheError(#[from] WriteToCacheError)
+
 }
 
 #[cfg(feature = "commands")]
@@ -320,7 +351,17 @@ impl StringSource {
             },
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
-            Self::Error => Err(StringSourceError::ExplicitError)?
+            Self::Error => Err(StringSourceError::ExplicitError)?,
+            Self::Cache {category, key, source} => {
+                let category = get_string!(category, job_state, StringSourceError);
+                let key = get_string!(key, job_state, StringSourceError);
+                if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
+                    return Ok(ret.map(Cow::Owned));
+                }
+                let ret = source.get(job_state)?;
+                job_state.cache_handler.write_to_cache(&category, &key, ret.as_deref())?;
+                ret
+            }
         })
     }
 }
