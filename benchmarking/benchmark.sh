@@ -66,7 +66,7 @@ for url in "${URLS[@]}"; do
     rm stdin
     if [ "$print_desmos_lists" == "true" ]; then
       echo "N=[$(echo "${NUMS[@]}" | sed "s/ /,/g")]"
-      echo -n T= && cat "hyperfine-$file_safe_in_url.json" | jq "[.results[].mean]" -c
+      echo -n T= && cat "hyperfine.out-$file_safe_in_url.json" | jq "[.results[].mean]" -c
     fi
   fi
   if [ "$no_valgrind" == "false" ]; then

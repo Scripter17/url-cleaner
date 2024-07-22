@@ -12,7 +12,8 @@ use diesel::prelude::*;
 mod schema;
 pub use schema::cache;
 
-const EMPTY_CACHE: &[u8] = include_bytes!("../../empty-cache.sqlite");
+/// Creating a [`CacheHandler`] from a [`Path`] writes this to the path if there's nothing there.
+pub const EMPTY_CACHE: &[u8] = include_bytes!("../../empty-cache.sqlite");
 
 /// An entry in the [`cache`] table.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, Queryable, Selectable)]
@@ -42,18 +43,23 @@ pub struct NewCacheEntry<'a> {
 }
 
 /// Convenience wrapper to contain the annoyingness of it all.
-pub struct CacheHandler(pub Mutex<SqliteConnection>);
+#[derive(Debug)]
+pub struct CacheHandler(Mutex<InnerCacheHandler>);
 
-impl ::core::fmt::Debug for CacheHandler {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CacheHandler")
+pub enum InnerCacheHandler {
+    Unconnected {
+        path: String
+    },
+    Connected {
+        path: String,
+        connection: SqliteConnection
     }
 }
 
-impl From<SqliteConnection> for CacheHandler {
-    fn from(value: SqliteConnection) -> Self {
-        Self(Mutex::new(value))
+impl ::core::fmt::Debug for InnerCacheHandler {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "InnerCacheHandler")
     }
 }
 
@@ -75,7 +81,7 @@ impl FromStr for CacheHandler {
     type Err = MakeCacheHandlerError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(SqliteConnection::establish(s)?.into())
+        Ok(CacheHandler(Mutex::new(InnerCacheHandler::Unconnected { path: s.to_string() })))
     }
 }
 
@@ -107,7 +113,10 @@ pub enum ReadFromCacheError {
     MutexPoisonError(String),
     /// Returned when a [`diesel::result::Error`] is encountered.
     #[error(transparent)]
-    DieselError(#[from] diesel::result::Error)
+    DieselError(#[from] diesel::result::Error),
+    /// Returned when a [`ConnectCacheError`] is encountered.
+    #[error(transparent)]
+    ConnectCacheError(#[from] ConnectCacheError)
 }
 
 /// The enum of errors [`CacheHandler::write_to_cache`] can return.
@@ -118,7 +127,10 @@ pub enum WriteToCacheError {
     MutexPoisonError(String),
     /// Returned when a [`diesel::result::Error`] is encountered.
     #[error(transparent)]
-    DieselError(#[from] diesel::result::Error)
+    DieselError(#[from] diesel::result::Error),
+    /// Returned when a [`ConnectCacheError`] is encountered.
+    #[error(transparent)]
+    ConnectCacheError(#[from] ConnectCacheError)
 }
 
 impl CacheHandler {
@@ -133,7 +145,7 @@ impl CacheHandler {
             .filter(cache::dsl::key.eq(key))
             .limit(1)
             .select(CacheEntry::as_select())
-            .load(&mut *self.0.lock().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?)?
+            .load(self.0.lock().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?.connect()?)?
             .first()
             .map(|cache_entry| cache_entry.value.to_owned()))
     }
@@ -147,7 +159,34 @@ impl CacheHandler {
         diesel::insert_into(cache::table)
             .values(&NewCacheEntry {category, key, value})
             .returning(CacheEntry::as_returning())
-            .get_result(&mut *self.0.lock().map_err(|e| WriteToCacheError::MutexPoisonError(e.to_string()))?)?;
+            .get_result(self.0.lock().map_err(|e| WriteToCacheError::MutexPoisonError(e.to_string()))?.connect()?)?;
         Ok(())
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum ConnectCacheError {
+    /// Returned when a [`diesel::ConnectionError`] is encountered.
+    #[error(transparent)]
+    ConnectionError(#[from] diesel::ConnectionError)
+}
+
+impl InnerCacheHandler {
+    /// # Errors
+    /// If the call to [`SqliteConnecttion::establish`] returns an error, that error is returned.
+    pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
+        Ok(match self {
+            Self::Unconnected { path } => {
+                *self = InnerCacheHandler::Connected {
+                    connection: SqliteConnection::establish(path)?,
+                    path: path.clone()
+                };
+                match self {
+                    Self::Connected { ref mut connection, .. } => connection,
+                    _ => unreachable!()
+                }
+            },
+            Self::Connected { ref mut connection, .. } => connection
+        })
     }
 }
