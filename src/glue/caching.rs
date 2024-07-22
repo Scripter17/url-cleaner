@@ -12,6 +12,8 @@ use diesel::prelude::*;
 mod schema;
 pub use schema::cache;
 
+const EMPTY_CACHE: &[u8] = include_bytes!("../../empty-cache.sqlite");
+
 /// An entry in the [`cache`] table.
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(table_name = cache)]
@@ -61,6 +63,9 @@ pub enum MakeCacheHandlerError {
     /// Returned when making a [`CacheHandler`] from a non-UTF-8 [`Path`].
     #[error("The cache's path was not UTF-8")]
     CachePathIsNotUtf8,
+    /// Returned when a [`std::io::Error`] is encountered.
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
     /// Returned when a [`ConnectionError`] is encountered.
     #[error(transparent)]
     ConnectionError(#[from] ConnectionError)
@@ -85,7 +90,11 @@ impl TryFrom<&str> for CacheHandler {
 impl TryFrom<&Path> for CacheHandler {
     type Error = MakeCacheHandlerError;
 
+    /// Makes the file if it doesn't exist.
     fn try_from(value: &Path) -> Result<Self, Self::Error> {
+        if !value.exists() {
+            std::fs::write(value, EMPTY_CACHE)?;
+        }
         Self::from_str(value.to_str().ok_or(MakeCacheHandlerError::CachePathIsNotUtf8)?)
     }
 }
