@@ -3,14 +3,19 @@
 #[cfg(feature = "debug")]
 use std::sync::Mutex;
 
+/// Used by [`debug`] to control the indentation level.
 #[cfg(feature = "debug")]
 pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
 
+/// The thing that decrements [`DEBUG_INDENT`] when dropped.
 #[cfg(feature = "debug")]
 pub(crate) struct Deindenter;
 
+/// Decrements [`DEBUG_INDENT`].
 #[cfg(feature = "debug")]
 impl std::ops::Drop for Deindenter {
+    /// Decrements [`DEBUG_INDENT`]
+    #[allow(clippy::arithmetic_side_effects)]
     fn drop(&mut self) {
         *crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.")-=1;
     }
@@ -20,6 +25,7 @@ impl std::ops::Drop for Deindenter {
 macro_rules! debug {
     ($x:expr) => {
         #[cfg(feature = "debug")]
+        #[allow(clippy::arithmetic_side_effects)]
         let _deindent = {
             let mut indent = crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.");
             eprint!("{}", "|   ".repeat(*indent));

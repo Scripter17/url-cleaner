@@ -25,7 +25,18 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// Condition::Error.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// Condition::Error.satisfied_by(&job_state).unwrap_err();
     /// ```
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
@@ -61,10 +72,21 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), true );
     /// 
-    /// Condition::Not(Box::new(Condition::Error )).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// Condition::Not(Box::new(Condition::Error )).satisfied_by(&job_state).unwrap_err();
     /// ```
     Not(Box<Self>),
     /// Passes if all of the included [`Self`]s pass.
@@ -75,16 +97,27 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Always]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Never ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Always]).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Never ]).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Error ]).satisfied_by(&job_state).unwrap(), false);
     /// 
-    /// Condition::All(vec![Condition::Always, Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// Condition::All(vec![Condition::Error , Condition::Always]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// Condition::All(vec![Condition::Error , Condition::Never ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// Condition::All(vec![Condition::Always, Condition::Error ]).satisfied_by(&job_state).unwrap_err();
+    /// Condition::All(vec![Condition::Error , Condition::Always]).satisfied_by(&job_state).unwrap_err();
+    /// Condition::All(vec![Condition::Error , Condition::Never ]).satisfied_by(&job_state).unwrap_err();
+    /// Condition::All(vec![Condition::Error , Condition::Error ]).satisfied_by(&job_state).unwrap_err();
     /// ```
     All(Vec<Self>),
     /// Passes if any of the included [`Self`]s pass.
@@ -95,16 +128,27 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::Any(vec![Condition::Never , Condition::Always]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::Any(vec![Condition::Never , Condition::Never ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Error ]).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Never , Condition::Always]).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::Any(vec![Condition::Never , Condition::Never ]).satisfied_by(&job_state).unwrap(), false);
     /// 
-    /// Condition::Any(vec![Condition::Never , Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// Condition::Any(vec![Condition::Error , Condition::Always]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// Condition::Any(vec![Condition::Error , Condition::Never ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// Condition::Any(vec![Condition::Never , Condition::Error ]).satisfied_by(&job_state).unwrap_err();
+    /// Condition::Any(vec![Condition::Error , Condition::Always]).satisfied_by(&job_state).unwrap_err();
+    /// Condition::Any(vec![Condition::Error , Condition::Never ]).satisfied_by(&job_state).unwrap_err();
+    /// Condition::Any(vec![Condition::Error , Condition::Error ]).satisfied_by(&job_state).unwrap_err();
     /// ```
     Any(Vec<Self>),
     /// Passes if the condition in `map` whose key is the value returned by `part`'s [`UrlPart::get`] passes.
@@ -135,9 +179,20 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&job_state).unwrap(), true );
     /// ```
     TreatErrorAsPass(Box<Self>),
     /// If the contained [`Self`] returns an error, treat it as a fail.
@@ -145,9 +200,20 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&job_state).unwrap(), false);
     /// ```
     TreatErrorAsFail(Box<Self>),
     /// If `try` returns an error, `else` is executed.
@@ -158,15 +224,26 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Never )}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Never ), r#else: Box::new(Condition::Error )}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Never )}.satisfied_by(&job_state).unwrap(), false);
+    /// Condition::TryElse{r#try: Box::new(Condition::Error ), r#else: Box::new(Condition::Error )}.satisfied_by(&job_state).unwrap_err();
     /// ```
     TryElse {
         /// The [`Self`] to try first.
@@ -188,10 +265,29 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"    ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
     /// ```
     UnqualifiedDomain(String),
     /// Similar to [`Condition::UnqualifiedDomain`] but only checks if the subdomain is empty or `www`.
@@ -202,9 +298,26 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.com").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://not.example.com").unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state).unwrap(), false);
     /// ```
     MaybeWWWDomain(String),
     /// Passes if the URL's domain is the specified domain.
@@ -214,10 +327,29 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"    ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state).unwrap(), true );
     /// ```
     QualifiedDomain(String),
     /// Passes if the URL's host is in the specified set of hosts.
@@ -228,10 +360,23 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::HashSet;
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&JobState::new(&mut Url::parse("https://example.com" ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&JobState::new(&mut Url::parse("https://example.com" ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&JobState::new(&mut Url::parse("https://example2.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&JobState::new(&mut Url::parse("https://example2.com").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://example2.com").unwrap();
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), true );
     /// ```
     HostIsOneOf(HashSet<String>),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
@@ -244,18 +389,50 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
-    /// // Weird edge cases.
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.example.co.uk" ).unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.aexample.example.co.uk").unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.aexample.co.uk"        ).unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.example.co.uk" ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true);
+    /// 
+    /// *job_state.url = Url::parse("https://www.aexample.example.co.uk").unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true);
+    /// 
+    /// *job_state.url = Url::parse("https://www.aexample.co.uk"        ).unwrap();
+    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), false);
     /// ```
     UnqualifiedAnySuffix(String),
     /// Similar to [`Condition::UnqualifiedAnySuffix`] but only checks if the subdomain is empty or `www`.
@@ -269,12 +446,29 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.com"  ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://not.example.co.uk").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// *job_state.url = Url::parse("https://not.example.com"  ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// *job_state.url = Url::parse("https://not.example.co.uk").unwrap();
+    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), false);
     /// ```
     MaybeWWWAnySuffix(String),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
@@ -287,14 +481,41 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"      ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.co.uk"    ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.com"  ).unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://www.example.co.uk").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// 
+    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state).unwrap(), true );
     /// ```
     QualifiedAnySuffix(String),
 
@@ -305,9 +526,26 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::QueryHasParam("a".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com?a=2&b=3").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QueryHasParam("b".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com?a=2&b=3").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::QueryHasParam("c".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com?a=2&b=3").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// assert_eq!(Condition::QueryHasParam("a".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// assert_eq!(Condition::QueryHasParam("b".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// 
+    /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// assert_eq!(Condition::QueryHasParam("c".to_string()).satisfied_by(&job_state).unwrap(), false);
     /// ```
     QueryHasParam(String),
     /// Passes if the URL's path is the specified string.
@@ -315,10 +553,29 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com"   ).unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com/"  ).unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::PathIs("/a" .to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com/a" ).unwrap())).unwrap(), true);
-    /// assert_eq!(Condition::PathIs("/a/".to_string()).satisfied_by(&JobState::new(&mut Url::parse("https://example.com/a/").unwrap())).unwrap(), true);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// *job_state.url = Url::parse("https://example.com").unwrap();
+    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state).unwrap(), true);
+    /// 
+    /// *job_state.url = Url::parse("https://example.com/").unwrap();
+    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state).unwrap(), true);
+    /// 
+    /// *job_state.url = Url::parse("https://example.com/a").unwrap();
+    /// assert_eq!(Condition::PathIs("/a" .to_string()).satisfied_by(&job_state).unwrap(), true);
+    /// 
+    /// *job_state.url = Url::parse("https://example.com/a/").unwrap();
+    /// assert_eq!(Condition::PathIs("/a/".to_string()).satisfied_by(&job_state).unwrap(), true);
     /// ```
     PathIs(String),
 
@@ -330,12 +587,23 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&job_state).unwrap(), true );
     /// ```
     PartIs {
         /// The name of the part to check.
@@ -352,8 +620,19 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&job_state).unwrap(), false);
     /// ```
     PartContains {
         /// The name of the part to check.
@@ -383,13 +662,23 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::HashMap;
-    /// let mut url=Url::parse("https://example.com").unwrap();
-    /// let params=Params {vars: HashMap::from([("a".to_string(), "2".to_string())]), ..Params::default()};
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&JobState::new_with_params(&mut url, &params)).unwrap(), true );
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&JobState::new_with_params(&mut url, &params)).unwrap(), false);
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&JobState::new_with_params(&mut url, &params)).unwrap(), false);
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&JobState::new(&mut url)).unwrap(), false);
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: None            }.satisfied_by(&JobState::new(&mut url)).unwrap(), true );
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = url_cleaner::types::Params { vars: vec![("a".to_string(), "2".to_string())].into_iter().collect(), ..Default::default() };
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// print!("{job_state:?}");
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "b".into(), value: None            }.satisfied_by(&job_state).unwrap(), true );
     /// ```
     VarIs {
         /// The name of the variable to check.
@@ -404,8 +693,19 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use std::collections::HashSet;
     /// # use url::Url;
-    /// assert_eq!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&JobState::new_with_params(&mut Url::parse("https://example.com").unwrap(), &Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()})).unwrap(), true );
-    /// assert_eq!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&JobState::new            (&mut Url::parse("https://example.com").unwrap(),                                                                              )).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = url_cleaner::types::Params { flags: HashSet::from_iter(vec!["abc".to_string()]), ..Default::default() };
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::FlagIsSet("xyz".to_string()).satisfied_by(&job_state).unwrap(), false);
     /// ```
     FlagIsSet(String),
 
@@ -455,9 +755,20 @@ pub enum Condition {
     /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&JobState::new(&mut Url::parse("https://url.does/not#matter").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&JobState::new(&mut Url::parse("https://url.does/not#matter").unwrap())).unwrap(), true );
-    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&JobState::new(&mut Url::parse("https://url.does/not#matter").unwrap())).unwrap(), false);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&job_state).unwrap(), false);
     /// ```
     #[cfg(feature = "commands")]
     CommandExists(CommandConfig),
@@ -470,9 +781,20 @@ pub enum Condition {
     /// # use url_cleaner::glue::CommandConfig;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&JobState::new(&mut Url::parse("https://url.does/not#matter").unwrap())).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&JobState::new(&mut Url::parse("https://url.does/not#matter").unwrap())).is_ok_and(|x| x==false));
-    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&JobState::new(&mut Url::parse("https://url.does/not#matter").unwrap())).is_err());
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&job_state).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&job_state).is_ok_and(|x| x==false));
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&job_state).is_err());
     /// ```
     #[cfg(feature = "commands")]
     CommandExitStatus {

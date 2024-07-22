@@ -35,7 +35,19 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
-    /// assert_eq!(StringSource::String("abc".to_string()).get(&JobState::new(&mut url)).unwrap(), Some(Cow::Borrowed("abc")));
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// assert_eq!(StringSource::String("abc".to_string()).get(&job_state).unwrap(), Some(Cow::Borrowed("abc")));
     /// ```
     String(String),
     /// Gets the specified URL part.
@@ -47,8 +59,20 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Params::default();
-    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&JobState::new(&mut url)).unwrap(), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state).unwrap(), Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
     /// Gets the specified variable's value.
@@ -61,8 +85,20 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = url_cleaner::types::Params { vars: vec![("abc".to_string(), "xyz".to_string())].into_iter().collect(), ..Default::default() };
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// assert_eq!(StringSource::Var("abc".to_string()).get(&JobState::new_with_params(&mut url, &params)).unwrap(), Some(Cow::Borrowed("xyz")));
+    /// assert_eq!(StringSource::Var("abc".to_string()).get(&job_state).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(String),
     /// Gets the value of the specified [`JobState::vars`].
@@ -79,11 +115,33 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// # use std::collections::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let params_1 = Params::default();
-    /// let params_2 = Params {flags: HashSet::from_iter(["abc".to_string()]), ..Params::default()};
-    /// let x = StringSource::IfFlag {flag: "abc".to_string(), then: Box::new(StringSource::String("xyz".to_string())), r#else: Box::new(StringSource::Part(UrlPart::Domain))};
-    /// assert_eq!(x.get(&JobState::new_with_params(&mut url, &params_1)).unwrap(), Some(Cow::Borrowed("example.com")));
-    /// assert_eq!(x.get(&JobState::new_with_params(&mut url, &params_2)).unwrap(), Some(Cow::Borrowed("xyz")));
+    /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// assert_eq!(
+    ///     StringSource::IfFlag {
+    ///         flag: "abc".to_string(),
+    ///         then: Box::new(StringSource::String("abc".to_string())),
+    ///         r#else: Box::new(StringSource::Part(UrlPart::Domain))
+    ///     }.get(&job_state).unwrap(),
+    ///     Some(Cow::Borrowed("abc"))
+    /// );
+    /// assert_eq!(
+    ///     StringSource::IfFlag {
+    ///         flag: "xyz".to_string(),
+    ///         then: Box::new(StringSource::String("xyz".to_string())),
+    ///         r#else: Box::new(StringSource::Part(UrlPart::Domain))
+    ///     }.get(&job_state).unwrap(),
+    ///     Some(Cow::Borrowed("example.com"))
+    /// );
     /// ```
     IfFlag {
         /// The name of the flag to check.
@@ -111,6 +169,18 @@ pub enum StringSource {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// assert_eq!(
     ///     StringSource::Join {
     ///         sources: vec![
@@ -118,7 +188,7 @@ pub enum StringSource {
     ///             StringSource::Part(UrlPart::NotSubdomain)
     ///         ],
     ///         join: "".to_string()
-    ///     }.get(&JobState::new(&mut Url::parse("https://abc.example.com.example.com").unwrap())).unwrap(),
+    ///     }.get(&job_state).unwrap(),
     ///     Some(Cow::Owned(".example.com".to_string()))
     /// );
     /// ```
@@ -142,11 +212,23 @@ pub enum StringSource {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// assert_eq!(
     ///     StringSource::ExtractPart {
     ///         source: Box::new(StringSource::String("https://example.com".to_string())),
     ///         part: UrlPart::Scheme
-    ///     }.get(&JobState::new(&mut Url::parse("https://not-relevant-at-all.com").unwrap())).unwrap(),
+    ///     }.get(&job_state).unwrap(),
     ///     Some(Cow::Borrowed("https"))
     /// );
     /// ```
@@ -209,6 +291,7 @@ pub enum StringSource {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
     Cache {
         /// The category to cache in.
         category: Box<Self>,
@@ -293,13 +376,12 @@ pub enum StringSourceError {
     /// Returned when the provided string is not in the specified map.
     #[error("The provided string was not in the specified map.")]
     StringNotInMap,
-    /// Returned when attepting to cache [`None`].
-    #[error("Attempted to cache None.")]
-    CannotCacheNone,
     /// Returned when a [`ReadFromCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
     /// Returned when a [`WriteToCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError)
 
@@ -352,6 +434,7 @@ impl StringSource {
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
             Self::Error => Err(StringSourceError::ExplicitError)?,
+            #[cfg(feature = "cache")]
             Self::Cache {category, key, source} => {
                 let category = get_string!(category, job_state, StringSourceError);
                 let key = get_string!(key, job_state, StringSourceError);

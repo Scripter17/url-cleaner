@@ -93,7 +93,19 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state).unwrap(), true);
     /// ```
     Contains {
         /// The location to check for `value` at.
@@ -107,7 +119,19 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::RegexParts;
     /// # use url::Url;
-    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state).unwrap(), true);
     /// ```
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
@@ -117,7 +141,19 @@ pub enum StringMatcher {
     /// # use url_cleaner::glue::GlobWrapper;
     /// # use url::Url;
     /// # use std::str::FromStr;
-    /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap(), true);
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state).unwrap(), true);
     /// ```
     #[cfg(feature = "glob")]
     Glob(GlobWrapper),

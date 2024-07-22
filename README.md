@@ -4,6 +4,13 @@ Websites often put unique identifiers into URLs so that, when you send a link to
 As most people do not understand and therefore cannot consent to this, it is polite to remove the spyware query parameters before sending URLs to people.  
 URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, fast, and easy as possible.
 
+## C dependencies
+
+These packages are required on Kubuntu 2024.04:
+
+- `libssl-dev`
+- `libsqlite3-dev`
+
 ## Anonymity
 
 In theory, if you're the only one sharing posts from a website without URL trackers, the website could realize that and track you in the same way.  

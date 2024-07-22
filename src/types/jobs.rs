@@ -42,11 +42,12 @@ pub struct Jobs {
 impl ::core::fmt::Debug for Jobs {
     #[inline]
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        f.debug_struct("Jobs")
-            .field("config", &self.config)
-            .field("cache_handler", &self.cache_handler)
-            .field("url_source", &"...")
-            .finish()
+        let mut x = f.debug_struct("Jobs");
+        x.field("config", &self.config);
+        #[cfg(feature = "cache")]
+        x.field("cache_handler", &self.cache_handler);
+        x.field("url_source", &"...");
+        x.finish()
     }
 }
 
@@ -80,6 +81,7 @@ impl<'a> Jobs {
             Ok(url) => Ok(Job {
                 url,
                 config: &self.config,
+                #[cfg(feature = "cache")]
                 cache_handler: &mut self.cache_handler
             }),
             // `e @ Err(e) => e?` doesn't work because for some reason it thinks `e` is a `Url`.
@@ -134,6 +136,7 @@ impl Job<'_> {
             url: &mut self.url,
             params: &self.config.params,
             vars: Default::default(),
+            #[cfg(feature = "cache")]
             cache_handler: self.cache_handler
         })?;
         Ok(self.url)
@@ -150,5 +153,6 @@ pub struct JobState<'a> {
     /// The string vars created and managed by the config.
     pub vars: HashMap<String, String>,
     /// The cache handler.
+    #[cfg(feature = "cache")]
     pub cache_handler: &'a CacheHandler
 }

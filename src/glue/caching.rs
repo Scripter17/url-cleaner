@@ -46,20 +46,36 @@ pub struct NewCacheEntry<'a> {
 #[derive(Debug)]
 pub struct CacheHandler(Mutex<InnerCacheHandler>);
 
+/// The internals of [`CacheHandler`] that handles lazily connecting.
 pub enum InnerCacheHandler {
+    /// The unconnected state. Should be fast to construct.
     Unconnected {
+        /// The path to connect to,
         path: String
     },
+    /// The connected state. Slow to construct. Make using [`Self::connect`].
     Connected {
+        /// The path being connected to. Used for [`Debug`].
         path: String,
+        /// The actual [`SqliteConnection`]
         connection: SqliteConnection
     }
 }
 
 impl ::core::fmt::Debug for InnerCacheHandler {
-    #[inline]
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "InnerCacheHandler")
+        match self {
+            Self::Unconnected {path} => {
+                f.debug_struct("Unconnected")
+                    .field("path", &path)
+                    .finish()
+            },
+            Self::Connected {path, ..} => {
+                f.debug_struct("Connected")
+                    .field("path", &path)
+                    .finish()
+            }
+        }
     }
 }
 
@@ -164,6 +180,7 @@ impl CacheHandler {
     }
 }
 
+/// The enum of errors [`InnerCacheHandler::connect`] can return.
 #[derive(Debug, Error)]
 pub enum ConnectCacheError {
     /// Returned when a [`diesel::ConnectionError`] is encountered.

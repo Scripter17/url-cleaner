@@ -14,6 +14,7 @@ mod glue;
 mod types;
 mod util;
 
+/// Used by [`debug`] to control the indentation level.
 #[cfg(feature = "debug")]
 pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
 
@@ -114,6 +115,7 @@ pub enum CliError {
     /// Returned when a [`SerdeJsonError`] is encountered.
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
     /// Returned when a [`MakeCacheHandlerError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)] MakeCacheHandlerError(#[from] glue::MakeCacheHandlerError)
 }
 
@@ -172,18 +174,21 @@ fn main() -> Result<(), CliError> {
     if no_cleaning {std::process::exit(0);}
 
     let mut jobs = types::Jobs {
+        #[cfg(feature = "cache")]
         cache_handler: args.cache_path.as_deref().unwrap_or(config.cache_path.as_path()).try_into()?,
         url_source: {
             let ret = args.urls.into_iter().map(Ok);
             #[cfg(feature = "stdin")]
-            if atty::isnt(atty::Stream::Stdin) {
+            {if atty::isnt(atty::Stream::Stdin) {
                 Box::new(ret.chain(io::stdin().lines().map(|line| match line {
                     Ok(line) => Url::parse(&line).map_err(Into::into),
                     Err(e) => Err(e.into())
                 })))
             } else {
                 Box::new(ret)
-            }
+            }}
+            #[cfg(not(feature = "stdin"))]
+            Box::new(ret)
         },
         config
     };

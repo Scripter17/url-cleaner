@@ -70,8 +70,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::Set("ghi".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Set("ghi".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "ghi");
     /// ```
     /// # Errors
@@ -82,8 +94,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::Append("ghi".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Append("ghi".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "abcdefghi");
     /// ```
     /// # Errors
@@ -94,8 +118,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::Prepend("ghi".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Prepend("ghi".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "ghiabcdef");
     /// ```
     /// # Errors
@@ -106,8 +142,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcabc".to_string();
-    /// StringModification::Replace{find: "ab".into(), replace: "xy".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Replace{find: "ab".into(), replace: "xy".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "xycxyc");
     /// ```
     Replace {
@@ -123,16 +171,28 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::ReplaceRange{start: Some( 6), end: Some( 7), replace: "123" .into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// StringModification::ReplaceRange{start: Some( 6), end: Some( 7), replace: "123" .into()}.apply(&mut x, &job_state).unwrap_err();
     /// assert_eq!(&x, "abcdef");
-    /// StringModification::ReplaceRange{start: Some( 1), end: Some( 4), replace: "ab"  .into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::ReplaceRange{start: Some( 1), end: Some( 4), replace: "ab"  .into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "aabef");
-    /// StringModification::ReplaceRange{start: Some(-3), end: Some(-1), replace: "abcd".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::ReplaceRange{start: Some(-3), end: Some(-1), replace: "abcd".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "aaabcdf");
-    /// StringModification::ReplaceRange{start: Some(-3), end: None    , replace: "efg" .into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::ReplaceRange{start: Some(-3), end: None    , replace: "efg" .into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "aaabefg");
-    /// StringModification::ReplaceRange{start: Some(-8), end: None    , replace: "hij" .into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// StringModification::ReplaceRange{start: Some(-8), end: None    , replace: "hij" .into()}.apply(&mut x, &job_state).unwrap_err();
     /// assert_eq!(&x, "aaabefg");
     /// ```
     ReplaceRange {
@@ -148,8 +208,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "ABCdef".to_string();
-    /// StringModification::Lowercase.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Lowercase.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "abcdef");
     /// ```
     Lowercase,
@@ -158,8 +230,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcDEF".to_string();
-    /// StringModification::Uppercase.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Uppercase.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "ABCDEF");
     /// ```
     Uppercase,
@@ -170,10 +254,22 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::StripPrefix("abc".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::StripPrefix("abc".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "def");
-    /// StringModification::StripPrefix("abc".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// StringModification::StripPrefix("abc".into()).apply(&mut x, &job_state).unwrap_err();
     /// assert_eq!(&x, "def");
     /// ```
     StripPrefix(StringSource),
@@ -184,10 +280,22 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::StripSuffix("def".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::StripSuffix("def".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "abc");
-    /// StringModification::StripSuffix("def".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
+    /// StringModification::StripSuffix("def".into()).apply(&mut x, &job_state).unwrap_err();
     /// assert_eq!(&x, "abc");
     /// ```
     StripSuffix(StringSource),
@@ -196,10 +304,22 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::StripMaybePrefix("abc".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::StripMaybePrefix("abc".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "def");
-    /// StringModification::StripMaybePrefix("abc".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::StripMaybePrefix("abc".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "def");
     /// ```
     StripMaybePrefix(StringSource),
@@ -208,10 +328,22 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::StripMaybeSuffix("def".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::StripMaybeSuffix("def".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "abc");
-    /// StringModification::StripMaybeSuffix("def".into()).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::StripMaybeSuffix("def".into()).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "abc");
     /// ```
     StripMaybeSuffix(StringSource),
@@ -220,10 +352,22 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "aaaaa".to_string();
-    /// StringModification::Replacen{find: "a" .into(), replace: "x".into(), count: 2}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Replacen{find: "a" .into(), replace: "x".into(), count: 2}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "xxaaa");
-    /// StringModification::Replacen{find: "xa".into(), replace: "x".into(), count: 2}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Replacen{find: "xa".into(), replace: "x".into(), count: 2}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "xxaa");
     /// ```
     Replacen {
@@ -241,12 +385,24 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abc".to_string();
-    /// StringModification::Insert{r#where:  0, value: "def".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Insert{r#where:  0, value: "def".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "defabc");
-    /// StringModification::Insert{r#where:  2, value: "ghi".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Insert{r#where:  2, value: "ghi".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "deghifabc");
-    /// StringModification::Insert{r#where: -1, value: "jhk".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Insert{r#where: -1, value: "jhk".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "deghifabjhkc");
     /// ```
     Insert {
@@ -262,10 +418,22 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdef".to_string();
-    /// StringModification::Remove( 1).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Remove( 1).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "acdef");
-    /// StringModification::Remove(-1).apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::Remove(-1).apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "acde");
     /// ```
     Remove(isize),
@@ -276,14 +444,26 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abcdefghi".into();
-    /// StringModification::KeepRange{start: Some( 1), end: Some( 8)}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::KeepRange{start: Some( 1), end: Some( 8)}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "bcdefgh");
-    /// StringModification::KeepRange{start: None    , end: Some( 6)}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::KeepRange{start: None    , end: Some( 6)}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "bcdefg");
-    /// StringModification::KeepRange{start: Some(-3), end: None    }.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::KeepRange{start: Some(-3), end: None    }.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "efg");
-    /// StringModification::KeepRange{start: Some(-3), end: Some(-1)}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::KeepRange{start: Some(-3), end: Some(-1)}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "ef");
     /// ```
     KeepRange {
@@ -319,16 +499,28 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "a.b.c.d.e.f".to_string();
-    /// StringModification::SetNthSegment{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.c.d.e.f");
-    /// StringModification::SetNthSegment{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.c.d.e.-1");
-    /// StringModification::SetNthSegment{split: ".".into(), n: -2, value: None}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -2, value: None}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.c.d.-1");
-    /// StringModification::SetNthSegment{split: ".".into(), n:  5, value: Some( "E".into())}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// StringModification::SetNthSegment{split: ".".into(), n: -6, value: Some( "E".into())}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// StringModification::SetNthSegment{split: ".".into(), n: -5, value: Some("-5".into())}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n:  5, value: Some( "E".into())}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -6, value: Some( "E".into())}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -5, value: Some("-5".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "-5.1.c.d.-1");
     /// ```
     SetNthSegment {
@@ -365,18 +557,30 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.4.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value:  "6".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value:  "6".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.4.c.6");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value:  "E".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value:  "E".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: "-7".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: "-7".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "-7.a.1.b.-1.4.c.6");
     /// ```
     InsertSegmentBefore {
@@ -396,16 +600,28 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.b.1.c");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.b.1.c.-1");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.b.1.c.-1.4");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value:  "E".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value:  "E".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: "-6".into()}.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: "-6".into()}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.-6.b.1.c.-1.4");
     /// ```
     InsertSegmentAfter {
@@ -433,12 +649,24 @@ pub enum StringModification {
     /// # use url::Url;
     /// # use url_cleaner::glue::*;
     /// # use std::str::FromStr;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "...a2..a3....a4".to_string();
     /// StringModification::JoinAllRegexCaptures {
     ///     regex: RegexWrapper::from_str(r"a(\d)").unwrap(),
     ///     replace: "A$1$1".into(),
     ///     join: "---".into()
-    /// }.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// }.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(x, "A22---A33---A44");
     /// ```
     /// # Errors
@@ -498,8 +726,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "a/b/c".to_string();
-    /// StringModification::URLEncode.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::URLEncode.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a%2Fb%2Fc");
     /// ```
     URLEncode,
@@ -510,8 +750,20 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "a%2fb%2Fc".to_string();
-    /// StringModification::URLDecode.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// StringModification::URLDecode.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a/b/c");
     /// ```
     URLDecode,
@@ -542,12 +794,24 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abc xyz".to_string();
     /// StringModification::ModifyNthSegment {
     ///     split: " ".into(),
     ///     n: 1,
     ///     modification: Box::new(StringModification::Set("abc".into()))
-    /// }.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// }.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(x, "abc abc");
     /// ```
     /// # Errors
@@ -566,12 +830,24 @@ pub enum StringModification {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
     /// let mut x = "abc def xyz".to_string();
     /// StringModification::ModifySegments {
     ///     split: " ".into(),
     ///     ns: vec![1, 2],
     ///     modification: Box::new(StringModification::Set("a b c".into()))
-    /// }.apply(&mut x, &JobState::new(&mut Url::parse("https://example.com").unwrap())).unwrap();
+    /// }.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(x, "abc a b c a b c");
     /// ```
     /// # Errors

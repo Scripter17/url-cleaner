@@ -57,9 +57,20 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut JobState::new(&mut url)).unwrap_err();
-    /// assert_eq!(url.domain(), Some("www.example.com"));
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut job_state).unwrap_err();
+    /// assert_eq!(job_state.url.domain(), Some("example.com"));
     /// ```
     All(Vec<Self>),
     /// Applies the contained [`Self`]s in order. If an error occurs, the URL remains changed by the previous contained [`Self`]s and the error is returned.
@@ -70,9 +81,20 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap_err();
-    /// assert_eq!(url.domain(), Some("3.com"));
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut job_state).unwrap_err();
+    /// assert_eq!(job_state.url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Self>),
     /// If any of the contained [`Self`]s returns an error, the error is ignored and subsequent [`Self`]s are still applied.
@@ -81,9 +103,20 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.domain(), Some("6.com"));
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
 
@@ -99,10 +132,22 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap ();
-    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap ();
-    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap ();
-    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut JobState::new(&mut Url::parse("https://www.example.com").unwrap())).unwrap_err();
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut job_state).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut job_state).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::None )}.apply(&mut job_state).unwrap ();
+    /// Mapper::TryElse {r#try: Box::new(Mapper::Error), r#else: Box::new(Mapper::Error)}.apply(&mut job_state).unwrap_err();
     /// ```
     TryElse {
         /// The [`Self`] to try first.
@@ -117,15 +162,26 @@ pub enum Mapper {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url=Url::parse("https://www.example.com").unwrap();
-    /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.domain(), Some("1.com"));
-    /// Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.domain(), Some("3.com"));
-    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.domain(), Some("4.com"));
-    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut JobState::new(&mut url)).unwrap_err();
-    /// assert_eq!(url.domain(), Some("4.com"));
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.domain(), Some("1.com"));
+    /// Mapper::FirstNotError(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error                       ]).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.domain(), Some("3.com"));
+    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::SetHost("4.com".to_string())]).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.domain(), Some("4.com"));
+    /// Mapper::FirstNotError(vec![Mapper::Error                       , Mapper::Error                       ]).apply(&mut job_state).unwrap_err();
+    /// assert_eq!(job_state.url.domain(), Some("4.com"));
     /// ```
     FirstNotError(Vec<Self>),
 
@@ -141,13 +197,24 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
-    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.query(), Some("b=3&c=4&d=5"));
-    /// Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.query(), Some("d=5"));
-    /// Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.query(), None);
+    /// let mut url = Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.query(), Some("b=3&c=4&d=5"));
+    /// Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.query(), Some("d=5"));
+    /// Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.query(), None);
     /// ```
     RemoveQueryParams(HashSet<String>),
     /// Keeps only the query parameters whose name exists in the specified [`HashSet`].
@@ -157,8 +224,19 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
-    /// let mut url=Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut JobState::new(&mut url)).unwrap();
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
     /// ```
     AllowQueryParams(HashSet<String>),
     /// Removes all query parameters whose name matches the specified [`StringMatcher`].
@@ -264,8 +342,19 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut JobState::new(&mut url)).unwrap();
-    /// assert_eq!(url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     ExpandShortLink {
@@ -351,6 +440,7 @@ pub enum Mapper {
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     /// 
     /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
     CacheUrl {
         /// The category to cache in.
         category: StringSource,
@@ -440,12 +530,15 @@ pub enum MapperError {
     #[error("The specified UrlPart returned None where it had to be Some.")]
     UrlPartIsNone,
     /// Returned when a [`ReadFromCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
     /// Returned when a [`WriteToCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
     /// Returned when the cached [`Url`] is [`None`].
+    #[cfg(feature = "cache")]
     #[error("The cached URL was None.")]
     CachedUrlIsNone
 }
@@ -488,6 +581,7 @@ impl Mapper {
                     url: &mut temp_url,
                     params: job_state.params,
                     vars: job_state.vars.clone(),
+                    #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler
                 };
                 for mapper in mappers {

@@ -103,7 +103,17 @@ pub enum Rule {
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
-    /// assert!(Rule::RepeatUntilNonePass {
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// Rule::RepeatUntilNonePass {
     ///     rules: Rules(vec![
     ///         Rule::Normal {
     ///             condition: Condition::Always,
@@ -114,7 +124,7 @@ pub enum Rule {
     ///         }
     ///     ]),
     ///     limit: 10
-    /// }.apply(&mut JobState::new(&mut url)).is_ok());
+    /// }.apply(&mut job_state).unwrap();
     /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
     /// ```
     RepeatUntilNonePass {
@@ -181,7 +191,29 @@ pub enum Rule {
     /// # use url::Url;
     /// // [`RuleError::FailedCondition`] is returned when the condition does not pass.
     /// // [`Rules`] just ignores them because it's a higher level API.
-    /// assert!(Rule::Normal{condition: Condition::Never, mapper: Mapper::None}.apply(&mut JobState::new(&mut Url::parse("https://example.com").unwrap())).is_err());
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Rule::Normal {
+    ///     condition: Condition::Always,
+    ///     mapper: Mapper::None
+    /// }.apply(&mut job_state).unwrap();
+    /// 
+    /// // If [`Condition::satisfied_by`] returns `Ok(false)`, `Rule::Normal.apply` returns `Err(ConditionError::FailedCondition)`.
+    /// // That specific error is ignored by [`Rules::apply`].
+    /// Rule::Normal {
+    ///     condition: Condition::Never,
+    ///     mapper: Mapper::None
+    /// }.apply(&mut job_state).unwrap_err();
     /// ```
     #[serde(untagged)]
     Normal {
@@ -292,6 +324,7 @@ impl Rules {
             url: &mut temp_url,
             params: job_state.params,
             vars: job_state.vars.clone(),
+            #[cfg(feature = "cache")]
             cache_handler: job_state.cache_handler
         };
         for rule in &self.0 {
