@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2021"
 description = "A CLI tool and library for URL manipulation with a focus on stripping tracking garbage."
 repository = "https://github.com/Scripter17/url-cleaner"
