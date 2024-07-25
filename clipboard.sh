@@ -6,4 +6,4 @@
 
 x=$(dirname "$0")
 
-$x/target/release/url-cleaner "$(xclip -selection clipboard -o)" --config $x/default-config.json | tr -d '\n' | xclip -selection clipboard & # THe & keeps xclip alive which is apparently important on KDE Plasma.
+$x/target/release/url-cleaner "$(xclip -selection clipboard -o)" --config $x/default-config.json | tr -d '\n' | xclip -selection clipboard & # The & keeps xclip alive which is apparently important on KDE Plasma.

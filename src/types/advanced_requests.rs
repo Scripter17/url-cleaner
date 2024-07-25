@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use url::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
-use reqwest::{Method, header::HeaderMap};
+use reqwest::{Method, header::{HeaderName, HeaderValue, HeaderMap}};
 use thiserror::Error;
 #[allow(unused_imports)] // Used for documentation.
-use reqwest::{header::HeaderValue, cookie::Cookie};
+use reqwest::cookie::Cookie;
 
 use crate::types::*;
 use crate::glue::*;
@@ -24,9 +24,12 @@ pub struct RequestConfig {
     #[serde(default, skip_serializing_if = "is_default", with = "method")]
     pub method: Method,
     /// The headers to send in the request in addition to the default headers provided by [`Params::http_client_config`] and [`Self::client_config_diff`].
-    /// Defaults to an empty [`HeaderMap`].
-    #[serde(default, skip_serializing_if = "is_default", with = "headermap")]
-    pub headers: HeaderMap,
+    /// 
+    /// If a call to [`StringSource::get`] returns [`None`], that header is omitted from the request. For a header with an empty value, use [`StringSource::NoneToEmptyString`].
+    /// 
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub headers: HashMap<String, Option<StringSource>>,
     /// The request body to send. Works with all methods but intended only for [`Method::POST`] requests.
     /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
@@ -60,7 +63,15 @@ pub enum RequestConfigError {
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`ResponseHandlerError`] is encountered.
     #[error(transparent)]
-    ResponseHandlerError(#[from] ResponseHandlerError)
+    ResponseHandlerError(#[from] ResponseHandlerError),
+    /// Returned when making the headermap fails.
+    #[error("Couldn't make the HeaderMap. Name error: {name:?}. Value error: {value:?}.")]
+    MakeHeaderMapError {
+        /// The error in making the [`HeaderName`], if any..
+        name: Option<reqwest::header::InvalidHeaderName>,
+        /// The error in making the [`HeaderValue`], if any.
+        value: Option<reqwest::header::InvalidHeaderValue>
+    }
 }
 
 impl From<StringSourceError> for RequestConfigError {
@@ -74,6 +85,12 @@ impl RequestConfig {
     /// # Errors
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
+    /// If any of the header names in [`Self::headers`] is, once [`str::to_lowercase`] is applie, an invalid [`HeaderName`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
+    /// 
+    /// If any of the calls to [`StringSource::get`] from [`Self::headers`] returns an error, that error is returned.
+    /// 
+    /// If any of the calls to [`StringSource::get`] return an invlaid [`HeaderValue`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
+    /// 
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, job_state: &JobState) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
         let mut ret=job_state.params
@@ -86,7 +103,24 @@ impl RequestConfig {
                 }
             );
 
-        ret = ret.headers(self.headers.clone());
+        ret = ret.headers(self.headers
+            .iter()
+            .map(
+                |(k, v)| Ok(get_option_str!(v, job_state)
+                    .map(|v| (
+                        HeaderName::from_lowercase(k.to_lowercase().as_bytes()),
+                        HeaderValue::from_str(v)
+                    )))
+            )
+            .filter_map(|x| x.transpose())
+            .map(|x| match x {
+                Ok((Ok (k), Ok (v))) => Ok((k, v)),
+                Ok((Ok (_), Err(v))) => Err(RequestConfigError::MakeHeaderMapError { name: None   , value: Some(v) }),
+                Ok((Err(k), Ok (_))) => Err(RequestConfigError::MakeHeaderMapError { name: Some(k), value: None    }),
+                Ok((Err(k), Err(v))) => Err(RequestConfigError::MakeHeaderMapError { name: Some(k), value: Some(v) }),
+                Err(e) => Err(RequestConfigError::StringSourceError(Box::new(e)))
+            })
+            .collect::<Result<HeaderMap<_>, _>>()?);
         if let Some(body) = &self.body {ret=body.apply(ret, job_state)?;}
         Ok(ret)
     }

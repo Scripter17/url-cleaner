@@ -52,7 +52,8 @@
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": [],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org"],
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
-			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgtfy2.com", "lmgt.org"]
+			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgtfy2.com", "lmgt.org"],
+			"bypass.vip-hosts": ["linkvertise.com", "www.linkvertise.com"]
 		},
 		"lists": {
 			"utp-prefixes": [
@@ -146,6 +147,7 @@
 					}},
 					"matcher": {"Any": [
 						{"InSet": "shortlink-hosts"},
+						{"InSet": "bypass.vip-hosts"},
 						{"IsOneOf": [
 					    "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "bfy.tw", "buymeacoff.ee", "buymeacoffee.com", "cach.me", "cash.app",
 					    "deviantart.com", "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "gf.me",
@@ -169,7 +171,7 @@
 									{"Not": {"FlagIsSet": "no-https-upgrade"}},
 									{"Not": {"PartMatches": {"part": "Host", "matcher": {"Any": [
 										{"InSet": "https-upgrade-host-blacklist"},
-										{"Regex": "^((0?10|172\\.(1[6-9]|2\\d|3[0-1])|192\\.168)\\.[\\d.]+|0\\.0\\.0\\.0)$"}
+										{"Regex": "^(\\d+\\.\\d+\\.\\d+\\.\\d+|localhost|[\\da-fA-F:]*:[\\da-fA-D:]*)$"}
 									]}}}}
 								]},
 								"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
@@ -405,7 +407,11 @@
 											"mapper": {"GetUrlFromQueryParam": "q"}
 										}},
 										"linkvertise.com": {"IfCondition": {
-											"condition": {"All": [{"FlagIsSet": "bypass.vip"}, {"Not": {"FlagIsSet": "no-http"}}]},
+											"condition": {"All": [
+												{"FlagIsSet": "bypass.vip"},
+												{"Not": {"FlagIsSet": "no-http"}},
+												{"PartMatches": {"part": "Host", "matcher": {"InSet": "bypass.vip-hosts"}}}
+											]},
 											"mapper": {"All": [
 												{"IfCondition": {
 													"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
@@ -424,10 +430,23 @@
 															"source": {"HttpRequest": {
 																"url": {"Join": {
 																	"sources": [
-																		"https://api.bypass.vip/bypass?url=",
+																		{"Debug": {"IfSourceIsNone": {
+																			"source": {"NoneTo": {
+																				"source": {"Var": "bypass.vip-api-key"},
+																				"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
+																			}},
+																			"then": "https://api.bypass.vip/bypass?url=",
+																			"else": "https://api.bypass.vip/premium/bypass?url="
+																		}}},
 																		{"Modified": {"source": {"Part": "Whole"}, "modification": "URLEncode"}}
 																	]
-																}}
+																}},
+																"headers": {
+																	"x-api-key": {"Debug": {"NoneTo": {
+																		"source": {"Var": "bypass.vip-api-key"},
+																		"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
+																	}}}
+																}
 															}},
 															"modification": {"JsonPointer": "/result"}
 														}}
@@ -559,6 +578,7 @@
 					{"Any": [
 						{"HostIsOneOf": ["http", "https", "bsky.app", "www.bsky.app"]},
 						{"PartContains": {"part": "Path", "value": "http"}},
+						{"PartIs": {"part": {"DomainSegment": 0}, "value": "www"}},
 						{"Not": {"PartIs": {"part": {"DomainSegment": 4}, "value": null}}}
 					]}
 				]},
@@ -694,7 +714,7 @@
 				{"Not": {"FlagIsSet": "no-https-upgrade"}},
 				{"Not": {"PartMatches": {"part": "Host", "matcher": {"Any": [
 					{"InSet": "https-upgrade-host-blacklist"},
-					{"Regex": "^((0?10|172\\.(1[6-9]|2\\d|3[0-1])|192\\.168)\\.[\\d.]+|0\\.0\\.0\\.0)$"}
+					{"Regex": "^(\\d+\\.\\d+\\.\\d+\\.\\d+|localhost|[\\da-fA-F:]*:[\\da-fA-D:]*)$"}
 				]}}}}
 			]},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}

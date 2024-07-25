@@ -3,6 +3,7 @@
 use std::str::FromStr;
 use std::convert::Infallible;
 use std::borrow::Cow;
+use std::env::var;
 
 use serde::{Serialize, Deserialize};
 use url::Url;
@@ -299,7 +300,39 @@ pub enum StringSource {
         key: Box<Self>,
         /// The [`Self`] to cache.
         source: Box<Self>
-    }
+    },
+    /// If the value of `source` matches `matcher`, returns the value of `then`, otheriwse returns tha velue of `else`.
+    /// # Errors
+    /// If any call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`StringMatcher::satisfied_by`] returns an erorr, that error is returned.
+    IfSourceMatches {
+        /// The [`Self`] to match on.
+        source: Box<Self>,
+        /// The matcher.
+        matcher: Box<StringMatcher>,
+        /// The [`Self`] to return if the matcher passes.
+        then: Box<Self>,
+        /// The [`Self`] to return if thematcher fails.
+        r#else: Box<Self>
+    },
+    /// If the value of `source` is [`None`], returns the value of `then`, otherwise returns the value of `else`.
+    /// # Errors
+    /// If any of the calls to [`StringSource::get`] return an error, that error is returned.
+    IfSourceIsNone {
+        /// The value to check the [`None`]ness of.
+        source: Box<Self>,
+        /// THe value to return if `source` is [`None`].
+        then: Box<Self>,
+        /// The value to return if `source` is not [`None`]
+        r#else: Box<Self>
+    },
+    /// Gets the environment variable.
+    /// 
+    /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotPresent`], returns [`None`].
+    /// # Errors
+    /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotUnicode`], returns the error [`StringSourceError::EnvVarIsNotUtf8`].
+    EnvVar(Box<Self>)
 }
 
 impl FromStr for StringSource {
@@ -383,14 +416,26 @@ pub enum StringSourceError {
     /// Returned when a [`WriteToCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
-    WriteToCacheError(#[from] WriteToCacheError)
-
+    WriteToCacheError(#[from] WriteToCacheError),
+    /// Returned when a [`StringMatcherError`] is encountered.
+    #[error(transparent)]
+    StringMatcherError(#[from] Box<StringMatcherError>),
+    /// Returned when the value of a requested environemnt variable is not UTF-8.
+    #[error("The value of the requested environment variable was not UTF-8.")]
+    EnvVarIsNotUtf8
 }
+
 
 #[cfg(feature = "commands")]
 impl From<CommandError> for StringSourceError {
     fn from(value: CommandError) -> Self {
         Self::CommandError(Box::new(value))
+    }
+}
+
+impl From<StringMatcherError> for StringSourceError {
+    fn from(value: StringMatcherError) -> Self {
+        Self::StringMatcherError(Box::new(value))
     }
 }
 
@@ -438,12 +483,37 @@ impl StringSource {
             Self::Cache {category, key, source} => {
                 let category = get_string!(category, job_state, StringSourceError);
                 let key = get_string!(key, job_state, StringSourceError);
-                if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
-                    return Ok(ret.map(Cow::Owned));
+                if job_state.params.read_cache {
+                    if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
+                        return Ok(ret.map(Cow::Owned));
+                    }
                 }
                 let ret = source.get(job_state)?;
-                job_state.cache_handler.write_to_cache(&category, &key, ret.as_deref())?;
+                if job_state.params.write_cache {
+                    job_state.cache_handler.write_to_cache(&category, &key, ret.as_deref())?;
+                }
                 ret
+            },
+            Self::IfSourceMatches {source, matcher, then, r#else} => {
+                if matcher.satisfied_by(get_str!(source, job_state, StringSourceError), job_state)? {
+                    then.get(job_state)?
+                } else {
+                    r#else.get(job_state)?
+                }
+            },
+            Self::IfSourceIsNone {source, then, r#else} => {
+                if source.get(job_state)?.is_none() {
+                    then.get(job_state)?
+                } else {
+                    r#else.get(job_state)?
+                }
+            },
+            Self::EnvVar(name) => {
+                match var(get_str!(name, job_state, StringSourceError)) {
+                    Ok(value) => Some(Cow::Owned(value)),
+                    Err(std::env::VarError::NotPresent) => None,
+                    Err(std::env::VarError::NotUnicode(_)) => Err(StringSourceError::EnvVarIsNotUtf8)?
+                }
             }
         })
     }

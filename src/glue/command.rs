@@ -32,12 +32,20 @@ pub struct CommandConfig {
     #[serde(default, skip_serializing_if = "is_default")]
     pub args: Vec<StringSource>,
     /// The directory to run [`Self::program`] in.
+    /// 
+    /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub current_dir: Option<PathBuf>,
     /// The environment arguments to run [`Self::program`] with.
+    /// 
+    /// If a call to [`StringSource::get`] returns [`None`], that environment variable is omitted from the request. For an environment variable with an empty value, use [`StringSource::NoneToEmptyString`].
+    /// 
+    /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub envs: HashMap<String, String>,
+    pub envs: HashMap<String, Option<StringSource>>,
     /// The STDIN to feed into the command.
+    /// 
+    /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub stdin: Option<StringSource>
 }
@@ -114,7 +122,7 @@ impl CommandConfig {
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
         }
-        ret.envs(self.envs.clone());
+        ret.envs(self.envs.iter().map(|(k, v)| Ok(get_option_string!(v, job_state).map(|v| (k, v)))).filter_map(|x| x.transpose()).collect::<Result<HashMap<_, _>, StringSourceError>>()?);
         Ok(ret)
     }
 

@@ -2,6 +2,7 @@
 
 use std::str::Utf8Error;
 use std::collections::hash_set::HashSet;
+use std::time::Duration;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -446,8 +447,25 @@ pub enum Mapper {
         category: StringSource,
         /// The [`Self`] to cache.
         mapper: Box<Self>
+    },
+    /// Retry `mapper` after `delay` at most `limit` times.
+    /// 
+    /// Note that if the call to [`Mapper::apply`] changes the job state (see [`Mapper::AllNoRevert`]), the job state is not reverted.
+    Retry {
+        /// The mapper to apply.
+        mapper: Box<Self>,
+        /// The duration to wait between tries.
+        delay: Duration,
+        /// The max number of tries.
+        /// 
+        /// Defaults to `10`.
+        #[serde(default = "get_10_u8")]
+        limit: u8
     }
 }
+
+/// Serde helper function.
+const fn get_10_u8() -> u8 {10}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Debug, Error)]
@@ -709,17 +727,31 @@ impl Mapper {
             #[cfg(feature = "cache")]
             Self::CacheUrl {category, mapper} => {
                 let category = get_string!(category, job_state, MapperError);
-                if let Some(new_url) = job_state.cache_handler.read_from_cache(&category, job_state.url.as_str())? {
-                    *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
-                    return Ok(());
+                if job_state.params.read_cache {
+                    if let Some(new_url) = job_state.cache_handler.read_from_cache(&category, job_state.url.as_str())? {
+                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
+                        return Ok(());
+                    }
                 }
                 let old_url = job_state.url.clone();
                 let old_vars = job_state.vars.clone();
                 mapper.apply(job_state)?;
-                if let e @ Err(_) = job_state.cache_handler.write_to_cache(&category, old_url.as_str(), Some(job_state.url.as_str())) {
-                    *job_state.url = old_url;
-                    job_state.vars = old_vars;
-                    e?;
+                if job_state.params.write_cache {
+                    if let e @ Err(_) = job_state.cache_handler.write_to_cache(&category, old_url.as_str(), Some(job_state.url.as_str())) {
+                        *job_state.url = old_url;
+                        job_state.vars = old_vars;
+                        e?;
+                    }
+                }
+            },
+            Self::Retry {mapper, delay, limit} => {
+                for i in 0..*limit {
+                    match mapper.apply(job_state) {
+                        Ok(()) => return Ok(()),
+                        #[allow(clippy::arithmetic_side_effects)]
+                        e @ Err(_) if i+1==*limit => e?,
+                        Err(_) => {std::thread::sleep(*delay);}
+                    }
                 }
             }
         };

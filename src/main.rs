@@ -14,10 +14,6 @@ mod glue;
 mod types;
 mod util;
 
-/// Used by [`debug`] to control the indentation level.
-#[cfg(feature = "debug")]
-pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
-
 #[derive(Debug, Clone, Parser)]
 /// URL Cleaner - Explicit non-consent to URL-based tracking.
 /// 

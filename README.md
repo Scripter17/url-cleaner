@@ -6,19 +6,33 @@ URL Cleaner is an extremely versatile tool designed to make this process as comp
 
 ## C dependencies
 
-These packages are required on Kubuntu 2024.04:
+These packages are required on Kubuntu 2024.04 (and probably therefore all Debian based distros.):
 
 - `libssl-dev`
 - `libsqlite3-dev`
 
+There are likely plenty more dependencies required that various Linux distros may or may not pre-install.
+
+If you can't compile it I'll try to help you out. And if you can make it work on your own please let me know so I can add to this list.
+
 ## Anonymity
 
-In theory, if you're the only one sharing posts from a website without URL trackers, the website could realize that and track you in the same way.  
+In theory, if you're the only one on a website sharing posts from that website without URL trackers, the website could realize that and track you in the same way ("if no trackers then assume sender is Jared".).  
 In practise you are very unlikely to be the only one sharing clean URLs. Search engines generally provide URLs without trackers<sup>[citation needed]</sup>, some people manually remove trackers, and some websites like [vxtwitter.com](https://github.com/dylanpdx/BetterTwitFix) automatically strip URL trackers.
 
 However, for some websites the default config strips more stuff than search engines. In this case anonymity does fall back to many people using URL Cleaner and providing cover for each other.
 
 As with Tor, protests, and anything else where privacy matters, safety comes in numbers.
+
+### Canonicalization
+
+There is a vague notion of "canonical" URLs. One where every URL with its semantics can be converted into the canonical form with no external details.
+
+For example, `https://amazon.com/product-name-here/dp/PRODUCTID` can be "canonicalized" to `https://amazon.com/dp/PRODUCTID`.
+
+I have not yet decided if I want to remove the `minimize` flag and/or just make it the default behavior.
+
+Input on the matter would be appreciated.
 
 ## Basic usage
 
@@ -32,13 +46,19 @@ The default config is intended to always obey the following rules:
     - Insignificant details like the navbar amazon listings have full of links to item categories being slightly different are, as previously stated, insignificant.
 - URLs that are "semantically valid" (as defined by whatever website it's a URL for) shouldn't ever throe an error.
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
-- Outside of long (>10)/cyclic redirects/shortlinks, it should always be idempotent.
+    - URLs that are semantically valid should never change semantics and/or become semantically invalid.
+        - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so (re: `unmangle` flag).
+- Outside of long (>10)/infinite redirects/shortlinks, it should always be idempotent.
 - The `command` and `debug` features, as well as any features starting with `experiment-`/`experimental-` are never expected to be enabled.
-    The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, it should be disabled.
+    The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
+- All caching is expected to be deterministic.
+    - Also the rest of the default config is expected to be deterministic but when nothing's being cached corrections don't cause problems.
+    - Usually redirect links don't randomly change (looking at you, goo.gl).
+    - The `onion-location` flag does throw a minor wrench into this but whatever.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 
-Additionally, these rules may be changed at any time for any reason.
+Additionally, these rules may be changed at any time for any reason. Usually just for clarification.
 
 #### Flags
 
@@ -49,7 +69,7 @@ Various flags are included in the default config for things I want to do frequen
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-http`: Don't make any HTTP requests.
 - `assume-1-dot-2-is-shortlink`: Treat all that match the Regex `^.\...$` as shortlinks. Let's be real, they all are.
-- `no-unmangle`: Disable unmangling.
+- `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
 - `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
@@ -78,8 +98,15 @@ Various variables are included in the default config for things that have multip
 - `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
 - `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
 - `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
+- `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS.VIP_API_KEY` environment variable.
 
 If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
+
+#### Environment variables
+
+There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--key abc=xyz`. For this, URL Cleaner does make use of native environment variables.
+
+- `URL_CLEANER_BYPASS.VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
 
 #### Sets
 
@@ -109,9 +136,13 @@ Currently only one list is included in the default config:
 
 - `utp-prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
 
+Currently there is no command line syntax for them. There really should be.
+
 #### Citations
 
 The people and projects I have stolen various parts of the default config from.
+
+And by that I basically just mean the UTP set. And the UTP prefix list.
 
 - [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
 - [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)
@@ -119,15 +150,15 @@ The people and projects I have stolen various parts of the default config from.
 
 ## Custom rules
 
-Although proper documentation of the config schema is pending me being bothered to do it, the `url_cleaner` crate itself is well documented and the structs and enums are (I think) fairly easy to understand.  
+Although proper documentation of the config schema is pending me being bothered to do it, the `url_cleaner` crate itself is reasonably well documented and the various types are (I think) fairly easy to understand.  
 The main files you want to look at are [`conditions.rs`](src/rules/conditions.rs) and [`mappers.rs`](src/rules/mappers.rs).  
 Additionally [`url_part.rs`](src/types/url_part.rs), [`string_location.rs`](src/types/string_location.rs), and [`string_modification.rs`](src/types/string_modification.rs) are very important for more advanced rules.
 
 ### Footguns
 
-There are various things in/about URL Cleaner that I or many consider stupid but for various reasons cannot/should not be fixed. These include but are not limited to:
+There are various things in/about URL Cleaner that I or many consider stupid but for various reasons cannot/should not be "fixed". These include but are not limited to:
 
-- For `UrlPart`s and `Mapper`s that use "suffix" semantics (the idea that the '.co.uk" in "google.co.uk" is semantically the same as the ".com" in "google.com"'), the [psl] crate is used which in turn uses [Mozilla's Public Suffix List].
+- For `UrlPart`s and `Mapper`s that use "suffix" semantics (the idea that the '.co.uk" in "google.co.uk" is semantically the same as the ".com" in "google.com"'), the [psl](https://docs.rs/psl/latest/psl/) crate is used which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/).
     Various suffixes are included that one may expect to be normal domains, such as blogspot.com.
     If for some reason a domain isn't working as expected, that may be the issue.
 
@@ -139,6 +170,7 @@ There are various things in/about URL Cleaner that I or many consider stupid but
 - [`HashMap<..., ...>`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) and [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) are written as maps.
     - [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) keys are always lowercase.
 - [`u8`](https://doc.rust-lang.org/std/primitive.u8.html), [`u16`](https://doc.rust-lang.org/std/primitive.u16.html), [`u32`](https://doc.rust-lang.org/std/primitive.u32.html), [`u64`](https://doc.rust-lang.org/std/primitive.u64.html), [`u128`](https://doc.rust-lang.org/std/primitive.u128.html), and [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) are unsigned (never negative) integers. [`i8`](https://doc.rust-lang.org/std/primitive.i8.html), [`i16`](https://doc.rust-lang.org/std/primitive.i16.html), [`i32`](https://doc.rust-lang.org/std/primitive.i32.html), [`i64`](https://doc.rust-lang.org/std/primitive.i64.html), [`i128`](https://doc.rust-lang.org/std/primitive.i128.html), and [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) are signed (maybe negative) integers. [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) is a [`u32`](https://doc.rust-lang.org/std/primitive.u32.html) on 32-bit computers and [`u64`](https://doc.rust-lang.org/std/primitive.u64.html) on 64-bit computers. Likewise [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) is [`i32`](https://doc.rust-lang.org/std/primitive.i32.html) and [`i64`](https://doc.rust-lang.org/std/primitive.i64.html) under the same conditions. In practice, if a number makes sense to be used in a field then it'll fit.
+- [`Duration`](https://doc.rust-lang.org/nightly/core/time/struct.Duration.html) is written as `{"secs": u64, "nanos": 0..1000000000}`.
 - If a field starts with [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) you write it without the [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) (like `"else"`). [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) is just Rust syntax for "this isn't a keyword".
 - [`StringSource`](src/types/string_source.rs), [`GlobWrapper`](src/glue/glob.rs), [`RegexWrapper`](src/glue/regex.rs), [`RegexParts`](src/glue/regex/regex_parts.rs), and [`CommandWrapper`](src/glue/command.rs) can be written as both strings and maps.
     - [`RegexWrapper`](src/glue/regex.rs) and [`RegexParts`](src/glue/regex/regex_parts.rs) don't do any handling of [`/.../i`](https://en.wikipedia.org/wiki/Regex#Delimiters)-style syntax.
@@ -156,6 +188,8 @@ Certain common regex operations are not possible to express without those, but t
 ## MSRV
 
 The Minimum Supported Rust Version is the latest stable release. URL Cleaner may or may not work on older versions, but there's no guarantee.
+
+If this is an issue I'll do what I can to lower it but Diesel also keeps a fairly recent MSRV so you may lose caching.
 
 ## Untrusted input
 

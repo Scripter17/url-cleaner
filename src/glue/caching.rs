@@ -73,6 +73,7 @@ impl ::core::fmt::Debug for InnerCacheHandler {
             Self::Connected {path, ..} => {
                 f.debug_struct("Connected")
                     .field("path", &path)
+                    .field("connection", &"...")
                     .finish()
             }
         }
@@ -190,7 +191,7 @@ pub enum ConnectCacheError {
 
 impl InnerCacheHandler {
     /// # Errors
-    /// If the call to [`SqliteConnecttion::establish`] returns an error, that error is returned.
+    /// If the call to [`SqliteConnection::establish`] returns an error, that error is returned.
     pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
         Ok(match self {
             Self::Unconnected { path } => {
