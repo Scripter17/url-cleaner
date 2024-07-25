@@ -430,22 +430,22 @@
 															"source": {"HttpRequest": {
 																"url": {"Join": {
 																	"sources": [
-																		{"Debug": {"IfSourceIsNone": {
+																		{"IfSourceIsNone": {
 																			"source": {"NoneTo": {
 																				"source": {"Var": "bypass.vip-api-key"},
 																				"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
 																			}},
 																			"then": "https://api.bypass.vip/bypass?url=",
 																			"else": "https://api.bypass.vip/premium/bypass?url="
-																		}}},
+																		}},
 																		{"Modified": {"source": {"Part": "Whole"}, "modification": "URLEncode"}}
 																	]
 																}},
 																"headers": {
-																	"x-api-key": {"Debug": {"NoneTo": {
+																	"x-api-key": {"NoneTo": {
 																		"source": {"Var": "bypass.vip-api-key"},
 																		"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
-																	}}}
+																	}}
 																}
 															}},
 															"modification": {"JsonPointer": "/result"}
