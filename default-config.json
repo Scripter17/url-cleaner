@@ -768,7 +768,7 @@
 					"fixvx.com"    : {"SetHost": "x.com"},
 					"fxtwitter.com": {"SetHost": "x.com"},
 					"youtube.com"  : {"All": [
-						{"RemoveQueryParams": ["si", "feature"]},
+						{"RemoveQueryParams": ["si", "feature", "pp"]},
 						{"IfCondition": {
 							"condition": {"All": [
 								{"FlagIsSet": "youtube-unshort"},
@@ -784,7 +784,7 @@
 						{"SetHost" : "youtube.com"},
 						{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
 						{"SetPart" : {"part": "Path", "value": "watch"}},
-						{"RemoveQueryParams": ["si", "feature"]}
+						{"RemoveQueryParams": ["si", "feature", "pp"]}
 					]},
 					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
 					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
