@@ -20,6 +20,8 @@ mod string_source;
 pub use string_source::*;
 mod string_matcher;
 pub use string_matcher::*;
+mod char_matcher;
+pub use char_matcher::*;
 #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] mod advanced_requests;
 #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] pub use advanced_requests::*;
 mod jobs;

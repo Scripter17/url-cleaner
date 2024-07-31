@@ -1177,6 +1177,15 @@ impl UrlPart {
         self.set(job_state.url, Some(&new_part))?;
         Ok(())
     }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used, clippy::missing_const_for_fn)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::Debug(_) => false,
+            _ => true
+        }
+    }
 }
 
 /// Checks if the provided string is a valid domain.

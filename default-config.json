@@ -1,4 +1,5 @@
 {
+	"is_default_config": true,
 	"cache_path": "cache.sqlite",
 	"params": {
 		"flags": [],
@@ -16,14 +17,14 @@
 			],
 			"shortlink-hosts": [
 				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bityl.co", "blizz.ly",
-				"bloom.bg", "boxd.it", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me",
-				"dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fal.cn", "fb.me", "flip.it", "forms.gle", "g.co", "go.forbes.com", "go.nasa.gov",
-				"gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "k00.fr", "katy.to", "kck.st", "l.leparisien.fr",
-				"link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm",
-				"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly",
-				"pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "shorturl.at",
-				"spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "xbx.ly",
-				"xhslink.com", "x.gd", "glo.bo"
+				"bloom.bg", "boxd.it", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt",
+				"dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fal.cn", "fb.me", "flip.it", "forms.gle", "g.co", "glo.bo",
+				"go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "k00.fr", "katy.to",
+				"kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
+				"ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la", "onl.sc",
+				"operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc",
+				"reut.rs", "rzr.to", "s.goodsmile.link", "shorturl.at", "spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm",
+				"tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -79,8 +80,6 @@
 				{"before": "http://example.com", "after": "https://example.com/"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
 				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
-				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"},
 				{
 					"comment": "It was the only somewhat normal one I could find, okay?",
 					"before": "http://bfy.tw/9ZSk",
@@ -135,6 +134,17 @@
 		{
 			"params_diff": {"flags": ["unmobile"]},
 			"expectations": [{"before": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "after": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"}]
+		},
+		{
+			"params_diff": {"read_cache": false},
+			"expectations": [
+				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"}
+			]
+		},
+		{
+			"params_diff": {"flags": ["bypass.vip"], "read_cache": false},
+			"expectations": [{"before": "https://linkvertise.com/514008/hydrogen-gateway-1", "after": "https://api.hydrogen.sh/gateway/callback?stage=1"}]
 		}
 	],
 	"rules": [
@@ -243,12 +253,12 @@
 										"part": "Whole",
 										"value": {"Modified": {
 											"source": {"Part": {"QueryParam": "url"}},
-											"modification": {"IgnoreError": "URLDecode"}
+											"modification": {"IgnoreError": "UrlDecode"}
 										}}
 									}},
 									"else": { "SetPart": {
 										"part": "Whole",
-										"value": {"Modified": {"source": {"Part": "Query"}, "modification": "URLDecode"}}
+										"value": {"Modified": {"source": {"Part": "Query"}, "modification": "UrlDecode"}}
 									}}
 								}}
 							},
@@ -298,7 +308,7 @@
 											"part": "Whole",
 											"value": {"Modified": {
 												"source": {"Part": "Query"},
-												"modification": "URLDecode"
+												"modification": "UrlDecode"
 											}}
 										}},
 										"instagr.am": {"SetHost": "instagram.com"},
@@ -438,7 +448,7 @@
 																			"then": "https://api.bypass.vip/bypass?url=",
 																			"else": "https://api.bypass.vip/premium/bypass?url="
 																		}},
-																		{"Modified": {"source": {"Part": "Whole"}, "modification": "URLEncode"}}
+																		{"Modified": {"source": {"Part": "Whole"}, "modification": "UrlEncode"}}
 																	]
 																}},
 																"headers": {
@@ -778,6 +788,13 @@
 								{"CopyPart": {"from": {"PathSegment": 1}, "to": {"QueryParam": "v"}}},
 								{"SetPart": {"part": "Path", "value": "watch"}}
 							]}
+						}},
+						{"IfCondition": {
+							"condition": {"All": [
+								{"FlagIsSet": "youtube-unplaylist"},
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "watch"}}
+							]},
+							"mapper": {"RemoveQueryParams": ["list"]}
 						}}
 					]},
 					"youtu.be"     : {"All": [
@@ -786,7 +803,7 @@
 						{"SetPart" : {"part": "Path", "value": "watch"}},
 						{"RemoveQueryParams": ["si", "feature", "pp"]}
 					]},
-					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh"]},
+					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
 					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
 					"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 					"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},

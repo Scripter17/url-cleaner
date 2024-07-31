@@ -303,6 +303,25 @@ impl Rule {
             })
         }
     }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
+            Self::PartRuleMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
+            Self::PartRulesMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
+            Self::StringSourceMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
+            Self::StringSourceRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
+            Self::StringSourceRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
+            Self::RepeatUntilNonePass {rules, ..} => rules.is_suitable_for_release(),
+            Self::CommonCondition {condition, rules} => condition.is_suitable_for_release() && rules.is_suitable_for_release(),
+            Self::PretendFailedCondition(rule) => rule.is_suitable_for_release(),
+            Self::Rules(rules) => rules.is_suitable_for_release(),
+            Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release() && else_mapper.is_suitable_for_release(),
+            Self::Normal {condition, mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release()
+        }
+    }
 }
 
 /// A wrapper around a vector of rules.
@@ -337,5 +356,11 @@ impl Rules {
         job_state.vars = temp_job_state.vars;
         *job_state.url = temp_url;
         Ok(())
+    }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        self.0.iter().all(|rule| rule.is_suitable_for_release())
     }
 }

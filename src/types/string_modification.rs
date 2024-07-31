@@ -546,7 +546,7 @@ pub enum StringModification {
         /// The end of the range of segments to replace.
         end: Option<isize>,
         /// The value to replace the segments with.
-        value: StringSource
+        value: Option<StringSource>
     },
     /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
     /// # Errors
@@ -570,17 +570,17 @@ pub enum StringModification {
     /// };
     /// 
     /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.4.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value:  "6".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value: Some( "6".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.4.c.6");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: "-7".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value: Some( "E".into())}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value: Some( "E".into())}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: Some("-7".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "-7.a.1.b.-1.4.c.6");
     /// ```
     InsertSegmentBefore {
@@ -589,7 +589,7 @@ pub enum StringModification {
         /// The segment index to insert before.
         n: isize,
         /// The value to insert.
-        value: StringSource
+        value: Option<StringSource>
     },
     /// Like [`Self::SetNthSegment`] except it inserts `value` after the `n`th segment instead of overwriting.
     /// # Errors
@@ -613,15 +613,15 @@ pub enum StringModification {
     /// };
     /// 
     /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.b.1.c");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.b.1.c.-1");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.b.1.c.-1.4");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value:  "E".into()}.apply(&mut x, &job_state).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: "-6".into()}.apply(&mut x, &job_state).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value: Some( "E".into())}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value: Some( "E".into())}.apply(&mut x, &job_state).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: Some("-6".into())}.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a.-6.b.1.c.-1.4");
     /// ```
     InsertSegmentAfter {
@@ -630,7 +630,7 @@ pub enum StringModification {
         /// The segment index to insert before.
         n: isize,
         /// The value to insert.
-        value: StringSource
+        value: Option<StringSource>
     },
     /// [`Regex::captures`] and [`regex::Captures::expand`].
     /// # Errors
@@ -739,10 +739,10 @@ pub enum StringModification {
     /// };
     /// 
     /// let mut x = "a/b/c".to_string();
-    /// StringModification::URLEncode.apply(&mut x, &job_state).unwrap();
+    /// StringModification::UrlEncode.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a%2Fb%2Fc");
     /// ```
-    URLEncode,
+    UrlEncode,
     /// [`percent_encoding::percent_decode_str`]
     /// # Errors
     /// If the call to [`percent_encoding::percent_decode_str`] errors, returns that error.
@@ -763,10 +763,10 @@ pub enum StringModification {
     /// };
     /// 
     /// let mut x = "a%2fb%2Fc".to_string();
-    /// StringModification::URLDecode.apply(&mut x, &job_state).unwrap();
+    /// StringModification::UrlDecode.apply(&mut x, &job_state).unwrap();
     /// assert_eq!(&x, "a/b/c");
     /// ```
-    URLDecode,
+    UrlDecode,
     /// Encode the string using [`base64::prelude::BASE64_STANDARD`].
     Base64EncodeStandard,
     /// Decode the string using [`base64::prelude::BASE64_STANDARD`].
@@ -865,22 +865,7 @@ pub enum StringModification {
     /// If the provided string is in the specified map, return the value of its corresponding [`StringSource`].
     /// # Errors
     /// If the provided string is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
-    Map(HashMap<String, StringSource>),
-    /// A long if-else if chain of [`StringMatcher`]s and [`Self`]s.
-    /// # Errors
-    /// If a call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
-    /// 
-    /// If a call to [`Self::apply`] returns an error, that error is returned.
-    IfChain(Vec<If>)
-}
-
-/// An element of [`StringModification::IfChain`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct If {
-    /// Checks if [`Self::then`] should be applied.
-    r#if: StringMatcher,
-    /// The [`StringModification`] to apply.
-    then: StringModification
+    Map(HashMap<String, StringSource>)
 }
 
 /// The enum of all possible errors [`StringModification::apply`] can return.
@@ -1069,26 +1054,28 @@ impl StringModification {
                 let mut segments = to.split(split).collect::<Vec<_>>();
                 let fixed_n = neg_index(start.unwrap_or(0), segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 let _ = segments.drain(neg_range(*start, *end, segments.len()).ok_or(StringModificationError::SegmentRangeNotFound)?).collect::<Vec<_>>();
-                let x = get_string!(value, job_state, StringModificationError);
-                segments.insert(fixed_n, &x);
+                let x = get_option_string!(value, job_state);
+                if let Some(x) = &x {segments.insert(fixed_n, x);}
                 *to = segments.join(split);
             }
             Self::InsertSegmentBefore{split, n, value} => {
-                let split = get_str!(split, job_state, StringModificationError);
-                let mut temp=to.split(split).collect::<Vec<_>>();
-                let fixed_n=neg_range_boundary(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                let x = get_string!(value, job_state, StringModificationError);
-                temp.insert(fixed_n, &x);
-                *to=temp.join(split);
+                if let Some(new_segment) = get_option_str!(value, job_state) {
+                    let split = get_str!(split, job_state, StringModificationError);
+                    let mut temp=to.split(split).collect::<Vec<_>>();
+                    let fixed_n=neg_range_boundary(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                    temp.insert(fixed_n, new_segment);
+                    *to=temp.join(split);
+                }
             },
             Self::InsertSegmentAfter{split, n, value} => {
-                let split = get_str!(split, job_state, StringModificationError);
-                let mut temp=to.split(split).collect::<Vec<_>>();
-                let fixed_n=neg_shifted_range_boundary(*n, temp.len(), 1).ok_or(StringModificationError::SegmentNotFound)?;
-                #[allow(clippy::arithmetic_side_effects)]
-                let x = get_string!(value, job_state, StringModificationError);
-                temp.insert(fixed_n, &x);
-                *to=temp.join(split);
+                if let Some(new_segment) = get_option_str!(value, job_state) {
+                    let split = get_str!(split, job_state, StringModificationError);
+                    let mut temp=to.split(split).collect::<Vec<_>>();
+                    let fixed_n=neg_shifted_range_boundary(*n, temp.len(), 1).ok_or(StringModificationError::SegmentNotFound)?;
+                    #[allow(clippy::arithmetic_side_effects)]
+                    temp.insert(fixed_n, new_segment);
+                    *to=temp.join(split);
+                }
             },
             #[cfg(feature = "regex")]
             Self::RegexCaptures {regex, replace} => {
@@ -1120,8 +1107,8 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to = regex.get_regex()?.replace_all(to,     get_str!(replace, job_state, StringModificationError)).into_owned(),
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to = regex.get_regex()?.replacen   (to, *n, get_str!(replace, job_state, StringModificationError)).into_owned(),
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(get_str!(flag, job_state, StringModificationError)) {then} else {r#else}.apply(to, job_state)?,
-            Self::URLEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
-            Self::URLDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
+            Self::UrlEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
+            Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             Self::Base64EncodeStandard => *to = BASE64_STANDARD.encode(to.as_bytes()),
             Self::Base64DecodeStandard => *to = String::from_utf8(BASE64_STANDARD.decode(to.as_bytes())?)?,
             Self::Base64EncodeUrlSafe  => *to = BASE64_URL_SAFE.encode(to.as_bytes()),
@@ -1151,16 +1138,55 @@ impl StringModification {
                 }
                 *to = segments.join(split);
             },
-            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError),
-            Self::IfChain(if_chain) => {
-                for r#if in if_chain {
-                    if r#if.r#if.satisfied_by(to, job_state)? {
-                        r#if.then.apply(to, job_state)?;
-                        return Ok(());
-                    }
-                }
-            }
+            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError)
         };
         Ok(())
+    }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::IgnoreError(modification) => modification.is_suitable_for_release(),
+            Self::All(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
+            Self::AllNoRevert(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
+            Self::AllIgnoreError(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
+            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::Set(source) => source.is_suitable_for_release(),
+            Self::Append(source) => source.is_suitable_for_release(),
+            Self::Prepend(source) => source.is_suitable_for_release(),
+            Self::Replace {find, replace} => find.is_suitable_for_release() && replace.is_suitable_for_release(),
+            Self::ReplaceRange {replace, ..} => replace.is_suitable_for_release(),
+            Self::StripPrefix(source) => source.is_suitable_for_release(),
+            Self::StripSuffix(source) => source.is_suitable_for_release(),
+            Self::StripMaybePrefix(source) => source.is_suitable_for_release(),
+            Self::StripMaybeSuffix(source) => source.is_suitable_for_release(),
+            Self::Replacen {find, replace, ..} => find.is_suitable_for_release() && replace.is_suitable_for_release(),
+            Self::Insert {value, ..} => value.is_suitable_for_release(),
+            Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(),
+            Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(),
+            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            #[cfg(feature = "regex")] Self::RegexCaptures {replace, ..} => replace.is_suitable_for_release(),
+            #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {replace, join, ..} => replace.is_suitable_for_release() && join.is_suitable_for_release(),
+            #[cfg(feature = "regex")] Self::RegexReplace {replace, ..} => replace.is_suitable_for_release(),
+            #[cfg(feature = "regex")] Self::RegexReplaceAll {replace, ..} => replace.is_suitable_for_release(),
+            #[cfg(feature = "regex")] Self::RegexReplacen {replace, ..} => replace.is_suitable_for_release(),
+            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::JsonPointer(pointer) => pointer.is_suitable_for_release(),
+            Self::ModifyNthSegment {split, modification, ..} => split.is_suitable_for_release() && modification.is_suitable_for_release(),
+            Self::ModifySegments {split, modification, ..} => split.is_suitable_for_release() && modification.is_suitable_for_release(),
+            Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release()),
+            Self::Debug(_) => false,
+            Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
+                Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode |
+                Self::Base64EncodeStandard | Self::Base64DecodeStandard | Self::Base64EncodeUrlSafe |
+                Self::Base64DecodeUrlSafe => true,
+            #[cfg(feature = "regex")]
+            Self::RegexFind(_) => true
+        }
     }
 }

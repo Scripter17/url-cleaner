@@ -9,7 +9,7 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// A general API for matching strings with a variety of methods.
+/// A general API for matching [`str`]ings with a variety of methods.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum StringMatcher {
     /// Always passes.
@@ -46,6 +46,10 @@ pub enum StringMatcher {
         /// The [`Self`] to use if `r#if` fails.
         r#else: Box<Self>
     },
+    /// Passes if the included [`Self`] doesn't and vice-versa.
+    /// # Errors
+    /// If the contained [`Self`] returns an error, that error is returned.
+    Not(Box<Self>),
     /// Passes if all of the included [`Self`]s pass.
     /// Like [`Iterator::all`], an empty list passes.
     /// # Errors
@@ -56,10 +60,6 @@ pub enum StringMatcher {
     /// # Errors
     /// If any of the contained [`Self`]s returns an error, that error is returned.
     Any(Vec<Self>),
-    /// Passes if the included [`Self`] doesn't and vice-versa.
-    /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned.
-    Not(Box<Self>),
 
     // Error handling.
 
@@ -84,8 +84,6 @@ pub enum StringMatcher {
 
     // Other.
 
-    /// Passes if the provided string is contained in the specified [`HashSet`].
-    IsOneOf(HashSet<String>),
     /// Uses a [`StringLocation`].
     /// # Errors
     /// If the call to [`StringLocation::satisfied_by`] errors, returns that error.
@@ -108,12 +106,20 @@ pub enum StringMatcher {
     /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state).unwrap(), true);
     /// ```
     Contains {
+        /// The value to look for.
+        value: StringSource,
         /// The location to check for `value` at.
         #[serde(default)]
-        r#where: StringLocation,
-        /// The value to look for.
-        value: StringSource
+        r#where: StringLocation
     },
+    /// Passes if the string equals the specified value.
+    Equals(StringSource),
+    /// Passes if the provided string is contained in the specified [`HashSet`].
+    IsOneOf(HashSet<String>),
+    /// Passes if the string is in the specified [`Params::sets`] set.
+    /// 
+    /// See also: [`Self::IsOneOf`].
+    InSet(StringSource),
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -166,6 +172,14 @@ pub enum StringMatcher {
     },
     /// Passes if the provided string only contains the specified [`char`]s.
     OnlyTheseChars(Vec<char>),
+    /// Passes if the specified matcher passes for all characters in the haystack.
+    /// # Errors
+    /// If any call to [`CharMatcher::satisfied_by`] return an error, that error is returned.
+    AllCharsMatch(CharMatcher),
+    /// Passes if the specified matcher passes for any characters in the haystack.
+    /// # Errors
+    /// If any call to [`CharMatcher::satisfied_by`] return an error, that error is returned.
+    AnyCharMatches(CharMatcher),
     /// [`str::is_ascii`].
     IsAscii,
     /// Passes if the `n`th segment of the string passes specified matcher.
@@ -194,12 +208,6 @@ pub enum StringMatcher {
         /// The matcher to test each segment with.
         matcher: Box<Self>
     },
-    /// Passes if the string equals the specified value.
-    Equals(StringSource),
-    /// Passes if the string is in the specified [`Params::sets`] set.
-    /// 
-    /// See also: [`Self::IsOneOf`].
-    InSet(StringSource),
     /// Passes if the specified [`StringLocation`] is satisfied by any of the strings in [`Self::ContainsAnyInList::list`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
@@ -216,7 +224,77 @@ pub enum StringMatcher {
         list: StringSource
     },
     /// Passes if the provided string's length is the specified value.
-    LengthIs(usize)
+    LengthIs(usize),
+    /// Like [`StringLocation::Start`] but works based on segments instead of characters.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// let matcher = StringMatcher::SegmentsStartWith {
+    ///     split: Box::new("--".into()),
+    ///     value: Box::new("abc--def".into())
+    /// };
+    /// assert_eq!(matcher.satisfied_by("abc--def--ghi"  , &job_state).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc--def----ghi", &job_state).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc--deff--ghi" , &job_state).unwrap(), false);
+    /// ```
+    SegmentsStartWith {
+        /// The value to segment the haystack by.
+        split: Box<StringSource>,
+        /// The string of segments to search for in the haystack.
+        value: Box<StringSource>
+    },
+    /// Like [`StringLocation::End`] but works based on segments instead of characters.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// let matcher = StringMatcher::SegmentsEndWith {
+    ///     split: Box::new("--".into()),
+    ///     value: Box::new("def--ghi".into())
+    /// };
+    /// assert_eq!(matcher.satisfied_by("abc--def--ghi"  , &job_state).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc----def--ghi", &job_state).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc--ddef--ghi" , &job_state).unwrap(), false);
+    /// ```
+    SegmentsEndWith {
+        /// The value to segment the haystack by.
+        split: Box<StringSource>,
+        /// The string of segments to search for in the haystack.
+        value: Box<StringSource>
+    }
 }
 
 #[cfg(feature = "regex")]
@@ -269,7 +347,10 @@ pub enum StringMatcherError {
     SegmentNotFound,
     /// Returned when the requested list is not found.
     #[error("The requested list was not found.")]
-    ListNotFound
+    ListNotFound,
+    /// Returned when a [`CharMatcherError`] is encountered.
+    #[error(transparent)]
+    CharMatcherError(#[from] CharMatcherError)
 }
 
 impl StringMatcher {
@@ -330,6 +411,22 @@ impl StringMatcher {
             #[cfg(feature = "regex")] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob" )] Self::Glob(glob) => glob.matches(haystack),
             Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)=="",
+            Self::AllCharsMatch(matcher) => {
+                for char in haystack.chars() {
+                    if !matcher.satisfied_by(char)? {
+                        return Ok(false);
+                    }
+                }
+                true
+            },
+            Self::AnyCharMatches(matcher) => {
+                for char in haystack.chars() {
+                    if matcher.satisfied_by(char)? {
+                        return Ok(true);
+                    }
+                }
+                false
+            },
             Self::IsAscii => haystack.is_ascii(),
             Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, job_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, job_state)?,
             // https://github.com/rust-lang/rfcs/pull/3233
@@ -354,7 +451,48 @@ impl StringMatcher {
                 }
                 false
             },
-            Self::LengthIs(x) => haystack.len() == *x
+            Self::LengthIs(x) => haystack.len() == *x,
+            Self::SegmentsEndWith { split, value } => {
+                let split = get_str!(split, job_state, StringMatcherError);
+                // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value, job_state, StringMatcherError).split(split)).all(|(x, y)| x==y)
+                haystack.strip_suffix(get_str!(value, job_state, StringMatcherError))
+                    .is_some_and(|x| x.split(split).last()==Some(""))
+            },
+            Self::SegmentsStartWith { split, value } => {
+                let split = get_str!(split, job_state, StringMatcherError);
+                haystack.strip_prefix(get_str!(value, job_state, StringMatcherError))
+                    .is_some_and(|x| x.strip_prefix(split).is_some())
+            }
         })
+    }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::Not(matcher) => matcher.is_suitable_for_release(),
+            Self::All(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release()),
+            Self::Any(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release()),
+            Self::TreatErrorAsPass(matcher) => matcher.is_suitable_for_release(),
+            Self::TreatErrorAsFail(matcher) => matcher.is_suitable_for_release(),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::FirstNotError(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release()),
+            Self::Contains {value, r#where} => value.is_suitable_for_release() && r#where.is_suitable_for_release(),
+            Self::Equals(value) => value.is_suitable_for_release(),
+            Self::InSet(name) => name.is_suitable_for_release(),
+            Self::Modified {modification, matcher} => modification.is_suitable_for_release() && matcher.is_suitable_for_release(),
+            Self::AllCharsMatch(matcher) => matcher.is_suitable_for_release(),
+            Self::AnyCharMatches(matcher) => matcher.is_suitable_for_release(),
+            Self::NthSegmentMatches {split, matcher, ..} => split.is_suitable_for_release() && matcher.is_suitable_for_release(),
+            Self::AnySegmentMatches {split, matcher} => split.is_suitable_for_release() && matcher.is_suitable_for_release(),
+            Self::ContainsAnyInList {list, r#where} => list.is_suitable_for_release() && r#where.is_suitable_for_release(),
+            Self::SegmentsStartWith {split, value} => split.is_suitable_for_release() && value.is_suitable_for_release(),
+            Self::SegmentsEndWith {split, value} => split.is_suitable_for_release() && value.is_suitable_for_release(),
+            Self::Debug(_) => false,
+            #[cfg(feature = "regex")] Self::Regex(_) => true,
+            #[cfg(feature = "glob")] Self::Glob(_) => true,
+            Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true
+        }
     }
 }

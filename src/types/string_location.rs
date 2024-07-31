@@ -323,4 +323,13 @@ impl StringLocation {
             Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?
         })
     }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used, clippy::missing_const_for_fn)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::Debug(_) => false,
+            _ => true
+        }
+    }
 }

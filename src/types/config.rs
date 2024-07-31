@@ -20,6 +20,13 @@ pub use params::*;
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
+    /// Restricts this [`Config`] to only allow stuff suitable for the default config.
+    /// 
+    /// The exact behavior from setting this to [`true`] is unspecified and subject to change.
+    /// 
+    /// Defaults to [`false`].
+    #[serde(default = "get_false")]
+    pub is_default_config: bool,
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
@@ -32,6 +39,9 @@ pub struct Config {
     /// The conditions and mappers that modify the URLS.
     pub rules: Rules
 }
+
+/// Serde helper function.
+const fn get_false() -> bool {false}
 
 impl Config {
     /// Loads and parses the specified file.
@@ -81,9 +91,16 @@ impl Config {
     /// # Panics
     /// Panics if a call to [`Job::do`] or a test fails.
     pub fn run_tests(&self) {
+        // Changing the if's braces to parenthesis causes some really weird syntax erros. Including the `Ok(DEFAULT_CONFIG.get_or_init(|| config))` line above complaining about needing braces???
+        if self.is_default_config {assert!(self.is_suitable_for_release());}
         for test in &self.tests {
             test.run(self.clone());
         }
+    }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        self.rules.is_suitable_for_release()
     }
 }
 

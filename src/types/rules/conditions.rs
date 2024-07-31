@@ -704,10 +704,10 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
-    /// assert_eq!(Condition::FlagIsSet("abc".to_string()).satisfied_by(&job_state).unwrap(), true );
-    /// assert_eq!(Condition::FlagIsSet("xyz".to_string()).satisfied_by(&job_state).unwrap(), false);
+    /// assert_eq!(Condition::FlagIsSet("abc".into()).satisfied_by(&job_state).unwrap(), true );
+    /// assert_eq!(Condition::FlagIsSet("xyz".into()).satisfied_by(&job_state).unwrap(), false);
     /// ```
-    FlagIsSet(String),
+    FlagIsSet(StringSource),
 
     // String source.
 
@@ -914,7 +914,7 @@ impl Condition {
             Self::UnqualifiedDomain(domain_suffix) => job_state.url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
             Self::MaybeWWWDomain(domain_suffix) => job_state.url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
             Self::QualifiedDomain(domain) => job_state.url.domain()==Some(domain),
-            Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host.strip_prefix("www.").unwrap_or(url_host))),
+            Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
             Self::UnqualifiedAnySuffix(middle) => job_state.url.domain()
                 .is_some_and(|url_domain| url_domain.rsplit_once(middle)
                     .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')
@@ -953,7 +953,7 @@ impl Condition {
 
             // Miscellaneous.
 
-            Self::FlagIsSet(name) => job_state.params.flags.contains(name),
+            Self::FlagIsSet(name) => job_state.params.flags.contains(&get_string!(name, job_state, ConditionError)),
             Self::AnyFlagIsSet => !job_state.params.flags.is_empty(),
             Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x)==get_option_str!(value, job_state),
 
@@ -968,5 +968,37 @@ impl Condition {
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
             #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(job_state)?==expected}
         })
+    }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::Debug(_) => false,
+            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::Not(condition) => condition.is_suitable_for_release(),
+            Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
+            Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
+            Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
+            Self::StringSourceMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
+            Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(),
+            Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
+            Self::PartIs {part, value} => part.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::PartContains {part, value, r#where} => part.is_suitable_for_release() && value.is_suitable_for_release() && r#where.is_suitable_for_release(),
+            Self::PartMatches {part, matcher} => part.is_suitable_for_release() && matcher.is_suitable_for_release(),
+            Self::VarIs {name, value} => name.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::FlagIsSet(name) => name.is_suitable_for_release(),
+            Self::StringIs {source, value} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::StringContains {source, value, r#where} => source.is_suitable_for_release() && value.is_suitable_for_release() && r#where.is_suitable_for_release(),
+            Self::StringMatches {source, matcher} => source.is_suitable_for_release() && matcher.is_suitable_for_release(),
+            #[cfg(feature = "commands")] Self::CommandExists (_) => false,
+            #[cfg(feature = "commands")] Self::CommandExitStatus {..} => false,
+            Self::Always | Self::Never | Self::Error | Self::MaybeWWWDomain(_) |
+                Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
+                Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
+                Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true
+        }
     }
 }

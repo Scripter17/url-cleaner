@@ -393,7 +393,7 @@ pub enum Mapper {
     /// Sets the current job's `name` string var to `value`.
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    SetVar {
+    SetJobVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The value to set the variable to.
@@ -402,13 +402,13 @@ pub enum Mapper {
     /// Delete the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    DeleteVar(StringSource),
+    DeleteJobVar(StringSource),
     /// Applies a [`StringModification`] to the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringModification::apply`] returns an error, that error is returned.
-    ModifyVar {
+    ModifyJobVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The modification to apply.
@@ -711,12 +711,12 @@ impl Mapper {
             Self::Print   (source) => if let Some(x) = source.get(job_state)? {print!   ("{x}");},
             Self::Eprintln(source) => if let Some(x) = source.get(job_state)? {eprintln!("{x}");},
             Self::Eprint  (source) => if let Some(x) = source.get(job_state)? {eprint!  ("{x}");},
-            Self::SetVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
-            Self::DeleteVar(name) => {
+            Self::SetJobVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
+            Self::DeleteJobVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
                 let _ = job_state.vars.remove(&name);
             },
-            Self::ModifyVar {name, modification} => {
+            Self::ModifyJobVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
                 let mut temp = job_state.vars.get_mut(&name).ok_or(MapperError::JobVarIsNone)?.to_owned();
                 modification.apply(&mut temp, job_state)?;
@@ -756,5 +756,39 @@ impl Mapper {
             }
         };
         Ok(())
+    }
+
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used)]
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        match self {
+            Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release() && (else_mapper.is_none() || else_mapper.as_ref().unwrap().is_suitable_for_release()),
+            Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
+            Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
+            Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
+            Self::IgnoreError(mapper) => mapper.is_suitable_for_release(),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
+            Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
+            Self::Join(value) => value.is_suitable_for_release(),
+            Self::SetPart {part, value} => part.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
+            Self::ModifyPart {part, modification} => part.is_suitable_for_release() && modification.is_suitable_for_release(),
+            Self::CopyPart {from, to} => from.is_suitable_for_release() && to.is_suitable_for_release(),
+            Self::SetJobVar {name, value} => name.is_suitable_for_release() && value.is_suitable_for_release(),
+            Self::DeleteJobVar(name) => name.is_suitable_for_release(),
+            Self::ModifyJobVar {name, modification} => name.is_suitable_for_release() && modification.is_suitable_for_release(),
+            Self::Rule(rule) => rule.is_suitable_for_release(),
+            Self::Rules(rules) => rules.is_suitable_for_release(),
+            #[cfg(feature = "cache")]
+            Self::CacheUrl {category, mapper} => category.is_suitable_for_release() && mapper.is_suitable_for_release(),
+            Self::Retry {mapper, ..} => mapper.is_suitable_for_release(),
+            Self::Debug(_) | Self::Println(_) | Self::Eprintln(_) | Self::Print(_) | Self::Eprint(_)=> false,
+            Self::None  | Self::Error | Self::RemoveQuery |
+                Self::RemoveQueryParams(_) | Self::AllowQueryParams(_) |
+                Self::RemoveQueryParamsMatching(_) | Self::AllowQueryParamsMatching(_) | 
+                Self::GetUrlFromQueryParam(_) | Self::GetPathFromQueryParam(_) |
+                Self::SetHost(_) => true,
+            #[cfg(feature = "http")]
+            Self::ExpandShortLink {..} => true
+        }
     }
 }
