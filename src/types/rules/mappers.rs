@@ -296,13 +296,46 @@ pub enum Mapper {
     },
     /// Copies the part specified by `from` to the part specified by `to`.
     /// # Errors
-    /// If the part specified by `from` is None and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`UrlPartSetError::PartCannotBeNone`].
+    /// If the part specified by `from` is [`None`] and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`UrlPartSetError::PartCannotBeNone`].
     CopyPart {
         /// The part to get the value from.
         from: UrlPart,
         /// The part to set to `from`'s value.
         to: UrlPart
-    },   
+    },
+    /// Effectively [`Self::CopyPart`] then [`Self::SetPart`] `from` to [`None`].
+    /// # Errors
+    /// If the part specified by `from` is [`None`] and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`UrlPartSetError::PartCannotBeNone`].
+    /// 
+    /// If the call to `from`'s [`UrlPart::set`] returns an erorr, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler
+    /// };
+    /// 
+    /// Mapper::MovePart{from: UrlPart::Subdomain, to: UrlPart::BeforePathSegment(0)}.apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.as_str(), "https://example.com/abc/");
+    /// 
+    /// Mapper::MovePart{from: UrlPart::Scheme, to: UrlPart::BeforePathSegment(0)}.apply(&mut job_state).unwrap_err();
+    /// assert_eq!(job_state.url.as_str(), "https://example.com/abc/");
+    /// ```
+    MovePart {
+        /// The part to get the value from then set to [`None`].
+        from: UrlPart,
+        /// The part to set to `from`'s value.
+        to: UrlPart
+    },
 
     // Miscellaneous.
 
@@ -686,6 +719,13 @@ impl Mapper {
             Self::SetPart{part, value} => part.set(job_state.url, get_option_string!(value, job_state).as_deref())?, // The deref is needed for borrow checking reasons.
             Self::ModifyPart{part, modification} => part.modify(modification, job_state)?,
             Self::CopyPart{from, to} => to.set(job_state.url, from.get(job_state.url).map(|x| x.into_owned()).as_deref())?,
+            Self::MovePart{from, to} => {
+                let mut temp_url = job_state.url.clone();
+                let temp_url_ref = &mut temp_url;
+                to.set(temp_url_ref, from.get(temp_url_ref).map(|x| x.into_owned()).as_deref())?;
+                from.set(&mut temp_url, None)?;
+                *job_state.url = temp_url;
+            },
 
             // Miscellaneous.
 
@@ -786,7 +826,7 @@ impl Mapper {
                 Self::RemoveQueryParams(_) | Self::AllowQueryParams(_) |
                 Self::RemoveQueryParamsMatching(_) | Self::AllowQueryParamsMatching(_) | 
                 Self::GetUrlFromQueryParam(_) | Self::GetPathFromQueryParam(_) |
-                Self::SetHost(_) => true,
+                Self::SetHost(_) | Self::MovePart {..} => true,
             #[cfg(feature = "http")]
             Self::ExpandShortLink {..} => true
         }

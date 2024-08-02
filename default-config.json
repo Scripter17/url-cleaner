@@ -16,11 +16,11 @@
 				"nerd.whatever.social", "z.opnxng.com"
 			],
 			"shortlink-hosts": [
-				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bityl.co", "blizz.ly",
-				"bloom.bg", "boxd.it", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt",
-				"dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fal.cn", "fb.me", "flip.it", "forms.gle", "g.co", "glo.bo",
-				"go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "k00.fr", "katy.to",
-				"kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
+				"a.co", "abc7.la", "adobe.ly", "aje.io", "amzn.asia", "amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co",
+				"blizz.ly", "bloom.bg", "boxd.it", "buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly",
+				"db.tt", "dcdr.me", "dis.gd", "dlvr.it", "e.emailalerts.cnn.com", "etsy.me", "fal.cn", "fb.me", "flip.it", "forms.gle", "g.co",
+				"glo.bo", "go.forbes.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "iwe.one", "j.mp", "k00.fr",
+				"katy.to", "kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "mzl.la", "n.pr", "nas.cr", "ninten.do",
 				"ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la", "onl.sc",
 				"operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc",
 				"reut.rs", "rzr.to", "s.goodsmile.link", "shorturl.at", "spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm",
@@ -85,7 +85,7 @@
 					"before": "http://bfy.tw/9ZSk",
 					"after": "https://google.com/search?q=How+does+the+US+government+work"
 				},
-				{"before": "https://https//abc.tumblr.com.tumblr.com", "after": "https://abc.tumblr.com"},
+				{"before": "https://https//abc.tumblr.com.tumblr.com", "after": "https://tumblr.com/abc/"},
 
 				{"before": "https://https//example.com/abc", "after": "https://example.com/abc"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
@@ -162,8 +162,9 @@
 					    "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "bfy.tw", "buymeacoff.ee", "buymeacoffee.com", "cach.me", "cash.app",
 					    "deviantart.com", "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "gf.me",
 					    "gofundme.com", "gofundme.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com",
-					    "l.threads.com", "lmddgtfy.net", "lnk.bio", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "sketchfab.com", "sketchfab.com",
-					    "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
+					    "l.threads.com", "lmddgtfy.net", "lnk.bio", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "sketchfab.com",
+					    "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult", "t.umblr.com", "tinyurl.com", "toyhou.se",
+					    "youtube.com"
 					  ]},
 					  {"InSet": "lmgtfy-hosts"},
 					  {"LengthIs": 4},
@@ -463,7 +464,8 @@
 													}}
 												}}
 											]}
-										}}
+										}},
+										"out.reddit.com": {"GetUrlFromQueryParam": "url"}
 									}
 								}
 							},
@@ -873,10 +875,7 @@
 							{"Not": {"PartIs": {"part": "Subdomain", "value": "www"}}},
 							{"Not": {"PartIs": {"part": "Subdomain", "value": ""}}}
 						]},
-						"mapper": {"All": [
-							{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-							{"SetPart": {"part": "Subdomain", "value": null}}
-						]}
+						"mapper": {"MovePart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}}
 					}},
 					"tumblr.com": {"Rules": [
 						{
@@ -893,6 +892,10 @@
 						{
 							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "login_required"}},
 							"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+						},
+						{
+							"condition": {"PartMatches": {"part": "Subdomain", "matcher": {"Not": {"IsOneOf": ["at", "www"]}}}},
+							"mapper": {"MovePart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}}
 						}
 					]}
 				}
@@ -1103,8 +1106,7 @@
 						]},
 						"mapper": {"All": [
 							{"SetHost": "fandom.com"},
-							{"CopyPart": {"from": {"PathSegment": 0}, "to": "Subdomain"}},
-							{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+							{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
 						]}
 					},
 					{
