@@ -24,7 +24,7 @@
 				"ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "onl.bz", "onl.la",
 				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "py.pl", "rb.gy", "rblx.co", "rdbl.co", "redd.it",
 				"reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "shorturl.at", "spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio",
-				"thr.cm", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"thr.cm", "tmz.me", "tr.ee", "trib.al", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "w.wiki"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -53,7 +53,7 @@
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": [],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org"],
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
-			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgtfy2.com", "lmgt.org"],
+			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
 			"bypass.vip-hosts": ["linkvertise.com", "www.linkvertise.com"]
 		},
 		"lists": {
@@ -164,7 +164,7 @@
 					    "e.emailalerts.cnn.com", "gf.me", "gofundme.com", "gofundme.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com",
 					    "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lnk.bio", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
 					    "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult", "t.umblr.com", "tinyurl.com",
-					    "toyhou.se", "youtube.com"
+					    "toyhou.se", "youtube.com", "lmgtfy2.com", "goodreads.com", "substack.com", "open.substack.com", "click.notification.elsevier.com", "rd.goodreads.com"
 					  ]},
 					  {"InSet": "lmgtfy-hosts"},
 					  {"LengthIs": 4},
@@ -218,7 +218,11 @@
 												"pawoo.net"        : {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
 												"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
 												"allmylinks.com"   : {"PathIs": "/link/out"},
-												"gofundme.com"     : {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}}
+												"gofundme.com"     : {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
+												"substack.com"     : {"All": [
+													{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
+													{"Not": {"PartIs": {"part": {"PathSegment": 1}, "value": "2"}}}
+												]}
 											}
 										}}
 									]}
@@ -477,6 +481,49 @@
 													{"KeepNthSegment": {"split": ",", "n": -1}}
 												]}
 											}}
+										}},
+										"goodreads.com": {"IfCondition": {
+											"condition": {"PathIs": "/gp/r.html"},
+											"mapper": {"GetUrlFromQueryParam": "U"}
+										}},
+										"rd.goodreads.com": {"IfCondition": {
+											"condition": {"PathIs": "/gp/r.html"},
+											"mapper": {"GetUrlFromQueryParam": "U"}
+										}},
+										"substack.com": {"IfCondition": {
+											"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/redirect/2/"}},
+											"mapper": {"SetPart": {
+												"part": "Whole",
+												"value": {"Modified": {
+													"source": {"Part": {"PathSegment": 2}},
+													"modification": {"All": [
+														{"KeepNthSegment": {"split": ".", "n": 0}},
+														"Base64DecodeUrlSafeNoPad",
+														{"JsonPointer": "/e"}
+													]}
+												}}
+											}}
+										}},
+										"open.substack.com": {"IfCondition": {
+											"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "pub"}},
+											"mapper": {"All": [
+												{"CopyPart": {"from": {"PathSegment": 1}, "to": "Subdomain"}},
+												{"SetPart": {"part": {"PathSegment": 0}, "value": null}},
+												{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+											]}
+										}},
+										"click.notification.elsevier.com": {"IfCondition": {
+											"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "CL0"}},
+											"mapper": {"SetPart": {
+												"part": "Whole",
+												"value": {"Modified": {
+													"source": {"Part": "Path"},
+													"modification": {"All": [
+														{"KeepSegmentRange": {"split": "/", "start": 2}},
+														"UrlDecode"
+													]}
+												}}
+											}}
 										}}
 									}
 								}
@@ -560,7 +607,8 @@
 													    "b": "https://www.google.com/search?tbm=bks&q=",
 													    "f": "https://www.google.com/finance?q=",
 													    "sc": "https://scholar.google.com/scholar?q="
-												    }
+												    },
+												    "if_null": "https://www.google.com/search?q="
 												  }},
 												  "c": "https://www.chat.openai.com/search?q=",
 												  "b": "https://www.startpage.com/search?q=",
@@ -780,6 +828,14 @@
 
 		{
 			"PartMap": {
+				"part": "Host",
+				"map": {
+					"overview.mail.yahoo.com": "RemoveQuery"
+				}
+			}
+		},
+		{
+			"PartMap": {
 				"comment-1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
 				"comment-2": "There's another PartMap below this one for UrlPart::Suffix.",
 				"part": "NotSubdomain",
@@ -909,6 +965,13 @@
 							"condition": {"PartMatches": {"part": "Subdomain", "matcher": {"Not": {"IsOneOf": ["at", "www"]}}}},
 							"mapper": {"MovePart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}}
 						}
+					]},
+					"goodreads.com": {"All": [
+						{"RemoveQueryParams": ["ref_"]},
+						{"IfCondition": {
+							"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/book/show/"}},
+							"mapper": "RemoveQuery"
+						}}
 					]}
 				}
 			}

@@ -44,7 +44,7 @@ The default config is intended to always obey the following rules:
 
 - "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
     - Insignificant details like the navbar amazon listings have full of links to item categories being slightly different are, as previously stated, insignificant.
-- URLs that are "semantically valid" (as defined by whatever website it's a URL for) shouldn't ever throe an error.
+- URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever throw an error.
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
     - URLs that are semantically valid should never change semantics and/or become semantically invalid.
         - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so (re: `unmangle` flag).

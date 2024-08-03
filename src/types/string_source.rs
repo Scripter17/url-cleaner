@@ -173,7 +173,14 @@ pub enum StringSource {
         /// The map to map the string with.
         /// 
         /// God these docs need a total rewrite.
-        map: HashMap<Option<String>, Self>
+        map: HashMap<Option<String>, Self>,
+        /// JSON doesn't allow `null`/[`None`] to be a key in objects.
+        /// 
+        /// If `source` returns [`None`], there's no [`None`] in `map`, and `if_null` is not [`None`], the [`Self`] in `if_null` is used.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        if_null: Option<Box<Self>>
     },
 
     // Basic stuff.
@@ -497,7 +504,17 @@ impl StringSource {
                     r#else.get(job_state)?
                 }
             },
-            Self::Map {source, map} => map.get(&get_option_string!(source, job_state)).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?,
+            Self::Map {source, map, if_null} => {
+                let key = get_option_string!(source, job_state);
+                if key == None && !map.contains_key(&None) {
+                    match if_null {
+                        Some(source) => source.get(job_state)?,
+                        None => Err(StringSourceError::StringNotInMap)?
+                    }
+                } else {
+                    map.get(&key).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?
+                }
+            },
 
 
 
