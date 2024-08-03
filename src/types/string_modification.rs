@@ -775,6 +775,14 @@ pub enum StringModification {
     /// 
     /// If the call to [`String::from_utf8`] returns an error, that error is returned.
     Base64DecodeStandard,
+    /// Encode the string using [`base64::prelude::BASE64_STANDARD_NO_PAD`].
+    Base64EncodeStandardNoPad,
+    /// Decode the string using [`base64::prelude::BASE64_STANDARD_NO_PAD`].
+    /// # Errors
+    /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
+    Base64DecodeStandardNoPad,
     /// Encode the string using [`base64::prelude::BASE64_URL_SAFE`].
     Base64EncodeUrlSafe,
     /// Encode the string using [`base64::prelude::BASE64_URL_SAFE`].
@@ -783,6 +791,14 @@ pub enum StringModification {
     /// 
     /// If the call to [`String::from_utf8`] returns an error, that error is returned.
     Base64DecodeUrlSafe,
+    /// Encode the string using [`base64::prelude::BASE64_URL_SAFE_NO_PAD`].
+    Base64EncodeUrlSafeNoPad,
+    /// Encode the string using [`base64::prelude::BASE64_URL_SAFE_NO_PAD`].
+    /// # Errors
+    /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
+    Base64DecodeUrlSafeNoPad,
     /// [`serde_json::Value::pointer`].
     /// Does not do any string conversions. I should probably add an option for that.
     /// # Errors
@@ -1111,8 +1127,12 @@ impl StringModification {
             Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             Self::Base64EncodeStandard => *to = BASE64_STANDARD.encode(to.as_bytes()),
             Self::Base64DecodeStandard => *to = String::from_utf8(BASE64_STANDARD.decode(to.as_bytes())?)?,
+            Self::Base64EncodeStandardNoPad => *to = BASE64_STANDARD_NO_PAD.encode(to.as_bytes()),
+            Self::Base64DecodeStandardNoPad => *to = String::from_utf8(BASE64_STANDARD_NO_PAD.decode(to.as_bytes())?)?,
             Self::Base64EncodeUrlSafe  => *to = BASE64_URL_SAFE.encode(to.as_bytes()),
             Self::Base64DecodeUrlSafe  => *to = String::from_utf8(BASE64_URL_SAFE.decode(to.as_bytes())?)?,
+            Self::Base64EncodeUrlSafeNoPad  => *to = BASE64_URL_SAFE_NO_PAD.encode(to.as_bytes()),
+            Self::Base64DecodeUrlSafeNoPad  => *to = String::from_utf8(BASE64_URL_SAFE_NO_PAD.decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, job_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
             // fixed_n is guaranteed to be in bounds.
             #[allow(clippy::indexing_slicing)]
@@ -1183,8 +1203,10 @@ impl StringModification {
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
                 Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode |
-                Self::Base64EncodeStandard | Self::Base64DecodeStandard | Self::Base64EncodeUrlSafe |
-                Self::Base64DecodeUrlSafe => true,
+                Self::Base64EncodeStandard | Self::Base64DecodeStandard |
+                Self::Base64EncodeStandardNoPad | Self::Base64DecodeStandardNoPad |
+                Self::Base64EncodeUrlSafe | Self::Base64DecodeUrlSafe |
+                Self::Base64EncodeUrlSafeNoPad | Self::Base64DecodeUrlSafeNoPad => true,
             #[cfg(feature = "regex")]
             Self::RegexFind(_) => true
         }
