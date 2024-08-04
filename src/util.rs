@@ -86,6 +86,13 @@ pub(crate) fn neg_vec_keep<I: IntoIterator>(iter: I, start: Option<isize>, end: 
     Some(ret.drain(neg_range(start, end, ret.len())?).collect())
 }
 
+/// Serde helper function.
+pub(crate) const fn is_false(x: &bool) -> bool {!*x}
+/// Serde helper function.
+pub(crate) const fn is_true(x: &bool) -> bool {*x}
+/// Serde helper function.
+pub(crate) const fn get_true() -> bool {true}
+
 #[cfg(test)]
 mod tests {
     use super::*;

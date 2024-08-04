@@ -408,7 +408,7 @@
 													"source": {"Part": {"QueryParam": "url"}},
 													"modification": {"All": [
 														{"Replace": {"find": "\n", "replace": ""}},
-														"Base64DecodeUrlSafe"
+														"Base64Decode"
 													]}
 												}}
 											}}
@@ -477,7 +477,7 @@
 												"modification": {"All": [
 													{"KeepNthSegment": {"split": "/", "n": 2}},
 													{"Remove": 0},
-													"Base64DecodeStandardNoPad",
+													"Base64Decode",
 													{"KeepNthSegment": {"split": ",", "n": -1}}
 												]}
 											}}
@@ -498,7 +498,7 @@
 													"source": {"Part": {"PathSegment": 2}},
 													"modification": {"All": [
 														{"KeepNthSegment": {"split": ".", "n": 0}},
-														"Base64DecodeUrlSafeNoPad",
+														"Base64Decode",
 														{"JsonPointer": "/e"}
 													]}
 												}}
@@ -650,8 +650,10 @@
 					{"Any": [
 						{"HostIsOneOf": ["http", "https", "bsky.app", "www.bsky.app"]},
 						{"PartContains": {"part": "Path", "value": "http"}},
-						{"PartIs": {"part": {"DomainSegment": 0}, "value": "www"}},
-						{"Not": {"PartIs": {"part": {"DomainSegment": 4}, "value": null}}}
+						{"All": [
+							{"PartIs": {"part": {"DomainSegment": 0}, "value": "www"}},
+							{"Not": {"PartIs": {"part": {"DomainSegment": 4}, "value": null}}}
+						]}
 					]}
 				]},
 				"rules": [
@@ -972,7 +974,11 @@
 							"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/book/show/"}},
 							"mapper": "RemoveQuery"
 						}}
-					]}
+					]},
+					"thelancet.com": {"IfCondition": {
+						"condition": {"PartMatches": {"part": {"PathSegment": 0}, "matcher": {"IsOneOf": ["commissions", "journals"]}}},
+						"mapper": "RemoveQuery"
+					}}
 				}
 			}
 		},

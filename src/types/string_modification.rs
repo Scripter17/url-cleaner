@@ -1,6 +1,7 @@
 //! Provides [`StringModification`] which provides an easy API for all the ways one might want to modify a [`String`].
 
 use std::borrow::Cow;
+use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -19,6 +20,7 @@ use crate::util::*;
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
+#[serde(remote = "Self")]
 pub enum StringModification {
     /// Does nothing.
     None,
@@ -768,37 +770,13 @@ pub enum StringModification {
     /// ```
     UrlDecode,
     /// Encode the string using [`base64::prelude::BASE64_STANDARD`].
-    Base64EncodeStandard,
+    Base64Encode(#[serde(default)] Base64Config),
     /// Decode the string using [`base64::prelude::BASE64_STANDARD`].
     /// # Errors
     /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
     /// 
     /// If the call to [`String::from_utf8`] returns an error, that error is returned.
-    Base64DecodeStandard,
-    /// Encode the string using [`base64::prelude::BASE64_STANDARD_NO_PAD`].
-    Base64EncodeStandardNoPad,
-    /// Decode the string using [`base64::prelude::BASE64_STANDARD_NO_PAD`].
-    /// # Errors
-    /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
-    Base64DecodeStandardNoPad,
-    /// Encode the string using [`base64::prelude::BASE64_URL_SAFE`].
-    Base64EncodeUrlSafe,
-    /// Encode the string using [`base64::prelude::BASE64_URL_SAFE`].
-    /// # Errors
-    /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
-    Base64DecodeUrlSafe,
-    /// Encode the string using [`base64::prelude::BASE64_URL_SAFE_NO_PAD`].
-    Base64EncodeUrlSafeNoPad,
-    /// Encode the string using [`base64::prelude::BASE64_URL_SAFE_NO_PAD`].
-    /// # Errors
-    /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
-    Base64DecodeUrlSafeNoPad,
+    Base64Decode(#[serde(default)] Base64Config),
     /// [`serde_json::Value::pointer`].
     /// Does not do any string conversions. I should probably add an option for that.
     /// # Errors
@@ -884,6 +862,32 @@ pub enum StringModification {
     Map(HashMap<String, StringSource>)
 }
 
+string_or_struct_magic!(StringModification);
+
+/// Returned when trying to call [`StringModification::from_str`] with a variant name that has non-defaultable fields.
+#[derive(Debug, Error)]
+#[error("Tried deserializing a StringModification variant with non-defaultale fields from a string.")]
+pub struct NonDefaultableVariant;
+
+impl FromStr for StringModification {
+    type Err = NonDefaultableVariant;
+
+    /// Used for allowing deserializng [`Self::Base64Decode`] and [`Self::Base64Encode`] from strings using the default values for their fields.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "Base64Decode" => StringModification::Base64Decode(Default::default()),
+            "Base64Encode" => StringModification::Base64Encode(Default::default()),
+            "UrlDecode" => StringModification::UrlDecode,
+            "UrlEncode" => StringModification::UrlEncode,
+            "None" => StringModification::None,
+            "Error" => StringModification::Error,
+            "Lowercase" => StringModification::Lowercase,
+            "Uppercase" => StringModification::Uppercase,
+            _ => Err(NonDefaultableVariant)?
+        })
+    }
+}
+
 /// The enum of all possible errors [`StringModification::apply`] can return.
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Error)]
@@ -953,7 +957,10 @@ pub enum StringModificationError {
     StringNotInMap,
     /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
-    StringMatcherError(#[from] Box<StringMatcherError>)
+    StringMatcherError(#[from] Box<StringMatcherError>),
+    /// Returned when a [`MakeBase64EngineError`] is encountered.
+    #[error(transparent)]
+    MakeBase64EngineError(#[from] MakeBase64EngineError)
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -1125,14 +1132,8 @@ impl StringModification {
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(get_str!(flag, job_state, StringModificationError)) {then} else {r#else}.apply(to, job_state)?,
             Self::UrlEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
             Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
-            Self::Base64EncodeStandard => *to = BASE64_STANDARD.encode(to.as_bytes()),
-            Self::Base64DecodeStandard => *to = String::from_utf8(BASE64_STANDARD.decode(to.as_bytes())?)?,
-            Self::Base64EncodeStandardNoPad => *to = BASE64_STANDARD_NO_PAD.encode(to.as_bytes()),
-            Self::Base64DecodeStandardNoPad => *to = String::from_utf8(BASE64_STANDARD_NO_PAD.decode(to.as_bytes())?)?,
-            Self::Base64EncodeUrlSafe  => *to = BASE64_URL_SAFE.encode(to.as_bytes()),
-            Self::Base64DecodeUrlSafe  => *to = String::from_utf8(BASE64_URL_SAFE.decode(to.as_bytes())?)?,
-            Self::Base64EncodeUrlSafeNoPad  => *to = BASE64_URL_SAFE_NO_PAD.encode(to.as_bytes()),
-            Self::Base64DecodeUrlSafeNoPad  => *to = String::from_utf8(BASE64_URL_SAFE_NO_PAD.decode(to.as_bytes())?)?,
+            Self::Base64Encode(config) => *to = config.make_engine()?.encode(to.as_bytes()),
+            Self::Base64Decode(config) => *to = String::from_utf8(config.make_engine()?.decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, job_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
             // fixed_n is guaranteed to be in bounds.
             #[allow(clippy::indexing_slicing)]
@@ -1203,10 +1204,7 @@ impl StringModification {
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
                 Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode |
-                Self::Base64EncodeStandard | Self::Base64DecodeStandard |
-                Self::Base64EncodeStandardNoPad | Self::Base64DecodeStandardNoPad |
-                Self::Base64EncodeUrlSafe | Self::Base64DecodeUrlSafe |
-                Self::Base64EncodeUrlSafeNoPad | Self::Base64DecodeUrlSafeNoPad => true,
+                Self::Base64Encode(_) | Self::Base64Decode(_)  => true,
             #[cfg(feature = "regex")]
             Self::RegexFind(_) => true
         }

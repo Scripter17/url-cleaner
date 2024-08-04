@@ -10,6 +10,8 @@ use regex_syntax::{ParserBuilder, Parser, Error as RegexSyntaxError};
 #[allow(unused_imports)]
 use super::RegexWrapper;
 
+use crate::util::*;
+
 /// Contains the rules for constructing a [`Regex`].
 /// 
 /// The pattern is guaranteed to be valid.
@@ -143,15 +145,9 @@ pub struct RegexConfig {
 }
 
 /// Serde helper function used by [`RegexConfig`].
-const fn is_false(x: &bool) -> bool {!*x} // <&bool as std::ops::Not>::not is not const.
-/// Serde helper function used by [`RegexConfig`].
-const fn is_true(x: &bool) -> bool {*x}
-/// Serde helper function used by [`RegexConfig`].
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
 /// Serde helper function used by [`RegexConfig`].
 const fn newline_u8() -> u8 {b'\n'}
-/// Serde helper function used by [`RegexConfig`].
-const fn get_true() -> bool {true}
 
 impl Default for RegexConfig {
     fn default() -> Self {

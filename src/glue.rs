@@ -14,3 +14,5 @@
 #[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod method;
 #[cfg(feature = "cache")] mod caching;
 #[cfg(feature = "cache")] pub use caching::*;
+mod base64;
+pub use base64::*;
