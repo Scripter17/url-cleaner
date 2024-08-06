@@ -90,13 +90,17 @@ pub enum Rule {
         /// The map determining which [`Mapper`] to apply.
         map: HashMap<Option<String>, Rules>
     },
-    /// Runs all the contained rules in a loop until none of their conditions pass.
+    /// Runs all the contained rules in a loop until the specified [`StopLoopCondition`] returns [`true`].
     /// 
     /// Runs at most `limit` times. (Defaults to 10).
     /// # Implementation details
-    /// While [`Self::RepeatUntilNonePass`] is a [`Rules`], [`Rules::apply`] is not called due to needing to keep track of if any contained [`Rule`]s... pass. I need a better term for that/
+    /// While [`Self::Repeat`] is a [`Rules`], [`Rules::apply`] is not called due to needing to keep track of if any contained [`Rule`]s... pass. I need a better term for that.
+    /// 
+    /// If a contained [`Rule`] never requires another loop, it's advised to put it in a [`Rule::DontTriggerLoop`].
+    /// 
+    /// Other rules can still trigger the loop.
     /// # Errors
-    /// If any call to a [`Self`] contained in the specified [`Rules`] returns an error other than [`RuleError::FailedCondition`] and [`RuleError::ValueNotInMap`], the error is returned.
+    /// If any call to a [`Self`] contained in the specified [`Rules`] returns an error other than [`RuleError::DontTriggerLoop`], [`RuleError::FailedCondition`] and [`RuleError::ValueNotInMap`], the error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -113,7 +117,7 @@ pub enum Rule {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
-    /// Rule::RepeatUntilNonePass {
+    /// Rule::Repeat {
     ///     rules: Rules(vec![
     ///         Rule::Normal {
     ///             condition: Condition::Always,
@@ -123,19 +127,33 @@ pub enum Rule {
     ///             }
     ///         }
     ///     ]),
+    ///     stop_loop_condition: Default::default(),
     ///     limit: 10
     /// }.apply(&mut job_state).unwrap();
     /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
     /// ```
-    RepeatUntilNonePass {
+    Repeat {
         /// The rules to repeat.
         rules: Rules,
+        #[serde(default)]
+        /// Defaults to the value of [`StopLoopCondition::default`].
+        stop_loop_condition: StopLoopCondition,
         /// The max amount of times to repeat them.
         /// 
         /// Defaults to 10.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
+    /// Runs the contained [`Self`] then, if no error is returned, returns the error [`RuleError::DontTriggerLoop`],
+    /// 
+    /// Intended for use in [`Self::Repeat`].
+    /// 
+    /// Other [`Rule`]s in the loop body can still trigger another loop.
+    /// # Errors 
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// 
+    /// If no error is returned, returns the error [`RuleError::DontTriggerLoop`].
+    DontTriggerLoop(Box<Self>),
     /// When many rules share a common condition (such as `{"UnqualifiedAnySuffix": "amazon"}`), it often makes semantic and performance sense to merge them all into one.
     /// # Errors
     /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
@@ -149,14 +167,6 @@ pub enum Rule {
         /// The rules to run if [`Self::CommonCondition::condition`] passes.
         rules: Rules
     },
-    /// Runs the contained [`Self`] then, if no error is returned, returns the error [`RuleError::FailedCondition`],
-    /// 
-    /// Useful for use in [``]
-    /// # Errors 
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
-    /// 
-    /// If no error is returned, returns the error [`RuleError::FailedCondition`].
-    PretendFailedCondition(Box<Self>),
     /// Execites the contained [`Rules`].
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
@@ -224,7 +234,7 @@ pub enum Rule {
     }
 }
 
-/// Serde helper function. The default value of [`Rule::RepeatUntilNonePass::limit`].
+/// Serde helper function. The default value of [`Rule::Repeat::limit`].
 const fn get_10_u8() -> u8 {10}
 
 /// The errors that [`Rule`] can return.
@@ -244,7 +254,10 @@ pub enum RuleError {
     ValueNotInMap,
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
-    StringSourceError(#[from] StringSourceError)
+    StringSourceError(#[from] StringSourceError),
+    /// Not an error; Just tells Rule::Repeat to not loop just because of the rule that returned this.
+    #[error("Not an error; Just tells Rule::Repeat to not loop just because of the rule that returned this.")]
+    DontTriggerLoop
 }
 
 impl Rule {
@@ -252,7 +265,7 @@ impl Rule {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        debug!("Rule: {self:?}");
+        debug!(Rule::apply, self, job_state);
         match self {
             Self::Normal{condition, mapper} => if condition.satisfied_by(job_state)? {
                 mapper.apply(job_state)?;
@@ -266,20 +279,24 @@ impl Rule {
             Self::StringSourceMap      {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
             Self::StringSourceRuleMap  {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
             Self::StringSourceRulesMap {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::RepeatUntilNonePass{rules, limit} => {
+            Self::Repeat{rules, stop_loop_condition, limit} => {
 
                 // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rules::apply`]!!!
 
+                let mut previous_url = job_state.url.clone();
+                let mut previous_job_vars = job_state.vars.clone();
                 for _ in 0..*limit {
-                    let mut done=true;
+                    let mut none_passed=true;
                     for rule in rules.0.iter() {
                         match rule.apply(job_state) {
-                            Err(RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
+                            Err(RuleError::DontTriggerLoop | RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
                             e @ Err(_) => e?,
-                            _ => done=false
+                            _ => none_passed=false
                         }
                     }
-                    if done {break}
+                    if stop_loop_condition.satisfied_by(job_state, none_passed, &previous_url, &previous_job_vars) {break;}
+                    previous_url = job_state.url.clone();
+                    previous_job_vars = job_state.vars.clone();
                 }
                 Ok(())
             },
@@ -291,9 +308,9 @@ impl Rule {
                     Err(RuleError::FailedCondition)
                 }
             },
-            Self::PretendFailedCondition(rule) => {
+            Self::DontTriggerLoop(rule) => {
                 rule.apply(job_state)?;
-                Err(RuleError::FailedCondition)
+                Err(RuleError::DontTriggerLoop)
             },
             Self::Rules(rules) => Ok(rules.apply(job_state)?),
             Self::IfElse {condition, mapper, else_mapper} => Ok(if condition.satisfied_by(job_state)? {
@@ -314,9 +331,9 @@ impl Rule {
             Self::StringSourceMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
             Self::StringSourceRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
             Self::StringSourceRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
-            Self::RepeatUntilNonePass {rules, ..} => rules.is_suitable_for_release(),
+            Self::Repeat {rules, ..} => rules.is_suitable_for_release(),
             Self::CommonCondition {condition, rules} => condition.is_suitable_for_release() && rules.is_suitable_for_release(),
-            Self::PretendFailedCondition(rule) => rule.is_suitable_for_release(),
+            Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(),
             Self::Rules(rules) => rules.is_suitable_for_release(),
             Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release() && else_mapper.is_suitable_for_release(),
             Self::Normal {condition, mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release()
@@ -334,10 +351,12 @@ impl Rules {
     /// Applies each contained [`Rule`] to the provided [`JobState::url`] in order.
     /// 
     /// If an error is returned, `job_state.url` and `job_state.vars` are left unmodified.
+    /// 
+    /// Caching may still happen and won't be reverted.
     /// # Errors
     /// If any contained [`Rule`] returns an error other than [`RuleError::FailedCondition`] or [`RuleError::ValueNotInMap`], that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        debug!("Rules: {self:?}");
+        debug!(Rules::apply, self, job_state);
         let mut temp_url = job_state.url.clone();
         let mut temp_job_state = JobState {
             url: &mut temp_url,
@@ -346,9 +365,12 @@ impl Rules {
             #[cfg(feature = "cache")]
             cache_handler: job_state.cache_handler
         };
+
+        // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rule::Repeat`]!!!
+
         for rule in &self.0 {
             match rule.apply(&mut temp_job_state) {
-                Err(RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
+                Err(RuleError::DontTriggerLoop | RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
                 e @ Err(_) => e?,
                 _ => {}
             }

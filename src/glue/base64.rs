@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize, Deserializer, de::Visitor};
 use crate::util::*;
 
 /// A wrapper around [`base64::engine::DecodePaddingMode`] that has a more complete set of trait implementations.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DecodePaddingMode(pub base64::engine::DecodePaddingMode);
 
 /// Returned when trying to create an invalid [`DecodePaddingMode`].
@@ -181,6 +181,14 @@ impl TryFrom<Base64Alphabet> for base64::alphabet::Alphabet {
     type Error = MakeRealBase64AlphabetError;
 
     fn try_from(value: Base64Alphabet) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&Base64Alphabet> for base64::alphabet::Alphabet {
+    type Error = MakeRealBase64AlphabetError;
+
+    fn try_from(value: &Base64Alphabet) -> Result<Self, Self::Error> {
         value.make_real_alphabet()
     }
 }
@@ -220,6 +228,14 @@ impl TryFrom<Base64Config> for base64::engine::general_purpose::GeneralPurpose {
     type Error = MakeBase64EngineError;
 
     fn try_from(value: Base64Config) -> Result<Self, Self::Error> {
+        (&value).try_into()
+    }
+}
+
+impl TryFrom<&Base64Config> for base64::engine::general_purpose::GeneralPurpose {
+    type Error = MakeBase64EngineError;
+
+    fn try_from(value: &Base64Config) -> Result<Self, Self::Error> {
         value.make_engine()
     }
 }

@@ -355,7 +355,7 @@ pub enum Mapper {
     /// However, this means that this mapper will by default send an HTTP GET request to all pages pointed to even if they're not shortlinks.
     /// 
     /// The default config handles this by configuring [`Self::ExpandShortLink::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
-    /// And, because it's in a [`Rule::RepeatUntilNonePass`], it still handles recursion up to 10 levels deep while protecting privacy.
+    /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
     #[cfg_attr(feature = "cache", doc = "If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.")]
     /// 
@@ -605,7 +605,7 @@ impl Mapper {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), MapperError> {
-        debug!("Mapper: {self:?}");
+        debug!(Mapper::apply, self, job_state);
         match self {
             // Testing.
 

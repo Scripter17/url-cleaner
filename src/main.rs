@@ -1,8 +1,7 @@
 //! URL Cleaner originally started as a project to remove tracking garbage from URLs but has since grown into a very powerful URL manipulation tool.
 
 use std::path::PathBuf;
-#[cfg(feature = "stdin")]
-use std::io;
+use std::io::{self, IsTerminal};
 #[cfg(feature = "debug")]
 use std::sync::Mutex;
 
@@ -20,7 +19,6 @@ mod util;
 /// Enabled features:
 #[cfg_attr(feature = "default-config"         , doc = "default-config"         )]
 #[cfg_attr(feature = "minify-included-strings", doc = "minify-included-strings")]
-#[cfg_attr(feature = "stdin"                  , doc = "stdin"                  )]
 #[cfg_attr(feature = "regex"                  , doc = "regex"                  )]
 #[cfg_attr(feature = "glob"                   , doc = "glob"                   )]
 #[cfg_attr(feature = "commands"               , doc = "commands"               )]
@@ -33,7 +31,6 @@ mod util;
 /// Disabled features:
 #[cfg_attr(not(feature = "default-config"         ), doc = "default-config"         )]
 #[cfg_attr(not(feature = "minify-included-strings"), doc = "minify-included-strings")]
-#[cfg_attr(not(feature = "stdin"                  ), doc = "stdin"                  )]
 #[cfg_attr(not(feature = "regex"                  ), doc = "regex"                  )]
 #[cfg_attr(not(feature = "glob"                   ), doc = "glob"                   )]
 #[cfg_attr(not(feature = "commands"               ), doc = "commands"               )]
@@ -174,8 +171,7 @@ fn main() -> Result<(), CliError> {
         cache_handler: args.cache_path.as_deref().unwrap_or(config.cache_path.as_path()).try_into()?,
         url_source: {
             let ret = args.urls.into_iter().map(Ok);
-            #[cfg(feature = "stdin")]
-            {if atty::isnt(atty::Stream::Stdin) {
+            {if !io::stdin().is_terminal() {
                 Box::new(ret.chain(io::stdin().lines().map(|line| match line {
                     Ok(line) => Url::parse(&line).map_err(Into::into),
                     Err(e) => Err(e.into())
@@ -183,8 +179,6 @@ fn main() -> Result<(), CliError> {
             } else {
                 Box::new(ret)
             }}
-            #[cfg(not(feature = "stdin"))]
-            Box::new(ret)
         },
         config
     };

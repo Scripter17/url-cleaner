@@ -853,7 +853,7 @@ impl Condition {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn satisfied_by(&self, job_state: &JobState) -> Result<bool, ConditionError> {
-        debug!("Condition: {self:?}");
+        debug!(Condition::satisfied_by, self, job_state);
         Ok(match self {
             // Debug/constants.
 

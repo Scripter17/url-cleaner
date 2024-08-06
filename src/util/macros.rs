@@ -23,13 +23,15 @@ impl std::ops::Drop for Deindenter {
 
 /// Print debugging for the win!
 macro_rules! debug {
-    ($x:expr) => {
+    ($func:pat, $($comment:literal,)? $($name:ident),*) => {
         #[cfg(feature = "debug")]
         #[allow(clippy::arithmetic_side_effects)]
-        let _deindent = {
+        let _deindenter = {
             let mut indent = crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.");
-            eprint!("{}", "|   ".repeat(*indent));
-            eprintln!($x);
+            eprint!("{}{}", "|   ".repeat(*indent), stringify!($func));
+            $(eprint!($comment);)?
+            $(eprint!(concat!("; ", stringify!($name), ": {:?}"), $name);)*
+            eprintln!();
             *indent+=1;
             crate::util::Deindenter
         };

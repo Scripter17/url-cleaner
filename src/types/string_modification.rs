@@ -980,7 +980,7 @@ impl StringModification {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn apply(&self, to: &mut String, job_state: &JobState) -> Result<(), StringModificationError> {
-        debug!("Modification: {self:?}");
+        debug!(StringModification::apply, self);
         match self {
             Self::None => {},
             Self::Error => Err(StringModificationError::ExplicitError)?,

@@ -473,7 +473,7 @@ impl StringSource {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn get<'a>(&'a self, job_state: &'a JobState) -> Result<Option<Cow<'a, str>>, StringSourceError> {
-        debug!("Source: {self:?}");
+        debug!(StringSource::get, self, job_state);
         Ok(match self {
             Self::Error => Err(StringSourceError::ExplicitError)?,
             Self::Debug(source) => {

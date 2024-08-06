@@ -63,7 +63,7 @@ impl Params {
     /// Errors if [`reqwest::ClientBuilder::build`] errors.
     #[cfg(all(feature = "http", not(target_family = "wasm")))]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        debug!("=== Params::http_client ===\nself: {self:?}\nhttp_client_config_diff: {http_client_config_diff:?}");
+        debug!(Params::http_client, self, http_client_config_diff);
         match http_client_config_diff {
             Some(http_client_config_diff) => {
                 let mut temp_http_client_config = self.http_client_config.clone();
@@ -145,6 +145,6 @@ impl ParamsDiff {
         #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
         #[cfg(all(feature = "http", not(target_family = "wasm")))] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
-        debug!("=== ParamsDiff::apply ===\nold: {old_to:?}\nDiff: {self:?}\nnew: {to:?}");
+        debug!(ParamsDiff::apply, self, old_to, to);
     }
 }

@@ -26,6 +26,8 @@ pub use char_matcher::*;
 #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))] pub use advanced_requests::*;
 mod jobs;
 pub use jobs::*;
+mod stop_loop_condition;
+pub use stop_loop_condition::*;
 
 /// An enum that transitively contains any possible error that can happen when cleaning a URL.
 #[derive(Debug, Error)]

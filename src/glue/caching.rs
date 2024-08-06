@@ -8,6 +8,8 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 
+use crate::util::*;
+
 #[allow(clippy::missing_docs_in_private_items, missing_docs)]
 mod schema;
 pub use schema::cache;
@@ -157,6 +159,7 @@ impl CacheHandler {
     /// 
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn read_from_cache(&self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
+        debug!(CacheHandler::read_from_cache, self, category, key);
         Ok(cache::dsl::cache
             .filter(cache::dsl::category.eq(category))
             .filter(cache::dsl::key.eq(key))
@@ -173,6 +176,7 @@ impl CacheHandler {
     /// 
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn write_to_cache(&self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
+        debug!(CacheHandler::write_to_cache, self, category, key, value);
         diesel::insert_into(cache::table)
             .values(&NewCacheEntry {category, key, value})
             .returning(CacheEntry::as_returning())
@@ -193,6 +197,12 @@ impl InnerCacheHandler {
     /// # Errors
     /// If the call to [`SqliteConnection::establish`] returns an error, that error is returned.
     pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
+        #[cfg(feature = "debug")]
+        if matches!(self, Self::Unconnected{..}) {
+            debug!(InnerCacheHandler::connect, "actually connecting", self);
+        } else if matches!(self, Self::Connected{..}) {
+            debug!(InnerCacheHandler::connect, "already connected", self);
+        }
         Ok(match self {
             Self::Unconnected { path } => {
                 *self = InnerCacheHandler::Connected {

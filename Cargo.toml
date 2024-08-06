@@ -17,7 +17,6 @@ serde_json = "1.0.122"
 url = { version = "2.5.2", features = ["serde"] }
 reqwest = { version = "0.12.5", features = ["blocking", "socks"], optional = true }
 const-str = { version = "0.5.7", optional = true }
-atty = { version = "0.2.14", optional = true }
 thiserror = "1.0.63"
 regex = { version = "1.10.6", optional = true }
 glob = { version = "0.3.1", optional = true }
@@ -41,8 +40,6 @@ default = [
   "default-config",
   "minify-included-strings",
 
-  "stdin",
-
   "regex",
 
   "glob",
@@ -59,9 +56,6 @@ default = [
 default-config = []
 # Replace all whitepace in the default config with just one space.
 minify-included-strings = ["dep:const-str"]
-
-# Allow reading URLs from STDIN.
-stdin = ["dep:atty"]
 
 # Enables [`url_cleaner::glue::RegexWrapper`].
 regex = ["dep:regex", "dep:regex-syntax"]
