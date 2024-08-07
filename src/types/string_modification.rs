@@ -10,6 +10,7 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC
 #[allow(unused_imports)]
 #[cfg(feature = "regex")]
 use regex::Regex;
+#[cfg(feature = "base64")]
 use base64::prelude::*;
 
 use crate::types::*;
@@ -770,12 +771,14 @@ pub enum StringModification {
     /// ```
     UrlDecode,
     /// Encode the string using [`base64::prelude::BASE64_STANDARD`].
+    #[cfg(feature = "base64")]
     Base64Encode(#[serde(default)] Base64Config),
     /// Decode the string using [`base64::prelude::BASE64_STANDARD`].
     /// # Errors
     /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
     /// 
     /// If the call to [`String::from_utf8`] returns an error, that error is returned.
+    #[cfg(feature = "base64")]
     Base64Decode(#[serde(default)] Base64Config),
     /// [`serde_json::Value::pointer`].
     /// Does not do any string conversions. I should probably add an option for that.
@@ -875,8 +878,8 @@ impl FromStr for StringModification {
     /// Used for allowing deserializng [`Self::Base64Decode`] and [`Self::Base64Encode`] from strings using the default values for their fields.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            "Base64Decode" => StringModification::Base64Decode(Default::default()),
-            "Base64Encode" => StringModification::Base64Encode(Default::default()),
+            #[cfg(feature = "base64")] "Base64Decode" => StringModification::Base64Decode(Default::default()),
+            #[cfg(feature = "base64")] "Base64Encode" => StringModification::Base64Encode(Default::default()),
             "UrlDecode" => StringModification::UrlDecode,
             "UrlEncode" => StringModification::UrlEncode,
             "None" => StringModification::None,
@@ -942,6 +945,7 @@ pub enum StringModificationError {
     },
     /// Returned when a [`base64::DecodeError`] is encountered.
     #[error(transparent)]
+    #[cfg(feature = "base64")]
     Base64DecodeError(#[from] base64::DecodeError),
     /// Returned when a [`std::string::FromUtf8Error`] is encountered.
     #[error(transparent)]
@@ -960,6 +964,7 @@ pub enum StringModificationError {
     StringMatcherError(#[from] Box<StringMatcherError>),
     /// Returned when a [`MakeBase64EngineError`] is encountered.
     #[error(transparent)]
+    #[cfg(feature = "base64")]
     MakeBase64EngineError(#[from] MakeBase64EngineError)
 }
 
@@ -1132,8 +1137,8 @@ impl StringModification {
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(get_str!(flag, job_state, StringModificationError)) {then} else {r#else}.apply(to, job_state)?,
             Self::UrlEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
             Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
-            Self::Base64Encode(config) => *to = config.make_engine()?.encode(to.as_bytes()),
-            Self::Base64Decode(config) => *to = String::from_utf8(config.make_engine()?.decode(to.as_bytes())?)?,
+            #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.make_engine()?.encode(to.as_bytes()),
+            #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.make_engine()?.decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, job_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
             // fixed_n is guaranteed to be in bounds.
             #[allow(clippy::indexing_slicing)]
@@ -1203,10 +1208,11 @@ impl StringModification {
             Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release()),
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
-                Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode |
-                Self::Base64Encode(_) | Self::Base64Decode(_)  => true,
+                Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode => true,
             #[cfg(feature = "regex")]
-            Self::RegexFind(_) => true
+            Self::RegexFind(_) => true,
+            #[cfg(feature = "base64")]
+            Self::Base64Encode(_) | Self::Base64Decode(_) => true
         }
     }
 }

@@ -14,8 +14,8 @@ use crate::util::is_default;
 
 mod params;
 pub use params::*;
-#[cfg(all(feature = "http", not(target_family = "wasm")))] mod http_client_config;
-#[cfg(all(feature = "http", not(target_family = "wasm")))] pub use http_client_config::*;
+#[cfg(feature = "http")] mod http_client_config;
+#[cfg(feature = "http")] pub use http_client_config::*;
 
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]

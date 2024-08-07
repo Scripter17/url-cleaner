@@ -321,7 +321,7 @@ pub enum StringSource {
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
     /// # Errors
     /// If the call to [`RequestConfig::response`] returns an error, that error is returned.
-    #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+    #[cfg(feature = "advanced-requests")]
     HttpRequest(Box<RequestConfig>),
     /// Run a command and return its output.
     /// # Errors
@@ -399,15 +399,15 @@ pub enum StringSourceError {
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when [`reqwest::Error`] is encountered.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
     /// Returned when a requested HTTP response header is not found.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[error("The HTTP request response did not contain the requested header.")]
     HeaderNotFound,
     /// Returned when a [`reqwest::header::ToStrError`] is encountered.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[error(transparent)]
     HeaderToStrError(#[from] reqwest::header::ToStrError),
     /// Returned when a [`url::ParseError`] is encountered.
@@ -420,12 +420,11 @@ pub enum StringSourceError {
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when a [`RequestConfigError`] is encountered.
-    #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+    /// Retd when a [`RequestConfigErrorture = "advanced-requests")]
     #[error(transparent)]
     RequestConfigError(#[from] RequestConfigError),
     /// Returned when a [`ResponseHandlerError`] is encountered.
-    #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+    #[cfg(feature = "advanced-requests")]
     #[error(transparent)]
     ReponseHandlerError(#[from] ResponseHandlerError),
     /// Returned when a [`CommandError`] is encountered.
@@ -543,7 +542,7 @@ impl StringSource {
                     Err(std::env::VarError::NotUnicode(_)) => Err(StringSourceError::EnvVarIsNotUtf8)?
                 }
             },
-            #[cfg(all(feature = "advanced-requests", not(target_family = "wasm")))]
+            #[cfg(feature = "advanced-requests")]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(job_state)?)),
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),

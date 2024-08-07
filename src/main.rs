@@ -69,10 +69,10 @@ struct Args {
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
     write_cache: Option<bool>,
     /// The proxy to send HTTP requests over. Example: socks5://localhost:9150
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[arg(             long)] http_proxy: Option<glue::ProxyConfig>,
     /// Disables all HTTP proxying.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
     no_http_proxy: Option<bool>,
     /// Print the parsed arguments for debugging.
@@ -138,7 +138,7 @@ fn main() -> Result<(), CliError> {
         delete_sets: Default::default(),
         #[cfg(feature = "cache")] read_cache : args.read_cache,
         #[cfg(feature = "cache")] write_cache: args.write_cache,
-        #[cfg(all(feature = "http", not(target_family = "wasm")))] http_client_config_diff: Some(types::HttpClientConfigDiff {
+        #[cfg(feature = "http")] http_client_config_diff: Some(types::HttpClientConfigDiff {
             set_proxies: args.http_proxy.map(|x| vec![x]),
             no_proxy: args.no_http_proxy,
             ..types::HttpClientConfigDiff::default()

@@ -1,7 +1,7 @@
 //! Allows configuring HTTP clients.
 
 use serde::{Serialize, Deserialize};
-#[cfg(all(feature = "http", not(target_family = "wasm")))]
+#[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
 
 // Used for doc links.

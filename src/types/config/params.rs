@@ -31,7 +31,7 @@ pub struct Params {
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write_cache: bool,
     /// The default headers to send in HTTP requests.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub http_client_config: HttpClientConfig
 }
@@ -48,7 +48,7 @@ impl Default for Params {
             lists: HashMap::default(),
             #[cfg(feature = "cache")] read_cache: true,
             #[cfg(feature = "cache")] write_cache: true,
-            #[cfg(all(feature = "http", not(target_family = "wasm")))]
+            #[cfg(feature = "http")]
             http_client_config: HttpClientConfig::default()
         }
     }
@@ -61,7 +61,7 @@ impl Params {
     /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
     /// # Errors
     /// Errors if [`reqwest::ClientBuilder::build`] errors.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
         debug!(Params::http_client, self, http_client_config_diff);
         match http_client_config_diff {
@@ -101,7 +101,7 @@ pub struct ParamsDiff {
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")] pub write_cache: Option<bool>,
     /// If [`Some`], calls [`HttpClientConfigDiff::apply`] with `to`'s [`HttpClientConfig`]. Defaults to [`None`].
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[serde(default, skip_serializing_if = "is_default")] pub http_client_config_diff: Option<HttpClientConfigDiff>
 }
 
@@ -144,7 +144,7 @@ impl ParamsDiff {
         }
         #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
-        #[cfg(all(feature = "http", not(target_family = "wasm")))] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
+        #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
         debug!(ParamsDiff::apply, self, old_to, to);
     }
 }

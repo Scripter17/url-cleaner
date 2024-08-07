@@ -6,13 +6,12 @@
 #[cfg(feature = "glob"    )] pub use glob::*;
 #[cfg(feature = "commands")] mod command;
 #[cfg(feature = "commands")] pub use command::*;
-#[cfg(all(feature = "http", not(target_family = "wasm")))] pub mod proxy;
-#[cfg(all(feature = "http", not(target_family = "wasm")))] pub use proxy::*;
-/// Serializing and deserializing [`reqwest::header::HeaderMap`].
-#[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod headermap;
-#[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod headervalue;
-#[cfg(all(feature = "http", not(target_family = "wasm")))] pub(crate) mod method;
-#[cfg(feature = "cache")] mod caching;
-#[cfg(feature = "cache")] pub use caching::*;
-mod base64;
-pub use base64::*;
+#[cfg(feature = "http"    )] pub mod proxy;
+#[cfg(feature = "http"    )] pub use proxy::*;
+#[cfg(feature = "http"    )] pub(crate) mod headermap;
+#[cfg(feature = "http"    )] pub(crate) mod headervalue;
+#[cfg(feature = "http"    )] pub(crate) mod method;
+#[cfg(feature = "cache"   )] mod caching;
+#[cfg(feature = "cache"   )] pub use caching::*;
+#[cfg(feature = "base64"  )] mod base64;
+#[cfg(feature = "base64"  )] pub use base64::*;

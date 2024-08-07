@@ -7,7 +7,7 @@ use std::time::Duration;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use url::Url;
-#[cfg(all(feature = "http", not(target_family = "wasm")))]
+#[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
 
 use crate::glue::*;
@@ -390,7 +390,7 @@ pub enum Mapper {
     /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     ExpandShortLink {
         /// The headers to send alongside the param's default headers.
         #[serde(default, with = "headermap")]
@@ -516,7 +516,7 @@ pub enum MapperError {
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`reqwest::Error`] is encountered.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
     /// Returned when a [`Utf8Error`] is encountered.
@@ -559,11 +559,11 @@ pub enum MapperError {
     #[error(transparent)]
     RuleError(Box<RuleError>),
     /// Returned when the requested header is not found.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[error("The requested header was not found.")]
     HeaderNotFound,
     /// Returned when a [`reqwest::header::ToStrError`] is encountered.
-    #[cfg(all(feature = "http", not(target_family = "wasm")))]
+    #[cfg(feature = "http")]
     #[error(transparent)]
     ToStrError(#[from] reqwest::header::ToStrError),
     /// Returned when both the `try` and `else` of a [`Mapper::TryElse`] both return errors.
@@ -729,7 +729,7 @@ impl Mapper {
 
             // Miscellaneous.
 
-            #[cfg(all(feature = "http", not(target_family = "wasm")))]
+            #[cfg(feature = "http")]
             Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
                 if let Some(new_url) = job_state.cache_handler.read_from_cache("redirect", job_state.url.as_str())? {
