@@ -49,6 +49,7 @@ default = [
   "http",
   "advanced-requests",
 
+  "base64",
 
   "cache-redirects"
 ]
