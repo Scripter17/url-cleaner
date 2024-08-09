@@ -9,6 +9,7 @@ use crate::util::*;
 
 /// A wrapper around [`base64::engine::DecodePaddingMode`] that has a more complete set of trait implementations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
 pub struct DecodePaddingMode(pub base64::engine::DecodePaddingMode);
 
 /// Returned when trying to create an invalid [`DecodePaddingMode`].

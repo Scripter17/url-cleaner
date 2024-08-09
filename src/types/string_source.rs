@@ -420,7 +420,8 @@ pub enum StringSourceError {
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Retd when a [`RequestConfigErrorture = "advanced-requests")]
+    /// Returned when a [`RequestConfigError`] is encountered.
+    #[cfg(feature = "advanced-requests")]
     #[error(transparent)]
     RequestConfigError(#[from] RequestConfigError),
     /// Returned when a [`ResponseHandlerError`] is encountered.

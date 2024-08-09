@@ -25,6 +25,7 @@ mod util;
 #[cfg_attr(feature = "http"                   , doc = "http"                   )]
 #[cfg_attr(feature = "advanced-requests"      , doc = "advanced-requests"      )]
 #[cfg_attr(feature = "cache"                  , doc = "cache"                  )]
+#[cfg_attr(feature = "base64"                 , doc = "base64"                 )]
 #[cfg_attr(feature = "cache-redirects"        , doc = "cache-redirects"        )]
 #[cfg_attr(feature = "debug"                  , doc = "debug"                  )]
 /// 
@@ -37,6 +38,7 @@ mod util;
 #[cfg_attr(not(feature = "http"                   ), doc = "http"                   )]
 #[cfg_attr(not(feature = "advanced-requests"      ), doc = "advanced-requests"      )]
 #[cfg_attr(not(feature = "cache"                  ), doc = "cache"                  )]
+#[cfg_attr(not(feature = "base64"                 ), doc = "base64"                 )]
 #[cfg_attr(not(feature = "cache-redirects"        ), doc = "cache-redirects"        )]
 #[cfg_attr(not(feature = "debug"                  ), doc = "debug"                  )]
 struct Args {
