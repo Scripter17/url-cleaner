@@ -138,6 +138,10 @@ fn main() -> Result<(), CliError> {
         insert_into_sets: args.insert_into_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
         remove_from_sets: args.remove_from_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
         delete_sets: Default::default(),
+        init_maps: Default::default(),
+        insert_into_maps: Default::default(),
+        remove_from_maps: Default::default(),
+        delete_maps: Default::default(),
         #[cfg(feature = "cache")] read_cache : args.read_cache,
         #[cfg(feature = "cache")] write_cache: args.write_cache,
         #[cfg(feature = "http")] http_client_config_diff: Some(types::HttpClientConfigDiff {
@@ -171,11 +175,11 @@ fn main() -> Result<(), CliError> {
     let mut jobs = types::Jobs {
         #[cfg(feature = "cache")]
         cache_handler: args.cache_path.as_deref().unwrap_or(config.cache_path.as_path()).try_into()?,
-        url_source: {
-            let ret = args.urls.into_iter().map(Ok);
+        job_source: {
+            let ret = args.urls.into_iter().map(Into::into).map(Ok);
             {if !io::stdin().is_terminal() {
                 Box::new(ret.chain(io::stdin().lines().map(|line| match line {
-                    Ok(line) => Url::parse(&line).map_err(Into::into),
+                    Ok(line) => Url::parse(&line).map(Into::into).map_err(Into::into),
                     Err(e) => Err(e.into())
                 })))
             } else {

@@ -46,12 +46,14 @@ impl Expectation {
     pub fn run(&self, config: &Config) {
         println!("Testing the following expectation set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable")); // Only applies when testing a config.
         let mut temp = self.before.clone();
+        let context = Default::default();
         #[cfg(feature = "cache")]
         let cache_handler = config.cache_path.as_path().try_into().expect("The cache handler path to be valid UTF-8");
         config.rules.apply(&mut JobState {
             url: &mut temp,
             params: &config.params,
             vars: Default::default(),
+            context: &context,
             #[cfg(feature = "cache")]
             cache_handler: &cache_handler
         }).expect("The URL to be modified without errors."); // Only applies when testing a config.

@@ -22,6 +22,9 @@ pub struct Params {
     /// List variables used to determine behavior.
     #[serde(default, skip_serializing_if = "is_default")]
     pub lists: HashMap<String, Vec<String>>,
+    /// Map variables used to determine behavior.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub maps: HashMap<String, HashMap<String, String>>,
     /// If [`true`], enables reading from caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
@@ -46,6 +49,7 @@ impl Default for Params {
             vars : HashMap::default(),
             sets : HashMap::default(),
             lists: HashMap::default(),
+            maps : HashMap::default(),
             #[cfg(feature = "cache")] read_cache: true,
             #[cfg(feature = "cache")] write_cache: true,
             #[cfg(feature = "http")]
@@ -94,6 +98,14 @@ pub struct ParamsDiff {
     #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, Vec<String>>,
     /// If the sets exist in [`Params::sets`], remove them.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_sets: Vec<String>,
+    /// Initializes new maps in [`Params::maps`].
+    #[serde(default, skip_serializing_if = "is_default")] pub init_maps: Vec<String>,
+    /// Initializes new maps in [`Params::maps`] if they don't already exist, then inserts values into them.
+    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, HashMap<String, String>>,
+    /// If the maps exist in [`Params::maps`], removes values from them.
+    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, HashMap<String, String>>,
+    /// If the maps exist in [`Params::maps`], remove them.
+    #[serde(default, skip_serializing_if = "is_default")] pub delete_maps: Vec<String>,
     /// If [`Some`], sets [`Params::read_cache`]. Defaults to [`None`].
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")] pub read_cache : Option<bool>,
@@ -116,16 +128,23 @@ impl ParamsDiff {
     /// 6. Inserts all values into sets as specified by [`Self::insert_into_sets`].
     /// 7. Removes all values from sets as specified by [`Self::remove_from_sets`].
     /// 8. Deletes all sets specified in [`Self::delete_sets`].
-    /// 9. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
-    /// 10. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
-    /// 11. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
+    /// 9. Initializes all maps specified by [`Self::init_maps`] to [`HashSet::default`] if they don't exist.
+    /// 10. Inserts all values into maps as specified by [`Self::insert_into_maps`].
+    /// 11. Removes all values from maps as specified by [`Self::remove_from_maps`].
+    /// 12. Deletes all maps specified in [`Self::delete_maps`].
+    /// 13. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
+    /// 14. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
+    /// 15. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
     pub fn apply(&self, to: &mut Params) {
         #[cfg(feature = "debug")]
         let old_to = to.clone();
+
         to.flags.extend(self.flags.clone());
         for flag in &self.unflags {to.flags.remove(flag);}
+
         to.vars.extend(self.vars.clone());
         for var in &self.unvars {to.vars.remove(var);}
+
         for k in self.init_sets.iter() {
             if !to.sets.contains_key(k) {to.sets.insert(k.clone(), Default::default());}
         }
@@ -142,8 +161,27 @@ impl ParamsDiff {
         for k in self.delete_sets.iter() {
             to.sets.remove(k);
         }
+
+        for k in self.init_maps.iter() {
+            if !to.maps.contains_key(k) {to.maps.insert(k.clone(), Default::default());}
+        }
+        for (k, v) in self.insert_into_maps.iter() {
+            to.maps.entry(k.clone()).or_default().extend(v.clone());
+        }
+        for (k, vs) in self.remove_from_maps.iter() {
+            if let Some(x) = to.maps.get_mut(k) {
+                for v in vs.keys() {
+                    x.remove(v);
+                }
+            }
+        }
+        for k in self.delete_maps.iter() {
+            to.maps.remove(k);
+        }
+
         #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
+
         #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
         debug!(ParamsDiff::apply, self, old_to, to);
     }

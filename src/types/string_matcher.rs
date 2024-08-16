@@ -92,6 +92,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -99,6 +100,7 @@ pub enum StringMatcher {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -126,6 +128,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::glue::RegexParts;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -133,6 +136,7 @@ pub enum StringMatcher {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -148,6 +152,7 @@ pub enum StringMatcher {
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -155,6 +160,7 @@ pub enum StringMatcher {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -235,6 +241,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -242,6 +249,7 @@ pub enum StringMatcher {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -270,6 +278,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -277,6 +286,7 @@ pub enum StringMatcher {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };

@@ -60,12 +60,14 @@ pub enum Mapper {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -84,12 +86,14 @@ pub enum Mapper {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -106,12 +110,14 @@ pub enum Mapper {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -135,12 +141,14 @@ pub enum Mapper {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -165,12 +173,14 @@ pub enum Mapper {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -200,12 +210,14 @@ pub enum Mapper {
     /// # use std::collections::hash_set::HashSet;
     /// let mut url = Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -227,12 +239,14 @@ pub enum Mapper {
     /// # use std::collections::hash_set::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -314,12 +328,14 @@ pub enum Mapper {
     /// # use url::Url;
     /// let mut url = Url::parse("https://abc.example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -345,9 +361,10 @@ pub enum Mapper {
     /// Please note that some websites (like `tinyurl.com` and `duckduckgo.com`) don't do redirects properly and therefore need to be fixed via more complex methods.
     /// If you know how to detect when a DDG search query has a bang that DDG will actually use (`"a !g"` doesn't redirect to google), please let me know as that would be immensely useful.
     /// 
-    /// This mapper (and all HTTP stuff) only works on non-WASM targets.
-    /// This is both because CORS makes this mapper useless and because `reqwest::blocking` does not work on WASM targets.
-    /// See [reqwest#891](https://github.com/seanmonstar/reqwest/issues/891) and [reqwest#1068](https://github.com/seanmonstar/reqwest/issues/1068) for details.
+    /// # Implementation details
+    /// 
+    /// According to [`reqwest::header::HeaderValue`], the HTTP spec specifies that non-ASCII bytes mark the whole entire  as "opaque", and thus the [`reqwest::header::HeaderValue::to_str`] does not handle UTF-8
+    /// This mapper bypasses that by using [`reqwest::header::HeaderValue::as_bytes`] and [`std::str::from_utf8`].
     /// 
     /// # Privacy
     /// 
@@ -357,7 +374,7 @@ pub enum Mapper {
     /// The default config handles this by configuring [`Self::ExpandShortLink::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
     /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
-    #[cfg_attr(feature = "cache", doc = "If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.")]
     /// 
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
@@ -369,7 +386,7 @@ pub enum Mapper {
     /// 
     /// (3xx status code) If the call to [`Url::parse`] to parse the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
     /// 
-    #[cfg_attr(feature = "cache", doc = "If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.")]
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -377,12 +394,14 @@ pub enum Mapper {
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -632,6 +651,7 @@ impl Mapper {
                     url: &mut temp_url,
                     params: job_state.params,
                     vars: job_state.vars.clone(),
+                    context: job_state.context,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler
                 };
@@ -738,7 +758,7 @@ impl Mapper {
                 }
                 let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
-                    Url::parse(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.to_str()?)?
+                    Url::parse(std::str::from_utf8(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.as_bytes())?)?
                 } else {
                     response.url().clone()
                 };

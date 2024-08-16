@@ -59,6 +59,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -66,6 +67,7 @@ pub enum StringSource {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -98,6 +100,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// # use std::collections::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -105,6 +108,7 @@ pub enum StringSource {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -192,6 +196,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -199,6 +204,7 @@ pub enum StringSource {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -216,6 +222,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -223,6 +230,7 @@ pub enum StringSource {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -245,6 +253,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -252,6 +261,7 @@ pub enum StringSource {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -280,6 +290,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
     /// let params = url_cleaner::types::Params { vars: vec![("abc".to_string(), "xyz".to_string())].into_iter().collect(), ..Default::default() };
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -287,6 +298,7 @@ pub enum StringSource {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -299,7 +311,26 @@ pub enum StringSource {
     /// Gets the value of the specified [`JobState::vars`].
     /// 
     /// Returns [`None`] (NOT an error) if the string var is not set.
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// 
     JobVar(Box<Self>),
+    /// Gets the value of the specified [`UrlContext::vars`]
+    /// 
+    /// Returns [`None`] (NOT an error) if the string var is not set.
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// 
+    ContextVar(Box<Self>),
+    /// Indexes into a [`Params::maps`] using `map` then indexes the returned [`HashMap`] with `key`.
+    /// # Errors
+    /// If either call to [`Self::get`] returns an error, that error is returned.
+    MapKey {
+        /// The map from [`Params::maps`] to index in.
+        map: Box<Self>,
+        /// The key to index the map with.
+        key: Box<Self>
+    },
     /// Gets a string with `source`, modifies it with `modification`, and returns the result.
     /// # Errors
     /// If the call to [`StringModification::apply`] errors, returns that error.
@@ -316,6 +347,8 @@ pub enum StringSource {
     /// 
     /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotPresent`], returns [`None`].
     /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// 
     /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotUnicode`], returns the error [`StringSourceError::EnvVarIsNotUtf8`].
     EnvVar(Box<Self>),
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
@@ -451,7 +484,10 @@ pub enum StringSourceError {
     StringMatcherError(#[from] Box<StringMatcherError>),
     /// Returned when the value of a requested environemnt variable is not UTF-8.
     #[error("The value of the requested environment variable was not UTF-8.")]
-    EnvVarIsNotUtf8
+    EnvVarIsNotUtf8,
+    /// Returned when the requested map is not found.
+    #[error("The requested map was not found.")]
+    MapNotFound
 }
 
 
@@ -523,6 +559,8 @@ impl StringSource {
             Self::ExtractPart{source, part} => source.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::Var(key) => job_state.params.vars.get(&get_string!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::JobVar(key) => job_state.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
+            Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
+            Self::MapKey {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
             Self::Modified {source, modification} => {
                 match source.as_ref().get(job_state)? {
                     Some(x) => {
@@ -580,6 +618,8 @@ impl StringSource {
             Self::ExtractPart {source, part} => source.is_suitable_for_release() && part.is_suitable_for_release(),
             Self::Var(name) => name.is_suitable_for_release(),
             Self::JobVar(name) => name.is_suitable_for_release(),
+            Self::ContextVar(name) => name.is_suitable_for_release(),
+            Self::MapKey {map, key} => map.is_suitable_for_release() && key.is_suitable_for_release(),
             Self::Modified {source, modification} => source.is_suitable_for_release() && modification.is_suitable_for_release(),
             Self::EnvVar(name) => name.is_suitable_for_release(),
             #[cfg(feature = "cache")]
@@ -587,7 +627,7 @@ impl StringSource {
             Self::Debug(_) => false,
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,
-            Self::Error | Self::String(_)  => true,
+            Self::Error | Self::String(_) => true,
             #[cfg(feature = "advanced-requests")]
             Self::HttpRequest(_) => true
         }

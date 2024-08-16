@@ -1,6 +1,7 @@
 //! The part of a config that actually modified URLs.
 
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -108,12 +109,14 @@ pub enum Rule {
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -203,12 +206,14 @@ pub enum Rule {
     /// // [`Rules`] just ignores them because it's a higher level API.
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Default::default();
+    /// let context = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
     ///     vars: Default::default(),
+    ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler
     /// };
@@ -345,7 +350,22 @@ impl Rule {
 /// 
 /// Exists mainly for convenience.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[repr(transparent)]
 pub struct Rules(pub Vec<Rule>);
+
+impl Deref for Rules {
+    type Target = Vec<Rule>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Rules {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl Rules {
     /// Applies each contained [`Rule`] to the provided [`JobState::url`] in order.
@@ -362,6 +382,7 @@ impl Rules {
             url: &mut temp_url,
             params: job_state.params,
             vars: job_state.vars.clone(),
+            context: job_state.context,
             #[cfg(feature = "cache")]
             cache_handler: job_state.cache_handler
         };
