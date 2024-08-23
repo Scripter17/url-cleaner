@@ -60,6 +60,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -69,7 +70,9 @@ pub enum StringSource {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// assert_eq!(
@@ -101,6 +104,7 @@ pub enum StringSource {
     /// # use std::collections::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -110,7 +114,9 @@ pub enum StringSource {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// assert_eq!(
@@ -197,6 +203,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -206,7 +213,9 @@ pub enum StringSource {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -223,6 +232,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -232,7 +242,9 @@ pub enum StringSource {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -254,6 +266,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -263,7 +276,9 @@ pub enum StringSource {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// assert_eq!(
@@ -280,6 +295,10 @@ pub enum StringSource {
         /// The part to extract from `source`.
         part: UrlPart
     },
+    /// Indexes [`JobState::common_vars`].
+    /// # Errors
+    /// If [`JobState::common_vars`] is [`None`], returns the error [`StringSourceError::NotInACommonContext`].
+    CommonVar(Box<Self>),
     /// Gets the specified variable's value.
     /// 
     /// Returns [`None`] (NOT an error) if the variable is not set.
@@ -291,6 +310,7 @@ pub enum StringSource {
     /// # use std::collections::HashMap;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { vars: vec![("abc".to_string(), "xyz".to_string())].into_iter().collect(), ..Default::default() };
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -300,7 +320,9 @@ pub enum StringSource {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -382,7 +404,67 @@ pub enum StringSource {
         key: Box<Self>,
         /// The [`Self`] to cache.
         source: Box<Self>
+    },
+    /// Reads a value from the cache.
+    /// 
+    /// If [`Params::read_cache`] is [`true`], returns [`None`].
+    /// # Errors
+    /// If either call to [`Self::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
+    ReadFromCache {
+        /// The category to read from.
+        category: Box<Self>,
+        /// The key to read from.
+        key: Box<Self>
+    },
+    /// Writes a value to the cache then returns that value.
+    /// 
+    /// If [`Params::write_cache`] is [`true`], still returns the would-ba-cached value.
+    /// # Errors
+    /// If any call to [`Self::get`] returns an error, that error is returned.
+    /// 
+    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
+    WriteToCache {
+        /// The category to write to.
+        category: Box<Self>,
+        /// The key to wrtie to.
+        key: Box<Self>,
+        /// The value to write.
+        value: Option<Box<Self>>
+    },
+    /// Extracts the substring of `source` found between the first `start` and the first subsequent `end`.
+    /// 
+    /// The same as [`StringModification::ExtractBetween`] but preserves borrowedness.
+    /// 
+    /// If `source` returns a [`Cow::Borrowed`], this will also return a [`Cow::Borrowed`].
+    /// # Errors
+    /// If any call to [`Self::get`] returns an error, that error is returned.
+    /// 
+    /// If any call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    /// 
+    /// If `start` is not found in `source`, returns the error [`StringSourceError::ExtractBetweenStartNotFound`].
+    /// 
+    /// If `end` is not found in `source` after `start`, returns the error [`StringSourceError::ExtractBetweenEndNotFound`].
+    ExtractBetween {
+        /// The [`Self`] to get a substring from.
+        source: Box<Self>,
+        /// The [`Self`] to look for before the substring.
+        start: Box<Self>,
+        /// The [`Self`] to look for after the substring.
+        end: Box<Self>
+    },
+    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
+    Common {
+        /// The name of the mapper to use.
+        name: Box<Self>,
+        /// The [`JobState::common_vars`] to pass.
+        #[serde(default, skip_serializing_if = "is_default")]
+        vars: HashMap<String, Self>
     }
+
 }
 
 impl FromStr for StringSource {
@@ -487,7 +569,19 @@ pub enum StringSourceError {
     EnvVarIsNotUtf8,
     /// Returned when the requested map is not found.
     #[error("The requested map was not found.")]
-    MapNotFound
+    MapNotFound,
+    /// Returneed when [`StringSource::Common`] is used outside of a common context.
+    #[error("Not in a common context.")]
+    NotInACommonContext,
+    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `source`.
+    #[error("The `start` of an `ExtractBetween` was not found in the string.")]
+    ExtractBetweenStartNotFound,
+    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `source`.
+    #[error("The `end` of an `ExtractBetween` was not found in the string.")]
+    ExtractBetweenEndNotFound,
+    /// Returned when the common [`StringSource`] is not found.
+    #[error("The common StringSource was not found.")]
+    CommonStringSourceNotFound,
 }
 
 
@@ -557,7 +651,8 @@ impl StringSource {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::Part(part) => part.get(job_state.url),
             Self::ExtractPart{source, part} => source.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
-            Self::Var(key) => job_state.params.vars.get(&get_string!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
+            Self::CommonVar(name) => job_state.common_vars.ok_or(StringSourceError::NotInACommonContext)?.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
+            Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::JobVar(key) => job_state.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::MapKey {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
@@ -599,6 +694,60 @@ impl StringSource {
                     job_state.cache_handler.write_to_cache(&category, &key, ret.as_deref())?;
                 }
                 ret
+            },
+            #[cfg(feature = "cache")]
+            Self::ReadFromCache {category, key} => {
+                if job_state.params.read_cache {
+                    let category = get_string!(category, job_state, StringSourceError);
+                    let key = get_string!(key, job_state, StringSourceError);
+                    if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
+                        return Ok(ret.map(Cow::Owned));
+                    }
+                }
+                None
+            },
+            #[cfg(feature = "cache")]
+            Self::WriteToCache {category, key, value} => {
+                let value = get_option_string!(value.as_deref(), job_state);
+                if job_state.params.write_cache {
+                    let category = get_string!(category, job_state, StringSourceError);
+                    let key = get_string!(key, job_state, StringSourceError);
+                    job_state.cache_handler.write_to_cache(&category, &key, value.as_deref())?;
+                }
+                value.map(Cow::Owned)
+            },
+            Self::ExtractBetween {source, start, end} => {
+                Some(match source.get(job_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+                    Cow::Borrowed(x) => Cow::Borrowed(x
+                        .split_once(get_str!(start, job_state, StringSourceError))
+                        .ok_or(StringSourceError::ExtractBetweenStartNotFound)?
+                        .1
+                        .split_once(get_str!(end, job_state, StringSourceError))
+                        .ok_or(StringSourceError::ExtractBetweenEndNotFound)?
+                        .0),
+                    Cow::Owned(x) => Cow::Owned(x
+                        .split_once(get_str!(start, job_state, StringSourceError))
+                        .ok_or(StringSourceError::ExtractBetweenStartNotFound)?
+                        .1
+                        .split_once(get_str!(end, job_state, StringSourceError))
+                        .ok_or(StringSourceError::ExtractBetweenEndNotFound)?
+                        .0
+                        .to_string())
+                })
+            },
+            Self::Common {name, vars} => {
+                let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, _>>()?;
+                let mut temp_url = job_state.url.clone();
+                job_state.commons.string_sources.get(get_str!(name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobState {
+                    url: &mut temp_url,
+                    context: job_state.context,
+                    params: job_state.params,
+                    vars: Default::default(),
+                    #[cfg(feature = "cache")]
+                    cache_handler: job_state.cache_handler,
+                    commons: job_state.commons,
+                    common_vars: Some(&common_vars)
+                })?.map(|x| Cow::Owned(x.into_owned()))
             }
         })
     }
@@ -616,20 +765,24 @@ impl StringSource {
             Self::Map {source, map, if_null} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, source)| source.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()),
             Self::Part(part) => part.is_suitable_for_release(),
             Self::ExtractPart {source, part} => source.is_suitable_for_release() && part.is_suitable_for_release(),
+            Self::CommonVar(name) => name.is_suitable_for_release(),
             Self::Var(name) => name.is_suitable_for_release(),
             Self::JobVar(name) => name.is_suitable_for_release(),
             Self::ContextVar(name) => name.is_suitable_for_release(),
             Self::MapKey {map, key} => map.is_suitable_for_release() && key.is_suitable_for_release(),
             Self::Modified {source, modification} => source.is_suitable_for_release() && modification.is_suitable_for_release(),
             Self::EnvVar(name) => name.is_suitable_for_release(),
-            #[cfg(feature = "cache")]
-            Self::Cache {category, key, source} => category.is_suitable_for_release() && key.is_suitable_for_release() && source.is_suitable_for_release(),
+            #[cfg(feature = "cache")] Self::Cache {category, key, source} => category.is_suitable_for_release() && key.is_suitable_for_release() && source.is_suitable_for_release(),
+            #[cfg(feature = "cache")] Self::ReadFromCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
+            #[cfg(feature = "cache")] Self::WriteToCache {category, key, value} => category.is_suitable_for_release() && key.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
             Self::Debug(_) => false,
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,
             Self::Error | Self::String(_) => true,
             #[cfg(feature = "advanced-requests")]
-            Self::HttpRequest(_) => true
+            Self::HttpRequest(_) => true,
+            Self::ExtractBetween {source, start, end} => source.is_suitable_for_release() && start.is_suitable_for_release() && end.is_suitable_for_release(),
+            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
         }
     }
 }

@@ -142,11 +142,10 @@ Currently there is no command line syntax for them. There really should be.
 
 The people and projects I have stolen various parts of the default config from.
 
-And by that I basically just mean the UTP set. And the UTP prefix list.
-
 - [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
 - [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)
 - [AdGuard's Tracking Parameters Filter](https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections)
+- [FastForward](https://github.com/FastForwardTeam/FastForward)
 
 ## Custom rules
 

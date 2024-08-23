@@ -37,7 +37,10 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "is_default")]
     pub tests: Vec<TestSet>,
     /// The conditions and mappers that modify the URLS.
-    pub rules: Rules
+    pub rules: Rules,
+    /// Various things that are used in multiple spots.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub commons: Commons
 }
 
 /// Serde helper function.
@@ -100,7 +103,7 @@ impl Config {
 
     /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
     pub(crate) fn is_suitable_for_release(&self) -> bool {
-        self.rules.is_suitable_for_release()
+        self.commons.is_suitable_for_release() && self.rules.is_suitable_for_release()
     }
 }
 
@@ -131,13 +134,30 @@ pub enum GetConfigError {
     #[error(transparent)]
     CantParseConfigFile(serde_json::Error),
     /// URL Cleaner was compiled without default config.
-    #[allow(dead_code)]
     #[error("URL Cleaner was compiled without default config.")]
     NoDefaultConfig,
     /// The default config compiled into URL Cleaner isn't valid JSON.
-    #[allow(dead_code)]
     #[error(transparent)]
     CantParseDefaultConfig(serde_json::Error)
+}
+
+/// Container for various things that are used in multiple spots.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Commons {
+    /// [`Mapper`]s that are used in multiple spots.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub mappers: HashMap<String, Mapper>,
+    /// [`StringSource`]s that are used in multiple spots.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub string_sources: HashMap<String, StringSource>
+}
+
+impl Commons {
+    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    pub(crate) fn is_suitable_for_release(&self) -> bool {
+        self.mappers.iter().all(|(_, v)| v.is_suitable_for_release()) &&
+            self.string_sources.iter().all(|(_, v)| v.is_suitable_for_release())
+    }
 }
 
 #[cfg(test)]

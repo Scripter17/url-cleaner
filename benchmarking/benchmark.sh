@@ -19,28 +19,37 @@ no_cachegrind=false
 no_massif=false
 no_dhat=false
 no_memcheck=false
+an_only_is_set=false
 
 for arg in "$@"; do
   shift
   case "$arg" in
-    "--no-compile") no_compile=true ;;
-    "--json") json=true ;;
-    "--no-hyperfine") no_hyperfine=true ;;
+    "--no-compile")         no_compile=true ;;
+    "--json")               json=true ;;
+    "--no-hyperfine")       no_hyperfine=true ;;
     "--print-desmos-lists") print_desmos_lists=true ;;
-    "--no-valgrind") no_valgrind=true ;;
-    "--no-callgrind") no_callgrind=true ;;
-    "--no-cachegrind") no_cachegrind=true ;;
-    "--no-massif") no_massif=true ;;
-    "--no-dhat") no_dhat=true ;;
-    "--no-memcheck") no_memcheck=true ;;
+    "--no-valgrind")        no_valgrind=true ;;
+    "--no-callgrind")       no_callgrind=true ;;
+    "--no-cachegrind")      no_cachegrind=true ;;
+    "--no-massif")          no_massif=true ;;
+    "--no-dhat")            no_dhat=true ;;
+    "--no-memcheck")        no_memcheck=true ;;
+    "--only-hyperfine")     if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true                      && no_valgrind=true                                                                                                 ; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--only-valgrind")      if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true && no_hyperfine=true                                                                                                                     ; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--only-callgrind")     if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true && no_hyperfine=true                                          && no_cachegrind=true && no_massif=true && no_dhat=true && no_memcheck=true; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--only-cachegrind")    if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true && no_hyperfine=true                     && no_callgrind=true                       && no_massif=true && no_dhat=true && no_memcheck=true; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--only-massif")        if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true && no_hyperfine=true                     && no_callgrind=true && no_cachegrind=true                   && no_dhat=true && no_memcheck=true; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--only-dhat")          if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true && no_hyperfine=true                     && no_callgrind=true && no_cachegrind=true && no_massif=true                 && no_memcheck=true; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--only-memcheck")      if [ "$an_only_is_set" == "false" ]; then an_only_is_set=true && no_hyperfine=true                     && no_callgrind=true && no_cachegrind=true && no_massif=true && no_dhat=true                    ; else echo "Error: Multiple --only- flags were set." && exit 2; fi ;;
+    "--") break ;;
     *) echo Unknwon option \"$arg\" && exit 1 ;;
   esac
 done
 
 if [ "$json" == "true" ]; then
-  COMMAND="../target/release/url-cleaner --config ../default-config.json --json"
+  COMMAND="../target/release/url-cleaner --config ../default-config.json --json $@"
 else
-  COMMAND="../target/release/url-cleaner --config ../default-config.json"
+  COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
 fi
 
 if [ "$no_compile" == "false" ]; then cargo build -r --config profile.release.strip=false --config profile.release.debug=2; fi

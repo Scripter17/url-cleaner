@@ -79,13 +79,13 @@ impl<'a> Jobs {
     /// If a call to [`Vec::push`] panics, that panic is... returned? Thrown?
     /// 
     /// If you feed in infinite URLs you get a panic.
-    #[allow(dead_code)]
-    pub fn r#do(mut self) -> Result<Vec<Url>, DoJobsError> {
+    pub fn r#do(mut self) -> Vec<Result<Result<Url, DoJobError>, GetJobError>> {
+        // For reasons I don't fully understand, [`std::iter::from_fn`] doesn't work here.
         let mut ret = Vec::new();
-        while let Some(job) = self.next_job() {
-            ret.push(job?.r#do()?);
+        while let Some(maybe_job) = self.next_job() {
+            ret.push(maybe_job.map(|job| job.r#do()));
         }
-        Ok(ret)
+        ret
     }
 }
 

@@ -59,7 +59,7 @@ pub enum Rule {
     /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
-    StringSourceMap {
+    StringMap {
         /// The [`StringSource`] to get the string from.
         source: Option<StringSource>,
         /// The map determining which [`Mapper`] to apply.
@@ -72,7 +72,7 @@ pub enum Rule {
     /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rule::apply`] returns an error, that error is returned.
-    StringSourceRuleMap {
+    StringRuleMap {
         /// The [`StringSource`] to get the string from.
         source: Option<StringSource>,
         /// The map determining which [`Mapper`] to apply.
@@ -85,7 +85,7 @@ pub enum Rule {
     /// If the call to [`HashMap::get`] returns [`None`], returns the error [`RuleError::ValueNotInMap`]. This error is ignored by [`Rules::apply`].
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
-    StringSourceRulesMap {
+    StringRulesMap {
         /// The [`StringSource`] to get the string from.
         source: Option<StringSource>,
         /// The map determining which [`Mapper`] to apply.
@@ -108,6 +108,7 @@ pub enum Rule {
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -118,7 +119,9 @@ pub enum Rule {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// Rule::Repeat {
     ///     rules: Rules(vec![
@@ -205,6 +208,7 @@ pub enum Rule {
     /// // [`RuleError::FailedCondition`] is returned when the condition does not pass.
     /// // [`Rules`] just ignores them because it's a higher level API.
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -215,7 +219,9 @@ pub enum Rule {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Rule::Normal {
@@ -281,9 +287,9 @@ impl Rule {
             Self::PartMap      {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
             Self::PartRuleMap  {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
             Self::PartRulesMap {part, map} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::StringSourceMap      {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::StringSourceRuleMap  {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::StringSourceRulesMap {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringMap      {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringRuleMap  {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringRulesMap {source, map} => Ok(map.get(&get_option_string!(source, job_state)).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
             Self::Repeat{rules, stop_loop_condition, limit} => {
 
                 // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rules::apply`]!!!
@@ -333,9 +339,9 @@ impl Rule {
             Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
             Self::PartRuleMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
             Self::PartRulesMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
-            Self::StringSourceMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
-            Self::StringSourceRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
-            Self::StringSourceRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
+            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
+            Self::StringRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
+            Self::StringRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
             Self::Repeat {rules, ..} => rules.is_suitable_for_release(),
             Self::CommonCondition {condition, rules} => condition.is_suitable_for_release() && rules.is_suitable_for_release(),
             Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(),
@@ -384,7 +390,9 @@ impl Rules {
             vars: job_state.vars.clone(),
             context: job_state.context,
             #[cfg(feature = "cache")]
-            cache_handler: job_state.cache_handler
+            cache_handler: job_state.cache_handler,
+            commons: job_state.commons,
+            common_vars: None
         };
 
         // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rule::Repeat`]!!!

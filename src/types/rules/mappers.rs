@@ -59,6 +59,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -69,7 +70,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut job_state).unwrap_err();
@@ -85,6 +88,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -95,7 +99,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut job_state).unwrap_err();
@@ -109,6 +115,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -119,19 +126,46 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.domain(), Some("6.com"));
     /// ```
     AllIgnoreError(Vec<Self>),
+    /// Indexes `map` with the string returned by `part` and applies that mapper.
+    /// # Errors
+    /// If no mapper is found, returns the error [`MapperError::MapperNotFound`].
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    PartMap {
+        /// The part to index `map` with.
+        part: UrlPart,
+        /// The map specifying which values should apply which mapper.
+        map: HashMap<Option<String>, Self>
+    },
+    /// Indexes `map` with the string returned by `source` and applies that mapper.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If no mapper is found, returns the error [`MapperError::MapperNotFound`].
+    /// 
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    StringMap {
+        /// The string to index `map` with.
+        source: Option<StringSource>,
+        /// The map specifying which strings should apply which mapper.
+        map: HashMap<Option<String>, Self>
+    },
 
     // Error handling.
 
     /// Ignores any error the contained [`Self`] may return.
     IgnoreError(Box<Self>),
     /// If `try` returns an error, `else` is applied.
+    /// 
     /// If `try` does not return an error, `else` is not applied.
     /// # Errors
     /// If `else` returns an error, that error is returned.
@@ -140,6 +174,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -150,7 +185,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut job_state).unwrap ();
@@ -172,6 +209,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -182,7 +220,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut job_state).unwrap();
@@ -209,6 +249,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url = Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -219,7 +260,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
@@ -238,6 +281,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -248,7 +292,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
@@ -327,6 +373,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -337,7 +384,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::MovePart{from: UrlPart::Subdomain, to: UrlPart::BeforePathSegment(0)}.apply(&mut job_state).unwrap();
@@ -393,6 +442,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -403,7 +453,9 @@ pub enum Mapper {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
@@ -500,6 +552,41 @@ pub enum Mapper {
         /// The [`Self`] to cache.
         mapper: Box<Self>
     },
+    /// Replaced the current URL with one read from the cache.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    /// 
+    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    /// 
+    /// IF the call to [`CacheHandler::read_from_cache`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].
+    ///
+    /// If the call to [`Url::parse`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
+    ReadUrlFromCache {
+        /// The category ro read from.
+        category: StringSource,
+        /// The key to rad from.
+        /// 
+        /// Defaults to `StringSource::Part(UrlPart::Whole)`.
+        #[serde(default = "string_source_part_whole")]
+        key: StringSource
+    },
+    /// Writes the current URL to the cache.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    /// 
+    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
+    #[cfg(feature = "cache")]
+    WriteUrlToCache {
+        /// The category to write to.
+        category: StringSource,
+        /// The key to write to.
+        key: StringSource
+    },
     /// Retry `mapper` after `delay` at most `limit` times.
     /// 
     /// Note that if the call to [`Mapper::apply`] changes the job state (see [`Mapper::AllNoRevert`]), the job state is not reverted.
@@ -513,11 +600,21 @@ pub enum Mapper {
         /// Defaults to `10`.
         #[serde(default = "get_10_u8")]
         limit: u8
+    },
+    /// Uses a mapper from the [`JobState::commons`]'s [`Commons::mappers`].
+    Common {
+        /// The name of the mapper to use.
+        name: StringSource,
+        /// The [`JobState::common_vars`] to pass.
+        #[serde(default, skip_serializing_if = "is_default")]
+        vars: HashMap<String, StringSource>
     }
 }
 
 /// Serde helper function.
 const fn get_10_u8() -> u8 {10}
+/// Serde helper function.
+const fn string_source_part_whole() -> StringSource {StringSource::Part(UrlPart::Whole)}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Debug, Error)]
@@ -610,7 +707,13 @@ pub enum MapperError {
     /// Returned when the cached [`Url`] is [`None`].
     #[cfg(feature = "cache")]
     #[error("The cached URL was None.")]
-    CachedUrlIsNone
+    CachedUrlIsNone,
+    /// Returned when the common [`Mapper`] is not found.
+    #[error("The common Mapper was not found.")]
+    CommonMapperNotFound,
+    /// Returned when the mapper is not found.
+    #[error("The mapper was not found.")]
+    MapperNotFound
 }
 
 impl From<RuleError> for MapperError {
@@ -653,7 +756,9 @@ impl Mapper {
                     vars: job_state.vars.clone(),
                     context: job_state.context,
                     #[cfg(feature = "cache")]
-                    cache_handler: job_state.cache_handler
+                    cache_handler: job_state.cache_handler,
+                    commons: job_state.commons,
+                    common_vars: job_state.common_vars,
                 };
                 for mapper in mappers {
                     mapper.apply(&mut temp_job_state)?;
@@ -671,6 +776,8 @@ impl Mapper {
                     let _=mapper.apply(job_state);
                 }
             },
+            Self::PartMap {part, map} => map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(MapperError::MapperNotFound)?.apply(job_state)?,
+            Self::StringMap {source, map} => map.get(&get_option_string!(source, job_state)).ok_or(MapperError::MapperNotFound)?.apply(job_state)?,
 
             // Error handling.
 
@@ -752,9 +859,11 @@ impl Mapper {
             #[cfg(feature = "http")]
             Self::ExpandShortLink {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
-                if let Some(new_url) = job_state.cache_handler.read_from_cache("redirect", job_state.url.as_str())? {
-                    *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
-                    return Ok(());
+                if job_state.params.read_cache {
+                    if let Some(new_url) = job_state.cache_handler.read_from_cache("redirect", job_state.url.as_str())? {
+                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
+                        return Ok(());
+                    }
                 }
                 let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
@@ -763,7 +872,9 @@ impl Mapper {
                     response.url().clone()
                 };
                 #[cfg(feature = "cache-redirects")]
-                job_state.cache_handler.write_to_cache("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
+                if job_state.params.write_cache {
+                    job_state.cache_handler.write_to_cache("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
+                }
                 *job_state.url=new_url;
             },
 
@@ -804,6 +915,24 @@ impl Mapper {
                     }
                 }
             },
+            #[cfg(feature = "cache")]
+            Self::ReadUrlFromCache {category, key} => {
+                if job_state.params.read_cache {
+                    let category = get_string!(category, job_state, MapperError);
+                    let key = get_string!(key, job_state, MapperError);
+                    if let Some(new_url) = job_state.cache_handler.read_from_cache(&category, &key)? {
+                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
+                    }
+                }
+            },
+            #[cfg(feature = "cache")]
+            Self::WriteUrlToCache {category, key} => {
+                if job_state.params.write_cache {
+                    let category = get_string!(category, job_state, MapperError);
+                    let key = get_string!(key, job_state, MapperError);
+                    job_state.cache_handler.write_to_cache(&category, &key, Some(job_state.url.as_str()))?;
+                }
+            },
             Self::Retry {mapper, delay, limit} => {
                 for i in 0..*limit {
                     match mapper.apply(job_state) {
@@ -813,6 +942,19 @@ impl Mapper {
                         Err(_) => {std::thread::sleep(*delay);}
                     }
                 }
+            },
+            Self::Common {name, vars} => {
+                let common_vars = vars.iter().map(|(k, v)| Ok::<_, MapperError>((k.clone(), get_string!(v, job_state, MapperError)))).collect::<Result<HashMap<_, _>, _>>()?;
+                job_state.commons.mappers.get(get_str!(name, job_state, MapperError)).ok_or(MapperError::CommonMapperNotFound)?.apply(&mut JobState {
+                    url: job_state.url,
+                    context: job_state.context,
+                    params: job_state.params,
+                    vars: Default::default(),
+                    #[cfg(feature = "cache")]
+                    cache_handler: job_state.cache_handler,
+                    commons: job_state.commons,
+                    common_vars: Some(&common_vars)
+                })?
             }
         };
         Ok(())
@@ -826,6 +968,8 @@ impl Mapper {
             Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
+            Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
+            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
             Self::IgnoreError(mapper) => mapper.is_suitable_for_release(),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
             Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
@@ -838,8 +982,9 @@ impl Mapper {
             Self::ModifyJobVar {name, modification} => name.is_suitable_for_release() && modification.is_suitable_for_release(),
             Self::Rule(rule) => rule.is_suitable_for_release(),
             Self::Rules(rules) => rules.is_suitable_for_release(),
-            #[cfg(feature = "cache")]
-            Self::CacheUrl {category, mapper} => category.is_suitable_for_release() && mapper.is_suitable_for_release(),
+            #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release() && mapper.is_suitable_for_release(),
+            #[cfg(feature = "cache")] Self::ReadUrlFromCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
+            #[cfg(feature = "cache")] Self::WriteUrlToCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
             Self::Retry {mapper, ..} => mapper.is_suitable_for_release(),
             Self::Debug(_) | Self::Println(_) | Self::Eprintln(_) | Self::Print(_) | Self::Eprint(_)=> false,
             Self::None  | Self::Error | Self::RemoveQuery |
@@ -848,7 +993,8 @@ impl Mapper {
                 Self::GetUrlFromQueryParam(_) | Self::GetPathFromQueryParam(_) |
                 Self::SetHost(_) | Self::MovePart {..} => true,
             #[cfg(feature = "http")]
-            Self::ExpandShortLink {..} => true
+            Self::ExpandShortLink {..} => true,
+            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
         }
     }
 }

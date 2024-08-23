@@ -2,8 +2,6 @@
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
-#[cfg(feature = "debug")]
-use std::sync::Mutex;
 
 use clap::Parser;
 use url::Url;
@@ -90,7 +88,7 @@ struct Args {
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)] print_config: bool,
     /// Run the config's tests.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
+    /// When this or any other `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)] test_config : bool,
     /// Overrides the config's [`Config::cache_path`].
     #[arg(             long                      )] cache_path: Option<PathBuf>

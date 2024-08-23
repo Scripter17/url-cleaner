@@ -31,7 +31,9 @@ impl Job<'_> {
             vars: Default::default(),
             context: &self.context,
             #[cfg(feature = "cache")]
-            cache_handler: self.cache_handler
+            cache_handler: self.cache_handler,
+            commons: &self.config.commons,
+            common_vars: None
         })?;
         Ok(self.url)
     }

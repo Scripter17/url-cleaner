@@ -25,7 +25,7 @@
 				"on.forbes.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it",
 				"pixiv.me", "play.st", "politi.co", "py.pl", "qr1.be", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to",
 				"s.goodsmile.link", "shorturl.at", "spoti.fi", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "tr.ee", "trib.al",
-				"w.wiki", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"w.wiki", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "go.microsoft.com", "2kgam.es", "to.pbs.org"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -56,7 +56,8 @@
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
 			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": ["uscourts.gov"],
 			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
-			"bypass.vip-hosts": ["linkvertise.com", "www.linkvertise.com"]
+			"bypass.vip-hosts": ["linkvertise.com", "www.linkvertise.com"],
+			"email-link-format-1-hosts": ["action.openmedia.org"]
 		},
 		"lists": {
 			"utp-prefixes": [
@@ -71,6 +72,32 @@
 			},
 			"referer": false,
 			"redirect_policy": "None"
+		}
+	},
+	"commons": {
+		"mappers": {
+			"utps-no-if": {
+				"RemoveQueryParamsMatching": {"Any": [
+					{"InSet": "utps"},
+					{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+				]}
+			},
+			"utps": {"IfCondition": {
+				"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+				"mapper": {"Common": {"name": "utps-no-if"}}
+			}},
+			"extract-from-page": {"SetPart": {
+				"part": "Whole",
+				"value": {"Cache": {
+					"category": "redirect",
+					"key": {"Part": "Whole"},
+					"source": {"ExtractBetween": {
+						"source": {"HttpRequest": {}},
+						"start": {"CommonVar": "start"},
+						"end": {"CommonVar": "end"}
+					}}
+				}}
+			}}
 		}
 	},
 	"tests": [
@@ -142,7 +169,9 @@
 			"params_diff": {"read_cache": false},
 			"expectations": [
 				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"}
+				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"},
+				{"before": "http://1link.club/100767", "after": "https://google.com/"},
+				{"before": "https://gprivate.com/6bi5b", "after": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"}
 			]
 		},
 		{
@@ -167,7 +196,7 @@
 				    "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com",
 				    "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
 				    "rd.goodreads.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult",
-				    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
+				    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "action.openmedia.org", "1link.club"
 				  ]},
 				  {"InSet": "lmgtfy-hosts"},
 				  {"LengthIs": 4},
@@ -192,66 +221,17 @@
 
 
 						{
-							"condition": {"MaybeWWWDomain": "gf.me"},
-							"mapper": {"All": [
-								{"SetHost": "gofundme.com"},
-								{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "url_shortener"}}
-							]}
-						},
-
-
-						{
 							"condition": {"All": [
 								{"MaybeWWWDomain": "t.co"},
 								{"Not": {"StringIs": {"source": {"ContextVar": "alt_text"}, "value": null}}}
 							]},
 							"mapper": {"SetPart": {"part": "Whole", "value": {"ContextVar": "alt_text"}}}
 						},
-						{
-							"condition": {"All": [
-								{"Not": {"FlagIsSet": "no-http"}},
-								{"Any": [
-		              {"All": [
-		              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
-		              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
-		              ]},
-									{"StringMatches": {
-										"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
-										"matcher": {"InSet": "shortlink-hosts"}
-									}},
-									{"StringSourceMap": {
-										"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
-										"map": {
-											"pawoo.net"        : {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
-											"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
-											"allmylinks.com"   : {"PathIs": "/link/out"},
-											"gofundme.com"     : {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
-											"substack.com"     : {"All": [
-												{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
-												{"Not": {"PartIs": {"part": {"PathSegment": 1}, "value": "2"}}}
-											]}
-										}
-									}}
-								]}
-							]},
-							"mapper": {"All": [
-								{"IfCondition": {
-									"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-									"mapper": {
-										"RemoveQueryParamsMatching": {"Any": [
-											{"InSet": "utps"},
-											{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-										]
-									}}
-								}},
-								{"ExpandShortLink": {}}
-							]}
-						},
 
 
 
 						{
-							"condition": {"StringSourceMap": {
+							"condition": {"StringMap": {
 								"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
 								"map": {
 									"pixiv.net"     : {"PathIs": "/jump.php"},
@@ -277,7 +257,7 @@
 
 
 						{
-							"StringSourceMap": {
+							"StringMap": {
 								"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
 								"map": {
 									"t.umblr.com": {"GetUrlFromQueryParam": "z"},
@@ -288,30 +268,14 @@
 									"sketchfab.com": {"IfCondition": {
 										"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "s"}},
 										"mapper": {"All": [
-											{"IfCondition": {
-												"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-												"mapper": {
-													"RemoveQueryParamsMatching": {"Any": [
-														{"InSet": "utps"},
-														{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-													]
-												}}
-											}},
+											{"Common": {"name": "utps"}},
 											{"ExpandShortLink": {}}
 										]}
 									}},
 									"smarturl.it": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-http"}},
 										"mapper": {"All": [
-											{"IfCondition": {
-												"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-												"mapper": {
-													"RemoveQueryParamsMatching": {"Any": [
-														{"InSet": "utps"},
-														{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-													]
-												}}
-											}},
+											{"Common": {"name": "utps"}},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -319,9 +283,9 @@
 													"value": {"Modified": {
 														"source": {"HttpRequest": {}},
 														"modification": {"All": [
-															{"RegexCaptures": {
-																"regex": "\"originalUrl\":\"(.+?)\"",
-																"replace": "$1"
+															{"ExtractBetween": {
+																"start": "\"originalUrl\":\"",
+																"end": "\""
 															}},
 															{"Replace": {"find": "\\/", "replace": "/"}}
 														]}
@@ -341,27 +305,17 @@
 									"bfy.tw": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-http"}},
 										"mapper": {"All": [
-											{"IfCondition": {
-												"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-												"mapper": {
-													"RemoveQueryParamsMatching": {"Any": [
-														{"InSet": "utps"},
-														{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-													]}
-												}
-											}},
+											{"Common": {"name": "utps"}},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
 													"part": "Whole",
-													"value": {"Modified": {
+													"value": {"ExtractBetween": {
 														"source": {"HttpRequest": {
 															"http_client_config_diff": {"danger_accept_invalid_certs": true}
 														}},
-														"modification": {"RegexCaptures": {
-															"regex": "href=\"(.+?)\"",
-															"replace": "$1"
-														}}
+														"start": "href=\"",
+														"end": "\""
 													}}
 												}}
 											}}
@@ -370,27 +324,17 @@
 									"gprivate.com": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-http"}},
 										"mapper": {"All": [
-											{"IfCondition": {
-												"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-												"mapper": {
-													"RemoveQueryParamsMatching": {"Any": [
-														{"InSet": "utps"},
-														{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-													]}
-												}
-											}},
+											{"Common": {"name": "utps"}},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
 													"part": "Whole",
-													"value": {"Modified": {
+													"value": {"ExtractBetween": {
 														"source": {"HttpRequest": {
 															"http_client_config_diff": {"danger_accept_invalid_certs": true}
 														}},
-														"modification": {"RegexCaptures": {
-															"regex": "window\\.location\\s=\\s\"(.+?)\"",
-															"replace": "$1"
-														}}
+														"start": "window.location = \"",
+														"end": "\""
 													}}
 												}}
 											}}
@@ -449,15 +393,7 @@
 											{"PartMatches": {"part": "Host", "matcher": {"InSet": "bypass.vip-hosts"}}}
 										]},
 										"mapper": {"All": [
-											{"IfCondition": {
-												"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-												"mapper": {
-													"RemoveQueryParamsMatching": {"Any": [
-														{"InSet": "utps"},
-														{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-													]}
-												}
-											}},
+											{"Common": {"name": "utps"}},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -545,7 +481,25 @@
 												]}
 											}}
 										}}
-									}}
+									}},
+									"gf.me": {"All": [
+										{"SetHost": "gofundme.com"},
+										{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "url_shortener"}}
+									]},
+									"action.openmedia.org": {"IfCondition": {
+										"condition": {"PartContains": {"part": "Path", "value": "/page/email/click", "where": "Start"}},
+										"mapper": "RemoveQuery"
+									}},
+									"1link.club": {"All": [
+										{"Common": {"name": "utps"}},
+										{"Common": {
+											"name": "extract-from-page",
+											"vars": {
+												"start": "<a id=\"download\" href=\"",
+												"end": "\""
+											}
+										}}
+									]}
 								}
 							}
 						},
@@ -567,27 +521,13 @@
 								{"PartIs": {"part": {"PathSegment": 0}, "value": "preview"}}
 							]},
 							"mapper": {"All": [
-								{"IfCondition": {
-									"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-									"mapper": {
-										"RemoveQueryParamsMatching": {"Any": [
-											{"InSet": "utps"},
-											{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-										]
-									}}
-								}},
-								{"CacheUrl": {
-									"category": "redirect",
-									"mapper": {"SetPart": {
-										"part": "Whole",
-										"value": {"Modified": {
-											"source": {"HttpRequest": {}},
-											"modification": {"RegexCaptures": {
-												"regex": "let\\surl\\s=\\s\\\"(.+)\\\"",
-												"replace": "$1"
-											}}
-										}}
-									}}
+								{"Common": {"name": "utps"}},
+								{"Common": {
+									"name": "extract-from-page",
+									"vars": {
+										"start": "let url = \"",
+										"end": "\""
+									}
 								}}
 							]}
 						},
@@ -655,6 +595,61 @@
 								{"PathIs": "/url"}
 							]},
 							"mapper": {"GetUrlFromQueryParam": "q"}
+						},
+
+
+
+						{
+							"condition": {"All": [
+								{"Not": {"FlagIsSet": "no-http"}},
+								{"Any": [
+		              {"All": [
+		              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
+		              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
+		              ]},
+									{"StringMatches": {
+										"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+										"matcher": {"InSet": "shortlink-hosts"}
+									}},
+									{"StringMap": {
+										"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+										"map": {
+											"pawoo.net"        : {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
+											"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
+											"allmylinks.com"   : {"PathIs": "/link/out"},
+											"gofundme.com"     : {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
+											"substack.com"     : {"All": [
+												{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
+												{"Not": {"PartIs": {"part": {"PathSegment": 1}, "value": "2"}}}
+											]}
+										}
+									}},
+									{"All": [
+										{"StringMatches": {
+											"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+											"matcher": {"InSet": "email-link-format-1-hosts"}
+										}},
+										{"PartContains": {"part": "Path", "value": "/page/email/click", "where": "Start"}}
+									]}
+								]}
+							]},
+							"mapper": {"All": [
+								{"Common": {"name": "utps"}},
+								{"ExpandShortLink": {}}
+							]}
+						},
+						{
+							"condition": {"All": [
+								{"StringMatches": {
+									"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
+									"matcher": {"InSet": "email-link-format-1-hosts"}
+								}},
+								{"PartContains": {"part": "Path", "value": "/page/email/redirect", "where": "Start"}}
+							]},
+							"mapper": {"All": [
+								{"CopyPart": {"from": {"QueryParam": "campaignpageurl"}, "to": "Whole"}},
+								{"RemoveQueryParams": ["ea.url.id"]}
+							]}
 						}
 					]
 				}}
@@ -1013,7 +1008,7 @@
 			}
 		},
 		{
-			"StringSourceMap": {
+			"StringMap": {
 				"source": {"Modified": {"source": {"Part": "Host"}, "modification": {"StripMaybePrefix": "www."}}},
 					"map": {
 					"at.tumblr.com": {"All": [
@@ -1233,15 +1228,7 @@
 							{"PartIs": {"part": "Scheme", "value": "https"}}
 						]},
 						"mapper": {"All": [
-							{"IfCondition": {
-								"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-								"mapper": {
-									"RemoveQueryParamsMatching": {"Any": [
-										{"InSet": "utps"},
-										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-									]
-								}}
-							}},
+							{"Common": {"name": "utps"}},
 							{"IgnoreError": {
 								"SetPart": {
 									"part": "Origin",
@@ -1283,12 +1270,7 @@
 		{
 			"comment": "The query paramaters to always remove.",
 			"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-			"mapper": {
-				"RemoveQueryParamsMatching": {"Any": [
-					{"InSet": "utps"},
-					{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-				]
-			}}
+			"mapper": {"Common": {"name": "utps-no-if"}}
 		}
 	]
 }

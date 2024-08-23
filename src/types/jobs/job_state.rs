@@ -18,5 +18,9 @@ pub struct JobState<'a> {
     pub vars: HashMap<String, String>,
     /// The cache handler.
     #[cfg(feature = "cache")]
-    pub cache_handler: &'a CacheHandler
+    pub cache_handler: &'a CacheHandler,
+    /// Various things that are used multiple times.
+    pub commons: &'a Commons,
+    /// Vars used in common contexts.
+    pub common_vars: Option<&'a HashMap<String, String>>
 }

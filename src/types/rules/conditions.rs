@@ -26,6 +26,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -36,7 +37,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// Condition::Error.satisfied_by(&job_state).unwrap_err();
     /// ```
@@ -75,6 +78,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -85,7 +89,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), false);
     /// assert_eq!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), true );
@@ -102,6 +108,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -112,7 +119,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state).unwrap(), false);
@@ -135,6 +144,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -145,7 +155,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state).unwrap(), true );
@@ -173,7 +185,7 @@ pub enum Condition {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
-    StringSourceMap {
+    StringMap {
         /// The string to index the map with.
         source: Option<StringSource>,
         /// The map specifying which values should run which conditions.
@@ -188,6 +200,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -198,7 +211,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), false);
@@ -211,6 +226,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -221,7 +237,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), false);
@@ -237,6 +255,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -247,7 +266,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&job_state).unwrap(), true );
@@ -280,6 +301,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -290,7 +312,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -315,6 +339,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -325,7 +350,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -346,6 +373,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -356,7 +384,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -381,6 +411,7 @@ pub enum Condition {
     /// # use url::Url;
     /// # use std::collections::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -391,7 +422,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), false);
@@ -412,6 +445,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -422,7 +456,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -471,6 +507,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -481,7 +518,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true );
@@ -508,6 +547,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -518,7 +558,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -555,6 +597,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -565,7 +608,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
@@ -584,6 +629,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -594,7 +640,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com").unwrap();
@@ -620,6 +668,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -630,7 +679,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&job_state).unwrap(), false);
     /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&job_state).unwrap(), true );
@@ -655,6 +706,7 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -665,7 +717,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&job_state).unwrap(), false);
@@ -699,6 +753,7 @@ pub enum Condition {
     /// # use url::Url;
     /// # use std::collections::HashMap;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { vars: vec![("a".to_string(), "2".to_string())].into_iter().collect(), ..Default::default() };
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -709,7 +764,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// print!("{job_state:?}");
     /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&job_state).unwrap(), true );
@@ -732,6 +789,7 @@ pub enum Condition {
     /// # use std::collections::HashSet;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { flags: HashSet::from_iter(vec!["abc".to_string()]), ..Default::default() };
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -742,7 +800,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::FlagIsSet("abc".into()).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::FlagIsSet("xyz".into()).satisfied_by(&job_state).unwrap(), false);
@@ -796,6 +856,7 @@ pub enum Condition {
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -806,7 +867,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&job_state).unwrap(), true );
@@ -824,6 +887,7 @@ pub enum Condition {
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
@@ -834,7 +898,9 @@ pub enum Condition {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&job_state).is_ok_and(|x| x==true ));
     /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&job_state).is_ok_and(|x| x==false));
@@ -934,7 +1000,7 @@ impl Condition {
                 Some(condition) => condition.satisfied_by(job_state)?,
                 None => false
             },
-            Self::StringSourceMap{source, map} => match map.get(&get_option_string!(source, job_state)) {
+            Self::StringMap{source, map} => match map.get(&get_option_string!(source, job_state)) {
                 Some(condition) => condition.satisfied_by(job_state)?,
                 None => false
             },
@@ -1024,7 +1090,7 @@ impl Condition {
             Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
             Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
             Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
-            Self::StringSourceMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
+            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
             Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(),
             Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),

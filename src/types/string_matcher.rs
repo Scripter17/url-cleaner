@@ -93,6 +93,7 @@ pub enum StringMatcher {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -102,7 +103,9 @@ pub enum StringMatcher {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state).unwrap(), true);
@@ -129,6 +132,7 @@ pub enum StringMatcher {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -138,7 +142,9 @@ pub enum StringMatcher {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state).unwrap(), true);
@@ -153,6 +159,7 @@ pub enum StringMatcher {
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -162,7 +169,9 @@ pub enum StringMatcher {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state).unwrap(), true);
@@ -242,6 +251,7 @@ pub enum StringMatcher {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -251,7 +261,9 @@ pub enum StringMatcher {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let matcher = StringMatcher::SegmentsStartWith {
@@ -279,6 +291,7 @@ pub enum StringMatcher {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -288,7 +301,9 @@ pub enum StringMatcher {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let matcher = StringMatcher::SegmentsEndWith {

@@ -75,6 +75,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -84,7 +85,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -101,6 +104,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -110,7 +114,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -127,6 +133,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -136,7 +143,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -153,6 +162,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -162,7 +172,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcabc".to_string();
@@ -184,6 +196,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -193,7 +206,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -223,6 +238,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -232,7 +248,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "ABCdef".to_string();
@@ -247,6 +265,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -256,7 +275,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcDEF".to_string();
@@ -273,6 +294,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -282,7 +304,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -301,6 +325,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -310,7 +335,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -327,6 +354,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -336,7 +364,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -353,6 +383,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -362,7 +393,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -379,6 +412,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -388,7 +422,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "aaaaa".to_string();
@@ -414,6 +450,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -423,7 +460,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abc".to_string();
@@ -449,6 +488,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -458,7 +498,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -477,6 +519,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -486,7 +529,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abcdefghi".into();
@@ -534,6 +579,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -543,7 +589,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "a.b.c.d.e.f".to_string();
@@ -594,6 +642,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -603,7 +652,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "a.b.c".to_string();
@@ -639,6 +690,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -648,7 +700,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "a.b.c".to_string();
@@ -690,6 +744,7 @@ pub enum StringModification {
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -699,7 +754,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "...a2..a3....a4".to_string();
@@ -769,6 +826,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -778,7 +836,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "a/b/c".to_string();
@@ -795,6 +855,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -804,7 +865,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "a%2fb%2Fc".to_string();
@@ -835,6 +898,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -844,7 +908,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abc xyz".to_string();
@@ -873,6 +939,7 @@ pub enum StringModification {
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let context = Default::default();
+    /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
     /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
@@ -882,7 +949,9 @@ pub enum StringModification {
     ///     vars: Default::default(),
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
     /// };
     /// 
     /// let mut x = "abc def xyz".to_string();
@@ -908,7 +977,24 @@ pub enum StringModification {
     /// If the provided string is in the specified map, return the value of its corresponding [`StringSource`].
     /// # Errors
     /// If the provided string is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
-    Map(HashMap<String, StringSource>)
+    Map(HashMap<String, StringSource>),
+    /// Extracts the substring of `source` found between the first `start` and the first subsequent `end`.
+    /// 
+    /// The same as [`StringSource::ExtractBetween`] but doesn't preserve borrowedness.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    /// 
+    /// If `start` is not found in `source`, returns the error [`StringModificationError::ExtractBetweenStartNotFound`].
+    /// 
+    /// If `end` is not found in `source` after `start`, returns the error [`StringModificationError::ExtractBetweenEndNotFound`].
+    ExtractBetween {
+        /// The [`StringSource`] to look for before the substring.
+        start: StringSource,
+        /// The [`StringSource`] to look for after the substring.
+        end: StringSource
+    }
 }
 
 string_or_struct_magic!(StringModification);
@@ -1011,7 +1097,13 @@ pub enum StringModificationError {
     /// Returned when a [`MakeBase64EngineError`] is encountered.
     #[error(transparent)]
     #[cfg(feature = "base64")]
-    MakeBase64EngineError(#[from] MakeBase64EngineError)
+    MakeBase64EngineError(#[from] MakeBase64EngineError),
+    /// Returned when the `start` of a [`StringModification::ExtractBetween`] is not found in the provided string.
+    #[error("The `start` of an `ExtractBetween` was not found in the provided string.")]
+    ExtractBetweenStartNotFound,
+    /// Returned when the `start` of a [`StringModification::ExtractBetween`] is not found in the provided string.
+    #[error("The `end` of an `ExtractBetween` was not found in the provided string.")]
+    ExtractBetweenEndNotFound
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -1210,7 +1302,17 @@ impl StringModification {
                 }
                 *to = segments.join(split);
             },
-            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError)
+            Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError),
+            Self::ExtractBetween {start, end} => {
+                *to = to
+                    .split_once(get_str!(start, job_state, StringModificationError))
+                    .ok_or(StringModificationError::ExtractBetweenStartNotFound)?
+                    .1
+                    .split_once(get_str!(end, job_state, StringModificationError))
+                    .ok_or(StringModificationError::ExtractBetweenEndNotFound)?
+                    .0
+                    .to_string()
+            }
         };
         Ok(())
     }
@@ -1258,7 +1360,8 @@ impl StringModification {
             #[cfg(feature = "regex")]
             Self::RegexFind(_) => true,
             #[cfg(feature = "base64")]
-            Self::Base64Encode(_) | Self::Base64Decode(_) => true
+            Self::Base64Encode(_) | Self::Base64Decode(_) => true,
+            Self::ExtractBetween {start, end} => start.is_suitable_for_release() && end.is_suitable_for_release()
         }
     }
 }
