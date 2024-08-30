@@ -11,11 +11,11 @@ license = "AGPL-3.0-or-later"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.5.13", features = ["derive", "unstable-v5"] }
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.122"
+clap = { version = "4.5.16", features = ["derive", "unstable-v5"] }
+serde = { version = "1.0.209", features = ["derive"] }
+serde_json = "1.0.127"
 url = { version = "2.5.2", features = ["serde"] }
-reqwest = { version = "0.12.5", features = ["blocking", "socks"], optional = true }
+reqwest = { version = "0.12.7", features = ["blocking", "socks"], optional = true }
 const-str = { version = "0.5.7", optional = true }
 thiserror = "1.0.63"
 regex = { version = "1.10.6", optional = true }
@@ -24,12 +24,12 @@ psl = "2.1.55"
 form_urlencoded = "1.2.1"
 regex-syntax = { version = "0.8.4", optional = true }
 percent-encoding = "2.3.1"
-which = { version = "6.0.2", optional = true }
+which = { version = "6.0.3", optional = true }
 base64 = { version = "0.22.1", optional = true }
-diesel = { version = "2.2.2", features = ["sqlite", "returning_clauses_for_sqlite_3_35"], optional = true }
+diesel = { version = "2.2.3", features = ["sqlite", "returning_clauses_for_sqlite_3_35"], optional = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-wasm-bindgen = "0.2.92"
+wasm-bindgen = "0.2.93"
 serde-wasm-bindgen = "0.6.5"
 
 [lib]

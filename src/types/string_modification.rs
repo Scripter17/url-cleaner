@@ -994,7 +994,74 @@ pub enum StringModification {
         start: StringSource,
         /// The [`StringSource`] to look for after the substring.
         end: StringSource
+    },
+    /// Takes every [`char`] and maps it according to the specified map.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let context = Default::default();
+    /// let commons = Default::default();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     vars: Default::default(),
+    ///     context: &context,
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_vars: None
+    /// };
+    /// 
+    /// let mut x = "abc".to_string();
+    /// StringModification::MapChars {map: [('a', Some('A')), ('b', None)].into_iter().collect(), not_found_behavior: CharNotFoundBehavior::Nothing}.apply(&mut x, &job_state).unwrap();
+    /// assert_eq!(x, "Ac");
+    /// 
+    /// let mut x = "abc".to_string();
+    /// StringModification::MapChars {map: [('a', Some('A')), ('b', None)].into_iter().collect(), not_found_behavior: CharNotFoundBehavior::Error}.apply(&mut x, &job_state).unwrap_err();
+    /// assert_eq!(x, "abc");
+    /// let mut x = "abc".to_string();
+    /// StringModification::MapChars {map: [('a', Some('A')), ('b', None), ('c', Some('c'))].into_iter().collect(), not_found_behavior: CharNotFoundBehavior::Error}.apply(&mut x, &job_state).unwrap();
+    /// assert_eq!(x, "Ac");
+    /// 
+    /// let mut x = "abc".to_string();
+    /// StringModification::MapChars {map: [('a', Some('A')), ('b', None)].into_iter().collect(), not_found_behavior: CharNotFoundBehavior::Replace(None)}.apply(&mut x, &job_state).unwrap();
+    /// assert_eq!(x, "A");
+    /// let mut x = "abc".to_string();
+    /// StringModification::MapChars {map: [('a', Some('A')), ('b', None)].into_iter().collect(), not_found_behavior: CharNotFoundBehavior::Replace(Some('?'))}.apply(&mut x, &job_state).unwrap();
+    /// assert_eq!(x, "A?");
+    /// ````
+    MapChars {
+        /// The map to map [`char`]s by
+        map: HashMap<char, Option<char>>,
+        /// What do do when a [`char`] that isn't in `map` is found.
+        not_found_behavior: CharNotFoundBehavior
+    },
+    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
+    /// 
+    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
+    Common {
+        /// The name of the [`Self`] to use.
+        name: StringSource,
+        /// The [`JobState::common_vars`] to pass.
+        #[serde(default, skip_serializing_if = "is_default")]
+        vars: HashMap<String, StringSource>
     }
+}
+
+/// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CharNotFoundBehavior {
+    /// Leave the [`char`] as-is.
+    Nothing,
+    /// Return an error.
+    Error,
+    /// Replace with the specified [`char`].
+    Replace(Option<char>)
 }
 
 string_or_struct_magic!(StringModification);
@@ -1014,11 +1081,11 @@ impl FromStr for StringModification {
             #[cfg(feature = "base64")] "Base64Encode" => StringModification::Base64Encode(Default::default()),
             "UrlDecode" => StringModification::UrlDecode,
             "UrlEncode" => StringModification::UrlEncode,
-            "None" => StringModification::None,
-            "Error" => StringModification::Error,
+            "None"      => StringModification::None,
+            "Error"     => StringModification::Error,
             "Lowercase" => StringModification::Lowercase,
             "Uppercase" => StringModification::Uppercase,
-            _ => Err(NonDefaultableVariant)?
+            _           => Err(NonDefaultableVariant)?
         })
     }
 }
@@ -1103,7 +1170,13 @@ pub enum StringModificationError {
     ExtractBetweenStartNotFound,
     /// Returned when the `start` of a [`StringModification::ExtractBetween`] is not found in the provided string.
     #[error("The `end` of an `ExtractBetween` was not found in the provided string.")]
-    ExtractBetweenEndNotFound
+    ExtractBetweenEndNotFound,
+    /// Returned by [`StringModification::MapChars`] when [`StringModification::MapChars::not_found_behavior`] is set to [`CharNotFoundBehavior::Error`] and a chatacter not in [`StringModification::MapChars::map`] is encountered.
+    #[error("Attempted to map a character not found in the mapping map.")]
+    CharNotInMap,
+    /// Returned when the common [`StringModification`] is not found.
+    #[error("The common StringModification was not found.")]
+    CommonStringModificationNotFound,
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -1312,6 +1385,35 @@ impl StringModification {
                     .ok_or(StringModificationError::ExtractBetweenEndNotFound)?
                     .0
                     .to_string()
+            },
+            Self::MapChars {map, not_found_behavior} => {
+                *to = match not_found_behavior {
+                    CharNotFoundBehavior::Nothing => to.chars().filter_map(|c| *map.get(&c).unwrap_or(&Some(c))).collect::<String>(),
+                    CharNotFoundBehavior::Error   => to.chars().map(|c| map.get(&c)).filter_map(|x| match x {
+                        // `Option<Option<T>>` should impl a `fn transpose(self) -> Self` that does this
+                        Some(None) => None,
+                        None => Some(None),
+                        Some(Some(c)) => Some(Some(c))
+                    }).collect::<Option<String>>().ok_or(StringModificationError::CharNotInMap)?,
+                    CharNotFoundBehavior::Replace(replace) => to.chars().filter_map(|c| *map.get(&c).unwrap_or(replace)).collect::<String>()
+                }
+            },
+            Self::Common {name, vars} => {
+                let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringModificationError>((k.clone(), get_string!(v, job_state, StringModificationError)))).collect::<Result<HashMap<_, _>, _>>()?;
+                let mut temp_url = job_state.url.clone();
+                job_state.commons.string_modifications.get(get_str!(name, job_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
+                    to,
+                    &JobState {
+                        url: &mut temp_url,
+                        context: job_state.context,
+                        params: job_state.params,
+                        vars: Default::default(),
+                        #[cfg(feature = "cache")]
+                        cache_handler: job_state.cache_handler,
+                        commons: job_state.commons,
+                        common_vars: Some(&common_vars)
+                    }
+                )?
             }
         };
         Ok(())
@@ -1361,7 +1463,9 @@ impl StringModification {
             Self::RegexFind(_) => true,
             #[cfg(feature = "base64")]
             Self::Base64Encode(_) | Self::Base64Decode(_) => true,
-            Self::ExtractBetween {start, end} => start.is_suitable_for_release() && end.is_suitable_for_release()
+            Self::ExtractBetween {start, end} => start.is_suitable_for_release() && end.is_suitable_for_release(),
+            Self::MapChars{..} => true,
+            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
         }
     }
 }

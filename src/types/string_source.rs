@@ -190,7 +190,12 @@ pub enum StringSource {
         /// 
         /// Defaults to [`None`].
         #[serde(default)]
-        if_null: Option<Box<Self>>
+        if_null: Option<Box<Self>>,
+        /// The [`Self`] to use if the string is not found in `map` and `if_null` isn't used.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        r#else: Option<Box<Self>>
     },
 
     // Basic stuff.
@@ -457,14 +462,15 @@ pub enum StringSource {
         end: Box<Self>
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
+    /// 
+    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
     Common {
-        /// The name of the mapper to use.
+        /// The name of the [`Self`] to use.
         name: Box<Self>,
         /// The [`JobState::common_vars`] to pass.
         #[serde(default, skip_serializing_if = "is_default")]
         vars: HashMap<String, Self>
     }
-
 }
 
 impl FromStr for StringSource {
@@ -634,16 +640,14 @@ impl StringSource {
                     r#else.get(job_state)?
                 }
             },
-            Self::Map {source, map, if_null} => {
+            Self::Map {source, map, if_null, r#else} => {
                 let key = get_option_string!(source, job_state);
-                if key.is_none() && !map.contains_key(&None) {
-                    match if_null {
-                        Some(source) => source.get(job_state)?,
-                        None => Err(StringSourceError::StringNotInMap)?
-                    }
-                } else {
-                    map.get(&key).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?
-                }
+                match (key.is_none(), map.get(&key), if_null, r#else) {
+                    (_   , Some(mapper), _           , _           ) => mapper,
+                    (true, _           , Some(mapper), _           ) => mapper,
+                    (_   , _           , _           , Some(mapper)) => mapper,
+                    _ => Err(StringSourceError::StringNotInMap)?
+                }.get(job_state)?
             },
 
 
@@ -762,7 +766,7 @@ impl StringSource {
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
             Self::IfSourceMatches {source, matcher, then, r#else} => source.is_suitable_for_release() && matcher.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
             Self::IfSourceIsNone {source, then, r#else} => source.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::Map {source, map, if_null} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, source)| source.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()),
+            Self::Map {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, source)| source.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release()),
             Self::Part(part) => part.is_suitable_for_release(),
             Self::ExtractPart {source, part} => source.is_suitable_for_release() && part.is_suitable_for_release(),
             Self::CommonVar(name) => name.is_suitable_for_release(),

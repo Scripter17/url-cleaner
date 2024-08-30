@@ -1,7 +1,7 @@
 # URL Cleaner
 
 Websites often put unique identifiers into URLs so that, when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
-As most people do not understand and therefore cannot consent to this, it is polite to remove the spyware query parameters before sending URLs to people.  
+As most people do not understand and therefore cannot consent to this, it is polite to remove the spytext query parameters before sending URLs to people.  
 URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, fast, and easy as possible.
 
 ## C dependencies
@@ -72,6 +72,7 @@ Various flags are included in the default config for things I want to do frequen
 - `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
+- `no-unmangle-path-is-url-encoded-url`: TODO
 - `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
 - `no-unmangle-subdomain-ends-in-not-subdomain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
 - `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.

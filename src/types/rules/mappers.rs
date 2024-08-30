@@ -144,7 +144,19 @@ pub enum Mapper {
         /// The part to index `map` with.
         part: UrlPart,
         /// The map specifying which values should apply which mapper.
-        map: HashMap<Option<String>, Self>
+        map: HashMap<Option<String>, Self>,
+        /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
+        /// 
+        /// Useful because JSON doesn't allow maps to use `null` as keys.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        if_null: Option<Box<Self>>,
+        /// The mapper to use if the part is not found in `map` and `if_null` isn't used.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        r#else: Option<Box<Self>>
     },
     /// Indexes `map` with the string returned by `source` and applies that mapper.
     /// # Errors
@@ -157,7 +169,19 @@ pub enum Mapper {
         /// The string to index `map` with.
         source: Option<StringSource>,
         /// The map specifying which strings should apply which mapper.
-        map: HashMap<Option<String>, Self>
+        map: HashMap<Option<String>, Self>,
+        /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
+        /// 
+        /// Useful because JSON doesn't allow maps to use `null` as keys.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        if_null: Option<Box<Self>>,
+        /// The mapper to use if the part is not found in `map` and `if_null` isn't used.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        r#else: Option<Box<Self>>
     },
 
     // Error handling.
@@ -601,9 +625,11 @@ pub enum Mapper {
         #[serde(default = "get_10_u8")]
         limit: u8
     },
-    /// Uses a mapper from the [`JobState::commons`]'s [`Commons::mappers`].
+    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::mappers`].
+    /// 
+    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
     Common {
-        /// The name of the mapper to use.
+        /// The name of the [`Self`] to use.
         name: StringSource,
         /// The [`JobState::common_vars`] to pass.
         #[serde(default, skip_serializing_if = "is_default")]
@@ -776,8 +802,24 @@ impl Mapper {
                     let _=mapper.apply(job_state);
                 }
             },
-            Self::PartMap {part, map} => map.get(&part.get(job_state.url).map(|x| x.into_owned())).ok_or(MapperError::MapperNotFound)?.apply(job_state)?,
-            Self::StringMap {source, map} => map.get(&get_option_string!(source, job_state)).ok_or(MapperError::MapperNotFound)?.apply(job_state)?,
+            Self::PartMap {part, map, if_null, r#else} => {
+                let key = part.get(job_state.url).map(|x| x.into_owned());
+                match (key.is_none(), map.get(&key), if_null, r#else) {
+                    (_   , Some(mapper), _           , _           ) => mapper,
+                    (true, None        , Some(mapper), _           ) => mapper,
+                    (_   , _           , _           , Some(mapper)) => mapper,
+                    _ => Err(MapperError::MapperNotFound)?
+                }.apply(job_state)?
+            },
+            Self::StringMap {source, map, if_null, r#else} => {
+                let key = get_option_string!(source, job_state);
+                match (key.is_none(), map.get(&key), if_null, r#else) {
+                    (_   , Some(mapper), _           , _           ) => mapper,
+                    (true, _           , Some(mapper), _           ) => mapper,
+                    (_   , _           , _           , Some(mapper)) => mapper,
+                    _ => Err(MapperError::MapperNotFound)?
+                }.apply(job_state)?
+            },
 
             // Error handling.
 
@@ -968,8 +1010,8 @@ impl Mapper {
             Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
-            Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
-            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
+            Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release()),
+            Self::StringMap {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release()),
             Self::IgnoreError(mapper) => mapper.is_suitable_for_release(),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
             Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),

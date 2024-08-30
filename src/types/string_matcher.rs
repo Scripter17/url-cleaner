@@ -319,6 +319,16 @@ pub enum StringMatcher {
         split: Box<StringSource>,
         /// The string of segments to search for in the haystack.
         value: Box<StringSource>
+    },
+    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_matchers`].
+    /// 
+    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
+    Common {
+        /// The name of the [`Self`] to use.
+        name: StringSource,
+        /// The [`JobState::common_vars`] to pass.
+        #[serde(default, skip_serializing_if = "is_default")]
+        vars: HashMap<String, StringSource>
     }
 }
 
@@ -375,7 +385,10 @@ pub enum StringMatcherError {
     ListNotFound,
     /// Returned when a [`CharMatcherError`] is encountered.
     #[error(transparent)]
-    CharMatcherError(#[from] CharMatcherError)
+    CharMatcherError(#[from] CharMatcherError),
+    /// Returned when the common [`StringMatcher`] is not found.
+    #[error("The common StringMatcher was not found.")]
+    CommonStringMatcherNotFound,
 }
 
 impl StringMatcher {
@@ -487,6 +500,23 @@ impl StringMatcher {
                 let split = get_str!(split, job_state, StringMatcherError);
                 haystack.strip_prefix(get_str!(value, job_state, StringMatcherError))
                     .is_some_and(|x| x.strip_prefix(split).is_some())
+            },
+            Self::Common {name, vars} => {
+                let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringMatcherError>((k.clone(), get_string!(v, job_state, StringMatcherError)))).collect::<Result<HashMap<_, _>, _>>()?;
+                let mut temp_url = job_state.url.clone();
+                job_state.commons.string_matchers.get(get_str!(name, job_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.satisfied_by(
+                    haystack,
+                    &JobState {
+                        url: &mut temp_url,
+                        context: job_state.context,
+                        params: job_state.params,
+                        vars: Default::default(),
+                        #[cfg(feature = "cache")]
+                        cache_handler: job_state.cache_handler,
+                        commons: job_state.commons,
+                        common_vars: Some(&common_vars)
+                    }
+                )?
             }
         })
     }
@@ -517,7 +547,8 @@ impl StringMatcher {
             Self::Debug(_) => false,
             #[cfg(feature = "regex")] Self::Regex(_) => true,
             #[cfg(feature = "glob")] Self::Glob(_) => true,
-            Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true
+            Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true,
+            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
         }
     }
 }

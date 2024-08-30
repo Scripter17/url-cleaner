@@ -917,7 +917,17 @@ pub enum Condition {
     /// Passes if the provided [`JobState`]'s [`JobState::params`]'s [`Params::flags`] is non-empty.
     /// 
     /// A rarely useful optimization but an optimization none the less.
-    AnyFlagIsSet
+    AnyFlagIsSet,
+    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::conditions`].`
+    /// 
+    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
+    Common {
+        /// The name of the [`Self`] to use.
+        name: StringSource,
+        /// The [`JobState::common_vars`] to pass.
+        #[serde(default, skip_serializing_if = "is_default")]
+        vars: HashMap<String, StringSource>
+    }
 }
 
 /// An enum of all possible errors a [`Condition`] can return.
@@ -955,7 +965,10 @@ pub enum ConditionError {
         try_error: Box<Self>,
         /// The error returned by [`Condition::TryElse::else`],
         else_error: Box<Self>
-    }
+    },
+    /// Returned when the common [`Condition`] is not found.
+    #[error("The common Condition was not found.")]
+    CommonConditionNotFound,
 }
 
 impl Condition {
@@ -1076,7 +1089,22 @@ impl Condition {
             // Commands.
 
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
-            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(job_state)?==expected}
+            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(job_state)?==expected},
+
+            Self::Common {name, vars} => {
+                let common_vars = vars.iter().map(|(k, v)| Ok::<_, ConditionError>((k.clone(), get_string!(v, job_state, ConditionError)))).collect::<Result<HashMap<_, _>, _>>()?;
+                let mut temp_url = job_state.url.clone();
+                job_state.commons.conditions.get(get_str!(name, job_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.satisfied_by(&JobState {
+                    url: &mut temp_url,
+                    context: job_state.context,
+                    params: job_state.params,
+                    vars: Default::default(),
+                    #[cfg(feature = "cache")]
+                    cache_handler: job_state.cache_handler,
+                    commons: job_state.commons,
+                    common_vars: Some(&common_vars)
+                })?
+            }
         })
     }
 
@@ -1108,7 +1136,8 @@ impl Condition {
             Self::Always | Self::Never | Self::Error | Self::MaybeWWWDomain(_) |
                 Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
-                Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true
+                Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
+            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
         }
     }
 }
