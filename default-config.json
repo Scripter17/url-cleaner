@@ -177,7 +177,6 @@
 				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
 				{"before": "https://tinyurl.com/preview/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
 				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"},
-				{"before": "http://1link.club/100767", "after": "https://google.com/"},
 				{"before": "https://1link.club/100767", "after": "https://google.com/"},
 				{"before": "https://gprivate.com/6bi5b", "after": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
 				{
