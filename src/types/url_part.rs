@@ -159,6 +159,18 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::Host.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com"    )));
     /// ```
     Host,
+    /// [`Self::Host`] but with the `www.` at the start, if it exists, removed.
+    /// # Getting
+    /// Can be [`None`]
+    /// # Setting
+    /// Cannot be [`None`]
+    /// 
+    /// If the URL does not have a host ([`Url::host_str`] returns [`None`]), returns the error [`UrlPartGetError::UrlDoesNotHaveAHost`].
+    /// 
+    /// If [`Self::Host`] starts with `www.`, replaces the rest of the host.
+    /// 
+    /// If [`Self::Host`] does not start with `www.`, returns the error [`UrlPartSetError::HostDoesNotStartWithWWWDot`].
+    HostWithoutWWWDotPrefix,
     /// The domain segment between segments N-1 and N.
     /// 
     /// Please note that, if a URL has N domain segments, setting `BeforeDomainSegment(N)` (the N+1th segment) will error even though it's reasonable to expect it to work like [`Self::NextDomainSegment`].
@@ -874,6 +886,7 @@ impl UrlPart {
             Self::Query            => Cow::Borrowed(url.query()?),
             Self::Whole            => Cow::Borrowed(url.as_str()),
             Self::Host             => Cow::Borrowed(url.host_str()?),
+            Self::HostWithoutWWWDotPrefix => Cow::Borrowed(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x))?),
             Self::DomainSegment(n) => Cow::Borrowed(neg_nth(url.domain()?.split('.'), *n)?),
             Self::Subdomain        => {
                 let url_domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
@@ -951,6 +964,11 @@ impl UrlPart {
             // Ordered hopefully most used to least used.
             (Self::Query, _) => url.set_query(to),
             (Self::Host , _) => url.set_host (to)?,
+            (Self::HostWithoutWWWDotPrefix, Some(to)) => match url.host_str().map(|host| host.starts_with("www.")) {
+                Some(true) => url.set_host(Some(&format!("www.{to}")))?,
+                Some(false) => Err(UrlPartSetError::HostDoesNotStartWithWWWDot)?,
+                None => Err(UrlPartGetError::UrlDoesNotHaveAHost)?
+            },
             (Self::BeforeDomainSegment(n), _) => if let Some(to) = to {
                 let mut segments = url.domain().ok_or(UrlPartGetError::HostIsNotADomain)?.split('.').collect::<Vec<_>>();
                 let fixed_n=neg_range_boundary(*n, segments.len()).ok_or(UrlPartGetError::SegmentBoundaryNotFound)?;
@@ -1234,7 +1252,10 @@ pub enum UrlPartGetError {
     PartIsNone,
     /// Returned when the requested segment boundary is not found.
     #[error("The requested segment boundary was not found.")]
-    SegmentBoundaryNotFound
+    SegmentBoundaryNotFound,
+    /// Returned when the URL does not have a host.
+    #[error("The URL did not have a host.")]
+    UrlDoesNotHaveAHost
 }
 
 /// The enum of all possible errors [`UrlPart::set`] can return.
@@ -1278,7 +1299,10 @@ pub enum UrlPartSetError {
     InvalidDomain,
     /// Returned when attempting to set a URL's not WWW domain but the URL's subdomain exists and is not www.
     #[error("Attempted to set a URL's not WWW domain but the URL's subdomain exists and is not www.")]
-    HostIsNotMaybeWWWDomain
+    HostIsNotMaybeWWWDomain,
+    /// Returned when Attempting to set a URL's UrlPart::HostWithoutWWWDotPrefix when its UrlPart::Host does not start with \"www.\".
+    #[error("Attempted to set a URL's UrlPart::HostWithoutWWWDotPrefix when its UrlPart::Host does not start with \"www.\".")]
+    HostDoesNotStartWithWWWDot
 }
 
 /// The enum of all possible errors [`UrlPart::modify`] can return.
