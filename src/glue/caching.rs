@@ -1,6 +1,6 @@
 #![doc = "Allows caching to an SQLite file."]
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::str::FromStr;
 use std::path::Path;
 
@@ -45,8 +45,8 @@ pub struct NewCacheEntry<'a> {
 }
 
 /// Convenience wrapper to contain the annoyingness of it all.
-#[derive(Debug)]
-pub struct CacheHandler(Mutex<InnerCacheHandler>);
+#[derive(Debug, Clone)]
+pub struct CacheHandler(Arc<Mutex<InnerCacheHandler>>);
 
 /// The internals of [`CacheHandler`] that handles lazily connecting.
 pub enum InnerCacheHandler {
@@ -100,7 +100,7 @@ impl FromStr for CacheHandler {
     type Err = MakeCacheHandlerError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(CacheHandler(Mutex::new(InnerCacheHandler::Unconnected { path: s.to_string() })))
+        Ok(CacheHandler(Arc::new(Mutex::new(InnerCacheHandler::Unconnected { path: s.to_string() }))))
     }
 }
 

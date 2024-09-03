@@ -5,7 +5,7 @@ use url::Url;
 use crate::types::*;
 use crate::glue::*;
 
-/// The current state of the job.
+/// The current state of a job.
 #[derive(Debug)]
 pub struct JobState<'a> {
     /// The URL being modified.

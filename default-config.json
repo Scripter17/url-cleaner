@@ -26,7 +26,7 @@
 				"on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "politi.co", "py.pl",
 				"qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s76.co", "shor.tf",
 				"shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee",
-				"trib.al", "u.jd.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"trib.al", "u.jd.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "visitlink.me"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -603,6 +603,10 @@
 										"part": "HostWithoutWWWDotPrefix",
 										"matcher": {"InSet": "shortlink-hosts"}
 									}},
+									{"TreatErrorAsFail": {"PartMatches": {
+										"part": "NotSubdomain",
+										"matcher": {"InSet": "shortlink-hosts"}
+									}}},
 									{"PartMap": {
 										"part": "HostWithoutWWWDotPrefix",
 										"map": {

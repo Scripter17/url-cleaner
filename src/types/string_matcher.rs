@@ -439,7 +439,7 @@ impl StringMatcher {
                     if result.is_ok() {return result;}
                 }
                 result?
-            }
+            },
 
             // Other.
 
@@ -467,16 +467,13 @@ impl StringMatcher {
             },
             Self::IsAscii => haystack.is_ascii(),
             Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, job_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, job_state)?,
-            // https://github.com/rust-lang/rfcs/pull/3233
-            // And yes, this is valid Rust.
-            // Not a very well known feature but it REALLY comes in handy.
-            Self::AnySegmentMatches {split, matcher} => 'a: {
+            Self::AnySegmentMatches {split, matcher} => {
                 for segment in haystack.split(get_str!(split, job_state, StringMatcherError)) {
                     if matcher.satisfied_by(segment, job_state)? {
-                        break 'a true;
+                        return Ok(true);
                     }
                 };
-                break 'a false;
+                return Ok(false);
             },
             Self::Equals(source) => haystack == get_str!(source, job_state, StringMatcherError),
             Self::InSet(name) => job_state.params.sets.get(get_str!(name, job_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),

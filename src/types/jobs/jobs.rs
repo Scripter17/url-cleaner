@@ -1,6 +1,7 @@
 //! Bulk jobs using common configs and cache handlers.
 
 use std::error::Error;
+use std::borrow::Cow;
 
 use url::Url;
 use thiserror::Error;
@@ -28,9 +29,9 @@ pub enum UrlSourceError {
 /// Note: [`Self::cache_handler`] should be created via `config.cache_handler.as_path().try_into()?` but does not need to be.
 /// 
 /// This is intentional as it means you can override it using, for example, command line arguments.
-pub struct Jobs {
+pub struct Jobs<'a> {
     /// The [`Config`] tp use.
-    pub config: Config,
+    pub config: Cow<'a, Config>,
     /// The cache.
     #[cfg(feature = "cache")]
     pub cache_handler: CacheHandler,
@@ -38,7 +39,7 @@ pub struct Jobs {
     pub job_source: Box<dyn Iterator<Item = Result<JobConfig, UrlSourceError>>>,
 }
 
-impl ::core::fmt::Debug for Jobs {
+impl ::core::fmt::Debug for Jobs<'_> {
     #[inline]
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         let mut x = f.debug_struct("Jobs");
@@ -50,7 +51,7 @@ impl ::core::fmt::Debug for Jobs {
     }
 }
 
-impl<'a> Jobs {
+impl<'a> Jobs<'_> {
     /// Gets the next [`Job`].
     /// 
     /// Would be implemented as [`Iterator::next`] if not for the need of a `&'a mut self` in the type signature.

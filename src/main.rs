@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
+use std::borrow::Cow;
 
 use clap::Parser;
 use url::Url;
@@ -184,7 +185,7 @@ fn main() -> Result<(), CliError> {
                 Box::new(ret)
             }}
         },
-        config
+        config: Cow::Owned(config)
     };
 
     if json {
