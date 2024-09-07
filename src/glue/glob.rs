@@ -1,4 +1,6 @@
 //! Provides [`GlobWrapper`], a serializable/deserializable wrapper around [`Pattern`] and [`MatchOptions`].
+//! 
+//! Enabled by the `glob` feature flag.
 
 use std::str::FromStr;
 

@@ -510,7 +510,7 @@ impl From<String> for Box<StringSource> {
 crate::util::string_or_struct_magic!(StringSource);
 
 /// The enum of all possible errors [`StringSource::get`] can return.
-#[allow(clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringSourceError {
     /// Returned when [`StringSource::Error`] is used.
@@ -757,7 +757,7 @@ impl StringSource {
     }
 
     /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used)]
+    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
             Self::NoneToEmptyString(source) => source.is_suitable_for_release(),

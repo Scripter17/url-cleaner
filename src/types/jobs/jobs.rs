@@ -19,7 +19,7 @@ pub enum UrlSourceError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     /// Catch-all for user-defined URL sources with errors not listed here.
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "Public API for use in other people's code.")]
     #[error(transparent)]
     Other(Box<dyn Error>)
 }
@@ -77,9 +77,10 @@ impl<'a> Jobs<'_> {
     /// 
     /// If a call to [`Jobs::do`] returns an error, that error is returned.
     /// # Panics
-    /// If a call to [`Vec::push`] panics, that panic is... returned? Thrown?
+    /// If a call to [`Vec::push`] panics, that panic is... returned? Thrown? Not caught?
     /// 
     /// If you feed in infinite URLs you get a panic.
+    #[allow(dead_code, reason = "For some reason, using expect here complains about no lint being thrown. But the link is thrown if this isn't allowed. Maybe it's because of the r#?")]
     pub fn r#do(mut self) -> Vec<Result<Result<Url, DoJobError>, GetJobError>> {
         // For reasons I don't fully understand, [`std::iter::from_fn`] doesn't work here.
         let mut ret = Vec::new();

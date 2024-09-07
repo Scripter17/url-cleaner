@@ -209,7 +209,7 @@ pub enum StringLocation {
 }
 
 // The [`Default`] derive macro doesn't say which enum the default is.
-#[allow(clippy::derivable_impls)] // The derive for [`Default`] doesn't state the default value.
+#[allow(clippy::derivable_impls, reason = "The derive for [`Default`] doesn't state the default value.")] 
 impl Default for StringLocation {
     /// [`Self::Anywhere`].
     fn default() -> Self {
@@ -218,7 +218,7 @@ impl Default for StringLocation {
 }
 
 /// The enum of all possible errors [`StringLocation::satisfied_by`] can return.
-#[allow(clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringLocationError {
     /// Returned when [`StringLocation::Error`] is used.
@@ -325,7 +325,7 @@ impl StringLocation {
     }
 
     /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
             Self::Debug(_) => false,

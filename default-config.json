@@ -15,7 +15,7 @@
 				"bw.artemislena.eu", "bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
 				"nerd.whatever.social", "z.opnxng.com"
 			],
-			"shortlink-hosts": [
+			"redirect-hosts": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly",
 				"cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd",
@@ -26,7 +26,7 @@
 				"on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "politi.co", "py.pl",
 				"qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s76.co", "shor.tf",
 				"shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee",
-				"trib.al", "u.jd.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "visitlink.me"
+				"trib.al", "u.jd.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "visitlink.me", "hmstr.fr"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -118,6 +118,7 @@
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
 				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
 				{"before": "https://https//abc.tumblr.com.tumblr.com", "after": "https://tumblr.com/abc/"},
+				{"before": "https://abc.deviantart.com.deviantart.com", "after": "https://deviantart.com/abc/"},
 
 				{"before": "https://https//example.com/abc", "after": "https://example.com/abc"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
@@ -196,7 +197,7 @@
 			"condition": {"PartMatches": {
 				"part": "HostWithoutWWWDotPrefix",
 				"matcher": {"Any": [
-					{"InSet": "shortlink-hosts"},
+					{"InSet": "redirect-hosts"},
 					{"InSet": "bypass.vip-hosts"},
 					{"IsOneOf": [
 				    "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "bfy.tw", "buymeacoff.ee", "buymeacoffee.com",
@@ -205,7 +206,7 @@
 				    "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com",
 				    "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
 				    "rd.goodreads.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult",
-				    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "action.openmedia.org", "1link.club", "proxy.notsobot.com"
+				    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "action.openmedia.org", "1link.club", "proxy.notsobot.com", "awin1.com"
 				  ]},
 				  {"InSet": "lmgtfy-hosts"},
 				  {"LengthIs": 4},
@@ -452,20 +453,33 @@
 										"condition": {"PathIs": "/gp/r.html"},
 										"mapper": {"GetUrlFromQueryParam": "U"}
 									}},
-									"substack.com": {"IfCondition": {
-										"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/redirect/2/"}},
-										"mapper": {"SetPart": {
-											"part": "Whole",
-											"value": {"Modified": {
-												"source": {"Part": {"PathSegment": 2}},
-												"modification": {"All": [
-													{"KeepNthSegment": {"split": ".", "n": 0}},
-													"Base64Decode",
-													{"JsonPointer": "/e"}
-												]}
+									"substack.com": {"ConditionChain": [
+										{
+											"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/redirect/2/"}},
+											"mapper": {"SetPart": {
+												"part": "Whole",
+												"value": {"Modified": {
+													"source": {"Part": {"PathSegment": 2}},
+													"modification": {"All": [
+														{"KeepNthSegment": {"split": ".", "n": 0}},
+														"Base64Decode",
+														{"JsonPointer": "/e"}
+													]}
+												}}
 											}}
-										}}
-									}},
+										},
+										{
+											"condition": {"PathIs": "/app-link/post"},
+											"mapper": {"AllowQueryParams": ["publication_id", "post_id"]}
+										},
+										{
+											"condition": {"All": [
+												{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
+												{"PartMatches": {"part": {"PathSegment": 1}, "matcher": {"LengthIs": 36}}}
+											]},
+											"mapper": "RemoveQuery"
+										}
+									]},
 									"open.substack.com": {"IfCondition": {
 										"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "pub"}},
 										"mapper": {"All": [
@@ -561,7 +575,11 @@
 											}
 										}
 									}},
-									"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"}
+									"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
+									"awin1.com": {"IfCondition": {
+										"condition": {"PathIs": "/cread.php"},
+										"mapper": {"GetUrlFromQueryParam": "ued"}
+									}}
 								}
 							}
 						},
@@ -596,16 +614,16 @@
 								{"Not": {"FlagIsSet": "no-http"}},
 								{"Any": [
 		              {"All": [
-		              	{"FlagIsSet": "assume-1-dot-2-is-shortlink"},
+		              	{"FlagIsSet": "assume-1-dot-2-is-redirect"},
 		              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
 		              ]},
 									{"PartMatches": {
 										"part": "HostWithoutWWWDotPrefix",
-										"matcher": {"InSet": "shortlink-hosts"}
+										"matcher": {"InSet": "redirect-hosts"}
 									}},
 									{"TreatErrorAsFail": {"PartMatches": {
 										"part": "NotSubdomain",
-										"matcher": {"InSet": "shortlink-hosts"}
+										"matcher": {"InSet": "redirect-hosts"}
 									}}},
 									{"PartMap": {
 										"part": "HostWithoutWWWDotPrefix",
@@ -614,9 +632,12 @@
 											"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
 											"allmylinks.com"   : {"PathIs": "/link/out"},
 											"gofundme.com"     : {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
-											"substack.com"     : {"All": [
-												{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
-												{"Not": {"PartIs": {"part": {"PathSegment": 1}, "value": "2"}}}
+											"substack.com"     : {"Any": [
+												{"All": [
+													{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
+													{"Not": {"PartIs": {"part": {"PathSegment": 1}, "value": "2"}}}
+												]},
+												{"PathIs": "/app-link/post"}
 											]},
 											"sketchfab.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "s"}}
 										}
@@ -632,7 +653,7 @@
 							]},
 							"mapper": {"All": [
 								{"Common": {"name": "utps"}},
-								{"ExpandShortLink": {}}
+								{"ExpandRedirect": {}}
 							]}
 						},
 						{
@@ -662,10 +683,7 @@
 					{"Any": [
 						{"HostIsOneOf": ["http", "https", "bsky.app", "www.bsky.app"]},
 						{"PartContains": {"part": "Path", "value": "http"}},
-						{"All": [
-							{"PartIs": {"part": {"DomainSegment": 0}, "value": "www"}},
-							{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}}
-						]}
+						{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}}
 					]}
 				]},
 				"rules": [

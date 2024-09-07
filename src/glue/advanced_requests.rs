@@ -1,4 +1,6 @@
 //! Provides [`RequestConfig`], [`RequestBody`], and [`ResponseHandler`] which allows for sending HTTP requests and getting strings from their responses.
+//! 
+//! Enabled by the `advanced-requests` feature flag.
 
 use std::collections::HashMap;
 
@@ -7,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::value::Value;
 use reqwest::{Method, header::{HeaderName, HeaderValue, HeaderMap}};
 use thiserror::Error;
-#[allow(unused_imports)] // Used for documentation.
+#[allow(unused_imports, reason = "Used in a doc comment.")]
 use reqwest::cookie::Cookie;
 
 use crate::types::*;

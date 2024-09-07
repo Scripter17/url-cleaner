@@ -3,8 +3,9 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, ser::{Serializer, Error as _}, de::{Deserializer, Error as _}};
-#[allow(unused_imports)] // [`HeaderValue`] is imported for [`serialize`]'s documentation.
-use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::header::HeaderMap;
+#[allow(unused_imports, reason = "Used in a doc comment.")] // [`HeaderValue`] is imported for [`serialize`]'s documentation.
+use reqwest::header::HeaderValue;
 
 /// Deserializes a [`HeaderMap`]
 /// # Errors

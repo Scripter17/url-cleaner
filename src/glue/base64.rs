@@ -1,4 +1,6 @@
 //! Glue to make using [`base64`] easier.
+//! 
+//! Enabled by the `base64` feature flag.
 
 use std::str::FromStr;
 

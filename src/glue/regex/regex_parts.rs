@@ -1,13 +1,15 @@
 //! Provides [`RegexParts`] and [`RegexConfig`] which are instructions for how to create a [`Regex`].
 //! 
 //! Used by [`RegexWrapper`].
+//! 
+//! Enabled by the `regex` feature flag.
 
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use regex::{Regex, RegexBuilder};
 use regex_syntax::{ParserBuilder, Parser, Error as RegexSyntaxError};
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "Used in a doc comment.")]
 use super::RegexWrapper;
 
 use crate::util::*;
@@ -51,7 +53,6 @@ impl From<RegexParts> for (String, RegexConfig) {
     }
 }
 
-#[allow(dead_code)]
 impl RegexParts {
     /// Creates a [`RegexParts`] with the provided pattern and a default config.
     /// # Errors

@@ -4,8 +4,7 @@ use serde::{Serialize, Deserialize};
 #[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
 
-// Used for doc links.
-#[allow(unused_imports)]
+#[expect(unused_imports, reason = "Used for doc links.")]
 use crate::types::*;
 use crate::glue::*;
 use crate::util::is_default;

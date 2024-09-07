@@ -175,7 +175,7 @@ impl Commons {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
+#[allow(clippy::unwrap_used, reason = "Panicking tests are easier to write than erroring tests.")]
 mod tests {
     use super::*;
 

@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 
 use crate::types::*;
-#[allow(unused_imports)] // Needed for doc links.
+#[allow(unused_imports, reason = "Needed for doc links.")]
 use crate::glue::*;
 
 /// Tests to make sure a [`Config`] is working as intended.

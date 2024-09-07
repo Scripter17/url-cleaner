@@ -6,8 +6,7 @@ use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
-// Used just for documentation.
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "Used in a doc comment.")]
 #[cfg(feature = "regex")]
 use regex::Regex;
 #[cfg(feature = "base64")]
@@ -37,6 +36,28 @@ pub enum StringModification {
     /// # Errors
     /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
+    /// If `matcher` passes, apply `modification`, otherwise apply `else_modification`.
+    /// # Errors
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If either possible call to [`StringModification::apply`] returns an error, that error is returned.
+    IfStringMatches {
+        /// The [`StringMatcher`] that decides if `modification` or `else_modification` is used.
+        matcher: Box<StringMatcher>,
+        /// The [`Self`] to use if `matcher` passes.
+        modification: Box<Self>,
+        /// The [`Self`] to use if `matcher` fails.
+        /// 
+        /// Defaults to [`None`].
+        #[serde(default)]
+        else_modification: Option<Box<Self>>
+    },
+    /// Effectively a [`Self::IfStringMatches`] where each subsequent link is put inside the previous link's [`Self::IfStringMatches::else_modification`].
+    /// # Errors
+    /// If a call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If a call to [`StringModification::apply`] returns an error, that error is returned.
+    StringMatcherChain(Vec<StringMatcherChainLink>),
     /// Ignores any error the contained [`Self`] may return.
     IgnoreError(Box<Self>),
     /// If `try` returns an error, `else` is applied.
@@ -1066,6 +1087,15 @@ pub enum CharNotFoundBehavior {
 
 string_or_struct_magic!(StringModification);
 
+/// Individual links in the [`StringModification::StringMatcherChain`] chain.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StringMatcherChainLink {
+    /// The [`StringMatcher`] to apply [`Self::moficiation`] under.
+    matcher: StringMatcher,
+    /// The [`StringModiciation`] to apply if [`Self::matcher`] is satisfied.
+    modification: StringModification
+}
+
 /// Returned when trying to call [`StringModification::from_str`] with a variant name that has non-defaultable fields.
 #[derive(Debug, Error)]
 #[error("Tried deserializing a StringModification variant with non-defaultale fields from a string.")]
@@ -1091,7 +1121,7 @@ impl FromStr for StringModification {
 }
 
 /// The enum of all possible errors [`StringModification::apply`] can return.
-#[allow(clippy::enum_variant_names)]
+#[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringModificationError {
     /// Returned when [`StringModification::Error`] is used.
@@ -1206,6 +1236,17 @@ impl StringModification {
                 eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\nJob state: {job_state:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
                 modification_result?;
             },
+            Self::IfStringMatches {matcher, modification, else_modification} => if matcher.satisfied_by(to, job_state)? {
+                modification.apply(to, job_state)?;
+            } else if let Some(else_modification) = else_modification {
+                else_modification.apply(to, job_state)?
+            },
+            Self::StringMatcherChain(chain) => for link in chain {
+                if link.matcher.satisfied_by(to, job_state)? {
+                    link.modification.apply(to, job_state)?;
+                    break;
+                }
+            },
             Self::IgnoreError(modification) => {let _=modification.apply(to, job_state);},
             Self::TryElse{r#try, r#else} => r#try.apply(to, job_state).or_else(|try_error| r#else.apply(to, job_state).map_err(|else_error| StringModificationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::All(modifications) => {
@@ -1252,7 +1293,7 @@ impl StringModification {
                 let prefix = get_str!(prefix, job_state, StringModificationError);
                 if to.starts_with(prefix) {to.drain(..prefix.len());} else {Err(StringModificationError::PrefixNotFound)?;};
             },
-            #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
+            #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
             Self::StripSuffix(suffix)                => {
                 let suffix = get_str!(suffix, job_state, StringModificationError);
                 if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;};
@@ -1261,7 +1302,7 @@ impl StringModification {
                 let prefix = get_str!(prefix, job_state, StringModificationError);
                 if to.starts_with(prefix) {to.drain(..prefix.len());};
             },
-            #[allow(clippy::arithmetic_side_effects)] // `suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.
+            #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
             Self::StripMaybeSuffix(suffix)           => {
                 let suffix = get_str!(suffix, job_state, StringModificationError);
                 if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len());};
@@ -1280,8 +1321,7 @@ impl StringModification {
                 let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 if fixed_n==temp.len() {Err(StringModificationError::SegmentNotFound)?;}
                 let x = get_option_string!(value, job_state);
-                // fixed_n is guaranteed to be in bounds.
-                #[allow(clippy::indexing_slicing)]
+                #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
                 match x.as_deref() {
                     Some(value) => temp[fixed_n]=value,
                     None        => {temp.remove(fixed_n);}
@@ -1311,7 +1351,6 @@ impl StringModification {
                     let split = get_str!(split, job_state, StringModificationError);
                     let mut temp=to.split(split).collect::<Vec<_>>();
                     let fixed_n=neg_shifted_range_boundary(*n, temp.len(), 1).ok_or(StringModificationError::SegmentNotFound)?;
-                    #[allow(clippy::arithmetic_side_effects)]
                     temp.insert(fixed_n, new_segment);
                     *to=temp.join(split);
                 }
@@ -1351,8 +1390,7 @@ impl StringModification {
             #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.make_engine()?.encode(to.as_bytes()),
             #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.make_engine()?.decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, job_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
-            // fixed_n is guaranteed to be in bounds.
-            #[allow(clippy::indexing_slicing)]
+            #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
             Self::ModifyNthSegment {split, n, modification} => {
                 let split = get_str!(split, job_state, StringModificationError);
                 let mut segments = to.split(split).collect::<Vec<_>>();
@@ -1362,8 +1400,7 @@ impl StringModification {
                 segments[fixed_n] = &*temp;
                 *to = segments.join(split);
             },
-            // fixed_n is guaranteed to be in bounds.
-            #[allow(clippy::indexing_slicing)]
+            #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
             Self::ModifySegments {split, ns, modification} => {
                 let split = get_str!(split, job_state, StringModificationError);
                 let mut segments = to.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
@@ -1420,9 +1457,11 @@ impl StringModification {
     }
 
     /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used)]
+    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
+            Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release() && modification.is_suitable_for_release() && (else_modification.is_none() || else_modification.as_ref().unwrap().is_suitable_for_release()),
+            Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release() && link.modification.is_suitable_for_release()),
             Self::IgnoreError(modification) => modification.is_suitable_for_release(),
             Self::All(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
             Self::AllNoRevert(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),

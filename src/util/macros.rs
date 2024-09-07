@@ -15,7 +15,7 @@ pub(crate) struct Deindenter;
 #[cfg(feature = "debug")]
 impl std::ops::Drop for Deindenter {
     /// Decrements [`DEBUG_INDENT`]
-    #[allow(clippy::arithmetic_side_effects)]
+    #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
     fn drop(&mut self) {
         *crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.")-=1;
     }
@@ -25,7 +25,7 @@ impl std::ops::Drop for Deindenter {
 macro_rules! debug {
     ($func:pat, $($comment:literal,)? $($name:ident),*) => {
         #[cfg(feature = "debug")]
-        #[allow(clippy::arithmetic_side_effects)]
+        #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
         let _deindenter = {
             let mut indent = crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.");
             eprint!("{}{}", "|   ".repeat(*indent), stringify!($func));

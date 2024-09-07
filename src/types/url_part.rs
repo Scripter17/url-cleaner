@@ -954,7 +954,6 @@ impl UrlPart {
     /// See each of [`Self`]'s variant's documentation for details.
     pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
         debug!(UrlPart::set, self, url, to);
-        #[allow(clippy::arithmetic_side_effects)]
         match (self, to) {
             (Self::Debug(part), _) => {
                 let old = part.get(url).to_owned();
@@ -978,7 +977,7 @@ impl UrlPart {
             (Self::DomainSegment(n), _) => {
                 let mut segments = url.domain().ok_or(UrlPartGetError::HostIsNotADomain)?.split('.').collect::<Vec<_>>();
                 let fixed_n=neg_index(*n, segments.len()).ok_or(UrlPartGetError::SegmentNotFound)?;
-                #[allow(clippy::indexing_slicing)]
+                #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
                 match to {
                     Some(to) => segments[fixed_n]=to,
                     None     => {let _ = segments.remove(fixed_n);}
@@ -1000,7 +999,7 @@ impl UrlPart {
                         set_domain(url, &new_domain)?;
                     },
                     None => {
-                        #[allow(clippy::unnecessary_to_owned)]
+                        #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
                         set_domain(url, &Self::NotSubdomain.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?.into_owned())?;
                     }
                 }
@@ -1015,7 +1014,7 @@ impl UrlPart {
                     set_domain(url, &new_domain)?;
                 },
                 None => {
-                    #[allow(clippy::unnecessary_to_owned)]
+                    #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
                     set_domain(url, &Self::Subdomain.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?.to_string())?;
                 }
             },
@@ -1023,7 +1022,6 @@ impl UrlPart {
                 Some("www") | None => Self::NotSubdomain.set(url, to), // What did you think "behaves the same" meant? :P
                 _ => Err(UrlPartSetError::HostIsNotMaybeWWWDomain)
             }?,
-            #[allow(clippy::unnecessary_to_owned)]
             (Self::NotDomainSuffix, _) => {
                 let domain = match to {
                     Some(to) => format!("{}.{}", to, Self::DomainSuffix.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?),
@@ -1032,7 +1030,7 @@ impl UrlPart {
                 set_domain(url, &domain)?;
             },
             (Self::DomainMiddle, _) => {
-                #[allow(clippy::useless_format)]
+                #[allow(clippy::useless_format, reason = "Visual consistency/patterns.")]
                 set_domain(url, &match (Self::Subdomain.get(url), to, Self::DomainSuffix.get(url), url.domain().ok_or(UrlPartGetError::HostIsNotADomain)?.ends_with('.')) {
                     // I do not know or care if any of these are impossible.
                     // Future me here: I care slightly.
@@ -1080,7 +1078,6 @@ impl UrlPart {
             (Self::Port          , _) => url.set_port(to.map(|x| x.parse().map_err(|_| UrlPartSetError::InvalidPort)).transpose()?).map_err(|()| UrlPartSetError::CannotSetPort)?,
             (Self::Origin, Some(to)) => if let Origin::Tuple(scheme, host, port) = Url::parse(to)?.origin() {
                 url.set_scheme(&scheme).map_err(|_| UrlPartSetError::CannotSetScheme)?;
-                #[allow(clippy::unnecessary_to_owned)]
                 url.set_host(Some(&host.to_string()))?;
                 if url.port_or_known_default()!=Some(port) {
                     url.set_port(Some(port)).map_err(|()| UrlPartSetError::CannotSetPort)?;
@@ -1094,7 +1091,7 @@ impl UrlPart {
             },
             (Self::PathSegment(n), _) => {
                 let mut segments = url.path_segments().ok_or(UrlPartGetError::UrlDoesNotHaveAPath)?.collect::<Vec<_>>();
-                #[allow(clippy::indexing_slicing)]
+                #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
                 match (neg_index(*n, segments.len()), to) {
                     (Some(fixed_n), Some(to)) => segments[fixed_n]=to,
                     (Some(fixed_n), None    ) => {let _ = segments.remove(fixed_n);}
@@ -1152,7 +1149,7 @@ impl UrlPart {
                 let fixed_n=neg_index(*index, segments.len()).ok_or(UrlPartGetError::SegmentNotFound)?;
                 if fixed_n==segments.len() {Err(UrlPartGetError::SegmentNotFound)?;}
                 // fixed_n is guaranteed to be in bounds.
-                #[allow(clippy::indexing_slicing)]
+                #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
                 match to {
                     Some(to) => segments[fixed_n]=to,
                     None     => {segments.remove(fixed_n);}
@@ -1163,7 +1160,6 @@ impl UrlPart {
                 let temp = part.get(url).ok_or(UrlPartGetError::PartIsNone)?;
                 let mut segments = temp.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_shifted_range_boundary(*index, segments.len(), 1).ok_or(UrlPartGetError::SegmentNotFound)?;
-                #[allow(clippy::arithmetic_side_effects)]
                 segments.insert(fixed_n, to);
                 part.set(url, Some(&segments.join(split)))?;
             },
@@ -1197,7 +1193,7 @@ impl UrlPart {
     }
 
     /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
             Self::Debug(_) => false,
@@ -1319,7 +1315,7 @@ pub enum UrlPartModifyError {
     StringModificationError(#[from] StringModificationError)
 }
 
-#[allow(clippy::unwrap_used)]
+#[allow(clippy::unwrap_used, reason = "Panicking tests are easier to write than erroring tests.")]
 #[cfg(test)]
 mod tests {
     use super::*;

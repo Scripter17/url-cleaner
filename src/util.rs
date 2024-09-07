@@ -32,7 +32,7 @@ pub(crate) const fn neg_range_boundary(index: isize, len: usize) -> Option<usize
 }
 
 /// Used for inserting after segments.
-#[allow(clippy::arithmetic_side_effects)]
+#[expect(clippy::arithmetic_side_effects, reason = "Shouldn't ever occur.")]
 pub(crate) const fn neg_shifted_range_boundary(index: isize, len: usize, shift: isize) -> Option<usize> {
     if let Some(x) = neg_range_boundary(index, len) {
         if x as isize + shift <= 0 || x as isize + shift > len as isize {

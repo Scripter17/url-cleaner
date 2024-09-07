@@ -41,7 +41,7 @@ pub struct Params {
 
 const fn is_true(x: &bool) -> bool {!*x}
 
-#[allow(clippy::derivable_impls)] // When the `cache` feature is disabled, this can be derived.
+#[allow(clippy::derivable_impls, reason = "When the `cache` feature is enabled, this can't be derived.")]
 impl Default for Params {
     fn default() -> Self {
         Self {

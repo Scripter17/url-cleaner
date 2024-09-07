@@ -1,4 +1,6 @@
 //! Proxy support for HTTP and HTTPS requests.
+//! 
+//! Enabled by the `http` feature flag.
 
 use std::str::FromStr;
 
@@ -10,7 +12,7 @@ use reqwest::Proxy;
 use crate::util::is_default;
 
 // Used for doc links.
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "Used in a doc comment.")]
 use crate::types::HttpClientConfig;
 
 /// Used by [`HttpClientConfig`] to detail how a [`reqwest::Proxy`] should be made.

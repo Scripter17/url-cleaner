@@ -1,4 +1,6 @@
 //! Provides [`RegexWrapper`], a lazy, serializable/deserializable, and deconstructable wrapper around [`Regex`].
+//! 
+//! Enabled by the `regex` feature flag.
 
 mod regex_parts;
 pub use regex_parts::*;

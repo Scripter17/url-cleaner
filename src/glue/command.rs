@@ -1,4 +1,6 @@
 //! Provides [`CommandConfig`] to allow usage of external commands.
+//! 
+//! Enabled by the `commands` feature flag.
 
 use std::process::{Command, Stdio};
 use std::io::Write;
@@ -13,16 +15,11 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use which::which;
 
-// Used just for documentation.
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "Used in a doc comment.")]
 use crate::types::*;
 use crate::util::*;
 
 /// Instructions on how to make and run a [`Command`] object.
-/// 
-/// If you are making a URL-Cleaner-as-a-service service, you should disable the `commands` feature to block access to this.
-/// 
-/// I don't care if you use sandboxing. You shouldn't tempt fate.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote= "Self")]
 pub struct CommandConfig {
@@ -148,7 +145,7 @@ impl CommandConfig {
     /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
     /// 
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
-    #[allow(clippy::missing_panics_doc)]
+    #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever panic.")]
     pub fn output(&self, job_state: &JobState) -> Result<String, CommandError> {
         // https://stackoverflow.com/a/49597789/10720231
         let mut command = self.make_command(job_state)?;
@@ -171,7 +168,6 @@ impl CommandConfig {
     /// If the call to [`Self::output`] returns an error, that error is returned.
     /// 
     /// If the call to [`Url::parse`] returns an error, that error is returned.
-    #[allow(dead_code)]
     pub fn get_url(&self, job_state: &JobState) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(job_state)?.trim_end_matches(&['\r', '\n']))?)
     }

@@ -1,4 +1,4 @@
-# URL Cleaner
+t# URL Cleaner
 
 Websites often put unique identifiers into URLs so that, when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
 As most people do not understand and therefore cannot consent to this, it is polite to remove the spytext query parameters before sending URLs to people.  
@@ -202,7 +202,7 @@ That said, if you notice any rules that use but don't actually need HTTP request
 
 Note: [JSON output is supported](#json-output).
 
-Unless `Mapper::(e|)Print(ln|)` or a `Debug` variant is used, the following should always be true:
+Unless a `Debug` variant is used, the following should always be true:
 
 1. Input URLs are a list of URLs starting with URLs provided as command line arguments then each line of the STDIN.
 
@@ -219,8 +219,6 @@ Unless `Mapper::(e|)Print(ln|)` or a `Debug` variant is used, the following shou
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 
 The exact format is currently in flux.
-
-If a `Mapper::Print(ln|)` is used, this is not guaranteed to be valid JSON.
 
 ## Panic policy
 

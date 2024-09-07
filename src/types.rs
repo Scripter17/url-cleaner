@@ -22,8 +22,6 @@ mod string_matcher;
 pub use string_matcher::*;
 mod char_matcher;
 pub use char_matcher::*;
-#[cfg(feature = "advanced-requests")] mod advanced_requests;
-#[cfg(feature = "advanced-requests")] pub use advanced_requests::*;
 mod jobs;
 pub use jobs::*;
 mod stop_loop_condition;

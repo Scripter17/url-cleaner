@@ -51,6 +51,12 @@ pub enum Mapper {
         #[serde(default)]
         else_mapper: Option<Box<Self>>
     },
+    /// Effectively a [`Self::IfCondition`] where each subsequent link is put inside the previous link's [`Self::IfCondition::else_mapper`].
+    /// # Errors
+    /// If a call to [`Condition::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If a call to [`Mapper::apply`] returns an error, that error is returned.
+    ConditionChain(Vec<ConditionChainLink>),
     /// Applies the contained [`Self`]s in order.
     /// # Errors
     /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
@@ -442,9 +448,9 @@ pub enum Mapper {
     /// # Privacy
     /// 
     /// Please note that, by default, this mapper recursively expands short links. If a `t.co` link links to a `bit.ly` link, it'll return the page the `bit.ly` link links to.
-    /// However, this means that this mapper will by default send an HTTP GET request to all pages pointed to even if they're not shortlinks.
+    /// However, this means that this mapper will by default send an HTTP GET request to all pages pointed to even if they're not redirects.
     /// 
-    /// The default config handles this by configuring [`Self::ExpandShortLink::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
+    /// The default config handles this by configuring [`Self::ExpandRedirect::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
     /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
     #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.")]
@@ -482,11 +488,11 @@ pub enum Mapper {
     ///     common_vars: None
     /// };
     /// 
-    /// Mapper::ExpandShortLink{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
+    /// Mapper::ExpandRedirect{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
     /// ```
     #[cfg(feature = "http")]
-    ExpandShortLink {
+    ExpandRedirect {
         /// The headers to send alongside the param's default headers.
         #[serde(default, with = "headermap")]
         headers: HeaderMap,
@@ -494,30 +500,6 @@ pub enum Mapper {
         #[serde(default)]
         http_client_config_diff: Option<HttpClientConfigDiff>
     },
-    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`println`]'s `x`.
-    /// If it returns `Ok(None)`, doesn't print anything.
-    /// Does not change the URL at all.
-    /// # Errors
-    /// If [`StringSource::get`] returns an error, that error is returned.
-    Println(StringSource),
-    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`print`]'s `x`.
-    /// If it returns `Ok(None)`, doesn't print anything.
-    /// Does not change the URL at all.
-    /// # Errors
-    /// If [`StringSource::get`] returns an error, that error is returned.
-    Eprintln(StringSource),
-    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`eprintln`]'s `x`.
-    /// If it returns `Ok(None)`, doesn't print anything.
-    /// Does not change the URL at all.
-    /// # Errors
-    /// If [`StringSource::get`] returns an error, that error is returned.
-    Print(StringSource),
-    /// If [`StringSource::get`] returns `Ok(Some(x))`, [`eprint`]'s `x`.
-    /// If it returns `Ok(None)`, doesn't print anything.
-    /// Does not change the URL at all.
-    /// # Errors
-    /// If [`StringSource::get`] returns an error, that error is returned.
-    Eprint(StringSource),
     /// Sets the current job's `name` string var to `value`.
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
@@ -635,6 +617,15 @@ pub enum Mapper {
         #[serde(default, skip_serializing_if = "is_default")]
         vars: HashMap<String, StringSource>
     }
+}
+
+/// Individual links in the [`Mapper::ConditionChain`] chain.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConditionChainLink {
+    /// The [`Condition`] to apply [`Self::mapper`] under.
+    pub condition: Condition,
+    /// The [`Mapper`] to apply if [`Self::condition`] is satisfied.
+    pub mapper: Mapper
 }
 
 /// Serde helper function.
@@ -774,6 +765,12 @@ impl Mapper {
             } else if let Some(else_mapper) = else_mapper {
                 else_mapper.apply(job_state)?;
             },
+            Self::ConditionChain(chain) => for link in chain {
+                if link.condition.satisfied_by(job_state)? {
+                    link.mapper.apply(job_state)?;
+                    break;
+                }
+            },
             Self::All(mappers) => {
                 let mut temp_url = job_state.url.clone();
                 let mut temp_job_state = JobState {
@@ -873,7 +870,7 @@ impl Mapper {
             },
             Self::GetPathFromQueryParam(name) => {
                 match job_state.url.query_pairs().find(|(param_name, _)| param_name==name) {
-                    Some((_, new_path)) => {#[allow(clippy::unnecessary_to_owned)] job_state.url.set_path(&new_path.into_owned());},
+                    Some((_, new_path)) => {#[expect(clippy::unnecessary_to_owned, reason = "False positive.")] job_state.url.set_path(&new_path.into_owned());},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
@@ -899,7 +896,7 @@ impl Mapper {
             // Miscellaneous.
 
             #[cfg(feature = "http")]
-            Self::ExpandShortLink {headers, http_client_config_diff} => {
+            Self::ExpandRedirect {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
                 if job_state.params.read_cache {
                     if let Some(new_url) = job_state.cache_handler.read_from_cache("redirect", job_state.url.as_str())? {
@@ -920,10 +917,6 @@ impl Mapper {
                 *job_state.url=new_url;
             },
 
-            Self::Println (source) => if let Some(x) = source.get(job_state)? {println! ("{x}");},
-            Self::Print   (source) => if let Some(x) = source.get(job_state)? {print!   ("{x}");},
-            Self::Eprintln(source) => if let Some(x) = source.get(job_state)? {eprintln!("{x}");},
-            Self::Eprint  (source) => if let Some(x) = source.get(job_state)? {eprint!  ("{x}");},
             Self::SetJobVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
             Self::DeleteJobVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
@@ -979,7 +972,7 @@ impl Mapper {
                 for i in 0..*limit {
                     match mapper.apply(job_state) {
                         Ok(()) => return Ok(()),
-                        #[allow(clippy::arithmetic_side_effects)]
+                        #[allow(clippy::arithmetic_side_effects, reason = "`i` is never 255 and therefore never overflows.")]
                         e @ Err(_) if i+1==*limit => e?,
                         Err(_) => {std::thread::sleep(*delay);}
                     }
@@ -1003,10 +996,11 @@ impl Mapper {
     }
 
     /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used)]
+    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
             Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release() && (else_mapper.is_none() || else_mapper.as_ref().unwrap().is_suitable_for_release()),
+            Self::ConditionChain(chain) => chain.iter().all(|link| link.condition.is_suitable_for_release() && link.mapper.is_suitable_for_release()),
             Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
@@ -1028,14 +1022,14 @@ impl Mapper {
             #[cfg(feature = "cache")] Self::ReadUrlFromCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
             #[cfg(feature = "cache")] Self::WriteUrlToCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
             Self::Retry {mapper, ..} => mapper.is_suitable_for_release(),
-            Self::Debug(_) | Self::Println(_) | Self::Eprintln(_) | Self::Print(_) | Self::Eprint(_)=> false,
+            Self::Debug(_) => false,
             Self::None  | Self::Error | Self::RemoveQuery |
                 Self::RemoveQueryParams(_) | Self::AllowQueryParams(_) |
                 Self::RemoveQueryParamsMatching(_) | Self::AllowQueryParamsMatching(_) | 
                 Self::GetUrlFromQueryParam(_) | Self::GetPathFromQueryParam(_) |
                 Self::SetHost(_) | Self::MovePart {..} => true,
             #[cfg(feature = "http")]
-            Self::ExpandShortLink {..} => true,
+            Self::ExpandRedirect {..} => true,
             Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
         }
     }
