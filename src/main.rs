@@ -174,7 +174,7 @@ fn main() -> Result<(), CliError> {
     let mut jobs = types::Jobs {
         #[cfg(feature = "cache")]
         cache_handler: args.cache_path.as_deref().unwrap_or(config.cache_path.as_path()).try_into()?,
-        job_source: {
+        configs_source: {
             let ret = args.urls.into_iter().map(Into::into).map(Ok);
             {if !io::stdin().is_terminal() {
                 Box::new(ret.chain(io::stdin().lines().map(|line| match line {
@@ -189,28 +189,28 @@ fn main() -> Result<(), CliError> {
     };
 
     if json {
-        print!("{{\"urls\":[");
+        print!("{{\"Ok\":{{\"urls\":[");
         let mut first_job = true;
 
         while let Some(job) = jobs.next_job() {
             if !first_job {print!(",");}
             match job {
                 Ok(job) => match job.r#do() {
-                    Ok(url) => print!("{{\"Ok\":{:?}}}", url.as_str()),
-                    Err(e) => print!("{{\"Err\":{{\"type\":\"JobError\",\"error\":{}}}}}", str_to_json_str(&e.to_string()))
+                    Ok(url) => print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str())),
+                    Err(e) => print!("{{\"Err\":{{\"type\":\"DoJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")))
                 },
-                Err(e) => print!("{{\"Err\":{{\"type\":\"GetJobError\",\"error\":{}}}}}", str_to_json_str(&e.to_string()))
+                Err(e) => print!("{{\"Err\":{{\"type\":\"GetJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")))
             }
             first_job = false;
         }
 
-        print!("]}}");
+        print!("]}}}}");
     } else {
         while let Some(job) = jobs.next_job() {
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => println!("{url}"),
-                    Err(e) => {println!(); eprintln!("JobError\t{e:?}");}
+                    Err(e) => {println!(); eprintln!("DoJobError\t{e:?}");}
                 },
                 Err(e) => {println!(); eprintln!("GetJobError\t{e:?}");}
             }

@@ -11,7 +11,7 @@ use crate::glue::*;
 
 /// The enum of errors that can happen when [`Jobs::next_job`] tries to get a URL.
 #[derive(Debug, Error)]
-pub enum UrlSourceError {
+pub enum JobConfigSourceError {
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
@@ -36,7 +36,7 @@ pub struct Jobs<'a> {
     #[cfg(feature = "cache")]
     pub cache_handler: CacheHandler,
     /// The iterator URLs are acquired from.
-    pub job_source: Box<dyn Iterator<Item = Result<JobConfig, UrlSourceError>>>,
+    pub configs_source: Box<dyn Iterator<Item = Result<JobConfig, JobConfigSourceError>>>,
 }
 
 impl ::core::fmt::Debug for Jobs<'_> {
@@ -46,7 +46,7 @@ impl ::core::fmt::Debug for Jobs<'_> {
         x.field("config", &self.config);
         #[cfg(feature = "cache")]
         x.field("cache_handler", &self.cache_handler);
-        x.field("job_source", &"...");
+        x.field("configs_source", &"...");
         x.finish()
     }
 }
@@ -56,9 +56,9 @@ impl<'a> Jobs<'_> {
     /// 
     /// Would be implemented as [`Iterator::next`] if not for the need of a `&'a mut self` in the type signature.
     /// # Errors
-    /// If the call to [`Self::job_source`]'s [`Iterator::next`] returns an error, that error is returned.
+    /// If the call to [`Self::configs_source`]'s [`Iterator::next`] returns an error, that error is returned.
     pub fn next_job(&'a mut self) -> Option<Result<Job<'a>, GetJobError>> {
-        Some(match self.job_source.next()? {
+        Some(match self.configs_source.next()? {
             Ok(JobConfig {url, context}) => Ok(Job {
                 url,
                 config: &self.config,
@@ -94,9 +94,9 @@ impl<'a> Jobs<'_> {
 /// The enum of errors [`Jobs::next_job`] can return.
 #[derive(Debug, Error)]
 pub enum GetJobError {
-    /// Returned when a [`UrlSourceError`] is encountered.
+    /// Returned when a [`JobConfigSourceError`] is encountered.
     #[error(transparent)]
-    UrlSourceError(#[from] UrlSourceError)
+    JobConfigSourceError(#[from] JobConfigSourceError)
 }
 
 /// The enum of errors [`Jobs::do`] can return.
