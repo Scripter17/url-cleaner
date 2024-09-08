@@ -1,4 +1,4 @@
-t# URL Cleaner
+# URL Cleaner
 
 Websites often put unique identifiers into URLs so that, when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
 As most people do not understand and therefore cannot consent to this, it is polite to remove the spytext query parameters before sending URLs to people.  
@@ -8,8 +8,8 @@ URL Cleaner is an extremely versatile tool designed to make this process as comp
 
 These packages are required on Kubuntu 2024.04 (and probably therefore all Debian based distros.):
 
-- `libssl-dev`
-- `libsqlite3-dev`
+- `libssl-dev` for the `http` feature flag.
+- `libsqlite3-dev` for the `caching` feature flag.
 
 There are likely plenty more dependencies required that various Linux distros may or may not pre-install.
 
@@ -43,18 +43,15 @@ By default, compiling URL Cleaner includes the [`default-config.json`](default-c
 The default config is intended to always obey the following rules:
 
 - "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
-    - Insignificant details like the navbar amazon listings have full of links to item categories being slightly different are, as previously stated, insignificant.
+    - Insignificant details like the navbar amazon listings have full of links to item categories being slightly different are insignificant.
 - URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever throw an error.
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
     - URLs that are semantically valid should never change semantics and/or become semantically invalid.
-        - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so (re: `unmangle` flag).
+        - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
 - Outside of long (>10)/infinite redirects/shortlinks, it should always be idempotent.
+- Outside of redirect sites changing behavior, netowork connectivity issues, or other similarly difficult thing to guarantee determinism for, it should always be deterministic.
 - The `command` and `debug` features, as well as any features starting with `experiment-`/`experimental-` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
-- All caching is expected to be deterministic.
-    - Also the rest of the default config is expected to be deterministic but when nothing's being cached corrections don't cause problems.
-    - Usually redirect links don't randomly change (looking at you, goo.gl).
-    - The `onion-location` flag does throw a minor wrench into this but whatever.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 
@@ -92,7 +89,7 @@ If a flag is enabled in a config's `"params"` field, it can be disabled using `-
 
 #### Variables
 
-Variables let you specify behaviour with the `--var name=value --var name2=value2` command line syntax.
+Variables let you specify behaviour with the `--var name value --var name2 value2` command line syntax.
 
 Various variables are included in the default config for things that have multiple useful values.
 
@@ -105,7 +102,7 @@ If a variable is specified in a config's `"params"` field, it can be unspecified
 
 #### Environment variables
 
-There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--key abc=xyz`. For this, URL Cleaner does make use of native environment variables.
+There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--var abc xyz`. For this, URL Cleaner does make use of native environment variables.
 
 - `URL_CLEANER_BYPASS.VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
 

@@ -17,10 +17,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose
+      run: rustup update stable && cargo build --verbose
     - name: Build no default features
-      run: cargo build --verbose --no-default-features
+      run: rustup update stable && cargo build --verbose --no-default-features
     - name: Run tests
-      run: cargo test --verbose -- --skip ExpandShortLink
+      run: rustup update stable && cargo test --verbose -- --skip ExpandRedirect
     - name: Run tests no default features
-      run: cargo test --verbose --no-default-features -- --skip default_config
+      run: rustup update stable && cargo test --verbose --no-default-features -- --skip default_config

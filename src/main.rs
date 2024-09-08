@@ -43,9 +43,9 @@ mod util;
 struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     urls: Vec<Url>,
-    /// The config.json to use. If unspecified, use the config compiled into URL Cleaner.
+    /// The JSON config to use. If unspecified and URL Cleaner was compiled with the default-config feature, use the default config compiled into URL Cleaner.
     #[arg(short      , long)] config: Option<PathBuf>,
-    /// Output JSON.
+    /// Output JSON. It is intended to be identical to URL Cleaner Site's output, so while some of the output is "redundant", it's important.
     #[arg(short      , long)] json: bool,
     /// Additional ParamsDiffs to apply before the rest of the options.
     #[arg(             long)] params_diff: Vec<PathBuf>,
@@ -54,7 +54,7 @@ struct Args {
     /// Unset flags set by the config.
     #[arg(short = 'F', long)] unflag: Vec<String>,
     /// Set variables using name=value syntax.
-    #[arg(short      , long)] var   : Vec<String>,
+    #[arg(short      , long, num_args(2))] var   : Vec<Vec<String>>,
     /// Unset variables set by the config.
     #[arg(short = 'V', long)] unvar : Vec<String>,
     /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to insert.
@@ -131,7 +131,8 @@ fn main() -> Result<(), CliError> {
     params_diffs.push(types::ParamsDiff {
         flags  : args.flag  .into_iter().collect(), // It's probably not a good thing to do a global impl for,
         unflags: args.unflag.into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
-        vars   : args.var   .into_iter().filter_map(|mut kev| kev.find('=').map(|e| {let mut v=kev.split_off(e); v.drain(..1); kev.shrink_to_fit(); (kev, v)})).collect(),
+        #[allow(clippy::indexing_slicing, reason = "Clap ensures there's always exactly 2.")]
+        vars   : args.var   .into_iter().map(|x| (x[0].clone(), x[1].clone())).collect(), // Why do I have to clone here???
         unvars : args.unvar .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
         init_sets: Default::default(),
         insert_into_sets: args.insert_into_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
