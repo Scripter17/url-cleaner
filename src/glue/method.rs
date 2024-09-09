@@ -5,9 +5,9 @@ use std::str::FromStr;
 use serde::{Deserialize, ser::Serializer, de::{Deserializer, Error as _}};
 use reqwest::Method;
 
-/// Deserializes a [`Method`]
+/// Deserializes a [`Method`].
 /// # Errors
-/// TODO
+/// If the call to [`Method::from_str`] returns an error, that error is returned.
 pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Method, D::Error> {
     Method::from_str(Deserialize::deserialize(d)?).map_err(D::Error::custom)
 }

@@ -20,13 +20,14 @@
 				"apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly",
 				"cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd",
 				"dlvr.it", "etsy.me", "fal.cn", "fanga.me", "fb.me", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com", "go.microsoft.com",
-				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hulu.tv", "ift.tt", "interc.pt", "iwe.one", "j.mp", "jbgm.es", "k00.fr",
-				"katy.to", "kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "msft.it", "mzl.la", "n.pr", "nas.cr",
-				"ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com",
-				"on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "politi.co", "py.pl",
-				"qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s76.co", "shor.tf",
-				"shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee",
-				"trib.al", "u.jd.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "visitlink.me", "hmstr.fr"
+				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "interc.pt", "iwe.one", "j.mp", "jbgm.es",
+				"k00.fr", "katy.to", "kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "lpc.ca", "msft.it",
+				"mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
+				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me",
+				"play.st", "politi.co", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to",
+				"s.goodsmile.link", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio",
+				"thr.cm", "tmz.me", "to.pbs.org", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr",
+				"wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
