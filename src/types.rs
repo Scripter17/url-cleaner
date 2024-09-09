@@ -30,7 +30,7 @@ pub use stop_loop_condition::*;
 /// An enum that transitively contains any possible error that can happen when cleaning a URL.
 #[derive(Debug, Error)]
 pub enum CleaningError {
-    /// Returned when a [`GetConfigError`] os encountered.
+    /// Returned when a [`GetConfigError`] is encountered.
     #[error(transparent)]
     GetConfigError(#[from] GetConfigError),
     /// Returned when a [`RuleError`] is encountered.

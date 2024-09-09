@@ -30,7 +30,7 @@ pub enum JobConfigSourceError {
 /// 
 /// This is intentional as it means you can override it using, for example, command line arguments.
 pub struct Jobs<'a> {
-    /// The [`Config`] tp use.
+    /// The [`Config`] to use.
     pub config: Cow<'a, Config>,
     /// The cache.
     #[cfg(feature = "cache")]

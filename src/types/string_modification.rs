@@ -1090,21 +1090,21 @@ string_or_struct_magic!(StringModification);
 /// Individual links in the [`StringModification::StringMatcherChain`] chain.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StringMatcherChainLink {
-    /// The [`StringMatcher`] to apply [`Self::moficiation`] under.
+    /// The [`StringMatcher`] to apply [`Self::modification`] under.
     matcher: StringMatcher,
-    /// The [`StringModiciation`] to apply if [`Self::matcher`] is satisfied.
+    /// The [`StringModification`] to apply if [`Self::matcher`] is satisfied.
     modification: StringModification
 }
 
 /// Returned when trying to call [`StringModification::from_str`] with a variant name that has non-defaultable fields.
 #[derive(Debug, Error)]
-#[error("Tried deserializing a StringModification variant with non-defaultale fields from a string.")]
+#[error("Tried deserializing a StringModification variant with non-defaultable fields from a string.")]
 pub struct NonDefaultableVariant;
 
 impl FromStr for StringModification {
     type Err = NonDefaultableVariant;
 
-    /// Used for allowing deserializng [`Self::Base64Decode`] and [`Self::Base64Encode`] from strings using the default values for their fields.
+    /// Used for allowing deserializing [`Self::Base64Decode`] and [`Self::Base64Encode`] from strings using the default values for their fields.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             #[cfg(feature = "base64")] "Base64Decode" => StringModification::Base64Decode(Default::default()),
@@ -1201,7 +1201,7 @@ pub enum StringModificationError {
     /// Returned when the `start` of a [`StringModification::ExtractBetween`] is not found in the provided string.
     #[error("The `end` of an `ExtractBetween` was not found in the provided string.")]
     ExtractBetweenEndNotFound,
-    /// Returned by [`StringModification::MapChars`] when [`StringModification::MapChars::not_found_behavior`] is set to [`CharNotFoundBehavior::Error`] and a chatacter not in [`StringModification::MapChars::map`] is encountered.
+    /// Returned by [`StringModification::MapChars`] when [`StringModification::MapChars::not_found_behavior`] is set to [`CharNotFoundBehavior::Error`] and a character not in [`StringModification::MapChars::map`] is encountered.
     #[error("Attempted to map a character not found in the mapping map.")]
     CharNotInMap,
     /// Returned when the common [`StringModification`] is not found.
@@ -1456,7 +1456,7 @@ impl StringModification {
         Ok(())
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {

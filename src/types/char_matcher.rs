@@ -143,7 +143,7 @@ pub enum CharMatcher {
 #[derive(Debug, Error)]
 pub enum CharMatcherError {
     /// Returned when [`CharMatcher::IsDigitRadix`] has a radix greater than 36 which would make [`char::is_digit`] panic.
-    #[error("Invalid radix: {0}. Radi must be between 0 and 36 inclusive. See [`char::is_digit`] for details.")]
+    #[error("Invalid radix: {0}. Radix must be between 0 and 36 inclusive. See [`char::is_digit`] for details.")]
     InvalidRadix(u32),
     /// Returned when [`CharMatcher::Error`] is used.
     #[error("CharMatcher::Error was used.")]
@@ -238,7 +238,7 @@ impl CharMatcher {
         })
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {

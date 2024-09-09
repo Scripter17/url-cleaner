@@ -144,11 +144,11 @@ pub enum StringSource {
         /// If the flag is not set, use this.
         r#else: Box<Self>
     },
-    /// If the value of `source` matches `matcher`, returns the value of `then`, otheriwse returns tha velue of `else`.
+    /// If the value of `source` matches `matcher`, returns the value of `then`, otherwise returns the value of `else`.
     /// # Errors
     /// If any call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`StringMatcher::satisfied_by`] returns an erorr, that error is returned.
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     IfSourceMatches {
         /// The [`Self`] to match on.
         source: Box<Self>,
@@ -156,7 +156,7 @@ pub enum StringSource {
         matcher: Box<StringMatcher>,
         /// The [`Self`] to return if the matcher passes.
         then: Box<Self>,
-        /// The [`Self`] to return if thematcher fails.
+        /// The [`Self`] to return if the matcher fails.
         r#else: Box<Self>
     },
     /// If the value of `source` is [`None`], returns the value of `then`, otherwise returns the value of `else`.
@@ -165,7 +165,7 @@ pub enum StringSource {
     IfSourceIsNone {
         /// The value to check the [`None`]ness of.
         source: Box<Self>,
-        /// THe value to return if `source` is [`None`].
+        /// The value to return if `source` is [`None`].
         then: Box<Self>,
         /// The value to return if `source` is not [`None`]
         r#else: Box<Self>
@@ -392,7 +392,7 @@ pub enum StringSource {
     /// 
     /// If an entry is found, return its value.
     /// 
-    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache, then reutrns it.
+    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache, then returns it.
     /// 
     /// Please note that [`Self::Cache::category`] and [`Self::Cache::key`] should be chosen to make all possible collisions intentional.
     /// # Errors
@@ -540,13 +540,13 @@ pub enum StringSourceError {
     /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] Box<StringMatcherError>),
-    /// Returned when the value of a requested environemnt variable is not UTF-8.
+    /// Returned when the value of a requested environment variable is not UTF-8.
     #[error("The value of the requested environment variable was not UTF-8.")]
     EnvVarIsNotUtf8,
     /// Returned when the requested map is not found.
     #[error("The requested map was not found.")]
     MapNotFound,
-    /// Returneed when [`StringSource::Common`] is used outside of a common context.
+    /// Returned when [`StringSource::Common`] is used outside of a common context.
     #[error("Not in a common context.")]
     NotInACommonContext,
     /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `source`.
@@ -705,7 +705,7 @@ impl StringSource {
         })
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {

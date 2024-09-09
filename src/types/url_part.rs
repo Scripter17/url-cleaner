@@ -1192,7 +1192,7 @@ impl UrlPart {
         Ok(())
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
@@ -1214,7 +1214,7 @@ fn is_valid_domain(domain: &str) -> bool {
 /// 
 /// Unfortunately [`Url`] doesn't have a `set_domain` method, so this checks if [`url::Host::parse`]ing `domain` returns a [`url::Host::Domain`].
 /// # Errors
-/// If [`is_valid_domain`] returns [`false`], returns the error [`UrlPartSetError::InvlaidDomain`].
+/// If [`is_valid_domain`] returns [`false`], returns the error [`UrlPartSetError::InvalidDomain`].
 /// 
 /// If [`is_valid_domain`] returns [`true`] but [`Url::set_host`] somehow returns an error, that error is returned.
 fn set_domain(url: &mut Url, domain: &str) -> Result<(), UrlPartSetError> {

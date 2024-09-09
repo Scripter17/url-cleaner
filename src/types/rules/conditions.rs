@@ -1108,7 +1108,7 @@ impl Condition {
         })
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {

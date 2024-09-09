@@ -43,13 +43,13 @@ By default, compiling URL Cleaner includes the [`default-config.json`](default-c
 The default config is intended to always obey the following rules:
 
 - "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
-    - Insignificant details like the navbar amazon listings have full of links to item categories being slightly different are insignificant.
+    - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
 - URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever throw an error.
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
     - URLs that are semantically valid should never change semantics and/or become semantically invalid.
         - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
 - Outside of long (>10)/infinite redirects/shortlinks, it should always be idempotent.
-- Outside of redirect sites changing behavior, netowork connectivity issues, or other similarly difficult thing to guarantee determinism for, it should always be deterministic.
+- Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
 - The `command` and `debug` features, as well as any features starting with `experiment-`/`experimental-` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
 
@@ -96,7 +96,7 @@ Various variables are included in the default config for things that have multip
 - `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
 - `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
 - `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
-- `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS.VIP_API_KEY` environment variable.
+- `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
 
 If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
 
@@ -104,7 +104,7 @@ If a variable is specified in a config's `"params"` field, it can be unspecified
 
 There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--var abc xyz`. For this, URL Cleaner does make use of native environment variables.
 
-- `URL_CLEANER_BYPASS.VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
+- `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
 
 #### Sets
 
@@ -116,7 +116,7 @@ Various sets are included in the default config.
 - `shortlink-hosts`: Hosts that are considered shortlinks in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandShortLink` mapper applied.
 - `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
-    Please note that the UTP rule in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
+    Please note that the `utps` common mapper in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
 - `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
 - `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
 - `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.

@@ -1,4 +1,4 @@
-//! A simple condition system to determing if and when a [`Rule::Repeat`] should stop looping before the limit.
+//! A simple condition system to determine if and when a [`Rule::Repeat`] should stop looping before the limit.
 
 use serde::{Serialize, Deserialize};
 use url::Url;
@@ -6,7 +6,7 @@ use url::Url;
 use crate::types::*;
 use crate::util::*;
 
-/// A simple condition system to determing if and when a [`Rule::Repeat`] should stop looping before the limit.
+/// A simple condition system to determine if and when a [`Rule::Repeat`] should stop looping before the limit.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StopLoopCondition {
     /// Passes if all contained [`Self`]s pass.
@@ -21,7 +21,7 @@ pub enum StopLoopCondition {
     NonePass,
     /// Passes if the [`Url`]'s end value is the same as its start value.
     NoUrlChange,
-    /// Passes if the [`JobState`]'s [`JobState::vars`]'s end value is tha same as its start value.
+    /// Passes if the [`JobState`]'s [`JobState::vars`]'s end value is the same as its start value.
     NoJobVarChange
 }
 
@@ -33,7 +33,7 @@ impl Default for StopLoopCondition {
 }
 
 impl StopLoopCondition {
-    /// See each vaeiant of [`Self`] for details.
+    /// See each variant of [`Self`] for details.
     pub fn satisfied_by(&self, job_state: &JobState, none_passed: bool, previous_url: &Url, previous_job_vars: &HashMap<String, String>) -> bool {
         debug!(StopLoopCondition::satisfied_by, self, job_state, none_passed, previous_url, previous_job_vars);
         match self {

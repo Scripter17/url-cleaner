@@ -87,11 +87,11 @@ impl RequestConfig {
     /// # Errors
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
-    /// If any of the header names in [`Self::headers`] is, once [`str::to_lowercase`] is applie, an invalid [`HeaderName`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
+    /// If any of the header names in [`Self::headers`] is, once [`str::to_lowercase`] is applied, an invalid [`HeaderName`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
     /// 
     /// If any of the calls to [`StringSource::get`] from [`Self::headers`] returns an error, that error is returned.
     /// 
-    /// If any of the calls to [`StringSource::get`] return an invlaid [`HeaderValue`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
+    /// If any of the calls to [`StringSource::get`] return an invalid [`HeaderValue`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
     /// 
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, job_state: &JobState) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {

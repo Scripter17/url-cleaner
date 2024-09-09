@@ -16,7 +16,7 @@ use crate::util::*;
 mod schema;
 pub use schema::cache;
 
-/// An empty cache that is written when trying to connect to a file that deosn't exist.
+/// An empty cache that is written when trying to connect to a file that doesn't exist.
 pub const EMPTY_CACHE: &[u8] = include_bytes!("../../empty-cache.sqlite");
 
 /// An entry in the [`cache`] table.

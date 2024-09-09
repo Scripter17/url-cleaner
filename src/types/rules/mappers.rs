@@ -397,7 +397,7 @@ pub enum Mapper {
     /// # Errors
     /// If the part specified by `from` is [`None`] and the part specified by `to` cannot be `None` (see [`Mapper::SetPart`]), returns the error [`UrlPartSetError::PartCannotBeNone`].
     /// 
-    /// If the call to `from`'s [`UrlPart::set`] returns an erorr, that error is returned.
+    /// If the call to `from`'s [`UrlPart::set`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -524,11 +524,11 @@ pub enum Mapper {
         /// The modification to apply.
         modification: StringModification
     },
-    /// Execites the contained [`Rule`].
+    /// Executes the contained [`Rule`].
     /// # Errors
     /// If the call to [`Rule::apply`] returns an error other than [`RuleError::FailedCondition`] and [`RuleError::ValueNotInMap`], returns that error.
     Rule(Box<Rule>),
-    /// Execites the contained [`Rules`].
+    /// Excites the contained [`Rules`].
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     Rules(Rules),
@@ -940,7 +940,7 @@ impl Mapper {
         Ok(())
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {

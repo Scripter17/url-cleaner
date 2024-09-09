@@ -173,7 +173,7 @@ pub enum Rule {
         /// The rules to run if [`Self::CommonCondition::condition`] passes.
         rules: Rules
     },
-    /// Execites the contained [`Rules`].
+    /// Applies the contained [`Rules`].
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     Rules(Rules),
@@ -189,7 +189,7 @@ pub enum Rule {
         condition: Condition,
         /// The mapper to use if the condition passes.
         mapper: Mapper,
-        /// The mapper to use if the consition fails.
+        /// The mapper to use if the condition fails.
         else_mapper: Mapper
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::rules`].
@@ -361,7 +361,7 @@ impl Rule {
         }
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         match self {
@@ -439,7 +439,7 @@ impl Rules {
         Ok(())
     }
 
-    /// Internal method to make sure I don't accidetnally commit Debug variants and other stuff unsuitable for the default config.
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self) -> bool {
         self.0.iter().all(|rule| rule.is_suitable_for_release())
