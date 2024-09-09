@@ -69,7 +69,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -98,7 +98,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -125,7 +125,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -208,7 +208,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -243,7 +243,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -283,7 +283,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -315,7 +315,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -407,7 +407,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -476,7 +476,7 @@ pub enum Mapper {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -558,41 +558,6 @@ pub enum Mapper {
         /// The [`Self`] to cache.
         mapper: Box<Self>
     },
-    /// Replaced the current URL with one read from the cache.
-    /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    /// 
-    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
-    /// 
-    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
-    /// 
-    /// IF the call to [`CacheHandler::read_from_cache`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].
-    ///
-    /// If the call to [`Url::parse`] returns an error, that error is returned.
-    #[cfg(feature = "cache")]
-    ReadUrlFromCache {
-        /// The category ro read from.
-        category: StringSource,
-        /// The key to rad from.
-        /// 
-        /// Defaults to `StringSource::Part(UrlPart::Whole)`.
-        #[serde(default = "string_source_part_whole")]
-        key: StringSource
-    },
-    /// Writes the current URL to the cache.
-    /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    /// 
-    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
-    /// 
-    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
-    #[cfg(feature = "cache")]
-    WriteUrlToCache {
-        /// The category to write to.
-        category: StringSource,
-        /// The key to write to.
-        key: StringSource
-    },
     /// Retry `mapper` after `delay` at most `limit` times.
     /// 
     /// Note that if the call to [`Mapper::apply`] changes the job state (see [`Mapper::AllNoRevert`]), the job state is not reverted.
@@ -630,8 +595,6 @@ pub struct ConditionChainLink {
 
 /// Serde helper function.
 const fn get_10_u8() -> u8 {10}
-/// Serde helper function.
-const fn string_source_part_whole() -> StringSource {StringSource::Part(UrlPart::Whole)}
 
 /// An enum of all possible errors a [`Mapper`] can return.
 #[derive(Debug, Error)]
@@ -950,24 +913,6 @@ impl Mapper {
                     }
                 }
             },
-            #[cfg(feature = "cache")]
-            Self::ReadUrlFromCache {category, key} => {
-                if job_state.params.read_cache {
-                    let category = get_string!(category, job_state, MapperError);
-                    let key = get_string!(key, job_state, MapperError);
-                    if let Some(new_url) = job_state.cache_handler.read_from_cache(&category, &key)? {
-                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
-                    }
-                }
-            },
-            #[cfg(feature = "cache")]
-            Self::WriteUrlToCache {category, key} => {
-                if job_state.params.write_cache {
-                    let category = get_string!(category, job_state, MapperError);
-                    let key = get_string!(key, job_state, MapperError);
-                    job_state.cache_handler.write_to_cache(&category, &key, Some(job_state.url.as_str()))?;
-                }
-            },
             Self::Retry {mapper, delay, limit} => {
                 for i in 0..*limit {
                     match mapper.apply(job_state) {
@@ -1019,8 +964,6 @@ impl Mapper {
             Self::Rule(rule) => rule.is_suitable_for_release(),
             Self::Rules(rules) => rules.is_suitable_for_release(),
             #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release() && mapper.is_suitable_for_release(),
-            #[cfg(feature = "cache")] Self::ReadUrlFromCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
-            #[cfg(feature = "cache")] Self::WriteUrlToCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
             Self::Retry {mapper, ..} => mapper.is_suitable_for_release(),
             Self::Debug(_) => false,
             Self::None  | Self::Error | Self::RemoveQuery |

@@ -92,7 +92,7 @@ struct Args {
     /// When this or any other `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)] test_config : bool,
     /// Overrides the config's [`Config::cache_path`].
-    #[arg(             long                      )] cache_path: Option<PathBuf>
+    #[arg(             long                      )] cache_path: Option<String>
 }
 
 /// The enum of all errors that can occur when using the URL Cleaner CLI tool.
@@ -107,10 +107,7 @@ pub enum CliError {
     /// Returned when a [`CleaningError`] is encountered.
     #[error(transparent)] CleaningError(#[from] types::CleaningError),
     /// Returned when a [`SerdeJsonError`] is encountered.
-    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when a [`MakeCacheHandlerError`] is encountered.
-    #[cfg(feature = "cache")]
-    #[error(transparent)] MakeCacheHandlerError(#[from] glue::MakeCacheHandlerError)
+    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }
 
 fn str_to_json_str(s: &str) -> String {
@@ -174,7 +171,7 @@ fn main() -> Result<(), CliError> {
 
     let mut jobs = types::Jobs {
         #[cfg(feature = "cache")]
-        cache_handler: args.cache_path.as_deref().unwrap_or(config.cache_path.as_path()).try_into()?,
+        cache_handler: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
         configs_source: {
             let ret = args.urls.into_iter().map(Into::into).map(Ok);
             {if !io::stdin().is_terminal() {

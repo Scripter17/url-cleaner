@@ -41,9 +41,5 @@ pub enum CleaningError {
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when a [`crate::glue::MakeCacheHandlerError`] is encountered.
-    #[cfg(feature = "cache")]
-    #[error(transparent)]
-    MakeCacheHandlerError(#[from] crate::glue::MakeCacheHandlerError)
+    SerdeJsonError(#[from] serde_json::Error)
 }

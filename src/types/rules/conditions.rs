@@ -30,7 +30,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -82,7 +82,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -112,7 +112,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -148,7 +148,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -204,7 +204,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -230,7 +230,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -259,7 +259,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -305,7 +305,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -343,7 +343,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -377,7 +377,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -415,7 +415,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -449,7 +449,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -511,7 +511,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -551,7 +551,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -601,7 +601,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -633,7 +633,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -672,7 +672,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -710,7 +710,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -757,7 +757,7 @@ pub enum Condition {
     /// let params = url_cleaner::types::Params { vars: vec![("a".to_string(), "2".to_string())].into_iter().collect(), ..Default::default() };
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -793,7 +793,7 @@ pub enum Condition {
     /// let params = url_cleaner::types::Params { flags: HashSet::from_iter(vec!["abc".to_string()]), ..Default::default() };
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -860,7 +860,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -891,7 +891,7 @@ pub enum Condition {
     /// let params = Default::default();
     /// let context = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,

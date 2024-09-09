@@ -48,7 +48,7 @@ impl Expectation {
         let mut temp = self.before.clone();
         let context = Default::default();
         #[cfg(feature = "cache")]
-        let cache_handler = config.cache_path.as_path().try_into().expect("The cache handler path to be valid UTF-8");
+        let cache_handler = (&*config.cache_path).into();
         config.rules.apply(&mut JobState {
             url: &mut temp,
             params: &config.params,

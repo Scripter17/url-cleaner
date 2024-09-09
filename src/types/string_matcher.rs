@@ -96,7 +96,7 @@ pub enum StringMatcher {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -135,7 +135,7 @@ pub enum StringMatcher {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -162,7 +162,7 @@ pub enum StringMatcher {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -254,7 +254,7 @@ pub enum StringMatcher {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -294,7 +294,7 @@ pub enum StringMatcher {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,

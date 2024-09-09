@@ -52,7 +52,7 @@ fn get_config<'a>(config: Option<&'a types::Config>, params_diff: Option<&types:
 pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>) -> Result<(), types::CleaningError> {
     let config = get_config(config, params_diff)?;
     #[cfg(feature = "cache")]
-    let cache_handler = config.cache_path.as_path().try_into()?;
+    let cache_handler = (&*config.cache_path).into();
     config.rules.apply(&mut types::JobState {
         url,
         params: &config.params,

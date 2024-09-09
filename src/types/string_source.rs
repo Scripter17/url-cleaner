@@ -63,7 +63,7 @@ pub enum StringSource {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -107,7 +107,7 @@ pub enum StringSource {
     /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -211,7 +211,7 @@ pub enum StringSource {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -240,7 +240,7 @@ pub enum StringSource {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -274,7 +274,7 @@ pub enum StringSource {
     /// let commons = Default::default();
     /// let params = Default::default();
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -318,7 +318,7 @@ pub enum StringSource {
     /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { vars: vec![("abc".to_string(), "xyz".to_string())].into_iter().collect(), ..Default::default() };
     /// #[cfg(feature = "cache")]
-    /// let cache_handler = std::path::PathBuf::from("test-cache.sqlite").as_path().try_into().unwrap();
+    /// let cache_handler = "test-cache.sqlite".into();
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
@@ -409,36 +409,6 @@ pub enum StringSource {
         key: Box<Self>,
         /// The [`Self`] to cache.
         source: Box<Self>
-    },
-    /// Reads a value from the cache.
-    /// 
-    /// If [`Params::read_cache`] is [`true`], returns [`None`].
-    /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
-    #[cfg(feature = "cache")]
-    ReadFromCache {
-        /// The category to read from.
-        category: Box<Self>,
-        /// The key to read from.
-        key: Box<Self>
-    },
-    /// Writes a value to the cache then returns that value.
-    /// 
-    /// If [`Params::write_cache`] is [`true`], still returns the would-ba-cached value.
-    /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
-    #[cfg(feature = "cache")]
-    WriteToCache {
-        /// The category to write to.
-        category: Box<Self>,
-        /// The key to wrtie to.
-        key: Box<Self>,
-        /// The value to write.
-        value: Option<Box<Self>>
     },
     /// Extracts the substring of `source` found between the first `start` and the first subsequent `end`.
     /// 
@@ -699,27 +669,6 @@ impl StringSource {
                 }
                 ret
             },
-            #[cfg(feature = "cache")]
-            Self::ReadFromCache {category, key} => {
-                if job_state.params.read_cache {
-                    let category = get_string!(category, job_state, StringSourceError);
-                    let key = get_string!(key, job_state, StringSourceError);
-                    if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
-                        return Ok(ret.map(Cow::Owned));
-                    }
-                }
-                None
-            },
-            #[cfg(feature = "cache")]
-            Self::WriteToCache {category, key, value} => {
-                let value = get_option_string!(value.as_deref(), job_state);
-                if job_state.params.write_cache {
-                    let category = get_string!(category, job_state, StringSourceError);
-                    let key = get_string!(key, job_state, StringSourceError);
-                    job_state.cache_handler.write_to_cache(&category, &key, value.as_deref())?;
-                }
-                value.map(Cow::Owned)
-            },
             Self::ExtractBetween {source, start, end} => {
                 Some(match source.get(job_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
                     Cow::Borrowed(x) => Cow::Borrowed(x
@@ -777,8 +726,6 @@ impl StringSource {
             Self::Modified {source, modification} => source.is_suitable_for_release() && modification.is_suitable_for_release(),
             Self::EnvVar(name) => name.is_suitable_for_release(),
             #[cfg(feature = "cache")] Self::Cache {category, key, source} => category.is_suitable_for_release() && key.is_suitable_for_release() && source.is_suitable_for_release(),
-            #[cfg(feature = "cache")] Self::ReadFromCache {category, key} => category.is_suitable_for_release() && key.is_suitable_for_release(),
-            #[cfg(feature = "cache")] Self::WriteToCache {category, key, value} => category.is_suitable_for_release() && key.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
             Self::Debug(_) => false,
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,

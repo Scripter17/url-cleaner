@@ -1,7 +1,7 @@
 //! Provides [`Config`] which controls all details of how URL Cleaner works.
 
 use std::fs::read_to_string;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::borrow::Cow;
 use std::io;
 #[cfg(feature = "default-config")]
@@ -32,7 +32,7 @@ pub struct Config {
     pub params: Params,
     /// The path of the sqlite cache to use.
     #[cfg(feature = "cache")]
-    pub cache_path: PathBuf,
+    pub cache_path: String,
     /// The tests to make sure the config is working as intended.
     #[serde(default, skip_serializing_if = "is_default")]
     pub tests: Vec<TestSet>,
