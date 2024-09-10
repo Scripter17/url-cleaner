@@ -137,6 +137,16 @@ impl RequestConfig {
     pub fn response(&self, job_state: &JobState) -> Result<String, RequestConfigError> {
         Ok(self.response_handler.handle(self.make(job_state)?.send()?, job_state)?)
     }
+
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        assert!(
+            (self.url.is_none() || self.url.as_ref().unwrap().is_suitable_for_release(config)) &&
+            self.headers.iter().all(|(_, v)| (v.is_none() || v.as_ref().unwrap().is_suitable_for_release(config))) &&
+            (self.body.is_none() || self.body.as_ref().unwrap().is_suitable_for_release(config)),
+            "Unsuitable RequestConfig: {self:?}"
+        );
+        true
+    }
 }
 
 /// The ways one can set the body in an HTTP request.
@@ -194,6 +204,15 @@ impl RequestBody {
             ),
             Self::Json(json) => request.json(json)
         })
+    }
+
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        assert!(match self {
+            Self::Text(text) => text.is_suitable_for_release(config),
+            Self::Form(map) => map.iter().all(|(_, v)| v.is_suitable_for_release(config)),
+            Self::Json(_) => true
+        }, "Unsuitable RequestBody: {self:?}");
+        true
     }
 }
 

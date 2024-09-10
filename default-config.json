@@ -34,6 +34,9 @@
 			"tor2web-suffix": "The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.",
 			"bypass.vip-api-key": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable."
 		},
+		"environment_vars": {
+			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable."
+		},
 		"sets": {
 			"https-upgrade-host-blacklist": "Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.",
 			"redirect-hosts": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",

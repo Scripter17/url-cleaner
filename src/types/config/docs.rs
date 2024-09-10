@@ -18,6 +18,9 @@ pub struct ConfigDocs {
     /// The descriptions of the [`Config::vars`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>,
+    /// The descriptions of the environment variables used.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub environment_vars: HashMap<String, String>,
     /// The descriptions of the [`Config::sets`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub sets: HashMap<String, String>,

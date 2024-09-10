@@ -724,14 +724,14 @@ impl StringSource {
             Self::ContextVar(name) => name.is_suitable_for_release(config),
             Self::MapKey {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
             Self::Modified {source, modification} => source.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::EnvVar(name) => name.is_suitable_for_release(config),
+            Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),
             #[cfg(feature = "cache")] Self::Cache {category, key, source} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && source.is_suitable_for_release(config),
             Self::Debug(_) => false,
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,
             Self::Error | Self::String(_) => true,
             #[cfg(feature = "advanced-requests")]
-            Self::HttpRequest(_) => true,
+            Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
             Self::ExtractBetween {source, start, end} => source.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
         }, "Unsuitable StringSource detected: {self:?}");

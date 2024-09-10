@@ -63,9 +63,15 @@ Flags let you specify behaviour with the `--flag name --flag name2` command line
 
 Various flags are included in the default config for things I want to do frequently.
 
-- `no-https-upgrade`: Disable replacing `http://` with `https://`.
-- `no-http`: Don't make any HTTP requests.
 - `assume-1-dot-2-is-redirect`: Treat all that match the Regex `^.\...$` as redirects. Let's be real, they all are.
+- `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
+- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.
+- `deadname-twitter`: Change `x.com` to `twitter.com`.
+- `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
+- `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
+- `minimize`: Remove non-essential parts of that are likely not tracking related.
+- `no-http`: Don't make any HTTP requests.
+- `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
@@ -73,21 +79,16 @@ Various flags are included in the default config for things I want to do frequen
 - `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
 - `no-unmangle-subdomain-ends-in-not-subdomain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
 - `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.
-- `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
-- `minimize`: Remove non-essential parts of that are likely not tracking related.
-- `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube-unplaylist`: Removes the `list` query parameter from `/watch` URLs.
-- `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
-- `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
-- `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
-- `deadname-twitter`: Change `x.com` to `twitter.com`.
-- `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
-- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.
+- `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present.
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
-- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.
+- `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
+- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.
+- `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
+- `youtube-unplaylist`: Removes the `list` query parameter from `/watch` URLs.
+- `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
 
-If a flag is enabled in a config's `"params"` field, it can be disabled using `--unflag flag1 --unflag flag1`.
+If a flag is enabled in a config's `params` field, it can be disabled using `--unflag flag1 --unflag flag1`.
 
 #### Variables
 
@@ -95,12 +96,12 @@ Variables let you specify behaviour with the `--var name value --var name2 value
 
 Various variables are included in the default config for things that have multiple useful values.
 
-- `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
 - `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
-- `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
+- `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
+- `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
 
-If a variable is specified in a config's `"params"` field, it can be unspecified using `--unvar var1 --unvar var2`.
+If a variable is specified in a config's `params` field, it can be unspecified using `--unvar var1 --unvar var2`.
 
 #### Environment variables
 
@@ -114,20 +115,19 @@ Sets let you check if a string is one of many specific strings very quickly.
 
 Various sets are included in the default config.
 
-- `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
-- `redirect-hosts`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
-- `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
-- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
-    Please note that the `utps` common mapper in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
-- `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
-- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
 - `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
-- `lmgtfy-hosts`: Hosts to replace with `google.com`.
 - `bypass.vip-hosts`: Hosts to use bypass.vip for.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
+- `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
+- `lmgtfy-hosts`: Hosts to replace with `google.com`.
+- `redirect-hosts`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
+- `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
+- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
 - `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.
 - `unmobile-not-subdomain-blacklist`: The `NotSubdomain`s to never apply the `unmobile` flag for.
-- `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present.
+- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
+    Please note that the `utps` common mapper in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
+- `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
 
