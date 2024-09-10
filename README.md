@@ -1,6 +1,6 @@
 # URL Cleaner
 
-Websites often put unique identifiers into URLs so that, when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
+Websites often put unique identifiers into URLs so that when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
 As most people do not understand and therefore cannot consent to this, it is polite to remove the spytext query parameters before sending URLs to people.  
 URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, fast, and easy as possible.
 
@@ -126,7 +126,7 @@ Various sets are included in the default config.
 - `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.
 - `unmobile-not-subdomain-blacklist`: The `NotSubdomain`s to never apply the `unmobile` flag for.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
-    Please note that the `utps` common mapper in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
+    Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
 - `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.

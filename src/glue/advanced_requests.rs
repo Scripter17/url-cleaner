@@ -138,6 +138,8 @@ impl RequestConfig {
         Ok(self.response_handler.handle(self.make(job_state)?.send()?, job_state)?)
     }
 
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(
             (self.url.is_none() || self.url.as_ref().unwrap().is_suitable_for_release(config)) &&
@@ -206,6 +208,8 @@ impl RequestBody {
         })
     }
 
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::Text(text) => text.is_suitable_for_release(config),
