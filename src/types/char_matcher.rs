@@ -244,7 +244,7 @@ impl CharMatcher {
     #[allow(clippy::only_used_in_recursion, reason = "Keeps the pattern.")]
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        if match self {
+        assert!(match self {
             Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::All(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
             Self::Any(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
@@ -254,11 +254,7 @@ impl CharMatcher {
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::Debug(_) => false,
             _ => true
-        } {
-            true
-        } else {
-            println!("Failed CharMatcher: {self:?}.");
-            false
-        }
+        }, "Unsuitable CharMatcher detected: {self:?}");
+        true
     }
 }

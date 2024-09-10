@@ -521,7 +521,7 @@ impl StringMatcher {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        if match self {
+        assert!(match self {
             Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::Not(matcher) => matcher.is_suitable_for_release(config),
             Self::All(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
@@ -546,11 +546,7 @@ impl StringMatcher {
             #[cfg(feature = "glob")] Self::Glob(_) => true,
             Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true,
             Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
-        } {
-            true
-        } else {
-            println!("Failed StringMatcher: {self:?}.");
-            false
-        }
+        }, "Unsuitable StringMatcher detected: {self:?}");
+        true
     }
 }

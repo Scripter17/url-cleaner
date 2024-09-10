@@ -1111,7 +1111,7 @@ impl Condition {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        if match self {
+        assert!(match self {
             Self::Debug(_) => false,
             Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::Not(condition) => condition.is_suitable_for_release(config),
@@ -1138,11 +1138,7 @@ impl Condition {
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
                 Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
             Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
-        } {
-            true
-        } else {
-            println!("Failed Condition: {self:?}.");
-            false
-        }
+        }, "Unsuitable Condition detected: {self:?}");
+        true
     }
 }

@@ -708,7 +708,7 @@ impl StringSource {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        if match self {
+        assert!(match self {
             Self::NoneToEmptyString(source) => source.is_suitable_for_release(config),
             Self::NoneTo {source, if_none} => source.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
             Self::Join {sources, ..} => sources.iter().all(|source| source.is_suitable_for_release(config)),
@@ -734,11 +734,7 @@ impl StringSource {
             Self::HttpRequest(_) => true,
             Self::ExtractBetween {source, start, end} => source.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
-        } {
-            true
-        } else {
-            println!("Failed StringSource: {self:?}.");
-            false
-        }
+        }, "Unsuitable StringSource detected: {self:?}");
+        true
     }
 }

@@ -1,5 +1,5 @@
 {
-	"is_default_config": true,
+	"strict_mode": true,
 	"cache_path": "cache.sqlite",
 	"docs": {
 		"flags": {

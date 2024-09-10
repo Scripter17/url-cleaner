@@ -110,7 +110,14 @@ macro_rules! get_option_str {
 /// Shorthand for checking a [`Config::docs`] has an entry for [`StringSource::String`] flags/sets/etc..
 macro_rules! check_docs {
     ($config:expr, $type:ident, $name:expr) => {
-        match $name {StringSource::String(name) => if $config.docs.$type.contains_key(name) {true} else {panic!("{name}")}, _ => true}
+        match $name {
+            StringSource::String(name) => if $config.docs.$type.contains_key(name) {
+                true
+            } else {
+                panic!(concat!("Missing docs for ", stringify!($type), " {}"), name)
+            },
+            _ => true
+        }
     }
 }
 

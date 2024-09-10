@@ -1459,7 +1459,7 @@ impl StringModification {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        if match self {
+        assert!(match self {
             Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config) && (else_modification.is_none() || else_modification.as_ref().unwrap().is_suitable_for_release(config)),
             Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release(config) && link.modification.is_suitable_for_release(config)),
             Self::IgnoreError(modification) => modification.is_suitable_for_release(config),
@@ -1505,11 +1505,7 @@ impl StringModification {
             Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
             Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
-        } {
-            true
-        } else {
-            println!("Failed StringModification: {self:?}.");
-            false
-        }
+        }, "Unsuitable StringModification detected: {self:?}");
+        true
     }
 }

@@ -1195,15 +1195,11 @@ impl UrlPart {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
     pub(crate) fn is_suitable_for_release(&self, _config: &Config) -> bool {
-        if match self {
+        assert!(match self {
             Self::Debug(_) => false,
             _ => true
-        } {
-            true
-        } else {
-            println!("Failed UrlPart: {self:?}.");
-            false
-        }
+        }, "Unsuitable UrlPart detected: {self:?}");
+        true
     }
 }
 

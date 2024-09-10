@@ -28,7 +28,7 @@ pub struct Config {
     /// 
     /// Defaults to [`false`].
     #[serde(default = "get_false")]
-    pub is_default_config: bool,
+    pub strict_mode: bool,
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
@@ -100,7 +100,7 @@ impl Config {
     /// Panics if a call to [`Job::do`] or a test fails.
     pub fn run_tests(&self) {
         // Changing the if's braces to parenthesis causes some really weird syntax errors. Including the `Ok(DEFAULT_CONFIG.get_or_init(|| config))` line above complaining about needing braces???
-        if self.is_default_config {assert!(self.is_suitable_for_release());}
+        if self.strict_mode {assert!(self.is_suitable_for_release());}
         for test in &self.tests {
             test.run(self.clone());
         }
@@ -108,12 +108,8 @@ impl Config {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     pub(crate) fn is_suitable_for_release(&self) -> bool {
-        if self.commons.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self) {
-            true
-        } else {
-            println!("Failed Config: {self:?}.");
-            false
-        }
+        assert!(self.commons.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self), "Unsuitable Config detected: {self:?}");
+        true
     }
 }
 
