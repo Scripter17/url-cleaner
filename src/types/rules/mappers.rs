@@ -942,29 +942,29 @@ impl Mapper {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
-            Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release() && (else_mapper.is_none() || else_mapper.as_ref().unwrap().is_suitable_for_release()),
-            Self::ConditionChain(chain) => chain.iter().all(|link| link.condition.is_suitable_for_release() && link.mapper.is_suitable_for_release()),
-            Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
-            Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
-            Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
-            Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release()),
-            Self::StringMap {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release()),
-            Self::IgnoreError(mapper) => mapper.is_suitable_for_release(),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release()),
-            Self::Join(value) => value.is_suitable_for_release(),
-            Self::SetPart {part, value} => part.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::ModifyPart {part, modification} => part.is_suitable_for_release() && modification.is_suitable_for_release(),
-            Self::CopyPart {from, to} => from.is_suitable_for_release() && to.is_suitable_for_release(),
-            Self::SetJobVar {name, value} => name.is_suitable_for_release() && value.is_suitable_for_release(),
-            Self::DeleteJobVar(name) => name.is_suitable_for_release(),
-            Self::ModifyJobVar {name, modification} => name.is_suitable_for_release() && modification.is_suitable_for_release(),
-            Self::Rule(rule) => rule.is_suitable_for_release(),
-            Self::Rules(rules) => rules.is_suitable_for_release(),
-            #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release() && mapper.is_suitable_for_release(),
-            Self::Retry {mapper, ..} => mapper.is_suitable_for_release(),
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        if match self {
+            Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && (else_mapper.is_none() || else_mapper.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::ConditionChain(chain) => chain.iter().all(|link| link.condition.is_suitable_for_release(config) && link.mapper.is_suitable_for_release(config)),
+            Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
+            Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
+            Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
+            Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release(config)) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::StringMap {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release(config)) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::IgnoreError(mapper) => mapper.is_suitable_for_release(config),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
+            Self::Join(value) => value.is_suitable_for_release(config),
+            Self::SetPart {part, value} => part.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::ModifyPart {part, modification} => part.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::CopyPart {from, to} => from.is_suitable_for_release(config) && to.is_suitable_for_release(config),
+            Self::SetJobVar {name, value} => name.is_suitable_for_release(config) && value.is_suitable_for_release(config),
+            Self::DeleteJobVar(name) => name.is_suitable_for_release(config),
+            Self::ModifyJobVar {name, modification} => name.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::Rule(rule) => rule.is_suitable_for_release(config),
+            Self::Rules(rules) => rules.is_suitable_for_release(config),
+            #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),
+            Self::Retry {mapper, ..} => mapper.is_suitable_for_release(config),
             Self::Debug(_) => false,
             Self::None  | Self::Error | Self::RemoveQuery |
                 Self::RemoveQueryParams(_) | Self::AllowQueryParams(_) |
@@ -973,7 +973,12 @@ impl Mapper {
                 Self::SetHost(_) | Self::MovePart {..} => true,
             #[cfg(feature = "http")]
             Self::ExpandRedirect {..} => true,
-            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
+            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+        } {
+            true
+        } else {
+            println!("Failed Mapper: {self:?}.");
+            false
         }
     }
 }

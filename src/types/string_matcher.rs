@@ -520,32 +520,37 @@ impl StringMatcher {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
-            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::Not(matcher) => matcher.is_suitable_for_release(),
-            Self::All(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release()),
-            Self::Any(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release()),
-            Self::TreatErrorAsPass(matcher) => matcher.is_suitable_for_release(),
-            Self::TreatErrorAsFail(matcher) => matcher.is_suitable_for_release(),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::FirstNotError(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release()),
-            Self::Contains {value, r#where} => value.is_suitable_for_release() && r#where.is_suitable_for_release(),
-            Self::Equals(value) => value.is_suitable_for_release(),
-            Self::InSet(name) => name.is_suitable_for_release(),
-            Self::Modified {modification, matcher} => modification.is_suitable_for_release() && matcher.is_suitable_for_release(),
-            Self::AllCharsMatch(matcher) => matcher.is_suitable_for_release(),
-            Self::AnyCharMatches(matcher) => matcher.is_suitable_for_release(),
-            Self::NthSegmentMatches {split, matcher, ..} => split.is_suitable_for_release() && matcher.is_suitable_for_release(),
-            Self::AnySegmentMatches {split, matcher} => split.is_suitable_for_release() && matcher.is_suitable_for_release(),
-            Self::ContainsAnyInList {list, r#where} => list.is_suitable_for_release() && r#where.is_suitable_for_release(),
-            Self::SegmentsStartWith {split, value} => split.is_suitable_for_release() && value.is_suitable_for_release(),
-            Self::SegmentsEndWith {split, value} => split.is_suitable_for_release() && value.is_suitable_for_release(),
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        if match self {
+            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::Not(matcher) => matcher.is_suitable_for_release(config),
+            Self::All(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
+            Self::Any(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
+            Self::TreatErrorAsPass(matcher) => matcher.is_suitable_for_release(config),
+            Self::TreatErrorAsFail(matcher) => matcher.is_suitable_for_release(config),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::FirstNotError(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
+            Self::Contains {value, r#where} => value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
+            Self::Equals(value) => value.is_suitable_for_release(config),
+            Self::InSet(name) => name.is_suitable_for_release(config) && check_docs!(config, sets, name),
+            Self::Modified {modification, matcher} => modification.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::AllCharsMatch(matcher) => matcher.is_suitable_for_release(config),
+            Self::AnyCharMatches(matcher) => matcher.is_suitable_for_release(config),
+            Self::NthSegmentMatches {split, matcher, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::AnySegmentMatches {split, matcher} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::ContainsAnyInList {list, r#where} => list.is_suitable_for_release(config) && r#where.is_suitable_for_release(config) && check_docs!(config, lists, list),
+            Self::SegmentsStartWith {split, value} => split.is_suitable_for_release(config) && value.is_suitable_for_release(config),
+            Self::SegmentsEndWith {split, value} => split.is_suitable_for_release(config) && value.is_suitable_for_release(config),
             Self::Debug(_) => false,
             #[cfg(feature = "regex")] Self::Regex(_) => true,
             #[cfg(feature = "glob")] Self::Glob(_) => true,
             Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true,
-            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
+            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+        } {
+            true
+        } else {
+            println!("Failed StringMatcher: {self:?}.");
+            false
         }
     }
 }

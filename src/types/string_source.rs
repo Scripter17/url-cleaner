@@ -707,33 +707,38 @@ impl StringSource {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
-            Self::NoneToEmptyString(source) => source.is_suitable_for_release(),
-            Self::NoneTo {source, if_none} => source.is_suitable_for_release() && if_none.is_suitable_for_release(),
-            Self::Join {sources, ..} => sources.iter().all(|source| source.is_suitable_for_release()),
-            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::IfSourceMatches {source, matcher, then, r#else} => source.is_suitable_for_release() && matcher.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::IfSourceIsNone {source, then, r#else} => source.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::Map {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, source)| source.is_suitable_for_release()) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release()) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release()),
-            Self::Part(part) => part.is_suitable_for_release(),
-            Self::ExtractPart {source, part} => source.is_suitable_for_release() && part.is_suitable_for_release(),
-            Self::CommonVar(name) => name.is_suitable_for_release(),
-            Self::Var(name) => name.is_suitable_for_release(),
-            Self::JobVar(name) => name.is_suitable_for_release(),
-            Self::ContextVar(name) => name.is_suitable_for_release(),
-            Self::MapKey {map, key} => map.is_suitable_for_release() && key.is_suitable_for_release(),
-            Self::Modified {source, modification} => source.is_suitable_for_release() && modification.is_suitable_for_release(),
-            Self::EnvVar(name) => name.is_suitable_for_release(),
-            #[cfg(feature = "cache")] Self::Cache {category, key, source} => category.is_suitable_for_release() && key.is_suitable_for_release() && source.is_suitable_for_release(),
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        if match self {
+            Self::NoneToEmptyString(source) => source.is_suitable_for_release(config),
+            Self::NoneTo {source, if_none} => source.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
+            Self::Join {sources, ..} => sources.iter().all(|source| source.is_suitable_for_release(config)),
+            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config) && check_docs!(config, flags, flag.as_ref()),
+            Self::IfSourceMatches {source, matcher, then, r#else} => source.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::IfSourceIsNone {source, then, r#else} => source.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::Map {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, source)| source.is_suitable_for_release(config)) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release(config)) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::Part(part) => part.is_suitable_for_release(config),
+            Self::ExtractPart {source, part} => source.is_suitable_for_release(config) && part.is_suitable_for_release(config),
+            Self::CommonVar(name) => name.is_suitable_for_release(config),
+            Self::Var(name) => name.is_suitable_for_release(config) && check_docs!(config, vars, name.as_ref()),
+            Self::JobVar(name) => name.is_suitable_for_release(config),
+            Self::ContextVar(name) => name.is_suitable_for_release(config),
+            Self::MapKey {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
+            Self::Modified {source, modification} => source.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::EnvVar(name) => name.is_suitable_for_release(config),
+            #[cfg(feature = "cache")] Self::Cache {category, key, source} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && source.is_suitable_for_release(config),
             Self::Debug(_) => false,
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,
             Self::Error | Self::String(_) => true,
             #[cfg(feature = "advanced-requests")]
             Self::HttpRequest(_) => true,
-            Self::ExtractBetween {source, start, end} => source.is_suitable_for_release() && start.is_suitable_for_release() && end.is_suitable_for_release(),
-            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
+            Self::ExtractBetween {source, start, end} => source.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
+            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+        } {
+            true
+        } else {
+            println!("Failed StringSource: {self:?}.");
+            false
         }
     }
 }

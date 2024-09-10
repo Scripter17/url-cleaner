@@ -16,6 +16,8 @@ mod params;
 pub use params::*;
 #[cfg(feature = "http")] mod http_client_config;
 #[cfg(feature = "http")] pub use http_client_config::*;
+mod docs;
+pub use docs::*;
 
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -40,7 +42,10 @@ pub struct Config {
     pub rules: Rules,
     /// Various things that are used in multiple spots.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub commons: Commons
+    pub commons: Commons,
+    /// The documentation.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub docs: ConfigDocs
 }
 
 /// Serde helper function.
@@ -103,7 +108,12 @@ impl Config {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     pub(crate) fn is_suitable_for_release(&self) -> bool {
-        self.commons.is_suitable_for_release() && self.rules.is_suitable_for_release()
+        if self.commons.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self) {
+            true
+        } else {
+            println!("Failed Config: {self:?}.");
+            false
+        }
     }
 }
 
@@ -166,11 +176,11 @@ pub struct Commons {
 
 impl Commons {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        self.mappers.iter().all(|(_, v)| v.is_suitable_for_release()) &&
-            self.string_sources.iter().all(|(_, v)| v.is_suitable_for_release()) &&
-            self.string_modifications.iter().all(|(_, v)| v.is_suitable_for_release()) &&
-            self.string_matchers.iter().all(|(_, v)| v.is_suitable_for_release())
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        self.mappers.iter().all(|(_, v)| v.is_suitable_for_release(config)) &&
+            self.string_sources.iter().all(|(_, v)| v.is_suitable_for_release(config)) &&
+            self.string_modifications.iter().all(|(_, v)| v.is_suitable_for_release(config)) &&
+            self.string_matchers.iter().all(|(_, v)| v.is_suitable_for_release(config))
     }
 }
 

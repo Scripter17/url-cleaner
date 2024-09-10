@@ -363,21 +363,26 @@ impl Rule {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
-            Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
-            Self::PartRuleMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
-            Self::PartRulesMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
-            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release()),
-            Self::StringRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rule)| rule.is_suitable_for_release()),
-            Self::StringRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, rules)| rules.is_suitable_for_release()),
-            Self::Repeat {rules, ..} => rules.is_suitable_for_release(),
-            Self::CommonCondition {condition, rules} => condition.is_suitable_for_release() && rules.is_suitable_for_release(),
-            Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(),
-            Self::Rules(rules) => rules.is_suitable_for_release(),
-            Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release() && else_mapper.is_suitable_for_release(),
-            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release()),
-            Self::Normal {condition, mapper} => condition.is_suitable_for_release() && mapper.is_suitable_for_release()
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        if match self {
+            Self::PartMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)),
+            Self::PartRuleMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)),
+            Self::PartRulesMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)),
+            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)),
+            Self::StringRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)),
+            Self::StringRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)),
+            Self::Repeat {rules, ..} => rules.is_suitable_for_release(config),
+            Self::CommonCondition {condition, rules} => condition.is_suitable_for_release(config) && rules.is_suitable_for_release(config),
+            Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(config),
+            Self::Rules(rules) => rules.is_suitable_for_release(config),
+            Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.is_suitable_for_release(config),
+            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config)),
+            Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config)
+        } {
+            true
+        } else {
+            println!("Failed Rule: {self:?}.");
+            false
         }
     }
 }
@@ -441,7 +446,7 @@ impl Rules {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        self.0.iter().all(|rule| rule.is_suitable_for_release())
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        self.0.iter().all(|rule| rule.is_suitable_for_release(config))
     }
 }

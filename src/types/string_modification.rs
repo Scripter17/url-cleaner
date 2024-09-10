@@ -1458,43 +1458,43 @@ impl StringModification {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
-            Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release() && modification.is_suitable_for_release() && (else_modification.is_none() || else_modification.as_ref().unwrap().is_suitable_for_release()),
-            Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release() && link.modification.is_suitable_for_release()),
-            Self::IgnoreError(modification) => modification.is_suitable_for_release(),
-            Self::All(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
-            Self::AllNoRevert(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
-            Self::AllIgnoreError(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release()),
-            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::Set(source) => source.is_suitable_for_release(),
-            Self::Append(source) => source.is_suitable_for_release(),
-            Self::Prepend(source) => source.is_suitable_for_release(),
-            Self::Replace {find, replace} => find.is_suitable_for_release() && replace.is_suitable_for_release(),
-            Self::ReplaceRange {replace, ..} => replace.is_suitable_for_release(),
-            Self::StripPrefix(source) => source.is_suitable_for_release(),
-            Self::StripSuffix(source) => source.is_suitable_for_release(),
-            Self::StripMaybePrefix(source) => source.is_suitable_for_release(),
-            Self::StripMaybeSuffix(source) => source.is_suitable_for_release(),
-            Self::Replacen {find, replace, ..} => find.is_suitable_for_release() && replace.is_suitable_for_release(),
-            Self::Insert {value, ..} => value.is_suitable_for_release(),
-            Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(),
-            Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(),
-            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            #[cfg(feature = "regex")] Self::RegexCaptures {replace, ..} => replace.is_suitable_for_release(),
-            #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {replace, join, ..} => replace.is_suitable_for_release() && join.is_suitable_for_release(),
-            #[cfg(feature = "regex")] Self::RegexReplace {replace, ..} => replace.is_suitable_for_release(),
-            #[cfg(feature = "regex")] Self::RegexReplaceAll {replace, ..} => replace.is_suitable_for_release(),
-            #[cfg(feature = "regex")] Self::RegexReplacen {replace, ..} => replace.is_suitable_for_release(),
-            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::JsonPointer(pointer) => pointer.is_suitable_for_release(),
-            Self::ModifyNthSegment {split, modification, ..} => split.is_suitable_for_release() && modification.is_suitable_for_release(),
-            Self::ModifySegments {split, modification, ..} => split.is_suitable_for_release() && modification.is_suitable_for_release(),
-            Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release()),
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        if match self {
+            Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config) && (else_modification.is_none() || else_modification.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release(config) && link.modification.is_suitable_for_release(config)),
+            Self::IgnoreError(modification) => modification.is_suitable_for_release(config),
+            Self::All(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
+            Self::AllNoRevert(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
+            Self::AllIgnoreError(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
+            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::Set(source) => source.is_suitable_for_release(config),
+            Self::Append(source) => source.is_suitable_for_release(config),
+            Self::Prepend(source) => source.is_suitable_for_release(config),
+            Self::Replace {find, replace} => find.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
+            Self::ReplaceRange {replace, ..} => replace.is_suitable_for_release(config),
+            Self::StripPrefix(source) => source.is_suitable_for_release(config),
+            Self::StripSuffix(source) => source.is_suitable_for_release(config),
+            Self::StripMaybePrefix(source) => source.is_suitable_for_release(config),
+            Self::StripMaybeSuffix(source) => source.is_suitable_for_release(config),
+            Self::Replacen {find, replace, ..} => find.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
+            Self::Insert {value, ..} => value.is_suitable_for_release(config),
+            Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(config),
+            Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(config),
+            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            #[cfg(feature = "regex")] Self::RegexCaptures {replace, ..} => replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {replace, join, ..} => replace.is_suitable_for_release(config) && join.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexReplace {replace, ..} => replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexReplaceAll {replace, ..} => replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexReplacen {replace, ..} => replace.is_suitable_for_release(config),
+            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::JsonPointer(pointer) => pointer.is_suitable_for_release(config),
+            Self::ModifyNthSegment {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::ModifySegments {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release(config)),
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
                 Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode => true,
@@ -1502,9 +1502,14 @@ impl StringModification {
             Self::RegexFind(_) => true,
             #[cfg(feature = "base64")]
             Self::Base64Encode(_) | Self::Base64Decode(_) => true,
-            Self::ExtractBetween {start, end} => start.is_suitable_for_release() && end.is_suitable_for_release(),
+            Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
-            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
+            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+        } {
+            true
+        } else {
+            println!("Failed StringModification: {self:?}.");
+            false
         }
     }
 }

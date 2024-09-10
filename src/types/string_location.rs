@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
+use crate::types::*;
 use crate::util::*;
 
 /// A wrapper around [`str`]'s various substring searching functions.
@@ -326,10 +327,15 @@ impl StringLocation {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
+    pub(crate) fn is_suitable_for_release(&self, _config: &Config) -> bool {
+        if match self {
             Self::Debug(_) => false,
             _ => true
+        } {
+            true
+        } else {
+            println!("Failed StringLocation: {self:?}.");
+            false
         }
     }
 }

@@ -48,7 +48,7 @@ The default config is intended to always obey the following rules:
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
     - URLs that are semantically valid should never change semantics and/or become semantically invalid.
         - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
-- Outside of long (>10)/infinite redirects/shortlinks, it should always be idempotent.
+- Outside of long (>10)/infinite redirects/redirects, it should always be idempotent.
 - Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
 - The `command` and `debug` features, as well as any features starting with `experiment-`/`experimental-` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
@@ -65,7 +65,7 @@ Various flags are included in the default config for things I want to do frequen
 
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-http`: Don't make any HTTP requests.
-- `assume-1-dot-2-is-shortlink`: Treat all that match the Regex `^.\...$` as shortlinks. Let's be real, they all are.
+- `assume-1-dot-2-is-redirect`: Treat all that match the Regex `^.\...$` as redirects. Let's be real, they all are.
 - `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
@@ -76,6 +76,8 @@ Various flags are included in the default config for things I want to do frequen
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `minimize`: Remove non-essential parts of that are likely not tracking related.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
+- `youtube-unplaylist`: Removes the `list` query parameter from `/watch` URLs.
+- `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
 - `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
 - `deadname-twitter`: Change `x.com` to `twitter.com`.
@@ -113,7 +115,7 @@ Sets let you check if a string is one of many specific strings very quickly.
 Various sets are included in the default config.
 
 - `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
-- `shortlink-hosts`: Hosts that are considered shortlinks in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandShortLink` mapper applied.
+- `redirect-hosts`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
 - `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
     Please note that the `utps` common mapper in the default config also removes any parameter starting with `cm_mmc`, `__s`, `at_custom`, and `utm_` and thus parameters starting with those can be omitted from this set.
@@ -121,6 +123,11 @@ Various sets are included in the default config.
 - `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
 - `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
 - `lmgtfy-hosts`: Hosts to replace with `google.com`.
+- `bypass.vip-hosts`: Hosts to use bypass.vip for.
+- `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
+- `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.
+- `unmobile-not-subdomain-blacklist`: The `NotSubdomain`s to never apply the `unmobile` flag for.
+- `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
 

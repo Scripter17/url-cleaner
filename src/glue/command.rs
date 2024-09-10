@@ -58,13 +58,7 @@ impl FromStr for CommandConfig {
 
 impl From<&str> for CommandConfig {
     fn from(value: &str) -> Self {
-        Self {
-            program: value.to_string(),
-            args: Vec::default(),
-            current_dir: None,
-            envs: HashMap::default(),
-            stdin: None
-        }
+        value.to_string().into()
     }
 }
 
@@ -72,10 +66,10 @@ impl From<String> for CommandConfig {
     fn from(value: String) -> Self {
         Self {
             program: value,
-            args: Vec::default(),
-            current_dir: None,
-            envs: HashMap::default(),
-            stdin: None
+            args: Default::default(),
+            current_dir: Default::default(),
+            envs: Default::default(),
+            stdin: Default::default()
         }
     }
 }

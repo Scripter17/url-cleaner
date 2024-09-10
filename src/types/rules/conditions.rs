@@ -1110,34 +1110,39 @@ impl Condition {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        match self {
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        if match self {
             Self::Debug(_) => false,
-            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release() && then.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::Not(condition) => condition.is_suitable_for_release(),
-            Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
-            Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
-            Self::PartMap {part, map} => part.is_suitable_for_release() && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
-            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && map.iter().all(|(_, condition)| condition.is_suitable_for_release()),
-            Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(),
-            Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release() && r#else.is_suitable_for_release(),
-            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release()),
-            Self::PartIs {part, value} => part.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::PartContains {part, value, r#where} => part.is_suitable_for_release() && value.is_suitable_for_release() && r#where.is_suitable_for_release(),
-            Self::PartMatches {part, matcher} => part.is_suitable_for_release() && matcher.is_suitable_for_release(),
-            Self::VarIs {name, value} => name.is_suitable_for_release() && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::FlagIsSet(name) => name.is_suitable_for_release(),
-            Self::StringIs {source, value} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release()) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release()),
-            Self::StringContains {source, value, r#where} => source.is_suitable_for_release() && value.is_suitable_for_release() && r#where.is_suitable_for_release(),
-            Self::StringMatches {source, matcher} => source.is_suitable_for_release() && matcher.is_suitable_for_release(),
+            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::Not(condition) => condition.is_suitable_for_release(config),
+            Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
+            Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
+            Self::PartMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
+            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
+            Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(config),
+            Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(config),
+            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
+            Self::PartIs {part, value} => part.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::PartContains {part, value, r#where} => part.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
+            Self::PartMatches {part, matcher} => part.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::VarIs {name, value} => name.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),
+            Self::StringIs {source, value} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::StringContains {source, value, r#where} => source.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
+            Self::StringMatches {source, matcher} => source.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             #[cfg(feature = "commands")] Self::CommandExists (_) => false,
             #[cfg(feature = "commands")] Self::CommandExitStatus {..} => false,
             Self::Always | Self::Never | Self::Error | Self::MaybeWWWDomain(_) |
                 Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
                 Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
-            Self::Common {name, vars} => name.is_suitable_for_release() && vars.iter().all(|(_, v)| v.is_suitable_for_release())
+            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+        } {
+            true
+        } else {
+            println!("Failed Condition: {self:?}.");
+            false
         }
     }
 }
