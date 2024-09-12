@@ -17,7 +17,7 @@ jobs:
     - name: Build
       run: rustup update stable && cargo build --verbose
 
-  build NDF:
+  build_NDF:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -31,7 +31,7 @@ jobs:
     - name: Run tests
       run: rustup update stable && cargo test --verbose -- --skip ExpandRedirect
 
-  test NDF:
+  test_NDF:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
