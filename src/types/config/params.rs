@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Serialize, Deserialize};
 
-use super::*;
+use crate::glue::*;
 use crate::util::*;
 
 /// Configuration options to choose the behaviour of various URL Cleaner types.

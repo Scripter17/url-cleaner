@@ -11,16 +11,29 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Build
       run: rustup update stable && cargo build --verbose
+
+  build NDF:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
     - name: Build no default features
       run: rustup update stable && cargo build --verbose --no-default-features
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
     - name: Run tests
       run: rustup update stable && cargo test --verbose -- --skip ExpandRedirect
+
+  test NDF:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
     - name: Run tests no default features
       run: rustup update stable && cargo test --verbose --no-default-features -- --skip default_config

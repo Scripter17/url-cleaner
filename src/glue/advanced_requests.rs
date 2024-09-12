@@ -144,7 +144,8 @@ impl RequestConfig {
         assert!(
             (self.url.is_none() || self.url.as_ref().unwrap().is_suitable_for_release(config)) &&
             self.headers.iter().all(|(_, v)| (v.is_none() || v.as_ref().unwrap().is_suitable_for_release(config))) &&
-            (self.body.is_none() || self.body.as_ref().unwrap().is_suitable_for_release(config)),
+            (self.body.is_none() || self.body.as_ref().unwrap().is_suitable_for_release(config)) &&
+            self.response_handler.is_suitable_for_release(config),
             "Unsuitable RequestConfig: {self:?}"
         );
         true
@@ -289,5 +290,16 @@ impl ResponseHandler {
                 response.cookies().find(|cookie| cookie.name()==name).ok_or(ResponseHandlerError::CookieNotFound)?.value().to_string()
             }
         })
+    }
+
+    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
+    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
+    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+        assert!(match self {
+            Self::Body | Self::Url => true,
+            Self::Header(name) => name.is_suitable_for_release(config),
+            Self::Cookie(name) => name.is_suitable_for_release(config)
+        }, "Unsuitable ResponseHandler: {self:?}");
+        true
     }
 }

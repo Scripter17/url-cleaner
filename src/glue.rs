@@ -8,6 +8,8 @@
 #[cfg(feature = "commands"         )] pub use command::*;
 #[cfg(feature = "advanced-requests")] mod advanced_requests;
 #[cfg(feature = "advanced-requests")] pub use advanced_requests::*;
+#[cfg(feature = "http"             )] mod http_client_config;
+#[cfg(feature = "http"             )] pub use http_client_config::*;
 #[cfg(feature = "http"             )] pub mod proxy;
 #[cfg(feature = "http"             )] pub use proxy::*;
 #[cfg(feature = "http"             )] pub(crate) mod headermap;

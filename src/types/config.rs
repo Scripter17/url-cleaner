@@ -14,8 +14,6 @@ use crate::util::is_default;
 
 mod params;
 pub use params::*;
-#[cfg(feature = "http")] mod http_client_config;
-#[cfg(feature = "http")] pub use http_client_config::*;
 mod docs;
 pub use docs::*;
 

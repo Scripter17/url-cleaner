@@ -9,7 +9,9 @@ use url::Url;
 use thiserror::Error;
 
 mod glue;
+use glue::*;
 mod types;
+use types::*;
 mod util;
 
 #[derive(Debug, Clone, Parser)]
@@ -71,7 +73,7 @@ struct Args {
     write_cache: Option<bool>,
     /// The proxy to send HTTP requests over. Example: socks5://localhost:9150
     #[cfg(feature = "http")]
-    #[arg(             long)] http_proxy: Option<glue::ProxyConfig>,
+    #[arg(             long)] http_proxy: Option<ProxyConfig>,
     /// Disables all HTTP proxying.
     #[cfg(feature = "http")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
@@ -99,13 +101,13 @@ struct Args {
 #[derive(Debug, Error)]
 pub enum CliError {
     /// Returned when a [`GetConfigError`] is encountered.
-    #[error(transparent)] GetConfigError(#[from] types::GetConfigError),
+    #[error(transparent)] GetConfigError(#[from] GetConfigError),
     /// Returned when URL Cleaner fails to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when URL Cleaner fails to parse a [`ParamsDiff`] file's contents.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
     /// Returned when a [`CleaningError`] is encountered.
-    #[error(transparent)] CleaningError(#[from] types::CleaningError),
+    #[error(transparent)] CleaningError(#[from] CleaningError),
     /// Returned when a [`SerdeJsonError`] is encountered.
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }
@@ -120,12 +122,12 @@ fn main() -> Result<(), CliError> {
     let print_args = args.print_args;
     if print_args {println!("{args:?}");}
 
-    let mut config = types::Config::get_default_or_load(args.config.as_deref())?.into_owned();
+    let mut config = Config::get_default_or_load(args.config.as_deref())?.into_owned();
     let mut params_diffs = args.params_diff
         .into_iter()
         .map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile))
         .collect::<Result<Vec<_>, _>>()?;
-    params_diffs.push(types::ParamsDiff {
+    params_diffs.push(ParamsDiff {
         flags  : args.flag  .into_iter().collect(), // It's probably not a good thing to do a global impl for,
         unflags: args.unflag.into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
         #[allow(clippy::indexing_slicing, reason = "Clap ensures there's always exactly 2.")]
@@ -141,10 +143,10 @@ fn main() -> Result<(), CliError> {
         delete_maps: Default::default(),
         #[cfg(feature = "cache")] read_cache : args.read_cache,
         #[cfg(feature = "cache")] write_cache: args.write_cache,
-        #[cfg(feature = "http")] http_client_config_diff: Some(types::HttpClientConfigDiff {
+        #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
             set_proxies: args.http_proxy.map(|x| vec![x]),
             no_proxy: args.no_http_proxy,
-            ..types::HttpClientConfigDiff::default()
+            ..HttpClientConfigDiff::default()
         })
     });
 
@@ -169,7 +171,7 @@ fn main() -> Result<(), CliError> {
 
     if no_cleaning {std::process::exit(0);}
 
-    let mut jobs = types::Jobs {
+    let mut jobs = Jobs {
         #[cfg(feature = "cache")]
         cache_handler: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
         configs_source: {

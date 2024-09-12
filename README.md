@@ -57,6 +57,7 @@ Currently no guarantees are made, though when the above rules are broken it is c
 
 Additionally, these rules may be changed at any time for any reason. Usually just for clarification.
 
+<!--cmd scripts/gen-docs.sh-->
 #### Flags
 
 Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
@@ -75,7 +76,7 @@ Various flags are included in the default config for things I want to do frequen
 - `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
-- `no-unmangle-path-is-url-encoded-url`: TODO
+- `no-unmangle-path-is-url-encoded-url`: Don't convert `https://example.com/https%3A%2F%2Fexample.com%2Fuser` to `https://example.com/user`.
 - `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
 - `no-unmangle-subdomain-ends-in-not-subdomain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
 - `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.
@@ -142,6 +143,7 @@ Currently only one list is included in the default config:
 - `utp-prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
 
 Currently there is no command line syntax for them. There really should be.
+<!--/cmd-->
 
 #### Citations
 
