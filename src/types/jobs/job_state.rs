@@ -14,8 +14,8 @@ pub struct JobState<'a> {
     pub context: &'a UrlContext,
     /// The flags, variables, etc. defined by the job initiator.
     pub params: &'a Params,
-    /// The string vars created and managed by the config.
-    pub vars: HashMap<String, String>,
+    /// Scratchpad space for [`Mapper`]s to store state in.
+    pub scratchpad: &'a mut JobScratchpad,
     /// The cache handler.
     #[cfg(feature = "cache")]
     pub cache_handler: &'a CacheHandler,

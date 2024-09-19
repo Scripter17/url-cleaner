@@ -25,10 +25,11 @@ impl Job<'_> {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     pub fn r#do(mut self) -> Result<Url, DoJobError> {
+        let mut scratchpad = Default::default();
         self.config.rules.apply(&mut JobState {
             url: &mut self.url,
             params: &self.config.params,
-            vars: Default::default(),
+            scratchpad: &mut scratchpad,
             context: &self.context,
             #[cfg(feature = "cache")]
             cache_handler: self.cache_handler,

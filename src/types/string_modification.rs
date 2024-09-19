@@ -95,6 +95,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -103,7 +104,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -124,6 +125,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -132,7 +134,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -153,6 +155,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -161,7 +164,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -182,6 +185,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -190,7 +194,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -216,6 +220,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -224,7 +229,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -258,6 +263,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -266,7 +272,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -285,6 +291,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -293,7 +300,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -314,6 +321,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -322,7 +330,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -345,6 +353,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -353,7 +362,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -374,6 +383,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -382,7 +392,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -403,6 +413,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -411,7 +422,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -432,6 +443,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -440,7 +452,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -470,6 +482,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -478,7 +491,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -508,6 +521,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -516,7 +530,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -539,6 +553,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -547,7 +562,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -599,6 +614,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -607,7 +623,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -662,6 +678,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -670,7 +687,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -710,6 +727,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -718,7 +736,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -764,6 +782,7 @@ pub enum StringModification {
     /// # use url_cleaner::glue::*;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -772,7 +791,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -846,6 +865,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -854,7 +874,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -875,6 +895,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -883,7 +904,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -918,6 +939,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -926,7 +948,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -959,6 +981,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -967,7 +990,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -1022,6 +1045,7 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -1030,7 +1054,7 @@ pub enum StringModification {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -1063,8 +1087,6 @@ pub enum StringModification {
         not_found_behavior: CharNotFoundBehavior
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
-    /// 
-    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
     Common {
         /// The name of the [`Self`] to use.
         name: StringSource,
@@ -1438,13 +1460,14 @@ impl StringModification {
             Self::Common {name, vars} => {
                 let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringModificationError>((k.clone(), get_string!(v, job_state, StringModificationError)))).collect::<Result<HashMap<_, _>, _>>()?;
                 let mut temp_url = job_state.url.clone();
+                let mut temp_scratchpad = job_state.scratchpad.clone();
                 job_state.commons.string_modifications.get(get_str!(name, job_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
                     &JobState {
                         url: &mut temp_url,
                         context: job_state.context,
                         params: job_state.params,
-                        vars: Default::default(),
+                        scratchpad: &mut temp_scratchpad,
                         #[cfg(feature = "cache")]
                         cache_handler: job_state.cache_handler,
                         commons: job_state.commons,

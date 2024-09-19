@@ -54,12 +54,13 @@ impl Expectation {
         println!("Testing the following expectation set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable")); // Only applies when testing a config.
         let mut temp = self.before.clone();
         let context = Default::default();
+        let mut scratchpad = Default::default();
         #[cfg(feature = "cache")]
         let cache_handler = (&*config.cache_path).into();
         config.rules.apply(&mut JobState {
             url: &mut temp,
             params: &config.params,
-            vars: Default::default(),
+            scratchpad: &mut scratchpad,
             context: &context,
             #[cfg(feature = "cache")]
             cache_handler: &cache_handler,

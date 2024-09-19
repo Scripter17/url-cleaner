@@ -108,6 +108,7 @@ pub enum Rule {
     /// # use url::Url;
     /// # use std::str::FromStr;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -116,7 +117,7 @@ pub enum Rule {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -193,8 +194,6 @@ pub enum Rule {
         else_mapper: Mapper
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::rules`].
-    /// 
-    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
     Common {
         /// The name of the [`Self`] to use.
         name: StringSource,
@@ -218,6 +217,7 @@ pub enum Rule {
     /// // [`RuleError::FailedCondition`] is returned when the condition does not pass.
     /// // [`Rules`] just ignores them because it's a higher level API.
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -226,7 +226,7 @@ pub enum Rule {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -310,9 +310,11 @@ impl Rule {
 
                 // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rules::apply`]!!!
 
-                let mut previous_url = job_state.url.clone();
-                let mut previous_job_vars = job_state.vars.clone();
+                let mut previous_url;
+                let mut previous_job_scratchpad;
                 for _ in 0..*limit {
+                    previous_url = job_state.url.clone();
+                    previous_job_scratchpad = job_state.scratchpad.clone();
                     let mut none_passed=true;
                     for rule in rules.0.iter() {
                         match rule.apply(job_state) {
@@ -321,9 +323,7 @@ impl Rule {
                             _ => none_passed=false
                         }
                     }
-                    if stop_loop_condition.satisfied_by(job_state, none_passed, &previous_url, &previous_job_vars) {break;}
-                    previous_url = job_state.url.clone();
-                    previous_job_vars = job_state.vars.clone();
+                    if stop_loop_condition.satisfied_by(job_state, none_passed, &previous_url, &previous_job_scratchpad) {break;}
                 }
                 Ok(())
             },
@@ -351,7 +351,7 @@ impl Rule {
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,
-                    vars: Default::default(),
+                    scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,
@@ -415,10 +415,11 @@ impl Rules {
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         debug!(Rules::apply, self, job_state);
         let mut temp_url = job_state.url.clone();
+        let mut temp_scratchpad = job_state.scratchpad.clone();
         let mut temp_job_state = JobState {
             url: &mut temp_url,
             params: job_state.params,
-            vars: job_state.vars.clone(),
+            scratchpad: &mut temp_scratchpad,
             context: job_state.context,
             #[cfg(feature = "cache")]
             cache_handler: job_state.cache_handler,
@@ -435,7 +436,7 @@ impl Rules {
                 _ => {}
             }
         }
-        job_state.vars = temp_job_state.vars;
+        *job_state.scratchpad = temp_scratchpad;
         *job_state.url = temp_url;
         Ok(())
     }

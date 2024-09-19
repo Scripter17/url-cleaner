@@ -10,3 +10,5 @@ mod job_state;
 pub use job_state::*;
 mod url_context;
 pub use url_context::*;
+mod job_scratchpad;
+pub use job_scratchpad::*;

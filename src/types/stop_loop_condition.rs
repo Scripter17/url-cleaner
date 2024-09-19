@@ -21,28 +21,28 @@ pub enum StopLoopCondition {
     NonePass,
     /// Passes if the [`Url`]'s end value is the same as its start value.
     NoUrlChange,
-    /// Passes if the [`JobState`]'s [`JobState::vars`]'s end value is the same as its start value.
-    NoJobVarChange
+    /// Passes if the [`JobState`]'s [`JobState::scratchpad`]'s end value is the same as its start value.
+    NoScratchpadChange
 }
 
 impl Default for StopLoopCondition {
-    /// Defaults to `Self::Any(vec![Self::NonePass, Self::All(vec![Self::NoUrlChange, Self::NoJobVarChange])]).
+    /// Defaults to `Self::Any(vec![Self::NonePass, Self::All(vec![Self::NoUrlChange, Self::NoScratchpadChange])]).
     fn default() -> Self {
-        Self::Any(vec![Self::NonePass, Self::All(vec![Self::NoUrlChange, Self::NoJobVarChange])])
+        Self::Any(vec![Self::NonePass, Self::All(vec![Self::NoUrlChange, Self::NoScratchpadChange])])
     }
 }
 
 impl StopLoopCondition {
     /// See each variant of [`Self`] for details.
-    pub fn satisfied_by(&self, job_state: &JobState, none_passed: bool, previous_url: &Url, previous_job_vars: &HashMap<String, String>) -> bool {
-        debug!(StopLoopCondition::satisfied_by, self, job_state, none_passed, previous_url, previous_job_vars);
+    pub fn satisfied_by(&self, job_state: &JobState, none_passed: bool, previous_url: &Url, previous_scratchpad: &JobScratchpad) -> bool {
+        debug!(StopLoopCondition::satisfied_by, self, job_state, none_passed, previous_url, previous_scratchpad);
         match self {
-            Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(job_state, none_passed, previous_url, previous_job_vars)),
-            Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(job_state, none_passed, previous_url, previous_job_vars)),
-            Self::Not(condition ) => !condition.satisfied_by(job_state, none_passed, previous_url, previous_job_vars),
+            Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(job_state, none_passed, previous_url, previous_scratchpad)),
+            Self::Any(conditions) => conditions.iter().any(|condition| condition.satisfied_by(job_state, none_passed, previous_url, previous_scratchpad)),
+            Self::Not(condition ) => !condition.satisfied_by(job_state, none_passed, previous_url, previous_scratchpad),
             Self::NonePass => none_passed,
             Self::NoUrlChange => job_state.url == previous_url,
-            Self::NoJobVarChange => job_state.vars == *previous_job_vars
+            Self::NoScratchpadChange => job_state.scratchpad == previous_scratchpad
         }
     }
 }

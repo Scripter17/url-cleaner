@@ -65,6 +65,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -73,7 +74,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -94,6 +95,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -102,7 +104,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -121,6 +123,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -129,7 +132,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -204,6 +207,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -212,7 +216,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -239,6 +243,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -247,7 +252,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -279,6 +284,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url = Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -287,7 +293,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -311,6 +317,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -319,7 +326,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -403,6 +410,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -411,7 +419,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -472,6 +480,7 @@ pub enum Mapper {
     /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
     /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
     /// let context = Default::default();
@@ -480,7 +489,7 @@ pub enum Mapper {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -538,7 +547,7 @@ pub enum Mapper {
     /// 
     /// If an entry is not found, calls [`Mapper::apply`] and writes the new [`JobState::url`] to the cache.
     /// 
-    /// Changes to [`JobState::vars`] are not cached but the resulting URL still is.
+    /// Changes to [`JobState::scratchpad`] are not cached but the resulting URL still is.
     /// 
     /// That will hopefully change at some point.
     /// # Errors
@@ -573,8 +582,6 @@ pub enum Mapper {
         limit: u8
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::mappers`].
-    /// 
-    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
     Common {
         /// The name of the [`Self`] to use.
         name: StringSource,
@@ -715,9 +722,9 @@ impl Mapper {
             Self::Error => Err(MapperError::ExplicitError)?,
             Self::Debug(mapper) => {
                 let old_url = job_state.url.clone();
-                let old_vars = job_state.vars.clone();
+                let old_scratchpad = job_state.scratchpad.clone();
                 let mapper_result=mapper.apply(job_state);
-                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld URL: {old_url:?}\nOld vars: {old_vars:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
+                eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld URL: {old_url:?}\nOld scratchpad: {old_scratchpad:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
                 mapper_result?;
             }
 
@@ -736,10 +743,11 @@ impl Mapper {
             },
             Self::All(mappers) => {
                 let mut temp_url = job_state.url.clone();
+                let mut temp_scratchpad = job_state.scratchpad.clone();
                 let mut temp_job_state = JobState {
                     url: &mut temp_url,
                     params: job_state.params,
-                    vars: job_state.vars.clone(),
+                    scratchpad: &mut temp_scratchpad,
                     context: job_state.context,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
@@ -749,7 +757,7 @@ impl Mapper {
                 for mapper in mappers {
                     mapper.apply(&mut temp_job_state)?;
                 }
-                job_state.vars = temp_job_state.vars;
+                *job_state.scratchpad = temp_scratchpad;
                 *job_state.url = temp_url;
             },
             Self::AllNoRevert(mappers) => {
@@ -880,16 +888,16 @@ impl Mapper {
                 *job_state.url=new_url;
             },
 
-            Self::SetJobVar {name, value} => {let _ = job_state.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
+            Self::SetJobVar {name, value} => {let _ = job_state.scratchpad.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
             Self::DeleteJobVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let _ = job_state.vars.remove(&name);
+                let _ = job_state.scratchpad.vars.remove(&name);
             },
             Self::ModifyJobVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let mut temp = job_state.vars.get_mut(&name).ok_or(MapperError::JobVarIsNone)?.to_owned();
+                let mut temp = job_state.scratchpad.vars.get_mut(&name).ok_or(MapperError::JobVarIsNone)?.to_owned();
                 modification.apply(&mut temp, job_state)?;
-                let _ = job_state.vars.insert(name, temp);
+                let _ = job_state.scratchpad.vars.insert(name, temp);
             },
             Self::Rule(rule) => rule.apply(job_state)?,
             Self::Rules(rules) => rules.apply(job_state)?,
@@ -903,12 +911,12 @@ impl Mapper {
                     }
                 }
                 let old_url = job_state.url.clone();
-                let old_vars = job_state.vars.clone();
+                let old_vars = job_state.scratchpad.vars.clone();
                 mapper.apply(job_state)?;
                 if job_state.params.write_cache {
                     if let e @ Err(_) = job_state.cache_handler.write_to_cache(&category, old_url.as_str(), Some(job_state.url.as_str())) {
                         *job_state.url = old_url;
-                        job_state.vars = old_vars;
+                        job_state.scratchpad.vars = old_vars;
                         e?;
                     }
                 }
@@ -929,7 +937,7 @@ impl Mapper {
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,
-                    vars: Default::default(),
+                    scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,

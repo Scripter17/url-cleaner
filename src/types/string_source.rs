@@ -59,6 +59,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -67,7 +68,7 @@ pub enum StringSource {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -103,6 +104,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// # use std::collections::HashSet;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
@@ -111,7 +113,7 @@ pub enum StringSource {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -207,6 +209,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -215,7 +218,7 @@ pub enum StringSource {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -236,6 +239,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -244,7 +248,7 @@ pub enum StringSource {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -270,6 +274,7 @@ pub enum StringSource {
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = Default::default();
@@ -278,7 +283,7 @@ pub enum StringSource {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -314,6 +319,7 @@ pub enum StringSource {
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
     /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
     /// let context = Default::default();
     /// let commons = Default::default();
     /// let params = url_cleaner::types::Params { vars: vec![("abc".to_string(), "xyz".to_string())].into_iter().collect(), ..Default::default() };
@@ -322,7 +328,7 @@ pub enum StringSource {
     /// let mut job_state = url_cleaner::types::JobState {
     ///     url: &mut url,
     ///     params: &params,
-    ///     vars: Default::default(),
+    ///     scratchpad: &mut scratchpad,
     ///     context: &context,
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
@@ -335,7 +341,7 @@ pub enum StringSource {
     /// assert_eq!(StringSource::Var("abc".into()).get(&job_state).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(Box<Self>),
-    /// Gets the value of the specified [`JobState::vars`].
+    /// Gets the value of the specified [`JobState::scratchpad`]'s [`JobScratchpad::vars`].
     /// 
     /// Returns [`None`] (NOT an error) if the string var is not set.
     /// # Errors
@@ -432,8 +438,6 @@ pub enum StringSource {
         end: Box<Self>
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
-    /// 
-    /// Currently does not pass-in [`JobState::vars`] or preserve updates. This will eventually be changed.
     Common {
         /// The name of the [`Self`] to use.
         name: Box<Self>,
@@ -627,7 +631,7 @@ impl StringSource {
             Self::ExtractPart{source, part} => source.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::CommonVar(name) => job_state.common_vars.ok_or(StringSourceError::NotInACommonContext)?.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
-            Self::JobVar(key) => job_state.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
+            Self::JobVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::MapKey {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
             Self::Modified {source, modification} => {
@@ -691,11 +695,12 @@ impl StringSource {
             Self::Common {name, vars} => {
                 let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, _>>()?;
                 let mut temp_url = job_state.url.clone();
+                let mut temp_scratchpad = job_state.scratchpad.clone();
                 job_state.commons.string_sources.get(get_str!(name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobState {
                     url: &mut temp_url,
                     context: job_state.context,
                     params: job_state.params,
-                    vars: Default::default(),
+                    scratchpad: &mut temp_scratchpad,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,

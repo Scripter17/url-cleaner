@@ -51,12 +51,13 @@ fn get_config<'a>(config: Option<&'a types::Config>, params_diff: Option<&types:
 /// If the call to [`clean_url_with_cache_handler`] returns an error, that error is returned.
 pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>) -> Result<(), types::CleaningError> {
     let config = get_config(config, params_diff)?;
+    let mut scratchpad = Default::default();
     #[cfg(feature = "cache")]
     let cache_handler = (&*config.cache_path).into();
     config.rules.apply(&mut types::JobState {
         url,
         params: &config.params,
-        vars: Default::default(),
+        scratchpad: &mut scratchpad,
         context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::UrlContext::default())},
         #[cfg(feature = "cache")]
         cache_handler: &cache_handler,
@@ -75,10 +76,11 @@ pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Opt
 #[cfg(feature = "cache")]
 pub fn clean_url_with_cache_handler(url: &mut Url, context: Option<&types::UrlContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>, cache_handler: &glue::CacheHandler) -> Result<(), types::CleaningError> {
     let config = get_config(config, params_diff)?;
+    let mut scratchpad = Default::default();
     config.rules.apply(&mut types::JobState {
         url,
         params: &config.params,
-        vars: Default::default(),
+        scratchpad: &mut scratchpad,
         context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::UrlContext::default())},
         cache_handler,
         commons: &config.commons,
