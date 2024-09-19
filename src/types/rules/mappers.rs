@@ -512,7 +512,7 @@ pub enum Mapper {
     /// Sets the current job's `name` string var to `value`.
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    SetJobVar {
+    SetScratchpadVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The value to set the variable to.
@@ -521,13 +521,13 @@ pub enum Mapper {
     /// Delete the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    DeleteJobVar(StringSource),
+    DeleteScratchpadVar(StringSource),
     /// Applies a [`StringModification`] to the current job's `name` string var.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringModification::apply`] returns an error, that error is returned.
-    ModifyJobVar {
+    ModifyScratchpadVar {
         /// The name of the variable to set.
         name: StringSource,
         /// The modification to apply.
@@ -679,7 +679,7 @@ pub enum MapperError {
     },
     /// Returned when a [`JobState`] string var is [`None`].
     #[error("A JobState string var was none.")]
-    JobVarIsNone,
+    ScratchpadVarIsNone,
     /// Returned when a call to [`UrlPart::get`] returns `None` where it has to be `Some`.
     #[error("The specified UrlPart returned None where it had to be Some.")]
     UrlPartIsNone,
@@ -888,14 +888,14 @@ impl Mapper {
                 *job_state.url=new_url;
             },
 
-            Self::SetJobVar {name, value} => {let _ = job_state.scratchpad.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
-            Self::DeleteJobVar(name) => {
+            Self::SetScratchpadVar {name, value} => {let _ = job_state.scratchpad.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
+            Self::DeleteScratchpadVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
                 let _ = job_state.scratchpad.vars.remove(&name);
             },
-            Self::ModifyJobVar {name, modification} => {
+            Self::ModifyScratchpadVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
-                let mut temp = job_state.scratchpad.vars.get_mut(&name).ok_or(MapperError::JobVarIsNone)?.to_owned();
+                let mut temp = job_state.scratchpad.vars.get_mut(&name).ok_or(MapperError::ScratchpadVarIsNone)?.to_owned();
                 modification.apply(&mut temp, job_state)?;
                 let _ = job_state.scratchpad.vars.insert(name, temp);
             },
@@ -966,9 +966,9 @@ impl Mapper {
             Self::SetPart {part, value} => part.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
             Self::ModifyPart {part, modification} => part.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::CopyPart {from, to} => from.is_suitable_for_release(config) && to.is_suitable_for_release(config),
-            Self::SetJobVar {name, value} => name.is_suitable_for_release(config) && value.is_suitable_for_release(config),
-            Self::DeleteJobVar(name) => name.is_suitable_for_release(config),
-            Self::ModifyJobVar {name, modification} => name.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::SetScratchpadVar {name, value} => name.is_suitable_for_release(config) && value.is_suitable_for_release(config),
+            Self::DeleteScratchpadVar(name) => name.is_suitable_for_release(config),
+            Self::ModifyScratchpadVar {name, modification} => name.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::Rule(rule) => rule.is_suitable_for_release(config),
             Self::Rules(rules) => rules.is_suitable_for_release(config),
             #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),

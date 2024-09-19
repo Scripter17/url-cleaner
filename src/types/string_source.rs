@@ -347,7 +347,7 @@ pub enum StringSource {
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// 
-    JobVar(Box<Self>),
+    ScratchpadVar(Box<Self>),
     /// Gets the value of the specified [`UrlContext::vars`]
     /// 
     /// Returns [`None`] (NOT an error) if the string var is not set.
@@ -631,7 +631,7 @@ impl StringSource {
             Self::ExtractPart{source, part} => source.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::CommonVar(name) => job_state.common_vars.ok_or(StringSourceError::NotInACommonContext)?.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
-            Self::JobVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
+            Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::MapKey {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
             Self::Modified {source, modification} => {
@@ -725,7 +725,7 @@ impl StringSource {
             Self::ExtractPart {source, part} => source.is_suitable_for_release(config) && part.is_suitable_for_release(config),
             Self::CommonVar(name) => name.is_suitable_for_release(config),
             Self::Var(name) => name.is_suitable_for_release(config) && check_docs!(config, vars, name.as_ref()),
-            Self::JobVar(name) => name.is_suitable_for_release(config),
+            Self::ScratchpadVar(name) => name.is_suitable_for_release(config),
             Self::ContextVar(name) => name.is_suitable_for_release(config),
             Self::MapKey {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
             Self::Modified {source, modification} => source.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
