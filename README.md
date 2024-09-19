@@ -18,7 +18,7 @@ If you can't compile it I'll try to help you out. And if you can make it work on
 ## Anonymity
 
 In theory, if you're the only one on a website sharing posts from that website without URL trackers, the website could realize that and track you in the same way ("if no trackers then assume sender is Jared".).  
-In practise you are very unlikely to be the only one sharing clean URLs. Search engines generally provide URLs without trackers<sup>[citation needed]</sup>, some people manually remove trackers, and some websites like [vxtwitter.com](https://github.com/dylanpdx/BetterTwitFix) automatically strip URL trackers.
+In practice you are very unlikely to be the only one using/sharing cleaned URLs. Search engines generally provide URLs without trackers<sup>[citation needed]</sup>, some people manually remove trackers, and some websites like [vxtwitter.com](https://github.com/dylanpdx/BetterTwitFix) automatically strip URL trackers.
 
 However, for some websites the default config strips more stuff than search engines. In this case anonymity does fall back to many people using URL Cleaner and providing cover for each other.
 
@@ -64,7 +64,7 @@ Flags let you specify behaviour with the `--flag name --flag name2` command line
 
 Various flags are included in the default config for things I want to do frequently.
 
-- `assume-1-dot-2-is-redirect`: Treat all that match the Regex `^.\...$` as redirects. Let's be real, they all are.
+- `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.
 - `deadname-twitter`: Change `x.com` to `twitter.com`.
@@ -225,6 +225,15 @@ Unless a `Debug` variant is used, the following should always be true:
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 
 The exact format is currently in flux.
+
+### Exit code
+
+Currently, the exit code is determined by the following rules:
+
+- If no   cleanings work and none fail, returns 0. This only applies if no URLs are provided.
+- If no   cleanings work and some fail, returns 1.
+- If some cleanings work and none fail, returns 0.
+- If some cleanings work and some fail, returns 2.
 
 ## Panic policy
 

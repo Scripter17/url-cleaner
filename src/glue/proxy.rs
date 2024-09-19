@@ -28,6 +28,8 @@ pub struct ProxyConfig {
     pub auth: Option<ProxyAuth>
 }
 
+crate::util::string_or_struct_magic!(ProxyConfig);
+
 impl FromStr for ProxyConfig {
     type Err = <Url as FromStr>::Err;
 
@@ -45,8 +47,6 @@ impl TryFrom<&str> for ProxyConfig {
         Self::from_str(value)
     }
 }
-
-crate::util::string_or_struct_magic!(ProxyConfig);
 
 impl From<Url> for ProxyConfig {
     /// Creates a [`Self`] with the provided URL, defaulting all other fields.

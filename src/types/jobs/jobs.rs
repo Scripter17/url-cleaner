@@ -54,7 +54,9 @@ impl ::core::fmt::Debug for Jobs<'_> {
 impl<'a> Jobs<'_> {
     /// Gets the next [`Job`].
     /// 
-    /// Would be implemented as [`Iterator::next`] if not for the need of a `&'a mut self` in the type signature.
+    /// An [`Iterator`] based API will exist once [`gen_blocks`](https://github.com/rust-lang/rust/issues/117078) is stablized.
+    /// 
+    /// During the long wait you can do `while let Some(x) = `.
     /// # Errors
     /// If the call to [`Self::configs_source`]'s [`Iterator::next`] returns an error, that error is returned.
     pub fn next_job(&'a mut self) -> Option<Result<Job<'a>, GetJobError>> {
@@ -70,6 +72,15 @@ impl<'a> Jobs<'_> {
             Err(e) => Err(e.into())
         })
     }
+
+    // Once gen_blocks (https://github.com/rust-lang/rust/issues/117078) is stabilized this can be added
+    // pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, GetJobError>> {
+    //     gen {
+    //         if let Some(x) = self.next_job() {
+    //             yield x;
+    //         }
+    //     }
+    // }
 
     /// Does all the jobs returned by [`Self::next_job`] until either `Ok(None)` or `Err(_)` are encountered.
     /// # Errors

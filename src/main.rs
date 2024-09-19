@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
 use std::borrow::Cow;
+use std::process::ExitCode;
 
 use clap::Parser;
 use url::Url;
@@ -14,7 +15,7 @@ mod types;
 use types::*;
 mod util;
 
-#[derive(Debug, Clone, Parser)]
+#[derive(Debug, Clone, PartialEq, Eq, Parser)]
 /// URL Cleaner - Explicit non-consent to URL-based tracking.
 /// 
 /// Enabled features:
@@ -42,59 +43,85 @@ mod util;
 #[cfg_attr(not(feature = "base64"                 ), doc = "base64"                 )]
 #[cfg_attr(not(feature = "cache-redirects"        ), doc = "cache-redirects"        )]
 #[cfg_attr(not(feature = "debug"                  ), doc = "debug"                  )]
-struct Args {
+pub struct Args {
     /// The URLs to clean before the URLs in the STDIN.
-    urls: Vec<Url>,
+    pub urls: Vec<String>,
     /// The JSON config to use. If unspecified and URL Cleaner was compiled with the default-config feature, use the default config compiled into URL Cleaner.
-    #[arg(short      , long)] config: Option<PathBuf>,
+    #[arg(short      , long)]
+    pub config: Option<PathBuf>,
     /// Output JSON. It is intended to be identical to URL Cleaner Site's output, so while some of the output is "redundant", it's important.
-    #[arg(short      , long)] json: bool,
+    #[arg(short      , long)]
+    pub json: bool,
     /// Additional ParamsDiffs to apply before the rest of the options.
-    #[arg(             long)] params_diff: Vec<PathBuf>,
+    #[arg(             long)]
+    pub params_diff: Vec<PathBuf>,
     /// Set flags.
-    #[arg(short      , long)] flag  : Vec<String>,
+    #[arg(short      , long)]
+    pub flag  : Vec<String>,
     /// Unset flags set by the config.
-    #[arg(short = 'F', long)] unflag: Vec<String>,
-    /// Set variables using name=value syntax.
-    #[arg(short      , long, num_args(2))] var   : Vec<Vec<String>>,
+    #[arg(short = 'F', long)]
+    pub unflag: Vec<String>,
+    /// For each occurrence of this option, its first argument is the variable name and the second argument is its value.
+    #[arg(short      , long, num_args(2))]
+    pub var: Vec<Vec<String>>,
     /// Unset variables set by the config.
-    #[arg(short = 'V', long)] unvar : Vec<String>,
+    #[arg(short = 'V', long)]
+    pub unvar : Vec<String>,
     /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to insert.
-    #[arg(             long, num_args(2..))] insert_into_set: Vec<Vec<String>>,
+    #[arg(             long, num_args(2..))]
+    pub insert_into_set: Vec<Vec<String>>,
     /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to remove.
-    #[arg(             long, num_args(2..))] remove_from_set: Vec<Vec<String>>,
+    #[arg(             long, num_args(2..))]
+    pub remove_from_set: Vec<Vec<String>>,
+    /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to insert.
+    #[arg(             long, num_args(3..))]
+    pub insert_into_map: Vec<Vec<String>>,
+    /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to remove.
+    #[arg(             long, num_args(3..))]
+    pub remove_from_map: Vec<Vec<String>>,
     /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
-    read_cache : Option<bool>,
+    pub read_cache : Option<bool>,
     /// Write stuff to caches. Default value is controlled by the config. Omitting a value means true.
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
-    write_cache: Option<bool>,
+    pub write_cache: Option<bool>,
     /// The proxy to send HTTP requests over. Example: socks5://localhost:9150
     #[cfg(feature = "http")]
-    #[arg(             long)] http_proxy: Option<ProxyConfig>,
+    #[arg(             long)]
+    pub http_proxy: Option<ProxyConfig>,
     /// Disables all HTTP proxying.
     #[cfg(feature = "http")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
-    no_http_proxy: Option<bool>,
+    pub no_http_proxy: Option<bool>,
+    /// Overrides the config's [`Config::cache_path`].
+    #[arg(             long)]
+    pub cache_path: Option<String>,
     /// Print the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_args: bool,
+    #[arg(             long, verbatim_doc_comment)]
+    pub print_args: bool,
     /// Print the ParamsDiffs loaded from `--params--diff` files and derived from the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_params_diffs: bool,
+    #[arg(             long, verbatim_doc_comment)]
+    pub print_params_diffs: bool,
     /// Print the config's params after applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_params: bool,
+    #[arg(             long, verbatim_doc_comment)]
+    pub print_params: bool,
     /// Print the specified config as JSON after applying the ParamsDiff.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] print_config: bool,
+    #[arg(             long, verbatim_doc_comment)]
+    pub print_config: bool,
+    /// Print the config's documentation.
+    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
+    #[arg(             long, verbatim_doc_comment)]
+    pub print_docs: bool,
     /// Run the config's tests.
     /// When this or any other `--print-...` flag is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)] test_config : bool,
-    /// Overrides the config's [`Config::cache_path`].
-    #[arg(             long                      )] cache_path: Option<String>
+    #[arg(             long, verbatim_doc_comment)]
+    pub test_config : bool
 }
 
 /// The enum of all errors that can occur when using the URL Cleaner CLI tool.
@@ -116,7 +143,10 @@ fn str_to_json_str(s: &str) -> String {
     serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
 
-fn main() -> Result<(), CliError> {
+fn main() -> Result<ExitCode, CliError> {
+    let mut some_ok = false;
+    let mut some_error = false;
+
     let args = Args::parse();
 
     let print_args = args.print_args;
@@ -128,19 +158,18 @@ fn main() -> Result<(), CliError> {
         .map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile))
         .collect::<Result<Vec<_>, _>>()?;
     params_diffs.push(ParamsDiff {
-        flags  : args.flag  .into_iter().collect(), // It's probably not a good thing to do a global impl for,
-        unflags: args.unflag.into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
-        #[allow(clippy::indexing_slicing, reason = "Clap ensures there's always exactly 2.")]
-        vars   : args.var   .into_iter().map(|x| (x[0].clone(), x[1].clone())).collect(), // Why do I have to clone here???
-        unvars : args.unvar .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
+        flags  : args.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
+        unflags: args.unflag.into_iter().collect(), // It's probably not a good thing to do a global impl for,
+        vars   : args.var   .into_iter().map(|x| x.try_into().expect("Clap guarantees the length is alwasy 2")).map(|[name, value]: [String; 2]| (name, value)).collect(), // Either let me TryFrom a Vec into a tuple or let me collect a [T; 2] into a HashMap. Preferably both.
+        unvars : args.unvar .into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
         init_sets: Default::default(),
-        insert_into_sets: args.insert_into_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-        remove_from_sets: args.remove_from_set.clone().into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-        delete_sets: Default::default(),
-        init_maps: Default::default(),
+        insert_into_sets: args.insert_into_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+        remove_from_sets: args.remove_from_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+        delete_sets     : Default::default(),
+        init_maps       : Default::default(),
         insert_into_maps: Default::default(),
         remove_from_maps: Default::default(),
-        delete_maps: Default::default(),
+        delete_maps     : Default::default(),
         #[cfg(feature = "cache")] read_cache : args.read_cache,
         #[cfg(feature = "cache")] write_cache: args.write_cache,
         #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
@@ -161,12 +190,14 @@ fn main() -> Result<(), CliError> {
 
     let print_params = args.print_params;
     let print_config = args.print_config;
+    let print_docs   = args.print_docs;
     let test_config  = args.test_config;
 
-    let no_cleaning = print_args || print_params_diffs || print_params || print_config || test_config;
+    let no_cleaning = print_args || print_params_diffs || print_params || print_config || print_docs || test_config;
 
+    if print_params {println!("{}", serde_json::to_string(&config.params)?);}
     if print_config {println!("{}", serde_json::to_string(&config)?);}
-    if print_params {println!("{}", serde_json::to_string(&config.params)?)};
+    if print_docs {println!("{}", config.docs.to_markdown());}
     if test_config {config.run_tests();}
 
     if no_cleaning {std::process::exit(0);}
@@ -175,15 +206,15 @@ fn main() -> Result<(), CliError> {
         #[cfg(feature = "cache")]
         cache_handler: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
         configs_source: {
-            let ret = args.urls.into_iter().map(Into::into).map(Ok);
-            {if !io::stdin().is_terminal() {
+            let ret = args.urls.into_iter().map(|url| Ok(Url::parse(&url)?.into()));
+            if !io::stdin().is_terminal() {
                 Box::new(ret.chain(io::stdin().lines().map(|line| match line {
-                    Ok(line) => Url::parse(&line).map(Into::into).map_err(Into::into),
+                    Ok(line) => Url::parse(&line).map(Into::into).map_err(Into::into), // impl<T1: Into<T2>, E1: Into<E2>, T2, E2> From<Result<T1, E1>> for Result<T2, E2> {..}
                     Err(e) => Err(e.into())
                 })))
             } else {
                 Box::new(ret)
-            }}
+            }
         },
         config: Cow::Owned(config)
     };
@@ -196,10 +227,19 @@ fn main() -> Result<(), CliError> {
             if !first_job {print!(",");}
             match job {
                 Ok(job) => match job.r#do() {
-                    Ok(url) => print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str())),
-                    Err(e) => print!("{{\"Err\":{{\"type\":\"DoJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")))
+                    Ok(url) => {
+                        print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));
+                        some_ok = true;
+                    },
+                    Err(e) => {
+                        print!("{{\"Err\":{{\"type\":\"DoJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                        some_error = true;
+                    }
                 },
-                Err(e) => print!("{{\"Err\":{{\"type\":\"GetJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")))
+                Err(e) => {
+                    print!("{{\"Err\":{{\"type\":\"GetJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                    some_error = true;
+                }
             }
             first_job = false;
         }
@@ -209,13 +249,29 @@ fn main() -> Result<(), CliError> {
         while let Some(job) = jobs.next_job() {
             match job {
                 Ok(job) => match job.r#do() {
-                    Ok(url) => println!("{url}"),
-                    Err(e) => {println!(); eprintln!("DoJobError\t{e:?}");}
+                    Ok(url) => {
+                        println!("{url}");
+                        some_ok = true;
+                    },
+                    Err(e) => {
+                        println!();
+                        eprintln!("DoJobError\t{e:?}");
+                        some_error = true;
+                    }
                 },
-                Err(e) => {println!(); eprintln!("GetJobError\t{e:?}");}
+                Err(e) => {
+                    println!();
+                    eprintln!("GetJobError\t{e:?}");
+                    some_error = true;
+                }
             }
         }
     }
 
-    Ok(())
+    Ok(match (some_ok, some_error) {
+        (false, false) => 0,
+        (false, true ) => 1,
+        (true , false) => 0,
+        (true , true ) => 2
+    }.into())
 }

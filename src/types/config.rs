@@ -22,7 +22,7 @@ pub use docs::*;
 pub struct Config {
     /// Restricts this [`Config`] to only allow stuff suitable for the default config.
     /// 
-    /// The exact behavior from setting this to [`true`] is unspecified and subject to change.
+    /// The exact behavior from setting this to [`true`] is currently unspecified and subject to change.
     /// 
     /// Defaults to [`false`].
     #[serde(default = "get_false")]
@@ -95,12 +95,12 @@ impl Config {
 
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
-    /// Panics if a call to [`Job::do`] or a test fails.
+    /// Panics if a test fails.
     pub fn run_tests(&self) {
         // Changing the if's braces to parenthesis causes some really weird syntax errors. Including the `Ok(DEFAULT_CONFIG.get_or_init(|| config))` line above complaining about needing braces???
         if self.strict_mode {assert!(self.is_suitable_for_release());}
         for test in &self.tests {
-            test.run(self.clone());
+            test.run(self);
         }
     }
 
@@ -201,8 +201,8 @@ mod tests {
 
     #[test]
     fn default_config_de_ser_identity() {
-        assert_eq!(Config::get_default().unwrap(), &de_ser(                Config::get_default().unwrap()  ));
-        assert_eq!(Config::get_default().unwrap(), &de_ser(&de_ser(        Config::get_default().unwrap() )));
+        assert_eq!(Config::get_default().unwrap(),                 &de_ser(Config::get_default().unwrap())  );
+        assert_eq!(Config::get_default().unwrap(),         &de_ser(&de_ser(Config::get_default().unwrap())) );
         assert_eq!(Config::get_default().unwrap(), &de_ser(&de_ser(&de_ser(Config::get_default().unwrap()))));
     }
 
