@@ -1,0 +1,170 @@
+{
+  "docs": {
+    "description": [
+      "An implementation of a Universal Turing Machine",
+      "Included program is the Three-state busy beaver from https://rosettacode.org/wiki/Universal_Turing_machine",
+      "Use with the URL https://example.com?tape={INITIAL_TAPE_HERE}"
+    ]
+  },
+  "tests": [
+    {
+      "expectations": [
+        {"before": "https://example.com?tape=", "after": "https://example.com?tape=10111111111111"}
+      ]
+    }
+  ],
+  "commons": {
+    "string_sources": {
+      "initial-state": "a",
+      "halt-state": "halt",
+      "blank-symbol": "0",
+      "key": {"Join": {"sources": [{"ScratchpadVar": "state"}, ",", {"ScratchpadVar": "read"}]}}
+    },
+    "string_modifications": {
+      "state_set": {"Map": {
+        "a,0": "1",
+        "a,1": "1",
+        "b,0": "1",
+        "b,1": "0",
+        "c,0": "1",
+        "c,1": "1",
+        "d,0": "1",
+        "d,1": "0"
+      }},
+      "state_move": {"Map": {
+        "a,0": "right",
+        "a,1": "left",
+        "b,0": "left",
+        "b,1": "left",
+        "c,0": "right",
+        "c,1": "left",
+        "d,0": "right",
+        "d,1": "right"
+      }},
+      "state_map": {"Map": {
+        "a,0": "b",
+        "a,1": "b",
+        "b,0": "a",
+        "b,1": "c",
+        "c,0": "halt",
+        "c,1": "d",
+        "d,0": "d",
+        "d,1": "a"
+      }}
+    },
+    "mappers": {
+      "move-right": {"All": [
+        {"IfCondition": {
+          "condition": {"StringMatches": {
+            "source": {"ScratchpadVar": "tape"},
+            "matcher": {"LengthIs": 0}
+          }},
+          "mapper": {"ModifyScratchpadVar": {
+            "name": "tape",
+            "modification": {"Append": {"Common": "blank-symbol"}}
+          }}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape-behind",
+          "modification": {"Append": {"Modified": {"source": {"ScratchpadVar": "tape"}, "modification": {"KeepRange": {"start": 0, "end": 1}}}}}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape",
+          "modification": {"Remove": 0}
+        }}
+      ]},
+      "move-left": {"All": [
+        {"IfCondition": {
+          "condition": {"StringMatches": {
+            "source": {"ScratchpadVar": "tape-behind"},
+            "matcher": {"LengthIs": 0}
+          }},
+          "mapper": {"ModifyScratchpadVar": {
+            "name": "tape-behind",
+            "modification": {"Append": {"Common": "blank-symbol"}}
+          }}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape",
+          "modification": {"Prepend": {"Modified": {"source": {"ScratchpadVar": "tape-behind"}, "modification": {"KeepRange": {"start": -1}}}}}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape-behind",
+          "modification": {"Remove": -1}
+        }}
+      ]},
+      "move-stay": "None"
+    },
+    "rules": {
+      "step": {
+        "condition": {"Not": {"StringIs": {"source": {"ScratchpadVar": "state"}, "value": {"Common": "halt-state"}}}},
+        "mapper": {"All": [
+          {"IfCondition": {
+            "condition": {"StringMatches": {
+              "source": {"ScratchpadVar": "tape"},
+              "matcher": {"LengthIs": 0}
+            }},
+            "mapper": {"ModifyScratchpadVar": {
+              "name": "tape",
+              "modification": {"Append": {"Common": "blank-symbol"}}
+            }}
+          }},
+          {"SetScratchpadVar": {
+            "name": "read",
+            "value": {
+              "Modified": {
+                "source": {"ScratchpadVar": "tape"},
+                "modification": {"KeepRange": {
+                  "start": 0,
+                  "end": 1
+                }}
+              }
+            }
+          }},
+          {"SetScratchpadVar": {
+            "name": "tape",
+            "value": {"Join": {
+              "sources": [
+                {"Modified": {"source": {"Common": "key"}, "modification": {"Common": "state_set"}}},
+                {"Modified": {"source": {"ScratchpadVar": "tape"}, "modification": {"KeepRange": {"start": 1}}}}
+              ]
+            }}
+          }},
+          {"Common": {"name": {"Join": {"sources": ["move-", {"Modified": {"source": {"Common": "key"}, "modification": {"Common": "state_move"}}}]}}}},
+          {"SetScratchpadVar": {
+            "name": "state",
+            "value": {"Modified": {"source": {"Common": {"name": "key"}}, "modification": {"Common": {"name": "state_map"}}}}
+          }},
+          {"Rule": {"Common": "step"}}
+        ]}
+      }
+    }
+  },
+  "rules": [
+    {
+      "condition": "Always",
+      "mapper": {"All": [
+        {"SetScratchpadVar": {
+          "name": "state",
+          "value": {"Common": "initial-state"}
+        }},
+        {"SetScratchpadVar": {
+          "name": "tape-behind",
+          "value": ""
+        }},
+        {"SetScratchpadVar": {
+          "name": "tape",
+          "value": {"Part": {"QueryParam": "tape"}}
+        }}
+      ]}
+    },
+    {"Common": "step"},
+    {
+      "condition": "Always",
+      "mapper": {"SetPart": {
+        "part": {"QueryParam": "tape"},
+        "value": {"Join": {"sources": [{"ScratchpadVar": "tape-behind"}, {"ScratchpadVar": "tape"}]}}
+      }}
+    }
+  ]
+}
