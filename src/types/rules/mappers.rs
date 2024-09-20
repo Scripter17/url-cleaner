@@ -535,7 +535,7 @@ pub enum Mapper {
     },
     /// Executes the contained [`Rule`].
     /// # Errors
-    /// If the call to [`Rule::apply`] returns an error other than [`RuleError::FailedCondition`] and [`RuleError::ValueNotInMap`], returns that error.
+    /// If the call to [`Rule::apply`] returns an error other than [`RuleError::DontTriggerLoop`], [`RuleError::FailedCondition`], and [`RuleError::ValueNotInMap`], returns that error.
     Rule(Box<Rule>),
     /// Excites the contained [`Rules`].
     /// # Errors
@@ -896,7 +896,11 @@ impl Mapper {
                 modification.apply(&mut temp, job_state)?;
                 let _ = job_state.scratchpad.vars.insert(name, temp);
             },
-            Self::Rule(rule) => rule.apply(job_state)?,
+            Self::Rule(rule) => match rule.apply(job_state) {
+                Ok(x) => x,
+                Err(RuleError::DontTriggerLoop | RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
+                Err(e) => Err(e)?
+            },
             Self::Rules(rules) => rules.apply(job_state)?,
             #[cfg(feature = "cache")]
             Self::CacheUrl {category, mapper} => {
