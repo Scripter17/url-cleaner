@@ -58,13 +58,13 @@ pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
 
 /// [`neg_maybe_index`] but doesn't [`None`] when `index == len`.
 fn neg_maybe_range_boundary(index: Option<isize>, len: usize) -> Option<Option<usize>> {
-    index.map(|index| neg_index(index, len))
+    index.map(|index| neg_range_boundary(index, len))
 }
 
 /// A range that may or may not have one or both ends open.
 pub(crate) fn neg_range(start: Option<isize>, end: Option<isize>, len: usize) -> Option<(Bound<usize>, Bound<usize>)> {
     match (start, end) {
-        (Some(start), Some(end)) if neg_index(end, len)? < neg_index(start, len)? => None,
+        (Some(start), Some(end)) if neg_range_boundary(end, len)? < neg_range_boundary(start, len)? => None,
         _ => Some((
             match neg_maybe_range_boundary(start, len) {
                 Some(Some(start)) => Bound::Included(start),
@@ -96,6 +96,7 @@ pub(crate) const fn get_true() -> bool {true}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::Bound;
 
     #[test]
     fn neg_index_test() {
@@ -120,5 +121,10 @@ mod tests {
         assert_eq!(neg_nth([1,2,3],  1), Some(2));
         assert_eq!(neg_nth([1,2,3],  2), Some(3));
         assert_eq!(neg_nth([1,2,3],  3), None   );
+    }
+
+    #[test]
+    fn neg_range_test() {
+        assert_eq!(neg_range(Some(0), Some(1), 1), Some((Bound::Included(0), Bound::Excluded(1))));
     }
 }

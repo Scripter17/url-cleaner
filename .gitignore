@@ -1,12 +1,9 @@
 /target
-/konsole*
 /benchmarking/stdin
 *.out*
 *.zip
 *.tar
 *.gz
-mprocs.yaml
-bacon.toml
 tests.sh
 sync.sh
 *.sqlite

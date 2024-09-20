@@ -22,6 +22,9 @@ pub use common_call::*;
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
+    /// The documentation.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub docs: ConfigDocs,
     /// Restricts this [`Config`] to only allow stuff suitable for the default config.
     /// 
     /// The exact behavior from setting this to [`true`] is currently unspecified and subject to change.
@@ -29,27 +32,31 @@ pub struct Config {
     /// Defaults to [`false`].
     #[serde(default = "get_false")]
     pub strict_mode: bool,
+    /// The path of the sqlite cache to use.
+    /// 
+    /// Defaults to `:memory:`.
+    #[cfg(feature = "cache")]
+    #[serde(default = "default_cache_path", skip_serializing_if = "is_default_cache_path")]
+    pub cache_path: String,
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
-    /// The path of the sqlite cache to use.
-    #[cfg(feature = "cache")]
-    pub cache_path: String,
     /// The tests to make sure the config is working as intended.
     #[serde(default, skip_serializing_if = "is_default")]
     pub tests: Vec<TestSet>,
-    /// The conditions and mappers that modify the URLS.
-    pub rules: Rules,
     /// Various things that are used in multiple spots.
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
-    /// The documentation.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub docs: ConfigDocs
+    /// The conditions and mappers that modify the URLS.
+    pub rules: Rules
 }
 
 /// Serde helper function.
 const fn get_false() -> bool {false}
+/// Serde helper function.
+fn default_cache_path() -> String {":memory:".to_string()}
+/// Serde helper function.
+fn is_default_cache_path(x: &str) -> bool {x == default_cache_path()}
 
 impl Config {
     /// Loads and parses the specified file.
@@ -69,13 +76,11 @@ impl Config {
     /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
     pub fn get_default() -> Result<&'static Self, GetConfigError> {
         #[cfg(feature = "default-config")]
-        {
-            if let Some(config) = DEFAULT_CONFIG.get() {
-                Ok(config)
-            } else {
-                let config=serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig)?;
-                Ok(DEFAULT_CONFIG.get_or_init(|| config))
-            }
+        if let Some(config) = DEFAULT_CONFIG.get() {
+            Ok(config)
+        } else {
+            let config=serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig)?;
+            Ok(DEFAULT_CONFIG.get_or_init(|| config))
         }
         #[cfg(not(feature = "default-config"))]
         Err(GetConfigError::NoDefaultConfig)

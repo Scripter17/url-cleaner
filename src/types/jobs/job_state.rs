@@ -10,17 +10,17 @@ use crate::glue::*;
 pub struct JobState<'a> {
     /// The URL being modified.
     pub url: &'a mut Url,
+    /// Scratchpad space for [`Mapper`]s to store state in.
+    pub scratchpad: &'a mut JobScratchpad,
+    /// Vars used in common contexts.
+    pub common_args: Option<&'a CommonArgs>,
     /// The context surrounding the URL.
     pub context: &'a UrlContext,
     /// The flags, variables, etc. defined by the job initiator.
     pub params: &'a Params,
-    /// Scratchpad space for [`Mapper`]s to store state in.
-    pub scratchpad: &'a mut JobScratchpad,
-    /// The cache handler.
-    #[cfg(feature = "cache")]
-    pub cache_handler: &'a CacheHandler,
     /// Various things that are used multiple times.
     pub commons: &'a Commons,
-    /// Vars used in common contexts.
-    pub common_args: Option<&'a CommonArgs>
+    /// The cache handler.
+    #[cfg(feature = "cache")]
+    pub cache_handler: &'a CacheHandler
 }

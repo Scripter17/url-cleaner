@@ -13,7 +13,7 @@ use crate::util::*;
 pub struct ConfigDocs {
     /// The basic description of the config.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub description: Option<String>,
+    pub description: Option<Vec<String>>,
     /// The descriptions of the [`Params::flags`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub flags: HashMap<String, String>,

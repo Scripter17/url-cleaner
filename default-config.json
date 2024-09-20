@@ -2,7 +2,9 @@
 	"strict_mode": true,
 	"cache_path": "cache.sqlite",
 	"docs": {
-		"description": "The default config; Meant for general purpose every day URL Cleaning.",
+		"description": [
+			"The default config; Meant for general purpose every day URL Cleaning."
+		],
 		"flags": {
 			"assume-1-dot-2-is-redirect": "Treat all hosts that match the Regex `^.\\...$` as redirects. Let's be real, they all are.",
 			"breezewiki": "Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.",
