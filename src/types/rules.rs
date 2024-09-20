@@ -122,7 +122,7 @@ pub enum Rule {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// Rule::Repeat {
     ///     rules: Rules(vec![
@@ -194,13 +194,7 @@ pub enum Rule {
         else_mapper: Mapper
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::rules`].
-    Common {
-        /// The name of the [`Self`] to use.
-        name: StringSource,
-        /// The [`JobState::common_vars`] to pass.
-        #[serde(default, skip_serializing_if = "is_default")]
-        vars: HashMap<String, StringSource>
-    },
+    Common(CommonCall),
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
@@ -231,7 +225,7 @@ pub enum Rule {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Rule::Normal {
@@ -284,7 +278,10 @@ pub enum RuleError {
     StringSourceIsNone,
     /// Returned when the common [`Rule`] is not found.
     #[error("The common Rule was not found.")]
-    CommonRuleNotFound
+    CommonRuleNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError)
 }
 
 impl Rule {
@@ -345,17 +342,16 @@ impl Rule {
             } else {
                 else_mapper.apply(job_state)?
             }),
-            Self::Common {name, vars} => {
-                let common_vars = vars.iter().map(|(k, v)| Ok::<_, RuleError>((k.clone(), get_string!(v, job_state, RuleError)))).collect::<Result<HashMap<_, _>, _>>()?;
-                job_state.commons.rules.get(get_str!(name, job_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut JobState {
+            Self::Common(common_call) => {
+                job_state.commons.rules.get(get_str!(common_call.name, job_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut JobState {
+                    common_args: Some(&common_call.args.make(job_state)?),
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
-                    commons: job_state.commons,
-                    common_vars: Some(&common_vars)
+                    commons: job_state.commons
                 })
             }
         }
@@ -376,7 +372,7 @@ impl Rule {
             Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(config),
             Self::Rules(rules) => rules.is_suitable_for_release(config),
             Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.is_suitable_for_release(config),
-            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config)),
+            Self::Common(common_call) => common_call.is_suitable_for_release(config),
             Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config)
         }, "Unsuitable Rule detected: {self:?}");
         true
@@ -424,7 +420,7 @@ impl Rules {
             #[cfg(feature = "cache")]
             cache_handler: job_state.cache_handler,
             commons: job_state.commons,
-            common_vars: None
+            common_args: None
         };
 
         // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rule::Repeat`]!!!

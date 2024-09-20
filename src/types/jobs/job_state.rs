@@ -22,5 +22,5 @@ pub struct JobState<'a> {
     /// Various things that are used multiple times.
     pub commons: &'a Commons,
     /// Vars used in common contexts.
-    pub common_vars: Option<&'a HashMap<String, String>>
+    pub common_args: Option<&'a CommonArgs>
 }

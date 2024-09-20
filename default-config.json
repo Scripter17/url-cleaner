@@ -141,10 +141,10 @@
 			},
 			"utps": {"IfCondition": {
 				"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-				"mapper": {"Common": {"name": "utps-no-if"}}
+				"mapper": {"Common": "utps-no-if"}
 			}},
 			"extract-from-page-no-if": {"All": [
-				{"Common": {"name": "utps"}},
+				{"Common": "utps"},
 				{"SetPart": {
 					"part": "Whole",
 					"value": {"Cache": {
@@ -160,7 +160,7 @@
 			]},
 			"extract-from-page": {"IfCondition": {
 				"condition": {"Not": {"FlagIsSet": "no-http"}},
-				"mapper": {"Common": {"name": "extract-from-page-no-if", "vars": {"start": {"CommonVar": "start"}, "end": {"CommonVar": "end"}}}}
+				"mapper": {"Common": {"name": "extract-from-page-no-if", "args": {"vars": {"start": {"CommonVar": "start"}, "end": {"CommonVar": "end"}}}}}
 			}}
 		}
 	},
@@ -336,7 +336,7 @@
 									"smarturl.it": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-http"}},
 										"mapper": {"All": [
-											{"Common": {"name": "utps"}},
+											{"Common": "utps"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -366,7 +366,7 @@
 									"bfy.tw": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-http"}},
 										"mapper": {"All": [
-											{"Common": {"name": "utps"}},
+											{"Common": "utps"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -385,7 +385,7 @@
 									"gprivate.com": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-http"}},
 										"mapper": {"All": [
-											{"Common": {"name": "utps"}},
+											{"Common": "utps"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -454,7 +454,7 @@
 											{"PartMatches": {"part": "Host", "matcher": {"InSet": "bypass.vip-hosts"}}}
 										]},
 										"mapper": {"All": [
-											{"Common": {"name": "utps"}},
+											{"Common": "utps"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -568,9 +568,11 @@
 										{"SetPart": {"part": "Scheme", "value": "https"}},
 										{"Common": {
 											"name": "extract-from-page",
-											"vars": {
-												"start": "<a id=\"download\" href=\"",
-												"end": "\""
+											"args": {
+												"vars": {
+													"start": "<a id=\"download\" href=\"",
+													"end": "\""
+												}
 											}
 										}}
 									]},
@@ -585,9 +587,11 @@
 										}},
 										{"Common": {
 											"name": "extract-from-page-no-if",
-											"vars": {
-												"start": "let url = \"",
-												"end": "\""
+											"args": {
+												"vars": {
+													"start": "let url = \"",
+													"end": "\""
+												}
 											}
 										}}
 									]},
@@ -707,7 +711,7 @@
 								]}
 							]},
 							"mapper": {"All": [
-								{"Common": {"name": "utps"}},
+								{"Common": "utps"},
 								{"ExpandRedirect": {}}
 							]}
 						},
@@ -1320,7 +1324,7 @@
 							{"PartIs": {"part": "Scheme", "value": "https"}}
 						]},
 						"mapper": {"All": [
-							{"Common": {"name": "utps"}},
+							{"Common": "utps"},
 							{"IgnoreError": {
 								"SetPart": {
 									"part": "Origin",
@@ -1362,7 +1366,7 @@
 		{
 			"comment": "The query paramaters to always remove.",
 			"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-			"mapper": {"Common": {"name": "utps-no-if"}}
+			"mapper": {"Common": "utps-no-if"}
 		}
 	]
 }

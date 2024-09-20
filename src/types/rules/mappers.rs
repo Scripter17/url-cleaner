@@ -79,7 +79,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut job_state).unwrap_err();
@@ -109,7 +109,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut job_state).unwrap_err();
@@ -137,7 +137,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut job_state).unwrap();
@@ -221,7 +221,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut job_state).unwrap ();
@@ -257,7 +257,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut job_state).unwrap();
@@ -298,7 +298,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
@@ -331,7 +331,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
@@ -424,7 +424,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::MovePart{from: UrlPart::Subdomain, to: UrlPart::BeforePathSegment(0)}.apply(&mut job_state).unwrap();
@@ -494,7 +494,7 @@ pub enum Mapper {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// Mapper::ExpandRedirect{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
@@ -582,13 +582,7 @@ pub enum Mapper {
         limit: u8
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::mappers`].
-    Common {
-        /// The name of the [`Self`] to use.
-        name: StringSource,
-        /// The [`JobState::common_vars`] to pass.
-        #[serde(default, skip_serializing_if = "is_default")]
-        vars: HashMap<String, StringSource>
-    }
+    Common(CommonCall)
 }
 
 /// Individual links in the [`Mapper::ConditionChain`] chain.
@@ -700,7 +694,10 @@ pub enum MapperError {
     CommonMapperNotFound,
     /// Returned when the mapper is not found.
     #[error("The mapper was not found.")]
-    MapperNotFound
+    MapperNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError)
 }
 
 impl From<RuleError> for MapperError {
@@ -752,7 +749,7 @@ impl Mapper {
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,
-                    common_vars: job_state.common_vars,
+                    common_args: job_state.common_args,
                 };
                 for mapper in mappers {
                     mapper.apply(&mut temp_job_state)?;
@@ -931,17 +928,16 @@ impl Mapper {
                     }
                 }
             },
-            Self::Common {name, vars} => {
-                let common_vars = vars.iter().map(|(k, v)| Ok::<_, MapperError>((k.clone(), get_string!(v, job_state, MapperError)))).collect::<Result<HashMap<_, _>, _>>()?;
-                job_state.commons.mappers.get(get_str!(name, job_state, MapperError)).ok_or(MapperError::CommonMapperNotFound)?.apply(&mut JobState {
+            Self::Common(common_call) => {
+                job_state.commons.mappers.get(get_str!(common_call.name, job_state, MapperError)).ok_or(MapperError::CommonMapperNotFound)?.apply(&mut JobState {
+                    common_args: Some(&common_call.args.make(job_state)?),
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
-                    commons: job_state.commons,
-                    common_vars: Some(&common_vars)
+                    commons: job_state.commons
                 })?
             }
         };
@@ -981,7 +977,7 @@ impl Mapper {
                 Self::SetHost(_) | Self::MovePart {..} => true,
             #[cfg(feature = "http")]
             Self::ExpandRedirect {..} => true,
-            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+            Self::Common(common_call) => common_call.is_suitable_for_release(config)
         }, "Unsuitable Mapper detected: (self:?)");
         true
     }

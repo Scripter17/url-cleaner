@@ -40,7 +40,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// Condition::Error.satisfied_by(&job_state).unwrap_err();
     /// ```
@@ -93,7 +93,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), false);
     /// assert_eq!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), true );
@@ -124,7 +124,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state).unwrap(), false);
@@ -161,7 +161,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state).unwrap(), true );
@@ -218,7 +218,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), false);
@@ -245,7 +245,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&job_state).unwrap(), false);
@@ -275,7 +275,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&job_state).unwrap(), true );
@@ -322,7 +322,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -361,7 +361,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -396,7 +396,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -435,7 +435,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state).unwrap(), false);
@@ -470,7 +470,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -533,7 +533,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state).unwrap(), true );
@@ -574,7 +574,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -625,7 +625,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
@@ -658,7 +658,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// *job_state.url = Url::parse("https://example.com").unwrap();
@@ -698,7 +698,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&job_state).unwrap(), false);
     /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&job_state).unwrap(), true );
@@ -737,7 +737,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&job_state).unwrap(), false);
@@ -785,7 +785,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// print!("{job_state:?}");
     /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&job_state).unwrap(), true );
@@ -822,7 +822,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::FlagIsSet("abc".into()).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::FlagIsSet("xyz".into()).satisfied_by(&job_state).unwrap(), false);
@@ -890,7 +890,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&job_state).unwrap(), true );
     /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&job_state).unwrap(), true );
@@ -922,7 +922,7 @@ pub enum Condition {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&job_state).is_ok_and(|x| x==true ));
     /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&job_state).is_ok_and(|x| x==false));
@@ -941,13 +941,7 @@ pub enum Condition {
     /// A rarely useful optimization but an optimization none the less.
     AnyFlagIsSet,
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::conditions`].`
-    Common {
-        /// The name of the [`Self`] to use.
-        name: StringSource,
-        /// The [`JobState::common_vars`] to pass.
-        #[serde(default, skip_serializing_if = "is_default")]
-        vars: HashMap<String, StringSource>
-    }
+    Common(CommonCall)
 }
 
 /// An enum of all possible errors a [`Condition`] can return.
@@ -989,6 +983,9 @@ pub enum ConditionError {
     /// Returned when the common [`Condition`] is not found.
     #[error("The common Condition was not found.")]
     CommonConditionNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError)
 }
 
 impl Condition {
@@ -1111,11 +1108,10 @@ impl Condition {
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
             #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(job_state)?==expected},
 
-            Self::Common {name, vars} => {
-                let common_vars = vars.iter().map(|(k, v)| Ok::<_, ConditionError>((k.clone(), get_string!(v, job_state, ConditionError)))).collect::<Result<HashMap<_, _>, _>>()?;
+            Self::Common(common_call) => {
                 let mut temp_url = job_state.url.clone();
                 let mut temp_scratchpad = job_state.scratchpad.clone();
-                job_state.commons.conditions.get(get_str!(name, job_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.satisfied_by(&JobState {
+                job_state.commons.conditions.get(get_str!(common_call.name, job_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.satisfied_by(&JobState {
                     url: &mut temp_url,
                     context: job_state.context,
                     params: job_state.params,
@@ -1123,7 +1119,7 @@ impl Condition {
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,
-                    common_vars: Some(&common_vars)
+                    common_args: Some(&common_call.args.make(job_state)?)
                 })?
             }
         })
@@ -1158,7 +1154,7 @@ impl Condition {
                 Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
                 Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
-            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+            Self::Common(common_call) => common_call.is_suitable_for_release(config)
         }, "Unsuitable Condition detected: {self:?}");
         true
     }

@@ -106,7 +106,7 @@ pub enum StringMatcher {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state).unwrap(), true);
@@ -146,7 +146,7 @@ pub enum StringMatcher {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state).unwrap(), true);
@@ -174,7 +174,7 @@ pub enum StringMatcher {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state).unwrap(), true);
@@ -267,7 +267,7 @@ pub enum StringMatcher {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let matcher = StringMatcher::SegmentsStartWith {
@@ -308,7 +308,7 @@ pub enum StringMatcher {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let matcher = StringMatcher::SegmentsEndWith {
@@ -326,13 +326,7 @@ pub enum StringMatcher {
         value: Box<StringSource>
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_matchers`].
-    Common {
-        /// The name of the [`Self`] to use.
-        name: StringSource,
-        /// The [`JobState::common_vars`] to pass.
-        #[serde(default, skip_serializing_if = "is_default")]
-        vars: HashMap<String, StringSource>
-    }
+    Common(CommonCall)
 }
 
 #[cfg(feature = "regex")]
@@ -392,6 +386,9 @@ pub enum StringMatcherError {
     /// Returned when the common [`StringMatcher`] is not found.
     #[error("The common StringMatcher was not found.")]
     CommonStringMatcherNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError)
 }
 
 impl StringMatcher {
@@ -501,11 +498,10 @@ impl StringMatcher {
                 haystack.strip_prefix(get_str!(value, job_state, StringMatcherError))
                     .is_some_and(|x| x.strip_prefix(split).is_some())
             },
-            Self::Common {name, vars} => {
-                let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringMatcherError>((k.clone(), get_string!(v, job_state, StringMatcherError)))).collect::<Result<HashMap<_, _>, _>>()?;
+            Self::Common(common_call) => {
                 let mut temp_url = job_state.url.clone();
                 let mut temp_scratchpad = job_state.scratchpad.clone();
-                job_state.commons.string_matchers.get(get_str!(name, job_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.satisfied_by(
+                job_state.commons.string_matchers.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.satisfied_by(
                     haystack,
                     &JobState {
                         url: &mut temp_url,
@@ -515,7 +511,7 @@ impl StringMatcher {
                         #[cfg(feature = "cache")]
                         cache_handler: job_state.cache_handler,
                         commons: job_state.commons,
-                        common_vars: Some(&common_vars)
+                        common_args: Some(&common_call.args.make(job_state)?)
                     }
                 )?
             }
@@ -549,7 +545,7 @@ impl StringMatcher {
             #[cfg(feature = "regex")] Self::Regex(_) => true,
             #[cfg(feature = "glob")] Self::Glob(_) => true,
             Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true,
-            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+            Self::Common(common_call) => common_call.is_suitable_for_release(config)
         }, "Unsuitable StringMatcher detected: {self:?}");
         true
     }

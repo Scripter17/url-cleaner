@@ -73,7 +73,7 @@ pub enum StringSource {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// assert_eq!(
@@ -118,7 +118,7 @@ pub enum StringSource {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// assert_eq!(
@@ -223,7 +223,7 @@ pub enum StringSource {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -253,7 +253,7 @@ pub enum StringSource {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -288,7 +288,7 @@ pub enum StringSource {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// assert_eq!(
@@ -305,9 +305,9 @@ pub enum StringSource {
         /// The part to extract from `source`.
         part: UrlPart
     },
-    /// Indexes [`JobState::common_vars`].
+    /// Indexes [`JobState::common_args`].
     /// # Errors
-    /// If [`JobState::common_vars`] is [`None`], returns the error [`StringSourceError::NotInACommonContext`].
+    /// If [`JobState::common_args`] is [`None`], returns the error [`StringSourceError::NotInACommonContext`].
     CommonVar(Box<Self>),
     /// Gets the specified variable's value.
     /// 
@@ -333,7 +333,7 @@ pub enum StringSource {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
@@ -438,13 +438,7 @@ pub enum StringSource {
         end: Box<Self>
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
-    Common {
-        /// The name of the [`Self`] to use.
-        name: Box<Self>,
-        /// The [`JobState::common_vars`] to pass.
-        #[serde(default, skip_serializing_if = "is_default")]
-        vars: HashMap<String, Self>
-    }
+    Common(CommonCall)
 }
 
 impl FromStr for StringSource {
@@ -562,6 +556,9 @@ pub enum StringSourceError {
     /// Returned when the common [`StringSource`] is not found.
     #[error("The common StringSource was not found.")]
     CommonStringSourceNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError)
 }
 
 
@@ -629,7 +626,7 @@ impl StringSource {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::Part(part) => part.get(job_state.url),
             Self::ExtractPart{source, part} => source.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
-            Self::CommonVar(name) => job_state.common_vars.ok_or(StringSourceError::NotInACommonContext)?.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
+            Self::CommonVar(name) => job_state.common_args.ok_or(StringSourceError::NotInACommonContext)?.vars.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
@@ -692,11 +689,10 @@ impl StringSource {
                         .to_string())
                 })
             },
-            Self::Common {name, vars} => {
-                let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, _>>()?;
+            Self::Common(common_call) => {
                 let mut temp_url = job_state.url.clone();
                 let mut temp_scratchpad = job_state.scratchpad.clone();
-                job_state.commons.string_sources.get(get_str!(name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobState {
+                job_state.commons.string_sources.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobState {
                     url: &mut temp_url,
                     context: job_state.context,
                     params: job_state.params,
@@ -704,7 +700,7 @@ impl StringSource {
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,
-                    common_vars: Some(&common_vars)
+                    common_args: Some(&common_call.args.make(job_state)?)
                 })?.map(|x| Cow::Owned(x.into_owned()))
             }
         })
@@ -738,7 +734,7 @@ impl StringSource {
             #[cfg(feature = "advanced-requests")]
             Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
             Self::ExtractBetween {source, start, end} => source.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
-            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+            Self::Common(common_call) => common_call.is_suitable_for_release(config)
         }, "Unsuitable StringSource detected: {self:?}");
         true
     }

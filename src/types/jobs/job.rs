@@ -34,7 +34,7 @@ impl Job<'_> {
             #[cfg(feature = "cache")]
             cache_handler: self.cache_handler,
             commons: &self.config.commons,
-            common_vars: None
+            common_args: None
         })?;
         Ok(self.url)
     }

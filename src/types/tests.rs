@@ -65,7 +65,7 @@ impl Expectation {
             #[cfg(feature = "cache")]
             cache_handler: &cache_handler,
             commons: &config.commons,
-            common_vars: None
+            common_args: None
         }).expect("The URL to be modified without errors."); // Only applies when testing a config.
         assert_eq!(temp, self.after);
     }

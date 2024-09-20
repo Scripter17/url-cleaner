@@ -62,7 +62,7 @@ pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Opt
         #[cfg(feature = "cache")]
         cache_handler: &cache_handler,
         commons: &config.commons,
-        common_vars: None
+        common_args: None
     })?;
 
     Ok(())
@@ -84,7 +84,7 @@ pub fn clean_url_with_cache_handler(url: &mut Url, context: Option<&types::UrlCo
         context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::UrlContext::default())},
         cache_handler,
         commons: &config.commons,
-        common_vars: None
+        common_args: None
     })?;
 
     Ok(())

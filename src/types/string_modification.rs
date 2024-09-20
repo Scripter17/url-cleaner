@@ -109,7 +109,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -139,7 +139,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -169,7 +169,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -199,7 +199,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcabc".to_string();
@@ -234,7 +234,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -277,7 +277,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "ABCdef".to_string();
@@ -305,7 +305,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcDEF".to_string();
@@ -335,7 +335,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -367,7 +367,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -397,7 +397,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -427,7 +427,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -457,7 +457,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "aaaaa".to_string();
@@ -496,7 +496,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abc".to_string();
@@ -535,7 +535,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdef".to_string();
@@ -567,7 +567,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abcdefghi".into();
@@ -628,7 +628,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "a.b.c.d.e.f".to_string();
@@ -692,7 +692,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "a.b.c".to_string();
@@ -741,7 +741,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "a.b.c".to_string();
@@ -796,7 +796,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "...a2..a3....a4".to_string();
@@ -879,7 +879,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "a/b/c".to_string();
@@ -909,7 +909,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "a%2fb%2Fc".to_string();
@@ -953,7 +953,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abc xyz".to_string();
@@ -995,7 +995,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abc def xyz".to_string();
@@ -1059,7 +1059,7 @@ pub enum StringModification {
     ///     #[cfg(feature = "cache")]
     ///     cache_handler: &cache_handler,
     ///     commons: &commons,
-    ///     common_vars: None
+    ///     common_args: None
     /// };
     /// 
     /// let mut x = "abc".to_string();
@@ -1087,13 +1087,7 @@ pub enum StringModification {
         not_found_behavior: CharNotFoundBehavior
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
-    Common {
-        /// The name of the [`Self`] to use.
-        name: StringSource,
-        /// The [`JobState::common_vars`] to pass.
-        #[serde(default, skip_serializing_if = "is_default")]
-        vars: HashMap<String, StringSource>
-    }
+    Common(CommonCall)
 }
 
 /// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
@@ -1229,6 +1223,9 @@ pub enum StringModificationError {
     /// Returned when the common [`StringModification`] is not found.
     #[error("The common StringModification was not found.")]
     CommonStringModificationNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError)
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -1457,11 +1454,10 @@ impl StringModification {
                     CharNotFoundBehavior::Replace(replace) => to.chars().filter_map(|c| *map.get(&c).unwrap_or(replace)).collect::<String>()
                 }
             },
-            Self::Common {name, vars} => {
-                let common_vars = vars.iter().map(|(k, v)| Ok::<_, StringModificationError>((k.clone(), get_string!(v, job_state, StringModificationError)))).collect::<Result<HashMap<_, _>, _>>()?;
+            Self::Common(common_call) => {
                 let mut temp_url = job_state.url.clone();
                 let mut temp_scratchpad = job_state.scratchpad.clone();
-                job_state.commons.string_modifications.get(get_str!(name, job_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
+                job_state.commons.string_modifications.get(get_str!(common_call.name, job_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
                     &JobState {
                         url: &mut temp_url,
@@ -1471,7 +1467,7 @@ impl StringModification {
                         #[cfg(feature = "cache")]
                         cache_handler: job_state.cache_handler,
                         commons: job_state.commons,
-                        common_vars: Some(&common_vars)
+                        common_args: Some(&common_call.args.make(job_state)?)
                     }
                 )?
             }
@@ -1527,7 +1523,7 @@ impl StringModification {
             Self::Base64Encode(_) | Self::Base64Decode(_) => true,
             Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
-            Self::Common {name, vars} => name.is_suitable_for_release(config) && vars.iter().all(|(_, v)| v.is_suitable_for_release(config))
+            Self::Common(common_call) => common_call.is_suitable_for_release(config)
         }, "Unsuitable StringModification detected: {self:?}");
         true
     }

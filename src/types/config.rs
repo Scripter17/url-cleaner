@@ -16,6 +16,8 @@ mod params;
 pub use params::*;
 mod docs;
 pub use docs::*;
+mod common_call;
+pub use common_call::*;
 
 /// The rules and rule parameters describing how to modify URLs.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
