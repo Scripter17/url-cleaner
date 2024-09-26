@@ -52,6 +52,15 @@ pub struct NewCacheEntry<'a> {
 #[derive(Debug, Clone)]
 pub struct CacheHandler(pub Arc<Mutex<InnerCacheHandler>>);
 
+impl Default for CacheHandler {
+    /// Has the "path" of `:memory:`, which just stores the database in memory until the program exits.
+    /// 
+    /// Seems like a reasonable default.
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
 /// The internals of [`CacheHandler`] that handles lazily connecting.
 pub struct InnerCacheHandler {
     /// The path being connected to.
@@ -66,6 +75,18 @@ impl ::core::fmt::Debug for InnerCacheHandler {
             .field("path", &self.path)
             .field("connection", if self.connection.get().is_some() {&"OnceCell(..)"} else {&"OnceCell(<uninit>)"})
             .finish()
+    }
+}
+
+impl Default for InnerCacheHandler {
+    /// Has the "path" of `:memory:`, which just stores the database in memory until the program exits.
+    /// 
+    /// Seems like a reasonable default.
+    fn default() -> Self {
+        Self {
+            path: ":memory:".to_string(),
+            connection: OnceCell::new()
+        }
     }
 }
 

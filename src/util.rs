@@ -64,7 +64,7 @@ fn neg_maybe_range_boundary(index: Option<isize>, len: usize) -> Option<Option<u
 /// A range that may or may not have one or both ends open.
 pub(crate) fn neg_range(start: Option<isize>, end: Option<isize>, len: usize) -> Option<(Bound<usize>, Bound<usize>)> {
     match (start, end) {
-        (Some(start), Some(end)) if neg_range_boundary(end, len)? < neg_range_boundary(start, len)? => None,
+        (Some(start), Some(end)) if neg_range_boundary(start, len)? > neg_range_boundary(end, len)? => None,
         _ => Some((
             match neg_maybe_range_boundary(start, len) {
                 Some(Some(start)) => Bound::Included(start),
@@ -125,6 +125,60 @@ mod tests {
 
     #[test]
     fn neg_range_test() {
-        assert_eq!(neg_range(Some(0), Some(1), 1), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some(-3), Some(-3), 2), None);
+        assert_eq!(neg_range(Some(-2), Some(-3), 2), None);
+        assert_eq!(neg_range(Some(-1), Some(-3), 2), None);
+        assert_eq!(neg_range(Some( 0), Some(-3), 2), None);
+        assert_eq!(neg_range(Some( 1), Some(-3), 2), None);
+        assert_eq!(neg_range(Some( 2), Some(-3), 2), None);
+        assert_eq!(neg_range(Some( 3), Some(-3), 2), None);
+
+        assert_eq!(neg_range(Some(-3), Some(-2), 2), None);
+        assert_eq!(neg_range(Some(-2), Some(-2), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range(Some(-1), Some(-2), 2), None);
+        assert_eq!(neg_range(Some( 0), Some(-2), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range(Some( 1), Some(-2), 2), None);
+        assert_eq!(neg_range(Some( 2), Some(-2), 2), None);
+        assert_eq!(neg_range(Some( 3), Some(-2), 2), None);
+
+        assert_eq!(neg_range(Some(-3), Some(-1), 2), None);
+        assert_eq!(neg_range(Some(-2), Some(-1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some(-1), Some(-1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some( 0), Some(-1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some( 1), Some(-1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some( 2), Some(-1), 2), None);
+        assert_eq!(neg_range(Some( 3), Some(-1), 2), None);
+
+        assert_eq!(neg_range(Some(-3), Some( 0), 2), None);
+        assert_eq!(neg_range(Some(-2), Some( 0), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range(Some(-1), Some( 0), 2), None);
+        assert_eq!(neg_range(Some( 0), Some( 0), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range(Some( 1), Some( 0), 2), None);
+        assert_eq!(neg_range(Some( 2), Some( 0), 2), None);
+        assert_eq!(neg_range(Some( 3), Some( 0), 2), None);
+
+        assert_eq!(neg_range(Some(-3), Some( 1), 2), None);
+        assert_eq!(neg_range(Some(-2), Some( 1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some(-1), Some( 1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some( 0), Some( 1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some( 1), Some( 1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range(Some( 2), Some( 1), 2), None);
+        assert_eq!(neg_range(Some( 3), Some( 1), 2), None);
+
+        assert_eq!(neg_range(Some(-3), Some( 2), 2), None);
+        assert_eq!(neg_range(Some(-2), Some( 2), 2), Some((Bound::Included(0), Bound::Excluded(2))));
+        assert_eq!(neg_range(Some(-1), Some( 2), 2), Some((Bound::Included(1), Bound::Excluded(2))));
+        assert_eq!(neg_range(Some( 0), Some( 2), 2), Some((Bound::Included(0), Bound::Excluded(2))));
+        assert_eq!(neg_range(Some( 1), Some( 2), 2), Some((Bound::Included(1), Bound::Excluded(2))));
+        assert_eq!(neg_range(Some( 2), Some( 2), 2), Some((Bound::Included(2), Bound::Excluded(2))));
+        assert_eq!(neg_range(Some( 3), Some( 2), 2), None);
+
+        assert_eq!(neg_range(Some(-3), Some( 3), 2), None);
+        assert_eq!(neg_range(Some(-2), Some( 3), 2), None);
+        assert_eq!(neg_range(Some(-1), Some( 3), 2), None);
+        assert_eq!(neg_range(Some( 0), Some( 3), 2), None);
+        assert_eq!(neg_range(Some( 1), Some( 3), 2), None);
+        assert_eq!(neg_range(Some( 2), Some( 3), 2), None);
+        assert_eq!(neg_range(Some( 3), Some( 3), 2), None);
     }
 }

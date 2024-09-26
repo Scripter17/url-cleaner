@@ -723,7 +723,7 @@ impl Mapper {
                 let mapper_result=mapper.apply(job_state);
                 eprintln!("=== Mapper::Debug ===\nMapper: {mapper:?}\nOld URL: {old_url:?}\nOld scratchpad: {old_scratchpad:?}\nMapper return value: {mapper_result:?}\nNew job state: {job_state:?}");
                 mapper_result?;
-            }
+            },
 
             // Logic.
 

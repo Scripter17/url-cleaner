@@ -66,6 +66,7 @@ impl From<StringSourceError> for CommonCallArgsError {
 }
 
 impl CommonCallArgs {
+    /// Makes a [`CommonArgs`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
     pub fn make(&self, job_state: &JobState) -> Result<CommonArgs, CommonCallArgsError> {

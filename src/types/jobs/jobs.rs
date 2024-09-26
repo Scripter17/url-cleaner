@@ -25,14 +25,14 @@ pub enum JobConfigSourceError {
 }
 
 /// A [`Job`] creator.
-/// 
-/// Note: [`Self::cache_handler`] should be created via `config.cache_handler.as_path().try_into()?` but does not need to be.
-/// 
-/// This is intentional as it means you can override it using, for example, command line arguments.
 pub struct Jobs<'a> {
     /// The [`Config`] to use.
     pub config: Cow<'a, Config>,
     /// The cache.
+    /// 
+    /// Normally should be created via [`Self::config`]'s [`Config::cahce_handler`] but doesn't need to be.
+    /// 
+    /// This is intentional so you can override it using, for example, command line arguments.
     #[cfg(feature = "cache")]
     pub cache_handler: CacheHandler,
     /// The iterator URLs are acquired from.

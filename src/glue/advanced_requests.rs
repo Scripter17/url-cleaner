@@ -6,7 +6,6 @@ use std::collections::HashMap;
 
 use url::Url;
 use serde::{Deserialize, Serialize};
-use serde_json::value::Value;
 use reqwest::{Method, header::{HeaderName, HeaderValue, HeaderMap}};
 use thiserror::Error;
 #[allow(unused_imports, reason = "Used in a doc comment.")]
@@ -15,6 +14,9 @@ use reqwest::cookie::Cookie;
 use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
+
+mod string_source_json_value;
+pub use string_source_json_value::*;
 
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -87,9 +89,9 @@ impl RequestConfig {
     /// # Errors
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
-    /// If any of the header names in [`Self::headers`] is, once [`str::to_lowercase`] is applied, an invalid [`HeaderName`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
+    /// If any of the header names in [`Self::headers`] are, once [`str::to_lowercase`] is applied, an invalid [`HeaderName`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
     /// 
-    /// If any of the calls to [`StringSource::get`] from [`Self::headers`] returns an error, that error is returned.
+    /// If any of the calls to [`StringSource::get`] from [`Self::headers`] return an error, that error is returned.
     /// 
     /// If any of the calls to [`StringSource::get`] return an invalid [`HeaderValue`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
     /// 
@@ -112,7 +114,8 @@ impl RequestConfig {
                     .map(|v| (
                         HeaderName::from_lowercase(k.to_lowercase().as_bytes()),
                         HeaderValue::from_str(v)
-                    )))
+                    ))
+                )
             )
             .filter_map(|x| x.transpose())
             .map(|x| match x {
@@ -168,7 +171,7 @@ pub enum RequestBody {
     /// If a call to [`StringSource::get`] returns [`None`], returns the error [`RequestBodyError::StringSourceIsNone`]`.
     Form(HashMap<String, StringSource>),
     /// [`reqwest::blocking::RequestBuilder::json`].
-    Json(Value)
+    Json(StringSourceJsonValue)
 }
 
 /// The enum of all possible errors [`RequestBody::apply`] can return.
@@ -205,7 +208,7 @@ impl RequestBody {
                 .collect::<Result<Option<HashMap<_, _>>, _>>()?
                 .ok_or(RequestBodyError::StringSourceIsNone)?
             ),
-            Self::Json(json) => request.json(json)
+            Self::Json(json) => request.json(&json.make(job_state)?)
         })
     }
 
@@ -215,7 +218,7 @@ impl RequestBody {
         assert!(match self {
             Self::Text(text) => text.is_suitable_for_release(config),
             Self::Form(map) => map.iter().all(|(_, v)| v.is_suitable_for_release(config)),
-            Self::Json(_) => true
+            Self::Json(json) => json.is_suitable_for_release(config)
         }, "Unsuitable RequestBody: {self:?}");
         true
     }
