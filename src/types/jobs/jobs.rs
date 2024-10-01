@@ -28,9 +28,9 @@ pub enum JobConfigSourceError {
 pub struct Jobs<'a> {
     /// The [`Config`] to use.
     pub config: Cow<'a, Config>,
-    /// The cache.
+    /// The cache handler.
     /// 
-    /// Normally should be created via [`Self::config`]'s [`Config::cahce_handler`] but doesn't need to be.
+    /// Normally should be created via [`Self::config`]'s [`Config::cache_path`] but doesn't need to be.
     /// 
     /// This is intentional so you can override it using, for example, command line arguments.
     #[cfg(feature = "cache")]

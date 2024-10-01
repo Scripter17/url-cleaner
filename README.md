@@ -50,7 +50,7 @@ The default config is intended to always obey the following rules:
         - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
 - Outside of long (>10)/infinite redirects/redirects, it should always be idempotent.
 - Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
-- The `command` and `debug` features, as well as any features starting with `experiment-`/`experimental-` are never expected to be enabled.
+- The `command` and feature, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.

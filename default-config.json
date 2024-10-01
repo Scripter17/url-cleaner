@@ -77,14 +77,14 @@
 				"apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly",
 				"cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd",
 				"dlvr.it", "etsy.me", "fal.cn", "fanga.me", "fb.me", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com", "go.microsoft.com",
-				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "interc.pt", "iwe.one", "j.mp", "jbgm.es",
-				"k00.fr", "katy.to", "kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "lpc.ca", "msft.it",
-				"mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
-				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me",
-				"play.st", "politi.co", "propub.li", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs",
-				"rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly",
-				"thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link",
-				"wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "interc.pt", "is.gd", "iwe.one",
+				"j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "lpc.ca",
+				"msft.it", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyti.ms", "nyto.ms", "on.forbes.com",
+				"on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "pin.it",
+				"pixiv.me", "play.st", "politi.co", "propub.li", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc",
+				"reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to",
+				"t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com",
+				"wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -108,7 +108,7 @@
 				"usqp", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wt_mc", "xtor", "yclid",
 				"ymclid", "ymid", "ysclid"
 			],
-			"utps-host-whitelist": [],
+			"utps-host-whitelist": ["bambulab.com", "www.bambulab.com"],
 			"unmangle-path-is-url-host-whitelist": [],
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": [],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org"],
@@ -257,13 +257,13 @@
 					{"InSet": "redirect-hosts"},
 					{"InSet": "bypass.vip-hosts"},
 					{"IsOneOf": [
-				    "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "bfy.tw", "buymeacoff.ee", "buymeacoffee.com",
-				    "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com", "duckduckgo.com",
+				    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "buymeacoff.ee",
+				    "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com", "duckduckgo.com",
 				    "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "gf.me", "gofundme.com", "gofundme.com",
 				    "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com",
 				    "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
-				    "rd.goodreads.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult",
-				    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "action.openmedia.org", "1link.club", "proxy.notsobot.com", "awin1.com"
+				    "proxy.notsobot.com", "rd.goodreads.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly",
+				    "smarturl.it", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
 				  ]},
 				  {"InSet": "lmgtfy-hosts"},
 				  {"LengthIs": 4},
@@ -449,46 +449,6 @@
 										"condition": {"PathIs": "/redirect"},
 										"mapper": {"GetUrlFromQueryParam": "q"}
 									}},
-									"linkvertise.com": {"IfCondition": {
-										"condition": {"All": [
-											{"FlagIsSet": "bypass.vip"},
-											{"Not": {"FlagIsSet": "no-http"}},
-											{"PartMatches": {"part": "Host", "matcher": {"InSet": "bypass.vip-hosts"}}}
-										]},
-										"mapper": {"All": [
-											{"Common": "utps"},
-											{"CacheUrl": {
-												"category": "redirect",
-												"mapper": {"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"source": {"HttpRequest": {
-															"url": {"Join": {
-																"sources": [
-																	{"IfSourceIsNone": {
-																		"source": {"NoneTo": {
-																			"source": {"Var": "bypass.vip-api-key"},
-																			"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
-																		}},
-																		"then": "https://api.bypass.vip/bypass?url=",
-																		"else": "https://api.bypass.vip/premium/bypass?url="
-																	}},
-																	{"Modified": {"source": {"Part": "Whole"}, "modification": "UrlEncode"}}
-																]
-															}},
-															"headers": {
-																"x-api-key": {"NoneTo": {
-																	"source": {"Var": "bypass.vip-api-key"},
-																	"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
-																}}
-															}
-														}},
-														"modification": {"JsonPointer": "/result"}
-													}}
-												}}
-											}}
-										]}
-									}},
 									"out.reddit.com": {"GetUrlFromQueryParam": "url"},
 									"e.emailalerts.cnn.com": {"SetPart": {
 										"part": "Whole",
@@ -640,9 +600,98 @@
 									"awin1.com": {"IfCondition": {
 										"condition": {"PathIs": "/cread.php"},
 										"mapper": {"GetUrlFromQueryParam": "ued"}
+									}},
+									"shareasale-analytics.com": {"IfCondition": {
+										"condition": {"PathIs": "/r.cfm"},
+										"mapper": {"All": [
+											{"SetHost": "shareasale-analytics.com"},
+											{"AllowQueryParams": ["b", "u", "m"]},
+											{"Common": "utps"},
+											{"SetPart": {
+												"part": "Whole",
+												"value": {"Modified": {
+													"source": {"Cache": {
+														"category": "redirect",
+														"key": {"Part": "Whole"},
+														"source": {"ExtractBetween": {
+															"source": {"HttpRequest": {}},
+															"start": "replace('",
+															"end": "')"
+														}}
+													}},
+													"modification": {"RunEscapeCodes": {"\\/": "/"}}
+												}}
+											}}
+										]}
+									}},
+									"shareasale.com": {"IfCondition": {
+										"condition": {"PathIs": "/r.cfm"},
+										"mapper": {"All": [
+											{"SetHost": "shareasale-analytics.com"},
+											{"AllowQueryParams": ["b", "u", "m"]},
+											{"Common": "utps"},
+											{"SetPart": {
+												"part": "Whole",
+												"value": {"Modified": {
+													"source": {"Cache": {
+														"category": "redirect",
+														"key": {"Part": "Whole"},
+														"source": {"ExtractBetween": {
+															"source": {"HttpRequest": {}},
+															"start": "replace('",
+															"end": "')"
+														}}
+													}},
+													"modification": {"RunEscapeCodes": {"\\/": "/"}}
+												}}
+											}}
+										]}
 									}}
 								}
 							}
+						},
+
+
+
+						{
+							"condition": {"All": [
+								{"FlagIsSet": "bypass.vip"},
+								{"Not": {"FlagIsSet": "no-http"}},
+								{"PartMatches": {"part": "Host", "matcher": {"InSet": "bypass.vip-hosts"}}}
+							]},
+							"mapper": {"All": [
+								{"Common": "utps"},
+								{"CacheUrl": {
+									"category": "redirect",
+									"mapper": {"SetPart": {
+										"part": "Whole",
+										"value": {"Modified": {
+											"source": {"HttpRequest": {
+												"url": {"Join": {
+													"sources": [
+														{"IfSourceIsNone": {
+															"source": {"NoneTo": {
+																"source": {"Var": "bypass.vip-api-key"},
+																"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
+															}},
+															"then": "https://api.bypass.vip/bypass?url=",
+															"else": "https://api.bypass.vip/premium/bypass?url="
+														}},
+														{"Modified": {"source": {"Part": "Whole"}, "modification": "UrlEncode"}}
+													]
+												}},
+												"headers": {
+													"x-api-key": {"NoneTo": {
+														"source": {"Var": "bypass.vip-api-key"},
+														"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
+													}}
+												}
+											}},
+											"modification": {"JsonPointer": "/result"}
+										}}
+									}}
+								}}
+							]}
 						},
 
 
@@ -960,6 +1009,7 @@
 					"vxtwitter.com": {"SetHost": "x.com"},
 					"fixvx.com"    : {"SetHost": "x.com"},
 					"fxtwitter.com": {"SetHost": "x.com"},
+					"stupidpenisx.com": {"SetHost": "x.com"},
 					"youtube.com"  : {"All": [
 						{"RemoveQueryParams": ["si", "feature", "pp"]},
 						{"IfCondition": {

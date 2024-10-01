@@ -76,14 +76,29 @@ impl Config {
     /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
     /// 
     /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
+    #[allow(dead_code, reason = "Public API.")]
     pub fn get_default() -> Result<&'static Self, GetConfigError> {
         #[cfg(feature = "default-config")]
         if let Some(config) = DEFAULT_CONFIG.get() {
             Ok(config)
         } else {
-            let config=serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig)?;
+            let config=Self::get_default_no_cache()?;
             Ok(DEFAULT_CONFIG.get_or_init(|| config))
         }
+        #[cfg(not(feature = "default-config"))]
+        Err(GetConfigError::NoDefaultConfig)
+    }
+
+    /// Useful for when you know you're only getting the config once and, if needed, caching it yourself.
+    /// 
+    /// Generally, [`Self::get_default`] should be used over calling this function multiple times.
+    /// # Errors
+    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
+    /// 
+    /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
+    pub fn get_default_no_cache() -> Result<Self, GetConfigError> {
+        #[cfg(feature = "default-config")]
+        return serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig);
         #[cfg(not(feature = "default-config"))]
         Err(GetConfigError::NoDefaultConfig)
     }
@@ -95,10 +110,25 @@ impl Config {
     /// If `path` is `None` and the call to [`Self::get_default`] returns an error, that error is returned.
     /// 
     /// If `path` is `Some` and the call to [`Self::load_from_file`] returns an error, that error is returned.
+    #[allow(dead_code, reason = "Public API.")]
     pub fn get_default_or_load(path: Option<&Path>) -> Result<Cow<'static, Self>, GetConfigError> {
         Ok(match path {
             Some(path) => Cow::Owned(Self::load_from_file(path)?),
             None => Cow::Borrowed(Self::get_default()?)
+        })
+    }
+
+    /// Useful for when you know you're only getting the config once and, if needed, caching it yourself.
+    /// 
+    /// Generally, [`Self::get_default_or_load`] should be used over calling this function with the same argument multiple times.
+    /// # Errors
+    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
+    /// 
+    /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
+    pub fn get_default_no_cache_or_load(path: Option<&Path>) -> Result<Self, GetConfigError> {
+        Ok(match path {
+            Some(path) => Self::load_from_file(path)?,
+            None => Self::get_default_no_cache()?
         })
     }
 
@@ -120,7 +150,7 @@ impl Config {
     }
 }
 
-/// The config loaded into URL Cleaner at compile time.
+/// The minimized config loaded into URL Cleaner at compile time.
 /// 
 /// When the `minify-included-strings` is enabled, all whitespace is replaced with a single space.
 /// If there are any spaces in a string, this compression will alter how the config works.
@@ -131,10 +161,18 @@ impl Config {
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]
 pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../../default-config.json"));
 /// The non-minified config loaded into URL Cleaner at compile time.
+/// 
+/// When the `minify-included-strings` is enabled, all whitespace is replaced with a single space.
+/// If there are any spaces in a string, this compression will alter how the config works.
+/// 
+/// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
+/// 
+/// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", not(feature = "minify-included-strings")))]
 pub static DEFAULT_CONFIG_STR: &str=include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
+#[allow(dead_code, reason = "Public API.")]
 pub static DEFAULT_CONFIG: OnceLock<Config>=OnceLock::new();
 
 /// An enum containing all possible errors that can happen when loading/parsing a rules into a [`Rules`]

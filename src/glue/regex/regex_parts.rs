@@ -88,8 +88,9 @@ impl RegexParts {
 
     /// Creates the regex.
     /// # Errors
-    /// If the regex is larger than the maximum DFA size, this will error.
+    /// If the call to [`RegexBuilder::build`] returns an error, that error is returned.
     pub fn build(&self) -> Result<Regex, regex::Error> {
+        debug!(RegexParts::build, self);
         RegexBuilder::new(&self.pattern)
             .case_insensitive(self.config.case_insensitive)
             .crlf(self.config.crlf)

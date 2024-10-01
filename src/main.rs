@@ -144,47 +144,71 @@ fn str_to_json_str(s: &str) -> String {
 }
 
 fn main() -> Result<ExitCode, CliError> {
+    #[cfg(feature = "debug-time")] let start_time = std::time::Instant::now();
+
     let mut some_ok = false;
     let mut some_error = false;
 
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+
     let args = Args::parse();
+
+    #[cfg(feature = "debug-time")] eprintln!("Parse args: {:?}", x.elapsed());
 
     let print_args = args.print_args;
     if print_args {println!("{args:?}");}
 
-    let mut config = Config::get_default_or_load(args.config.as_deref())?.into_owned();
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+
+    let mut config = Config::get_default_no_cache_or_load(args.config.as_deref())?;
+
+    #[cfg(feature = "debug-time")] eprintln!("Load Config: {:?}", x.elapsed());
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+
     let mut params_diffs = args.params_diff
         .into_iter()
         .map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile))
         .collect::<Result<Vec<_>, _>>()?;
-    params_diffs.push(ParamsDiff {
-        flags  : args.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
-        unflags: args.unflag.into_iter().collect(), // It's probably not a good thing to do a global impl for,
-        vars   : args.var   .into_iter().map(|x| x.try_into().expect("Clap guarantees the length is alwasy 2")).map(|[name, value]: [String; 2]| (name, value)).collect(), // Either let me TryFrom a Vec into a tuple or let me collect a [T; 2] into a HashMap. Preferably both.
-        unvars : args.unvar .into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
-        init_sets: Default::default(),
-        insert_into_sets: args.insert_into_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-        remove_from_sets: args.remove_from_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-        delete_sets     : Default::default(),
-        init_maps       : Default::default(),
-        insert_into_maps: Default::default(),
-        remove_from_maps: Default::default(),
-        delete_maps     : Default::default(),
-        #[cfg(feature = "cache")] read_cache : args.read_cache,
-        #[cfg(feature = "cache")] write_cache: args.write_cache,
-        #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
-            set_proxies: args.http_proxy.map(|x| vec![x]),
-            no_proxy: args.no_http_proxy,
-            ..HttpClientConfigDiff::default()
-        })
-    });
+    let mut feature_flag_make_params_diff = false;
+    #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.read_cache.is_some()};
+    #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.write_cache.is_some()};
+    #[cfg(feature = "http" )] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.http_proxy.is_some()};
+    if !args.flag.is_empty() || !args.unflag.is_empty() || !args.var.is_empty() || !args.unvar.is_empty() || !args.insert_into_set.is_empty() || !args.remove_from_set.is_empty() || feature_flag_make_params_diff {
+        params_diffs.push(ParamsDiff {
+            flags  : args.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
+            unflags: args.unflag.into_iter().collect(), // It's probably not a good thing to do a global impl for,
+            vars   : args.var   .into_iter().map(|x| x.try_into().expect("Clap guarantees the length is always 2")).map(|[name, value]: [String; 2]| (name, value)).collect(), // Either let me TryFrom a Vec into a tuple or let me collect a [T; 2] into a HashMap. Preferably both.
+            unvars : args.unvar .into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
+            init_sets: Default::default(),
+            insert_into_sets: args.insert_into_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+            remove_from_sets: args.remove_from_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+            delete_sets     : Default::default(),
+            init_maps       : Default::default(),
+            insert_into_maps: Default::default(),
+            remove_from_maps: Default::default(),
+            delete_maps     : Default::default(),
+            #[cfg(feature = "cache")] read_cache : args.read_cache,
+            #[cfg(feature = "cache")] write_cache: args.write_cache,
+            #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
+                set_proxies: args.http_proxy.map(|x| vec![x]),
+                no_proxy: args.no_http_proxy,
+                ..HttpClientConfigDiff::default()
+            })
+        });
+    }
+
+    #[cfg(feature = "debug-time")] eprintln!("Args to ParamsDiffs: {:?}", x.elapsed());
 
     let print_params_diffs = args.print_params_diffs;
     if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
 
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+
     for params_diff in params_diffs {
         params_diff.apply(&mut config.params);
     }
+
+    #[cfg(feature = "debug-time")] eprintln!("Apply ParamsDiffs: {:?}", x.elapsed());
 
     let json = args.json;
 
@@ -202,22 +226,24 @@ fn main() -> Result<ExitCode, CliError> {
 
     if no_cleaning {std::process::exit(0);}
 
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+
     let mut jobs = Jobs {
         #[cfg(feature = "cache")]
         cache_handler: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
         configs_source: {
             let ret = args.urls.into_iter().map(|url| Ok(Url::parse(&url)?.into()));
             if !io::stdin().is_terminal() {
-                Box::new(ret.chain(io::stdin().lines().map(|line| match line {
-                    Ok(line) => Url::parse(&line).map(Into::into).map_err(Into::into), // impl<T1: Into<T2>, E1: Into<E2>, T2, E2> From<Result<T1, E1>> for Result<T2, E2> {..}
-                    Err(e) => Err(e.into())
-                })))
+                Box::new(ret.chain(io::stdin().lines().map(|line| Ok(Url::parse(&line?)?.into()))))
             } else {
                 Box::new(ret)
             }
         },
         config: Cow::Owned(config)
     };
+
+    #[cfg(feature = "debug-time")] eprintln!("Make Jobs: {:?}", x.elapsed());
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
     if json {
         print!("{{\"Ok\":{{\"urls\":[");
@@ -267,6 +293,14 @@ fn main() -> Result<ExitCode, CliError> {
             }
         }
     }
+
+    #[cfg(feature = "debug-time")] eprintln!("Run Jobs: {:?}", x.elapsed());
+    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+
+    #[cfg(feature = "debug-time")] drop(jobs);
+
+    #[cfg(feature = "debug-time")] eprintln!("Drop Jobs: {:?}", x.elapsed());
+    #[cfg(feature = "debug-time")] eprintln!("Total: {:?}", start_time.elapsed());
 
     Ok(match (some_ok, some_error) {
         (false, false) => 0,

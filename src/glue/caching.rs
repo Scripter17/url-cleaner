@@ -232,7 +232,7 @@ impl InnerCacheHandler {
     /// # Errors
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn read_from_cache(&mut self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
-        debug!(CacheHandler::read_from_cache, self, category, key);
+        debug!(InnerCacheHandler::read_from_cache, self, category, key);
         Ok(cache::dsl::cache
             .filter(cache::dsl::category.eq(category))
             .filter(cache::dsl::key.eq(key))
@@ -251,7 +251,7 @@ impl InnerCacheHandler {
     /// # Errors
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn write_to_cache(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
-        debug!(CacheHandler::write_to_cache, self, category, key, value);
+        debug!(InnerCacheHandler::write_to_cache, self, category, key, value);
         diesel::insert_into(cache::table)
             .values(&NewCacheEntry {category, key, value})
             .returning(CacheEntry::as_returning())

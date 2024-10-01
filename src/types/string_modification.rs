@@ -1087,7 +1087,41 @@ pub enum StringModification {
         not_found_behavior: CharNotFoundBehavior
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
-    Common(CommonCall)
+    Common(CommonCall),
+    /// Be careful to make sure no element key is a prefix of any other element key.
+    /// 
+    /// The current implementation sucks and can't handle that.
+    /// # Tests
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut scratchpad = Default::default();
+    /// let context = Default::default();
+    /// let commons = Default::default();
+    /// let params = Default::default();
+    /// #[cfg(feature = "cache")]
+    /// let cache_handler = "test-cache.sqlite".into();
+    /// let mut job_state = url_cleaner::types::JobState {
+    ///     url: &mut url,
+    ///     params: &params,
+    ///     scratchpad: &mut scratchpad,
+    ///     context: &context,
+    ///     #[cfg(feature = "cache")]
+    ///     cache_handler: &cache_handler,
+    ///     commons: &commons,
+    ///     common_args: None
+    /// };
+    /// 
+    /// let mut x = "\\/a\\n\\\\n".to_string();
+    /// StringModification::RunEscapeCodes([
+    ///     ("\\/" .to_string(), "/" .to_string()),
+    ///     ("\\\\".to_string(), "\\".to_string()),
+    ///     ("\\n" .to_string(), "\n".to_string())
+    /// ].into_iter().collect()).apply(&mut x, &job_state).unwrap();
+    /// assert_eq!(x, "/a\n\\n");
+    /// ```
+    RunEscapeCodes(HashMap<String, String>)
 }
 
 /// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
@@ -1470,6 +1504,23 @@ impl StringModification {
                         common_args: Some(&common_call.args.make(job_state)?)
                     }
                 )?
+            },
+            Self::RunEscapeCodes(map) => {
+                let mut ret = String::new();
+                let mut to_munch = &**to;
+                'a: while !to_munch.is_empty() {
+                    for (escape, replace) in map.iter() {
+                        if let Some(tail) = to_munch.strip_prefix(escape) {
+                            to_munch = tail;
+                            ret.push_str(replace);
+                            continue 'a;
+                        }
+                    }
+                    let mut chars = to_munch.chars();
+                    if let Some(next_char) = chars.next() {ret.push(next_char);}
+                    to_munch = chars.as_str();
+                }
+                *to=ret;
             }
         };
         Ok(())
@@ -1516,7 +1567,7 @@ impl StringModification {
             Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release(config)),
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
-                Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode => true,
+                Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode | Self::RunEscapeCodes(_) => true,
             #[cfg(feature = "regex")]
             Self::RegexFind(_) => true,
             #[cfg(feature = "base64")]
