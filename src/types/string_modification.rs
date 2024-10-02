@@ -1509,7 +1509,7 @@ impl StringModification {
                 let mut ret = String::new();
                 let mut to_munch = &**to;
                 'a: while !to_munch.is_empty() {
-                    for (escape, replace) in map.iter() {
+                    for (escape, replace) in map {
                         if let Some(tail) = to_munch.strip_prefix(escape) {
                             to_munch = tail;
                             ret.push_str(replace);

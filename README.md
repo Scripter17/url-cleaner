@@ -24,16 +24,6 @@ However, for some websites the default config strips more stuff than search engi
 
 As with Tor, protests, and anything else where privacy matters, safety comes in numbers.
 
-### Canonicalization
-
-There is a vague notion of "canonical" URLs. One where every URL with its semantics can be converted into the canonical form with no external details.
-
-For example, `https://amazon.com/product-name-here/dp/PRODUCTID` can be "canonicalized" to `https://amazon.com/dp/PRODUCTID`.
-
-I have not yet decided if I want to remove the `minimize` flag and/or just make it the default behavior.
-
-Input on the matter would be appreciated.
-
 ## Basic usage
 
 By default, compiling URL Cleaner includes the [`default-config.json`](default-config.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
@@ -42,12 +32,11 @@ By default, compiling URL Cleaner includes the [`default-config.json`](default-c
 
 The default config is intended to always obey the following rules:
 
-- "Meaningful semantic changes"<sup>[definition?]</sup> should only ever occur as a result of a flag being enabled.
+- "Meaningful semantic changes"<sup>[definition?]</sup> from the input URL and output URL should only ever occur as a result of a flag being enabled.
     - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
-- URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever throw an error.
+- URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error.
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
-    - URLs that are semantically valid should never change semantics and/or become semantically invalid.
-        - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
+    - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
 - Outside of long (>10)/infinite redirects/redirects, it should always be idempotent.
 - Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
 - The `command` and feature, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
@@ -70,7 +59,6 @@ Various flags are included in the default config for things I want to do frequen
 - `deadname-twitter`: Change `x.com` to `twitter.com`.
 - `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
-- `minimize`: Remove non-essential parts of that are likely not tracking related.
 - `no-http`: Don't make any HTTP requests.
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-unmangle`: Disable all unmangling.

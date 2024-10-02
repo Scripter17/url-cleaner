@@ -12,7 +12,6 @@
 			"deadname-twitter": "Change `x.com` to `twitter.com`.",
 			"discord-compatibility": "Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.",
 			"discord-unexternal": "Replace `images-ext-1.discordapp.net` with the original images they refer to.",
-			"minimize": "Remove non-essential parts of that are likely not tracking related.",
 			"no-http": "Don't make any HTTP requests.",
 			"no-https-upgrade": "Disable replacing `http://` with `https://`.",
 			"no-unmangle": "Disable all unmangling.",
@@ -171,7 +170,7 @@
 			"expectations": [
 				{"before": "https://x.com?t=a&s=b", "after": "https://x.com/"},
 				{"before": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "after": "https://example.com/"},
-				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN"},
+				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/dp/B0C6DX66TN"},
 				{"before": "http://example.com", "after": "https://example.com/"},
 				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
 				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
@@ -193,12 +192,6 @@
 			"params_diff": {"flags": ["deadname-twitter"]},
 			"expectations": [
 				{"before": "https://x.com?t=a&s=b", "after": "https://twitter.com/"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["minimize"]},
-			"expectations": [
-				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/dp/B0C6DX66TN"}
 			]
 		},
 		{
@@ -1171,10 +1164,10 @@
 					"x.com": {"Rules": [
 						{
 							"condition": {"PathIs": "/i/flow/login"},
-							"mapper": {"All": [
-								{"CopyPart": {"from": {"QueryParam": "redirect_after_login"}, "to": {"NoneToEmptyString": "Path"}}},
-								{"SetPart": {"part": "Query", "value": null}}
-							]}
+							"mapper": {"SetPart": {
+								"part": "Whole",
+								"value": {"Join": {"sources": ["https://x.com", {"Part": {"QueryParam": "redirect_after_login"}}]}}
+							}}
 						},
 						{
 							"IfElse": {
@@ -1213,10 +1206,7 @@
 						"mapper": "RemoveQuery"
 					},
 					"walmart": {
-						"condition": {"All": [
-							{"FlagIsSet": "minimize"},
-							{"PartIs": {"part": {"PathSegment": 1}, "value": "ip"}}
-						]},
+						"condition": {"PartIs": {"part": {"PathSegment": 1}, "value": "ip"}},
 						"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
 					},
 					"bestbuy": {
@@ -1233,17 +1223,11 @@
 							]}
 						},
 						{
-							"condition": {"All": [
-								{"FlagIsSet": "minimize"},
-								{"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}}
-							]},
+							"condition": {"PartIs": {"part": {"PathSegment": 1}, "value": "dp"}},
 							"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
 						},
 						{
-							"condition": {"All": [
-								{"FlagIsSet": "minimize"},
-								{"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}}
-							]},
+							"condition": {"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}},
 							"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
 						},
 						{
