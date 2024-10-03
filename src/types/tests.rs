@@ -41,9 +41,9 @@ impl TestSet {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Expectation {
     /// The URL to clean.
-    pub before: Url,
+    pub job_config: JobConfig,
     /// The expected result of cleaning [`Self::before`].
-    pub after: Url
+    pub result: Url
 }
 
 impl Expectation {
@@ -52,21 +52,18 @@ impl Expectation {
     /// Panics if a making the [`CacheHandler`], a call to [`Rules::apply`], or a test fails.
     pub fn run(&self, config: &Config) {
         println!("Testing the following expectation set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable")); // Only applies when testing a config.
-        let mut temp = self.before.clone();
-        let context = Default::default();
-        let mut scratchpad = Default::default();
+        let mut url = self.job_config.url.clone();
         #[cfg(feature = "cache")]
-        let cache_handler = (&*config.cache_path).into();
         config.rules.apply(&mut JobState {
-            url: &mut temp,
+            url: &mut url,
             params: &config.params,
-            scratchpad: &mut scratchpad,
-            context: &context,
+            scratchpad: &mut Default::default(),
+            context: &self.job_config.context,
             #[cfg(feature = "cache")]
-            cache_handler: &cache_handler,
+            cache_handler: &Default::default(),
             commons: &config.commons,
             common_args: None
         }).expect("The URL to be modified without errors."); // Only applies when testing a config.
-        assert_eq!(temp, self.after);
+        assert_eq!(url, self.result);
     }
 }

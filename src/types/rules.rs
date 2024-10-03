@@ -168,10 +168,10 @@ pub enum Rule {
     /// If the call to [`Condition::satisfied_by`] returns `Some(false)`, returns the error [`RuleError::FailedCondition`].
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
-    CommonCondition {
+    SharedCondition {
         /// The condition they all share. Note that [`Condition::All`] and [`Condition::Any`] can be used to have multiple common conditions.
         condition: Condition,
-        /// The rules to run if [`Self::CommonCondition::condition`] passes.
+        /// The rules to run if [`Self::SharedCondition::condition`] passes.
         rules: Rules
     },
     /// Applies the contained [`Rules`].
@@ -324,7 +324,7 @@ impl Rule {
                 }
                 Ok(())
             },
-            Self::CommonCondition{condition, rules} => {
+            Self::SharedCondition{condition, rules} => {
                 if condition.satisfied_by(job_state)? {
                     rules.apply(job_state)?;
                     Ok(())
@@ -368,7 +368,7 @@ impl Rule {
             Self::StringRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)),
             Self::StringRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)),
             Self::Repeat {rules, ..} => rules.is_suitable_for_release(config),
-            Self::CommonCondition {condition, rules} => condition.is_suitable_for_release(config) && rules.is_suitable_for_release(config),
+            Self::SharedCondition {condition, rules} => condition.is_suitable_for_release(config) && rules.is_suitable_for_release(config),
             Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(config),
             Self::Rules(rules) => rules.is_suitable_for_release(config),
             Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.is_suitable_for_release(config),

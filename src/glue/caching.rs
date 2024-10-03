@@ -214,7 +214,11 @@ impl InnerCacheHandler {
             std::fs::write(&self.path, EMPTY_CACHE)?;
         }
         if self.connection.get().is_none() {
-            self.connection.set(SqliteConnection::establish(&self.path)?).map_err(|_| ()).expect("The connection to have just been confirmed unset.");
+            let mut connection = SqliteConnection::establish(&self.path)?;
+            if self.path == ":memory:" {
+                diesel::sql_query(include_str!("../../migrations/2024-07-20-075910_create_cache/up.sql")).execute(&mut connection).expect("The migrations/../up.sql file to contain SQL commands that can be executed on the in-memory cache.");
+            }
+            self.connection.set(connection).map_err(|_| ()).expect("The connection to have just been confirmed unset.");
         }
         Ok(self.connection.get_mut().expect("The connection to have just been set."))
     }

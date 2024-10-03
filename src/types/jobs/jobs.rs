@@ -109,14 +109,3 @@ pub enum GetJobError {
     #[error(transparent)]
     JobConfigSourceError(#[from] JobConfigSourceError)
 }
-
-/// The enum of errors [`Jobs::do`] can return.
-#[derive(Debug, Error)]
-pub enum DoJobsError {
-    /// Returned when a [`GetJobError`] is encountered.
-    #[error(transparent)]
-    GetJobError(#[from] GetJobError),
-    /// Returned when a [`DoJobError`] is encountered.
-    #[error(transparent)]
-    DoJobError(#[from] DoJobError)
-}

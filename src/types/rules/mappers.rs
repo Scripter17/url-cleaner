@@ -982,7 +982,7 @@ impl Mapper {
             #[cfg(feature = "http")]
             Self::ExpandRedirect {..} => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config)
-        }, "Unsuitable Mapper detected: (self:?)");
+        }, "Unsuitable Mapper detected: {self:?}");
         true
     }
 }

@@ -56,11 +56,10 @@ Various flags are included in the default config for things I want to do frequen
 - `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.
-- `deadname-twitter`: Change `x.com` to `twitter.com`.
 - `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
-- `no-http`: Don't make any HTTP requests.
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
+- `no-network`: Don't make any HTTP requests.
 - `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
@@ -74,6 +73,7 @@ Various flags are included in the default config for things I want to do frequen
 - `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
+- `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unplaylist`: Removes the `list` query parameter from `/watch` URLs.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
 

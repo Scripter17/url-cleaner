@@ -105,7 +105,7 @@ pub struct ParamsDiff {
     /// Initializes new maps in [`Params::maps`] if they don't already exist, then inserts values into them.
     #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, HashMap<String, String>>,
     /// If the maps exist in [`Params::maps`], removes values from them.
-    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, HashMap<String, String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, Vec<String>>,
     /// If the maps exist in [`Params::maps`], remove them.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_maps: Vec<String>,
     /// If [`Some`], sets [`Params::read_cache`]. Defaults to [`None`].
@@ -172,7 +172,7 @@ impl ParamsDiff {
         }
         for (k, vs) in self.remove_from_maps.iter() {
             if let Some(x) = to.maps.get_mut(k) {
-                for v in vs.keys() {
+                for v in vs {
                     x.remove(v);
                 }
             }

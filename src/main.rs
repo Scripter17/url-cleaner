@@ -4,8 +4,9 @@ use std::path::PathBuf;
 use std::io::{self, IsTerminal};
 use std::borrow::Cow;
 use std::process::ExitCode;
+use std::collections::HashMap;
 
-use clap::Parser;
+use clap::{Parser, CommandFactory};
 use url::Url;
 use thiserror::Error;
 
@@ -56,28 +57,28 @@ pub struct Args {
     #[arg(             long)]
     pub params_diff: Vec<PathBuf>,
     /// Set flags.
-    #[arg(short      , long)]
+    #[arg(short      , long, value_names = ["NAME"])]
     pub flag  : Vec<String>,
     /// Unset flags set by the config.
-    #[arg(short = 'F', long)]
+    #[arg(short = 'F', long, value_names = ["NAME"])]
     pub unflag: Vec<String>,
     /// For each occurrence of this option, its first argument is the variable name and the second argument is its value.
-    #[arg(short      , long, num_args(2))]
+    #[arg(short      , long, num_args(2), value_names = ["NAME", "VALUE"])]
     pub var: Vec<Vec<String>>,
     /// Unset variables set by the config.
-    #[arg(short = 'V', long)]
+    #[arg(short = 'V', long, value_names = ["NAME"])]
     pub unvar : Vec<String>,
     /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to insert.
-    #[arg(             long, num_args(2..))]
+    #[arg(             long, num_args(2..), value_names = ["NAME", "VALUE"])]
     pub insert_into_set: Vec<Vec<String>>,
     /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to remove.
-    #[arg(             long, num_args(2..))]
+    #[arg(             long, num_args(2..), value_names = ["NAME", "VALUE"])]
     pub remove_from_set: Vec<Vec<String>>,
     /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to insert.
-    #[arg(             long, num_args(3..))]
+    #[arg(             long, num_args(3..), value_names = ["NAME", "KEY1", "VALUE1"])]
     pub insert_into_map: Vec<Vec<String>>,
     /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to remove.
-    #[arg(             long, num_args(3..))]
+    #[arg(             long, num_args(2..), value_names = ["NAME", "KEY1"])]
     pub remove_from_map: Vec<Vec<String>>,
     /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
     #[cfg(feature = "cache")]
@@ -153,6 +154,27 @@ fn main() -> Result<ExitCode, CliError> {
 
     let args = Args::parse();
 
+    for invocation in args.insert_into_map.iter() {
+        if invocation.is_empty() {
+            Args::command()
+                .error(clap::error::ErrorKind::WrongNumberOfValues, "--insert-into-map needs a map to insert key-value pairs into.")
+                .exit();
+        }
+        if invocation.len() % 2 != 1 {
+            Args::command()
+                .error(clap::error::ErrorKind::WrongNumberOfValues, "--insert-into-map found a key without a value at the end.")
+                .exit();
+        }
+    }
+
+    for invocation in args.remove_from_map.iter() {
+        if invocation.is_empty() {
+            Args::command()
+                .error(clap::error::ErrorKind::WrongNumberOfValues, "--remove-from-map needs a map to remove keys from.")
+                .exit();
+        }
+    }
+
     #[cfg(feature = "debug-time")] eprintln!("Parse args: {:?}", x.elapsed());
 
     let print_args = args.print_args;
@@ -173,7 +195,7 @@ fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.read_cache.is_some()};
     #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.write_cache.is_some()};
     #[cfg(feature = "http" )] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.http_proxy.is_some()};
-    if !args.flag.is_empty() || !args.unflag.is_empty() || !args.var.is_empty() || !args.unvar.is_empty() || !args.insert_into_set.is_empty() || !args.remove_from_set.is_empty() || feature_flag_make_params_diff {
+    if !args.flag.is_empty() || !args.unflag.is_empty() || !args.var.is_empty() || !args.unvar.is_empty() || !args.insert_into_set.is_empty() || !args.remove_from_set.is_empty() || !args.insert_into_map.is_empty() || !args.remove_from_map.is_empty() || feature_flag_make_params_diff {
         params_diffs.push(ParamsDiff {
             flags  : args.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
             unflags: args.unflag.into_iter().collect(), // It's probably not a good thing to do a global impl for,
@@ -184,8 +206,16 @@ fn main() -> Result<ExitCode, CliError> {
             remove_from_sets: args.remove_from_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
             delete_sets     : Default::default(),
             init_maps       : Default::default(),
-            insert_into_maps: Default::default(),
-            remove_from_maps: Default::default(),
+            insert_into_maps: args.insert_into_map.into_iter().map(|x| {
+                let mut values = HashMap::new();
+                let mut args_iter = x.into_iter();
+                let map = args_iter.next().expect("The validation to have worked.");
+                while let Some(k) = args_iter.next() {
+                    values.insert(k, args_iter.next().expect("The validation to have worked."));
+                }
+                (map, values)
+            }).collect::<HashMap<_, _>>(),
+            remove_from_maps: args.remove_from_map.into_iter().map(|mut x| (x.swap_remove(0), x)).collect::<HashMap<_, _>>(),
             delete_maps     : Default::default(),
             #[cfg(feature = "cache")] read_cache : args.read_cache,
             #[cfg(feature = "cache")] write_cache: args.write_cache,
@@ -254,16 +284,16 @@ fn main() -> Result<ExitCode, CliError> {
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => {
-                        print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));
+                        print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
                         some_ok = true;
                     },
                     Err(e) => {
-                        print!("{{\"Err\":{{\"type\":\"DoJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                        print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
                         some_error = true;
                     }
                 },
                 Err(e) => {
-                    print!("{{\"Err\":{{\"type\":\"GetJobError\",\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                    print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
                     some_error = true;
                 }
             }

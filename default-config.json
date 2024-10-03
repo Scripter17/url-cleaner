@@ -8,11 +8,10 @@
 		"flags": {
 			"assume-1-dot-2-is-redirect": "Treat all hosts that match the Regex `^.\\...$` as redirects. Let's be real, they all are.",
 			"breezewiki": "Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.",
-			"bypass.vip": "Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.",
-			"deadname-twitter": "Change `x.com` to `twitter.com`.",
+			"bypass.vip": "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links. Currently untestable as the API is down.",
 			"discord-compatibility": "Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.",
 			"discord-unexternal": "Replace `images-ext-1.discordapp.net` with the original images they refer to.",
-			"no-http": "Don't make any HTTP requests.",
+			"no-network": "Don't make any HTTP requests.",
 			"no-https-upgrade": "Disable replacing `http://` with `https://`.",
 			"no-unmangle": "Disable all unmangling.",
 			"no-unmangle-host-is-http-or-https": "Don't convert `https://https//example.com/abc` to `https://example.com/abc`.",
@@ -25,8 +24,9 @@
 			"tor2web": "Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.",
 			"tor2web2tor": "Replace `**.onion.**` domains with `**.onion` domains.",
 			"tumblr-unsubdomain-blog": "Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.",
-			"unbreezewiki": "Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.",
+			"unbreezewiki": "Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.",
 			"unmobile": "Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.",
+			"youtube-unlive": "Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.",
 			"youtube-unplaylist": "Removes the `list` query parameter from `/watch` URLs.",
 			"youtube-unshort": "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`."
 		},
@@ -41,7 +41,7 @@
 		},
 		"sets": {
 			"breezewiki-hosts": "Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.",
-			"bypass.vip-hosts": "Hosts to use bypass.vip for.",
+			"bypass.vip-host-without-www-dot-prefixes": "`HostWithoutWWWDotPrefix`es to use bypass.vip for.",
 			"email-link-format-1-hosts": "(TEMPORARY NAME) Hosts that use unknown link format 1.",
 			"https-upgrade-host-blacklist": "Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.",
 			"lmgtfy-hosts": "Hosts to replace with `google.com`.",
@@ -58,7 +58,6 @@
 		}
 	},
 	"params": {
-		"flags": [],
 		"vars": {
 			"twitter-embed-domain": "vxtwitter.com",
 			"breezewiki-domain": "breezewiki.com"
@@ -114,7 +113,16 @@
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
 			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": ["uscourts.gov"],
 			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
-			"bypass.vip-hosts": ["linkvertise.com", "www.linkvertise.com"],
+			"bypass.vip-host-without-www-dot-prefixes": [
+				"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "bit.ly", "booo.st", "boost.ink", "bst.gg",
+				"cemendemons.com", "depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "is.gd",
+				"leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com", "loot-link.com", "loot-links.com", "lootdest.com",
+				"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com",
+				"newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com",
+				"rebrand.ly", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "sub2get.com", "sub2unlock.com",
+				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylink.onl",
+				"tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com"
+			],
 			"email-link-format-1-hosts": ["action.openmedia.org"]
 		},
 		"lists": {
@@ -160,7 +168,7 @@
 				}}
 			]},
 			"extract-from-page": {"IfCondition": {
-				"condition": {"Not": {"FlagIsSet": "no-http"}},
+				"condition": {"Not": {"FlagIsSet": "no-network"}},
 				"mapper": {"Common": {"name": "extract-from-page-no-if", "args": {"vars": {"start": {"CommonVar": "start"}, "end": {"CommonVar": "end"}}}}}
 			}}
 		}
@@ -168,78 +176,72 @@
 	"tests": [
 		{
 			"expectations": [
-				{"before": "https://x.com?t=a&s=b", "after": "https://x.com/"},
-				{"before": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "after": "https://example.com/"},
-				{"before": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "after": "https://www.amazon.ca/dp/B0C6DX66TN"},
-				{"before": "http://example.com", "after": "https://example.com/"},
-				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
-				{"before": "https://http//www.deviantart.com/user.deviantart.com/gallery", "after": "https://deviantart.com/user/gallery"},
-				{"before": "https://https//abc.tumblr.com.tumblr.com", "after": "https://abc.tumblr.com"},
-				{"before": "https://abc.deviantart.com.deviantart.com", "after": "https://deviantart.com/abc/"},
+				{"job_config": "https://x.com?t=a&s=b", "result": "https://x.com/"},
+				{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
+				{"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "result": "https://www.amazon.ca/dp/B0C6DX66TN"},
+				{"job_config": "http://example.com", "result": "https://example.com/"},
+				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
+				{"job_config": "https://https//abc.tumblr.com.tumblr.com", "result": "https://abc.tumblr.com"},
+				{"job_config": "https://abc.deviantart.com.deviantart.com", "result": "https://deviantart.com/abc/"},
 
-				{"before": "https://https//example.com/abc", "after": "https://example.com/abc"},
-				{"before": "https://https//example1.com/example2.com/abc", "after": "https://example2.com/abc"},
-				{"before": "https://https//example1.com/user/example2.com/abc", "after": "https://example2.com/abc"},
-				{"before": "https://www.username.example.com", "after": "https://username.example.com"},
+				{"job_config": "https://https//example.com/abc", "result": "https://example.com/abc"},
+				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://https//example1.com/user/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://www.username.example.com", "result": "https://username.example.com"},
 
-				{"before": "https://127.0.0.1", "after": "https://127.0.0.1"},
-				{"before": "https://com"      , "after": "https://com"},
-				{"before": "ftp://127.0.0.1"  , "after": "ftp://127.0.0.1"},
-				{"before": "file://a/b/c"     , "after": "file://a/b/c"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["deadname-twitter"]},
-			"expectations": [
-				{"before": "https://x.com?t=a&s=b", "after": "https://twitter.com/"}
+				{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
+				{"job_config": "https://com"      , "result": "https://com"},
+				{"job_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1"},
+				{"job_config": "file://a/b/c"     , "result": "file://a/b/c"}
 			]
 		},
 		{
 			"params_diff": {"vars": {"tor2web-suffix": "example"}, "flags": ["tor2web"]},
-			"expectations": [{"before": "https://example.onion", "after": "https://example.onion.example"}]
+			"expectations": [{"job_config": "https://example.onion", "result": "https://example.onion.example"}]
 		},
 		{
 			"params_diff": {"flags": ["tor2web2tor"]},
 			"expectations": [
-				{"before": "https://example.onion.com"  , "after": "https://example.onion"},
-				{"before": "https://example.onion.co.uk", "after": "https://example.onion"}
+				{"job_config": "https://example.onion.com"  , "result": "https://example.onion"},
+				{"job_config": "https://example.onion.co.uk", "result": "https://example.onion"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unbreezewiki"]},
-			"expectations": [{"before": "https://antifandom.com/tardis/wiki/Genocide", "after": "https://tardis.fandom.com/wiki/Genocide"}]
+			"expectations": [{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://tardis.fandom.com/wiki/Genocide"}]
 		},
 		{
 			"params_diff": {"flags": ["breezewiki"]},
 			"expectations": [
-				{"before": "https://antifandom.com/tardis/wiki/Genocide", "after": "https://breezewiki.com/tardis/wiki/Genocide"},
-				{"before": "https://tardis.fandom.com/wiki/Genocide"    , "after": "https://breezewiki.com/tardis/wiki/Genocide"}
+				{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://breezewiki.com/tardis/wiki/Genocide"},
+				{"job_config": "https://tardis.fandom.com/wiki/Genocide"    , "result": "https://breezewiki.com/tardis/wiki/Genocide"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unmobile"]},
 			"expectations": [
-				{"before": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "after": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
-				{"before": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "after": "https://en.wikipedia.org/wiki/Gaza_genocide"}
+				{"job_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"job_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
 			]
 		},
 		{
 			"params_diff": {"read_cache": false},
 			"expectations": [
-				{"before": "https://tinyurl.com/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"before": "https://tinyurl.com/preview/wp-tinyurl", "after": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"before": "https://smarturl.it/irl_s05e04?IQid=eg", "after": "https://irlpodcast.org/season5/episode4/"},
-				{"before": "https://gprivate.com/6bi5b", "after": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
+				{"job_config": "https://tinyurl.com/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"job_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"job_config": "https://smarturl.it/irl_s05e04?IQid=eg", "result": "https://irlpodcast.org/season5/episode4/"},
+				{"job_config": "https://gprivate.com/6bi5b", "result": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
 				{
 					"comment": "It was the only somewhat normal one I could find, okay?",
-					"before": "http://bfy.tw/9ZSk",
-					"after": "https://google.com/search?q=How+does+the+US+government+work"
+					"job_config": "http://bfy.tw/9ZSk",
+					"result": "https://google.com/search?q=How+does+the+US+government+work"
 				}
 			]
 		},
 		{
 			"params_diff": {"flags": ["bypass.vip"], "read_cache": false},
-			"expectations": [{"before": "https://linkvertise.com/514008/hydrogen-gateway-1", "after": "https://api.hydrogen.sh/gateway/callback?stage=1"}]
+			"expectations": [{"job_config": "https://linkvertise.com/514008/hydrogen-gateway-1", "result": "https://api.hydrogen.sh/gateway/callback?stage=1"}]
 		}
 	],
 	"rules": [
@@ -248,7 +250,7 @@
 				"part": "HostWithoutWWWDotPrefix",
 				"matcher": {"Any": [
 					{"InSet": "redirect-hosts"},
-					{"InSet": "bypass.vip-hosts"},
+					{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
 					{"IsOneOf": [
 				    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "buymeacoff.ee",
 				    "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com", "duckduckgo.com",
@@ -329,7 +331,7 @@
 										{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "s"}}
 									]},
 									"smarturl.it": {"IfCondition": {
-										"condition": {"Not": {"FlagIsSet": "no-http"}},
+										"condition": {"Not": {"FlagIsSet": "no-network"}},
 										"mapper": {"All": [
 											{"Common": "utps"},
 											{"CacheUrl": {
@@ -359,7 +361,7 @@
 									}},
 									"instagr.am": {"SetHost": "instagram.com"},
 									"bfy.tw": {"IfCondition": {
-										"condition": {"Not": {"FlagIsSet": "no-http"}},
+										"condition": {"Not": {"FlagIsSet": "no-network"}},
 										"mapper": {"All": [
 											{"Common": "utps"},
 											{"CacheUrl": {
@@ -378,7 +380,7 @@
 										]}
 									}},
 									"gprivate.com": {"IfCondition": {
-										"condition": {"Not": {"FlagIsSet": "no-http"}},
+										"condition": {"Not": {"FlagIsSet": "no-network"}},
 										"mapper": {"All": [
 											{"Common": "utps"},
 											{"CacheUrl": {
@@ -604,7 +606,7 @@
 												"part": "Whole",
 												"value": {"Modified": {
 													"source": {"Cache": {
-														"category": "redirect",
+														"category": "sharesale-escaped-redirect",
 														"key": {"Part": "Whole"},
 														"source": {"ExtractBetween": {
 															"source": {"HttpRequest": {}},
@@ -649,8 +651,8 @@
 						{
 							"condition": {"All": [
 								{"FlagIsSet": "bypass.vip"},
-								{"Not": {"FlagIsSet": "no-http"}},
-								{"PartMatches": {"part": "Host", "matcher": {"InSet": "bypass.vip-hosts"}}}
+								{"Not": {"FlagIsSet": "no-network"}},
+								{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "bypass.vip-host-without-www-dot-prefixes"}}}
 							]},
 							"mapper": {"All": [
 								{"Common": "utps"},
@@ -714,7 +716,7 @@
 
 						{
 							"condition": {"All": [
-								{"Not": {"FlagIsSet": "no-http"}},
+								{"Not": {"FlagIsSet": "no-network"}},
 								{"Any": [
 		              {"All": [
 		              	{"FlagIsSet": "assume-1-dot-2-is-redirect"},
@@ -780,7 +782,7 @@
 
 
 		{
-			"CommonCondition": {
+			"SharedCondition": {
 				"condition": {"All": [
 					{"Not": {"FlagIsSet": "no-unmangle"}},
 					{"Any": [
@@ -791,7 +793,7 @@
 				]},
 				"rules": [
 					{
-						"CommonCondition": {
+						"SharedCondition": {
 							"condition": {"All": [
 								{"HostIsOneOf": ["http", "https"]},
 								{"Not": {"FlagIsSet": "no-unmangle-host-is-http-or-https"}}
@@ -950,7 +952,7 @@
 
 
 		{
-			"CommonCondition": {
+			"SharedCondition": {
 				"condition": {"FlagIsSet": "unmobile"},
 				"rules": [
 					{
@@ -1006,9 +1008,15 @@
 					"youtube.com"  : {"All": [
 						{"RemoveQueryParams": ["si", "feature", "pp"]},
 						{"IfCondition": {
-							"condition": {"All": [
-								{"FlagIsSet": "youtube-unshort"},
-								{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
+							"condition": {"Any": [
+								{"All": [
+									{"FlagIsSet": "youtube-unshort"},
+									{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
+								]},
+								{"All": [
+									{"FlagIsSet": "youtube-unlive"},
+									{"PartIs": {"part": {"PathSegment": 0}, "value": "live"}}
+								]}
 							]},
 							"mapper": {"All": [
 								{"CopyPart": {"from": {"PathSegment": 1}, "to": {"QueryParam": "v"}}},
@@ -1109,6 +1117,10 @@
 							]}
 						},
 						{
+							"condition": {"PathIs": "/safe-mode"},
+							"mapper": {"GetUrlFromQueryParam": "url"}
+						},
+						{
 							"condition": {"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "search"}}},
 							"mapper": "RemoveQuery"
 						},
@@ -1170,24 +1182,15 @@
 							}}
 						},
 						{
-							"IfElse": {
-								"condition": {"PathIs": "/search"},
-								"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]},
-								"else_mapper": "RemoveQuery"
-							}
+							"condition": "Always",
+							"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
 						},
 						{
-							"IfElse": {
-								"condition": {"All": [
-									{"FlagIsSet": "discord-compatibility"},
-									{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
-								]},
-								"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}},
-								"else_mapper": {"IfCondition": {
-									"condition": {"FlagIsSet": "deadname-twitter"},
-									"mapper": {"SetHost": "twitter.com"}
-								}}
-							}
+							"condition": {"All": [
+								{"FlagIsSet": "discord-compatibility"},
+								{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
+							]},
+							"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
 						}
 					]}
 				}
@@ -1303,7 +1306,7 @@
 
 
 		{
-			"CommonCondition": {
+			"SharedCondition": {
 				"condition": "AnyFlagIsSet",
 				"rules": [
 					{
@@ -1356,7 +1359,7 @@
 					{
 						"condition": {"All": [
 							{"FlagIsSet": "onion-location"},
-							{"Not": {"FlagIsSet": "no-http"}},
+							{"Not": {"FlagIsSet": "no-network"}},
 							{"PartIs": {"part": "Scheme", "value": "https"}}
 						]},
 						"mapper": {"All": [
