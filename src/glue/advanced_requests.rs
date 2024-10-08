@@ -123,7 +123,7 @@ impl RequestConfig {
                 Ok((Ok (_), Err(v))) => Err(RequestConfigError::MakeHeaderMapError { name: None   , value: Some(v) }),
                 Ok((Err(k), Ok (_))) => Err(RequestConfigError::MakeHeaderMapError { name: Some(k), value: None    }),
                 Ok((Err(k), Err(v))) => Err(RequestConfigError::MakeHeaderMapError { name: Some(k), value: Some(v) }),
-                Err(e) => Err(e.into())
+                Err(e) => Err(RequestConfigError::StringSourceError(Box::new(e)))
             })
             .collect::<Result<HeaderMap<_>, _>>()?);
         if let Some(body) = &self.body {ret=body.apply(ret, job_state)?;}
