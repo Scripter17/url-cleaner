@@ -194,13 +194,13 @@ impl InnerCacheHandler {
         self.connection.get_mut()
     }
 
+    /// If already connected, just return the connection.
+    /// 
     /// If the path is a file and doesn't exist, writes [`EMPTY_CACHE`] to the path.
     /// 
-    /// If the path is `:memory:` or starts with `file://` (for an explicit opt-out), the file is not created.
+    /// If the path is `:memory:` or starts with `file://` (for an explicit opt-out), no file is created.
     /// 
     /// If unconnected, connect to the path then return the connection.
-    /// 
-    /// If connected, return the connection.
     /// # Errors
     /// If the call to [`std::fs::exists`] returns an error, that error is returned.
     /// 
@@ -210,13 +210,13 @@ impl InnerCacheHandler {
     #[allow(clippy::missing_panics_doc, reason = "Doesn't panic, but should be replaced with OnceCell::get_or_try_init once that's stable.")]
     pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
         debug!(InnerCacheHandler::connect, self);
-        if self.path!=":memory:" && !self.path.starts_with("file://") && !std::fs::exists(&self.path)? {
-            std::fs::write(&self.path, EMPTY_CACHE)?;
-        }
         if self.connection.get().is_none() {
+            if self.path != ":memory:" && !self.path.starts_with("file://") && !std::fs::exists(&self.path)? {
+                std::fs::write(&self.path, EMPTY_CACHE)?;
+            }
             let mut connection = SqliteConnection::establish(&self.path)?;
             if self.path == ":memory:" {
-                diesel::sql_query(include_str!("../../migrations/2024-07-20-075910_create_cache/up.sql")).execute(&mut connection).expect("The migrations/../up.sql file to contain SQL commands that can be executed on the in-memory cache.");
+                diesel::sql_query(include_str!("../../migrations/2024-07-20-075910_create_cache/up.sql")).execute(&mut connection).expect("The migrations/_/up.sql file to contain SQL commands that can be executed on the in-memory cache.");
             }
             self.connection.set(connection).map_err(|_| ()).expect("The connection to have just been confirmed unset.");
         }
@@ -247,7 +247,7 @@ impl InnerCacheHandler {
             .map(|cache_entry| cache_entry.value.to_owned()))
     }
 
-    /// Writes a string to the cache.
+    /// Writes an entry to the cache.
     /// 
     /// Note that this doesn't check if the corresponding `key` and `value` are already present in a cache entry.
     /// 

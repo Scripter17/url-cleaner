@@ -2,49 +2,15 @@
   "docs": {
     "description": [
       "An implementation of a Universal Turing Machine",
-      "Included program is the Three-state busy beaver from https://rosettacode.org/wiki/Universal_Turing_machine",
-      "Use with the URL https://example.com?tape={INITIAL_TAPE_HERE}"
+      "See the included Busy Beaver ParamsDiffs for examples on how to program it."
     ]
   },
-  "tests": [
-    {
-      "expectations": [
-        {"before": "https://example.com?tape=", "after": "https://example.com?tape=111111"}
-      ]
-    }
-  ],
   "commons": {
     "string_sources": {
       "initial-state": "a",
       "halt-state": "halt",
       "blank-symbol": "0",
       "key": {"Join": {"sources": [{"ScratchpadVar": "state"}, ",", {"ScratchpadVar": "read"}]}}
-    },
-    "string_modifications": {
-      "state_set": {"Map": {
-        "a,0": "1",
-        "a,1": "1",
-        "b,0": "1",
-        "b,1": "1",
-        "c,0": "1",
-        "c,1": "1"
-      }},
-      "state_move": {"Map": {
-        "a,0": "right",
-        "a,1": "left",
-        "b,0": "left",
-        "b,1": "right",
-        "c,0": "left",
-        "c,1": "stay"
-      }},
-      "state_map": {"Map": {
-        "a,0": "b",
-        "a,1": "c",
-        "b,0": "a",
-        "b,1": "b",
-        "c,0": "b",
-        "c,1": "halt"
-      }}
     },
     "mappers": {
       "move-right": {"All": [
@@ -119,15 +85,15 @@
             "name": "tape",
             "value": {"Join": {
               "sources": [
-                {"Modified": {"source": {"Common": "key"}, "modification": {"Common": "state_set"}}},
+                {"MapKey": {"map": "state_set", "key": {"Common": "key"}}},
                 {"Modified": {"source": {"ScratchpadVar": "tape"}, "modification": {"KeepRange": {"start": 1}}}}
               ]
             }}
           }},
-          {"Common": {"name": {"Join": {"sources": ["move-", {"Modified": {"source": {"Common": "key"}, "modification": {"Common": "state_move"}}}]}}}},
+          {"Common": {"name": {"Join": {"sources": ["move-", {"MapKey": {"map": "state_move", "key": {"Common": "key"}}}]}}}},
           {"SetScratchpadVar": {
             "name": "state",
-            "value": {"Modified": {"source": {"Common": {"name": "key"}}, "modification": {"Common": {"name": "state_map"}}}}
+            "value": {"MapKey": {"map": "state_map", "key": {"Common": "key"}}}
           }},
           {"Rule": {"Common": "step"}}
         ]}

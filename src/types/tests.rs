@@ -42,7 +42,7 @@ impl TestSet {
 pub struct Expectation {
     /// The URL to clean.
     pub job_config: JobConfig,
-    /// The expected result of cleaning [`Self::before`].
+    /// The expected result of cleaning [`Self::job_config`].
     pub result: Url
 }
 

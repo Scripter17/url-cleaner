@@ -33,9 +33,9 @@ pub enum CleaningError {
     /// Returned when a [`GetConfigError`] is encountered.
     #[error(transparent)]
     GetConfigError(#[from] GetConfigError),
-    /// Returned when a [`RuleError`] is encountered.
+    /// Returned when a [`ApplyConfigError`] is encountered.
     #[error(transparent)]
-    RuleError(#[from] RuleError),
+    ApplyConfigError(#[from] ApplyConfigError),
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),

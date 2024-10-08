@@ -132,6 +132,15 @@ impl Config {
         })
     }
 
+    /// Applies the [`Self::rules`].
+    /// 
+    /// Exists for future compatibility.
+    /// # Errors
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    pub fn apply(&self, job_state: &mut JobState) -> Result<(), ApplyConfigError> {
+        self.rules.apply(job_state).map_err(Into::into)
+    }
+
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
     /// Panics if a test fails.
@@ -148,6 +157,16 @@ impl Config {
         assert!(self.commons.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self), "Unsuitable Config detected: {self:?}");
         true
     }
+}
+
+/// The enum of errors [`Config::apply`] can return.
+/// 
+/// Exists for future compatibility.
+#[derive(Debug, Error)]
+pub enum ApplyConfigError {
+    /// Returned when a [`RuleError`] is encountered.
+    #[error(transparent)]
+    RuleError(#[from] RuleError)
 }
 
 /// The minimized config loaded into URL Cleaner at compile time.

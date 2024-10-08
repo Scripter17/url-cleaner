@@ -46,6 +46,7 @@
 			"https-upgrade-host-blacklist": "Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.",
 			"lmgtfy-hosts": "Hosts to replace with `google.com`.",
 			"redirect-hosts": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
+			"redirect-not-subdomains": "The `redirect-hosts` set but `UrlPart::NotSubdomain`.",
 			"unmangle-path-is-url-host-whitelist": "Effectively the `no-unmangle-path-is-url` for specified hosts.",
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": "Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.",
 			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": "The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.",
@@ -83,6 +84,9 @@
 				"reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to",
 				"t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com",
 				"wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+			],
+			"redirect-not-subdomains": [
+				"lnk.to"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -226,7 +230,6 @@
 			]
 		},
 		{
-			"params_diff": {"read_cache": false},
 			"expectations": [
 				{"job_config": "https://tinyurl.com/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
 				{"job_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
@@ -240,31 +243,37 @@
 			]
 		},
 		{
-			"params_diff": {"flags": ["bypass.vip"], "read_cache": false},
+			"params_diff": {"flags": ["bypass.vip"]},
 			"expectations": [{"job_config": "https://linkvertise.com/514008/hydrogen-gateway-1", "result": "https://api.hydrogen.sh/gateway/callback?stage=1"}]
 		}
 	],
 	"rules": [
 		{
-			"condition": {"PartMatches": {
-				"part": "HostWithoutWWWDotPrefix",
-				"matcher": {"Any": [
-					{"InSet": "redirect-hosts"},
-					{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
-					{"IsOneOf": [
-				    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "buymeacoff.ee",
-				    "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com", "duckduckgo.com",
-				    "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "gf.me", "gofundme.com", "gofundme.com",
-				    "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com",
-				    "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
-				    "proxy.notsobot.com", "rd.goodreads.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly",
-				    "smarturl.it", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
-				  ]},
-				  {"InSet": "lmgtfy-hosts"},
-				  {"LengthIs": 4},
-				  {"Contains": {"value": "google"}}
-				]}
-			}},
+			"condition": {"Any": [
+				{"PartMatches": {
+					"part": "HostWithoutWWWDotPrefix",
+					"matcher": {"Any": [
+						{"InSet": "redirect-hosts"},
+						{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
+						{"IsOneOf": [
+					    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "buymeacoff.ee",
+					    "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com", "duckduckgo.com",
+					    "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "gf.me", "gofundme.com", "gofundme.com",
+					    "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com",
+					    "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
+					    "proxy.notsobot.com", "rd.goodreads.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly",
+					    "smarturl.it", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
+					  ]},
+					  {"InSet": "lmgtfy-hosts"},
+					  {"LengthIs": 4},
+					  {"Contains": {"value": "google"}}
+					]}
+				}},
+				{"TreatErrorAsFail": {"PartMatches": {
+					"part": "NotSubdomain",
+					"matcher": {"InSet": "redirect-not-subdomains"}
+				}}}
+			]},
 			"mapper": {"Rule": {
 				"Repeat": {
 					"rules": [
@@ -276,22 +285,12 @@
 									"part": "Host",
 									"matcher": {"Any": [
 										{"InSet": "https-upgrade-host-blacklist"},
-										{"Regex": "^(\\d+\\.\\d+\\.\\d+\\.\\d+|localhost|[\\da-fA-F:]*:[\\da-fA-D:]*)$"}
+										{"Regex": "^(\\d+\\.\\d+\\.\\d+\\.\\d+|localhost)$|:"}
 									]}
 								}}}
 							]},
 							"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
 						}},
-
-
-
-						{
-							"condition": {"All": [
-								{"MaybeWWWDomain": "t.co"},
-								{"Not": {"StringIs": {"source": {"ContextVar": "alt_text"}, "value": null}}}
-							]},
-							"mapper": {"SetPart": {"part": "Whole", "value": {"ContextVar": "alt_text"}}}
-						},
 
 
 
@@ -325,6 +324,10 @@
 							"PartMap": {
 								"part": "HostWithoutWWWDotPrefix",
 								"map": {
+									"t.co": {"IfCondition": {
+										"condition": {"Not": {"StringIs": {"source": {"ContextVar": "alt_text"}, "value": null}}},
+										"mapper": {"SetPart": {"part": "Whole", "value": {"ContextVar": "alt_text"}}}
+									}},
 									"t.umblr.com": {"GetUrlFromQueryParam": "z"},
 									"skfb.ly": {"All": [
 										{"SetHost": "sketchfab.com"},
@@ -641,7 +644,8 @@
 												}}
 											}}
 										]}
-									}}
+									}},
+									"mfy.gg": {"SetHost": "metafy.gg"}
 								}
 							}
 						},
@@ -728,7 +732,7 @@
 									}},
 									{"TreatErrorAsFail": {"PartMatches": {
 										"part": "NotSubdomain",
-										"matcher": {"InSet": "redirect-hosts"}
+										"matcher": {"InSet": "redirect-not-subdomains"}
 									}}},
 									{"PartMap": {
 										"part": "HostWithoutWWWDotPrefix",
@@ -943,7 +947,7 @@
 				{"Not": {"FlagIsSet": "no-https-upgrade"}},
 				{"Not": {"PartMatches": {"part": "Host", "matcher": {"Any": [
 					{"InSet": "https-upgrade-host-blacklist"},
-					{"Regex": "^(\\d+\\.\\d+\\.\\d+\\.\\d+|localhost|[\\da-fA-F:]*:[\\da-fA-D:]*)$"}
+					{"Regex": "^(\\d+\\.\\d+\\.\\d+\\.\\d+|localhost)$|:"}
 				]}}}}
 			]},
 			"mapper": {"SetPart": {"part": "Scheme", "value": "https"}}
@@ -983,14 +987,6 @@
 
 
 
-		{
-			"PartMap": {
-				"part": "Host",
-				"map": {
-					"overview.mail.yahoo.com": "RemoveQuery"
-				}
-			}
-		},
 		{
 			"PartMap": {
 				"comment-1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
@@ -1192,7 +1188,8 @@
 							]},
 							"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
 						}
-					]}
+					]},
+					"overview.mail.yahoo.com": "RemoveQuery"
 				}
 			}
 		},

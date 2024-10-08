@@ -54,7 +54,7 @@ pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Opt
     let mut scratchpad = Default::default();
     #[cfg(feature = "cache")]
     let cache_handler = (&*config.cache_path).into();
-    config.rules.apply(&mut types::JobState {
+    config.apply(&mut types::JobState {
         url,
         params: &config.params,
         scratchpad: &mut scratchpad,
@@ -77,7 +77,7 @@ pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Opt
 pub fn clean_url_with_cache_handler(url: &mut Url, context: Option<&types::UrlContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>, cache_handler: &glue::CacheHandler) -> Result<(), types::CleaningError> {
     let config = get_config(config, params_diff)?;
     let mut scratchpad = Default::default();
-    config.rules.apply(&mut types::JobState {
+    config.apply(&mut types::JobState {
         url,
         params: &config.params,
         scratchpad: &mut scratchpad,

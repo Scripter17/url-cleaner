@@ -61,7 +61,7 @@ pub enum RequestConfigError {
     StringSourceIsNone,
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
-    StringSourceError(Box<StringSourceError>),
+    StringSourceError(#[from] Box<StringSourceError>),
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
@@ -123,7 +123,7 @@ impl RequestConfig {
                 Ok((Ok (_), Err(v))) => Err(RequestConfigError::MakeHeaderMapError { name: None   , value: Some(v) }),
                 Ok((Err(k), Ok (_))) => Err(RequestConfigError::MakeHeaderMapError { name: Some(k), value: None    }),
                 Ok((Err(k), Err(v))) => Err(RequestConfigError::MakeHeaderMapError { name: Some(k), value: Some(v) }),
-                Err(e) => Err(RequestConfigError::StringSourceError(Box::new(e)))
+                Err(e) => Err(e.into())
             })
             .collect::<Result<HeaderMap<_>, _>>()?);
         if let Some(body) = &self.body {ret=body.apply(ret, job_state)?;}

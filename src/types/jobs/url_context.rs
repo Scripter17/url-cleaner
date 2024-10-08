@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
+use crate::util::*;
 
 /// The context surrounding a URL.
 /// 
@@ -14,5 +15,6 @@ use crate::types::*;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UrlContext {
     /// String variables.
+    #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>
 }

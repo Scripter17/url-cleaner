@@ -15,6 +15,7 @@ pub struct JobConfig {
     /// The URL to modify.
     pub url: Url,
     /// The context surrounding the URL.
+    #[serde(default, skip_serializing_if = "is_default")]
     pub context: UrlContext
 }
 
@@ -31,10 +32,7 @@ impl FromStr for JobConfig {
     type Err = <Url as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            url: Url::from_str(s)?,
-            context: Default::default()
-        })
+        Url::from_str(s).map(Into::into)
     }
 }
 

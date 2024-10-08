@@ -1,0 +1,36 @@
+{
+  "comment": "https://en.wikipedia.org/wiki/Busy_beaver#List_of_busy_beavers",
+  "init_maps": ["state_set", "state_move", "state_map"],
+  "insert_into_maps": {
+    "state_set": {
+      "a,0": "1",
+      "a,1": "1",
+      "b,0": "1",
+      "b,1": "0",
+      "c,0": "1",
+      "c,1": "1",
+      "d,0": "1",
+      "d,1": "0"
+    },
+    "state_move": {
+      "a,0": "right",
+      "a,1": "left",
+      "b,0": "left",
+      "b,1": "left",
+      "c,0": "right",
+      "c,1": "left",
+      "d,0": "right",
+      "d,1": "right"
+    },
+    "state_map": {
+      "a,0": "b",
+      "a,1": "b",
+      "b,0": "a",
+      "b,1": "c",
+      "c,0": "halt",
+      "c,1": "d",
+      "d,0": "d",
+      "d,1": "a"
+    }
+  }
+}
