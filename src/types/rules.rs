@@ -148,8 +148,8 @@ pub enum Rule {
         /// The max amount of times to repeat them.
         /// 
         /// Defaults to 10.
-        #[serde(default = "get_10_u8")]
-        limit: u8
+        #[serde(default = "get_10_u64")]
+        limit: u64
     },
     /// Runs the contained [`Self`] then, if no error is returned, returns the error [`RuleError::DontTriggerLoop`],
     /// 
@@ -250,7 +250,7 @@ pub enum Rule {
 }
 
 /// Serde helper function. The default value of [`Rule::Repeat::limit`].
-const fn get_10_u8() -> u8 {10}
+const fn get_10_u64() -> u64 {10}
 
 /// The errors that [`Rule`] can return.
 #[derive(Debug, Error)]

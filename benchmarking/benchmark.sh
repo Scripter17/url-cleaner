@@ -76,6 +76,8 @@ if [ $hyperfine -eq 1 ]; then
 fi
 
 for url in "${URLS[@]}"; do
+  echo "IN : $url"
+  echo "OUT: $(../target/release/url-cleaner --config ../default-config.json $url)"
   file_safe_in_url=$(echo $url | head -c 50 | sed "s/\//-/g")
   if [ $valgrind -eq 1 ]; then
     for num in "${NUMS[@]}"; do

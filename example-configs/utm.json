@@ -13,7 +13,7 @@
       "key": {"Join": {"sources": [{"ScratchpadVar": "state"}, ",", {"ScratchpadVar": "read"}]}}
     },
     "mappers": {
-      "move-right": {"All": [
+      "r": {"All": [
         {"IfCondition": {
           "condition": {"StringMatches": {
             "source": {"ScratchpadVar": "tape"},
@@ -33,7 +33,7 @@
           "modification": {"Remove": 0}
         }}
       ]},
-      "move-left": {"All": [
+      "l": {"All": [
         {"IfCondition": {
           "condition": {"StringMatches": {
             "source": {"ScratchpadVar": "tape-behind"},
@@ -53,51 +53,7 @@
           "modification": {"Remove": -1}
         }}
       ]},
-      "move-stay": "None"
-    },
-    "rules": {
-      "step": {
-        "condition": {"Not": {"StringIs": {"source": {"ScratchpadVar": "state"}, "value": {"Common": "halt-state"}}}},
-        "mapper": {"All": [
-          {"IfCondition": {
-            "condition": {"StringMatches": {
-              "source": {"ScratchpadVar": "tape"},
-              "matcher": {"LengthIs": 0}
-            }},
-            "mapper": {"ModifyScratchpadVar": {
-              "name": "tape",
-              "modification": {"Append": {"Common": "blank-symbol"}}
-            }}
-          }},
-          {"SetScratchpadVar": {
-            "name": "read",
-            "value": {
-              "Modified": {
-                "source": {"ScratchpadVar": "tape"},
-                "modification": {"KeepRange": {
-                  "start": 0,
-                  "end": 1
-                }}
-              }
-            }
-          }},
-          {"SetScratchpadVar": {
-            "name": "tape",
-            "value": {"Join": {
-              "sources": [
-                {"MapKey": {"map": "state_set", "key": {"Common": "key"}}},
-                {"Modified": {"source": {"ScratchpadVar": "tape"}, "modification": {"KeepRange": {"start": 1}}}}
-              ]
-            }}
-          }},
-          {"Common": {"name": {"Join": {"sources": ["move-", {"MapKey": {"map": "state_move", "key": {"Common": "key"}}}]}}}},
-          {"SetScratchpadVar": {
-            "name": "state",
-            "value": {"MapKey": {"map": "state_map", "key": {"Common": "key"}}}
-          }},
-          {"Rule": {"Common": "step"}}
-        ]}
-      }
+      "s": "None"
     }
   },
   "rules": [
@@ -118,7 +74,52 @@
         }}
       ]}
     },
-    {"Common": "step"},
+    {"Repeat": {
+      "rules": [
+        {
+          "condition": {"Not": {"StringIs": {"source": {"ScratchpadVar": "state"}, "value": {"Common": "halt-state"}}}},
+          "mapper": {"All": [
+            {"IfCondition": {
+              "condition": {"StringMatches": {
+                "source": {"ScratchpadVar": "tape"},
+                "matcher": {"LengthIs": 0}
+              }},
+              "mapper": {"ModifyScratchpadVar": {
+                "name": "tape",
+                "modification": {"Append": {"Common": "blank-symbol"}}
+              }}
+            }},
+            {"SetScratchpadVar": {
+              "name": "read",
+              "value": {
+                "Modified": {
+                  "source": {"ScratchpadVar": "tape"},
+                  "modification": {"KeepRange": {
+                    "start": 0,
+                    "end": 1
+                  }}
+                }
+              }
+            }},
+            {"SetScratchpadVar": {
+              "name": "tape",
+              "value": {"Join": {
+                "sources": [
+                  {"MapKey": {"map": "state_set", "key": {"Common": "key"}}},
+                  {"Modified": {"source": {"ScratchpadVar": "tape"}, "modification": {"KeepRange": {"start": 1}}}}
+                ]
+              }}
+            }},
+            {"Common": {"name": {"MapKey": {"map": "state_move", "key": {"Common": "key"}}}}},
+            {"SetScratchpadVar": {
+              "name": "state",
+              "value": {"MapKey": {"map": "state_map", "key": {"Common": "key"}}}
+            }}
+          ]}
+        }
+      ],
+      "limit": 18446744073709551615
+    }},
     {
       "condition": "Always",
       "mapper": {"SetPart": {
