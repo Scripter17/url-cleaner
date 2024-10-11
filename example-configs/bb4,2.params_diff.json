@@ -1,6 +1,5 @@
 {
   "comment": "https://en.wikipedia.org/wiki/Busy_beaver#List_of_busy_beavers",
-  "init_maps": ["state_set", "state_move", "state_map"],
   "insert_into_maps": {
     "state_set": {
       "a,0": "1",

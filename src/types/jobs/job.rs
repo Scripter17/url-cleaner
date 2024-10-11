@@ -14,7 +14,7 @@ pub struct Job<'a> {
     /// The config to apply.
     pub config: &'a Config,
     /// The context of [`Self::url`].
-    pub context: UrlContext,
+    pub context: JobContext,
     /// The cache to use.
     #[cfg(feature = "cache")]
     pub cache_handler: &'a CacheHandler

@@ -16,7 +16,7 @@ pub struct JobConfig {
     pub url: Url,
     /// The context surrounding the URL.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub context: UrlContext
+    pub context: JobContext
 }
 
 impl From<Url> for JobConfig {

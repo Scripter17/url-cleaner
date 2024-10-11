@@ -96,7 +96,7 @@ impl RequestConfig {
     /// If any of the calls to [`StringSource::get`] return an invalid [`HeaderValue`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
     /// 
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &JobState) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
+    pub fn make(&self, job_state: &JobStateView) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
         let mut ret=job_state.params
             .http_client(self.client_config_diff.as_ref())?
             .request(
@@ -137,7 +137,7 @@ impl RequestConfig {
     /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
     /// 
     /// If the call to [`ResponseHandler`] returns an error, that error is returned.
-    pub fn response(&self, job_state: &JobState) -> Result<String, RequestConfigError> {
+    pub fn response(&self, job_state: &JobStateView) -> Result<String, RequestConfigError> {
         Ok(self.response_handler.handle(self.make(job_state)?.send()?, job_state)?)
     }
 
@@ -196,7 +196,7 @@ impl RequestBody {
     /// Applies the specified body to the provided [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn apply(&self, request: reqwest::blocking::RequestBuilder, job_state: &JobState) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
+    pub fn apply(&self, request: reqwest::blocking::RequestBuilder, job_state: &JobStateView) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
         Ok(match self {
             Self::Text(source) => request.body(get_string!(source, job_state, RequestBodyError)),
             Self::Form(map) => request.form(&map.iter()
@@ -283,7 +283,7 @@ impl ResponseHandler {
     /// Returns a string from the requested part of the response.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn handle(&self, response: reqwest::blocking::Response, job_state: &JobState) -> Result<String, ResponseHandlerError> {
+    pub fn handle(&self, response: reqwest::blocking::Response, job_state: &JobStateView) -> Result<String, ResponseHandlerError> {
         Ok(match self {
             Self::Body => response.text()?,
             Self::Header(source) => response.headers().get(get_str!(source, job_state, ResponseHandlerError)).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),

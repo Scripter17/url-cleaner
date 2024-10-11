@@ -291,7 +291,7 @@ impl Rule {
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         debug!(Rule::apply, self, job_state);
         match self {
-            Self::Normal{condition, mapper} => if condition.satisfied_by(job_state)? {
+            Self::Normal{condition, mapper} => if condition.satisfied_by(&job_state.to_view())? {
                 mapper.apply(job_state)?;
                 Ok(())
             } else {
@@ -320,12 +320,12 @@ impl Rule {
                             _ => none_passed=false
                         }
                     }
-                    if stop_loop_condition.satisfied_by(job_state, none_passed, &previous_url, &previous_job_scratchpad) {break;}
+                    if stop_loop_condition.satisfied_by(&job_state.to_view(), none_passed, &previous_url, &previous_job_scratchpad) {break;}
                 }
                 Ok(())
             },
             Self::SharedCondition{condition, rules} => {
-                if condition.satisfied_by(job_state)? {
+                if condition.satisfied_by(&job_state.to_view())? {
                     rules.apply(job_state)?;
                     Ok(())
                 } else {
@@ -337,14 +337,14 @@ impl Rule {
                 Err(RuleError::DontTriggerLoop)
             },
             Self::Rules(rules) => Ok(rules.apply(job_state)?),
-            Self::IfElse {condition, mapper, else_mapper} => Ok(if condition.satisfied_by(job_state)? {
+            Self::IfElse {condition, mapper, else_mapper} => Ok(if condition.satisfied_by(&job_state.to_view())? {
                 mapper.apply(job_state)?
             } else {
                 else_mapper.apply(job_state)?
             }),
             Self::Common(common_call) => {
                 job_state.commons.rules.get(get_str!(common_call.name, job_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut JobState {
-                    common_args: Some(&common_call.args.make(job_state)?),
+                    common_args: Some(&common_call.args.make(&job_state.to_view())?),
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,

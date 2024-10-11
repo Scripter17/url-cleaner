@@ -1187,7 +1187,7 @@ impl UrlPart {
     pub fn modify(&self, how: &StringModification, job_state: &mut JobState) -> Result<(), UrlPartModifyError> {
         debug!(UrlPart::modify, self, how, job_state);
         let mut new_part=self.get(job_state.url).ok_or(UrlPartModifyError::PartIsNone)?.into_owned();
-        how.apply(&mut new_part, job_state)?;
+        how.apply(&mut new_part, &job_state.to_view())?;
         self.set(job_state.url, Some(&new_part))?;
         Ok(())
     }

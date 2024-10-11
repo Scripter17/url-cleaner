@@ -109,7 +109,7 @@ pub enum StringMatcher {
     ///     common_args: None
     /// };
     /// 
-    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state).unwrap(), true);
+    /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state.to_view()).unwrap(), true);
     /// ```
     Contains {
         /// The value to look for.
@@ -149,7 +149,7 @@ pub enum StringMatcher {
     ///     common_args: None
     /// };
     /// 
-    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state).unwrap(), true);
+    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state.to_view()).unwrap(), true);
     /// ```
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
@@ -177,7 +177,7 @@ pub enum StringMatcher {
     ///     common_args: None
     /// };
     /// 
-    /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state).unwrap(), true);
+    /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state.to_view()).unwrap(), true);
     /// ```
     #[cfg(feature = "glob")]
     Glob(GlobWrapper),
@@ -274,9 +274,9 @@ pub enum StringMatcher {
     ///     split: Box::new("--".into()),
     ///     value: Box::new("abc--def".into())
     /// };
-    /// assert_eq!(matcher.satisfied_by("abc--def--ghi"  , &job_state).unwrap(), true );
-    /// assert_eq!(matcher.satisfied_by("abc--def----ghi", &job_state).unwrap(), true );
-    /// assert_eq!(matcher.satisfied_by("abc--deff--ghi" , &job_state).unwrap(), false);
+    /// assert_eq!(matcher.satisfied_by("abc--def--ghi"  , &job_state.to_view()).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc--def----ghi", &job_state.to_view()).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc--deff--ghi" , &job_state.to_view()).unwrap(), false);
     /// ```
     SegmentsStartWith {
         /// The value to segment the haystack by.
@@ -315,9 +315,9 @@ pub enum StringMatcher {
     ///     split: Box::new("--".into()),
     ///     value: Box::new("def--ghi".into())
     /// };
-    /// assert_eq!(matcher.satisfied_by("abc--def--ghi"  , &job_state).unwrap(), true );
-    /// assert_eq!(matcher.satisfied_by("abc----def--ghi", &job_state).unwrap(), true );
-    /// assert_eq!(matcher.satisfied_by("abc--ddef--ghi" , &job_state).unwrap(), false);
+    /// assert_eq!(matcher.satisfied_by("abc--def--ghi"  , &job_state.to_view()).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc----def--ghi", &job_state.to_view()).unwrap(), true );
+    /// assert_eq!(matcher.satisfied_by("abc--ddef--ghi" , &job_state.to_view()).unwrap(), false);
     /// ```
     SegmentsEndWith {
         /// The value to segment the haystack by.
@@ -394,7 +394,7 @@ pub enum StringMatcherError {
 impl StringMatcher {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn satisfied_by(&self, haystack: &str, job_state: &JobState) -> Result<bool, StringMatcherError> {
+    pub fn satisfied_by(&self, haystack: &str, job_state: &JobStateView) -> Result<bool, StringMatcherError> {
         debug!(StringMatcher::satisfied_by, self);
         Ok(match self {
             Self::Always => true,
@@ -499,15 +499,13 @@ impl StringMatcher {
                     .is_some_and(|x| x.strip_prefix(split).is_some())
             },
             Self::Common(common_call) => {
-                let mut temp_url = job_state.url.clone();
-                let mut temp_scratchpad = job_state.scratchpad.clone();
                 job_state.commons.string_matchers.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.satisfied_by(
                     haystack,
-                    &JobState {
-                        url: &mut temp_url,
+                    &JobStateView {
+                        url: job_state.url,
                         context: job_state.context,
                         params: job_state.params,
-                        scratchpad: &mut temp_scratchpad,
+                        scratchpad: job_state.scratchpad,
                         #[cfg(feature = "cache")]
                         cache_handler: job_state.cache_handler,
                         commons: job_state.commons,

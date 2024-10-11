@@ -82,28 +82,42 @@ macro_rules! string_or_struct_magic {
 /// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
 macro_rules! get_string {
     ($value:expr, $job_state:expr, $error:ty) => {
-        $value.get($job_state)?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
+        $value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
     }
 }
 
 /// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
 macro_rules! get_str {
     ($value:expr, $job_state:expr, $error:ty) => {
-        &*$value.get($job_state)?.ok_or(<$error>::StringSourceIsNone)?
+        &*$value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
     }
 }
 
 /// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
 macro_rules! get_option_string {
     ($value:expr, $job_state:expr) => {
-        $value.as_ref().map(|source| source.get($job_state)).transpose()?.flatten().map(|x| x.into_owned())
+        // $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().map(|x| x.into_owned())
+        {
+            let view = &$job_state.to_view();
+            match $value.as_ref() {
+                Some(source) => source.get(view),
+                None => Ok(None)
+            }?.map(|x| x.into_owned())
+        }
     }
 }
 
 /// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
 macro_rules! get_option_str {
     ($value:expr, $job_state:expr) => {
-        $value.as_ref().map(|source| source.get($job_state)).transpose()?.flatten().as_deref()
+        // $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().as_deref()
+        {
+            let view = &$job_state.to_view();
+            match $value.as_ref() {
+                Some(source) => source.get(view),
+                None => Ok(None)
+            }?.as_deref()
+        }
     }
 }
 

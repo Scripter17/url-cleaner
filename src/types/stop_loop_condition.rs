@@ -34,7 +34,7 @@ impl Default for StopLoopCondition {
 
 impl StopLoopCondition {
     /// See each variant of [`Self`] for details.
-    pub fn satisfied_by(&self, job_state: &JobState, none_passed: bool, previous_url: &Url, previous_scratchpad: &JobScratchpad) -> bool {
+    pub fn satisfied_by(&self, job_state: &JobStateView, none_passed: bool, previous_url: &Url, previous_scratchpad: &JobScratchpad) -> bool {
         debug!(StopLoopCondition::satisfied_by, self, job_state, none_passed, previous_url, previous_scratchpad);
         match self {
             Self::All(conditions) => conditions.iter().all(|condition| condition.satisfied_by(job_state, none_passed, previous_url, previous_scratchpad)),

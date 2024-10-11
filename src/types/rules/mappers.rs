@@ -727,13 +727,13 @@ impl Mapper {
 
             // Logic.
 
-            Self::IfCondition {condition, mapper, else_mapper} => if condition.satisfied_by(job_state)? {
+            Self::IfCondition {condition, mapper, else_mapper} => if condition.satisfied_by(&job_state.to_view())? {
                 mapper.apply(job_state)?;
             } else if let Some(else_mapper) = else_mapper {
                 else_mapper.apply(job_state)?;
             },
             Self::ConditionChain(chain) => for link in chain {
-                if link.condition.satisfied_by(job_state)? {
+                if link.condition.satisfied_by(&job_state.to_view())? {
                     link.mapper.apply(job_state)?;
                     break;
                 }
@@ -813,7 +813,7 @@ impl Mapper {
             Self::RemoveQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
                 for (name, value) in job_state.url.query_pairs() {
-                    if !matcher.satisfied_by(&name, job_state)? {
+                    if !matcher.satisfied_by(&name, &job_state.to_view())? {
                         new_query.append_pair(&name, &value);
                     }
                 }
@@ -823,7 +823,7 @@ impl Mapper {
             Self::AllowQueryParamsMatching(matcher) => {
                 let mut new_query=form_urlencoded::Serializer::new(String::new());
                 for (name, value) in job_state.url.query_pairs() {
-                    if matcher.satisfied_by(&name, job_state)? {
+                    if matcher.satisfied_by(&name, &job_state.to_view())? {
                         new_query.append_pair(&name, &value);
                     }
                 }
@@ -893,7 +893,7 @@ impl Mapper {
             Self::ModifyScratchpadVar {name, modification} => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
                 let mut temp = job_state.scratchpad.vars.get_mut(&name).ok_or(MapperError::ScratchpadVarIsNone)?.to_owned();
-                modification.apply(&mut temp, job_state)?;
+                modification.apply(&mut temp, &job_state.to_view())?;
                 let _ = job_state.scratchpad.vars.insert(name, temp);
             },
             Self::Rule(rule) => match rule.apply(job_state) {
@@ -934,7 +934,7 @@ impl Mapper {
             },
             Self::Common(common_call) => {
                 job_state.commons.mappers.get(get_str!(common_call.name, job_state, MapperError)).ok_or(MapperError::CommonMapperNotFound)?.apply(&mut JobState {
-                    common_args: Some(&common_call.args.make(job_state)?),
+                    common_args: Some(&common_call.args.make(&job_state.to_view())?),
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,

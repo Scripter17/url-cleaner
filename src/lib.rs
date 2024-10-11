@@ -10,7 +10,7 @@ pub mod glue;
 pub mod types;
 pub(crate) mod util;
 
-/// Takes a URL, an optional [`types::Config`], an optional [`types::Params`], and returns the result of applying the config and params to the URL.
+/// Takes a URL, an optional [`types::JobContext`], an optional [`types::Config`], an optional [`types::Params`], and returns the result of the job.
 /// 
 /// This function's name is set to `clean_url` in WASM for API simplicity.
 /// # Errors
@@ -18,9 +18,9 @@ pub(crate) mod util;
 /// If applying the rules returns an error, that error is returned.
 #[cfg(target_family = "wasm")]
 #[wasm_bindgen(js_name = clean_url)]
-pub fn wasm_clean_url(url: &str, config: wasm_bindgen::JsValue, params_diff: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
+pub fn wasm_clean_url(url: &str, context: wasm_bindgen::JsValue, config: wasm_bindgen::JsValue, params_diff: wasm_bindgen::JsValue) -> Result<JsValue, JsError> {
     let mut url=Url::parse(url)?;
-    clean_url(&mut url, Some(js_value_to_config(config)?.as_ref()), js_value_to_params_diff(params_diff)?)?;
+    clean_url(&mut url, serde_wasm_bindgen::from_value::<Option<types::JobContext>>(context)?.as_ref(), Some(js_value_to_config(config)?.as_ref()), js_value_to_params_diff(params_diff)?.as_ref())?;
     Ok(JsValue::from_str(url.as_str()))
 }
 
@@ -49,7 +49,7 @@ fn get_config<'a>(config: Option<&'a types::Config>, params_diff: Option<&types:
 /// If creating a [`glue::CacheHandler`] returns an error, that error is returned.
 /// 
 /// If the call to [`clean_url_with_cache_handler`] returns an error, that error is returned.
-pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>) -> Result<(), types::CleaningError> {
+pub fn clean_url(url: &mut Url, context: Option<&types::JobContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>) -> Result<(), types::CleaningError> {
     let config = get_config(config, params_diff)?;
     let mut scratchpad = Default::default();
     #[cfg(feature = "cache")]
@@ -58,7 +58,7 @@ pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Opt
         url,
         params: &config.params,
         scratchpad: &mut scratchpad,
-        context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::UrlContext::default())},
+        context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::JobContext::default())},
         #[cfg(feature = "cache")]
         cache_handler: &cache_handler,
         commons: &config.commons,
@@ -74,14 +74,14 @@ pub fn clean_url(url: &mut Url, context: Option<&types::UrlContext>, config: Opt
 /// 
 /// If the call to [`types::Rules::apply`] returns an error, that error is returned.
 #[cfg(feature = "cache")]
-pub fn clean_url_with_cache_handler(url: &mut Url, context: Option<&types::UrlContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>, cache_handler: &glue::CacheHandler) -> Result<(), types::CleaningError> {
+pub fn clean_url_with_cache_handler(url: &mut Url, context: Option<&types::JobContext>, config: Option<&types::Config>, params_diff: Option<&types::ParamsDiff>, cache_handler: &glue::CacheHandler) -> Result<(), types::CleaningError> {
     let config = get_config(config, params_diff)?;
     let mut scratchpad = Default::default();
     config.apply(&mut types::JobState {
         url,
         params: &config.params,
         scratchpad: &mut scratchpad,
-        context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::UrlContext::default())},
+        context: &*match context {Some(x) => Cow::Borrowed(x), None => Cow::Owned(types::JobContext::default())},
         cache_handler,
         commons: &config.commons,
         common_args: None

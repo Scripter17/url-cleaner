@@ -83,7 +83,7 @@ pub enum StringSource {
     ///             StringSource::Part(UrlPart::NotSubdomain)
     ///         ],
     ///         join: "".to_string()
-    ///     }.get(&job_state).unwrap(),
+    ///     }.get(&job_state.to_view()).unwrap(),
     ///     Some(Cow::Owned(".example.com".to_string()))
     /// );
     /// ```
@@ -126,7 +126,7 @@ pub enum StringSource {
     ///         flag: Box::new("abc".into()),
     ///         then: "abc".into(),
     ///         r#else: Box::new(StringSource::Part(UrlPart::Domain))
-    ///     }.get(&job_state).unwrap(),
+    ///     }.get(&job_state.to_view()).unwrap(),
     ///     Some(Cow::Borrowed("abc"))
     /// );
     /// assert_eq!(
@@ -134,7 +134,7 @@ pub enum StringSource {
     ///         flag: Box::new("xyz".into()),
     ///         then: "xyz".into(),
     ///         r#else: Box::new(StringSource::Part(UrlPart::Domain))
-    ///     }.get(&job_state).unwrap(),
+    ///     }.get(&job_state.to_view()).unwrap(),
     ///     Some(Cow::Borrowed("example.com"))
     /// );
     /// ```
@@ -227,7 +227,7 @@ pub enum StringSource {
     /// };
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
-    /// assert_eq!(StringSource::String("abc".to_string()).get(&job_state).unwrap(), Some(Cow::Borrowed("abc")));
+    /// assert_eq!(StringSource::String("abc".to_string()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("abc")));
     /// ```
     String(String),
     /// Gets the specified URL part.
@@ -258,7 +258,7 @@ pub enum StringSource {
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Params::default();
-    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state).unwrap(), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
     /// Parses `source` as a URL and gets the specified part.
@@ -295,7 +295,7 @@ pub enum StringSource {
     ///     StringSource::ExtractPart {
     ///         source: "https://example.com".into(),
     ///         part: UrlPart::Scheme
-    ///     }.get(&job_state).unwrap(),
+    ///     }.get(&job_state.to_view()).unwrap(),
     ///     Some(Cow::Borrowed("https"))
     /// );
     /// ```
@@ -338,7 +338,7 @@ pub enum StringSource {
     /// 
     /// let mut url = Url::parse("https://example.com").unwrap();
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// assert_eq!(StringSource::Var("abc".into()).get(&job_state).unwrap(), Some(Cow::Borrowed("xyz")));
+    /// assert_eq!(StringSource::Var("abc".into()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(Box<Self>),
     /// Gets the value of the specified [`JobState::scratchpad`]'s [`JobScratchpad::vars`].
@@ -348,7 +348,7 @@ pub enum StringSource {
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// 
     ScratchpadVar(Box<Self>),
-    /// Gets the value of the specified [`UrlContext::vars`]
+    /// Gets the value of the specified [`JobContext::vars`]
     /// 
     /// Returns [`None`] (NOT an error) if the string var is not set.
     /// # Errors
@@ -579,7 +579,7 @@ impl StringSource {
     /// Gets the string from the source.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn get<'a>(&'a self, job_state: &'a JobState) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'a>(&'a self, job_state: &'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         debug!(StringSource::get, self, job_state);
         Ok(match self {
             Self::Error => Err(StringSourceError::ExplicitError)?,
@@ -690,13 +690,11 @@ impl StringSource {
                 })
             },
             Self::Common(common_call) => {
-                let mut temp_url = job_state.url.clone();
-                let mut temp_scratchpad = job_state.scratchpad.clone();
-                job_state.commons.string_sources.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobState {
-                    url: &mut temp_url,
+                job_state.commons.string_sources.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobStateView {
+                    url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,
-                    scratchpad: &mut temp_scratchpad,
+                    scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache_handler: job_state.cache_handler,
                     commons: job_state.commons,

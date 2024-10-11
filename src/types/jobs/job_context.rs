@@ -13,7 +13,7 @@ use crate::util::*;
 /// 
 /// This lets URL Cleaner avoid an entire HTTP request per tweet outlink.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct UrlContext {
+pub struct JobContext {
     /// String variables.
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>

@@ -99,7 +99,7 @@ impl StringSourceJsonValue {
     /// Turns a [`Self`] into a [`serde_json::Value`] using [`StringSource::get`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &JobState) -> Result<Value, StringSourceError> {
+    pub fn make(&self, job_state: &JobStateView) -> Result<Value, StringSourceError> {
         debug!(StringSourceJsonValue::make, self, job_state);
 
         Ok(match self {

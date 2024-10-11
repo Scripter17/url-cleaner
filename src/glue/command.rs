@@ -105,7 +105,7 @@ impl CommandConfig {
     /// DOES NOT APPLY STDIN.
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make_command(&self, job_state: &JobState) -> Result<Command, CommandError> {
+    pub fn make_command(&self, job_state: &JobStateView) -> Result<Command, CommandError> {
         let mut ret = Command::new(&self.program);
         for arg in self.args.iter() {
             ret.arg(OsString::from(get_string!(arg, job_state, CommandError)));
@@ -130,7 +130,7 @@ impl CommandConfig {
     /// Runs the command and gets the exit code.
     /// # Errors
     /// If the command returns no exit code, returns the error [`CommandError::SignalTermination`].
-    pub fn exit_code(&self, job_state: &JobState) -> Result<i32, CommandError> {
+    pub fn exit_code(&self, job_state: &JobStateView) -> Result<i32, CommandError> {
         self.make_command(job_state)?.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
@@ -140,7 +140,7 @@ impl CommandConfig {
     /// 
     /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever panic.")]
-    pub fn output(&self, job_state: &JobState) -> Result<String, CommandError> {
+    pub fn output(&self, job_state: &JobStateView) -> Result<String, CommandError> {
         // https://stackoverflow.com/a/49597789/10720231
         let mut command = self.make_command(job_state)?;
         command.stdout(Stdio::piped());
@@ -162,7 +162,7 @@ impl CommandConfig {
     /// If the call to [`Self::output`] returns an error, that error is returned.
     /// 
     /// If the call to [`Url::parse`] returns an error, that error is returned.
-    pub fn get_url(&self, job_state: &JobState) -> Result<Url, CommandError> {
+    pub fn get_url(&self, job_state: &JobStateView) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(job_state)?.trim_end_matches(&['\r', '\n']))?)
     }
 }

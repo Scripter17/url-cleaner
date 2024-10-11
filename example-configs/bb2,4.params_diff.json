@@ -1,0 +1,35 @@
+{
+  "comment": "https://rosettacode.org/wiki/Universal_Turing_machine#",
+  "insert_into_maps": {
+    "state_set": {
+      "a,0": "1",
+      "a,1": "2",
+      "a,2": "1",
+      "a,3": "1",
+      "b,0": "1",
+      "b,1": "1",
+      "b,2": "3",
+      "b,3": "1"
+    },
+    "state_move": {
+      "a,0": "r",
+      "a,1": "l",
+      "a,2": "r",
+      "a,3": "r",
+      "b,0": "l",
+      "b,1": "l",
+      "b,2": "r",
+      "b,3": "r"
+    },
+    "state_map": {
+      "a,0": "b",
+      "a,1": "a",
+      "a,2": "a",
+      "a,3": "a",
+      "b,0": "b",
+      "b,1": "a",
+      "b,2": "b",
+      "b,3": "halt"
+    }
+  }
+}

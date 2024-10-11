@@ -69,7 +69,7 @@ impl CommonCallArgs {
     /// Makes a [`CommonArgs`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &JobState) -> Result<CommonArgs, CommonCallArgsError> {
+    pub fn make(&self, job_state: &JobStateView) -> Result<CommonArgs, CommonCallArgsError> {
         Ok(CommonArgs {
             vars: self.vars.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, _>>()?
         })
