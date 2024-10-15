@@ -8,7 +8,7 @@ use url::Url;
 use crate::types::*;
 use crate::util::*;
 
-/// Defines how each job from a [`Jobs`] should be constructed.
+/// Defines how each [`Job`] from a [`Jobs`] should be constructed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(remote = "Self")]
 pub struct JobConfig {

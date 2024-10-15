@@ -26,7 +26,7 @@ mod util;
 #[cfg_attr(feature = "glob"                   , doc = "glob"                   )]
 #[cfg_attr(feature = "commands"               , doc = "commands"               )]
 #[cfg_attr(feature = "http"                   , doc = "http"                   )]
-#[cfg_attr(feature = "advanced-requests"      , doc = "advanced-requests"      )]
+#[cfg_attr(feature = "advanced-http"          , doc = "advanced-http"          )]
 #[cfg_attr(feature = "cache"                  , doc = "cache"                  )]
 #[cfg_attr(feature = "base64"                 , doc = "base64"                 )]
 #[cfg_attr(feature = "cache-redirects"        , doc = "cache-redirects"        )]
@@ -39,7 +39,7 @@ mod util;
 #[cfg_attr(not(feature = "glob"                   ), doc = "glob"                   )]
 #[cfg_attr(not(feature = "commands"               ), doc = "commands"               )]
 #[cfg_attr(not(feature = "http"                   ), doc = "http"                   )]
-#[cfg_attr(not(feature = "advanced-requests"      ), doc = "advanced-requests"      )]
+#[cfg_attr(not(feature = "advanced-http"          ), doc = "advanced-http"          )]
 #[cfg_attr(not(feature = "cache"                  ), doc = "cache"                  )]
 #[cfg_attr(not(feature = "base64"                 ), doc = "base64"                 )]
 #[cfg_attr(not(feature = "cache-redirects"        ), doc = "cache-redirects"        )]
@@ -134,8 +134,6 @@ pub enum CliError {
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when URL Cleaner fails to parse a [`ParamsDiff`] file's contents.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
-    /// Returned when a [`CleaningError`] is encountered.
-    #[error(transparent)] CleaningError(#[from] CleaningError),
     /// Returned when a [`SerdeJsonError`] is encountered.
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }

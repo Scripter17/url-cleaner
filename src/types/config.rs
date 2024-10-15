@@ -188,11 +188,11 @@ pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../../defau
 /// 
 /// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", not(feature = "minify-included-strings")))]
-pub static DEFAULT_CONFIG_STR: &str=include_str!("../../default-config.json");
+pub static DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 #[allow(dead_code, reason = "Public API.")]
-pub static DEFAULT_CONFIG: OnceLock<Config>=OnceLock::new();
+pub static DEFAULT_CONFIG: OnceLock<Config> = OnceLock::new();
 
 /// An enum containing all possible errors that can happen when loading/parsing a rules into a [`Rules`]
 #[derive(Debug, Error)]

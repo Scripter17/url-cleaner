@@ -362,10 +362,10 @@ pub enum StringMatcherError {
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when a [`regex::Error`] is encountered.
+    /// Returned when a [`::regex::Error`] is encountered.
     #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] regex::Error),
+    RegexError(#[from] ::regex::Error),
     /// Returned when both the `try` and `else` of a [`StringMatcher::TryElse`] both return errors.
     #[error("A `StringMatcher::TryElse` had both `try` and `else` return an error.")]
     TryElseError {
@@ -477,7 +477,7 @@ impl StringMatcher {
             },
             Self::Equals(source) => haystack == get_str!(source, job_state, StringMatcherError),
             Self::InSet(name) => job_state.params.sets.get(get_str!(name, job_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
-            // Cannot wait for [`Iterator::try_any`] (https://github.com/rust-lang/rfcs/pull/3233)
+            // Cannot wait for [`Iterator::try_any`](https://github.com/rust-lang/rfcs/pull/3233)
             Self::ContainsAnyInList {r#where, list} => {
                 for x in job_state.params.lists.get(get_str!(list, job_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
                     if r#where.satisfied_by(haystack, x)? {

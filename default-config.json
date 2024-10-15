@@ -51,7 +51,7 @@
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": "Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.",
 			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": "The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.",
 			"unmobile-not-subdomain-blacklist": "The `NotSubdomain`s to never apply the `unmobile` flag for.",
-			"utps": "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set.\n    Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.",
+			"utps": "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.",
 			"utps-host-whitelist": "Hosts to never remove universal tracking parameters from."
 		},
 		"lists": {
@@ -930,7 +930,7 @@
 						"comment": "https://www.username.example.com -> https://username.example.com",
 						"condition": {"All": [
 							{"Not": {"FlagIsSet": "no-unmangle-subdomain-starting-with-www-segment"}},
-							{"Not": {"PartMatches": {"part": "NotSubdomain", "matcher": {"InSet": "unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist"}}}},
+							{"TreatErrorAsFail": {"Not": {"PartMatches": {"part": "NotSubdomain", "matcher": {"InSet": "unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist"}}}}},
 							{"TreatErrorAsFail": {"PartContains": {"part": "Subdomain", "where": "Start", "value": "www."}}}
 						]},
 						"mapper": {"ModifyPart": {"part": "Subdomain", "modification": {"StripPrefix": "www."}}}

@@ -8,9 +8,9 @@ use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
 #[allow(unused_imports, reason = "Used in a doc comment.")]
 #[cfg(feature = "regex")]
-use regex::Regex;
+use ::regex::Regex;
 #[cfg(feature = "base64")]
-use base64::prelude::*;
+use ::base64::prelude::*;
 
 use crate::types::*;
 use crate::glue::*;
@@ -764,17 +764,17 @@ pub enum StringModification {
         /// The value to insert.
         value: Option<StringSource>
     },
-    /// [`Regex::captures`] and [`regex::Captures::expand`].
+    /// [`Regex::captures`] and [`::regex::Captures::expand`].
     /// # Errors
     /// When the call to [`Regex::captures`] returns [`None`], returns the error [`StringModificationError::RegexMatchNotFound`]
     #[cfg(feature = "regex")]
     RegexCaptures {
         /// The regex to search with.
         regex: RegexWrapper,
-        /// The replacement string to call [`regex::Captures::expand`] with.
+        /// The replacement string to call [`::regex::Captures::expand`] with.
         replace: StringSource
     },
-    /// [`Regex::captures_iter`] and [`regex::Captures::expand`].
+    /// [`Regex::captures_iter`] and [`::regex::Captures::expand`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -813,7 +813,7 @@ pub enum StringModification {
     JoinAllRegexCaptures {
         /// The regex to search with.
         regex: RegexWrapper,
-        /// The replacement string to call [`regex::Captures::expand`] with.
+        /// The replacement string to call [`::regex::Captures::expand`] with.
         replace: StringSource,
         /// The value to join the captures with. Does not default to anything.
         join: StringSource
@@ -917,12 +917,12 @@ pub enum StringModification {
     /// assert_eq!(&x, "a/b/c");
     /// ```
     UrlDecode,
-    /// Encode the string using [`base64::prelude::BASE64_STANDARD`].
+    /// Encode the string using [`::base64::prelude::BASE64_STANDARD`].
     #[cfg(feature = "base64")]
     Base64Encode(#[serde(default)] Base64Config),
-    /// Decode the string using [`base64::prelude::BASE64_STANDARD`].
+    /// Decode the string using [`::base64::prelude::BASE64_STANDARD`].
     /// # Errors
-    /// If the call to [`base64::engine::Engine::decode`] returns an error, that error is returned.
+    /// If the call to [`::base64::engine::Engine::decode`] returns an error, that error is returned.
     /// 
     /// If the call to [`String::from_utf8`] returns an error, that error is returned.
     #[cfg(feature = "base64")]
@@ -1210,10 +1210,10 @@ pub enum StringModificationError {
     /// Returned when the requested regex pattern is not found in the provided string.
     #[error("The requested regex pattern was not found in the provided string.")]
     RegexMatchNotFound,
-    /// Returned when a [`regex::Error`] is encountered.
+    /// Returned when a [`::regex::Error`] is encountered.
     #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] regex::Error),
+    RegexError(#[from] ::regex::Error),
     /// Returned when both the `try` and `else` of a [`StringModification::TryElse`] both return errors.
     #[error("A `StringModification::TryElse` had both `try` and `else` return an error.")]
     TryElseError {
@@ -1222,10 +1222,10 @@ pub enum StringModificationError {
         /// The error returned by [`StringModification::TryElse::else`],
         else_error: Box<Self>
     },
-    /// Returned when a [`base64::DecodeError`] is encountered.
+    /// Returned when a [`::base64::DecodeError`] is encountered.
     #[error(transparent)]
     #[cfg(feature = "base64")]
-    Base64DecodeError(#[from] base64::DecodeError),
+    Base64DecodeError(#[from] ::base64::DecodeError),
     /// Returned when a [`std::string::FromUtf8Error`] is encountered.
     #[error(transparent)]
     FromUtf8Error(#[from] std::string::FromUtf8Error),

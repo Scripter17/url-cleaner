@@ -25,6 +25,8 @@ pub enum JobConfigSourceError {
 }
 
 /// A [`Job`] creator.
+/// 
+/// Arguably the main API you should build upon.
 pub struct Jobs<'a> {
     /// The [`Config`] to use.
     pub config: Cow<'a, Config>,
@@ -35,8 +37,8 @@ pub struct Jobs<'a> {
     /// This is intentional so you can override it using, for example, command line arguments.
     #[cfg(feature = "cache")]
     pub cache_handler: CacheHandler,
-    /// The iterator URLs are acquired from.
-    pub configs_source: Box<dyn Iterator<Item = Result<JobConfig, JobConfigSourceError>>>,
+    /// The iterator [`JobConfig`]s are acquired from.
+    pub configs_source: Box<dyn Iterator<Item = Result<JobConfig, JobConfigSourceError>>>
 }
 
 impl ::core::fmt::Debug for Jobs<'_> {
@@ -56,7 +58,7 @@ impl<'a> Jobs<'_> {
     /// 
     /// An [`Iterator`] based API will exist once [`gen_blocks`](https://github.com/rust-lang/rust/issues/117078) is stablized.
     /// 
-    /// During the long wait you can do `while let Some(x) = `.
+    /// During the long wait you can do `while let Some(x) = ` because for some reason [`std::iter::from_fn`] doesn't want to work.
     /// # Errors
     /// If the call to [`Self::configs_source`]'s [`Iterator::next`] returns an error, that error is returned.
     pub fn next_job(&'a mut self) -> Option<Result<Job<'a>, GetJobError>> {
@@ -82,11 +84,7 @@ impl<'a> Jobs<'_> {
     //     }
     // }
 
-    /// Does all the jobs returned by [`Self::next_job`] until either `Ok(None)` or `Err(_)` are encountered.
-    /// # Errors
-    /// If a call to [`Self::next_job`] returns an error, that error is returned.
-    /// 
-    /// If a call to [`Jobs::do`] returns an error, that error is returned.
+    /// Does all the jobs returned by [`Self::next_job`].
     /// # Panics
     /// If a call to [`Vec::push`] panics, that panic is... returned? Thrown? Not caught?
     /// 

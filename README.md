@@ -55,7 +55,7 @@ Various flags are included in the default config for things I want to do frequen
 
 - `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
-- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise links. Currently untestable as the API is down.
+- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links. Currently untestable as the API is down.
 - `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
@@ -71,7 +71,7 @@ Various flags are included in the default config for things I want to do frequen
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
-- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`.
+- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unplaylist`: Removes the `list` query parameter from `/watch` URLs.
@@ -105,11 +105,12 @@ Sets let you check if a string is one of many specific strings very quickly.
 Various sets are included in the default config.
 
 - `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
-- `bypass.vip-hosts`: Hosts to use bypass.vip for.
+- `bypass.vip-host-without-www-dot-prefixes`: `HostWithoutWWWDotPrefix`es to use bypass.vip for.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
 - `lmgtfy-hosts`: Hosts to replace with `google.com`.
 - `redirect-hosts`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
+- `redirect-not-subdomains`: The `redirect-hosts` set but `UrlPart::NotSubdomain`.
 - `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
 - `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
 - `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.
