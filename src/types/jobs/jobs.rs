@@ -3,7 +3,6 @@
 use std::error::Error;
 use std::borrow::Cow;
 
-use url::Url;
 use thiserror::Error;
 
 use crate::types::*;
@@ -54,49 +53,19 @@ impl ::core::fmt::Debug for Jobs<'_> {
 }
 
 impl<'a> Jobs<'_> {
-    /// Gets the next [`Job`].
-    /// 
-    /// An [`Iterator`] based API will exist once [`gen_blocks`](https://github.com/rust-lang/rust/issues/117078) is stablized.
-    /// 
-    /// During the long wait you can do `while let Some(x) = ` because for some reason [`std::iter::from_fn`] doesn't want to work.
-    /// # Errors
-    /// If the call to [`Self::configs_source`]'s [`Iterator::next`] returns an error, that error is returned.
-    pub fn next_job(&'a mut self) -> Option<Result<Job<'a>, GetJobError>> {
-        Some(match self.configs_source.next()? {
-            Ok(JobConfig {url, context}) => Ok(Job {
-                url,
-                config: &self.config,
-                context,
-                #[cfg(feature = "cache")]
-                cache_handler: &mut self.cache_handler
-            }),
-            // `e @ Err(e) => e?` doesn't work because for some reason it thinks `e` is a `Url`.
-            Err(e) => Err(e.into())
-        })
-    }
-
-    // Once gen_blocks (https://github.com/rust-lang/rust/issues/117078) is stabilized this can be added
-    // pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, GetJobError>> {
-    //     gen {
-    //         if let Some(x) = self.next_job() {
-    //             yield x;
-    //         }
-    //     }
-    // }
-
-    /// Does all the jobs returned by [`Self::next_job`].
-    /// # Panics
-    /// If a call to [`Vec::push`] panics, that panic is... returned? Thrown? Not caught?
-    /// 
-    /// If you feed in infinite URLs you get a panic.
-    #[allow(dead_code, reason = "For some reason, using expect here complains about no lint being thrown. But the link is thrown if this isn't allowed. Maybe it's because of the r#?")]
-    pub fn r#do(mut self) -> Vec<Result<Result<Url, DoJobError>, GetJobError>> {
-        // For reasons I don't fully understand, [`std::iter::from_fn`] doesn't work here.
-        let mut ret = Vec::new();
-        while let Some(maybe_job) = self.next_job() {
-            ret.push(maybe_job.map(|job| job.r#do()));
-        }
-        ret
+    /// Iterates over [`Job`]s created from [`JobConfig`]s returned from [`Self::configs_source`].
+    pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, GetJobError>> {
+        (&mut self.configs_source)
+            .map(|job_config|
+                job_config.map(|job_config| Job {
+                    url: job_config.url,
+                    config: &self.config,
+                    context: job_config.context,
+                    #[cfg(feature = "cache")]
+                    cache_handler: &self.cache_handler
+                })
+                .map_err(Into::into)
+            )
     }
 }
 

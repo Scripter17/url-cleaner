@@ -277,7 +277,7 @@ fn main() -> Result<ExitCode, CliError> {
         print!("{{\"Ok\":{{\"urls\":[");
         let mut first_job = true;
 
-        while let Some(job) = jobs.next_job() {
+        for job in jobs.iter() {
             if !first_job {print!(",");}
             match job {
                 Ok(job) => match job.r#do() {
@@ -300,7 +300,7 @@ fn main() -> Result<ExitCode, CliError> {
 
         print!("]}}}}");
     } else {
-        while let Some(job) = jobs.next_job() {
+        for job in jobs.iter() {
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => {
