@@ -90,7 +90,6 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state.to_view()).unwrap(), true);
@@ -114,7 +113,6 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::RegexParts;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state.to_view()).unwrap(), true);
@@ -126,7 +124,6 @@ pub enum StringMatcher {
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::GlobWrapper;
     /// # use std::str::FromStr;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state.to_view()).unwrap(), true);
@@ -203,7 +200,6 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let matcher = StringMatcher::SegmentsStartWith {
@@ -228,7 +224,6 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let matcher = StringMatcher::SegmentsEndWith {

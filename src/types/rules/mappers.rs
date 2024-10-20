@@ -63,8 +63,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
-    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut job_state).unwrap_err();
     /// assert_eq!(job_state.url.domain(), Some("example.com"));
@@ -77,8 +76,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
-    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut job_state).unwrap_err();
     /// assert_eq!(job_state.url.domain(), Some("3.com"));
@@ -89,8 +87,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
-    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.domain(), Some("6.com"));
@@ -157,8 +154,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
-    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut job_state).unwrap ();
     /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut job_state).unwrap ();
@@ -177,8 +173,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
-    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.domain(), Some("1.com"));
@@ -201,9 +196,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use std::collections::hash_set::HashSet;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state; url = "https://example.com?a=2&b=3&c=4&d=5";);
     /// 
     /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
@@ -219,9 +212,7 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use std::collections::hash_set::HashSet;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state; url = "https://example.com?a=2&b=3";);
     /// 
     /// Mapper::AllowQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
@@ -299,7 +290,6 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state; url = "https://abc.example.com";);
     /// 
     /// Mapper::MovePart{from: UrlPart::Subdomain, to: UrlPart::BeforePathSegment(0)}.apply(&mut job_state).unwrap();
@@ -353,7 +343,6 @@ pub enum Mapper {
     /// ```
     /// # use reqwest::header::HeaderMap;
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state; url = "https://t.co/H8IF8DHSFL";);
     /// 
     /// Mapper::ExpandRedirect{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();

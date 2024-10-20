@@ -59,7 +59,6 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(
@@ -88,7 +87,6 @@ pub enum StringSource {
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
     /// # use std::collections::HashSet;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// // Putting this in the `job_state!` call doesn't work???`
@@ -181,7 +179,6 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringSource::String("abc".to_string()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("abc")));
@@ -194,7 +191,6 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("example.com")));
@@ -211,7 +207,6 @@ pub enum StringSource {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(
@@ -240,7 +235,6 @@ pub enum StringSource {
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// // Putting this in the `job_state!` call doesn't work???`

@@ -105,7 +105,6 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// Rule::Repeat {
@@ -191,7 +190,6 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// Rule::Normal {

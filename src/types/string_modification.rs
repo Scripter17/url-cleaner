@@ -16,7 +16,7 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// Various ways to modify a string.
+/// Various ways to modify a [`String`].
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
@@ -93,7 +93,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -107,7 +106,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -121,7 +119,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -135,7 +132,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcabc".to_string();
@@ -154,7 +150,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -181,7 +176,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "ABCdef".to_string();
@@ -193,7 +187,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcDEF".to_string();
@@ -207,7 +200,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -223,7 +215,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -237,7 +228,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -251,7 +241,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -265,7 +254,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "aaaaa".to_string();
@@ -288,7 +276,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc".to_string();
@@ -311,7 +298,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
@@ -327,7 +313,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdefghi".into();
@@ -372,7 +357,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c.d.e.f".to_string();
@@ -420,7 +404,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c".to_string();
@@ -453,7 +436,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c".to_string();
@@ -492,7 +474,6 @@ pub enum StringModification {
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::*;
     /// # use std::str::FromStr;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "...a2..a3....a4".to_string();
@@ -559,7 +540,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a/b/c".to_string();
@@ -573,7 +553,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a%2fb%2Fc".to_string();
@@ -601,7 +580,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc xyz".to_string();
@@ -627,7 +605,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc def xyz".to_string();
@@ -675,7 +652,6 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc".to_string();
@@ -710,7 +686,6 @@ pub enum StringModification {
     /// # Tests
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "\\/a\\n\\\\n".to_string();

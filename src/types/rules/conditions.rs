@@ -24,7 +24,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// Condition::Error.satisfied_by(&job_state.to_view()).unwrap_err();
@@ -62,7 +61,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&job_state.to_view()).unwrap(), false);
@@ -78,7 +76,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -100,7 +97,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -142,7 +138,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -154,7 +149,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -170,7 +164,6 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -202,9 +195,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -227,9 +218,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -248,9 +237,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
@@ -272,11 +259,8 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use std::collections::HashSet;
-    /// 
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -296,9 +280,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -345,9 +327,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -373,9 +353,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
@@ -410,9 +388,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
@@ -429,9 +405,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// 
@@ -456,7 +430,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&job_state.to_view()).unwrap(), false);
@@ -480,7 +453,6 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -512,9 +484,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use std::collections::HashMap;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// // Putting this in the `job_state!` call doesn't work???`
@@ -538,9 +508,7 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use std::collections::HashSet;
-    /// 
     /// # use url_cleaner::types::*;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// // Putting this in the `job_state!` call doesn't work???`
@@ -596,7 +564,6 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::CommandConfig;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(Condition::CommandExists (CommandConfig::from("/usr/bin/true" )).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -612,7 +579,6 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::CommandConfig;
-    /// 
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert!(Condition::CommandExitStatus {command: CommandConfig::from("/usr/bin/true" ), expected: 0}.satisfied_by(&job_state.to_view()).is_ok_and(|x| x==true ));
