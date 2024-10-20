@@ -105,39 +105,23 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// # use std::str::FromStr;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// Rule::Repeat {
     ///     rules: Rules(vec![
     ///         Rule::Normal {
     ///             condition: Condition::Always,
     ///             mapper: Mapper::SetPart {
     ///                 part: UrlPart::NextPathSegment,
-    ///                 value: Some(FromStr::from_str("a").unwrap())
+    ///                 value: Some("a".into())
     ///             }
     ///         }
     ///     ]),
     ///     stop_loop_condition: Default::default(),
     ///     limit: 10
     /// }.apply(&mut job_state).unwrap();
-    /// assert_eq!(url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
+    /// assert_eq!(job_state.url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
     /// ```
     Repeat {
         /// The rules to repeat.
@@ -207,26 +191,8 @@ pub enum Rule {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// // [`RuleError::FailedCondition`] is returned when the condition does not pass.
-    /// // [`Rules`] just ignores them because it's a higher level API.
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// Rule::Normal {
     ///     condition: Condition::Always,
@@ -350,7 +316,7 @@ impl Rule {
                     params: job_state.params,
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
-                    cache_handler: job_state.cache_handler,
+                    cache: job_state.cache,
                     commons: job_state.commons
                 })
             }
@@ -358,15 +324,14 @@ impl Rule {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::PartMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)),
             Self::PartRuleMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)),
             Self::PartRulesMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)),
-            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)),
-            Self::StringRuleMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)),
-            Self::StringRulesMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)),
+            Self::StringMap {source, map} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)),
+            Self::StringRuleMap {source, map} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)),
+            Self::StringRulesMap {source, map} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)),
             Self::Repeat {rules, ..} => rules.is_suitable_for_release(config),
             Self::SharedCondition {condition, rules} => condition.is_suitable_for_release(config) && rules.is_suitable_for_release(config),
             Self::DontTriggerLoop(rule) => rule.is_suitable_for_release(config),
@@ -418,7 +383,7 @@ impl Rules {
             scratchpad: &mut temp_scratchpad,
             context: job_state.context,
             #[cfg(feature = "cache")]
-            cache_handler: job_state.cache_handler,
+            cache: job_state.cache,
             commons: job_state.commons,
             common_args: None
         };
@@ -438,7 +403,6 @@ impl Rules {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         self.0.iter().all(|rule| rule.is_suitable_for_release(config))
     }

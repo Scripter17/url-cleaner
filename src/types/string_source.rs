@@ -20,6 +20,8 @@ pub enum StringSource {
     // Error handling/prevention.
 
     /// Always returns the error [`StringSourceError::ExplicitError`].
+    /// 
+    /// Cannot be deserialized as `"None"` becomes `Self::String("None".into())`. I think this is less surprising behavior.
     /// # Errors
     /// Always returns the error [`StringSourceError::ExplicitError`].
     Error,
@@ -56,25 +58,9 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(
     ///     StringSource::Join {
@@ -100,26 +86,14 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::borrow::Cow;
     /// # use std::collections::HashSet;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// // Putting this in the `job_state!` call doesn't work???`
     /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// job_state.params = &params;
     /// 
     /// assert_eq!(
     ///     StringSource::IfFlag {
@@ -206,27 +180,10 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
     /// 
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(StringSource::String("abc".to_string()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("abc")));
     /// ```
     String(String),
@@ -236,28 +193,10 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
     /// 
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let params = Params::default();
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
@@ -271,25 +210,9 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(
     ///     StringSource::ExtractPart {
@@ -315,29 +238,15 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::borrow::Cow;
     /// # use std::collections::HashMap;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = url_cleaner::types::Params { vars: vec![("abc".to_string(), "xyz".to_string())].into_iter().collect(), ..Default::default() };
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
     /// 
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// // Putting this in the `job_state!` call doesn't work???`
     /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
+    /// job_state.params = &params;
+    /// 
     /// assert_eq!(StringSource::Var("abc".into()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
     Var(Box<Self>),
@@ -402,11 +311,11 @@ pub enum StringSource {
     /// 
     /// Please note that [`Self::Cache::category`] and [`Self::Cache::key`] should be chosen to make all possible collisions intentional.
     /// # Errors
-    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    /// If the call to [`Cache::read`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
+    /// If the call to [`Cache::write`] returns an error, that error is returned.
     #[cfg(feature = "cache")]
     Cache {
         /// The category to cache in.
@@ -660,13 +569,13 @@ impl StringSource {
                 let category = get_string!(category, job_state, StringSourceError);
                 let key = get_string!(key, job_state, StringSourceError);
                 if job_state.params.read_cache {
-                    if let Some(ret) = job_state.cache_handler.read_from_cache(&category, &key)? {
+                    if let Some(ret) = job_state.cache.read(&category, &key)? {
                         return Ok(ret.map(Cow::Owned));
                     }
                 }
                 let ret = source.get(job_state)?;
                 if job_state.params.write_cache {
-                    job_state.cache_handler.write_to_cache(&category, &key, ret.as_deref())?;
+                    job_state.cache.write(&category, &key, ret.as_deref())?;
                 }
                 ret
             },
@@ -696,7 +605,7 @@ impl StringSource {
                     params: job_state.params,
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
-                    cache_handler: job_state.cache_handler,
+                    cache: job_state.cache,
                     commons: job_state.commons,
                     common_args: Some(&common_call.args.make(job_state)?)
                 })?.map(|x| Cow::Owned(x.into_owned()))
@@ -705,7 +614,6 @@ impl StringSource {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::NoneToEmptyString(source) => source.is_suitable_for_release(config),
@@ -714,7 +622,7 @@ impl StringSource {
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config) && check_docs!(config, flags, flag.as_ref()),
             Self::IfSourceMatches {source, matcher, then, r#else} => source.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::IfSourceIsNone {source, then, r#else} => source.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Map {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, source)| source.is_suitable_for_release(config)) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release(config)) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::Map {source, map, if_null, r#else} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, source)| source.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
             Self::Part(part) => part.is_suitable_for_release(config),
             Self::ExtractPart {source, part} => source.is_suitable_for_release(config) && part.is_suitable_for_release(config),
             Self::CommonVar(name) => name.is_suitable_for_release(config),

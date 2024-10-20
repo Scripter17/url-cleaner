@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 use crate::types::*;
 use crate::util::*;
 
-/// Similar to [`Params`] but modifiable by [`Mapper`]s.
+/// Mutable state that you can use to track data between rules outside of the URL.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct JobScratchpad {
     /// String variables used to determine behavior.

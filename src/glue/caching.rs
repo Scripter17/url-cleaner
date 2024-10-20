@@ -50,9 +50,9 @@ pub struct NewCacheEntry<'a> {
 /// 
 /// Internally it's an [`Arc`] of a [`Mutex`] so cloning is O(1) and sharing immutable references is not a problem.
 #[derive(Debug, Clone)]
-pub struct CacheHandler(pub Arc<Mutex<InnerCacheHandler>>);
+pub struct Cache(pub Arc<Mutex<InnerCache>>);
 
-impl Default for CacheHandler {
+impl Default for Cache {
     /// Has the "path" of `:memory:`, which just stores the database in memory until the program exits.
     /// 
     /// Seems like a reasonable default.
@@ -61,50 +61,50 @@ impl Default for CacheHandler {
     }
 }
 
-/// The internals of [`CacheHandler`] that handles lazily connecting.
-pub struct InnerCacheHandler {
+/// The internals of [`Cache`] that handles lazily connecting.
+pub struct InnerCache {
     /// The path being connected to.
     path: String,
     /// The actual [`SqliteConnection`].
     connection: OnceCell<SqliteConnection>
 }
 
-impl ::core::fmt::Debug for InnerCacheHandler {
+impl ::core::fmt::Debug for InnerCache {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        f.debug_struct("InnerCacheHandler")
+        f.debug_struct("InnerCache")
             .field("path", &self.path)
             .field("connection", if self.connection.get().is_some() {&"OnceCell(..)"} else {&"OnceCell(<uninit>)"})
             .finish()
     }
 }
 
-impl Default for InnerCacheHandler {
-    /// Has the "path" of `:memory:`, which just stores the database in memory until the program exits.
+impl Default for InnerCache {
+    /// Has the "path" of `:memory:`, which just stores the database in memory until dropped.
     /// 
     /// Seems like a reasonable default.
     fn default() -> Self {
         Self {
-            path: ":memory:".to_string(),
+            path: Self::DEFAULT_PATH.to_string(),
             connection: OnceCell::new()
         }
     }
 }
 
-impl FromStr for CacheHandler {
-    type Err = <InnerCacheHandler as FromStr>::Err;
+impl FromStr for Cache {
+    type Err = <InnerCache as FromStr>::Err;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        InnerCacheHandler::from_str(s).map(Into::into)
+        InnerCache::from_str(s).map(Into::into)
     }
 }
 
-impl<T: Into<InnerCacheHandler>> From<T> for CacheHandler {
+impl<T: Into<InnerCache>> From<T> for Cache {
     fn from(value: T) -> Self {
         Self(Arc::new(Mutex::new(value.into())))
     }
 }
 
-impl FromStr for InnerCacheHandler {
+impl FromStr for InnerCache {
     type Err = std::convert::Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -112,19 +112,19 @@ impl FromStr for InnerCacheHandler {
     }
 }
 
-impl From<&str> for InnerCacheHandler {
+impl From<&str> for InnerCache {
     fn from(value: &str) -> Self {
         value.to_string().into()
     }
 }
 
-impl From<String> for InnerCacheHandler {
+impl From<String> for InnerCache {
     fn from(value: String) -> Self {
-        InnerCacheHandler { path: value, connection: OnceCell::new() }
+        InnerCache { path: value, connection: OnceCell::new() }
     }
 }
 
-/// The enum of errors [`CacheHandler::read_from_cache`] and [`InnerCacheHandler::read_from_cache`] can return.
+/// The enum of errors [`Cache::read`] and [`InnerCache::read`] can return.
 #[derive(Debug, Error)]
 pub enum ReadFromCacheError {
     /// Returned when the inner [`Mutex`] is poisoned.
@@ -138,7 +138,7 @@ pub enum ReadFromCacheError {
     ConnectCacheError(#[from] ConnectCacheError)
 }
 
-/// The enum of errors [`CacheHandler::write_to_cache`] and [`InnerCacheHandler::write_to_cache`] can return.
+/// The enum of errors [`Cache::write`] and [`InnerCache::write`] can return.
 #[derive(Debug, Error)]
 pub enum WriteToCacheError {
     /// Returned when the inner [`Mutex`] is poisoned.
@@ -152,27 +152,32 @@ pub enum WriteToCacheError {
     ConnectCacheError(#[from] ConnectCacheError)
 }
 
-impl CacheHandler {
+impl Cache {
+    /// The default path.
+    /// 
+    /// Link because RustDoc doesn't make a link for the value (as of 1.82): [`InnerCache::DEFAULT_PATH`].
+    pub const DEFAULT_PATH: &str = InnerCache::DEFAULT_PATH;
+    
     /// Reads a string from the cache.
     /// # Errors
     /// If the call to [`Mutex::lock`] returns an error, that error is returned.
     /// 
-    /// If the call to [`InnerCacheHandler::read_from_cache`] returns an error, that error is returned.
-    pub fn read_from_cache(&self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
-        self.0.lock().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?.read_from_cache(category, key)
+    /// If the call to [`InnerCache::read`] returns an error, that error is returned.
+    pub fn read(&self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
+        self.0.lock().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?.read(category, key)
     }
 
     /// Writes a string to the cache.
     /// # Errors
     /// If the call to [`Mutex::lock`] returns an error, that error is returned.
     /// 
-    /// If the call to [`InnerCacheHandler::write_to_cache`] returns an error, that error is returned.
-    pub fn write_to_cache(&self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
-        self.0.lock().map_err(|e| WriteToCacheError::MutexPoisonError(e.to_string()))?.write_to_cache(category, key, value)
+    /// If the call to [`InnerCache::write`] returns an error, that error is returned.
+    pub fn write(&self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
+        self.0.lock().map_err(|e| WriteToCacheError::MutexPoisonError(e.to_string()))?.write(category, key, value)
     }
 }
 
-/// The enum of errors [`InnerCacheHandler::connect`] can return.
+/// The enum of errors [`InnerCache::connect`] can return.
 #[derive(Debug, Error)]
 pub enum ConnectCacheError {
     /// Returned when a [`diesel::ConnectionError`] is encountered.
@@ -183,7 +188,10 @@ pub enum ConnectCacheError {
     IoError(#[from] std::io::Error),
 }
 
-impl InnerCacheHandler {
+impl InnerCache {
+    /// The default path.
+    pub const DEFAULT_PATH: &str = ":memory:";
+    
     /// Returns the path being connected to.
     pub fn path(&self) -> &str {
         &self.path
@@ -209,7 +217,7 @@ impl InnerCacheHandler {
     /// If the call to [`SqliteConnection::establish`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Doesn't panic, but should be replaced with OnceCell::get_or_try_init once that's stable.")]
     pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
-        debug!(InnerCacheHandler::connect, self);
+        debug!(InnerCache::connect, self);
         if self.connection.get().is_none() {
             if self.path != ":memory:" && !self.path.starts_with("file://") && !std::fs::exists(&self.path)? {
                 std::fs::write(&self.path, EMPTY_CACHE)?;
@@ -235,8 +243,8 @@ impl InnerCacheHandler {
     /// The inner [`Option`] is the cache entry.
     /// # Errors
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
-    pub fn read_from_cache(&mut self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
-        debug!(InnerCacheHandler::read_from_cache, self, category, key);
+    pub fn read(&mut self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
+        debug!(InnerCache::read, self, category, key);
         Ok(cache::dsl::cache
             .filter(cache::dsl::category.eq(category))
             .filter(cache::dsl::key.eq(key))
@@ -251,11 +259,11 @@ impl InnerCacheHandler {
     /// 
     /// Note that this doesn't check if the corresponding `key` and `value` are already present in a cache entry.
     /// 
-    /// Not checking yourself could result in [`Self::read_from_cache`] not returning the written value.
+    /// Not checking yourself could result in [`Self::read`] not returning the written value.
     /// # Errors
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
-    pub fn write_to_cache(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
-        debug!(InnerCacheHandler::write_to_cache, self, category, key, value);
+    pub fn write(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
+        debug!(InnerCache::write, self, category, key, value);
         diesel::insert_into(cache::table)
             .values(&NewCacheEntry {category, key, value})
             .returning(CacheEntry::as_returning())
@@ -264,8 +272,8 @@ impl InnerCacheHandler {
     }
 }
 
-impl From<InnerCacheHandler> for (String, OnceCell<SqliteConnection>) {
-    fn from(value: InnerCacheHandler) -> Self {
+impl From<InnerCache> for (String, OnceCell<SqliteConnection>) {
+    fn from(value: InnerCache) -> Self {
         (value.path, value.connection)
     }
 }

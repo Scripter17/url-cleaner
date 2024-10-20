@@ -93,24 +93,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::Set("ghi".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -123,24 +107,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::Append("ghi".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -153,24 +121,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::Prepend("ghi".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -183,24 +135,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcabc".to_string();
     /// StringModification::Replace{find: "ab".into(), replace: "xy".into()}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -218,24 +154,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::ReplaceRange{start: Some( 6), end: Some( 7), replace: "123" .into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
@@ -261,24 +181,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "ABCdef".to_string();
     /// StringModification::Lowercase.apply(&mut x, &job_state.to_view()).unwrap();
@@ -289,24 +193,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcDEF".to_string();
     /// StringModification::Uppercase.apply(&mut x, &job_state.to_view()).unwrap();
@@ -319,24 +207,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::StripPrefix("abc".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -351,24 +223,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::StripSuffix("def".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -381,24 +237,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::StripMaybePrefix("abc".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -411,24 +251,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::StripMaybeSuffix("def".into()).apply(&mut x, &job_state.to_view()).unwrap();
@@ -441,24 +265,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "aaaaa".to_string();
     /// StringModification::Replacen{find: "a" .into(), replace: "x".into(), count: 2}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -480,24 +288,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc".to_string();
     /// StringModification::Insert{r#where:  0, value: "def".into()}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -519,24 +311,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdef".to_string();
     /// StringModification::Remove( 1).apply(&mut x, &job_state.to_view()).unwrap();
@@ -551,24 +327,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abcdefghi".into();
     /// StringModification::KeepRange{start: Some( 1), end: Some( 8)}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -612,24 +372,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c.d.e.f".to_string();
     /// StringModification::SetNthSegment{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -676,24 +420,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c".to_string();
     /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -725,24 +453,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c".to_string();
     /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -778,26 +490,10 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use url_cleaner::glue::*;
     /// # use std::str::FromStr;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "...a2..a3....a4".to_string();
     /// StringModification::JoinAllRegexCaptures {
@@ -863,24 +559,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a/b/c".to_string();
     /// StringModification::UrlEncode.apply(&mut x, &job_state.to_view()).unwrap();
@@ -893,24 +573,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a%2fb%2Fc".to_string();
     /// StringModification::UrlDecode.apply(&mut x, &job_state.to_view()).unwrap();
@@ -937,24 +601,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc xyz".to_string();
     /// StringModification::ModifyNthSegment {
@@ -979,24 +627,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc def xyz".to_string();
     /// StringModification::ModifySegments {
@@ -1043,24 +675,8 @@ pub enum StringModification {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "abc".to_string();
     /// StringModification::MapChars {map: [('a', Some('A')), ('b', None)].into_iter().collect(), not_found_behavior: CharNotFoundBehavior::Nothing}.apply(&mut x, &job_state.to_view()).unwrap();
@@ -1094,24 +710,8 @@ pub enum StringModification {
     /// # Tests
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "\\/a\\n\\\\n".to_string();
     /// StringModification::RunEscapeCodes([
@@ -1497,7 +1097,7 @@ impl StringModification {
                         params: job_state.params,
                         scratchpad: job_state.scratchpad,
                         #[cfg(feature = "cache")]
-                        cache_handler: job_state.cache_handler,
+                        cache: job_state.cache,
                         commons: job_state.commons,
                         common_args: Some(&common_call.args.make(job_state)?)
                     }
@@ -1525,10 +1125,9 @@ impl StringModification {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
-            Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config) && (else_modification.is_none() || else_modification.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config) && else_modification.as_ref().is_none_or(|else_modification| else_modification.is_suitable_for_release(config)),
             Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release(config) && link.modification.is_suitable_for_release(config)),
             Self::IgnoreError(modification) => modification.is_suitable_for_release(config),
             Self::All(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
@@ -1549,10 +1148,10 @@ impl StringModification {
             Self::Insert {value, ..} => value.is_suitable_for_release(config),
             Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(config),
             Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(config),
-            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
-            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
-            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
-            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             #[cfg(feature = "regex")] Self::RegexCaptures {replace, ..} => replace.is_suitable_for_release(config),
             #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {replace, join, ..} => replace.is_suitable_for_release(config) && join.is_suitable_for_release(config),
             #[cfg(feature = "regex")] Self::RegexReplace {replace, ..} => replace.is_suitable_for_release(config),

@@ -3,16 +3,19 @@
 //! Enabled by the `glob` feature flag.
 
 use std::str::FromStr;
+use std::path::Path;
 
-use glob::{Pattern, MatchOptions, PatternError};
+use glob::{Pattern, MatchOptions};
 use serde::{
     Serialize, Deserialize,
     ser::Serializer,
     de::{Error as _, Deserializer}
 };
 
+use crate::util::*;
+
 /// A wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(remote= "Self")]
 pub struct GlobWrapper {
     /// The pattern used to match stuff.
@@ -23,22 +26,29 @@ pub struct GlobWrapper {
     pub options: MatchOptions
 }
 
+impl From<Pattern> for GlobWrapper {
+    /// Creates a [`Self`] using the provided [`Pattern`] and a default [`MatchOptions`].
+    fn from(value: Pattern) -> Self {
+        Self {
+            pattern: value,
+            options: Default::default()
+        }
+    }
+}
+
 impl FromStr for GlobWrapper {
-    type Err=PatternError;
+    type Err = <Pattern as FromStr>::Err;
 
     /// Simply treats the string as a glob and defaults the config.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            pattern: Pattern::from_str(s)?,
-            options: MatchOptions::default()
-        })
+        Pattern::from_str(s).map(Into::into)
     }
 }
 
 impl TryFrom<&str> for GlobWrapper {
     type Error = <Self as FromStr>::Err;
 
-    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         Self::from_str(s)
     }
 }
@@ -57,15 +67,6 @@ struct SerdeMatchOptions {
     #[serde(default = "get_true" , skip_serializing_if = "is_true" )] require_literal_leading_dot: bool,
 }
 
-/// Serde helper function used by [`SerdeMatchOptions`].
-const fn get_true() -> bool {true}
-/// Serde helper function used by [`SerdeMatchOptions`].
-const fn get_false() -> bool {false}
-/// Serde helper function used by [`SerdeMatchOptions`].
-const fn is_true(x: &bool) -> bool {*x}
-/// Serde helper function used by [`SerdeMatchOptions`].
-const fn is_false(x: &bool) -> bool {!*x}
-
 /// Deserializer to turn a string into a [`Pattern`].
 fn deserialize_pattern<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Pattern, D::Error> {
     let pattern: String=Deserialize::deserialize(deserializer)?;
@@ -78,9 +79,15 @@ fn serialize_pattern<S: Serializer>(pattern: &Pattern, serializer: S) -> Result<
 }
 
 impl GlobWrapper {
-    /// Wrapper for `glob::Pattern::matches_with`.
+    /// Wrapper for [`Pattern::matches_with`].
     #[must_use]
     pub fn matches(&self, str: &str) -> bool {
         self.pattern.matches_with(str, self.options)
+    }
+
+    /// Wrapper for [`Pattern::matches_path_with`].
+    #[must_use]
+    pub fn matches_path(&self, path: &Path) -> bool {
+        self.pattern.matches_path_with(path, self.options)
     }
 }

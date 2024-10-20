@@ -1,27 +1,11 @@
 //! Bulk jobs using common configs and cache handlers.
 
-use std::error::Error;
 use std::borrow::Cow;
 
 use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
-
-/// The enum of errors that can happen when [`Jobs::next_job`] tries to get a URL.
-#[derive(Debug, Error)]
-pub enum JobConfigSourceError {
-    /// Returned when a [`url::ParseError`] is encountered.
-    #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
-    /// Returned when a [`std::io::Error`] is encountered.
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-    /// Catch-all for user-defined URL sources with errors not listed here.
-    #[allow(dead_code, reason = "Public API for use in other people's code.")]
-    #[error(transparent)]
-    Other(Box<dyn Error>)
-}
 
 /// A [`Job`] creator.
 /// 
@@ -35,9 +19,9 @@ pub struct Jobs<'a> {
     /// 
     /// This is intentional so you can override it using, for example, command line arguments.
     #[cfg(feature = "cache")]
-    pub cache_handler: CacheHandler,
+    pub cache: Cache,
     /// The iterator [`JobConfig`]s are acquired from.
-    pub configs_source: Box<dyn Iterator<Item = Result<JobConfig, JobConfigSourceError>>>
+    pub job_config_source: Box<dyn Iterator<Item = Result<JobConfig, JobConfigSourceError>>>
 }
 
 impl ::core::fmt::Debug for Jobs<'_> {
@@ -46,30 +30,44 @@ impl ::core::fmt::Debug for Jobs<'_> {
         let mut x = f.debug_struct("Jobs");
         x.field("config", &self.config);
         #[cfg(feature = "cache")]
-        x.field("cache_handler", &self.cache_handler);
-        x.field("configs_source", &"...");
+        x.field("cache", &self.cache);
+        x.field("job_config_source", &"...");
         x.finish()
     }
 }
 
-impl<'a> Jobs<'_> {
-    /// Iterates over [`Job`]s created from [`JobConfig`]s returned from [`Self::configs_source`].
-    pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, GetJobError>> {
-        (&mut self.configs_source)
-            .map(|job_config|
-                job_config.map(|job_config| Job {
-                    url: job_config.url,
+impl Jobs<'_> {
+    /// Iterates over [`Job`]s created from [`JobConfig`]s returned from [`Self::job_config_source`].
+    pub fn iter(&mut self) -> impl Iterator<Item = Result<Job<'_>, GetJobError>> {
+        (&mut self.job_config_source)
+            .map(|job_config_result| match job_config_result {
+                Ok(JobConfig {url, context}) => Ok(Job {
+                    url,
                     config: &self.config,
-                    context: job_config.context,
+                    context,
                     #[cfg(feature = "cache")]
-                    cache_handler: &self.cache_handler
-                })
-                .map_err(Into::into)
-            )
+                    cache: &self.cache
+                }),
+                Err(e) => Err(e.into())
+            })
+    }
+
+    /// Creates a new [`Job`] with the provided [`JobConfig`].
+    /// 
+    /// Can be more convenient than [`Self::iter`].
+    #[allow(dead_code, reason = "Public API.")]
+    pub fn with_job_config(&self, job_config: JobConfig) -> Job<'_> {
+        Job {
+            url: job_config.url,
+            config: &self.config,
+            context: job_config.context,
+            #[cfg(feature = "cache")]
+            cache: &self.cache
+        }
     }
 }
 
-/// The enum of errors [`Jobs::next_job`] can return.
+/// The enum of errors [`Jobs::iter`] can return.
 #[derive(Debug, Error)]
 pub enum GetJobError {
     /// Returned when a [`JobConfigSourceError`] is encountered.

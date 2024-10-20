@@ -1,6 +1,6 @@
 //! Provides [`RequestConfig`], [`RequestBody`], and [`ResponseHandler`] which allows for sending HTTP requests and getting strings from their responses.
 //! 
-//! Enabled by the `advanced-requests` feature flag.
+//! Enabled by the `advanced-http` feature flag.
 
 use std::collections::HashMap;
 
@@ -142,12 +142,11 @@ impl RequestConfig {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(
-            (self.url.is_none() || self.url.as_ref().unwrap().is_suitable_for_release(config)) &&
-            self.headers.iter().all(|(_, v)| (v.is_none() || v.as_ref().unwrap().is_suitable_for_release(config))) &&
-            (self.body.is_none() || self.body.as_ref().unwrap().is_suitable_for_release(config)) &&
+            (self.url.as_ref().is_none_or(|url| url.is_suitable_for_release(config))) &&
+            self.headers.iter().all(|(_, v)| v.as_ref().is_none_or(|v| v.is_suitable_for_release(config))) &&
+            (self.body.as_ref().is_none_or(|body| body.is_suitable_for_release(config))) &&
             self.response_handler.is_suitable_for_release(config),
             "Unsuitable RequestConfig: {self:?}"
         );
@@ -213,7 +212,6 @@ impl RequestBody {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::Text(text) => text.is_suitable_for_release(config),
@@ -296,7 +294,6 @@ impl ResponseHandler {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::Body | Self::Url => true,

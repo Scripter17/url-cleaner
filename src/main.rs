@@ -142,6 +142,18 @@ fn str_to_json_str(s: &str) -> String {
     serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
 
+/// Allows turing `https://..`, `"https://.."`, and `{"url": "http://..", ..}` into a [`JobConfig`].
+fn url_or_job_config_str_to_job_config(line: &str) -> Result<JobConfig, JobConfigSourceError> {
+    Ok(if line.starts_with('"') || line.starts_with('{') {
+        match serde_json::from_str(line) {
+            Ok(x) => x,
+            Err(e) => Err(JobConfigSourceError::Other(Box::new(e)))?
+        }
+    } else {
+        Url::parse(line)?.into()
+    })
+}
+
 fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "debug-time")] let start_time = std::time::Instant::now();
 
@@ -258,11 +270,11 @@ fn main() -> Result<ExitCode, CliError> {
 
     let mut jobs = Jobs {
         #[cfg(feature = "cache")]
-        cache_handler: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
-        configs_source: {
-            let ret = args.urls.into_iter().map(|url| Ok(Url::parse(&url)?.into()));
+        cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
+        job_config_source: {
+            let ret = args.urls.into_iter().map(|url| url_or_job_config_str_to_job_config(&url));
             if !io::stdin().is_terminal() {
-                Box::new(ret.chain(io::stdin().lines().map(|line| Ok(Url::parse(&line?)?.into()))))
+                Box::new(ret.chain(io::stdin().lines().map(|line| url_or_job_config_str_to_job_config(&line?))))
             } else {
                 Box::new(ret)
             }

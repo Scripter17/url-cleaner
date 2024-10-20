@@ -10,7 +10,8 @@ use std::sync::OnceLock;
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
-use crate::util::is_default;
+use crate::glue::*;
+use crate::util::*;
 
 mod params;
 pub use params::*;
@@ -32,11 +33,11 @@ pub struct Config {
     /// The exact behavior from setting this to [`true`] is currently unspecified and subject to change.
     /// 
     /// Defaults to [`false`].
-    #[serde(default = "get_false")]
+    #[serde(default = "get_false", skip_serializing_if = "is_false")]
     pub strict_mode: bool,
-    /// The path of the sqlite cache to use.
+    /// The path to use for the [`Cache`].
     /// 
-    /// Defaults to `:memory:`.
+    /// Defaults to `:memory:` to store the cache in RAM and not read/write any files.
     #[cfg(feature = "cache")]
     #[serde(default = "default_cache_path", skip_serializing_if = "is_default_cache_path")]
     pub cache_path: String,
@@ -49,15 +50,15 @@ pub struct Config {
     /// Various things that are used in multiple spots.
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
-    /// The conditions and mappers that modify the URLS.
+    /// The [`Rule`]s that modify the URLS.
     pub rules: Rules
 }
 
 /// Serde helper function.
-const fn get_false() -> bool {false}
+#[cfg(feature = "cache")]
+fn default_cache_path() -> String {Cache::DEFAULT_PATH.to_string()}
 /// Serde helper function.
-fn default_cache_path() -> String {":memory:".to_string()}
-/// Serde helper function.
+#[cfg(feature = "cache")]
 fn is_default_cache_path(x: &str) -> bool {x == default_cache_path()}
 
 impl Config {
@@ -82,7 +83,7 @@ impl Config {
         if let Some(config) = DEFAULT_CONFIG.get() {
             Ok(config)
         } else {
-            let config=Self::get_default_no_cache()?;
+            let config = Self::get_default_no_cache()?;
             Ok(DEFAULT_CONFIG.get_or_init(|| config))
         }
         #[cfg(not(feature = "default-config"))]
@@ -172,13 +173,14 @@ pub enum ApplyConfigError {
 /// The minimized config loaded into URL Cleaner at compile time.
 /// 
 /// When the `minify-included-strings` is enabled, all whitespace is replaced with a single space.
-/// If there are any spaces in a string, this compression will alter how the config works.
+/// 
+/// If there are any consecutive spaces in a string, this compression will alter how the config works.
 /// 
 /// `{"x":     "y"}` is compressed but functionally unchanged, but `{"x   y": "z"}` will be converted to `{"x y": "z"}`, which could alter the functionality of the rule.
 /// 
 /// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", feature = "minify-included-strings"))]
-pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../../default-config.json"));
+pub const DEFAULT_CONFIG_STR: &str = const_str::squish!(include_str!("../../default-config.json"));
 /// The non-minified config loaded into URL Cleaner at compile time.
 /// 
 /// When the `minify-included-strings` is enabled, all whitespace is replaced with a single space.
@@ -188,7 +190,7 @@ pub static DEFAULT_CONFIG_STR: &str=const_str::squish!(include_str!("../../defau
 /// 
 /// If you cannot avoid multiple spaces in a string, turn off the `minify-default-strings` feature to disable this compression.
 #[cfg(all(feature = "default-config", not(feature = "minify-included-strings")))]
-pub static DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
+pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 #[allow(dead_code, reason = "Public API.")]

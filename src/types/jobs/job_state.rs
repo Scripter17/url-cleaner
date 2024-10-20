@@ -5,7 +5,7 @@ use url::Url;
 use crate::types::*;
 use crate::glue::*;
 
-/// The current state of a job.
+/// The current state of a [`Job`].
 #[derive(Debug)]
 pub struct JobState<'a> {
     /// The URL being modified.
@@ -22,7 +22,7 @@ pub struct JobState<'a> {
     pub commons: &'a Commons,
     /// The cache handler.
     #[cfg(feature = "cache")]
-    pub cache_handler: &'a CacheHandler
+    pub cache: &'a Cache
 }
 
 impl<'a> JobState<'a> {
@@ -31,16 +31,45 @@ impl<'a> JobState<'a> {
     /// Functions that don't have anything to do with [`Commons`] still take [`Self`] for the consistency.
     pub fn to_view(&'a self) -> JobStateView<'a> {
         JobStateView {
-            url          : self.url,
-            scratchpad   : self.scratchpad,
-            common_args  : self.common_args,
-            context      : self.context,
-            params       : self.params,
-            commons      : self.commons,
+            url        : self.url,
+            scratchpad : self.scratchpad,
+            common_args: self.common_args,
+            context    : self.context,
+            params     : self.params,
+            commons    : self.commons,
             #[cfg(feature = "cache")]
-            cache_handler: self.cache_handler
+            cache      : self.cache
         }
     }
+}
+
+/// Helper macro to make doctests less noisy.
+#[macro_export]
+macro_rules! job_state {
+    ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)?) => {
+        let url = "https://example.com";
+        $(let url = $url;)?
+        let mut scratchpad = Default::default();
+        let context = Default::default();
+        $(let context = $context;)?
+        let params = Default::default();
+        $(let params = $params;)?
+        let commons = Default::default();
+        $(let commons = $commons;)?
+        #[cfg(feature = "cache")]
+        let cache = Default::default();
+        let mut url = ::url::Url::parse(url).unwrap();
+        let mut $job_state = url_cleaner::types::JobState {
+            url: &mut url,
+            scratchpad: &mut scratchpad,
+            common_args: None,
+            context: &context,
+            params: &params,
+            commons: &commons,
+            #[cfg(feature = "cache")]
+            cache: &cache
+        };
+    };
 }
 
 /// An immutable view of a [`JobState`].
@@ -62,7 +91,7 @@ pub struct JobStateView<'a> {
     pub commons: &'a Commons,
     /// The cache handler.
     #[cfg(feature = "cache")]
-    pub cache_handler: &'a CacheHandler
+    pub cache: &'a Cache
 }
 
 impl<'a> JobStateView<'a> {

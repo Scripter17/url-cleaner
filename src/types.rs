@@ -1,4 +1,4 @@
-//! Various types to make URL Cleaner far more powerful.
+//! The core tools of URL Cleaner.
 
 use std::collections::HashMap;
 

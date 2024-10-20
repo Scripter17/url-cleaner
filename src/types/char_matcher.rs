@@ -242,7 +242,6 @@ impl CharMatcher {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::only_used_in_recursion, reason = "Keeps the pattern.")]
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),

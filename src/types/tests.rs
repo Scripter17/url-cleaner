@@ -49,7 +49,7 @@ pub struct Expectation {
 impl Expectation {
     /// Runs the test.
     /// # Panics
-    /// Panics if a making the [`CacheHandler`], a call to [`Rules::apply`], or a test fails.
+    /// Panics if a making the [`Cache`], a call to [`Rules::apply`], or a test fails.
     pub fn run(&self, config: &Config) {
         println!("Testing the following expectation set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable")); // Only applies when testing a config.
         let mut url = self.job_config.url.clone();
@@ -60,7 +60,7 @@ impl Expectation {
             scratchpad: &mut Default::default(),
             context: &self.job_config.context,
             #[cfg(feature = "cache")]
-            cache_handler: &Default::default(),
+            cache: &Default::default(),
             commons: &config.commons,
             common_args: None
         }).expect("The URL to be modified without errors."); // Only applies when testing a config.

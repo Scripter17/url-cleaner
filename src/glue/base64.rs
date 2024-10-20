@@ -109,9 +109,13 @@ impl Default for DecodePaddingMode {
 }
 
 /// The alphabet.
+/// 
+/// Defaults to [`Self::UrlSafe`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum Base64Alphabet {
     /// [`base64::alphabet::URL_SAFE`].
+    /// 
+    /// The default alphabet.
     #[default]
     UrlSafe,
     /// [`base64::alphabet::STANDARD`].

@@ -24,24 +24,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// Condition::Error.satisfied_by(&job_state.to_view()).unwrap_err();
     /// ```
     Error,
@@ -77,24 +62,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::Not(Box::new(Condition::Always)).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// assert_eq!(Condition::Not(Box::new(Condition::Never )).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
@@ -108,24 +78,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::All(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// assert_eq!(Condition::All(vec![Condition::Never , Condition::Always]).satisfied_by(&job_state.to_view()).unwrap(), false);
@@ -145,24 +100,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Always]).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Never ]).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::Any(vec![Condition::Always, Condition::Error ]).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -202,24 +142,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Always)).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Never )).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -229,24 +154,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Always)).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Never )).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// assert_eq!(Condition::TreatErrorAsFail(Box::new(Condition::Error )).satisfied_by(&job_state.to_view()).unwrap(), false);
@@ -260,23 +170,9 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Always)}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Never )}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::TryElse{r#try: Box::new(Condition::Always), r#else: Box::new(Condition::Error )}.satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -305,25 +201,11 @@ pub enum Condition {
     /// Similar to [`UrlPart::NotSubdomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -344,25 +226,11 @@ pub enum Condition {
     /// Similar to [`UrlPart::MaybeWWWNotSubdomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -379,25 +247,11 @@ pub enum Condition {
     /// Similar to [`UrlPart::Domain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -417,26 +271,14 @@ pub enum Condition {
     /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`Self::UnqualifiedDomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::collections::HashSet;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url::Url;
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
@@ -453,25 +295,11 @@ pub enum Condition {
     /// Please see [`UrlPart::DomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -516,25 +344,12 @@ pub enum Condition {
     /// Please see [`UrlPart::MaybeWWWDomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
@@ -557,25 +372,11 @@ pub enum Condition {
     /// Please see [`UrlPart::NotDomainSuffix`] for details on how "suffix" semantics can be counterintuitive.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -608,25 +409,11 @@ pub enum Condition {
     /// Passes if the URL has a query of the specified name.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
     /// assert_eq!(Condition::QueryHasParam("a".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -641,25 +428,12 @@ pub enum Condition {
     /// Passes if the URL's path is the specified string.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// 
     /// *job_state.url = Url::parse("https://example.com").unwrap();
     /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
@@ -682,24 +456,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&job_state.to_view()).unwrap(), false);
     /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&job_state.to_view()).unwrap(), false);
@@ -721,24 +480,9 @@ pub enum Condition {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
@@ -767,27 +511,16 @@ pub enum Condition {
     /// Passes if the specified variable is set to the specified value.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::collections::HashMap;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = url_cleaner::types::Params { vars: vec![("a".to_string(), "2".to_string())].into_iter().collect(), ..Default::default() };
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
-    /// print!("{job_state:?}");
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// // Putting this in the `job_state!` call doesn't work???`
+    /// let params = Params { vars: vec![("a".to_string(), "2".to_string())].into_iter().collect(), ..Default::default() };
+    /// job_state.params = &params;
+    /// 
     /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state.to_view()).unwrap(), false);
     /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state.to_view()).unwrap(), false);
@@ -804,26 +537,16 @@ pub enum Condition {
     /// Passes if the specified rule flag is set.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
     /// # use std::collections::HashSet;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = url_cleaner::types::Params { flags: HashSet::from_iter(vec!["abc".to_string()]), ..Default::default() };
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// // Putting this in the `job_state!` call doesn't work???`
+    /// let params = Params { flags: HashSet::from_iter(vec!["abc".to_string()]), ..Default::default() };
+    /// job_state.params = &params;
+    /// 
     /// assert_eq!(Condition::FlagIsSet("abc".into()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::FlagIsSet("xyz".into()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
@@ -873,28 +596,12 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::CommandConfig;
-    /// # use url::Url;
-    /// # use std::str::FromStr;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
-    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/true" ).unwrap()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/false").unwrap()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::CommandExists (CommandConfig::from_str("/usr/bin/fake" ).unwrap()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from("/usr/bin/true" )).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from("/usr/bin/false")).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::CommandExists (CommandConfig::from("/usr/bin/fake" )).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
     #[cfg(feature = "commands")]
     CommandExists(CommandConfig),
@@ -905,28 +612,12 @@ pub enum Condition {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::CommandConfig;
-    /// # use url::Url;
-    /// # use std::str::FromStr;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
-    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/true" ).unwrap(), expected: 0}.satisfied_by(&job_state.to_view()).is_ok_and(|x| x==true ));
-    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/false").unwrap(), expected: 0}.satisfied_by(&job_state.to_view()).is_ok_and(|x| x==false));
-    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from_str("/usr/bin/fake" ).unwrap(), expected: 0}.satisfied_by(&job_state.to_view()).is_err());
+    /// 
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from("/usr/bin/true" ), expected: 0}.satisfied_by(&job_state.to_view()).is_ok_and(|x| x==true ));
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from("/usr/bin/false"), expected: 0}.satisfied_by(&job_state.to_view()).is_ok_and(|x| x==false));
+    /// assert!(Condition::CommandExitStatus {command: CommandConfig::from("/usr/bin/fake" ), expected: 0}.satisfied_by(&job_state.to_view()).is_err());
     /// ```
     #[cfg(feature = "commands")]
     CommandExitStatus {
@@ -1115,7 +806,7 @@ impl Condition {
                     params: job_state.params,
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
-                    cache_handler: job_state.cache_handler,
+                    cache: job_state.cache,
                     commons: job_state.commons,
                     common_args: Some(&common_call.args.make(job_state)?)
                 })?
@@ -1124,7 +815,6 @@ impl Condition {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::Debug(_) => false,
@@ -1133,17 +823,17 @@ impl Condition {
             Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
             Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
             Self::PartMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
-            Self::StringMap {source, map} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
+            Self::StringMap {source, map} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
             Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(config),
             Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::PartIs {part, value} => part.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::PartIs {part, value} => part.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::PartContains {part, value, r#where} => part.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
             Self::PartMatches {part, matcher} => part.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
-            Self::VarIs {name, value} => name.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::VarIs {name, value} => name.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),
-            Self::StringIs {source, value} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::StringIs {source, value} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::StringContains {source, value, r#where} => source.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
             Self::StringMatches {source, matcher} => source.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             #[cfg(feature = "commands")] Self::CommandExists (_) => false,

@@ -1,4 +1,4 @@
-//! "Glue" to make working with types from other crates easier.
+//! "Glue" APIs that allow working with select other crates.
 
 #[cfg(feature = "regex"        )] pub mod regex;
 #[cfg(feature = "regex"        )] pub use regex::*;

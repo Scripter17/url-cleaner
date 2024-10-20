@@ -90,24 +90,8 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringMatcher::Contains {r#where: StringLocation::Start, value: "utm_".into()}.satisfied_by("utm_abc", &job_state.to_view()).unwrap(), true);
     /// ```
@@ -130,24 +114,8 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::RegexParts;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state.to_view()).unwrap(), true);
     /// ```
@@ -157,25 +125,9 @@ pub enum StringMatcher {
     /// ```
     /// # use url_cleaner::types::*;
     /// # use url_cleaner::glue::GlobWrapper;
-    /// # use url::Url;
     /// # use std::str::FromStr;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// assert_eq!(StringMatcher::Glob(GlobWrapper::from_str("a*c").unwrap()).satisfied_by("aabcc", &job_state.to_view()).unwrap(), true);
     /// ```
@@ -251,24 +203,8 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let matcher = StringMatcher::SegmentsStartWith {
     ///     split: Box::new("--".into()),
@@ -292,24 +228,8 @@ pub enum StringMatcher {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let context = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state;);
     /// 
     /// let matcher = StringMatcher::SegmentsEndWith {
     ///     split: Box::new("--".into()),
@@ -507,7 +427,7 @@ impl StringMatcher {
                         params: job_state.params,
                         scratchpad: job_state.scratchpad,
                         #[cfg(feature = "cache")]
-                        cache_handler: job_state.cache_handler,
+                        cache: job_state.cache,
                         commons: job_state.commons,
                         common_args: Some(&common_call.args.make(job_state)?)
                     }
@@ -517,7 +437,6 @@ impl StringMatcher {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),

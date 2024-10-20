@@ -63,24 +63,8 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
     /// 
     /// Mapper::All(vec![Mapper::SetHost("2.com".to_string()), Mapper::Error]).apply(&mut job_state).unwrap_err();
     /// assert_eq!(job_state.url.domain(), Some("example.com"));
@@ -93,24 +77,8 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
     /// 
     /// Mapper::AllNoRevert(vec![Mapper::SetHost("3.com".to_string()), Mapper::Error, Mapper::SetHost("4.com".to_string())]).apply(&mut job_state).unwrap_err();
     /// assert_eq!(job_state.url.domain(), Some("3.com"));
@@ -121,24 +89,8 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
     /// 
     /// Mapper::AllIgnoreError(vec![Mapper::SetHost("5.com".to_string()), Mapper::Error, Mapper::SetHost("6.com".to_string())]).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.domain(), Some("6.com"));
@@ -205,24 +157,8 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
     /// 
     /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::None )}.apply(&mut job_state).unwrap ();
     /// Mapper::TryElse {r#try: Box::new(Mapper::None ), r#else: Box::new(Mapper::Error)}.apply(&mut job_state).unwrap ();
@@ -241,24 +177,8 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com";);
     /// 
     /// Mapper::FirstNotError(vec![Mapper::SetHost("1.com".to_string()), Mapper::SetHost("2.com".to_string())]).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.domain(), Some("1.com"));
@@ -280,26 +200,11 @@ pub enum Mapper {
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
-    /// let mut url = Url::parse("https://example.com?a=2&b=3&c=4&d=5").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com?a=2&b=3&c=4&d=5";);
     /// 
     /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.query(), Some("b=3&c=4&d=5"));
@@ -313,28 +218,14 @@ pub enum Mapper {
     /// Useful for websites that keep changing their tracking parameters and you're sick of updating your rule set.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use std::collections::hash_set::HashSet;
-    /// let mut url = Url::parse("https://example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
     /// 
-    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://example.com?a=2&b=3";);
+    /// 
+    /// Mapper::AllowQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
+    /// assert_eq!(job_state.url.as_str(), "https://example.com/?a=2");
     /// ```
     AllowQueryParams(HashSet<String>),
     /// Removes all query parameters whose name matches the specified [`StringMatcher`].
@@ -408,24 +299,8 @@ pub enum Mapper {
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// # use url::Url;
-    /// let mut url = Url::parse("https://abc.example.com").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://abc.example.com";);
     /// 
     /// Mapper::MovePart{from: UrlPart::Subdomain, to: UrlPart::BeforePathSegment(0)}.apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.as_str(), "https://example.com/abc/");
@@ -461,7 +336,7 @@ pub enum Mapper {
     /// The default config handles this by configuring [`Self::ExpandRedirect::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
     /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
-    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`Cache::read`] returns an error, that error is returned.")]
     /// 
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
@@ -473,29 +348,13 @@ pub enum Mapper {
     /// 
     /// (3xx status code) If the call to [`Url::parse`] to parse the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
     /// 
-    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`Cache::write`] returns an error, that error is returned.")]
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
-    /// # use url::Url;
     /// # use reqwest::header::HeaderMap;
-    /// let mut url = Url::parse("https://t.co/H8IF8DHSFL").unwrap();
-    /// let mut scratchpad = Default::default();
-    /// let commons = Default::default();
-    /// let params = Default::default();
-    /// let context = Default::default();
-    /// #[cfg(feature = "cache")]
-    /// let cache_handler = "test-cache.sqlite".into();
-    /// let mut job_state = url_cleaner::types::JobState {
-    ///     url: &mut url,
-    ///     params: &params,
-    ///     scratchpad: &mut scratchpad,
-    ///     context: &context,
-    ///     #[cfg(feature = "cache")]
-    ///     cache_handler: &cache_handler,
-    ///     commons: &commons,
-    ///     common_args: None
-    /// };
+    /// # use url_cleaner::types::*;
+    /// 
+    /// url_cleaner::job_state!(job_state; url = "https://t.co/H8IF8DHSFL";);
     /// 
     /// Mapper::ExpandRedirect{headers: HeaderMap::default(), http_client_config_diff: None}.apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.as_str(), "https://www.eff.org/deeplinks/2024/01/eff-and-access-now-submission-un-expert-anti-lgbtq-repression");
@@ -507,7 +366,7 @@ pub enum Mapper {
         headers: HeaderMap,
         /// Rules for how to make the HTTP client.
         #[serde(default)]
-        http_client_config_diff: Option<HttpClientConfigDiff>
+        http_client_config_diff: Option<Box<HttpClientConfigDiff>>
     },
     /// Sets the current job's `name` string var to `value`.
     /// # Errors
@@ -551,15 +410,15 @@ pub enum Mapper {
     /// 
     /// That will hopefully change at some point.
     /// # Errors
-    /// If the call to [`CacheHandler::read_from_cache`] returns an error, that error is returned.
+    /// If the call to [`Cache::read`] returns an error, that error is returned.
     /// 
-    /// If the call to [`CacheHandler::read_from_cache`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].
+    /// If the call to [`Cache::read`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].
     /// 
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     /// 
-    /// If the call to [`CacheHandler::write_to_cache`] returns an error, that error is returned.
+    /// If the call to [`Cache::write`] returns an error, that error is returned.
     #[cfg(feature = "cache")]
     CacheUrl {
         /// The category to cache in.
@@ -747,7 +606,7 @@ impl Mapper {
                     scratchpad: &mut temp_scratchpad,
                     context: job_state.context,
                     #[cfg(feature = "cache")]
-                    cache_handler: job_state.cache_handler,
+                    cache: job_state.cache,
                     commons: job_state.commons,
                     common_args: job_state.common_args,
                 };
@@ -867,12 +726,12 @@ impl Mapper {
             Self::ExpandRedirect {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache-redirects")]
                 if job_state.params.read_cache {
-                    if let Some(new_url) = job_state.cache_handler.read_from_cache("redirect", job_state.url.as_str())? {
+                    if let Some(new_url) = job_state.cache.read("redirect", job_state.url.as_str())? {
                         *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
                 }
-                let response = job_state.params.http_client(http_client_config_diff.as_ref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
+                let response = job_state.params.http_client(http_client_config_diff.as_deref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
                     Url::parse(std::str::from_utf8(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.as_bytes())?)?
                 } else {
@@ -880,7 +739,7 @@ impl Mapper {
                 };
                 #[cfg(feature = "cache-redirects")]
                 if job_state.params.write_cache {
-                    job_state.cache_handler.write_to_cache("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
+                    job_state.cache.write("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
                 }
                 *job_state.url=new_url;
             },
@@ -906,7 +765,7 @@ impl Mapper {
             Self::CacheUrl {category, mapper} => {
                 let category = get_string!(category, job_state, MapperError);
                 if job_state.params.read_cache {
-                    if let Some(new_url) = job_state.cache_handler.read_from_cache(&category, job_state.url.as_str())? {
+                    if let Some(new_url) = job_state.cache.read(&category, job_state.url.as_str())? {
                         *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
@@ -915,7 +774,7 @@ impl Mapper {
                 let old_vars = job_state.scratchpad.vars.clone();
                 mapper.apply(job_state)?;
                 if job_state.params.write_cache {
-                    if let e @ Err(_) = job_state.cache_handler.write_to_cache(&category, old_url.as_str(), Some(job_state.url.as_str())) {
+                    if let e @ Err(_) = job_state.cache.write(&category, old_url.as_str(), Some(job_state.url.as_str())) {
                         *job_state.url = old_url;
                         job_state.scratchpad.vars = old_vars;
                         e?;
@@ -940,7 +799,7 @@ impl Mapper {
                     params: job_state.params,
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
-                    cache_handler: job_state.cache_handler,
+                    cache: job_state.cache,
                     commons: job_state.commons
                 })?
             }
@@ -949,21 +808,20 @@ impl Mapper {
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::unwrap_used, reason = "Private API, but they should be replaced by [`Option::is_none_or`] in 1.82.")]
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
-            Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && (else_mapper.is_none() || else_mapper.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.as_ref().is_none_or(|else_mapper| else_mapper.is_suitable_for_release(config)),
             Self::ConditionChain(chain) => chain.iter().all(|link| link.condition.is_suitable_for_release(config) && link.mapper.is_suitable_for_release(config)),
             Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
-            Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release(config)) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release(config)),
-            Self::StringMap {source, map, if_null, r#else} => (source.is_none() || source.as_ref().unwrap().is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && (if_null.is_none() || if_null.as_ref().unwrap().is_suitable_for_release(config)) && (r#else.is_none() || r#else.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::StringMap {source, map, if_null, r#else} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
             Self::IgnoreError(mapper) => mapper.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::Join(value) => value.is_suitable_for_release(config),
-            Self::SetPart {part, value} => part.is_suitable_for_release(config) && (value.is_none() || value.as_ref().unwrap().is_suitable_for_release(config)),
+            Self::SetPart {part, value} => part.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::ModifyPart {part, modification} => part.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::CopyPart {from, to} => from.is_suitable_for_release(config) && to.is_suitable_for_release(config),
             Self::SetScratchpadVar {name, value} => name.is_suitable_for_release(config) && value.is_suitable_for_release(config),

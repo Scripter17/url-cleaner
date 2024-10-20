@@ -71,7 +71,7 @@ impl HttpClientConfig {
             .referer(self.referer)
             .danger_accept_invalid_certs(self.danger_accept_invalid_certs);
         for proxy in &self.proxies {
-            temp = temp.proxy(proxy.make()?);
+            temp = temp.proxy(proxy.clone().make()?);
         }
         if self.no_proxy {temp = temp.no_proxy();}
         Ok(temp)

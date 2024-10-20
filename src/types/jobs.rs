@@ -1,4 +1,4 @@
-//! Jobs.
+//! Jobs, the main entrypoint for using URL Cleaner.
 
 mod jobs;
 pub use jobs::*;

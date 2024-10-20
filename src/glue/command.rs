@@ -163,6 +163,6 @@ impl CommandConfig {
     /// 
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     pub fn get_url(&self, job_state: &JobStateView) -> Result<Url, CommandError> {
-        Ok(Url::parse(self.output(job_state)?.trim_end_matches(&['\r', '\n']))?)
+        Ok(Url::parse(self.output(job_state)?.trim_end_matches(['\r', '\n']))?)
     }
 }

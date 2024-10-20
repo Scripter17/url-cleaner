@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::types::*;
 use crate::glue::*;
 
-/// A job.
+/// An individual job.
 #[derive(Debug)]
 pub struct Job<'a> {
     /// The URL to modify.
@@ -17,7 +17,7 @@ pub struct Job<'a> {
     pub context: JobContext,
     /// The cache to use.
     #[cfg(feature = "cache")]
-    pub cache_handler: &'a CacheHandler
+    pub cache: &'a Cache
 }
 
 impl Job<'_> {
@@ -31,7 +31,7 @@ impl Job<'_> {
             scratchpad: &mut Default::default(),
             context: &self.context,
             #[cfg(feature = "cache")]
-            cache_handler: self.cache_handler,
+            cache: self.cache,
             commons: &self.config.commons,
             common_args: None
         })?;
