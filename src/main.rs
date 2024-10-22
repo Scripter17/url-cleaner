@@ -5,9 +5,9 @@ use std::io::{self, IsTerminal};
 use std::borrow::Cow;
 use std::process::ExitCode;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use clap::{Parser, CommandFactory};
-use url::Url;
 use thiserror::Error;
 
 mod glue;
@@ -48,8 +48,13 @@ pub struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     pub urls: Vec<String>,
     /// The JSON config to use. If unspecified and URL Cleaner was compiled with the default-config feature, use the default config compiled into URL Cleaner.
+    #[cfg(feature = "default-config")]
     #[arg(short      , long)]
     pub config: Option<PathBuf>,
+    /// The JSON config to use. Has to be set because this instance of URL Cleaner was compiled without a default config.
+    #[cfg(not(feature = "default-config"))]
+    #[arg(short      , long)]
+    pub config: PathBuf,
     /// Output JSON. It is intended to be identical to URL Cleaner Site's output, so while some of the output is "redundant", it's important.
     #[arg(short      , long)]
     pub json: bool,
@@ -142,18 +147,6 @@ fn str_to_json_str(s: &str) -> String {
     serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
 
-/// Allows turing `https://..`, `"https://.."`, and `{"url": "http://..", ..}` into a [`JobConfig`].
-fn url_or_job_config_str_to_job_config(line: &str) -> Result<JobConfig, JobConfigSourceError> {
-    Ok(if line.starts_with('"') || line.starts_with('{') {
-        match serde_json::from_str(line) {
-            Ok(x) => x,
-            Err(e) => Err(JobConfigSourceError::Other(Box::new(e)))?
-        }
-    } else {
-        Url::parse(line)?.into()
-    })
-}
-
 fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "debug-time")] let start_time = std::time::Instant::now();
 
@@ -192,7 +185,10 @@ fn main() -> Result<ExitCode, CliError> {
 
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
+    #[cfg(feature = "default-config")]
     let mut config = Config::get_default_no_cache_or_load(args.config.as_deref())?;
+    #[cfg(not(feature = "default-config"))]
+    let mut config = Config::load_from_file(&args.config)?;
 
     #[cfg(feature = "debug-time")] eprintln!("Load Config: {:?}", x.elapsed());
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
@@ -272,9 +268,9 @@ fn main() -> Result<ExitCode, CliError> {
         #[cfg(feature = "cache")]
         cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
         job_config_source: {
-            let ret = args.urls.into_iter().map(|url| url_or_job_config_str_to_job_config(&url));
+            let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url).map_err(Into::into));
             if !io::stdin().is_terminal() {
-                Box::new(ret.chain(io::stdin().lines().map(|line| url_or_job_config_str_to_job_config(&line?))))
+                Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?).map_err(Into::into))))
             } else {
                 Box::new(ret)
             }

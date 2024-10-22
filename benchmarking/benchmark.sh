@@ -75,34 +75,32 @@ if [ $hyperfine -eq 1 ]; then
     bat -pl json
 fi
 
-for url in "${URLS[@]}"; do
-  echo "IN : $url"
-  echo "OUT: $(../target/release/url-cleaner --config ../default-config.json $url)"
-  file_safe_in_url=$(echo $url | head -c 50 | sed "s/\//-/g")
-  if [ $valgrind -eq 1 ]; then
-    for num in "${NUMS[@]}"; do
-      if [ $callgrind -eq 1 ]; then
-        echo "Callgrind  - $num"
-        yes "$url" | head -n $num | valgrind --quiet --tool=callgrind  --callgrind-out-file="callgrind.out-$file_safe_in_url-$num-%p"   $COMMAND > /dev/null
-      fi
-      if [ $cachegrind -eq 1 ]; then
-        echo "Cachegrind - $num"
-        yes "$url" | head -n $num | valgrind --quiet --tool=cachegrind --cachegrind-out-file="cachegrind.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
-      fi
-      if [ $massif -eq 1 ]; then
-        echo "Massif     - $num"
-        yes "$url" | head -n $num | valgrind --quiet --tool=massif     --massif-out-file="massif.out-$file_safe_in_url-$num-%p"         $COMMAND > /dev/null
-      fi
-      if [ $dhat -eq 1 ]; then
-        echo "Dhat       - $num"
-        yes "$url" | head -n $num | valgrind --quiet --tool=dhat       --dhat-out-file="dhat.out-$file_safe_in_url-$num-%p"             $COMMAND > /dev/null
-      fi
-      if [ $memcheck -eq 1 ]; then
-        echo "Memcheck   - $num"
-        yes "$url" | head -n $num | valgrind --quiet --tool=memcheck                                                                    $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
-      fi
-    done
-  fi
-done
+if [ $valgrind -eq 1 ]; then
+  for url in "${URLS[@]}"; do
+    file_safe_in_url=$(echo $url | head -c 50 | sed "s/\//-/g")
+      for num in "${NUMS[@]}"; do
+        if [ $callgrind -eq 1 ]; then
+          echo "Callgrind  - $num - $url"
+          yes "$url" | head -n $num | valgrind --quiet --tool=callgrind  --callgrind-out-file="callgrind.out-$file_safe_in_url-$num-%p"   $COMMAND > /dev/null
+        fi
+        if [ $cachegrind -eq 1 ]; then
+          echo "Cachegrind - $num - $url"
+          yes "$url" | head -n $num | valgrind --quiet --tool=cachegrind --cachegrind-out-file="cachegrind.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
+        fi
+        if [ $massif -eq 1 ]; then
+          echo "Massif     - $num - $url"
+          yes "$url" | head -n $num | valgrind --quiet --tool=massif     --massif-out-file="massif.out-$file_safe_in_url-$num-%p"         $COMMAND > /dev/null
+        fi
+        if [ $dhat -eq 1 ]; then
+          echo "Dhat       - $num - $url"
+          yes "$url" | head -n $num | valgrind --quiet --tool=dhat       --dhat-out-file="dhat.out-$file_safe_in_url-$num-%p"             $COMMAND > /dev/null
+        fi
+        if [ $memcheck -eq 1 ]; then
+          echo "Memcheck   - $num - $url"
+          yes "$url" | head -n $num | valgrind --quiet --tool=memcheck                                                                    $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
+        fi
+      done
+  done
+fi
 
 tar -czf "benchmarks-$(date +%s).tar.gz" *.out*

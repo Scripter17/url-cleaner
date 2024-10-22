@@ -72,22 +72,19 @@ impl Config {
     }
 
     /// Gets the config compiled into the URL Cleaner binary.
+    /// 
     /// On the first call, it parses [`DEFAULT_CONFIG_STR`] and caches it in [`DEFAULT_CONFIG`]. On all future calls it simply returns the cached value.
     /// # Errors
     /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
-    /// 
-    /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
     #[allow(dead_code, reason = "Public API.")]
+    #[cfg(feature = "default-config")]
     pub fn get_default() -> Result<&'static Self, GetConfigError> {
-        #[cfg(feature = "default-config")]
         if let Some(config) = DEFAULT_CONFIG.get() {
             Ok(config)
         } else {
             let config = Self::get_default_no_cache()?;
             Ok(DEFAULT_CONFIG.get_or_init(|| config))
         }
-        #[cfg(not(feature = "default-config"))]
-        Err(GetConfigError::NoDefaultConfig)
     }
 
     /// Useful for when you know you're only getting the config once and, if needed, caching it yourself.
@@ -95,13 +92,9 @@ impl Config {
     /// Generally, [`Self::get_default`] should be used over calling this function multiple times.
     /// # Errors
     /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
-    /// 
-    /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
+    #[cfg(feature = "default-config")]
     pub fn get_default_no_cache() -> Result<Self, GetConfigError> {
-        #[cfg(feature = "default-config")]
-        return serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig);
-        #[cfg(not(feature = "default-config"))]
-        Err(GetConfigError::NoDefaultConfig)
+        serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig)
     }
 
     /// If `path` is `Some`, returns [`Self::load_from_file`].
@@ -112,6 +105,7 @@ impl Config {
     /// 
     /// If `path` is `Some` and the call to [`Self::load_from_file`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
+    #[cfg(feature = "default-config")]
     pub fn get_default_or_load(path: Option<&Path>) -> Result<Cow<'static, Self>, GetConfigError> {
         Ok(match path {
             Some(path) => Cow::Owned(Self::load_from_file(path)?),
@@ -124,8 +118,7 @@ impl Config {
     /// Generally, [`Self::get_default_or_load`] should be used over calling this function with the same argument multiple times.
     /// # Errors
     /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
-    /// 
-    /// If URL Cleaner was compiled without a default config, returns the error [`GetConfigError::NoDefaultConfig`].
+    #[cfg(feature = "default-config")]
     pub fn get_default_no_cache_or_load(path: Option<&Path>) -> Result<Self, GetConfigError> {
         Ok(match path {
             Some(path) => Self::load_from_file(path)?,
@@ -205,11 +198,9 @@ pub enum GetConfigError {
     /// The loaded config file did not contain valid JSON.
     #[error(transparent)]
     CantParseConfigFile(serde_json::Error),
-    /// URL Cleaner was compiled without default config.
-    #[error("URL Cleaner was compiled without default config.")]
-    NoDefaultConfig,
     /// The default config compiled into URL Cleaner isn't valid JSON.
     #[error(transparent)]
+    #[cfg(feature = "default-config")]
     CantParseDefaultConfig(serde_json::Error)
 }
 
@@ -219,22 +210,27 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(feature = "default-config")]
     fn deserialize_default_config() {
         Config::get_default().unwrap();
     }
 
     #[test]
+    #[cfg(feature = "default-config")]
     fn reserialize_default_config() {
         serde_json::to_string(&Config::get_default().unwrap()).unwrap();
     }
 
     /// Does not work when generic.
+    /// 
     /// <'a, T: Serialize+Deserialize<'a>> throws nonsensical errors like `y.to_owned()` freed while still in use despite being an owned value.
+    #[cfg(feature = "default-config")]
     fn de_ser(config: &Config) -> Config {
         serde_json::from_str(&serde_json::to_string(config).unwrap()).unwrap()
     }
 
     #[test]
+    #[cfg(feature = "default-config")]
     fn default_config_de_ser_identity() {
         assert_eq!(Config::get_default().unwrap(),                 &de_ser(Config::get_default().unwrap())  );
         assert_eq!(Config::get_default().unwrap(),         &de_ser(&de_ser(Config::get_default().unwrap())) );
@@ -242,6 +238,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "default-config")]
     fn test_default_config() {
         Config::get_default().unwrap().clone().run_tests();
     }

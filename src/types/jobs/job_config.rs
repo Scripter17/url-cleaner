@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use url::Url;
+use thiserror::Error;
 
 use crate::types::*;
 use crate::util::*;
@@ -29,11 +30,26 @@ impl From<Url> for JobConfig {
     }
 }
 
+/// The enum of errors [`JobConfig::from_str`] and [`<JobConfig as TryFrom<&str>>::try_from`] can return.
+#[derive(Debug, Error)]
+pub enum MakeJobConfigError {
+    /// Returned when a [`url::ParseError`] is encoutered.
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`serde_json::Error`] is encountered.
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error)
+}
+
 impl FromStr for JobConfig {
-    type Err = <Url as FromStr>::Err;
+    type Err = MakeJobConfigError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Url::from_str(s).map(Into::into)
+        Ok(if s.starts_with('{') {
+            serde_json::from_str(s)?
+        } else {
+            Url::parse(s)?.into()
+        })
     }
 }
 
@@ -50,9 +66,9 @@ string_or_struct_magic!(JobConfig);
 /// The enum of errors that can happen when [`Jobs::iter`] tries to get a URL.
 #[derive(Debug, Error)]
 pub enum JobConfigSourceError {
-    /// Returned when a [`url::ParseError`] is encountered.
+    /// Returned when a [`MakeJobConfigError`] is encountered.
     #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
+    MakeJobConfigError(#[from] MakeJobConfigError),
     /// Returned when a [`std::io::Error`] is encountered.
     #[error(transparent)]
     IoError(#[from] std::io::Error),
