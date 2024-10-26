@@ -338,6 +338,11 @@ impl Rule {
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config)
         }, "Unsuitable Rule detected: {self:?}");
+        let self_debug_string = format!("{self:?}");
+        assert!(
+            self_debug_string.contains("no-network") == (self_debug_string.contains("ExpandRedirect") || self_debug_string.contains("HttpRequest")),
+            "Network call without no-network flag: {self_debug_string}"
+        );
         true
     }
 }

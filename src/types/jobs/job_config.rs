@@ -44,6 +44,9 @@ pub enum MakeJobConfigError {
 impl FromStr for JobConfig {
     type Err = MakeJobConfigError;
 
+    /// If `s` starts with `{`, deserializes it as a JSON object to allow both a more complete CLI and a more versatile API.
+    /// 
+    /// Otherwise uses [`Url::parse`] and [`Into::into`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(if s.starts_with('{') {
             serde_json::from_str(s)?
@@ -56,6 +59,7 @@ impl FromStr for JobConfig {
 impl TryFrom<&str> for JobConfig {
     type Error = <Self as FromStr>::Err;
 
+    /// [`Self::from_str`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_str(value)
     }

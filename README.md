@@ -39,7 +39,7 @@ The default config is intended to always obey the following rules:
     - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
 - Outside of long (>10)/infinite redirects/redirects, it should always be idempotent.
 - Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
-- The `command` and feature, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
+- The `command` feature, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
@@ -74,7 +74,7 @@ Various flags are included in the default config for things I want to do frequen
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube-unplaylist`: Removes the `list` query parameter from `/watch` URLs.
+- `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
 
 If a flag is enabled in a config's `params` field, it can be disabled using `--unflag flag1 --unflag flag1`.
@@ -85,10 +85,11 @@ Variables let you specify behaviour with the `--var name value --var name2 value
 
 Various variables are included in the default config for things that have multiple useful values.
 
+- `bluesky-embed-domain`: The domain to use for bluesky when the `discord-compatibility` flag is set. Defaults to `fxbsky.com`.
 - `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
 - `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
-- `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`.
+- `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is set. Defaults to `vxtwitter.com`.
 
 If a variable is specified in a config's `params` field, it can be unspecified using `--unvar var1 --unvar var2`.
 
@@ -111,12 +112,11 @@ Various sets are included in the default config.
 - `lmgtfy-hosts`: Hosts to replace with `google.com`.
 - `redirect-hosts`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
 - `redirect-not-subdomains`: The `redirect-hosts` set but `UrlPart::NotSubdomain`.
-- `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` for specified hosts.
-- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.
-- `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.
-- `unmobile-not-subdomain-blacklist`: The `NotSubdomain`s to never apply the `unmobile` flag for.
-- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set.
-    Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
+- `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.
+- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` flag for the specified `NotSubdomain`s.
+- `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.
+- `unmobile-not-subdomain-blacklist`: Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.
+- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
 - `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.

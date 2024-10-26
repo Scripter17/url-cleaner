@@ -27,14 +27,15 @@
 			"unbreezewiki": "Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.",
 			"unmobile": "Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.",
 			"youtube-unlive": "Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.",
-			"youtube-unplaylist": "Removes the `list` query parameter from `/watch` URLs.",
+			"youtube-unplaylist": "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
 			"youtube-unshort": "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`."
 		},
 		"vars": {
+			"bluesky-embed-domain": "The domain to use for bluesky when the `discord-compatibility` flag is set. Defaults to `fxbsky.com`.",
 			"breezewiki-domain": "The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`",
 			"bypass.vip-api-key": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.",
 			"tor2web-suffix": "The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.",
-			"twitter-embed-domain": "The domain to use for twitter when the `discord-compatibility` flag is specified. Defaults to `vxtwitter.com`."
+			"twitter-embed-domain": "The domain to use for twitter when the `discord-compatibility` flag is set. Defaults to `vxtwitter.com`."
 		},
 		"environment_vars": {
 			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable."
@@ -47,10 +48,10 @@
 			"lmgtfy-hosts": "Hosts to replace with `google.com`.",
 			"redirect-hosts": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
 			"redirect-not-subdomains": "The `redirect-hosts` set but `UrlPart::NotSubdomain`.",
-			"unmangle-path-is-url-host-whitelist": "Effectively the `no-unmangle-path-is-url` for specified hosts.",
-			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": "Effectively `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` for specified not subdomains.",
-			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": "The `NotSubdomain`s to apply the `no-unmangle-subdomain-starting-with-www-segment` flag for.",
-			"unmobile-not-subdomain-blacklist": "The `NotSubdomain`s to never apply the `unmobile` flag for.",
+			"unmangle-path-is-url-host-whitelist": "Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.",
+			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": "Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` flag for the specified `NotSubdomain`s.",
+			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": "Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.",
+			"unmobile-not-subdomain-blacklist": "Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.",
 			"utps": "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.",
 			"utps-host-whitelist": "Hosts to never remove universal tracking parameters from."
 		},
@@ -60,6 +61,7 @@
 	},
 	"params": {
 		"vars": {
+			"bluesky-embed-domain": "fxbsky.app",
 			"twitter-embed-domain": "vxtwitter.com",
 			"breezewiki-domain": "breezewiki.com"
 		},
@@ -79,14 +81,15 @@
 				"go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
 				"is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.leparisien.fr", "link.animaapp.com", "linkr.it",
 				"lnk.to", "loom.ly", "lpc.ca", "msft.it", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm",
-				"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc",
-				"operagx.gg", "orlo.uk", "ow.ly", "pin.it", "pixiv.me", "play.st", "politi.co", "propub.li", "py.pl", "qr1.be", "rb.gy", "rb.gy",
-				"rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at",
-				"spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org", "tr.ee", "trib.al",
-				"u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la",
+				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "pin.it", "pixiv.me", "play.st", "politi.co", "propub.li", "py.pl",
+				"qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co",
+				"shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org",
+				"tps.to", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly",
+				"xhslink.com", "yrp.ca"
 			],
 			"redirect-not-subdomains": [
-				"lnk.to"
+				"lnk.to", "visitlink.me"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -193,6 +196,8 @@
 				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
 				{"job_config": "https://https//example1.com/user/example2.com/abc", "result": "https://example2.com/abc"},
 				{"job_config": "https://www.username.example.com", "result": "https://username.example.com"},
+				{"job_config": "https://bsky.app", "result": "https://bsky.app/"},
+				{"job_config": "https://fxbsky.app", "result": "https://bsky.app/"},
 
 				{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
 				{"job_config": "https://com"      , "result": "https://com"},
@@ -245,6 +250,13 @@
 		{
 			"params_diff": {"flags": ["bypass.vip"]},
 			"expectations": [{"job_config": "https://linkvertise.com/514008/hydrogen-gateway-1", "result": "https://api.hydrogen.sh/gateway/callback?stage=1"}]
+		},
+		{
+			"params_diff": {"flags": ["discord-compatibility"]},
+			"expectations": [
+				{"job_config": "https://bsky.app", "result": "https://fxbsky.app/"},
+				{"job_config": "https://fxbsky.app", "result": "https://fxbsky.app/"}
+			]
 		}
 	],
 	"rules": [
@@ -271,7 +283,10 @@
 				}},
 				{"TreatErrorAsFail": {"PartMatches": {
 					"part": "NotSubdomain",
-					"matcher": {"InSet": "redirect-not-subdomains"}
+					"matcher": {"Any": [
+						{"InSet": "redirect-not-subdomains"},
+						{"IsOneOf": ["bsky.social"]}
+					]}
 				}}}
 			]},
 			"mapper": {"Rule": {
@@ -653,6 +668,24 @@
 
 
 						{
+							"PartMap": {
+								"part": "NotSubdomain",
+								"map": {
+									"visitlink.me": {"SetPart": {"part": "Subdomain", "value": null}},
+									"bsky.social": {"IfCondition": {
+										"condition": {"PartMatches": {"part": {"NoneToEmptyString": "Subdomain"}, "matcher": {"Not": {"IsOneOf": ["", "www"]}}}},
+										"mapper": {"All": [
+											{"SetPart": {"part": {"BeforePathSegment": 0}, "value": {"Join": {"sources": ["profile/", {"Part": "Subdomain"}, ".bsky.social"]}}}},
+											{"SetHost": "bsky.app"}
+										]}
+									}}
+								}
+							}
+						},
+
+
+
+						{
 							"condition": {"All": [
 								{"FlagIsSet": "bypass.vip"},
 								{"Not": {"FlagIsSet": "no-network"}},
@@ -1001,6 +1034,14 @@
 					"fixvx.com"    : {"SetHost": "x.com"},
 					"fxtwitter.com": {"SetHost": "x.com"},
 					"stupidpenisx.com": {"SetHost": "x.com"},
+					"fxbsky.app": {"IfCondition": {
+						"condition": {"Not": {"FlagIsSet": "discord-compatibility"}},
+						"mapper": {"SetPart": {"part": "NotSubdomain", "value": "bsky.app"}}
+					}},
+					"bsky.app": {"IfCondition": {
+						"condition": {"FlagIsSet": "discord-compatibility"},
+						"mapper": {"SetPart": {"part": "NotSubdomain", "value": "fxbsky.app"}}
+					}},
 					"youtube.com"  : {"All": [
 						{"RemoveQueryParams": ["si", "feature", "pp"]},
 						{"IfCondition": {
@@ -1143,7 +1184,8 @@
 						"condition": {"PartMatches": {"part": {"PathSegment": 0}, "matcher": {"IsOneOf": ["commissions", "journals"]}}},
 						"mapper": "RemoveQuery"
 					}},
-					"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb"]}
+					"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb"]},
+					"fori.io": {"SetHost": "foriio.com"}
 				}
 			}
 		},

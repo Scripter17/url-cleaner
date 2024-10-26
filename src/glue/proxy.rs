@@ -42,7 +42,7 @@ impl FromStr for ProxyConfig {
 impl TryFrom<&str> for ProxyConfig {
     type Error = <Self as FromStr>::Err;
 
-    /// [`Url::from_str`].
+    /// [`Self::from_str`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_str(value)
     }

@@ -48,6 +48,7 @@ impl FromStr for GlobWrapper {
 impl TryFrom<&str> for GlobWrapper {
     type Error = <Self as FromStr>::Err;
 
+    /// [`Self::from_str`].
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         Self::from_str(s)
     }

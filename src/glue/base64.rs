@@ -35,6 +35,7 @@ impl FromStr for DecodePaddingMode {
 impl TryFrom<&str> for DecodePaddingMode {
     type Error = <Self as FromStr>::Err;
 
+    /// [`Self::from_str`],
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_str(value)
     }
@@ -133,6 +134,9 @@ impl std::fmt::Display for Base64Alphabet {
 impl FromStr for Base64Alphabet {
     type Err = <Self as TryFrom<String>>::Error;
 
+    /// [`<Self as TryFrom<String>>`],
+    /// 
+    /// If you don't want to allocate a new string, use that.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::try_from(s.to_string())
     }
@@ -141,6 +145,9 @@ impl FromStr for Base64Alphabet {
 impl TryFrom<&str> for Base64Alphabet {
     type Error = <Self as TryFrom<String>>::Error;
 
+    /// [`<Self as TryFrom<String>>`],
+    /// 
+    /// If you don't want to allocate a new string, use that.
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::try_from(value.to_string())
     }
