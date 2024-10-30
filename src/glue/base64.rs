@@ -134,7 +134,7 @@ impl std::fmt::Display for Base64Alphabet {
 impl FromStr for Base64Alphabet {
     type Err = <Self as TryFrom<String>>::Error;
 
-    /// [`<Self as TryFrom<String>>`],
+    /// [`<Self as TryFrom<String>>::try_from`],
     /// 
     /// If you don't want to allocate a new string, use that.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -145,7 +145,7 @@ impl FromStr for Base64Alphabet {
 impl TryFrom<&str> for Base64Alphabet {
     type Error = <Self as TryFrom<String>>::Error;
 
-    /// [`<Self as TryFrom<String>>`],
+    /// [`<Self as TryFrom<String>>::try_from`],
     /// 
     /// If you don't want to allocate a new string, use that.
     fn try_from(value: &str) -> Result<Self, Self::Error> {

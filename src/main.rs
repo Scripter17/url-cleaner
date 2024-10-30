@@ -197,6 +197,7 @@ fn main() -> Result<ExitCode, CliError> {
         .into_iter()
         .map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile))
         .collect::<Result<Vec<_>, _>>()?;
+    #[allow(unused_mut, reason = "Attributes on expressions WHEN. PLEASE.")]
     let mut feature_flag_make_params_diff = false;
     #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.read_cache.is_some()};
     #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.write_cache.is_some()};

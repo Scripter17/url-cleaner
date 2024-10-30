@@ -430,7 +430,13 @@ pub enum Mapper {
         limit: u8
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::mappers`].
-    Common(CommonCall)
+    Common(CommonCall),
+    /// Uses a function pointer.
+    /// 
+    /// Cannot be serialized or deserialized.
+    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[cfg(feature = "experiment-custom")]
+    Custom(FnWrapper<fn(&Self, &mut JobState) -> Result<(), MapperError>>)
 }
 
 /// Individual links in the [`Mapper::ConditionChain`] chain.
@@ -451,9 +457,6 @@ pub enum MapperError {
     /// Returned when [`Mapper::Error`] is used.
     #[error("Mapper::Error was used.")]
     ExplicitError,
-    /// Returned when a call to [`UrlPart::get`] returns `None` where it has to return `Some`.
-    #[error("The provided URL does not have the requested part.")]
-    UrlPartNotFound,
     /// Returned when the provided URL does not contain the requested query parameter.
     #[error("The provided URL does not contain the requested query parameter.")]
     CannotFindQueryParam,
@@ -473,15 +476,6 @@ pub enum MapperError {
     /// Returned when a [`UrlPartSetError`] is encountered.
     #[error(transparent)]
     UrlPartSetError(#[from] UrlPartSetError),
-    /// Returned when the provided URL does not have a path.
-    #[error("The URL does not have a path.")]
-    UrlDoesNotHaveAPath,
-    /// Returned when a regex does not find any matches.
-    #[error("A regex pattern did not find any matches.")]
-    NoRegexMatchesFound,
-    /// Returned when the requested variable is not found in [`Params::vars`].
-    #[error("A variable was requested but not found at runtime.")]
-    VarNotFound,
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
@@ -522,9 +516,6 @@ pub enum MapperError {
     /// Returned when a [`JobState`] string var is [`None`].
     #[error("A JobState string var was none.")]
     ScratchpadVarIsNone,
-    /// Returned when a call to [`UrlPart::get`] returns `None` where it has to be `Some`.
-    #[error("The specified UrlPart returned None where it had to be Some.")]
-    UrlPartIsNone,
     /// Returned when a [`ReadFromCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
@@ -545,7 +536,11 @@ pub enum MapperError {
     MapperNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError)
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Custom error.
+    #[error(transparent)]
+    #[cfg(feature = "experiment-custom")]
+    Custom(Box<dyn std::error::Error>)
 }
 
 impl From<RuleError> for MapperError {
@@ -791,7 +786,9 @@ impl Mapper {
                     cache: job_state.cache,
                     commons: job_state.commons
                 })?
-            }
+            },
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(function) => function(self, job_state)?
         };
         Ok(())
     }
@@ -828,7 +825,9 @@ impl Mapper {
                 Self::SetHost(_) | Self::MovePart {..} => true,
             #[cfg(feature = "http")]
             Self::ExpandRedirect {..} => true,
-            Self::Common(common_call) => common_call.is_suitable_for_release(config)
+            Self::Common(common_call) => common_call.is_suitable_for_release(config),
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(_) => false
         }, "Unsuitable Mapper detected: {self:?}");
         true
     }

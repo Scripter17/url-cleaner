@@ -45,18 +45,18 @@ impl<'a> JobState<'a> {
 
 /// Helper macro to make doctests less noisy.
 #[macro_export]
+#[cfg(feature = "cache")]
 macro_rules! job_state {
     ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)?) => {
         let url = "https://example.com";
         $(let url = $url;)?
         let mut scratchpad = Default::default();
-        let context = Default::default();
+        let context: $crate::types::JobContext = Default::default();
         $(let context = $context;)?
-        let params = Default::default();
+        let params: $crate::types::Params = Default::default();
         $(let params = $params;)?
-        let commons = Default::default();
+        let commons: $crate::types::Commons = Default::default();
         $(let commons = $commons;)?
-        #[cfg(feature = "cache")]
         let cache = Default::default();
         let mut url = ::url::Url::parse(url).unwrap();
         let mut $job_state = url_cleaner::types::JobState {
@@ -66,8 +66,33 @@ macro_rules! job_state {
             context: &context,
             params: &params,
             commons: &commons,
-            #[cfg(feature = "cache")]
             cache: &cache
+        };
+    };
+}
+
+/// Helper macro to make doctests less noisy.
+#[macro_export]
+#[cfg(not(feature = "cache"))]
+macro_rules! job_state {
+    ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)?) => {
+        let url = "https://example.com";
+        $(let url = $url;)?
+        let mut scratchpad = Default::default();
+        let context: $crate::types::JobContext = Default::default();
+        $(let context = $context;)?
+        let params: $crate::types::Params = Default::default();
+        $(let params = $params;)?
+        let commons: $crate::types::Commons = Default::default();
+        $(let commons = $commons;)?
+        let mut url = ::url::Url::parse(url).unwrap();
+        let mut $job_state = url_cleaner::types::JobState {
+            url: &mut url,
+            scratchpad: &mut scratchpad,
+            common_args: None,
+            context: &context,
+            params: &params,
+            commons: &commons
         };
     };
 }

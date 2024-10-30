@@ -241,7 +241,13 @@ pub enum StringMatcher {
         value: Box<StringSource>
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_matchers`].
-    Common(CommonCall)
+    Common(CommonCall),
+    /// Uses a function pointer.
+    /// 
+    /// Cannot be serialized or deserialized.
+    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[cfg(feature = "experiment-custom")]
+    Custom(FnWrapper<fn(&Self, &str, &JobStateView) -> Result<bool, StringMatcherError>>)
 }
 
 #[cfg(feature = "regex")]
@@ -303,7 +309,11 @@ pub enum StringMatcherError {
     CommonStringMatcherNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError)
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Custom error.
+    #[error(transparent)]
+    #[cfg(feature = "experiment-custom")]
+    Custom(Box<dyn std::error::Error>)
 }
 
 impl StringMatcher {
@@ -427,7 +437,9 @@ impl StringMatcher {
                         common_args: Some(&common_call.args.make(job_state)?)
                     }
                 )?
-            }
+            },
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(function) => function(self, haystack, job_state)?,
         })
     }
 
@@ -457,7 +469,9 @@ impl StringMatcher {
             #[cfg(feature = "regex")] Self::Regex(_) => true,
             #[cfg(feature = "glob")] Self::Glob(_) => true,
             Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true,
-            Self::Common(common_call) => common_call.is_suitable_for_release(config)
+            Self::Common(common_call) => common_call.is_suitable_for_release(config),
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(_) => false
         }, "Unsuitable StringMatcher detected: {self:?}");
         true
     }

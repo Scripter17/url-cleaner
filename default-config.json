@@ -11,8 +11,8 @@
 			"bypass.vip": "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links. Currently untestable as the API is down.",
 			"discord-compatibility": "Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.",
 			"discord-unexternal": "Replace `images-ext-1.discordapp.net` with the original images they refer to.",
-			"no-network": "Don't make any HTTP requests.",
 			"no-https-upgrade": "Disable replacing `http://` with `https://`.",
+			"no-network": "Don't make any HTTP requests.",
 			"no-unmangle": "Disable all unmangling.",
 			"no-unmangle-host-is-http-or-https": "Don't convert `https://https//example.com/abc` to `https://example.com/abc`.",
 			"no-unmangle-path-is-url": "Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.",
@@ -62,8 +62,8 @@
 	"params": {
 		"vars": {
 			"bluesky-embed-domain": "fxbsky.app",
-			"twitter-embed-domain": "vxtwitter.com",
-			"breezewiki-domain": "breezewiki.com"
+			"breezewiki-domain": "breezewiki.com",
+			"twitter-embed-domain": "vxtwitter.com"
 		},
 		"sets": {
 			"breezewiki-hosts": [
@@ -86,10 +86,10 @@
 				"qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co",
 				"shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org",
 				"tps.to", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly",
-				"xhslink.com", "yrp.ca"
+				"xhslink.com", "yrp.ca", "pulse.ly", "clckhl.co"
 			],
 			"redirect-not-subdomains": [
-				"lnk.to", "visitlink.me"
+				"lnk.to", "visitlink.me", "goo.gl"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",

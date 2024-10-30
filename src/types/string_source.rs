@@ -341,7 +341,15 @@ pub enum StringSource {
         end: Box<Self>
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
-    Common(CommonCall)
+    Common(CommonCall),
+    /// Uses a function pointer.
+    /// 
+    /// Cannot be serialized or deserialized.
+    /// 
+    /// Sadly the return type has to be `'static`. I think.
+    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[cfg(feature = "experiment-custom")]
+    Custom(FnWrapper<fn(&Self, &JobStateView) -> Result<Option<Cow<'static, str>>, StringSourceError>>)
 }
 
 impl FromStr for StringSource {
@@ -361,18 +369,25 @@ impl From<&str> for StringSource {
 }
 
 impl From<String> for StringSource {
+    /// Returns a [`Self::String`].
     fn from(value: String) -> Self {
         Self::String(value)
     }
 }
 
 impl From<&str> for Box<StringSource> {
+    /// Returns a [`Self::String`].
+    /// 
+    /// Exists for convenience.
     fn from(value: &str) -> Self {
         Box::new(value.into())
     }
 }
 
 impl From<String> for Box<StringSource> {
+    /// Returns a [`Self::String`].
+    /// 
+    /// Exists for convenience.
     fn from(value: String) -> Self {
         Box::new(value.into())
     }
@@ -394,10 +409,6 @@ pub enum StringSourceError {
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
-    /// Returned when a requested HTTP response header is not found.
-    #[cfg(feature = "http")]
-    #[error("The HTTP request response did not contain the requested header.")]
-    HeaderNotFound,
     /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
@@ -405,10 +416,6 @@ pub enum StringSourceError {
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-    /// Returned when a regex does not find any matches.
-    #[error("A regex pattern did not find any matches.")]
-    #[cfg(feature = "regex")]
-    NoRegexMatchesFound,
     /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
@@ -424,9 +431,6 @@ pub enum StringSourceError {
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(Box<CommandError>),
-    /// Returned when the key is not in the map.
-    #[error("The key was not in the map.")]
-    KeyNotInMap,
     /// Returned when the provided string is not in the specified map.
     #[error("The provided string was not in the specified map.")]
     StringNotInMap,
@@ -461,7 +465,11 @@ pub enum StringSourceError {
     CommonStringSourceNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError)
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Custom error.
+    #[error(transparent)]
+    #[cfg(feature = "experiment-custom")]
+    Custom(Box<dyn std::error::Error>)
 }
 
 
@@ -603,7 +611,9 @@ impl StringSource {
                     commons: job_state.commons,
                     common_args: Some(&common_call.args.make(job_state)?)
                 })?.map(|x| Cow::Owned(x.into_owned()))
-            }
+            },
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(function) => function(self, job_state)?
         })
     }
 
@@ -634,8 +644,10 @@ impl StringSource {
             #[cfg(feature = "advanced-http")]
             Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
             Self::ExtractBetween {source, start, end} => source.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
-            Self::Common(common_call) => common_call.is_suitable_for_release(config)
-        }, "Unsuitable StringSource detected: {self:?}");
+            Self::Common(common_call) => common_call.is_suitable_for_release(config),
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(_) => false
+       }, "Unsuitable StringSource detected: {self:?}");
         true
     }
 }

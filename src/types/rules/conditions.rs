@@ -598,7 +598,13 @@ pub enum Condition {
     /// A rarely useful optimization but an optimization none the less.
     AnyFlagIsSet,
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::conditions`].`
-    Common(CommonCall)
+    Common(CommonCall),
+    /// Uses a function pointer.
+    /// 
+    /// Cannot be serialized or deserialized.
+    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[cfg(feature = "experiment-custom")]
+    Custom(FnWrapper<fn(&Self, &JobStateView) -> Result<bool, ConditionError>>)
 }
 
 /// An enum of all possible errors a [`Condition`] can return.
@@ -642,7 +648,11 @@ pub enum ConditionError {
     CommonConditionNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError)
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Custom error.
+    #[error(transparent)]
+    #[cfg(feature = "experiment-custom")]
+    Custom(Box<dyn std::error::Error>)
 }
 
 impl Condition {
@@ -776,7 +786,9 @@ impl Condition {
                     commons: job_state.commons,
                     common_args: Some(&common_call.args.make(job_state)?)
                 })?
-            }
+            },
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(function) => function(self, job_state)?
         })
     }
 
@@ -808,7 +820,9 @@ impl Condition {
                 Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
                 Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
-            Self::Common(common_call) => common_call.is_suitable_for_release(config)
+            Self::Common(common_call) => common_call.is_suitable_for_release(config),
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(_) => false
         }, "Unsuitable Condition detected: {self:?}");
         true
     }

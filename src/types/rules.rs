@@ -178,6 +178,12 @@ pub enum Rule {
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::rules`].
     Common(CommonCall),
+    /// Uses a function pointer.
+    /// 
+    /// Cannot be serialized or deserialized.
+    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[cfg(feature = "experiment-custom")]
+    Custom(FnWrapper<fn(&Self, &mut JobState) -> Result<(), RuleError>>),
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
     /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
@@ -245,7 +251,11 @@ pub enum RuleError {
     CommonRuleNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError)
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Custom error.
+    #[error(transparent)]
+    #[cfg(feature = "experiment-custom")]
+    Custom(Box<dyn std::error::Error>)
 }
 
 impl Rule {
@@ -317,7 +327,9 @@ impl Rule {
                     cache: job_state.cache,
                     commons: job_state.commons
                 })
-            }
+            },
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(function) => function(self, job_state)
         }
     }
 
@@ -336,7 +348,9 @@ impl Rule {
             Self::Rules(rules) => rules.is_suitable_for_release(config),
             Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.is_suitable_for_release(config),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config)
+            Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(_) => false
         }, "Unsuitable Rule detected: {self:?}");
         let self_debug_string = format!("{self:?}");
         assert!(

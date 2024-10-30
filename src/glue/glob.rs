@@ -88,6 +88,7 @@ impl GlobWrapper {
 
     /// Wrapper for [`Pattern::matches_path_with`].
     #[must_use]
+    #[allow(dead_code, reason = "Public API.")]
     pub fn matches_path(&self, path: &Path) -> bool {
         self.pattern.matches_path_with(path, self.options)
     }

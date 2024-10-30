@@ -696,7 +696,13 @@ pub enum StringModification {
     /// ].into_iter().collect()).apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(x, "/a\n\\n");
     /// ```
-    RunEscapeCodes(HashMap<String, String>)
+    RunEscapeCodes(HashMap<String, String>),
+    /// Uses a function pointer.
+    /// 
+    /// Cannot be serialized or deserialized.
+    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[cfg(feature = "experiment-custom")]
+    Custom(FnWrapper<fn(&Self, &mut String, &JobStateView) -> Result<(), StringModificationError>>)
 }
 
 /// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
@@ -834,7 +840,11 @@ pub enum StringModificationError {
     CommonStringModificationNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError)
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Custom error.
+    #[error(transparent)]
+    #[cfg(feature = "experiment-custom")]
+    Custom(Box<dyn std::error::Error>)
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -1094,7 +1104,9 @@ impl StringModification {
                     to_munch = chars.as_str();
                 }
                 *to=ret;
-            }
+            },
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(function) => function(self, to, job_state)?
         };
         Ok(())
     }
@@ -1146,7 +1158,9 @@ impl StringModification {
             Self::Base64Encode(_) | Self::Base64Decode(_) => true,
             Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
-            Self::Common(common_call) => common_call.is_suitable_for_release(config)
+            Self::Common(common_call) => common_call.is_suitable_for_release(config),
+            #[cfg(feature = "experiment-custom")]
+            Self::Custom(_) => false
         }, "Unsuitable StringModification detected: {self:?}");
         true
     }
