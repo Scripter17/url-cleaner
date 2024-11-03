@@ -28,7 +28,7 @@ pub struct JobState<'a> {
 impl<'a> JobState<'a> {
     /// For optimization purposes, functions that could take `&JobState` instead take `&JobStateView` to make [`Commons`] easier to handle.
     /// 
-    /// Functions that don't have anything to do with [`Commons`] still take [`Self`] for the consistency.
+    /// Functions that don't have anything to do with [`Commons`] still take [`JobStateView`] for the consistency.
     pub fn to_view(&'a self) -> JobStateView<'a> {
         JobStateView {
             url        : self.url,
@@ -100,21 +100,37 @@ macro_rules! job_state {
 /// An immutable view of a [`JobState`].
 /// 
 /// Exists for nuanced optimization reasons. Sorry for the added API complexity.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct JobStateView<'a> {
     /// The URL being modified.
+    /// 
+    /// See [`JobState::url`].
     pub url: &'a Url,
     /// Scratchpad space for [`Mapper`]s to store state in.
+    /// 
+    /// See [`JobState::scratchpad`].
     pub scratchpad: &'a JobScratchpad,
     /// Vars used in common contexts.
+    /// 
+    /// See [`JobState::common_args`].
+    // One could argue this should be a `&'a Option<CommonArgs>`, but that'd break ABI compatibility or whatever it's called.
+    // Transmuting a `JobState` to a `JobStateView` is effectively safe and that change would break that (I think?).
     pub common_args: Option<&'a CommonArgs>,
     /// The context surrounding the URL.
+    /// 
+    /// See [`JobState::context`].
     pub context: &'a JobContext,
     /// The flags, variables, etc. defined by the job initiator.
+    /// 
+    /// See [`JobState::params`].
     pub params: &'a Params,
     /// Various things that are used multiple times.
+    /// 
+    /// See [`JobState::commons`].
     pub commons: &'a Commons,
     /// The cache handler.
+    /// 
+    /// See [`JobState::cache`].
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
 }
@@ -123,7 +139,8 @@ impl<'a> JobStateView<'a> {
     /// Just returns itself.
     /// 
     /// Exists for internal ergonomics reasons.
-    pub const fn to_view(&'a self) -> &'a JobStateView<'a> {
+    #[allow(clippy::wrong_self_convention, reason = "Don't care.")]
+    pub(crate) const fn to_view(&'a self) -> &'a JobStateView<'a> {
         self
     }
 }

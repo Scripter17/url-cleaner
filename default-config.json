@@ -74,19 +74,19 @@
 				"nerd.whatever.social", "z.opnxng.com"
 			],
 			"redirect-hosts": [
-				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew",
-				"amzn.to", "apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it",
-				"buff.ly", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link",
+				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
+				"apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly",
+				"cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link",
 				"dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com",
 				"go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
 				"is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.leparisien.fr", "link.animaapp.com", "linkr.it",
 				"lnk.to", "loom.ly", "lpc.ca", "msft.it", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm",
 				"nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la",
-				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "pin.it", "pixiv.me", "play.st", "politi.co", "propub.li", "py.pl",
-				"qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co",
-				"shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "thecutio", "thr.cm", "tmz.me", "to.pbs.org",
-				"tps.to", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly",
-				"xhslink.com", "yrp.ca", "pulse.ly", "clckhl.co"
+				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "pin.it", "pixiv.me", "play.st", "politi.co", "propub.li", "pulse.ly",
+				"py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team",
+				"s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thr.cm",
+				"tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr",
+				"wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-not-subdomains": [
 				"lnk.to", "visitlink.me", "goo.gl"
@@ -1170,7 +1170,13 @@
 								{"FlagIsSet": "tumblr-unsubdomain-blog"},
 								{"TreatErrorAsFail": {"PartMatches": {"part": "Subdomain", "matcher": {"Not": {"IsOneOf": ["at", "www"]}}}}}
 							]},
-							"mapper": {"MovePart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}}
+							"mapper": {"All": [
+								{"IfCondition": {
+									"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "post"}},
+									"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+								}},
+								{"MovePart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}}
+							]}
 						}
 					]},
 					"goodreads.com": {"All": [

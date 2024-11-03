@@ -20,10 +20,8 @@ pub enum UrlPart {
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
-    /// 
-    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    /// If the call to [`Self::get`]/[`Self::set`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
     /// The whole URL. Corresponds to [`Url::as_str`].
     /// # Getting
@@ -850,7 +848,7 @@ pub enum UrlPart {
         index: isize
     },
     /// # Getting
-    /// If the contained [`Self`] returns `None`, instead return `Some(Cow::Borrowed(""))`
+    /// If the call to [`Self::get`]/[`Self::set`] returns `None`, instead return `Some(Cow::Borrowed(""))`
     /// # Setting
     /// If the value provided to [`Self::set`] is `None`, it is replaced with `Some("")`.
     /// # Examples
@@ -1177,21 +1175,6 @@ impl UrlPart {
         Ok(())
     }
 
-    /// Get the part from the provided URL and modify it according to the provided string modification rule.
-    /// # Errors
-    /// If [`UrlPart::get`] returns an error, that error is returned.
-    /// 
-    /// If [`StringModification::apply`] returns an error, that error is returned.
-    /// 
-    /// If [`UrlPart::set`] returns an error, that error is returned.
-    pub fn modify(&self, how: &StringModification, job_state: &mut JobState) -> Result<(), UrlPartModifyError> {
-        debug!(UrlPart::modify, self, how, job_state);
-        let mut new_part=self.get(job_state.url).ok_or(UrlPartModifyError::PartIsNone)?.into_owned();
-        how.apply(&mut new_part, &job_state.to_view())?;
-        self.set(job_state.url, Some(&new_part))?;
-        Ok(())
-    }
-
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
     pub(crate) fn is_suitable_for_release(&self, _config: &Config) -> bool {
@@ -1300,20 +1283,6 @@ pub enum UrlPartSetError {
     /// Returned when Attempting to set a URL's UrlPart::HostWithoutWWWDotPrefix when its UrlPart::Host does not start with \"www.\".
     #[error("Attempted to set a URL's UrlPart::HostWithoutWWWDotPrefix when its UrlPart::Host does not start with \"www.\".")]
     HostDoesNotStartWithWWWDot
-}
-
-/// The enum of all possible errors [`UrlPart::modify`] can return.
-#[derive(Debug, Error)]
-pub enum UrlPartModifyError {
-    /// Returned when the requested part is `None`.
-    #[error("Cannot modify the requested part because it doesn't have a value.")]
-    PartIsNone,
-    /// Returned when a [`UrlPartSetError`] is encountered.
-    #[error(transparent)]
-    UrlPartSetError(#[from] UrlPartSetError),
-    /// Returned when a [`StringModificationError`] is encountered.
-    #[error(transparent)]
-    StringModificationError(#[from] StringModificationError)
 }
 
 #[allow(clippy::unwrap_used, reason = "Panicking tests are easier to write than erroring tests.")]

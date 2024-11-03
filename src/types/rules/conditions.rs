@@ -32,10 +32,8 @@ pub enum Condition {
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
-    /// 
-    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
 
     // Logic.
@@ -57,7 +55,7 @@ pub enum Condition {
     },
     /// Passes if the included [`Self`] doesn't and vice-versa.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned.
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -72,7 +70,7 @@ pub enum Condition {
     /// Passes if all of the included [`Self`]s pass.
     /// Like [`Iterator::all`], an empty list passes.
     /// # Errors
-    /// If any of the contained [`Self`]s returns an error, that error is returned.
+    /// If any of the calls to [`Self::satisfied_by`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -93,7 +91,7 @@ pub enum Condition {
     /// Passes if any of the included [`Self`]s pass.
     /// Like [`Iterator::any`], an empty list fails.
     /// # Errors
-    /// If any of the contained [`Self`]s returns an error, that error is returned.
+    /// If any of the calls to [`Self::satisfied_by`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -134,7 +132,7 @@ pub enum Condition {
 
     // Error handling.
 
-    /// If the contained [`Self`] returns an error, treat it as a pass.
+    /// If the call to [`Self::satisfied_by`] returns an error, treat it as a pass.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -145,7 +143,7 @@ pub enum Condition {
     /// assert_eq!(Condition::TreatErrorAsPass(Box::new(Condition::Error )).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     TreatErrorAsPass(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a fail.
+    /// If the call to [`Self::satisfied_by`] returns an error, treat it as a fail.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -184,7 +182,7 @@ pub enum Condition {
     },
     /// Effectively a [`Self::TryElse`] chain but less ugly.
     /// # Errors
-    /// If every contained [`Self`] returns an error, returns the last error.
+    /// If every call to [`Self::satisfied_by`] returns an error, returns the last error.
     FirstNotError(Vec<Self>),
 
     // Domain conditions.

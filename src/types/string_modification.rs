@@ -31,10 +31,8 @@ pub enum StringModification {
     /// Prints debugging information about the contained [`Self`] and the details of its application to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
-    /// 
-    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
     /// If `matcher` passes, apply `modification`, otherwise apply `else_modification`.
     /// # Errors
@@ -58,9 +56,10 @@ pub enum StringModification {
     /// 
     /// If a call to [`StringModification::apply`] returns an error, that error is returned.
     StringMatcherChain(Vec<StringMatcherChainLink>),
-    /// Ignores any error the contained [`Self`] may return.
+    /// Ignores any error the call to [`Self::apply`] may return.
     IgnoreError(Box<Self>),
     /// If `try` returns an error, `else` is applied.
+    /// 
     /// If `try` does not return an er
     /// # Errors
     /// If `else` returns an error, that error is returned.
@@ -72,19 +71,21 @@ pub enum StringModification {
     },
     /// Applies the contained [`Self`]s in order.
     /// # Errors
-    /// If one of the contained [`Self`]s returns an error, the string is left unchanged and the error is returned.
+    /// If one of the calls to [`Self::apply`] return an error, the string is left unchanged and the error is returned.
     All(Vec<Self>),
-    /// Applies the contained [`Self`]s in order. If an error occurs, the string remains changed by the previous contained [`Self`]s and the error is returned.
-    /// Technically the name is wrong as [`Self::All`] only actually applies the change after all the contained [`Self`] pass, but this is conceptually simpler.
+    /// Applies the contained [`Self`]s in order. If an error occurs, the string remains changed by the previous calls to [`Self::apply`] and the error is returned.
+    /// 
+    /// Technically the name is wrong as [`Self::All`] only actually applies the change after all the calls to [`Self::apply`] pass, but this is conceptually simpler.
     /// # Errors
-    /// If one of the contained [`Self`]s returns an error, the string is left as whatever the previous contained mapper set it to and the error is returned.
+    /// If one of the calls to [`Self::apply`] return an error, the string is left as whatever the previous contained mapper set it to and the error is returned.
     AllNoRevert(Vec<Self>),
-    /// If any of the contained [`Self`]s returns an error, the error is ignored and subsequent [`Self`]s are still applied.
+    /// If any of the calls to [`Self::apply`] return an error, the error is ignored and subsequent [`Self`]s are still applied.
+    /// 
     /// This is equivalent to wrapping every contained [`Self`] in a [`Self::IgnoreError`].
     AllIgnoreError(Vec<Self>),
     /// Effectively a [`Self::TryElse`] chain but less ugly.
     /// # Errors
-    /// If every contained [`Self`] errors, returns the last error.
+    /// If all calls to [`Self::apply`] return an error, returns the last error.
     FirstNotError(Vec<Self>),
 
 

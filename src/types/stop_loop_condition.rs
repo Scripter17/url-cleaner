@@ -9,15 +9,13 @@ use crate::util::*;
 /// A simple condition system to determine if and when a [`Rule::Repeat`] should stop looping before the limit.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StopLoopCondition {
-    /// Passes if all contained [`Self`]s pass.
+    /// Passes if all calls to [`Self::satisfied_by`]s pass.
     All(Vec<Self>),
-    /// Passes if any contained [`Self`]s pass.
+    /// Passes if any calls to [`Self::satisfied_by`]s pass.
     Any(Vec<Self>),
-    /// Passes if the contained [`Self`] fails.
+    /// Passes if the call to [`Self::satisfied_by`] fails.
     Not(Box<Self>),
     /// Passes if none of the [`Rule`] pass.
-    /// 
-    /// See [`Rule::Repeat`] for details.
     NonePass,
     /// Passes if the [`Url`]'s end value is the same as its start value.
     NoUrlChange,

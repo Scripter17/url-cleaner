@@ -33,7 +33,7 @@ impl From<Url> for JobConfig {
 /// The enum of errors [`JobConfig::from_str`] and [`<JobConfig as TryFrom<&str>>::try_from`] can return.
 #[derive(Debug, Error)]
 pub enum MakeJobConfigError {
-    /// Returned when a [`url::ParseError`] is encoutered.
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`serde_json::Error`] is encountered.

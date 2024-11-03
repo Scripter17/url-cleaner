@@ -29,10 +29,8 @@ pub enum Mapper {
     /// Prints debugging information about the contained [`Self`] and the details of its application to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
-    /// 
-    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
 
     // Logic.
@@ -59,7 +57,7 @@ pub enum Mapper {
     ConditionChain(Vec<ConditionChainLink>),
     /// Applies the contained [`Self`]s in order.
     /// # Errors
-    /// If one of the contained [`Self`]s returns an error, the URL is left unchanged and the error is returned.
+    /// If one of the calls to [`Self::apply`] returns an error, the URL is left unchanged and the error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -70,9 +68,10 @@ pub enum Mapper {
     /// ```
     All(Vec<Self>),
     /// Applies the contained [`Self`]s in order. If an error occurs, the URL remains changed by the previous contained [`Self`]s and the error is returned.
+    /// 
     /// Technically the name is wrong as [`Self::All`] only actually applies the change after all the contained [`Self`] pass, but this is conceptually simpler.
     /// # Errors
-    /// If one of the contained [`Self`]s returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
+    /// If one of the calls to [`Self::apply`] returns an error, the URL is left as whatever the previous contained mapper set it to and the error is returned.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -82,7 +81,8 @@ pub enum Mapper {
     /// assert_eq!(job_state.url.domain(), Some("3.com"));
     /// ```
     AllNoRevert(Vec<Self>),
-    /// If any of the contained [`Self`]s returns an error, the error is ignored and subsequent [`Self`]s are still applied.
+    /// If any of the calls to [`Self::apply`] returns an error, the error is ignored and subsequent [`Self`]s are still applied.
+    /// 
     /// This is equivalent to wrapping every contained [`Self`] in a [`Self::IgnoreError`].
     /// # Examples
     /// ```
@@ -144,7 +144,7 @@ pub enum Mapper {
 
     // Error handling.
 
-    /// Ignores any error the contained [`Self`] may return.
+    /// Ignores any error the call to [`Self::apply`] may return.
     IgnoreError(Box<Self>),
     /// If `try` returns an error, `else` is applied.
     /// 
@@ -169,7 +169,7 @@ pub enum Mapper {
     },
     /// Effectively a [`Self::TryElse`] chain but less ugly.
     /// # Errors
-    /// If every contained [`Self`] returns an error, returns the last error.
+    /// If every call to [`Self::apply`] returns an error, returns the last error.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -264,9 +264,11 @@ pub enum Mapper {
     },
     /// Modifies the specified part of the URL.
     /// # Errors
-    /// If the call to [`StringModification::apply`] returns an error, that error is returned in a [`MapperError::StringModificationError`].
+    /// If the call to [`UrlPart::get`] returns [`None`], returns the error [`MapperError::UrlPartIsNone`].
     /// 
-    /// If the call to [`UrlPart::modify`] returns an error, that error is returned in a [`MapperError::UrlPartModifyError`].
+    /// If the call to [`StringModification::apply`] returns an error.
+    /// 
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
     ModifyPart {
         /// The name of the part to modify.
         part: UrlPart,
@@ -470,9 +472,6 @@ pub enum MapperError {
     /// Returned when a [`Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
-    /// Returned when a [`UrlPartModifyError`] is encountered.
-    #[error(transparent)]
-    UrlPartModifyError(#[from] UrlPartModifyError),
     /// Returned when a [`UrlPartSetError`] is encountered.
     #[error(transparent)]
     UrlPartSetError(#[from] UrlPartSetError),
@@ -540,7 +539,10 @@ pub enum MapperError {
     /// Custom error.
     #[error(transparent)]
     #[cfg(feature = "experiment-custom")]
-    Custom(Box<dyn std::error::Error>)
+    Custom(Box<dyn std::error::Error>),
+    /// Returned when the requested part of a URL is [`None`].
+    #[error("The requested part of the URL was None.")]
+    UrlPartIsNone
 }
 
 impl From<RuleError> for MapperError {
@@ -694,7 +696,11 @@ impl Mapper {
             // Generic part handling.
 
             Self::SetPart{part, value} => part.set(job_state.url, get_option_string!(value, job_state).as_deref())?, // The deref is needed for borrow checking reasons.
-            Self::ModifyPart{part, modification} => part.modify(modification, job_state)?,
+            Self::ModifyPart{part, modification} => {
+                let mut temp = part.get(job_state.url).ok_or(MapperError::UrlPartIsNone)?.into_owned();
+                modification.apply(&mut temp, &job_state.to_view())?;
+                part.set(job_state.url, Some(&temp))?;
+            }
             Self::CopyPart{from, to} => to.set(job_state.url, from.get(job_state.url).map(|x| x.into_owned()).as_deref())?,
             Self::MovePart{from, to} => {
                 let mut temp_url = job_state.url.clone();

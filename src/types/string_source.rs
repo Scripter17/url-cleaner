@@ -21,19 +21,17 @@ pub enum StringSource {
 
     /// Always returns the error [`StringSourceError::ExplicitError`].
     /// 
-    /// Cannot be deserialized as `"None"` becomes `Self::String("None".into())`. I think this is less surprising behavior.
+    /// Cannot be deserialized as `"Error"` becomes `Self::String("Error".into())`. I think this is less surprising behavior.
     /// # Errors
     /// Always returns the error [`StringSourceError::ExplicitError`].
     Error,
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
-    /// 
-    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned after the debug info is printed.
+    /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
     Debug(Box<Self>),
-    /// If the contained [`Self`] returns `None`, instead return `Some(Cow::Borrowed(""))`
+    /// If the call to [`Self::get`] returns `None`, instead return `Some(Cow::Borrowed(""))`
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     NoneToEmptyString(Box<Self>),
@@ -345,11 +343,9 @@ pub enum StringSource {
     /// Uses a function pointer.
     /// 
     /// Cannot be serialized or deserialized.
-    /// 
-    /// Sadly the return type has to be `'static`. I think.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "experiment-custom")]
-    Custom(FnWrapper<fn(&Self, &JobStateView) -> Result<Option<Cow<'static, str>>, StringSourceError>>)
+    Custom(FnWrapper<for<'a> fn(&'a Self, &'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>>)
 }
 
 impl FromStr for StringSource {
@@ -376,7 +372,7 @@ impl From<String> for StringSource {
 }
 
 impl From<&str> for Box<StringSource> {
-    /// Returns a [`Self::String`].
+    /// Returns a [`StringSource::String`].
     /// 
     /// Exists for convenience.
     fn from(value: &str) -> Self {
@@ -385,7 +381,7 @@ impl From<&str> for Box<StringSource> {
 }
 
 impl From<String> for Box<StringSource> {
-    /// Returns a [`Self::String`].
+    /// Returns a [`StringSource::String`].
     /// 
     /// Exists for convenience.
     fn from(value: String) -> Self {

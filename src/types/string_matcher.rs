@@ -23,10 +23,8 @@ pub enum StringMatcher {
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
-    /// 
-    /// *Can* be used in production as in both bash and batch `x | y` only pipes `x`'s STDOUT, but you probably shouldn't.
     /// # Errors
-    /// If the contained [`Self`] errors, returns that error.
+    /// If the call to [`Self::satisfied_by`] errors, returns that error.
     Debug(Box<Self>),
 
     // Logic
@@ -48,24 +46,24 @@ pub enum StringMatcher {
     },
     /// Passes if the included [`Self`] doesn't and vice-versa.
     /// # Errors
-    /// If the contained [`Self`] returns an error, that error is returned.
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     Not(Box<Self>),
     /// Passes if all of the included [`Self`]s pass.
     /// Like [`Iterator::all`], an empty list passes.
     /// # Errors
-    /// If any of the contained [`Self`]s returns an error, that error is returned.
+    /// If any of the calls to [`Self::satisfied_by`] return an error, that error is returned.
     All(Vec<Self>),
     /// Passes if any of the included [`Self`]s pass.
     /// Like [`Iterator::any`], an empty list fails.
     /// # Errors
-    /// If any of the contained [`Self`]s returns an error, that error is returned.
+    /// If any of the calls to [`Self::satisfied_by`] return an error, that error is returned.
     Any(Vec<Self>),
 
     // Error handling.
 
-    /// If the contained [`Self`] returns an error, treat it as a pass.
+    /// If the call to [`Self::satisfied_by`] returns an error, treat it as a pass.
     TreatErrorAsPass(Box<Self>),
-    /// If the contained [`Self`] returns an error, treat it as a fail.
+    /// If the call to [`Self::satisfied_by`] returns an error, treat it as a fail.
     TreatErrorAsFail(Box<Self>),
     /// If `try` returns an error, `else` is executed.
     /// If `try` does not return an error, `else` is not executed.
@@ -79,7 +77,7 @@ pub enum StringMatcher {
     },
     /// Effectively a [`Self::TryElse`] chain but less ugly.
     /// # Errors
-    /// If every contained [`Self`] returns an error, returns the last error.
+    /// If every call to [`Self::satisfied_by`] returns an error, returns the last error.
     FirstNotError(Vec<Self>),
 
     // Other.
@@ -183,7 +181,7 @@ pub enum StringMatcher {
     /// 
     /// If the call to [`HashMap::get`] to get the list from [`Params::lists`] returns [`None`] returns the error [`StringMatcherError::ListNotFound`].
     /// 
-    /// If any of the calls to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    /// If any of the calls to [`StringLocation::satisfied_by`] return an error, that error is returned.
     ContainsAnyInList {
         /// The location in `haystack` to look at.
         r#where: StringLocation,

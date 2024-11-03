@@ -19,6 +19,10 @@ mod util;
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
 /// URL Cleaner - Explicit non-consent to URL-based tracking.
 /// 
+/// Released under the GNU Affero General Public License 3.0 or later (AGPL-3.0-or-later).
+/// 
+/// Source code: https://github.com/Scripter17/url-cleaner
+/// 
 /// Enabled features:
 #[cfg_attr(feature = "default-config"         , doc = "default-config"         )]
 #[cfg_attr(feature = "minify-included-strings", doc = "minify-included-strings")]
@@ -125,7 +129,7 @@ pub struct Args {
     #[arg(             long, verbatim_doc_comment)]
     pub print_docs: bool,
     /// Run the config's tests.
-    /// When this or any other `--print-...` flag is set, no URLs are cleaned.
+    /// When this or any `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub test_config : bool
 }

@@ -30,6 +30,7 @@
 //!     config: Cow::Borrowed(&config),
 #![cfg_attr(feature = "cache", doc = "    // Doesn't do anything expensive until actually used.")]
 #![cfg_attr(feature = "cache", doc = "    // You should use a global static `OnceLock` if you have to make multiple `Jobs`s with the same `Cache`.")]
+#![cfg_attr(feature = "cache", doc = "    // That's fine because cloning a `Cache` is extremely cheap, because it's an `Arc<Mutex<InnerCache>>`.")]
 #![cfg_attr(feature = "cache", doc = "    cache: config.cache_path.as_str().into(),")]
 //!     // Ideally you'll be handling URLs in bulk.
 //!     job_config_source: Box::new(vec![
@@ -42,9 +43,9 @@
 //! }
 //! ```
 
-#[allow(unused_imports, reason = "Used in the module's doc coment.")]
+#[allow(unused_imports, reason = "Used in the module's doc comment.")]
 use std::str::FromStr;
-#[allow(unused_imports, reason = "Used in the module's doc coment.")]
+#[allow(unused_imports, reason = "Used in the module's doc comment.")]
 use serde::Deserialize;
 
 pub mod glue;
