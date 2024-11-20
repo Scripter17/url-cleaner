@@ -67,7 +67,7 @@ impl Config {
     /// If the specified file can't be loaded, returns the error [`GetConfigError::CantLoadConfigFile`].
     /// 
     /// If the config contained in the specified file can't be parsed, returns the error [`GetConfigError::CantParseConfigFile`].
-    pub fn load_from_file(path: &Path) -> Result<Self, GetConfigError> {
+    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetConfigError> {
         serde_json::from_str(&read_to_string(path).map_err(GetConfigError::CantLoadConfigFile)?).map_err(GetConfigError::CantParseConfigFile)
     }
 
@@ -106,7 +106,7 @@ impl Config {
     /// If `path` is `Some` and the call to [`Self::load_from_file`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
     #[cfg(feature = "default-config")]
-    pub fn get_default_or_load(path: Option<&Path>) -> Result<Cow<'static, Self>, GetConfigError> {
+    pub fn get_default_or_load<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Self>, GetConfigError> {
         Ok(match path {
             Some(path) => Cow::Owned(Self::load_from_file(path)?),
             None => Cow::Borrowed(Self::get_default()?)
@@ -119,7 +119,7 @@ impl Config {
     /// # Errors
     /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
     #[cfg(feature = "default-config")]
-    pub fn get_default_no_cache_or_load(path: Option<&Path>) -> Result<Self, GetConfigError> {
+    pub fn get_default_no_cache_or_load<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetConfigError> {
         Ok(match path {
             Some(path) => Self::load_from_file(path)?,
             None => Self::get_default_no_cache()?
@@ -189,7 +189,7 @@ pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 #[allow(dead_code, reason = "Public API.")]
 pub static DEFAULT_CONFIG: OnceLock<Config> = OnceLock::new();
 
-/// An enum containing all possible errors that can happen when loading/parsing a rules into a [`Rules`]
+/// An enum containing all possible errors that can happen when loading/parsing a config.
 #[derive(Debug, Error)]
 pub enum GetConfigError {
     /// Could not load the specified config file.

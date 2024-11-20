@@ -118,14 +118,14 @@ pub enum Condition {
         /// The map specifying which values should run which conditions.
         map: HashMap<Option<String>, Self>
     },
-    /// Passes if the condition in `map` whose key is the value returned by `source`'s [`StringSource::get`] passes.
+    /// Passes if the condition in `map` whose key is the value returned by `value`'s [`StringSource::get`] passes.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     StringMap {
         /// The string to index the map with.
-        source: Option<StringSource>,
+        value: Option<StringSource>,
         /// The map specifying which values should run which conditions.
         map: HashMap<Option<String>, Self>
     },
@@ -525,32 +525,32 @@ pub enum Condition {
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
     StringIs {
         /// The left hand side of the `==` operation.
-        source: Option<StringSource>,
+        left: Option<StringSource>,
         /// The right hand side of the `==` operation.`
-        value: Option<StringSource>
+        right: Option<StringSource>
     },
-    /// Passes if [`Self::StringContains::source`] contains [`Self::StringContains::value`] at [`Self::StringContains::where`].
+    /// Passes if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::where`].
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     StringContains {
         /// The haystack to search in.
-        source: StringSource,
-        /// The needle to look for.
         value: StringSource,
+        /// The needle to look for.
+        substring: StringSource,
         /// Where to look (defaults to [`StringLocation::Anywhere`]).
         #[serde(default)]
         r#where: StringLocation
     },
-    /// Passes if [`Self::StringMatches::source`] contains [`Self::StringMatches::matcher`].
+    /// Passes if [`Self::StringMatches::value`] contains [`Self::StringMatches::matcher`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     StringMatches {
         /// The string to match.
-        source: StringSource,
+        value: StringSource,
         /// The matcher.
         matcher: StringMatcher
     },
@@ -602,7 +602,7 @@ pub enum Condition {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "experiment-custom")]
-    Custom(FnWrapper<fn(&Self, &JobStateView) -> Result<bool, ConditionError>>)
+    Custom(FnWrapper<fn(&JobStateView) -> Result<bool, ConditionError>>)
 }
 
 /// An enum of all possible errors a [`Condition`] can return.
@@ -695,7 +695,7 @@ impl Condition {
                 Some(condition) => condition.satisfied_by(job_state)?,
                 None => false
             },
-            Self::StringMap{source, map} => match map.get(&get_option_string!(source, job_state)) {
+            Self::StringMap{value, map} => match map.get(&get_option_string!(value, job_state)) {
                 Some(condition) => condition.satisfied_by(job_state)?,
                 None => false
             },
@@ -764,9 +764,9 @@ impl Condition {
 
             // String source.
 
-            Self::StringIs {source, value} => get_option_str!(source, job_state)==get_option_str!(value, job_state),
-            Self::StringContains {source, value, r#where} => r#where.satisfied_by(get_str!(source, job_state, ConditionError), get_str!(value, job_state, ConditionError))?,
-            Self::StringMatches {source, matcher} => matcher.satisfied_by(get_str!(source, job_state, ConditionError), job_state)?,
+            Self::StringIs {left, right} => get_option_str!(left, job_state)==get_option_str!(right, job_state),
+            Self::StringContains {value, substring, r#where} => r#where.satisfied_by(get_str!(value, job_state, ConditionError), get_str!(substring, job_state, ConditionError))?,
+            Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, job_state, ConditionError), job_state)?,
 
             // Commands.
 
@@ -786,7 +786,7 @@ impl Condition {
                 })?
             },
             #[cfg(feature = "experiment-custom")]
-            Self::Custom(function) => function(self, job_state)?
+            Self::Custom(function) => function(job_state)?
         })
     }
 
@@ -799,7 +799,7 @@ impl Condition {
             Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
             Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
             Self::PartMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
-            Self::StringMap {source, map} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
+            Self::StringMap {value, map} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
             Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(config),
             Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
@@ -809,9 +809,9 @@ impl Condition {
             Self::PartMatches {part, matcher} => part.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             Self::VarIs {name, value} => name.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),
-            Self::StringIs {source, value} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::StringContains {source, value, r#where} => source.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
-            Self::StringMatches {source, matcher} => source.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::StringIs {left, right} => left.as_ref().is_none_or(|left| left.is_suitable_for_release(config)) && right.as_ref().is_none_or(|right| right.is_suitable_for_release(config)),
+            Self::StringContains {value, substring, r#where} => value.is_suitable_for_release(config) && substring.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
+            Self::StringMatches {value, matcher} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             #[cfg(feature = "commands")] Self::CommandExists (_) => false,
             #[cfg(feature = "commands")] Self::CommandExitStatus {..} => false,
             Self::Always | Self::Never | Self::Error | Self::MaybeWWWDomain(_) |

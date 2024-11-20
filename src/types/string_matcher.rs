@@ -245,7 +245,7 @@ pub enum StringMatcher {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "experiment-custom")]
-    Custom(FnWrapper<fn(&Self, &str, &JobStateView) -> Result<bool, StringMatcherError>>)
+    Custom(FnWrapper<fn(&str, &JobStateView) -> Result<bool, StringMatcherError>>)
 }
 
 #[cfg(feature = "regex")]
@@ -437,7 +437,7 @@ impl StringMatcher {
                 )?
             },
             #[cfg(feature = "experiment-custom")]
-            Self::Custom(function) => function(self, haystack, job_state)?,
+            Self::Custom(function) => function(haystack, job_state)?,
         })
     }
 

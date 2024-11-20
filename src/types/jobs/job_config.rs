@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::str::FromStr;
+use std::io;
 
 use serde::{Serialize, Deserialize};
 use url::Url;
@@ -11,6 +12,24 @@ use crate::types::*;
 use crate::util::*;
 
 /// Defines how each [`Job`] from a [`Jobs`] should be constructed.
+/// 
+/// When deserializing from a string or using [`FromStr::from_str`]/[`TryFrom<&str>`], if the string starts with `{`, it's deserializes the string's value.
+/// 
+/// For example, `{"url": "https://example.com"}` and `"{\"url\": \"https://example.com\"}"` deserialize to the same value.
+/// 
+/// This allows for more flexible APIs where having to input JSON objects is infeasable, like in command line interfaces.
+/// ```
+/// # use std::str::FromStr;
+/// # use url_cleaner::types::*;
+/// assert_eq!(
+///     serde_json::from_str::<JobConfig>("{\"url\": \"https://example.com\"}").unwrap(),
+///     serde_json::from_str::<JobConfig>("\"{\\\"url\\\": \\\"https://example.com\\\"}\"").unwrap()
+/// );
+/// assert_eq!(
+///     JobConfig::from_str("https://example.com").unwrap(),
+///     JobConfig::from_str("{\"url\": \"https://example.com\"}").unwrap()
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(remote = "Self")]
 pub struct JobConfig {
@@ -31,6 +50,8 @@ impl From<Url> for JobConfig {
 }
 
 /// The enum of errors [`JobConfig::from_str`] and [`<JobConfig as TryFrom<&str>>::try_from`] can return.
+/// 
+/// Additionally has [`Self::IoError`] and [`Self::Other`] to accomodate [`Jobs::job_configs_source`] iterators.
 #[derive(Debug, Error)]
 pub enum MakeJobConfigError {
     /// Returned when a [`url::ParseError`] is encountered.
@@ -38,7 +59,13 @@ pub enum MakeJobConfigError {
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error)
+    SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when an [`io::Error`] is encountered.
+    #[error(transparent)]
+    IoError(#[from] io::Error),
+    /// Generic error wrapper.
+    #[error(transparent)]
+    Other(#[from] Box<dyn Error>)
 }
 
 impl FromStr for JobConfig {
@@ -66,18 +93,3 @@ impl TryFrom<&str> for JobConfig {
 }
 
 string_or_struct_magic!(JobConfig);
-
-/// The enum of errors that can happen when [`Jobs::iter`] tries to get a URL.
-#[derive(Debug, Error)]
-pub enum JobConfigSourceError {
-    /// Returned when a [`MakeJobConfigError`] is encountered.
-    #[error(transparent)]
-    MakeJobConfigError(#[from] MakeJobConfigError),
-    /// Returned when a [`std::io::Error`] is encountered.
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-    /// Catch-all for user-defined URL sources with errors not listed here.
-    #[allow(dead_code, reason = "Public API for use in other people's code.")]
-    #[error(transparent)]
-    Other(#[from] Box<dyn Error>)
-}

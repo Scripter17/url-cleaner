@@ -49,17 +49,8 @@ pub struct NewCacheEntry<'a> {
 /// Convenience wrapper to contain the annoyingness of it all.
 /// 
 /// Internally it's an [`Arc`] of a [`Mutex`] so cloning is O(1) and sharing immutable references is not a problem.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Cache(pub Arc<Mutex<InnerCache>>);
-
-impl Default for Cache {
-    /// Has the "path" of `:memory:`, which just stores the database in memory until the program exits.
-    /// 
-    /// Seems like a reasonable default.
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
 
 /// The internals of [`Cache`] that handles lazily connecting.
 pub struct InnerCache {

@@ -116,7 +116,7 @@ pub enum Mapper {
         #[serde(default)]
         r#else: Option<Box<Self>>
     },
-    /// Indexes `map` with the string returned by `source` and applies that mapper.
+    /// Indexes `map` with the string returned by `value` and applies that mapper.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
@@ -125,7 +125,7 @@ pub enum Mapper {
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     StringMap {
         /// The string to index `map` with.
-        source: Option<StringSource>,
+        value: Option<StringSource>,
         /// The map specifying which strings should apply which mapper.
         map: HashMap<Option<String>, Self>,
         /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
@@ -438,7 +438,7 @@ pub enum Mapper {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "experiment-custom")]
-    Custom(FnWrapper<fn(&Self, &mut JobState) -> Result<(), MapperError>>)
+    Custom(FnWrapper<fn(&mut JobState) -> Result<(), MapperError>>)
 }
 
 /// Individual links in the [`Mapper::ConditionChain`] chain.
@@ -584,23 +584,18 @@ impl Mapper {
                 }
             },
             Self::All(mappers) => {
-                let mut temp_url = job_state.url.clone();
-                let mut temp_scratchpad = job_state.scratchpad.clone();
-                let mut temp_job_state = JobState {
-                    url: &mut temp_url,
-                    params: job_state.params,
-                    scratchpad: &mut temp_scratchpad,
-                    context: job_state.context,
-                    #[cfg(feature = "cache")]
-                    cache: job_state.cache,
-                    commons: job_state.commons,
-                    common_args: job_state.common_args,
-                };
+                let old_url = job_state.url.clone();
+                let old_scratchpad = job_state.scratchpad.clone();
                 for mapper in mappers {
-                    mapper.apply(&mut temp_job_state)?;
+                    match mapper.apply(job_state) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            *job_state.url = old_url;
+                            *job_state.scratchpad = old_scratchpad;
+                            return Err(e);
+                        }
+                    }
                 }
-                *job_state.scratchpad = temp_scratchpad;
-                *job_state.url = temp_url;
             },
             Self::AllNoRevert(mappers) => {
                 for mapper in mappers {
@@ -621,8 +616,8 @@ impl Mapper {
                     _ => Err(MapperError::MapperNotFound)?
                 }.apply(job_state)?
             },
-            Self::StringMap {source, map, if_null, r#else} => {
-                let key = get_option_string!(source, job_state);
+            Self::StringMap {value, map, if_null, r#else} => {
+                let key = get_option_string!(value, job_state);
                 match (key.is_none(), map.get(&key), if_null, r#else) {
                     (_   , Some(mapper), _           , _           ) => mapper,
                     (true, _           , Some(mapper), _           ) => mapper,
@@ -794,7 +789,7 @@ impl Mapper {
                 })?
             },
             #[cfg(feature = "experiment-custom")]
-            Self::Custom(function) => function(self, job_state)?
+            Self::Custom(function) => function(job_state)?
         };
         Ok(())
     }
@@ -808,7 +803,7 @@ impl Mapper {
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
-            Self::StringMap {source, map, if_null, r#else} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::StringMap {value, map, if_null, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
             Self::IgnoreError(mapper) => mapper.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),

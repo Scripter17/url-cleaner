@@ -134,7 +134,50 @@ Currently only one list is included in the default config:
 Currently there is no command line syntax for them. There really should be.
 <!--/cmd-->
 
-#### Citations
+#### But how fast is it?
+
+Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some hyperfine and valgrind benchmarking so I can reliably check for regressions.
+
+On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
+
+(The numbers are in milliseconds)
+
+```Json
+{
+  "https://x.com?a=2": {
+    "0":       5.176,
+    "1":       5.455,
+    "10":      5.284,
+    "100":     5.859,
+    "1000":    9.194,
+    "10000":  45.828
+  },
+  "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
+    "0":       5.351,
+    "1":       5.306,
+    "10":      5.313,
+    "100":     5.836,
+    "1000":   11.340,
+    "10000":  62.017
+  },
+  "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
+    "0":       5.516,
+    "1":       5.228,
+    "10":      5.562,
+    "100":     6.279,
+    "1000":   14.972,
+    "10000": 101.226
+  }
+}
+```
+
+In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is often up to 10x worse because for some reason `GM_XMLHttpRequest` always takes at least 10ms on my machine and, from basic testing, the amazon homepage has 1k URLs and takes about 8-10 requests to clean all of them.
+
+Mileage varies wildly but as long as you're not spawning a new instance of URL Cleaner for each URL it should be fast enough.
+
+Please note that URL Cleaner is currently single threaded because I don't know how to do it well. Parallelizing yourself (for example, with [GNU Parallel](https://www.gnu.org/software/parallel/)) may give better results.
+
+#### Credits
 
 The people and projects I have stolen various parts of the default config from.
 

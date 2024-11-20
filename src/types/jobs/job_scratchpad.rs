@@ -4,8 +4,6 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
-#[allow(unused_imports, reason = "Used in a doc comment.")]
-use crate::types::*;
 use crate::util::*;
 
 /// Mutable state that you can use to track data between rules outside of the URL.

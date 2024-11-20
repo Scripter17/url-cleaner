@@ -21,7 +21,7 @@ pub struct Jobs<'a> {
     #[cfg(feature = "cache")]
     pub cache: Cache,
     /// The iterator [`JobConfig`]s are acquired from.
-    pub job_config_source: Box<dyn Iterator<Item = Result<JobConfig, JobConfigSourceError>>>
+    pub job_configs_source: Box<dyn Iterator<Item = Result<JobConfig, MakeJobConfigError>>>
 }
 
 impl ::core::fmt::Debug for Jobs<'_> {
@@ -31,15 +31,15 @@ impl ::core::fmt::Debug for Jobs<'_> {
         x.field("config", &self.config);
         #[cfg(feature = "cache")]
         x.field("cache", &self.cache);
-        x.field("job_config_source", &"...");
+        x.field("job_configs_source", &"...");
         x.finish()
     }
 }
 
-impl Jobs<'_> {
-    /// Iterates over [`Job`]s created from [`JobConfig`]s returned from [`Self::job_config_source`].
-    pub fn iter(&mut self) -> impl Iterator<Item = Result<Job<'_>, GetJobError>> {
-        (&mut self.job_config_source)
+impl<'a> Jobs<'a> {
+    /// Iterates over [`Job`]s created from [`JobConfig`]s returned from [`Self::job_configs_source`].
+    pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, MakeJobError>> {
+        (&mut self.job_configs_source)
             .map(|job_config_result| match job_config_result {
                 Ok(JobConfig {url, context}) => Ok(Job {
                     url,
@@ -56,7 +56,7 @@ impl Jobs<'_> {
     /// 
     /// Can be more convenient than [`Self::iter`].
     #[allow(dead_code, reason = "Public API.")]
-    pub fn with_job_config(&self, job_config: JobConfig) -> Job<'_> {
+    pub fn with_job_config(&'a self, job_config: JobConfig) -> Job<'a> {
         Job {
             url: job_config.url,
             config: &self.config,
@@ -67,10 +67,10 @@ impl Jobs<'_> {
     }
 }
 
-/// The enum of errors [`Jobs::iter`] can return.
+/// The enum of errors that can happen when [`Jobs::iter`] tries to get a URL.
 #[derive(Debug, Error)]
-pub enum GetJobError {
-    /// Returned when a [`JobConfigSourceError`] is encountered.
+pub enum MakeJobError {
+    /// Returned when a [`MakeJobConfigError`] is encountered.
     #[error(transparent)]
-    JobConfigSourceError(#[from] JobConfigSourceError)
+    MakeJobConfigError(#[from] MakeJobConfigError)
 }

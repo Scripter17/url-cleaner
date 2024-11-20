@@ -35,15 +35,15 @@ pub enum StringSource {
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     NoneToEmptyString(Box<Self>),
-    /// If [`Self::NoneTo::source`] returns `None`, instead return the value of [`Self::NoneTo::if_none`].
+    /// If [`Self::NoneTo::value`] returns `None`, instead return the value of [`Self::NoneTo::if_none`].
     /// 
     /// Please note that [`Self::NoneTo::if_none`] can still return [`None`] and does not return an error when it does so.
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
     NoneTo {
         /// The [`Self`] to use by default.
-        source: Box<Self>,
-        /// The [`Self`] to use if [`Self::NoneTo::source`] returns [`None`].
+        value: Box<Self>,
+        /// The [`Self`] to use if [`Self::NoneTo::value`] returns [`None`].
         if_none: Box<Self>
     },
 
@@ -116,14 +116,14 @@ pub enum StringSource {
         /// If the flag is not set, use this.
         r#else: Box<Self>
     },
-    /// If the value of `source` matches `matcher`, returns the value of `then`, otherwise returns the value of `else`.
+    /// If the value of `value` matches `matcher`, returns the value of `then`, otherwise returns the value of `else`.
     /// # Errors
     /// If any call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     IfSourceMatches {
         /// The [`Self`] to match on.
-        source: Box<Self>,
+        value: Box<Self>,
         /// The matcher.
         matcher: Box<StringMatcher>,
         /// The [`Self`] to return if the matcher passes.
@@ -131,34 +131,34 @@ pub enum StringSource {
         /// The [`Self`] to return if the matcher fails.
         r#else: Box<Self>
     },
-    /// If the value of `source` is [`None`], returns the value of `then`, otherwise returns the value of `else`.
+    /// If the value of `value` is [`None`], returns the value of `then`, otherwise returns the value of `else`.
     /// # Errors
     /// If any of the calls to [`StringSource::get`] return an error, that error is returned.
     IfSourceIsNone {
         /// The value to check the [`None`]ness of.
-        source: Box<Self>,
-        /// The value to return if `source` is [`None`].
+        value: Box<Self>,
+        /// The value to return if `value` is [`None`].
         then: Box<Self>,
-        /// The value to return if `source` is not [`None`]
+        /// The value to return if `value` is not [`None`]
         r#else: Box<Self>
     },
-    /// Gets the `Option<String>` from [`Self::Map::source`] then, if it exists in [`Self::Map::map`], gets its corresponding [`Self`]'s value.
+    /// Gets the `Option<String>` from [`Self::Map::value`] then, if it exists in [`Self::Map::map`], gets its corresponding [`Self`]'s value.
     /// 
     /// The main benefit of this over [`StringModification::Map`] is this can handle [`None`].
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
     /// 
-    /// If string returned by [`Self::Map::source`] is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
+    /// If string returned by [`Self::Map::value`] is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
     Map {
         /// The string to index the map with.
-        source: Option<Box<Self>>,
+        value: Option<Box<Self>>,
         /// The map to map the string with.
         /// 
         /// God these docs need a total rewrite.
         map: HashMap<Option<String>, Self>,
         /// JSON doesn't allow `null`/[`None`] to be a key in objects.
         /// 
-        /// If `source` returns [`None`], there's no [`None`] in `map`, and `if_null` is not [`None`], the [`Self`] in `if_null` is used.
+        /// If `value` returns [`None`], there's no [`None`] in `map`, and `if_null` is not [`None`], the [`Self`] in `if_null` is used.
         /// 
         /// Defaults to [`None`].
         #[serde(default)]
@@ -194,7 +194,7 @@ pub enum StringSource {
     /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("example.com")));
     /// ```
     Part(UrlPart),
-    /// Parses `source` as a URL and gets the specified part.
+    /// Parses `value` as a URL and gets the specified part.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// 
@@ -209,7 +209,7 @@ pub enum StringSource {
     /// 
     /// assert_eq!(
     ///     StringSource::ExtractPart {
-    ///         source: "https://example.com".into(),
+    ///         value: "https://example.com".into(),
     ///         part: UrlPart::Scheme
     ///     }.get(&job_state.to_view()).unwrap(),
     ///     Some(Cow::Borrowed("https"))
@@ -217,8 +217,8 @@ pub enum StringSource {
     /// ```
     ExtractPart {
         /// The string to parse and extract `part` from.
-        source: Box<Self>,
-        /// The part to extract from `source`.
+        value: Box<Self>,
+        /// The part to extract from `value`.
         part: UrlPart
     },
     /// Indexes [`JobState::common_args`].
@@ -265,12 +265,12 @@ pub enum StringSource {
         /// The key to index the map with.
         key: Box<Self>
     },
-    /// Gets a string with `source`, modifies it with `modification`, and returns the result.
+    /// Gets a string with `value`, modifies it with `modification`, and returns the result.
     /// # Errors
     /// If the call to [`StringModification::apply`] errors, returns that error.
     Modified {
-        /// The source to get the string from.
-        source: Box<Self>,
+        /// The [`Self`] get the string from.
+        value: Box<Self>,
         /// The modification to apply to the string.
         modification: Box<StringModification>
     },
@@ -315,24 +315,24 @@ pub enum StringSource {
         /// The key to cache with.
         key: Box<Self>,
         /// The [`Self`] to cache.
-        source: Box<Self>
+        value: Box<Self>
     },
-    /// Extracts the substring of `source` found between the first `start` and the first subsequent `end`.
+    /// Extracts the substring of `value` found between the first `start` and the first subsequent `end`.
     /// 
     /// The same as [`StringModification::ExtractBetween`] but preserves borrowedness.
     /// 
-    /// If `source` returns a [`Cow::Borrowed`], this will also return a [`Cow::Borrowed`].
+    /// If `value` returns a [`Cow::Borrowed`], this will also return a [`Cow::Borrowed`].
     /// # Errors
     /// If any call to [`Self::get`] returns an error, that error is returned.
     /// 
     /// If any call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
     /// 
-    /// If `start` is not found in `source`, returns the error [`StringSourceError::ExtractBetweenStartNotFound`].
+    /// If `start` is not found in `value`, returns the error [`StringSourceError::ExtractBetweenStartNotFound`].
     /// 
-    /// If `end` is not found in `source` after `start`, returns the error [`StringSourceError::ExtractBetweenEndNotFound`].
+    /// If `end` is not found in `value` after `start`, returns the error [`StringSourceError::ExtractBetweenEndNotFound`].
     ExtractBetween {
         /// The [`Self`] to get a substring from.
-        source: Box<Self>,
+        value: Box<Self>,
         /// The [`Self`] to look for before the substring.
         start: Box<Self>,
         /// The [`Self`] to look for after the substring.
@@ -345,7 +345,7 @@ pub enum StringSource {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "experiment-custom")]
-    Custom(FnWrapper<for<'a> fn(&'a Self, &'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>>)
+    Custom(FnWrapper<for<'a> fn(&'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>>)
 }
 
 impl FromStr for StringSource {
@@ -450,10 +450,10 @@ pub enum StringSourceError {
     /// Returned when [`StringSource::Common`] is used outside of a common context.
     #[error("Not in a common context.")]
     NotInACommonContext,
-    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `source`.
+    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `value`.
     #[error("The `start` of an `ExtractBetween` was not found in the string.")]
     ExtractBetweenStartNotFound,
-    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `source`.
+    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `value`.
     #[error("The `end` of an `ExtractBetween` was not found in the string.")]
     ExtractBetweenEndNotFound,
     /// Returned when the common [`StringSource`] is not found.
@@ -489,37 +489,38 @@ impl StringSource {
     pub fn get<'a>(&'a self, job_state: &'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         debug!(StringSource::get, self, job_state);
         Ok(match self {
+            Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::Error => Err(StringSourceError::ExplicitError)?,
             Self::Debug(source) => {
-                let ret=source.get(job_state);
+                let ret = source.get(job_state);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nJob state: {job_state:?}\nret: {ret:?}");
                 ret?
             },
-            Self::NoneToEmptyString(source) => source.get(job_state)?.or(Some(Cow::Borrowed(""))),
-            Self::NoneTo {source, if_none} => source.get(job_state).transpose().or_else(|| if_none.get(job_state).transpose()).transpose()?,
+            Self::NoneToEmptyString(value) => value.get(job_state)?.or(Some(Cow::Borrowed(""))),
+            Self::NoneTo {value, if_none} => value.get(job_state).transpose().or_else(|| if_none.get(job_state).transpose()).transpose()?,
 
 
 
             // I love that [`Result`] and [`Option`] implement [`FromIterator`].
             // It's so silly but it works SO well.
-            Self::Join {sources, join} => sources.iter().map(|source| source.get(job_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            Self::Join {sources, join} => sources.iter().map(|value| value.get(job_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(&get_string!(flag, job_state, StringSourceError)) {then} else {r#else}.get(job_state)?,
-            Self::IfSourceMatches {source, matcher, then, r#else} => {
-                if matcher.satisfied_by(get_str!(source, job_state, StringSourceError), job_state)? {
+            Self::IfSourceMatches {value, matcher, then, r#else} => {
+                if matcher.satisfied_by(get_str!(value, job_state, StringSourceError), job_state)? {
                     then.get(job_state)?
                 } else {
                     r#else.get(job_state)?
                 }
             },
-            Self::IfSourceIsNone {source, then, r#else} => {
-                if source.get(job_state)?.is_none() {
+            Self::IfSourceIsNone {value, then, r#else} => {
+                if value.get(job_state)?.is_none() {
                     then.get(job_state)?
                 } else {
                     r#else.get(job_state)?
                 }
             },
-            Self::Map {source, map, if_null, r#else} => {
-                let key = get_option_string!(source, job_state);
+            Self::Map {value, map, if_null, r#else} => {
+                let key = get_option_string!(value, job_state);
                 match (key.is_none(), map.get(&key), if_null, r#else) {
                     (_   , Some(mapper), _           , _           ) => mapper,
                     (true, _           , Some(mapper), _           ) => mapper,
@@ -530,16 +531,15 @@ impl StringSource {
 
 
 
-            Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::Part(part) => part.get(job_state.url),
-            Self::ExtractPart{source, part} => source.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
+            Self::ExtractPart{value, part} => value.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::CommonVar(name) => job_state.common_args.ok_or(StringSourceError::NotInACommonContext)?.vars.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::MapKey {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
-            Self::Modified {source, modification} => {
-                match source.as_ref().get(job_state)? {
+            Self::Modified {value, modification} => {
+                match value.as_ref().get(job_state)? {
                     Some(x) => {
                         let mut x = x.into_owned();
                         modification.apply(&mut x, job_state)?;
@@ -562,23 +562,8 @@ impl StringSource {
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(job_state)?)),
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
-            #[cfg(feature = "cache")]
-            Self::Cache {category, key, source} => {
-                let category = get_string!(category, job_state, StringSourceError);
-                let key = get_string!(key, job_state, StringSourceError);
-                if job_state.params.read_cache {
-                    if let Some(ret) = job_state.cache.read(&category, &key)? {
-                        return Ok(ret.map(Cow::Owned));
-                    }
-                }
-                let ret = source.get(job_state)?;
-                if job_state.params.write_cache {
-                    job_state.cache.write(&category, &key, ret.as_deref())?;
-                }
-                ret
-            },
-            Self::ExtractBetween {source, start, end} => {
-                Some(match source.get(job_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+            Self::ExtractBetween {value, start, end} => {
+                Some(match value.get(job_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
                     Cow::Borrowed(x) => Cow::Borrowed(x
                         .split_once(get_str!(start, job_state, StringSourceError))
                         .ok_or(StringSourceError::ExtractBetweenStartNotFound)?
@@ -596,6 +581,21 @@ impl StringSource {
                         .to_string())
                 })
             },
+            #[cfg(feature = "cache")]
+            Self::Cache {category, key, value} => {
+                let category = get_string!(category, job_state, StringSourceError);
+                let key = get_string!(key, job_state, StringSourceError);
+                if job_state.params.read_cache {
+                    if let Some(ret) = job_state.cache.read(&category, &key)? {
+                        return Ok(ret.map(Cow::Owned));
+                    }
+                }
+                let ret = value.get(job_state)?;
+                if job_state.params.write_cache {
+                    job_state.cache.write(&category, &key, ret.as_deref())?;
+                }
+                ret
+            },
             Self::Common(common_call) => {
                 job_state.commons.string_sources.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&JobStateView {
                     url: job_state.url,
@@ -609,37 +609,37 @@ impl StringSource {
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
             #[cfg(feature = "experiment-custom")]
-            Self::Custom(function) => function(self, job_state)?
+            Self::Custom(function) => function(job_state)?
         })
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
-            Self::NoneToEmptyString(source) => source.is_suitable_for_release(config),
-            Self::NoneTo {source, if_none} => source.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
-            Self::Join {sources, ..} => sources.iter().all(|source| source.is_suitable_for_release(config)),
+            Self::NoneToEmptyString(value) => value.is_suitable_for_release(config),
+            Self::NoneTo {value, if_none} => value.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
+            Self::Join {sources, ..} => sources.iter().all(|value| value.is_suitable_for_release(config)),
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config) && check_docs!(config, flags, flag.as_ref()),
-            Self::IfSourceMatches {source, matcher, then, r#else} => source.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::IfSourceIsNone {source, then, r#else} => source.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Map {source, map, if_null, r#else} => source.as_ref().is_none_or(|source| source.is_suitable_for_release(config)) && map.iter().all(|(_, source)| source.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::IfSourceMatches {value, matcher, then, r#else} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::IfSourceIsNone {value, then, r#else} => value.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
+            Self::Map {value, map, if_null, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, value)| value.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
             Self::Part(part) => part.is_suitable_for_release(config),
-            Self::ExtractPart {source, part} => source.is_suitable_for_release(config) && part.is_suitable_for_release(config),
+            Self::ExtractPart {value, part} => value.is_suitable_for_release(config) && part.is_suitable_for_release(config),
             Self::CommonVar(name) => name.is_suitable_for_release(config),
             Self::Var(name) => name.is_suitable_for_release(config) && check_docs!(config, vars, name.as_ref()),
             Self::ScratchpadVar(name) => name.is_suitable_for_release(config),
             Self::ContextVar(name) => name.is_suitable_for_release(config),
             Self::MapKey {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
-            Self::Modified {source, modification} => source.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::Modified {value, modification} => value.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),
-            #[cfg(feature = "cache")] Self::Cache {category, key, source} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && source.is_suitable_for_release(config),
+            #[cfg(feature = "cache")] Self::Cache {category, key, value} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && value.is_suitable_for_release(config),
             Self::Debug(_) => false,
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,
             Self::Error | Self::String(_) => true,
             #[cfg(feature = "advanced-http")]
             Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
-            Self::ExtractBetween {source, start, end} => source.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
+            Self::ExtractBetween {value, start, end} => value.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             #[cfg(feature = "experiment-custom")]
             Self::Custom(_) => false

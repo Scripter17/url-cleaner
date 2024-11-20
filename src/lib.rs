@@ -4,8 +4,9 @@
 //! # Examples
 //! ```
 //! use std::borrow::Cow;
+//! use std::str::FromStr;
 //! use url::Url;
-//!
+//! 
 //! use url_cleaner::types::*;
 #![cfg_attr(feature = "cache", doc = "use url_cleaner::glue::Cache;")]
 //! 
@@ -33,9 +34,9 @@
 #![cfg_attr(feature = "cache", doc = "    // That's fine because cloning a `Cache` is extremely cheap, because it's an `Arc<Mutex<InnerCache>>`.")]
 #![cfg_attr(feature = "cache", doc = "    cache: config.cache_path.as_str().into(),")]
 //!     // Ideally you'll be handling URLs in bulk.
-//!     job_config_source: Box::new(vec![
-//!         Url::parse("https://example.com?utm_source=url-cleaner-docs").unwrap()
-//!     ].into_iter().map(|url| Ok(url.into())))
+//!     job_configs_source: Box::new([
+//!         JobConfig::from_str("https://example.com?utm_source=url-cleaner-docs")
+//!     ].into_iter())
 //! };
 //! 
 //! for job in jobs.iter() {

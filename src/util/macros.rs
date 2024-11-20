@@ -121,6 +121,20 @@ macro_rules! get_option_str {
     }
 }
 
+/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
+macro_rules! get_option_cow {
+    ($value:expr, $job_state:expr) => {
+        // $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().as_deref()
+        {
+            let view = &$job_state.to_view();
+            match $value.as_ref() {
+                Some(source) => source.get(view),
+                None => Ok(None)
+            }?
+        }
+    }
+}
+
 /// Shorthand for checking a [`Config::docs`] has an entry for [`StringSource::String`] flags/sets/etc..
 macro_rules! check_docs {
     ($config:expr, $type:ident, $name:expr) => {
@@ -141,4 +155,5 @@ pub(crate) use get_str;
 pub(crate) use get_string;
 pub(crate) use get_option_str;
 pub(crate) use get_option_string;
+pub(crate) use get_option_cow;
 pub(crate) use check_docs;

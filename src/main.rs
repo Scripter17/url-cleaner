@@ -147,6 +147,7 @@ pub enum CliError {
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }
 
+/// Shorthand for serializing a string to JSON.
 fn str_to_json_str(s: &str) -> String {
     serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
@@ -272,10 +273,10 @@ fn main() -> Result<ExitCode, CliError> {
     let mut jobs = Jobs {
         #[cfg(feature = "cache")]
         cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
-        job_config_source: {
-            let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url).map_err(Into::into));
+        job_configs_source: {
+            let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url));
             if !io::stdin().is_terminal() {
-                Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?).map_err(Into::into))))
+                Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?))))
             } else {
                 Box::new(ret)
             }
@@ -328,7 +329,7 @@ fn main() -> Result<ExitCode, CliError> {
                 },
                 Err(e) => {
                     println!();
-                    eprintln!("GetJobError\t{e:?}");
+                    eprintln!("MakeJobError\t{e:?}");
                     some_error = true;
                 }
             }
@@ -336,11 +337,11 @@ fn main() -> Result<ExitCode, CliError> {
     }
 
     #[cfg(feature = "debug-time")] eprintln!("Run Jobs: {:?}", x.elapsed());
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
+    // #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
-    #[cfg(feature = "debug-time")] drop(jobs);
+    // #[cfg(feature = "debug-time")] drop(jobs);
 
-    #[cfg(feature = "debug-time")] eprintln!("Drop Jobs: {:?}", x.elapsed());
+    // #[cfg(feature = "debug-time")] eprintln!("Drop Jobs: {:?}", x.elapsed());
     #[cfg(feature = "debug-time")] eprintln!("Total: {:?}", start_time.elapsed());
 
     Ok(match (some_ok, some_error) {

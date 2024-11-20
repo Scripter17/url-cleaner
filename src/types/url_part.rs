@@ -896,13 +896,7 @@ impl UrlPart {
                 let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
                 Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.strip_suffix('.')?)
             },
-            Self::DomainMiddle => {
-                // Cow::Borrowed(url.domain().map(|x| x.strip_suffix('.').unwrap_or(x).strip_suffix(psl::suffix_str(x)?))??
-                //     .rsplit('.').nth(1)?)
-                // let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
-                // Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.rsplit('.').nth(1)?)
-                Cow::Borrowed(psl::domain_str(url.domain()?)?.split_once('.')?.0)
-            },
+            Self::DomainMiddle => Cow::Borrowed(psl::domain_str(url.domain()?)?.split_once('.')?.0),
             Self::MaybeWWWDomainMiddle => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::DomainMiddle.get(url)} else {None}?,
             Self::Domain       => Cow::Borrowed(url.domain()?),
             Self::DomainSuffix => Cow::Borrowed(url.domain().and_then(psl::suffix_str)?),

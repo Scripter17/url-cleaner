@@ -13,10 +13,10 @@ pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {t == &T::defaul
 
 /// Loops negative `index`es around similar to Python.
 pub(crate) const fn neg_index(index: isize, len: usize) -> Option<usize> {
-    if 0<=index && (index as usize)<len {
-        Some(index as usize)
-    } else if index<0 {
+    if index<0 {
         len.checked_sub(index.unsigned_abs())
+    } else if (index as usize)<len {
+        Some(index as usize)
     } else {
         None
     }
@@ -24,8 +24,8 @@ pub(crate) const fn neg_index(index: isize, len: usize) -> Option<usize> {
 
 /// [`neg_index`] but doesn't [`None`] when `index == len`.
 pub(crate) const fn neg_range_boundary(index: isize, len: usize) -> Option<usize> {
-    if index >= 0 && index as usize == len {
-        Some(index as usize)
+    if index as usize == len {
+        Some(len)
     } else {
         neg_index(index, len)
     }

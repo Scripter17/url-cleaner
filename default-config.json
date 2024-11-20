@@ -75,21 +75,22 @@
 			],
 			"redirect-hosts": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
-				"apple.co", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly",
-				"cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link",
-				"dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com",
-				"go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
-				"is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.leparisien.fr", "link.animaapp.com", "linkr.it",
-				"lnk.to", "loom.ly", "lpc.ca", "msft.it", "mzl.la", "n.pr", "nas.cr", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm",
-				"nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la",
-				"onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "pin.it", "pixiv.me", "play.st", "politi.co", "propub.li", "pulse.ly",
-				"py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team",
-				"s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thr.cm",
-				"tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr",
-				"wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it",
+				"buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt",
+				"dcdr.me", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "flip.it", "forms.gle",
+				"g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co",
+				"hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st",
+				"kre.pe", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "msft.it", "mzl.la", "n.pr",
+				"nas.cr", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
+				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "pin.it",
+				"pixiv.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co",
+				"redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly",
+				"spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thr.cm", "thrn.co", "tiny.cc", "tmz.me", "to.pbs.org", "tps.to",
+				"tr.ee", "trib.al", "u.jd.com", "unes.co", "uni.cf", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd",
+				"xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-not-subdomains": [
-				"lnk.to", "visitlink.me", "goo.gl"
+				"lnk.to", "visitlink.me", "goo.gl", "o93x.net"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -166,8 +167,8 @@
 					"value": {"Cache": {
 						"category": "redirect",
 						"key": {"Part": "Whole"},
-						"source": {"ExtractBetween": {
-							"source": {"HttpRequest": {}},
+						"value": {"ExtractBetween": {
+							"value": {"HttpRequest": {}},
 							"start": {"CommonVar": "start"},
 							"end": {"CommonVar": "end"}
 						}}
@@ -196,8 +197,27 @@
 				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
 				{"job_config": "https://https//example1.com/user/example2.com/abc", "result": "https://example2.com/abc"},
 				{"job_config": "https://www.username.example.com", "result": "https://username.example.com"},
+				{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
+				{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
+				{"job_config": "https://twitter.com/www.twitter.com/user"    , "result": "https://x.com/user"},
+				{"job_config": "https://twitter.com/www.x.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/twitter.com/user"              , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://x.com/user"},
+				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://www.x.com/user"},
 				{"job_config": "https://bsky.app", "result": "https://bsky.app/"},
 				{"job_config": "https://fxbsky.app", "result": "https://bsky.app/"},
+				{"job_config": "https://bsky.app/profile/user", "result": "https://bsky.app/profile/user.bsky.social"},
+				{"job_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
+				{"job_config": "https://bsky.app/profile/user.com", "result": "https://bsky.app/profile/user.com"},
 
 				{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
 				{"job_config": "https://com"      , "result": "https://com"},
@@ -268,13 +288,14 @@
 						{"InSet": "redirect-hosts"},
 						{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
 						{"IsOneOf": [
-					    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "buymeacoff.ee",
-					    "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com", "duckduckgo.com",
-					    "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "gf.me", "gofundme.com", "gofundme.com",
-					    "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com",
-					    "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com",
-					    "proxy.notsobot.com", "rd.goodreads.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly",
-					    "smarturl.it", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com"
+					    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "bugzil.la",
+					    "buymeacoff.ee", "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com",
+					    "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "facebook.com",
+					    "gf.me", "gofundme.com", "gofundme.com", "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com",
+					    "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "old.reddit.com", "open.substack.com", "out.reddit.com",
+					    "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "rd.goodreads.com", "reddit.com", "shareasale-analytics.com",
+					    "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult",
+					    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "carleton.ca"
 					  ]},
 					  {"InSet": "lmgtfy-hosts"},
 					  {"LengthIs": 4},
@@ -283,10 +304,7 @@
 				}},
 				{"TreatErrorAsFail": {"PartMatches": {
 					"part": "NotSubdomain",
-					"matcher": {"Any": [
-						{"InSet": "redirect-not-subdomains"},
-						{"IsOneOf": ["bsky.social"]}
-					]}
+					"matcher": {"InSet": "redirect-not-subdomains"}
 				}}}
 			]},
 			"mapper": {"Rule": {
@@ -322,13 +340,13 @@
 								"try": {"SetPart": {
 									"part": "Whole",
 									"value": {"Modified": {
-										"source": {"Part": {"QueryParam": "url"}},
+										"value": {"Part": {"QueryParam": "url"}},
 										"modification": {"IgnoreError": "UrlDecode"}
 									}}
 								}},
 								"else": { "SetPart": {
 									"part": "Whole",
-									"value": {"Modified": {"source": {"Part": "Query"}, "modification": "UrlDecode"}}
+									"value": {"Modified": {"value": {"Part": "Query"}, "modification": "UrlDecode"}}
 								}}
 							}}
 						},
@@ -340,7 +358,7 @@
 								"part": "HostWithoutWWWDotPrefix",
 								"map": {
 									"t.co": {"IfCondition": {
-										"condition": {"Not": {"StringIs": {"source": {"ContextVar": "alt_text"}, "value": null}}},
+										"condition": {"Not": {"StringIs": {"value": {"ContextVar": "alt_text"}, "value": null}}},
 										"mapper": {"SetPart": {"part": "Whole", "value": {"ContextVar": "alt_text"}}}
 									}},
 									"t.umblr.com": {"GetUrlFromQueryParam": "z"},
@@ -357,7 +375,7 @@
 												"mapper": {"SetPart": {
 													"part": "Whole",
 													"value": {"Modified": {
-														"source": {"HttpRequest": {}},
+														"value": {"HttpRequest": {}},
 														"modification": {"All": [
 															{"ExtractBetween": {
 																"start": "\"originalUrl\":\"",
@@ -373,7 +391,7 @@
 									"href.li": {"SetPart": {
 										"part": "Whole",
 										"value": {"Modified": {
-											"source": {"Part": "Query"},
+											"value": {"Part": "Query"},
 											"modification": "UrlDecode"
 										}}
 									}},
@@ -387,7 +405,7 @@
 												"mapper": {"SetPart": {
 													"part": "Whole",
 													"value": {"ExtractBetween": {
-														"source": {"HttpRequest": {
+														"value": {"HttpRequest": {
 															"http_client_config_diff": {"danger_accept_invalid_certs": true}
 														}},
 														"start": "href=\"",
@@ -406,7 +424,7 @@
 												"mapper": {"SetPart": {
 													"part": "Whole",
 													"value": {"ExtractBetween": {
-														"source": {"HttpRequest": {
+														"value": {"HttpRequest": {
 															"http_client_config_diff": {"danger_accept_invalid_certs": true}
 														}},
 														"start": "window.location = \"",
@@ -446,7 +464,7 @@
 										"mapper": {"SetPart": {
 											"part": "Whole",
 											"value": {"Modified": {
-												"source": {"Part": {"QueryParam": "url"}},
+												"value": {"Part": {"QueryParam": "url"}},
 												"modification": {"All": [
 													{"Replace": {"find": "\n", "replace": ""}},
 													"Base64Decode"
@@ -466,7 +484,7 @@
 									"e.emailalerts.cnn.com": {"SetPart": {
 										"part": "Whole",
 										"value": {"Modified": {
-											"source": {"Part": "Query"},
+											"value": {"Part": "Query"},
 											"modification": {"All": [
 												{"KeepNthSegment": {"split": "/", "n": 2}},
 												{"Remove": 0},
@@ -489,7 +507,7 @@
 											"mapper": {"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
-													"source": {"Part": {"PathSegment": 2}},
+													"value": {"Part": {"PathSegment": 2}},
 													"modification": {"All": [
 														{"KeepNthSegment": {"split": ".", "n": 0}},
 														"Base64Decode",
@@ -500,7 +518,7 @@
 										},
 										{
 											"condition": {"PathIs": "/app-link/post"},
-											"mapper": {"AllowQueryParams": ["publication_id", "post_id"]}
+											"mapper": {"AllowQueryParams": ["publication_id", "post_id", "submitLike", "action"]}
 										},
 										{
 											"condition": {"All": [
@@ -523,7 +541,7 @@
 										"mapper": {"SetPart": {
 											"part": "Whole",
 											"value": {"Modified": {
-												"source": {"Part": "Path"},
+												"value": {"Part": "Path"},
 												"modification": {"All": [
 													{"KeepSegmentRange": {"split": "/", "start": 2}},
 													"UrlDecode"
@@ -576,11 +594,11 @@
 											"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
-													"source": {"Map": {
-														"source": {"Part": {"QueryParam": "s"}},
+													"value": {"Map": {
+														"value": {"Part": {"QueryParam": "s"}},
 														"map": {
 														  "g": {"Map": {
-														  	"source": {"Part": {"QueryParam": "t"}},
+														  	"value": {"Part": {"QueryParam": "t"}},
 														  	"map": {
 															    "w": "https://www.google.com/search?q=",
 															    "i": "https://www.google.com/search?tbm=isch&q=",
@@ -623,11 +641,11 @@
 											{"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
-													"source": {"Cache": {
+													"value": {"Cache": {
 														"category": "sharesale-escaped-redirect",
 														"key": {"Part": "Whole"},
-														"source": {"ExtractBetween": {
-															"source": {"HttpRequest": {}},
+														"value": {"ExtractBetween": {
+															"value": {"HttpRequest": {}},
 															"start": "replace('",
 															"end": "')"
 														}}
@@ -646,11 +664,11 @@
 											{"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
-													"source": {"Cache": {
+													"value": {"Cache": {
 														"category": "redirect",
 														"key": {"Part": "Whole"},
-														"source": {"ExtractBetween": {
-															"source": {"HttpRequest": {}},
+														"value": {"ExtractBetween": {
+															"value": {"HttpRequest": {}},
 															"start": "replace('",
 															"end": "')"
 														}}
@@ -660,7 +678,13 @@
 											}}
 										]}
 									}},
-									"mfy.gg": {"SetHost": "metafy.gg"}
+									"mfy.gg": {"SetHost": "metafy.gg"},
+									"bugzil.la": {"All": [
+										{"SetHost": "bugzilla.mozilla.org"},
+										{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "id"}}},
+										{"SetPart": {"part": "Path", "value": "/show_bug.cgi"}}
+									]},
+									"o93x.net": {"GetUrlFromQueryParam": "u"}
 								}
 							}
 						},
@@ -672,12 +696,9 @@
 								"part": "NotSubdomain",
 								"map": {
 									"visitlink.me": {"SetPart": {"part": "Subdomain", "value": null}},
-									"bsky.social": {"IfCondition": {
-										"condition": {"PartMatches": {"part": {"NoneToEmptyString": "Subdomain"}, "matcher": {"Not": {"IsOneOf": ["", "www"]}}}},
-										"mapper": {"All": [
-											{"SetPart": {"part": {"BeforePathSegment": 0}, "value": {"Join": {"sources": ["profile/", {"Part": "Subdomain"}, ".bsky.social"]}}}},
-											{"SetHost": "bsky.app"}
-										]}
+									"carleton.ca": {"IfCondition": {
+										"condition": {"PartIs": {"part": {"QueryParam": "action"}, "value": "redirect"}},
+										"mapper": {"GetUrlFromQueryParam": "url"}
 									}}
 								}
 							}
@@ -698,23 +719,23 @@
 									"mapper": {"SetPart": {
 										"part": "Whole",
 										"value": {"Modified": {
-											"source": {"HttpRequest": {
+											"value": {"HttpRequest": {
 												"url": {"Join": {
 													"sources": [
 														{"IfSourceIsNone": {
-															"source": {"NoneTo": {
-																"source": {"Var": "bypass.vip-api-key"},
+															"value": {"NoneTo": {
+																"value": {"Var": "bypass.vip-api-key"},
 																"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
 															}},
 															"then": "https://api.bypass.vip/bypass?url=",
 															"else": "https://api.bypass.vip/premium/bypass?url="
 														}},
-														{"Modified": {"source": {"Part": "Whole"}, "modification": "UrlEncode"}}
+														{"Modified": {"value": {"Part": "Whole"}, "modification": "UrlEncode"}}
 													]
 												}},
 												"headers": {
 													"x-api-key": {"NoneTo": {
-														"source": {"Var": "bypass.vip-api-key"},
+														"value": {"Var": "bypass.vip-api-key"},
 														"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
 													}}
 												}
@@ -781,7 +802,11 @@
 												]},
 												{"PathIs": "/app-link/post"}
 											]},
-											"sketchfab.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "s"}}
+											"sketchfab.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "s"}},
+											"qudsnen.co": {"Not": {"PartIs": {"part": {"QueryParam": "p"}, "value": null}}},
+											"facebook.com": {"PartContains": {"part": "Path", "where": "Start", "value": "/share/r/"}},
+											"reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}},
+											"old.reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}}
 										}
 									}},
 									{"All": [
@@ -823,7 +848,7 @@
 				"condition": {"All": [
 					{"Not": {"FlagIsSet": "no-unmangle"}},
 					{"Any": [
-						{"HostIsOneOf": ["http", "https", "bsky.app", "www.bsky.app"]},
+						{"HostIsOneOf": ["http", "https"]},
 						{"PartContains": {"part": "Path", "value": "http"}},
 						{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}}
 					]}
@@ -885,7 +910,7 @@
 						]},
 						"mapper": {"SetPart": {
 							"part": "Whole",
-							"value": {"Modified": {"source": {"Part": "Path"}, "modification": {"StripPrefix": "/"}}}
+							"value": {"Modified": {"value": {"Part": "Path"}, "modification": {"StripPrefix": "/"}}}
 						}}
 					},
 					{
@@ -895,8 +920,8 @@
 								"part": "NotSubdomain",
 								"value":  {"ExtractPart": {
 									"part": "NotSubdomain",
-									"source": {"Modified": {
-										"source": {"Part": "Path"},
+									"value": {"Modified": {
+										"value": {"Part": "Path"},
 										"modification": {"All": ["UrlDecode", {"StripPrefix": "/"}]}
 									}}
 								}}
@@ -904,7 +929,7 @@
 						]},
 						"mapper": {"SetPart": {
 							"part": "Whole",
-							"value": {"Modified": {"source": {"Part": "Path"}, "modification": {"All": ["UrlDecode", {"StripPrefix": "/"}]}}}
+							"value": {"Modified": {"value": {"Part": "Path"}, "modification": {"All": ["UrlDecode", {"StripPrefix": "/"}]}}}
 						}}
 					},
 					{
@@ -936,25 +961,6 @@
 							}}}
 						]},
 						"mapper": {"SetPart": {"part": "NotSubdomain", "value": null}}
-					},
-
-
-
-					{
-						"condition": {"All": [
-							{"MaybeWWWDomain": "bsky.app"},
-							{"PartContains": {"part": "Path", "where": "End", "value": ".bsky"}}
-						]},
-						"mapper": {"ModifyPart": {"part": "Path", "modification": {"Append": ".social"}}}
-					},
-					{
-						"condition": {"All": [
-							{"MaybeWWWDomain": "bsky.app"},
-							{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
-							{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": "."}}},
-							{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": ":"}}}
-						]},
-						"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "modification": {"Append": ".bsky.social"}}}
 					},
 
 
@@ -1028,7 +1034,6 @@
 				"map": {
 					"theonion.com" : "RemoveQuery",
 					"teespring.com": "RemoveQuery",
-					"instagram.com": "RemoveQuery",
 					"twitter.com"  : {"SetHost": "x.com"},
 					"vxtwitter.com": {"SetHost": "x.com"},
 					"fixvx.com"    : {"SetHost": "x.com"},
@@ -1038,9 +1043,12 @@
 						"condition": {"Not": {"FlagIsSet": "discord-compatibility"}},
 						"mapper": {"SetPart": {"part": "NotSubdomain", "value": "bsky.app"}}
 					}},
-					"bsky.app": {"IfCondition": {
-						"condition": {"FlagIsSet": "discord-compatibility"},
-						"mapper": {"SetPart": {"part": "NotSubdomain", "value": "fxbsky.app"}}
+					"bsky.social": {"IfCondition": {
+						"condition": {"PartMatches": {"part": {"NoneToEmptyString": "Subdomain"}, "matcher": {"Not": {"IsOneOf": ["", "www"]}}}},
+						"mapper": {"All": [
+							{"SetPart": {"part": "Path", "value": {"Join": {"sources": ["/profile/", {"Part": "Subdomain"}, ".bsky.social"]}}}},
+							{"SetHost": "bsky.app"}
+						]}
 					}},
 					"youtube.com"  : {"All": [
 						{"RemoveQueryParams": ["si", "feature", "pp"]},
@@ -1074,20 +1082,23 @@
 						{"SetPart" : {"part": "Path", "value": "watch"}},
 						{"RemoveQueryParams": ["si", "feature", "pp"]}
 					]},
-					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
-					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt"]},
+					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid"]},
+					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid"]},
 					"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 					"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion": {"RemoveQueryParams": ["t", "atb", "ia"]},
 					"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
 					"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
-					"facebook.com": {"RemoveQueryParams": ["fs", "s", "mibextid"]},
+					"facebook.com": {"All": [
+						{"IfCondition": {
+							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "reel"}},
+							"mapper": "RemoveQuery"
+						}},
+						{"RemoveQueryParams": ["fs", "s", "mibextid"]}
+					]},
 					"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "at_"}}},
 					"linktr.ee": {"RemoveQueryParams": ["ltsid"]},
-					"theguardian.com": {"All": [
-						{"RemoveQueryParams": ["CMP"]},
-						{"SetPart": {"part": "Fragment", "value": null}}
-					]},
+					"theguardian.com": {"RemoveQueryParams": ["CMP"]},
 					"roblox.com": {"AllowQueryParams": ["keyword", "Keyword"]},
 					"hp.com": {"RemoveQueryParams": ["jumpid"]},
 					"lenovo.com": {"RemoveQueryParams": ["IPromoID"]},
@@ -1108,10 +1119,13 @@
 					"addons.mozilla.org": {"RemoveQueryParams": ["platform", "appver"]},
 					"amtrak.com": {"RemoveQueryParams": ["atv", "cmp"]},
 					"support.google.com": {"AllowQueryParams": ["q"]},
-					"reddit.com": {"IfCondition": {
-						"condition": {"Not": {"PathIs": "/search"}},
-						"mapper": {"AllowQueryParams": ["f"]}
-					}},
+					"reddit.com": {"All": [
+						{"RemoveQueryParams": ["share_id"]},
+						{"IfCondition": {
+							"condition": {"Not": {"PathIs": "/search"}},
+							"mapper": {"AllowQueryParams": ["f"]}
+						}}
+					]},
 					"cnn.com"   : {"IfCondition": {
 						"condition": {"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "where": "Start"}},
 						"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
@@ -1192,7 +1206,8 @@
 					}},
 					"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb"]},
 					"fori.io": {"SetHost": "foriio.com"}
-				}
+				},
+				"pawoo.net": {"RemoveQueryParams": ["provider"]}
 			}
 		},
 		{
@@ -1219,6 +1234,11 @@
 					}},
 					"x.com": {"Rules": [
 						{
+							"comment": "https://(www\\.)?(twitter|x).com/(www\\.)?(twitter|x).com -> x.com",
+							"condition": {"PartMatches": {"part": {"PathSegment": 0}, "matcher": {"IsOneOf": ["x.com", "www.x.com", "twitter.com", "www.twitter.com"]}}},
+							"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+						},
+						{
 							"condition": {"PathIs": "/i/flow/login"},
 							"mapper": {"SetPart": {
 								"part": "Whole",
@@ -1237,7 +1257,28 @@
 							"mapper": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-domain"}}}
 						}
 					]},
-					"overview.mail.yahoo.com": "RemoveQuery"
+					"overview.mail.yahoo.com": "RemoveQuery",
+					"bsky.app": {"Rules": [
+						{
+							"condition": {"All": [
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
+								{"PartContains": {"part": {"PathSegment": 1}, "where": "End", "value": ".bsky"}}
+							]},
+							"mapper": {"ModifyPart": {"part": "Path", "modification": {"Append": ".social"}}}
+						},
+						{
+							"condition": {"All": [
+								{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
+								{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": "."}}},
+								{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": ":"}}}
+							]},
+							"mapper": {"ModifyPart": {"part": {"PathSegment": 1}, "modification": {"Append": ".bsky.social"}}}
+						},
+						{
+							"condition": {"FlagIsSet": "discord-compatibility"},
+							"mapper": {"SetPart": {"part": "NotSubdomain", "value": "fxbsky.app"}}
+						}
+					]}
 				}
 			}
 		},
@@ -1415,9 +1456,9 @@
 									"value": {"Cache": {
 										"category": "onion-location",
 										"key": {"Part": "Origin"},
-										"source": {"ExtractPart": {
+										"value": {"ExtractPart": {
 											"part": "Origin",
-											"source": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
+											"value": {"HttpRequest": {"response_handler": {"Header": "Onion-Location"}}}
 										}}
 									}}
 								}

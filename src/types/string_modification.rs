@@ -332,133 +332,6 @@ pub enum StringModification {
         /// The end of the range to keep.
         end: Option<isize>
     },
-    /// Splits the provided string by `split` and keeps only the `n`th segment.
-    /// # Errors
-    /// If the `n`th segment is not found, returns the error [`StringModificationError::SegmentNotFound`].
-    KeepNthSegment {
-        /// The value to split the string by.
-        split: StringSource,
-        /// The index of the segment to keep.
-        n: isize
-    },
-    /// Splits the provided string by `split` and keeps only the segments in the specified range.
-    /// # Errors
-    /// If the segment range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
-    KeepSegmentRange {
-        /// The value to split the string by.
-        split: StringSource,
-        /// The start of the range of segments to keep.
-        start: Option<isize>,
-        /// The end of the range of segments to keep.
-        end: Option<isize>
-    },
-    /// Splits the provided string by `split`, replaces the `n`th segment with `value` or removes the segment if `value` is `None`, then joins the segments back together.
-    /// # Errors
-    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// let mut x = "a.b.c.d.e.f".to_string();
-    /// StringModification::SetNthSegment{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.c.d.e.f");
-    /// StringModification::SetNthSegment{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.c.d.e.-1");
-    /// StringModification::SetNthSegment{split: ".".into(), n: -2, value: None}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.c.d.-1");
-    /// StringModification::SetNthSegment{split: ".".into(), n:  5, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::SetNthSegment{split: ".".into(), n: -6, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::SetNthSegment{split: ".".into(), n: -5, value: Some("-5".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "-5.1.c.d.-1");
-    /// ```
-    SetNthSegment {
-        /// The value to split the string by.
-        split: StringSource,
-        /// The index of the segment to modify.
-        n: isize,
-        /// The value to place at the segment index. If `None` then the segment is erased.
-        value: Option<StringSource>
-    },
-    /// Splits the provided string by `split`, replaces the range of segments specified by `start` and `end` with `value`,  then joins the segments back together.
-    /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    /// 
-    /// If there is no segment at `start` (or `0` if `start` is [`None`]), returns the error [`StringModificationError::SegmentNotFound`].
-    /// 
-    /// If the segment range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
-    SetSegmentRange {
-        /// The value to split the string by.
-        split: StringSource,
-        /// The start of the range of segments to replace.
-        start: Option<isize>,
-        /// The end of the range of segments to replace.
-        end: Option<isize>,
-        /// The value to replace the segments with.
-        value: Option<StringSource>
-    },
-    /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
-    /// # Errors
-    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
-    /// 
-    /// Please note that trying to append a new segment at the end still errors.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.b.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.b.-1.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.b.-1.4.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value: Some( "6".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.1.b.-1.4.c.6");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: Some("-7".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "-7.a.1.b.-1.4.c.6");
-    /// ```
-    InsertSegmentBefore {
-        /// The value to split the string by.
-        split: StringSource,
-        /// The segment index to insert before.
-        n: isize,
-        /// The value to insert.
-        value: Option<StringSource>
-    },
-    /// Like [`Self::SetNthSegment`] except it inserts `value` after the `n`th segment instead of overwriting.
-    /// # Errors
-    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
-    /// 
-    /// Please note that trying to append a new segment at the end still errors.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.b.1.c");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.b.1.c.-1");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.b.1.c.-1.4");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: Some("-6".into())}.apply(&mut x, &job_state.to_view()).unwrap();
-    /// assert_eq!(&x, "a.-6.b.1.c.-1.4");
-    /// ```
-    InsertSegmentAfter {
-        /// The value to split the string by.
-        split: StringSource,
-        /// The segment index to insert before.
-        n: isize,
-        /// The value to insert.
-        value: Option<StringSource>
-    },
     /// [`Regex::captures`] and [`::regex::Captures::expand`].
     /// # Errors
     /// When the call to [`Regex::captures`] returns [`None`], returns the error [`StringModificationError::RegexMatchNotFound`]
@@ -603,6 +476,201 @@ pub enum StringModification {
         /// The modification to apply.
         modification: Box<Self>
     },
+    /// Splits the provided string by `split` and keeps only the `n`th segment.
+    /// # Errors
+    /// If the `n`th segment is not found, returns the error [`StringModificationError::SegmentNotFound`].
+    KeepNthSegment {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The index of the segment to keep.
+        n: isize
+    },
+    /// Splits the provided string by `split` and keeps only the segments in the specified range.
+    /// # Errors
+    /// If the segment range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
+    KeepSegmentRange {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The start of the range of segments to keep.
+        start: Option<isize>,
+        /// The end of the range of segments to keep.
+        end: Option<isize>
+    },
+    /// Splits the provided string by `split`, replaces the `n`th segment with `value` or removes the segment if `value` is `None`, then joins the segments back together.
+    /// # Errors
+    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "a.b.c.d.e.f".to_string();
+    /// StringModification::SetNthSegment{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.c.d.e.f");
+    /// StringModification::SetNthSegment{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.c.d.e.-1");
+    /// StringModification::SetNthSegment{split: ".".into(), n: -2, value: None}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.c.d.-1");
+    /// StringModification::SetNthSegment{split: ".".into(), n:  5, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -6, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -5, value: Some("-5".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "-5.1.c.d.-1");
+    /// ```
+    SetNthSegment {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The index of the segment to modify.
+        n: isize,
+        /// The value to set. If `None` then the segment is removed.
+        value: Option<StringSource>
+    },
+    /// Finds the `n`th segment matching `matcher` and sets it to `value`.
+    /// # Errors
+    /// If `n` is not in the range of segments, returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// 
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    SetNthMatchingSegment {
+        /// The value to split the siring by.
+        split: StringSource,
+        /// The index of the segments to modify.
+        n: isize,
+        /// The [`StringMatcher`] to test each segment with.
+        matcher: Box<StringMatcher>,
+        /// The value to set. If `None` then the segment is removed.
+        value: Option<StringSource>
+    },
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let modification = StringModification::SetAroundNthMatchingSegment {
+    ///     split: " ".into(),
+    ///     n: 0,
+    ///     matcher: Box::new(StringMatcher::Equals("b".into())),
+    ///     shift: 1,
+    ///     value: None
+    /// };
+    /// 
+    /// let mut x = "a b c".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "a b");
+    /// 
+    /// let mut x = "a b".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// 
+    /// 
+    /// 
+    /// let modification = StringModification::SetAroundNthMatchingSegment {
+    ///     split: " ".into(),
+    ///     n: 0,
+    ///     matcher: Box::new(StringMatcher::Equals("b".into())),
+    ///     shift: -1,
+    ///     value: None
+    /// };
+    /// 
+    /// let mut x = "a b c".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "b c");
+    /// 
+    /// let mut x = "b c".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// ```
+    SetAroundNthMatchingSegment {
+        /// The value to split the siring by.
+        split: StringSource,
+        /// The index of the segments to modify.
+        n: isize,
+        /// The [`StringMatcher`] to test each segment with.
+        matcher: Box<StringMatcher>,
+        /// The offset of the segment to set.
+        shift: isize,
+        /// The value to set. If `None` then the segment is removed.
+        value: Option<StringSource>
+    },
+    /// Splits the provided string by `split`, replaces the range of segments specified by `start` and `end` with `value`,  then joins the segments back together.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// 
+    /// If there is no segment at `start` (or `0` if `start` is [`None`]), returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
+    /// If the segment range is not found, returns the error [`StringModificationError::SegmentRangeNotFound`].
+    SetSegmentRange {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The start of the range of segments to replace.
+        start: Option<isize>,
+        /// The end of the range of segments to replace.
+        end: Option<isize>,
+        /// The value to replace the segments with.
+        value: Option<StringSource>
+    },
+    /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
+    /// # Errors
+    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
+    /// Please note that trying to append a new segment at the end still errors.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "a.b.c".to_string();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.b.c");
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.b.-1.c");
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.b.-1.4.c");
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value: Some( "6".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.1.b.-1.4.c.6");
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: Some("-7".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "-7.a.1.b.-1.4.c.6");
+    /// ```
+    InsertSegmentBefore {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The segment index to insert before.
+        n: isize,
+        /// The value to insert.
+        value: Option<StringSource>
+    },
+    /// Like [`Self::SetNthSegment`] except it inserts `value` after the `n`th segment instead of overwriting.
+    /// # Errors
+    /// If `n` is not in the range of of segments, returns the error [`StringModificationError::SegmentNotFound`].
+    /// 
+    /// Please note that trying to append a new segment at the end still errors.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "a.b.c".to_string();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.b.1.c");
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.b.1.c.-1");
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.b.1.c.-1.4");
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: Some("-6".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(&x, "a.-6.b.1.c.-1.4");
+    /// ```
+    InsertSegmentAfter {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The segment index to insert before.
+        n: isize,
+        /// The value to insert.
+        value: Option<StringSource>
+    },
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -626,6 +694,92 @@ pub enum StringModification {
         /// The indices of the segments to modify.
         ns: Vec<isize>,
         /// The modification to apply.
+        modification: Box<Self>
+    },
+    /// Modifies the `n`th segment that matches `matcher`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "aaa aaaa aaaa".to_string();
+    /// StringModification::ModifyNthMatchingSegment {
+    ///     split: " ".into(),
+    ///     n: 1,
+    ///     matcher: Box::new(StringMatcher::LengthIs(4)),
+    ///     modification: Box::new(StringModification::Set("zzzz".into()))
+    /// }.apply(&mut x, &job_state.to_view()).unwrap();
+    /// 
+    /// assert_eq!(x, "aaa aaaa zzzz");
+    /// ```
+    ModifyNthMatchingSegment {
+        /// The value to split the siring by.
+        split: StringSource,
+        /// The index of the segments to modify.
+        n: isize,
+        /// The [`StringMatcher`] to test each segment with.
+        matcher: Box<StringMatcher>,
+        /// The [`Self`] to apply.
+        modification: Box<Self>
+    },
+    /// For each `n` in `ns`, modifies the `n`th segment that matches `matcher`.
+    ModifyMatchingSegments {
+        /// The value to split the siring by.
+        split: StringSource,
+        /// The indices of the segments to modify.
+        ns: Vec<isize>,
+        /// The [`StringMatcher`] to test each segment with.
+        matcher: Box<StringMatcher>,
+        /// The [`Self`] to apply.
+        modification: Box<Self>
+    },
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let modification = StringModification::ModifyAroundNthMatchingSegment {
+    ///     split: " ".into(),
+    ///     n: 0,
+    ///     matcher: Box::new(StringMatcher::Equals("b".into())),
+    ///     shift: 1,
+    ///     modification: Box::new(StringModification::Set("-".into()))
+    /// };
+    /// 
+    /// let mut x = "a b c".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "a b -");
+    /// 
+    /// let mut x = "a b".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// 
+    /// 
+    /// 
+    /// let modification = StringModification::ModifyAroundNthMatchingSegment {
+    ///     split: " ".into(),
+    ///     n: 0,
+    ///     matcher: Box::new(StringMatcher::Equals("b".into())),
+    ///     shift: -1,
+    ///     modification: Box::new(StringModification::Set("-".into()))
+    /// };
+    /// 
+    /// let mut x = "a b c".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "- b c");
+    /// 
+    /// let mut x = "b c".to_string();
+    /// modification.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// ```
+    ModifyAroundNthMatchingSegment {
+        /// The value to split the siring by.
+        split: StringSource,
+        /// The index of the segments to modify.
+        n: isize,
+        /// The [`StringMatcher`] to test each segment with.
+        matcher: Box<StringMatcher>,
+        /// The offset of the segment to modify.
+        shift: isize,
+        /// The value to set. If `None` then the segment is removed.
         modification: Box<Self>
     },
     /// If the provided string is in the specified map, return the value of its corresponding [`StringSource`].
@@ -679,8 +833,6 @@ pub enum StringModification {
         /// What do do when a [`char`] that isn't in `map` is found.
         not_found_behavior: CharNotFoundBehavior
     },
-    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
-    Common(CommonCall),
     /// Be careful to make sure no element key is a prefix of any other element key.
     /// 
     /// The current implementation sucks and can't handle that.
@@ -698,12 +850,14 @@ pub enum StringModification {
     /// assert_eq!(x, "/a\n\\n");
     /// ```
     RunEscapeCodes(HashMap<String, String>),
+    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
+    Common(CommonCall),
     /// Uses a function pointer.
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "experiment-custom")]
-    Custom(FnWrapper<fn(&Self, &mut String, &JobStateView) -> Result<(), StringModificationError>>)
+    Custom(FnWrapper<fn(&mut String, &JobStateView) -> Result<(), StringModificationError>>)
 }
 
 /// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
@@ -949,51 +1103,6 @@ impl StringModification {
             Self::Insert{r#where, value}               => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, get_str!(value, job_state, StringModificationError));} else {Err(StringModificationError::InvalidIndex)?;},
             Self::Remove(r#where)                      => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?                                                     );} else {Err(StringModificationError::InvalidIndex)?;},
             Self::KeepRange{start, end}                => *to = to.get(neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
-            Self::KeepNthSegment   {split, n}          => *to = neg_nth(to.split(get_str!(split, job_state, StringModificationError)), *n).ok_or(StringModificationError::SegmentNotFound)?.to_string(),
-            Self::KeepSegmentRange {split, start, end} => {
-                let split = get_str!(split, job_state, StringModificationError);
-                *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split);
-            },
-            Self::SetNthSegment{split, n, value} => {
-                let split = get_str!(split, job_state, StringModificationError);
-                let mut temp=to.split(split).collect::<Vec<_>>();
-                let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                if fixed_n==temp.len() {Err(StringModificationError::SegmentNotFound)?;}
-                let x = get_option_string!(value, job_state);
-                #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
-                match x.as_deref() {
-                    Some(value) => temp[fixed_n]=value,
-                    None        => {temp.remove(fixed_n);}
-                }
-                *to=temp.join(split);
-            },
-            Self::SetSegmentRange {split, start, end, value} => {
-                let split = get_str!(split, job_state, StringModificationError);
-                let mut segments = to.split(split).collect::<Vec<_>>();
-                let fixed_n = neg_index(start.unwrap_or(0), segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                let _ = segments.drain(neg_range(*start, *end, segments.len()).ok_or(StringModificationError::SegmentRangeNotFound)?).collect::<Vec<_>>();
-                let x = get_option_string!(value, job_state);
-                if let Some(x) = &x {segments.insert(fixed_n, x);}
-                *to = segments.join(split);
-            }
-            Self::InsertSegmentBefore{split, n, value} => {
-                if let Some(new_segment) = get_option_str!(value, job_state) {
-                    let split = get_str!(split, job_state, StringModificationError);
-                    let mut temp=to.split(split).collect::<Vec<_>>();
-                    let fixed_n=neg_range_boundary(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                    temp.insert(fixed_n, new_segment);
-                    *to=temp.join(split);
-                }
-            },
-            Self::InsertSegmentAfter{split, n, value} => {
-                if let Some(new_segment) = get_option_str!(value, job_state) {
-                    let split = get_str!(split, job_state, StringModificationError);
-                    let mut temp=to.split(split).collect::<Vec<_>>();
-                    let fixed_n=neg_shifted_range_boundary(*n, temp.len(), 1).ok_or(StringModificationError::SegmentNotFound)?;
-                    temp.insert(fixed_n, new_segment);
-                    *to=temp.join(split);
-                }
-            },
             #[cfg(feature = "regex")]
             Self::RegexCaptures {regex, replace} => {
                 let replace = get_str!(replace, job_state, StringModificationError);
@@ -1029,6 +1138,107 @@ impl StringModification {
             #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.make_engine()?.encode(to.as_bytes()),
             #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.make_engine()?.decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, job_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
+
+
+
+            Self::KeepNthSegment   {split, n}          => *to = neg_nth(to.split(get_str!(split, job_state, StringModificationError)), *n).ok_or(StringModificationError::SegmentNotFound)?.to_string(),
+            Self::KeepSegmentRange {split, start, end} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split);
+            },
+            Self::SetNthSegment{split, n, value} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut temp=to.split(split).collect::<Vec<_>>();
+                let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                let x = get_option_string!(value, job_state);
+                #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
+                match x.as_deref() {
+                    Some(value) => temp[fixed_n]=value,
+                    None        => {temp.remove(fixed_n);}
+                }
+                *to=temp.join(split);
+            },
+            Self::SetNthMatchingSegment {split, n, matcher, value} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut segments = to.split(split).collect::<Vec<_>>();
+                let fixed_n=neg_index(*n, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                let x = get_option_string!(value, job_state);
+                let mut count = 0usize;
+                let mut nth_match_found = false;
+                for (index, segment) in segments.iter_mut().enumerate() {
+                    if matcher.satisfied_by(segment, job_state)? {
+                        if count == fixed_n {
+                            match x.as_deref() {
+                                #[expect(clippy::indexing_slicing, reason = "`count` is guaranteed to be in bounds.")]
+                                Some(value) => segments[index] = value,
+                                None        => if index < segments.len() {segments.remove(index);} else {Err(StringModificationError::SegmentNotFound)?}
+                            }
+                            nth_match_found = true;
+                            break;
+                        }
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {count += 1;}
+                    }
+                }
+                if !nth_match_found {Err(StringModificationError::SegmentNotFound)?;}
+                *to=segments.join(split);
+            },
+            Self::SetAroundNthMatchingSegment {split, n, matcher, value, shift} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut segments = to.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
+                let fixed_n = neg_index(*n, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                let mut matched = 0usize;
+                let mut didnt_match = 0usize;
+                let mut nth_match_found = false;
+                for segment in segments.iter() {
+                    if matcher.satisfied_by(segment, job_state)? {
+                        if matched == fixed_n {
+                            nth_match_found = true;
+                            break;
+                        }
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {matched += 1;}
+                    } else {
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {didnt_match += 1;}
+                    }
+                }
+                if !nth_match_found {Err(StringModificationError::SegmentNotFound)?;}
+                #[allow(clippy::arithmetic_side_effects, reason = "The length of a vector is at most isize::MAX so `matched + didnt_match` is always a valid isize.")]
+                let shifted_n = ((matched + didnt_match) as isize).checked_add(*shift).ok_or(StringModificationError::SegmentNotFound)?.try_into().map_err(|_| StringModificationError::SegmentNotFound)?;
+                match get_option_cow!(value, job_state) {
+                    Some(value) => *segments.get_mut(shifted_n).ok_or(StringModificationError::SegmentNotFound)? = value,
+                    None        => if shifted_n >= segments.len() {Err(StringModificationError::SegmentNotFound)?} else {segments.remove(shifted_n);}
+                }
+                *to = segments.join(split);
+            },
+            Self::SetSegmentRange {split, start, end, value} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut segments = to.split(split).collect::<Vec<_>>();
+                let fixed_n = neg_index(start.unwrap_or(0), segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                let _ = segments.drain(neg_range(*start, *end, segments.len()).ok_or(StringModificationError::SegmentRangeNotFound)?).collect::<Vec<_>>();
+                let x = get_option_string!(value, job_state);
+                if let Some(x) = &x {segments.insert(fixed_n, x);}
+                *to = segments.join(split);
+            }
+            Self::InsertSegmentBefore{split, n, value} => {
+                if let Some(new_segment) = get_option_str!(value, job_state) {
+                    let split = get_str!(split, job_state, StringModificationError);
+                    let mut temp=to.split(split).collect::<Vec<_>>();
+                    let fixed_n=neg_range_boundary(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                    temp.insert(fixed_n, new_segment);
+                    *to=temp.join(split);
+                }
+            },
+            Self::InsertSegmentAfter{split, n, value} => {
+                if let Some(new_segment) = get_option_str!(value, job_state) {
+                    let split = get_str!(split, job_state, StringModificationError);
+                    let mut temp=to.split(split).collect::<Vec<_>>();
+                    let fixed_n=neg_shifted_range_boundary(*n, temp.len(), 1).ok_or(StringModificationError::SegmentNotFound)?;
+                    temp.insert(fixed_n, new_segment);
+                    *to=temp.join(split);
+                }
+            },
             #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
             Self::ModifyNthSegment {split, n, modification} => {
                 let split = get_str!(split, job_state, StringModificationError);
@@ -1051,6 +1261,73 @@ impl StringModification {
                 }
                 *to = segments.join(split);
             },
+            Self::ModifyNthMatchingSegment {split, n, matcher, modification} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut segments = to.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
+                let fixed_n = neg_index(*n, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                let mut count = 0usize;
+                for segment in segments.iter_mut() {
+                    if matcher.satisfied_by(segment, job_state)? {
+                        if count == fixed_n {
+                            let mut temp = segment.to_string();
+                            modification.apply(&mut temp, job_state)?;
+                            *segment = Cow::Owned(temp);
+                            break;
+                        }
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {count += 1;}
+                    }
+                }
+                *to = segments.join(split);
+            },
+            Self::ModifyMatchingSegments {split, ns, matcher, modification} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut segments = to.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
+                let mut count = 0usize;
+                let fixed_ns = ns.iter().map(|n| neg_index(*n, segments.len()).ok_or(StringModificationError::SegmentNotFound)).collect::<Result<Vec<_>, _>>()?;
+                for segment in segments.iter_mut() {
+                    if matcher.satisfied_by(segment, job_state)? {
+                        if fixed_ns.iter().any(|x| *x==count) {
+                            let mut temp = segment.to_string();
+                            modification.apply(&mut temp, job_state)?;
+                            *segment = Cow::Owned(temp);
+                        }
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {count += 1;}
+                    }
+                }
+                *to = segments.join(split);
+            },
+            Self::ModifyAroundNthMatchingSegment {split, n, matcher, modification, shift} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                let mut segments = to.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
+                let fixed_n = neg_index(*n, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                let mut matched = 0usize;
+                let mut didnt_match = 0usize;
+                let mut nth_match_found = false;
+                for segment in segments.iter() {
+                    if matcher.satisfied_by(segment, job_state)? {
+                        if matched == fixed_n {
+                            nth_match_found = true;
+                            break;
+                        }
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {matched += 1;}
+                    } else {
+                        #[allow(clippy::arithmetic_side_effects, reason = "Never exceeds `segments.len()`")]
+                        {didnt_match += 1;}
+                    }
+                }
+                if !nth_match_found {Err(StringModificationError::SegmentNotFound)?;}
+                #[allow(clippy::arithmetic_side_effects, reason = "The length of a vector is at most isize::MAX so `matched + didnt_match` is always a valid isize.")]
+                let shifted_n: usize = ((matched + didnt_match) as isize).checked_add(*shift).ok_or(StringModificationError::SegmentNotFound)?.try_into().map_err(|_| StringModificationError::SegmentNotFound)?;
+                let segment = segments.get_mut(shifted_n).ok_or(StringModificationError::SegmentNotFound)?.to_mut();
+                modification.apply(segment, job_state)?;
+                *to = segments.join(split);
+            },
+
+
+
             Self::Map(map) => *to = get_string!(map.get(to).ok_or(StringModificationError::StringNotInMap)?, job_state, StringModificationError),
             Self::ExtractBetween {start, end} => {
                 *to = to
@@ -1107,7 +1384,7 @@ impl StringModification {
                 *to=ret;
             },
             #[cfg(feature = "experiment-custom")]
-            Self::Custom(function) => function(self, to, job_state)?
+            Self::Custom(function) => function(to, job_state)?
         };
         Ok(())
     }
@@ -1134,12 +1411,6 @@ impl StringModification {
             Self::StripMaybeSuffix(source) => source.is_suitable_for_release(config),
             Self::Replacen {find, replace, ..} => find.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
             Self::Insert {value, ..} => value.is_suitable_for_release(config),
-            Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(config),
-            Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(config),
-            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             #[cfg(feature = "regex")] Self::RegexCaptures {replace, ..} => replace.is_suitable_for_release(config),
             #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {replace, join, ..} => replace.is_suitable_for_release(config) && join.is_suitable_for_release(config),
             #[cfg(feature = "regex")] Self::RegexReplace {replace, ..} => replace.is_suitable_for_release(config),
@@ -1147,8 +1418,19 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplacen {replace, ..} => replace.is_suitable_for_release(config),
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::JsonPointer(pointer) => pointer.is_suitable_for_release(config),
+            Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(config),
+            Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(config),
+            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::SetNthMatchingSegment {split, matcher, value, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::SetAroundNthMatchingSegment {split, matcher, value, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
+            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::ModifyNthSegment {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::ModifySegments {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::ModifyNthMatchingSegment {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::ModifyAroundNthMatchingSegment {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::ModifyMatchingSegments {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release(config)),
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
