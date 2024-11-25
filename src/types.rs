@@ -31,12 +31,14 @@ pub mod stop_loop_condition;
 pub use stop_loop_condition::*;
 
 /// Wrapper around a function pointer that fakes [`Serialize`] and [`Deserialize`] implementations.
+/// 
+/// Please note that, once it's stabilized, this will require [`T: FnPtr`](FnPtr) and that will not be considered a breaking change.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-#[cfg(feature = "experiment-custom")]
+#[cfg(feature = "custom")]
 pub struct FnWrapper<T>(pub T);
 
-#[cfg(feature = "experiment-custom")]
+#[cfg(feature = "custom")]
 impl<T> std::ops::Deref for FnWrapper<T> {
     type Target = T;
 
@@ -45,14 +47,14 @@ impl<T> std::ops::Deref for FnWrapper<T> {
     }
 }
 
-#[cfg(feature = "experiment-custom")]
+#[cfg(feature = "custom")]
 impl<T> std::ops::DerefMut for FnWrapper<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-#[cfg(feature = "experiment-custom")]
+#[cfg(feature = "custom")]
 impl<T> serde::Serialize for FnWrapper<T> {
     /// Always returns [`Err`].
     fn serialize<S: serde::ser::Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
@@ -61,7 +63,7 @@ impl<T> serde::Serialize for FnWrapper<T> {
     }
 }
 
-#[cfg(feature = "experiment-custom")]
+#[cfg(feature = "custom")]
 impl<'de, T> serde::Deserialize<'de> for FnWrapper<T> {
     /// Always returns [`Err`].
     fn deserialize<D: serde::de::Deserializer<'de>>(_: D) -> Result<Self, D::Error> {

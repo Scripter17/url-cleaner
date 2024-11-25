@@ -200,7 +200,7 @@ pub enum Rule {
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(FnWrapper<fn(&mut JobState) -> Result<(), RuleError>>),
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
@@ -272,7 +272,7 @@ pub enum RuleError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// Custom error.
     #[error(transparent)]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error>)
 }
 
@@ -346,7 +346,7 @@ impl Rule {
                     commons: job_state.commons
                 })
             },
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(function) => function(job_state)
         }
     }
@@ -367,7 +367,7 @@ impl Rule {
             Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.is_suitable_for_release(config),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(_) => false
         }, "Unsuitable Rule detected: {self:?}");
         let self_debug_string = format!("{self:?}");

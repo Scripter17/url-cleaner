@@ -601,7 +601,7 @@ pub enum Condition {
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(FnWrapper<fn(&JobStateView) -> Result<bool, ConditionError>>)
 }
 
@@ -649,7 +649,7 @@ pub enum ConditionError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// Custom error.
     #[error(transparent)]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error>)
 }
 
@@ -785,7 +785,7 @@ impl Condition {
                     common_args: Some(&common_call.args.make(job_state)?)
                 })?
             },
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(function) => function(job_state)?
         })
     }
@@ -819,7 +819,7 @@ impl Condition {
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
                 Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(_) => false
         }, "Unsuitable Condition detected: {self:?}");
         true

@@ -28,26 +28,30 @@ mod util;
 #[cfg_attr(feature = "minify-included-strings", doc = "minify-included-strings")]
 #[cfg_attr(feature = "regex"                  , doc = "regex"                  )]
 #[cfg_attr(feature = "glob"                   , doc = "glob"                   )]
-#[cfg_attr(feature = "commands"               , doc = "commands"               )]
 #[cfg_attr(feature = "http"                   , doc = "http"                   )]
 #[cfg_attr(feature = "advanced-http"          , doc = "advanced-http"          )]
 #[cfg_attr(feature = "cache"                  , doc = "cache"                  )]
 #[cfg_attr(feature = "base64"                 , doc = "base64"                 )]
+#[cfg_attr(feature = "commands"               , doc = "commands"               )]
+#[cfg_attr(feature = "custom"                 , doc = "custom"                 )]
 #[cfg_attr(feature = "cache-redirects"        , doc = "cache-redirects"        )]
 #[cfg_attr(feature = "debug"                  , doc = "debug"                  )]
+#[cfg_attr(feature = "debug-time"             , doc = "debug-time"             )]
 /// 
 /// Disabled features:
 #[cfg_attr(not(feature = "default-config"         ), doc = "default-config"         )]
 #[cfg_attr(not(feature = "minify-included-strings"), doc = "minify-included-strings")]
 #[cfg_attr(not(feature = "regex"                  ), doc = "regex"                  )]
 #[cfg_attr(not(feature = "glob"                   ), doc = "glob"                   )]
-#[cfg_attr(not(feature = "commands"               ), doc = "commands"               )]
 #[cfg_attr(not(feature = "http"                   ), doc = "http"                   )]
 #[cfg_attr(not(feature = "advanced-http"          ), doc = "advanced-http"          )]
 #[cfg_attr(not(feature = "cache"                  ), doc = "cache"                  )]
 #[cfg_attr(not(feature = "base64"                 ), doc = "base64"                 )]
+#[cfg_attr(not(feature = "commands"               ), doc = "commands"               )]
+#[cfg_attr(not(feature = "custom"                 ), doc = "custom"                 )]
 #[cfg_attr(not(feature = "cache-redirects"        ), doc = "cache-redirects"        )]
 #[cfg_attr(not(feature = "debug"                  ), doc = "debug"                  )]
+#[cfg_attr(not(feature = "debug-time"             ), doc = "debug-time"             )]
 pub struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     pub urls: Vec<String>,
@@ -89,6 +93,9 @@ pub struct Args {
     /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to remove.
     #[arg(             long, num_args(2..), value_names = ["NAME", "KEY1"])]
     pub remove_from_map: Vec<Vec<String>>,
+    /// Overrides the config's [`Config::cache_path`].
+    #[arg(             long)]
+    pub cache_path: Option<String>,
     /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
@@ -97,17 +104,14 @@ pub struct Args {
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
     pub write_cache: Option<bool>,
-    /// The proxy to send HTTP requests over. Example: socks5://localhost:9150
+    /// The proxy to use. Example: socks5://localhost:9150
     #[cfg(feature = "http")]
     #[arg(             long)]
-    pub http_proxy: Option<ProxyConfig>,
+    pub proxy: Option<ProxyConfig>,
     /// Disables all HTTP proxying.
     #[cfg(feature = "http")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
-    pub no_http_proxy: Option<bool>,
-    /// Overrides the config's [`Config::cache_path`].
-    #[arg(             long)]
-    pub cache_path: Option<String>,
+    pub no_proxy: Option<bool>,
     /// Print the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
@@ -206,7 +210,7 @@ fn main() -> Result<ExitCode, CliError> {
     let mut feature_flag_make_params_diff = false;
     #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.read_cache.is_some()};
     #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.write_cache.is_some()};
-    #[cfg(feature = "http" )] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.http_proxy.is_some()};
+    #[cfg(feature = "http" )] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || args.proxy.is_some()};
     if !args.flag.is_empty() || !args.unflag.is_empty() || !args.var.is_empty() || !args.unvar.is_empty() || !args.insert_into_set.is_empty() || !args.remove_from_set.is_empty() || !args.insert_into_map.is_empty() || !args.remove_from_map.is_empty() || feature_flag_make_params_diff {
         params_diffs.push(ParamsDiff {
             flags  : args.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
@@ -232,8 +236,8 @@ fn main() -> Result<ExitCode, CliError> {
             #[cfg(feature = "cache")] read_cache : args.read_cache,
             #[cfg(feature = "cache")] write_cache: args.write_cache,
             #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
-                set_proxies: args.http_proxy.map(|x| vec![x]),
-                no_proxy: args.no_http_proxy,
+                set_proxies: args.proxy.map(|x| vec![x]),
+                no_proxy: args.no_proxy,
                 ..HttpClientConfigDiff::default()
             })
         });

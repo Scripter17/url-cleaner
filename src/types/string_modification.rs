@@ -856,7 +856,7 @@ pub enum StringModification {
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(FnWrapper<fn(&mut String, &JobStateView) -> Result<(), StringModificationError>>)
 }
 
@@ -998,7 +998,7 @@ pub enum StringModificationError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// Custom error.
     #[error(transparent)]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error>)
 }
 
@@ -1383,7 +1383,7 @@ impl StringModification {
                 }
                 *to=ret;
             },
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, job_state)?
         };
         Ok(())
@@ -1442,7 +1442,7 @@ impl StringModification {
             Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(_) => false
         }, "Unsuitable StringModification detected: {self:?}");
         true

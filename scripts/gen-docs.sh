@@ -24,7 +24,7 @@ echo ""
 
 echo "#### Environment variables"
 echo ""
-echo "There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via \`--var abc xyz\`. For this, URL Cleaner does make use of native environment variables."
+echo "There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via \`--var abc xyz\`. For this, URL Cleaner uses environment variables."
 echo ""
 cat default-config.json | jq '.docs.environment_vars | to_entries | sort_by(.key) | map(("- `" + .key + "`: " + .value)) | join("\n")' -r
 echo ""

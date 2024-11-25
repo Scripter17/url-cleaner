@@ -8,29 +8,31 @@
 		"flags": {
 			"assume-1-dot-2-is-redirect": "Treat all hosts that match the Regex `^.\\...$` as redirects. Let's be real, they all are.",
 			"breezewiki": "Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.",
-			"bypass.vip": "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links. Currently untestable as the API is down.",
-			"discord-compatibility": "Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.",
+			"bypass.vip": "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.",
+			"discord-compatibility": "Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-domain` and `bsky.app` to the variable `bsky-embed-domain`.",
 			"discord-unexternal": "Replace `images-ext-1.discordapp.net` with the original images they refer to.",
 			"no-https-upgrade": "Disable replacing `http://` with `https://`.",
 			"no-network": "Don't make any HTTP requests.",
-			"no-unmangle": "Disable all unmangling.",
 			"no-unmangle-host-is-http-or-https": "Don't convert `https://https//example.com/abc` to `https://example.com/abc`.",
 			"no-unmangle-path-is-url": "Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.",
 			"no-unmangle-path-is-url-encoded-url": "Don't convert `https://example.com/https%3A%2F%2Fexample.com%2Fuser` to `https://example.com/user`.",
 			"no-unmangle-second-path-segment-is-url": "Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.",
 			"no-unmangle-subdomain-ends-in-not-subdomain": "Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.",
 			"no-unmangle-subdomain-starting-with-www-segment": "Don't convert `https://www.username.example.com` to `https://username.example.com`.",
-			"onion-location": "Replace hosts with results from the `Onion-Location` HTTP header if present.",
+			"no-unmangle-twitter-first-path-segment-is-twitter-domain": "If a twitter domain's first path segment is a twitter domain, don't remove it.",
+			"onion-location": "Replace hosts with results from the `Onion-Location` HTTP header if present. This makes an HTTP request one time per domain and caches it.",
 			"tor2web": "Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.",
 			"tor2web2tor": "Replace `**.onion.**` domains with `**.onion` domains.",
 			"tumblr-unsubdomain-blog": "Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.",
 			"unbreezewiki": "Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.",
+			"unmangle": "\"Unmangle\" certain \"invalid but I know what you mean\" URLs. Should not be used with untrusted URLs as malicious actors can use this to sneak malicuous URLs past, for example, email spam filters.",
 			"unmobile": "Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.",
 			"youtube-unlive": "Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.",
 			"youtube-unplaylist": "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
 			"youtube-unshort": "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`."
 		},
 		"vars": {
+			"SOURCE_URL": "Used by URL Cleaner Site to handle things wbesites do to links on their pages that's unsuitable to always remove.",
 			"bluesky-embed-domain": "The domain to use for bluesky when the `discord-compatibility` flag is set. Defaults to `fxbsky.com`.",
 			"breezewiki-domain": "The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`",
 			"bypass.vip-api-key": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.",
@@ -46,9 +48,9 @@
 			"email-link-format-1-hosts": "(TEMPORARY NAME) Hosts that use unknown link format 1.",
 			"https-upgrade-host-blacklist": "Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.",
 			"lmgtfy-hosts": "Hosts to replace with `google.com`.",
-			"redirect-hosts": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
-			"redirect-not-subdomains": "The `redirect-hosts` set but `UrlPart::NotSubdomain`.",
-			"unmangle-path-is-url-host-whitelist": "Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.",
+			"redirect-host-without-www-dot-prefixes": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
+			"redirect-not-subdomains": "The `redirect-host-without-www-dot-prefixes` set but using the `NotSubdomain` of the URL.",
+			"unmangle-path-is-url-blacklist": "Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.",
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": "Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` flag for the specified `NotSubdomain`s.",
 			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": "Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.",
 			"unmobile-not-subdomain-blacklist": "Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.",
@@ -73,7 +75,7 @@
 				"bw.artemislena.eu", "bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
 				"nerd.whatever.social", "z.opnxng.com"
 			],
-			"redirect-hosts": [
+			"redirect-host-without-www-dot-prefixes": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it",
 				"buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt",
@@ -87,7 +89,7 @@
 				"redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly",
 				"spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thr.cm", "thrn.co", "tiny.cc", "tmz.me", "to.pbs.org", "tps.to",
 				"tr.ee", "trib.al", "u.jd.com", "unes.co", "uni.cf", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd",
-				"xbx.ly", "xhslink.com", "yrp.ca"
+				"xbx.ly", "xhslink.com", "yrp.ca", "nbc4i.co"
 			],
 			"redirect-not-subdomains": [
 				"lnk.to", "visitlink.me", "goo.gl", "o93x.net"
@@ -115,7 +117,7 @@
 				"ymclid", "ymid", "ysclid"
 			],
 			"utps-host-whitelist": ["bambulab.com", "www.bambulab.com"],
-			"unmangle-path-is-url-host-whitelist": [],
+			"unmangle-path-is-url-blacklist": [],
 			"unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist": [],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org"],
 			"unmobile-not-subdomain-blacklist": ["tumblr.com", "deviantart.com"],
@@ -188,31 +190,7 @@
 				{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
 				{"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "result": "https://www.amazon.ca/dp/B0C6DX66TN"},
 				{"job_config": "http://example.com", "result": "https://example.com/"},
-				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
-				{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
-				{"job_config": "https://https//abc.tumblr.com.tumblr.com", "result": "https://abc.tumblr.com"},
-				{"job_config": "https://abc.deviantart.com.deviantart.com", "result": "https://deviantart.com/abc/"},
 
-				{"job_config": "https://https//example.com/abc", "result": "https://example.com/abc"},
-				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
-				{"job_config": "https://https//example1.com/user/example2.com/abc", "result": "https://example2.com/abc"},
-				{"job_config": "https://www.username.example.com", "result": "https://username.example.com"},
-				{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/www.twitter.com/user"    , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/www.x.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/twitter.com/user"              , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://www.x.com/user"},
 				{"job_config": "https://bsky.app", "result": "https://bsky.app/"},
 				{"job_config": "https://fxbsky.app", "result": "https://bsky.app/"},
 				{"job_config": "https://bsky.app/profile/user", "result": "https://bsky.app/profile/user.bsky.social"},
@@ -223,6 +201,36 @@
 				{"job_config": "https://com"      , "result": "https://com"},
 				{"job_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1"},
 				{"job_config": "file://a/b/c"     , "result": "file://a/b/c"}
+			]
+		},
+		{
+			"params_diff": {"flags": ["unmangle"]},
+			"expectations": [
+				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
+				{"job_config": "https://https//abc.tumblr.com.tumblr.com", "result": "https://abc.tumblr.com"},
+				{"job_config": "https://abc.deviantart.com.deviantart.com", "result": "https://deviantart.com/abc/"},
+				{"job_config": "https://https//example.com/abc", "result": "https://example.com/abc"},
+				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://https//example1.com/user/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://www.username.example.com", "result": "https://username.example.com"},
+
+				{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
+				{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
+				{"job_config": "https://twitter.com/www.twitter.com/user"    , "result": "https://x.com/user"},
+				{"job_config": "https://twitter.com/www.x.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/twitter.com/user"              , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://www.x.com/user"},
+				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://www.x.com/user"},
+				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://www.x.com/user"}
 			]
 		},
 		{
@@ -285,7 +293,7 @@
 				{"PartMatches": {
 					"part": "HostWithoutWWWDotPrefix",
 					"matcher": {"Any": [
-						{"InSet": "redirect-hosts"},
+						{"InSet": "redirect-host-without-www-dot-prefixes"},
 						{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
 						{"IsOneOf": [
 					    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "bugzil.la",
@@ -782,7 +790,7 @@
 		              ]},
 									{"PartMatches": {
 										"part": "HostWithoutWWWDotPrefix",
-										"matcher": {"InSet": "redirect-hosts"}
+										"matcher": {"InSet": "redirect-host-without-www-dot-prefixes"}
 									}},
 									{"TreatErrorAsFail": {"PartMatches": {
 										"part": "NotSubdomain",
@@ -846,7 +854,7 @@
 		{
 			"SharedCondition": {
 				"condition": {"All": [
-					{"Not": {"FlagIsSet": "no-unmangle"}},
+					{"FlagIsSet": "unmangle"},
 					{"Any": [
 						{"HostIsOneOf": ["http", "https"]},
 						{"PartContains": {"part": "Path", "value": "http"}},
@@ -902,7 +910,7 @@
 						"comment": "https://example1.com/https://example2.com/user -> https://example2.com/abc",
 						"condition": {"All": [
 							{"Not": {"FlagIsSet": "no-unmangle-path-is-url"}},
-							{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "unmangle-path-is-url-host-whitelist"}}}},
+							{"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "unmangle-path-is-url-blacklist"}}}},
 							{"Any": [
 								{"PartContains": {"part": "Path", "where": "Start", "value": "/http:"}},
 								{"PartContains": {"part": "Path", "where": "Start", "value": "/https:"}}
@@ -1034,7 +1042,7 @@
 				"map": {
 					"theonion.com" : "RemoveQuery",
 					"teespring.com": "RemoveQuery",
-					"twitter.com"  : {"SetHost": "x.com"},
+					"twitter.com"  : {"SetPart": {"part": "NotSubdomain", "value": "x.com"}},
 					"vxtwitter.com": {"SetHost": "x.com"},
 					"fixvx.com"    : {"SetHost": "x.com"},
 					"fxtwitter.com": {"SetHost": "x.com"},
@@ -1082,12 +1090,18 @@
 						{"SetPart" : {"part": "Path", "value": "watch"}},
 						{"RemoveQueryParams": ["si", "feature", "pp"]}
 					]},
-					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid"]},
-					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid"]},
+					"instagram.com": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
+					"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
 					"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 					"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion": {"RemoveQueryParams": ["t", "atb", "ia"]},
-					"washingtonpost.com": {"RemoveQueryParams": ["itid"]},
+					"washingtonpost.com": {"All": [
+						{"RemoveQueryParams": ["itid", "nid", "arcId", "account_location", "tid", "oscode", "s_l", "acqEntType", "p", "s_ct"]},
+						{"IfCondition": {
+							"condition": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "value": "link", "where": "Start"}}},
+							"mapper": {"SetPart": {"part": "Fragment", "value": null}}
+						}}
+					]},
 					"cnn.com": {"RemoveQueryParams": ["bt_ee", "bt_ts"]},
 					"facebook.com": {"All": [
 						{"IfCondition": {
@@ -1204,10 +1218,11 @@
 						"condition": {"PartMatches": {"part": {"PathSegment": 0}, "matcher": {"IsOneOf": ["commissions", "journals"]}}},
 						"mapper": "RemoveQuery"
 					}},
-					"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb"]},
-					"fori.io": {"SetHost": "foriio.com"}
-				},
-				"pawoo.net": {"RemoveQueryParams": ["provider"]}
+					"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb", "tracelog", "wx_navbar_tramsparent"]},
+					"fori.io": {"SetHost": "foriio.com"},
+					"pawoo.net": {"RemoveQueryParams": ["provider"]},
+					"snapchat.com": {"RemoveQueryParams": ["purpose", "sp"]}
+				}
 			}
 		},
 		{
@@ -1235,7 +1250,11 @@
 					"x.com": {"Rules": [
 						{
 							"comment": "https://(www\\.)?(twitter|x).com/(www\\.)?(twitter|x).com -> x.com",
-							"condition": {"PartMatches": {"part": {"PathSegment": 0}, "matcher": {"IsOneOf": ["x.com", "www.x.com", "twitter.com", "www.twitter.com"]}}},
+							"condition": {"All": [
+								{"FlagIsSet": "unmangle"},
+								{"Not": {"FlagIsSet": "no-unmangle-twitter-first-path-segment-is-twitter-domain"}},
+								{"PartMatches": {"part": {"PathSegment": 0}, "matcher": {"IsOneOf": ["x.com", "www.x.com", "twitter.com", "www.twitter.com"]}}}
+							]},
 							"mapper": {"SetPart": {"part": {"PathSegment": 0}, "value": null}}
 						},
 						{
@@ -1278,7 +1297,13 @@
 							"condition": {"FlagIsSet": "discord-compatibility"},
 							"mapper": {"SetPart": {"part": "NotSubdomain", "value": "fxbsky.app"}}
 						}
-					]}
+					]},
+					"apps.apple.com": {"RemoveQueryParams": ["pt", "ct", "mt"]},
+					"play.google.com": {"RemoveQueryParams": ["referrer"]},
+					"sale.alibaba.com": {"IfCondition": {
+						"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "p"}},
+						"mapper": {"RemoveQueryParams": ["wx_navbar_transparent", "path", "ncms_spm", "prefetchKey", "wx_xpage", "spm", "cardType"]}
+					}}
 				}
 			}
 		},
@@ -1375,6 +1400,18 @@
 							"mapper": {"RemoveQueryParams": ["sca_esv"]}
 						}
 					]}
+				}
+			}
+		},
+
+
+
+		{
+			"StringMap": {
+				"value": {"ExtractPart": {"value": {"Var": "SOURCE_URL"}, "part": "NotSubdomain"}},
+				"map": {
+					"alibaba.com": {"RemoveQueryParams": ["spm", "file"]},
+					"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]}
 				}
 			}
 		},

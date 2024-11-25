@@ -244,7 +244,7 @@ pub enum StringMatcher {
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(FnWrapper<fn(&str, &JobStateView) -> Result<bool, StringMatcherError>>)
 }
 
@@ -310,7 +310,7 @@ pub enum StringMatcherError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// Custom error.
     #[error(transparent)]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error>)
 }
 
@@ -436,7 +436,7 @@ impl StringMatcher {
                     }
                 )?
             },
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(function) => function(haystack, job_state)?,
         })
     }
@@ -468,7 +468,7 @@ impl StringMatcher {
             #[cfg(feature = "glob")] Self::Glob(_) => true,
             Self::Always | Self::Never | Self::Error | Self::IsOneOf(_) | Self::OnlyTheseChars(_) | Self::IsAscii | Self::LengthIs(_) => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(_) => false
         }, "Unsuitable StringMatcher detected: {self:?}");
         true

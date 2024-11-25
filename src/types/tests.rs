@@ -55,7 +55,7 @@ impl Expectation {
     /// 
     /// If the expectation fails, you guessed it, panics.
     pub fn run(&self, config: &Config) {
-        println!("Testing the following expectation set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable"));
+        println!("Testing the following expectation:\n{}", serde_json::to_string(self).expect("The entire config to be serializable"));
         let mut url = self.job_config.url.clone();
         config.apply(&mut JobState {
             url: &mut url,

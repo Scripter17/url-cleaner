@@ -437,7 +437,7 @@ pub enum Mapper {
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(FnWrapper<fn(&mut JobState) -> Result<(), MapperError>>)
 }
 
@@ -538,7 +538,7 @@ pub enum MapperError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// Custom error.
     #[error(transparent)]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error>),
     /// Returned when the requested part of a URL is [`None`].
     #[error("The requested part of the URL was None.")]
@@ -788,7 +788,7 @@ impl Mapper {
                     commons: job_state.commons
                 })?
             },
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(function) => function(job_state)?
         };
         Ok(())
@@ -827,7 +827,7 @@ impl Mapper {
             #[cfg(feature = "http")]
             Self::ExpandRedirect {..} => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(_) => false
         }, "Unsuitable Mapper detected: {self:?}");
         true

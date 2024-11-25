@@ -1,8 +1,23 @@
 # URL Cleaner
 
 Websites often put unique identifiers into URLs so that when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
-As most people do not understand and therefore cannot consent to this, it is polite to remove the spytext query parameters before sending URLs to people.  
-URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, fast, and easy as possible.
+As most people do not understand and therefore cannot consent to this, it is polite to remove the maltext before sending URLs to people.  
+URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, easy, and fast as possible.
+
+## Privacy
+
+There are several non-obvious privacy concerns you should keep in mind while using URL Cleaner, and especially the default config.
+
+- Carefully crafted links in emails/DMs/whatever might look fine to spam/mallink filters but, when cleaned (especially with the `unmangle` flag), become malicious.
+- When using [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) without the `no-network` flag, all (supported) redirects on a webpage are effectively automatically clicked.
+    - While this does prevent the redirect website from putting cookies on your browser and possibly gives it the false impression you clicked the link, it gives the website certainty you viewed the link.
+        - In the hopefully never going to happen case of someone hijacking a supported redirect site, this could allow an attacker to reliably grab your IP by sending it in an email/DM.
+            - While you can configure URL Cleaner to use a proxy to avoid the IP grabbing, it would still let them know when you're online.
+- For some websites URL Cleaner strips out more than just tracking stuff. I'm still not sure if or when this ever becomes a security issue.
+
+If you are in any way using URL Cleaner in a life-or-death scenario, PLEASE always use the `no-network` flag and be extremely careful of people you even remotely don't trust sending you URLs.
+
+Also if you're using URL Cleaner in life-or-death scenarios please be extremely careful. I'm still not confident I've minimized information leaks in handled websites.
 
 ## C dependencies
 
@@ -14,15 +29,6 @@ These packages are required on Kubuntu 2024.04 (and probably therefore all Debia
 There are likely plenty more dependencies required that various Linux distros may or may not pre-install.
 
 If you can't compile it I'll try to help you out. And if you can make it work on your own please let me know so I can add to this list.
-
-## Anonymity
-
-In theory, if you're the only one on a website sharing posts from that website without URL trackers, the website could realize that and track you in the same way ("if no trackers then assume sender is Jared".).  
-In practice you are very unlikely to be the only one using/sharing cleaned URLs. Search engines generally provide URLs without trackers<sup>[citation needed]</sup>, some people manually remove trackers, and some websites like [vxtwitter.com](https://github.com/dylanpdx/BetterTwitFix) automatically strip URL trackers.
-
-However, for some websites the default config strips more stuff than search engines. In this case anonymity does fall back to many people using URL Cleaner and providing cover for each other.
-
-As with Tor, protests, and anything else where privacy matters, safety comes in numbers.
 
 ## Basic usage
 
@@ -37,9 +43,9 @@ The default config is intended to always obey the following rules:
 - URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error.
     - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
     - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
-- Outside of long (>10)/infinite redirects/redirects, it should always be idempotent.
+- Outside of long (>10)/infinite redirects, it should always be idempotent.
 - Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
-- The `command` feature, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
+- The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
@@ -55,23 +61,24 @@ Various flags are included in the default config for things I want to do frequen
 
 - `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
 - `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
-- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links. Currently untestable as the API is down.
-- `discord-compatibility`: Sets the domain of `twitter.com` to the domain specified by the `twitter-embed-domain` variable.
+- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
+- `discord-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-domain` and `bsky.app` to the variable `bsky-embed-domain`.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-network`: Don't make any HTTP requests.
-- `no-unmangle`: Disable all unmangling.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
 - `no-unmangle-path-is-url-encoded-url`: Don't convert `https://example.com/https%3A%2F%2Fexample.com%2Fuser` to `https://example.com/user`.
 - `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
 - `no-unmangle-subdomain-ends-in-not-subdomain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
 - `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.
-- `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present.
+- `no-unmangle-twitter-first-path-segment-is-twitter-domain`: If a twitter domain's first path segment is a twitter domain, don't remove it.
+- `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present. This makes an HTTP request one time per domain and caches it.
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
 - `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.
+- `unmangle`: "Unmangle" certain "invalid but I know what you mean" URLs. Should not be used with untrusted URLs as malicious actors can use this to sneak malicuous URLs past, for example, email spam filters.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
@@ -85,6 +92,7 @@ Variables let you specify behaviour with the `--var name value --var name2 value
 
 Various variables are included in the default config for things that have multiple useful values.
 
+- `SOURCE_URL`: Used by URL Cleaner Site to handle things wbesites do to links on their pages that's unsuitable to always remove.
 - `bluesky-embed-domain`: The domain to use for bluesky when the `discord-compatibility` flag is set. Defaults to `fxbsky.com`.
 - `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
@@ -95,7 +103,7 @@ If a variable is specified in a config's `params` field, it can be unspecified u
 
 #### Environment variables
 
-There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--var abc xyz`. For this, URL Cleaner does make use of native environment variables.
+There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--var abc xyz`. For this, URL Cleaner uses environment variables.
 
 - `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
 
@@ -110,9 +118,9 @@ Various sets are included in the default config.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
 - `lmgtfy-hosts`: Hosts to replace with `google.com`.
-- `redirect-hosts`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
-- `redirect-not-subdomains`: The `redirect-hosts` set but `UrlPart::NotSubdomain`.
-- `unmangle-path-is-url-host-whitelist`: Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.
+- `redirect-host-without-www-dot-prefixes`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
+- `redirect-not-subdomains`: The `redirect-host-without-www-dot-prefixes` set but using the `NotSubdomain` of the URL.
+- `unmangle-path-is-url-blacklist`: Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.
 - `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` flag for the specified `NotSubdomain`s.
 - `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.
 - `unmobile-not-subdomain-blacklist`: Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.
@@ -136,7 +144,7 @@ Currently there is no command line syntax for them. There really should be.
 
 #### But how fast is it?
 
-Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some hyperfine and valgrind benchmarking so I can reliably check for regressions.
+Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some Hyperfine and Valgrind benchmarking so I can reliably check for regressions.
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
@@ -145,28 +153,28 @@ On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running 
 ```Json
 {
   "https://x.com?a=2": {
-    "0":       5.176,
-    "1":       5.455,
-    "10":      5.284,
-    "100":     5.859,
-    "1000":    9.194,
-    "10000":  45.828
+    "0":       5.142,
+    "1":       5.315,
+    "10":      5.384,
+    "100":     5.644,
+    "1000":    9.067,
+    "10000":  42.959
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0":       5.351,
-    "1":       5.306,
-    "10":      5.313,
-    "100":     5.836,
-    "1000":   11.340,
-    "10000":  62.017
+    "0":       5.156,
+    "1":       5.270,
+    "10":      5.275,
+    "100":     5.832,
+    "1000":   10.655,
+    "10000":  57.388
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0":       5.516,
-    "1":       5.228,
-    "10":      5.562,
-    "100":     6.279,
-    "1000":   14.972,
-    "10000": 101.226
+    "0":       5.233,
+    "1":       5.261,
+    "10":      5.331,
+    "100":     6.229,
+    "1000":   14.599,
+    "10000":  95.087
   }
 }
 ```
@@ -190,7 +198,7 @@ The people and projects I have stolen various parts of the default config from.
 
 Although proper documentation of the config schema is pending me being bothered to do it, the `url_cleaner` crate itself is reasonably well documented and the various types are (I think) fairly easy to understand.  
 The main files you want to look at are [`conditions.rs`](src/rules/conditions.rs) and [`mappers.rs`](src/rules/mappers.rs).  
-Additionally [`url_part.rs`](src/types/url_part.rs), [`string_location.rs`](src/types/string_location.rs), and [`string_modification.rs`](src/types/string_modification.rs) are very important for more advanced rules.
+Additionally [`url_part.rs`](src/types/url_part.rs), [`string_source.rs`](src/types/string_source.rs), and [`string_modification.rs`](src/types/string_modification.rs) are very important for more advanced rules.
 
 ### Footguns
 
@@ -256,7 +264,7 @@ Unless a `Debug` variant is used, the following should always be true:
 
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 
-The exact format is currently in flux.
+The exact format is currently in flux, though it should always be identical to [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site)'s output.
 
 ### Exit code
 

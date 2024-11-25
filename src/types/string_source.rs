@@ -344,7 +344,7 @@ pub enum StringSource {
     /// 
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(FnWrapper<for<'a> fn(&'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>>)
 }
 
@@ -464,7 +464,7 @@ pub enum StringSourceError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// Custom error.
     #[error(transparent)]
-    #[cfg(feature = "experiment-custom")]
+    #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error>)
 }
 
@@ -608,7 +608,7 @@ impl StringSource {
                     common_args: Some(&common_call.args.make(job_state)?)
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(function) => function(job_state)?
         })
     }
@@ -641,7 +641,7 @@ impl StringSource {
             Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
             Self::ExtractBetween {value, start, end} => value.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "experiment-custom")]
+            #[cfg(feature = "custom")]
             Self::Custom(_) => false
        }, "Unsuitable StringSource detected: {self:?}");
         true

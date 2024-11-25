@@ -48,8 +48,6 @@ done
 
 COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
 
-echo "$COMMAND"
-
 if [ $compile -eq 1 ]; then
   cargo build -r --config profile.release.strip=false --config profile.release.debug=2
   if [ $? -ne 0 ]; then exit 2; fi
