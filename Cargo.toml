@@ -1,10 +1,10 @@
 [package]
 name = "url-cleaner"
-version = "0.6.1"
+version = "0.6.2"
 edition = "2021"
 description = "A CLI tool and library for URL manipulation with a focus on stripping tracking garbage."
 repository = "https://github.com/Scripter17/url-cleaner"
-keywords = ["url", "url-tracking", "url-tracking-parameters", "privacy"]
+keywords = ["url", "url-tracking", "privacy"]
 categories = ["command-line-utilities"]
 license = "AGPL-3.0-or-later"
 
