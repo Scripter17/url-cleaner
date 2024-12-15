@@ -128,14 +128,18 @@ pub struct Args {
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_config: bool,
-    /// Print the config's documentation.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
-    #[arg(             long, verbatim_doc_comment)]
-    pub print_docs: bool,
     /// Run the config's tests.
     /// When this or any `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
-    pub test_config : bool
+    pub test_config : bool,
+    /// Amount of threads to process jobs in.
+    #[cfg(feature = "experiment-parallel")]
+    #[arg(long, default_value_t = 4)]
+    pub threads: usize,
+    /// Amount of jobs to do in each thread while waiting for other threads to return.
+    #[cfg(feature = "experiment-parallel")]
+    #[arg(long, default_value_t = 10)]
+    pub thread_queue: usize
 }
 
 /// The enum of all errors that can occur when using the URL Cleaner CLI tool.
@@ -159,8 +163,8 @@ fn str_to_json_str(s: &str) -> String {
 fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "debug-time")] let start_time = std::time::Instant::now();
 
-    let mut some_ok = false;
-    let mut some_error = false;
+    let some_ok = std::sync::Mutex::new(false);
+    let some_error = std::sync::Mutex::new(false);
 
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
@@ -260,20 +264,19 @@ fn main() -> Result<ExitCode, CliError> {
 
     let print_params = args.print_params;
     let print_config = args.print_config;
-    let print_docs   = args.print_docs;
     let test_config  = args.test_config;
 
-    let no_cleaning = print_args || print_params_diffs || print_params || print_config || print_docs || test_config;
+    let no_cleaning = print_args || print_params_diffs || print_params || print_config || test_config;
 
     if print_params {println!("{}", serde_json::to_string(&config.params)?);}
     if print_config {println!("{}", serde_json::to_string(&config)?);}
-    if print_docs {println!("{}", config.docs.to_markdown());}
     if test_config {config.run_tests();}
 
     if no_cleaning {std::process::exit(0);}
 
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
+    #[cfg(not(feature = "experiment-parallel"))]
     let mut jobs = Jobs {
         #[cfg(feature = "cache")]
         cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
@@ -295,22 +298,23 @@ fn main() -> Result<ExitCode, CliError> {
         print!("{{\"Ok\":{{\"urls\":[");
         let mut first_job = true;
 
+        #[cfg(not(feature = "experiment-parallel"))]
         for job in jobs.iter() {
             if !first_job {print!(",");}
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => {
                         print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
-                        some_ok = true;
+                        *some_ok.lock().expect("No panics.") = true;
                     },
                     Err(e) => {
                         print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                        some_error = true;
+                        *some_error.lock().expect("No panics.") = true;
                     }
                 },
                 Err(e) => {
                     print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                    some_error = true;
+                    *some_error.lock().expect("No panics.") = true;
                 }
             }
             first_job = false;
@@ -318,23 +322,99 @@ fn main() -> Result<ExitCode, CliError> {
 
         print!("]}}}}");
     } else {
+        #[cfg(feature = "experiment-parallel")]
+        {
+            let (in_senders , in_recievers ) = (0..args.threads).map(|_| std::sync::mpsc::sync_channel::<Result<Job<'_>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
+            let (out_senders, out_recievers) = (0..args.threads).map(|_| std::sync::mpsc::sync_channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
+
+            std::thread::scope(|s| {
+                let in_reciever_threads = in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
+                    s.spawn(move || {
+                        loop {
+                            match ir.recv() {
+                                Ok(job_result) => {
+                                    #[cfg(feature = "experiment-parallel-debug")] println!("Router {i} routing {job_result:?}");
+                                    os.send(job_result.map(|job| job.r#do())).expect("The receiver to still exist.");
+                                },
+                                Err(_) => {
+                                    #[cfg(feature = "experiment-parallel-debug")] println!("Router {i} done");
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }).collect::<Vec<_>>();
+
+                let some_ok_ref = &some_ok;
+                let some_error_ref = &some_error;
+
+                s.spawn(move || {
+                    let mut disconnected = 0usize;
+                    for or in out_recievers.iter().cycle() {
+                        let recieved = or.recv();
+                        #[cfg(feature = "experiment-parallel-debug")] println!("Recieved {recieved:?}");
+                        match recieved {
+                            Ok(job_result) => match job_result {
+                                Ok(job) => match job {
+                                    Ok(url) => {
+                                        println!("{url}");
+                                        *some_ok_ref.lock().expect("No panics.") = true;
+                                    },
+                                    Err(e) => {
+                                        println!();
+                                        eprintln!("DoJobError\t{e:?}");
+                                        *some_error_ref.lock().expect("No panics.") = true;
+                                    }
+                                },
+                                Err(e) => {
+                                    println!();
+                                    eprintln!("MakeJobError\t{e:?}");
+                                    *some_error_ref.lock().expect("No panics.") = true;
+                                }
+                            },
+                            Err(_) => {disconnected += 1; if disconnected == args.threads {break;}}
+                        }
+                    }
+                });
+
+                let mut jobs = Box::new(Jobs {
+                    #[cfg(feature = "cache")]
+                    cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
+                    job_configs_source: {
+                        let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url));
+                        if !io::stdin().is_terminal() {
+                            Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?))))
+                        } else {
+                            Box::new(ret)
+                        }
+                    },
+                    config: Cow::Owned(config)
+                });
+                for (i, job) in Box::leak(jobs).iter().enumerate() {
+                    #[cfg(feature = "experiment-parallel-debug")] println!("Putting {i} in: {job:?}");
+                    in_senders.get(i % args.threads).expect("The amount of senders to not exceet the count of senders to make.").send(job).expect("To successfuly send the Job.");
+                }
+                drop(in_senders);
+            })
+        }
+        #[cfg(not(feature = "experiment-parallel"))]
         for job in jobs.iter() {
             match job {
                 Ok(job) => match job.r#do() {
                     Ok(url) => {
                         println!("{url}");
-                        some_ok = true;
+                        *some_ok.lock().expect("No panics.") = true;
                     },
                     Err(e) => {
                         println!();
                         eprintln!("DoJobError\t{e:?}");
-                        some_error = true;
+                        *some_error.lock().expect("No panics.") = true;
                     }
                 },
                 Err(e) => {
                     println!();
                     eprintln!("MakeJobError\t{e:?}");
-                    some_error = true;
+                    *some_error.lock().expect("No panics.") = true;
                 }
             }
         }
@@ -348,10 +428,10 @@ fn main() -> Result<ExitCode, CliError> {
     // #[cfg(feature = "debug-time")] eprintln!("Drop Jobs: {:?}", x.elapsed());
     #[cfg(feature = "debug-time")] eprintln!("Total: {:?}", start_time.elapsed());
 
-    Ok(match (some_ok, some_error) {
+    return Ok(match (*some_ok.lock().expect("No panics."), *some_error.lock().expect("No panics.")) {
         (false, false) => 0,
         (false, true ) => 1,
         (true , false) => 0,
         (true , true ) => 2
-    }.into())
+    }.into());
 }

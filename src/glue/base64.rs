@@ -87,7 +87,8 @@ impl<'de> Deserialize<'de> for DecodePaddingMode {
         /// Visitor for deserialization.
         struct V;
 
-        impl<'de> Visitor<'de> for V {
+        // For some reason removing `--print-docs` made clippy tell me this could be elided from `impl<'de> Visitor<'de>`
+        impl Visitor<'_> for V {
             type Value = DecodePaddingMode;
 
             fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {

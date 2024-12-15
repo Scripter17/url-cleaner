@@ -22,7 +22,7 @@
 //!     rules: Rules(vec![
 //!         Rule::Normal {
 //!             condition: Condition::Always,
-//!             mapper: Mapper::RemoveQueryParams(["utm_source".to_string()].into_iter().collect())
+//!             mapper: Mapper::RemoveQueryParams(["utm_source".to_string()].into())
 //!         }
 //!     ])
 //! };

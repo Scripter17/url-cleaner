@@ -65,7 +65,7 @@ pub enum MakeJobConfigError {
     IoError(#[from] io::Error),
     /// Generic error wrapper.
     #[error(transparent)]
-    Other(#[from] Box<dyn Error>)
+    Other(#[from] Box<dyn Error + Send>)
 }
 
 impl FromStr for JobConfig {

@@ -179,11 +179,12 @@ On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running 
 }
 ```
 
-In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is often up to 10x worse because for some reason `GM_XMLHttpRequest` always takes at least 10ms on my machine and, from basic testing, the amazon homepage has 1k URLs and takes about 8-10 requests to clean all of them.
+In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is significantly (but not severely) worse.  
+Often the first few cleanings will take a few hundred milliseconds each because the page is still loading. Subsequent cleanings should generally be in the 10ms-50ms range.
 
 Mileage varies wildly but as long as you're not spawning a new instance of URL Cleaner for each URL it should be fast enough.
 
-Please note that URL Cleaner is currently single threaded because I don't know how to do it well. Parallelizing yourself (for example, with [GNU Parallel](https://www.gnu.org/software/parallel/)) may give better results.
+Please note that URL Cleaner is currently single threaded because I don't know how to do it well. Parallelizing yourself (for example, with [GNU Parallel](https://www.gnu.org/software/parallel/)) may give better results, especially in network-bound tasks.
 
 #### Credits
 
@@ -239,7 +240,7 @@ If this is an issue I'll do what I can to lower it but Diesel also keeps a fairl
 
 ## Untrusted input
 
-Although URL Cleaner has various feature flags that can be disabled to make handling untrusted input safer, no guarantees are made. Especially if the config file being used is untrusted.  
+Although URL Cleaner has various feature flags that can be disabled at compile time to make handling untrusted input safer, no guarantees are made. Especially if the config file being used is untrusted.  
 That said, if you notice any rules that use but don't actually need HTTP requests or other data-leaky features, please let me know.
 
 ## CLI
@@ -251,13 +252,9 @@ Note: [JSON output is supported](#json-output).
 Unless a `Debug` variant is used, the following should always be true:
 
 1. Input URLs are a list of URLs starting with URLs provided as command line arguments then each line of the STDIN.
-
 2. The nth line of STDOUT corresponds to the nth input URL.
-
 3. If the nth line of STDOUT is empty, then something about reading/parsing/cleaning the URL failed.
-
 4. The nth non-empty line of STDERR corresponds to the nth empty line of STDOUT.
-
     1. Currently empty STDERR lines are not printed when a URL succeeds. While it would make parsing the output easier it would cause visual clutter on terminals. While this will likely never change by default, parsers should be sure to follow 4 strictly in case this is added as an option.
 
 ### JSON output
@@ -280,17 +277,11 @@ Currently, the exit code is determined by the following rules:
 URL Cleaner should only ever panic under the following circumstances:
 
 - Parsing the CLI arguments failed.
-
 - Loading/parsing the config failed.
-
 - Printing the config failed. (Shouldn't be possible.)
-
 - Testing the config failed.
-
 - Reading from/writing to STDIN/STDOUT/STDERR has a catastrophic error.
-
 - Running out of memory resulting in a standard library function/method panicking. This should be extremely rare.
-
 - (Only possible when the `debug` feature is enabled) The mutex controlling debug printing indenting is poisoned and a lock is attempted.
     This should only be possible when URL Cleaner is used as a library.
 

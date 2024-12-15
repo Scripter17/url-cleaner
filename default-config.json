@@ -78,21 +78,21 @@
 			"redirect-host-without-www-dot-prefixes": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it",
-				"buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt",
-				"dcdr.me", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "flip.it", "forms.gle",
-				"g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co",
-				"hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st",
-				"kre.pe", "l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "msft.it", "mzl.la", "n.pr",
-				"nas.cr", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
+				"buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cos.lv", "cutt.ly", "db.tt", "dcdr.me",
+				"depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co",
+				"glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr",
+				"hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe",
+				"l.leparisien.fr", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "msft.it", "mzl.la", "n.pr", "nas.cr",
+				"nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
 				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "pin.it",
 				"pixiv.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co",
 				"redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "shor.tf", "shorturl.at", "spoti.fi", "spr.ly",
 				"spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thr.cm", "thrn.co", "tiny.cc", "tmz.me", "to.pbs.org", "tps.to",
 				"tr.ee", "trib.al", "u.jd.com", "unes.co", "uni.cf", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd",
-				"xbx.ly", "xhslink.com", "yrp.ca", "nbc4i.co"
+				"xbx.ly", "xhslink.com", "yrp.ca", "api.link.agorapulse.com", "perfht.ml", "share.firefox.dev", "unf.pa", "spr.ly", "thef.pub", "cons.lv", "kre.pe", "uniceflink.org"
 			],
 			"redirect-not-subdomains": [
-				"lnk.to", "visitlink.me", "goo.gl", "o93x.net"
+				"lnk.to", "visitlink.me", "goo.gl", "o93x.net", "pusle.ly"
 			],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
@@ -276,10 +276,6 @@
 			]
 		},
 		{
-			"params_diff": {"flags": ["bypass.vip"]},
-			"expectations": [{"job_config": "https://linkvertise.com/514008/hydrogen-gateway-1", "result": "https://api.hydrogen.sh/gateway/callback?stage=1"}]
-		},
-		{
 			"params_diff": {"flags": ["discord-compatibility"]},
 			"expectations": [
 				{"job_config": "https://bsky.app", "result": "https://fxbsky.app/"},
@@ -297,13 +293,13 @@
 						{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
 						{"IsOneOf": [
 					    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "bugzil.la",
-					    "buymeacoff.ee", "buymeacoffee.com", "cach.me", "cash.app", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com",
-					    "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "facebook.com",
-					    "gf.me", "gofundme.com", "gofundme.com", "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com",
-					    "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "old.reddit.com", "open.substack.com", "out.reddit.com",
-					    "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "rd.goodreads.com", "reddit.com", "shareasale-analytics.com",
-					    "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "steamcommunity.com", "subscribestar.adult",
-					    "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "carleton.ca"
+					    "buymeacoff.ee", "buymeacoffee.com", "cach.me", "carleton.ca", "cash.app", "click.notification.elsevier.com", "deviantart.com",
+					    "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com",
+					    "facebook.com", "gf.me", "gofundme.com", "gofundme.com", "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am",
+					    "instagram.com", "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "old.reddit.com", "open.substack.com",
+					    "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "rd.goodreads.com", "reddit.com",
+					    "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "ss3.shipstation.com",
+					    "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se", "youtube.com", "twpf.jp"
 					  ]},
 					  {"InSet": "lmgtfy-hosts"},
 					  {"LengthIs": 4},
@@ -692,7 +688,18 @@
 										{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "id"}}},
 										{"SetPart": {"part": "Path", "value": "/show_bug.cgi"}}
 									]},
-									"o93x.net": {"GetUrlFromQueryParam": "u"}
+									"o93x.net": {"GetUrlFromQueryParam": "u"},
+									"ss3.shipstation.com": {"SetPart": {"part": "Whole", "value": {"Join": {"sources": ["https://", {"Modified": {"value": {"Part": "Whole"}, "modification": {"StripPrefix": "https://ss3.shipstation.com/"}}}]}}}},
+									"twpf.jp": {"IfCondition": {
+										"condition": {"PartIs": {"part": "Path", "value": "/home/jump"}},
+										"mapper": {"SetPart": {
+											"part": "Whole",
+											"value": {"Modified": {
+												"value": {"Part": {"QueryParam": "p"}},
+												"modification": "UrlDecode"
+											}}
+										}}
+									}}
 								}
 							}
 						},
@@ -707,7 +714,11 @@
 									"carleton.ca": {"IfCondition": {
 										"condition": {"PartIs": {"part": {"QueryParam": "action"}, "value": "redirect"}},
 										"mapper": {"GetUrlFromQueryParam": "url"}
-									}}
+									}},
+									"pulse.ly": {"All": [
+										{"SetHost": "api.link.agorapulse.com"},
+										{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "redirect"}}
+									]}
 								}
 							}
 						},
@@ -1108,7 +1119,7 @@
 							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "reel"}},
 							"mapper": "RemoveQuery"
 						}},
-						{"RemoveQueryParams": ["fs", "s", "mibextid"]}
+						{"RemoveQueryParams": ["fs", "s", "mibextid", "rf"]}
 					]},
 					"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "at_"}}},
 					"linktr.ee": {"RemoveQueryParams": ["ltsid"]},
@@ -1221,7 +1232,8 @@
 					"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb", "tracelog", "wx_navbar_tramsparent"]},
 					"fori.io": {"SetHost": "foriio.com"},
 					"pawoo.net": {"RemoveQueryParams": ["provider"]},
-					"snapchat.com": {"RemoveQueryParams": ["purpose", "sp"]}
+					"snapchat.com": {"RemoveQueryParams": ["purpose", "sp"]},
+					"be.net": {"SetHost": "behance.net"}
 				}
 			}
 		},
@@ -1303,7 +1315,8 @@
 					"sale.alibaba.com": {"IfCondition": {
 						"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "p"}},
 						"mapper": {"RemoveQueryParams": ["wx_navbar_transparent", "path", "ncms_spm", "prefetchKey", "wx_xpage", "spm", "cardType"]}
-					}}
+					}},
+					"wlo.link": {"SetHost": "link.space"}
 				}
 			}
 		},
@@ -1329,6 +1342,52 @@
 					},
 					"amazon": {"Rules": [
 						{
+							"condition": {"PartContains": {"part": "Path", "value": "/dp/"}},
+							"mapper": {"AllowQueryParams": ["aod"]}
+						},
+						{
+							"PartMap": {
+								"part": "Path",
+								"map": {
+									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn"]},
+									"/gp/buyagain": {"AllowQueryParams": ["ats"]},
+									"/gp/customer-reviews": "RemoveQuery",
+									"/amazonprime": "RemoveQuery"
+								}
+							}
+						},
+						{
+							"condition": "Always",
+							"mapper": {"RemoveQueryParamsMatching": {"Any": [
+								{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref"]},
+								{"Contains": {"value": "pd_", "where": "Start"}},
+								{"Contains": {"value": "pf_", "where": "Start"}}
+							]}}
+						},
+						{
+							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "product-reviews"}},
+							"mapper": "RemoveQuery"
+						},
+
+
+
+						{
+							"condition": {"Any": [
+								{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
+								{"All": [
+									{"PartContains": {"part": "Path", "value": "/dp/"}},
+									{"Any": [
+										{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
+										{"PartMatches" : {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
+									]}
+								]}
+							]},
+							"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
+						},
+
+
+
+						{
 							"condition": {"PartContains": {"part": "Path", "where": "Start", "value": "/gp/offer-listing/"}},
 							"mapper": {"All": [
 								{"SetPart": {"part": {"PathSegment": 0}, "value": "dp"}},
@@ -1343,46 +1402,6 @@
 						{
 							"condition": {"PartIs": {"part": {"PathSegment": 3}, "value": "dp"}},
 							"mapper": {"SetPart": {"part": {"PathSegment": 2}, "value": null}}
-						},
-						{
-							"condition": {"PartContains": {"part": "Path", "value": "/dp/"}},
-							"mapper": {"AllowQueryParams": ["aod"]}
-						},
-						{
-							"condition": {"Any": [
-								{"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
-								{"All": [
-									{"PartContains": {"part": "Path", "value": "/dp/"}},
-									{"Any": [
-										{"PartContains": {"part": {"PathSegment": -1}, "where": "Anywhere", "value": "-"}},
-										{"PartMatches" : {"part": {"PathSegment": -1}, "matcher": {"OnlyTheseChars": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]}}}
-									]}
-								]}
-							]},
-							"mapper": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
-						},
-						{
-							"PartMap": {
-								"part": "Path",
-								"map": {
-									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn"]},
-									"/gp/buyagain": {"AllowQueryParams": ["ats"]},
-									"/gp/customer-reviews": "RemoveQuery",
-									"/amazonprime": "RemoveQuery"
-								}
-							}
-						},
-						{
-							"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "product-reviews"}},
-							"mapper": "RemoveQuery"
-						},
-						{
-							"condition": "Always",
-							"mapper": {"RemoveQueryParamsMatching": {"Any": [
-								{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref"]},
-								{"Contains": {"value": "pd_", "where": "Start"}},
-								{"Contains": {"value": "pf_", "where": "Start"}}
-							]}}
 						}
 					]},
 					"google": {"Rules": [

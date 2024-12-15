@@ -21,6 +21,8 @@ dhat=1
 memcheck=1
 an_only_is_set=0
 urls_are_reset=0
+num_mode=0
+nums_are_reset=0
 
 for arg in "$@"; do
   shift
@@ -40,14 +42,16 @@ for arg in "$@"; do
     --only-massif)     if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0          ; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-dhat)       if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0        ; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-memcheck)   if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0; dhat=0            ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
+    --nums)            num_mode=1 ;;
     *:*)               if [ $urls_are_reset -eq 0 ]; then URLS=( ); urls_are_reset=1; fi; URLS=( ${URLS[@]} "$arg" ) ;;
+    [0123456789]*)     if [ $num_mode -eq 1 ]; then if [ $nums_are_reset -eq 0 ]; then NUMS=( ); nums_are_reset=1; fi; NUMS=(${NUMS[@]} "$arg"); fi ;;
     --) break ;;
     *) echo Unknown option \"$arg\" && exit 1 ;;
   esac
 done
 
 COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
-
+echo "$COMMAND"
 if [ $compile -eq 1 ]; then
   cargo build -r --config profile.release.strip=false --config profile.release.debug=2
   if [ $? -ne 0 ]; then exit 2; fi

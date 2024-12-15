@@ -246,16 +246,14 @@ impl InnerCache {
             .map(|cache_entry| cache_entry.value.to_owned()))
     }
 
-    /// Writes an entry to the cache.
+    /// Overwrites an entry to the cache.
     /// 
-    /// Note that this doesn't check if the corresponding `key` and `value` are already present in a cache entry.
-    /// 
-    /// Not checking yourself could result in [`Self::read`] not returning the written value.
+    /// If an entry doesn't exist, it is made.
     /// # Errors
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn write(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
         debug!(InnerCache::write, self, category, key, value);
-        diesel::insert_into(cache::table)
+        diesel::replace_into(cache::table)
             .values(&NewCacheEntry {category, key, value})
             .returning(CacheEntry::as_returning())
             .get_result(self.connect()?)?;

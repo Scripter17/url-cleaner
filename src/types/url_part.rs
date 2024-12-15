@@ -1075,6 +1075,7 @@ impl UrlPart {
                     url.set_port(Some(port)).map_err(|()| UrlPartSetError::CannotSetPort)?;
                 }
             },
+            (Self::PathSegment(-1), None) => {url.path_segments_mut().map_err(|_| UrlPartGetError::UrlDoesNotHaveAPath)?.pop();},
             (Self::BeforePathSegment(n), _) => if let Some(to) = to {
                 let mut segments = url.path_segments().ok_or(UrlPartGetError::UrlDoesNotHaveAPath)?.collect::<Vec<_>>();
                 let fixed_n = neg_range_boundary(*n, segments.len()).ok_or(UrlPartGetError::SegmentBoundaryNotFound)?;

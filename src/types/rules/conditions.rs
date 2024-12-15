@@ -758,7 +758,7 @@ impl Condition {
 
             // Miscellaneous.
 
-            Self::FlagIsSet(name) => job_state.params.flags.contains(&get_string!(name, job_state, ConditionError)),
+            Self::FlagIsSet(name) => job_state.params.flags.contains(get_str!(name, job_state, ConditionError)),
             Self::AnyFlagIsSet => !job_state.params.flags.is_empty(),
             Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x)==get_option_str!(value, job_state),
 

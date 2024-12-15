@@ -110,14 +110,7 @@ macro_rules! get_option_string {
 /// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
 macro_rules! get_option_str {
     ($value:expr, $job_state:expr) => {
-        // $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().as_deref()
-        {
-            let view = &$job_state.to_view();
-            match $value.as_ref() {
-                Some(source) => source.get(view),
-                None => Ok(None)
-            }?.as_deref()
-        }
+        $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().as_deref()
     }
 }
 
