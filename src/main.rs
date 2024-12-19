@@ -133,12 +133,14 @@ pub struct Args {
     #[arg(             long, verbatim_doc_comment)]
     pub test_config : bool,
     /// Amount of threads to process jobs in.
+    /// 
+    /// Zero gets the current CPU threads.
     #[cfg(feature = "experiment-parallel")]
-    #[arg(long, default_value_t = 4)]
+    #[arg(long, default_value_t = 0)]
     pub threads: usize,
     /// Amount of jobs to do in each thread while waiting for other threads to return.
     #[cfg(feature = "experiment-parallel")]
-    #[arg(long, default_value_t = 10)]
+    #[arg(long, default_value_t = 100)]
     pub thread_queue: usize
 }
 
@@ -276,7 +278,6 @@ fn main() -> Result<ExitCode, CliError> {
 
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
-    #[cfg(not(feature = "experiment-parallel"))]
     let mut jobs = Jobs {
         #[cfg(feature = "cache")]
         cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
@@ -294,6 +295,101 @@ fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "debug-time")] eprintln!("Make Jobs: {:?}", x.elapsed());
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
+    #[cfg(feature = "experiment-parallel")]
+    {
+        let mut threads = args.threads;
+        if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
+        let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<Job<'_>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
+        let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
+
+        std::thread::scope(|s| {
+            in_recievers.into_iter().zip(out_senders).map(|(ir, os)| {
+                s.spawn(move || {
+                    while let Ok(job_result) = ir.recv() {
+                        os.send(job_result.map(|job| job.r#do())).expect("The receiver to still exist.");
+                    }
+                });
+            }).for_each(drop);
+
+            let some_ok_ref = &some_ok;
+            let some_error_ref = &some_error;
+
+            if json {
+                s.spawn(move || {
+                    print!("{{\"Ok\":{{\"urls\":[");
+                    let mut first_job = true;
+
+                    let mut disconnected = 0usize;
+                    for or in out_recievers.iter().cycle() {
+                        let recieved = or.recv();
+                        match recieved {
+                            Ok(Ok(Ok(url))) => {
+                                if !first_job {print!(",");}
+                                print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
+                                *some_ok_ref.lock().expect("No panics.") = true;
+                                first_job = false;
+                            },
+                            Ok(Ok(Err(e))) => {
+                                if !first_job {print!(",");}
+                                print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                                *some_error_ref.lock().expect("No panics.") = true;
+                                first_job = false;
+                            },
+                            Ok(Err(e)) => {
+                                if !first_job {print!(",");}
+                                print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                                *some_error_ref.lock().expect("No panics.") = true;
+                                first_job = false;
+                            },
+                            Err(_) => {
+                                #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+                                {disconnected += 1;}
+                                if disconnected == threads {break;}
+                            }
+                        }
+                    }
+
+                    print!("]}}}}");
+                });
+            } else {
+                s.spawn(move || {
+                    let mut disconnected = 0usize;
+                    for or in out_recievers.iter().cycle() {
+                        let recieved = or.recv();
+                        match recieved {
+                            Ok(Ok(Ok(url))) => {
+                                println!("{url}");
+                                *some_ok_ref.lock().expect("No panics.") = true;
+                            },
+                            Ok(Ok(Err(e))) => {
+                                println!();
+                                eprintln!("DoJobError\t{e:?}");
+                                *some_error_ref.lock().expect("No panics.") = true;
+                            }
+                            Ok(Err(e)) => {
+                                println!();
+                                eprintln!("MakeJobError\t{e:?}");
+                                *some_error_ref.lock().expect("No panics.") = true;
+                            }
+                            Err(_) => {
+                                #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+                                {disconnected += 1;}
+                                if disconnected == threads {break;}
+                            }
+                        }
+                    }
+                });
+            }
+
+            for (i, job) in jobs.iter().enumerate() {
+                #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+                in_senders.get(i % threads).expect("The amount of senders to not exceet the count of senders to make.").send(job).expect("To successfuly send the Job.");
+            }
+            drop(in_senders);
+        })
+    }
+
+    #[cfg(not(feature = "experiment-parallel"))]
     if json {
         print!("{{\"Ok\":{{\"urls\":[");
         let mut first_job = true;
@@ -322,82 +418,6 @@ fn main() -> Result<ExitCode, CliError> {
 
         print!("]}}}}");
     } else {
-        #[cfg(feature = "experiment-parallel")]
-        {
-            let (in_senders , in_recievers ) = (0..args.threads).map(|_| std::sync::mpsc::sync_channel::<Result<Job<'_>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
-            let (out_senders, out_recievers) = (0..args.threads).map(|_| std::sync::mpsc::sync_channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
-
-            std::thread::scope(|s| {
-                let in_reciever_threads = in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
-                    s.spawn(move || {
-                        loop {
-                            match ir.recv() {
-                                Ok(job_result) => {
-                                    #[cfg(feature = "experiment-parallel-debug")] println!("Router {i} routing {job_result:?}");
-                                    os.send(job_result.map(|job| job.r#do())).expect("The receiver to still exist.");
-                                },
-                                Err(_) => {
-                                    #[cfg(feature = "experiment-parallel-debug")] println!("Router {i} done");
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                }).collect::<Vec<_>>();
-
-                let some_ok_ref = &some_ok;
-                let some_error_ref = &some_error;
-
-                s.spawn(move || {
-                    let mut disconnected = 0usize;
-                    for or in out_recievers.iter().cycle() {
-                        let recieved = or.recv();
-                        #[cfg(feature = "experiment-parallel-debug")] println!("Recieved {recieved:?}");
-                        match recieved {
-                            Ok(job_result) => match job_result {
-                                Ok(job) => match job {
-                                    Ok(url) => {
-                                        println!("{url}");
-                                        *some_ok_ref.lock().expect("No panics.") = true;
-                                    },
-                                    Err(e) => {
-                                        println!();
-                                        eprintln!("DoJobError\t{e:?}");
-                                        *some_error_ref.lock().expect("No panics.") = true;
-                                    }
-                                },
-                                Err(e) => {
-                                    println!();
-                                    eprintln!("MakeJobError\t{e:?}");
-                                    *some_error_ref.lock().expect("No panics.") = true;
-                                }
-                            },
-                            Err(_) => {disconnected += 1; if disconnected == args.threads {break;}}
-                        }
-                    }
-                });
-
-                let mut jobs = Box::new(Jobs {
-                    #[cfg(feature = "cache")]
-                    cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
-                    job_configs_source: {
-                        let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url));
-                        if !io::stdin().is_terminal() {
-                            Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?))))
-                        } else {
-                            Box::new(ret)
-                        }
-                    },
-                    config: Cow::Owned(config)
-                });
-                for (i, job) in Box::leak(jobs).iter().enumerate() {
-                    #[cfg(feature = "experiment-parallel-debug")] println!("Putting {i} in: {job:?}");
-                    in_senders.get(i % args.threads).expect("The amount of senders to not exceet the count of senders to make.").send(job).expect("To successfuly send the Job.");
-                }
-                drop(in_senders);
-            })
-        }
-        #[cfg(not(feature = "experiment-parallel"))]
         for job in jobs.iter() {
             match job {
                 Ok(job) => match job.r#do() {

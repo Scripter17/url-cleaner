@@ -650,7 +650,7 @@ pub enum ConditionError {
     /// Custom error.
     #[error(transparent)]
     #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error>)
+    Custom(Box<dyn std::error::Error + Send>)
 }
 
 impl Condition {

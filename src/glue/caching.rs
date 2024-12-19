@@ -233,6 +233,8 @@ impl InnerCache {
     /// 
     /// The inner [`Option`] is the cache entry.
     /// # Errors
+    /// If the call to [`Self::connect`] returns an error, that error is returned.
+    /// 
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn read(&mut self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
         debug!(InnerCache::read, self, category, key);
@@ -250,6 +252,8 @@ impl InnerCache {
     /// 
     /// If an entry doesn't exist, it is made.
     /// # Errors
+    /// If the call to [`Self::connect`] returns an error, that error is returned.
+    /// 
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn write(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
         debug!(InnerCache::write, self, category, key, value);

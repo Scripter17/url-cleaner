@@ -20,9 +20,11 @@ massif=1
 dhat=1
 memcheck=1
 an_only_is_set=0
+mode=
+just_set_mode=0
 urls_are_reset=0
-num_mode=0
 nums_are_reset=0
+features=
 
 for arg in "$@"; do
   shift
@@ -42,18 +44,40 @@ for arg in "$@"; do
     --only-massif)     if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0          ; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-dhat)       if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0        ; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-memcheck)   if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0; dhat=0            ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --nums)            num_mode=1 ;;
-    *:*)               if [ $urls_are_reset -eq 0 ]; then URLS=( ); urls_are_reset=1; fi; URLS=( ${URLS[@]} "$arg" ) ;;
-    [0123456789]*)     if [ $num_mode -eq 1 ]; then if [ $nums_are_reset -eq 0 ]; then NUMS=( ); nums_are_reset=1; fi; NUMS=(${NUMS[@]} "$arg"); fi ;;
-    --) break ;;
-    *) echo Unknown option \"$arg\" && exit 1 ;;
+    --nums)            mode=nums    ; just_set_mode=1 ;;
+    --urls)            mode=urls    ; just_set_mode=1 ;;
+    --features)        mode=features; just_set_mode=1 ;;
+    --)                break ;;
+    --*)               echo Unknown option \"$arg\"; exit 1 ;;
+    *)                 if [ "$mode" == "urls" ]; then
+                         if [ $urls_are_reset -eq 0 ]; then
+                           URLS=( )
+                           urls_are_reset=1
+                         fi
+                         URLS=( ${URLS[@]} "$arg" )
+                       elif [ "$mode" == "nums" ]; then
+                         if [ $nums_are_reset -eq 0 ]; then
+                           NUMS=( )
+                           nums_are_reset=1
+                         fi
+                         NUMS=( ${NUMS[@]} "$arg" )
+                       elif [ "$mode" == "features" ]; then
+                         features_arg=--features
+                         features="$arg"
+                         mode=
+                       else
+                         echo "Modal arguments provided without a mode."
+                         exit 1
+                       fi ;;
   esac
+  if [[ "$arg" =~ ^"--" && $just_set_mode -eq 0 ]]; then mode=; fi
+  just_set_mode=0
 done
 
 COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
 echo "$COMMAND"
 if [ $compile -eq 1 ]; then
-  cargo build -r --config profile.release.strip=false --config profile.release.debug=2
+  cargo build -r $features_arg $features --config profile.release.strip=false --config profile.release.debug=2
   if [ $? -ne 0 ]; then exit 2; fi
 fi
 

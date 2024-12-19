@@ -184,7 +184,9 @@ Often the first few cleanings will take a few hundred milliseconds each because 
 
 Mileage varies wildly but as long as you're not spawning a new instance of URL Cleaner for each URL it should be fast enough.
 
-Please note that URL Cleaner is currently single threaded because I don't know how to do it well. Parallelizing yourself (for example, with [GNU Parallel](https://www.gnu.org/software/parallel/)) may give better results, especially in network-bound tasks.
+While URL Cleaner defaults to being single threaded, there is an experimental compilation feature flag to allow parallelization (`experiment-parallel`). For CPU bound jobs, increasing `--thread-queue` can give better times, where for network letency bound jobs increasing `--threads` can give *much* better times.
+
+Exact behavior and implementation of parallelization is still in flux, and it will likely never be added as a library feature due to some nonsense involving POSIX pthreads.
 
 #### Credits
 

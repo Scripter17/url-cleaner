@@ -539,7 +539,7 @@ pub enum MapperError {
     /// Custom error.
     #[error(transparent)]
     #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error>),
+    Custom(Box<dyn std::error::Error + Send>),
     /// Returned when the requested part of a URL is [`None`].
     #[error("The requested part of the URL was None.")]
     UrlPartIsNone
