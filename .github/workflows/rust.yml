@@ -15,25 +15,25 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: rustup update stable && cargo build --verbose
+      run: sudo apt install sqlite3 && rustup update stable && cargo build --verbose
 
   build_NDF:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Build no default features
-      run: rustup update stable && cargo build --verbose --no-default-features
+      run: sudo apt install sqlite3 && rustup update stable && cargo build --verbose --no-default-features
 
   test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Run tests
-      run: rustup update stable && cargo test --verbose -- --skip ExpandRedirect
+      run: sudo apt install sqlite3 && rustup update stable && cargo test --verbose -- --skip ExpandRedirect
 
   test_NDF:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Run tests no default features
-      run: rustup update stable && cargo test --verbose --no-default-features -- --skip default_config
+      run: sudo apt install sqlite3 && rustup update stable && cargo test --verbose --no-default-features -- --skip default_config
