@@ -25,6 +25,7 @@ just_set_mode=0
 urls_are_reset=0
 nums_are_reset=0
 features=
+out_file="benchmarks-$(date +%s).tar.gz"
 
 for arg in "$@"; do
   shift
@@ -47,6 +48,7 @@ for arg in "$@"; do
     --nums)            mode=nums    ; just_set_mode=1 ;;
     --urls)            mode=urls    ; just_set_mode=1 ;;
     --features)        mode=features; just_set_mode=1 ;;
+    --out-file)        mode=out_file; just_set_mode=1 ;;
     --)                break ;;
     --*)               echo Unknown option \"$arg\"; exit 1 ;;
     *)                 if [ "$mode" == "urls" ]; then
@@ -64,6 +66,9 @@ for arg in "$@"; do
                        elif [ "$mode" == "features" ]; then
                          features_arg=--features
                          features="$arg"
+                         mode=
+                       elif [ "$mode" == "out_file" ]; then
+                         out_file="$arg"
                          mode=
                        else
                          echo "Modal arguments provided without a mode."
@@ -131,4 +136,4 @@ if [ $valgrind -eq 1 ]; then
   done
 fi
 
-tar -czf "benchmarks-$(date +%s).tar.gz" *.out*
+tar -czf $out_file *.out*
