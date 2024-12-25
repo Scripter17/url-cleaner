@@ -27,7 +27,7 @@
 //!     ])
 //! };
 //! 
-//! let mut jobs = url_cleaner::Jobs {
+//! let mut jobs = Jobs {
 //!     config: Cow::Borrowed(&config),
 #![cfg_attr(feature = "cache", doc = "    // Doesn't do anything expensive until actually used.")]
 #![cfg_attr(feature = "cache", doc = "    // You should use a global static `OnceLock` if you have to make multiple `Jobs`s with the same `Cache`.")]

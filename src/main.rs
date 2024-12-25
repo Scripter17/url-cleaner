@@ -278,6 +278,7 @@ fn main() -> Result<ExitCode, CliError> {
 
     #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
+    #[cfg(not(feature = "experiment-parallel"))]
     let mut jobs = Jobs {
         #[cfg(feature = "cache")]
         cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
@@ -299,14 +300,31 @@ fn main() -> Result<ExitCode, CliError> {
     {
         let mut threads = args.threads;
         if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
-        let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<Job<'_>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
+        let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<String, io::Error>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
         let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
+
+        #[cfg(feature = "cache")]
+        let cache: Cache = args.cache_path.as_deref().unwrap_or(&*config.cache_path).into();
+        let config_ref = &config;
+        let cache_ref = &cache;
 
         std::thread::scope(|s| {
             in_recievers.into_iter().zip(out_senders).map(|(ir, os)| {
                 s.spawn(move || {
-                    while let Ok(job_result) = ir.recv() {
-                        os.send(job_result.map(|job| job.r#do())).expect("The receiver to still exist.");
+                    while let Ok(maybe_job_config_string) = ir.recv() {
+                        os.send(match maybe_job_config_string {
+                            Ok(job_config_string) => JobConfig::from_str(&job_config_string)
+                                .map(|JobConfig{url, context}|
+                                    Job {
+                                        url,
+                                        context,
+                                        config: config_ref,
+                                        cache: cache_ref
+                                    }.r#do()
+                                )
+                                .map_err(MakeJobError::MakeJobConfigError),
+                            Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))
+                        }).expect("The receiver to still exist.");
                     }
                 });
             }).for_each(drop);
@@ -381,9 +399,17 @@ fn main() -> Result<ExitCode, CliError> {
                 });
             }
 
-            for (i, job) in jobs.iter().enumerate() {
+            let job_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
+                let ret = args.urls.into_iter().map(Ok);
+                if !io::stdin().is_terminal() {
+                    Box::new(ret.chain(io::stdin().lines()))
+                } else {
+                    Box::new(ret)
+                }
+            };
+            for (i, job_config_string) in job_config_strings_source.enumerate() {
                 #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-                in_senders.get(i % threads).expect("The amount of senders to not exceet the count of senders to make.").send(job).expect("To successfuly send the Job.");
+                in_senders.get(i % threads).expect("The amount of senders to not exceet the count of senders to make.").send(job_config_string).expect("To successfuly send the Job.");
             }
             drop(in_senders);
         })

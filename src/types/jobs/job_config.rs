@@ -13,7 +13,7 @@ use crate::util::*;
 
 /// Defines how each [`Job`] from a [`Jobs`] should be constructed.
 /// 
-/// When deserializing from a string or using [`FromStr::from_str`]/[`TryFrom<&str>`], if the string starts with `{`, it's deserializes the string's value.
+/// When [`Deserialize`]ing from a string or using [`FromStr::from_str`]/[`TryFrom<&str>`], if the string starts with `{`, it's deserialized as JSON.
 /// 
 /// For example, `{"url": "https://example.com"}` and `"{\"url\": \"https://example.com\"}"` deserialize to the same value.
 /// 
