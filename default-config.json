@@ -294,19 +294,19 @@
 						{"InSet": "redirect-host-without-www-dot-prefixes"},
 						{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
 						{"IsOneOf": [
-					    "1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "bugzil.la",
-					    "buymeacoff.ee", "buymeacoffee.com", "cach.me", "carleton.ca", "cash.app", "click.notification.elsevier.com", "deviantart.com",
-					    "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com",
-					    "facebook.com", "gf.me", "gofundme.com", "gofundme.com", "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am",
-					    "instagram.com", "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "m.vk.com", "old.reddit.com",
-					    "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "rd.goodreads.com",
-					    "reddit.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it",
-					    "ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se",
-					    "twpf.jp", "vk.com", "youtube.com"
-					  ]},
-					  {"InSet": "lmgtfy-hosts"},
-					  {"LengthIs": 4},
-					  {"Contains": {"value": "google"}}
+							"1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "bugzil.la",
+							"buymeacoff.ee", "buymeacoffee.com", "cach.me", "carleton.ca", "cash.app", "click.notification.elsevier.com", "deviantart.com",
+							"duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com",
+							"facebook.com", "gf.me", "gofundme.com", "gofundme.com", "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am",
+							"instagram.com", "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "m.vk.com", "old.reddit.com",
+							"open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "rd.goodreads.com",
+							"reddit.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it",
+							"ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tinyurl.com", "toyhou.se",
+							"twpf.jp", "vk.com", "youtube.com"
+						]},
+						{"InSet": "lmgtfy-hosts"},
+						{"LengthIs": 4},
+						{"Contains": {"value": "google"}}
 					]}
 				}},
 				{"TreatErrorAsFail": {"PartMatches": {
@@ -604,29 +604,29 @@
 													"value": {"Map": {
 														"value": {"Part": {"QueryParam": "s"}},
 														"map": {
-														  "g": {"Map": {
-														  	"value": {"Part": {"QueryParam": "t"}},
-														  	"map": {
-															    "w": "https://www.google.com/search?q=",
-															    "i": "https://www.google.com/search?tbm=isch&q=",
-															    "v": "https://www.google.com/search?tbm=vid&q=",
-															    "m": "https://www.google.com/maps?q=",
-															    "n": "https://www.google.com/search?tbm=nws&q=",
-															    "s": "https://www.google.com/search?tbm=shop&q=",
-															    "b": "https://www.google.com/search?tbm=bks&q=",
-															    "f": "https://www.google.com/finance?q=",
-															    "sc": "https://scholar.google.com/scholar?q="
-														    },
-														    "if_null": "https://www.google.com/search?q="
-														  }},
-														  "c": "https://www.chat.openai.com/search?q=",
-														  "b": "https://www.startpage.com/search?q=",
-														  "y": "https://search.yahoo.com/search?q=",
-														  "d": "https://duckduckgo.com/?q=",
-														  "k": "http://www.ask.com/web?q=",
-														  "a": "http://search.aol.com/aol/search?q=",
-														  "w": "https://wikipedia.org/w/index.php?search=",
-														  "s": "http://www.snopes.com/search/?q="
+															"g": {"Map": {
+																"value": {"Part": {"QueryParam": "t"}},
+																"map": {
+																	"w": "https://www.google.com/search?q=",
+																	"i": "https://www.google.com/search?tbm=isch&q=",
+																	"v": "https://www.google.com/search?tbm=vid&q=",
+																	"m": "https://www.google.com/maps?q=",
+																	"n": "https://www.google.com/search?tbm=nws&q=",
+																	"s": "https://www.google.com/search?tbm=shop&q=",
+																	"b": "https://www.google.com/search?tbm=bks&q=",
+																	"f": "https://www.google.com/finance?q=",
+																	"sc": "https://scholar.google.com/scholar?q="
+																},
+																"if_null": "https://www.google.com/search?q="
+															}},
+															"c": "https://www.chat.openai.com/search?q=",
+															"b": "https://www.startpage.com/search?q=",
+															"y": "https://search.yahoo.com/search?q=",
+															"d": "https://duckduckgo.com/?q=",
+															"k": "http://www.ask.com/web?q=",
+															"a": "http://search.aol.com/aol/search?q=",
+															"w": "https://wikipedia.org/w/index.php?search=",
+															"s": "http://www.snopes.com/search/?q="
 														}
 													}},
 													"modification": {"Append": {"Part": {"QueryParam": "q"}}}
@@ -788,7 +788,7 @@
 
 
 
-	          {
+						{
 							"condition": {"All": [
 								{"UnqualifiedAnySuffix": "google"},
 								{"PathIs": "/url"}
@@ -802,10 +802,10 @@
 							"condition": {"All": [
 								{"Not": {"FlagIsSet": "no-network"}},
 								{"Any": [
-		              {"All": [
-		              	{"FlagIsSet": "assume-1-dot-2-is-redirect"},
-		              	{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
-		              ]},
+									{"All": [
+										{"FlagIsSet": "assume-1-dot-2-is-redirect"},
+										{"PartMatches": {"part": "Domain", "matcher": {"Regex": "^.\\...$"}}}
+									]},
 									{"PartMatches": {
 										"part": "HostWithoutWWWDotPrefix",
 										"matcher": {"InSet": "redirect-host-without-www-dot-prefixes"}
