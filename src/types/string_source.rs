@@ -288,7 +288,7 @@ pub enum StringSource {
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
     /// # Errors
     /// If the call to [`RequestConfig::response`] returns an error, that error is returned.
-    #[cfg(feature = "advanced-http")]
+    #[cfg(feature = "http")]
     HttpRequest(Box<RequestConfig>),
     /// Run a command and return its output.
     /// # Errors
@@ -416,11 +416,11 @@ pub enum StringSourceError {
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
     /// Returned when a [`RequestConfigError`] is encountered.
-    #[cfg(feature = "advanced-http")]
+    #[cfg(feature = "http")]
     #[error(transparent)]
     RequestConfigError(#[from] RequestConfigError),
     /// Returned when a [`ResponseHandlerError`] is encountered.
-    #[cfg(feature = "advanced-http")]
+    #[cfg(feature = "http")]
     #[error(transparent)]
     ReponseHandlerError(#[from] ResponseHandlerError),
     /// Returned when a [`CommandError`] is encountered.
@@ -558,7 +558,7 @@ impl StringSource {
                     Err(std::env::VarError::NotUnicode(_)) => Err(StringSourceError::EnvVarIsNotUtf8)?
                 }
             },
-            #[cfg(feature = "advanced-http")]
+            #[cfg(feature = "http")]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(job_state)?)),
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(job_state)?)),
@@ -637,7 +637,7 @@ impl StringSource {
             #[cfg(feature = "commands")]
             Self::CommandOutput(_) => false,
             Self::Error | Self::String(_) => true,
-            #[cfg(feature = "advanced-http")]
+            #[cfg(feature = "http")]
             Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
             Self::ExtractBetween {value, start, end} => value.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),

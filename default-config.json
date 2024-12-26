@@ -88,9 +88,10 @@
 				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml",
 				"pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co",
 				"rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev", "shor.tf",
-				"shorturl.at", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm",
-				"thrn.co", "tiny.cc", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org",
-				"visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "sonic.frack.deals"
+				"shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io",
+				"thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa",
+				"uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com",
+				"yrp.ca"
 			],
 			"redirect-not-subdomains": [
 				"lnk.to", "visitlink.me", "goo.gl", "o93x.net", "pusle.ly"

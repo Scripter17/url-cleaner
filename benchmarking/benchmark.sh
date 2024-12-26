@@ -79,12 +79,17 @@ for arg in "$@"; do
   just_set_mode=0
 done
 
-COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
-echo "$COMMAND"
+if [ $hyperfine -eq 1 ] && ! which -s hyperfine; then echo 'Hyperfine not found; Please run `cargo install hyperfine`.'                         ; exit 2; fi
+if [ $hyperfine -eq 1 ] && ! which -s jq       ; then echo 'Jq not found; Please install it. Also please learn it it'"'"'s a really handy tool.'; exit 2; fi
+if [ $hyperfine -eq 1 ] && ! which -s bat      ; then echo 'Bat not found; Please run `cargo install bat`.'                                     ; exit 2; fi
+if [ $valgrind  -eq 1 ] && ! which -s valgrind ; then echo 'Valgrind not found; Please install it.'                                             ; exit 2; fi
+
 if [ $compile -eq 1 ]; then
   cargo build -r $features_arg $features --config profile.release.strip=false --config profile.release.debug=2
-  if [ $? -ne 0 ]; then exit 2; fi
+  if [ $? -ne 0 ]; then exit 3; fi
 fi
+
+COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
 
 if [ $hyperfine -eq 1 ]; then
   touch stdin
@@ -137,3 +142,5 @@ if [ $valgrind -eq 1 ]; then
 fi
 
 tar -czf $out_file *.out*
+
+echo "Benchmark details compiled and compressed into $out_file"

@@ -5,6 +5,7 @@
 use std::sync::{Arc, Mutex};
 use std::str::FromStr;
 use std::cell::OnceCell;
+use std::path::Path;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
@@ -16,8 +17,13 @@ use crate::util::*;
 mod schema;
 pub use schema::cache;
 
-/// An empty cache that is written when trying to connect to a file that doesn't exist.
-pub const EMPTY_CACHE: &[u8] = include_bytes!("../../empty-cache.sqlite");
+/// The SQL command used to initialize a cache database.
+pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
+    id INTEGER NOT NULL PRIMARY KEY,
+    category TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    value TEXT
+)"#;
 
 /// An entry in the [`cache`] table.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Queryable, Selectable)]
@@ -53,12 +59,79 @@ pub struct NewCacheEntry<'a> {
 pub struct Cache(pub Arc<Mutex<InnerCache>>);
 
 /// The internals of [`Cache`] that handles lazily connecting.
+#[derive(Default)]
 pub struct InnerCache {
     /// The path being connected to.
-    path: String,
+    path: CachePath,
     /// The actual [`SqliteConnection`].
     connection: OnceCell<SqliteConnection>
 }
+
+/// Specifies where to store the cache.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(remote = "Self")]
+pub enum CachePath {
+    /// Store the cache in RAM.
+    #[default]
+    Memory,
+    /// Store the cache in a file.
+    Path(String)
+}
+
+impl CachePath {
+    /// Return the [`str`] this came from.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Memory => ":memory:",
+            Self::Path(x) => x
+        }
+    }
+
+    /// If [`Self::Path`], return the path.
+    pub fn as_path(&self) -> Option<&Path> {
+        match self {
+            Self::Memory => None,
+            Self::Path(x) => Some(x.strip_prefix("file://").unwrap_or(x).as_ref())
+        }
+    }
+}
+
+impl AsRef<str> for CachePath {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl std::fmt::Display for CachePath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl FromStr for CachePath {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(s.to_string().into())
+    }
+}
+
+impl From<&str> for CachePath {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for CachePath {
+    fn from(value: String) -> Self {
+        match &*value {
+            ":memory:" => Self::Memory,
+            _ => Self::Path(value)
+        }
+    }
+}
+
+crate::util::string_or_struct_magic!(CachePath);
 
 impl ::core::fmt::Debug for InnerCache {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -66,18 +139,6 @@ impl ::core::fmt::Debug for InnerCache {
             .field("path", &self.path)
             .field("connection", if self.connection.get().is_some() {&"OnceCell(..)"} else {&"OnceCell(<uninit>)"})
             .finish()
-    }
-}
-
-impl Default for InnerCache {
-    /// Has the "path" of `:memory:`, which just stores the database in memory until dropped.
-    /// 
-    /// Seems like a reasonable default.
-    fn default() -> Self {
-        Self {
-            path: Self::DEFAULT_PATH.to_string(),
-            connection: OnceCell::new()
-        }
     }
 }
 
@@ -111,6 +172,12 @@ impl From<&str> for InnerCache {
 
 impl From<String> for InnerCache {
     fn from(value: String) -> Self {
+        InnerCache { path: value.into(), connection: OnceCell::new() }
+    }
+}
+
+impl From<CachePath> for InnerCache {
+    fn from(value: CachePath) -> Self {
         InnerCache { path: value, connection: OnceCell::new() }
     }
 }
@@ -144,11 +211,6 @@ pub enum WriteToCacheError {
 }
 
 impl Cache {
-    /// The default path.
-    /// 
-    /// Link because RustDoc doesn't make a link for the value (as of 1.82): [`InnerCache::DEFAULT_PATH`].
-    pub const DEFAULT_PATH: &str = InnerCache::DEFAULT_PATH;
-    
     /// Reads a string from the cache.
     /// # Errors
     /// If the call to [`Mutex::lock`] returns an error, that error is returned.
@@ -177,14 +239,14 @@ pub enum ConnectCacheError {
     /// Returned when a [`std::io::Error`] is encountered.
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+    /// Returned when a [`diesel::result::Error`] is encountered.
+    #[error(transparent)]
+    DieselError(#[from] diesel::result::Error)
 }
 
 impl InnerCache {
-    /// The default path.
-    pub const DEFAULT_PATH: &str = ":memory:";
-    
     /// Returns the path being connected to.
-    pub fn path(&self) -> &str {
+    pub fn path(&self) -> &CachePath {
         &self.path
     }
 
@@ -193,29 +255,35 @@ impl InnerCache {
         self.connection.get_mut()
     }
 
-    /// If already connected, just return the connection.
+    /// If already connected, just returns the connection.
+    /// 
+    /// If unconnected, connect to the path then return the connection.
     /// 
     /// If the path is a file and doesn't exist, writes [`EMPTY_CACHE`] to the path.
     /// 
-    /// If the path is `:memory:` or starts with `file://` (for an explicit opt-out), no file is created.
-    /// 
-    /// If unconnected, connect to the path then return the connection.
+    /// If the path is `:memory:`, the database is storeed ephemerally in RAM and not saved to disk.
     /// # Errors
     /// If the call to [`std::fs::exists`] returns an error, that error is returned.
     /// 
-    /// If the call to [`std::fs::write`] returns an error, that error is returned.
+    /// If the call to [`std::fs::File::create_new`] returns an error, that error is returned.
+    /// 
+    /// If initializing the database returns an error, that error is returned.
     /// 
     /// If the call to [`SqliteConnection::establish`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Doesn't panic, but should be replaced with OnceCell::get_or_try_init once that's stable.")]
     pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
         debug!(InnerCache::connect, self);
         if self.connection.get().is_none() {
-            if self.path != ":memory:" && !self.path.starts_with("file://") && !std::fs::exists(&self.path)? {
-                std::fs::write(&self.path, EMPTY_CACHE)?;
+            let mut needs_init = self.path == CachePath::Memory;
+            if let CachePath::Path(path) = &self.path {
+                if !std::fs::exists(path)? {
+                    needs_init = true;
+                    std::fs::File::create_new(path)?;
+                }
             }
-            let mut connection = SqliteConnection::establish(&self.path)?;
-            if self.path == ":memory:" {
-                diesel::sql_query(include_str!("../../migrations/2024-07-20-075910_create_cache/up.sql")).execute(&mut connection).expect("The migrations/_/up.sql file to contain SQL commands that can be executed on the in-memory cache.");
+            let mut connection = SqliteConnection::establish(self.path.as_str())?;
+            if needs_init {
+                diesel::sql_query(DB_INIT_COMMAND).execute(&mut connection)?;
             }
             self.connection.set(connection).map_err(|_| ()).expect("The connection to have just been confirmed unset.");
         }
@@ -265,7 +333,7 @@ impl InnerCache {
     }
 }
 
-impl From<InnerCache> for (String, OnceCell<SqliteConnection>) {
+impl From<InnerCache> for (CachePath, OnceCell<SqliteConnection>) {
     fn from(value: InnerCache) -> Self {
         (value.path, value.connection)
     }

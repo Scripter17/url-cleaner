@@ -41,8 +41,6 @@ pub struct Params {
     pub http_client_config: HttpClientConfig
 }
 
-const fn is_true(x: &bool) -> bool {!*x}
-
 #[allow(clippy::derivable_impls, reason = "When the `cache` feature is enabled, this can't be derived.")]
 impl Default for Params {
     fn default() -> Self {
@@ -59,9 +57,6 @@ impl Default for Params {
         }
     }
 }
-
-/// Serde helper function.
-const fn get_true() -> bool {true}
 
 impl Params {
     /// Gets an HTTP client with [`Self`]'s configuration pre-applied.

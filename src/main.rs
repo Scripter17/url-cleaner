@@ -24,34 +24,28 @@ mod util;
 /// Source code: https://github.com/Scripter17/url-cleaner
 /// 
 /// Enabled features:
-#[cfg_attr(feature = "default-config"         , doc = "default-config"         )]
-#[cfg_attr(feature = "minify-included-strings", doc = "minify-included-strings")]
-#[cfg_attr(feature = "regex"                  , doc = "regex"                  )]
-#[cfg_attr(feature = "glob"                   , doc = "glob"                   )]
-#[cfg_attr(feature = "http"                   , doc = "http"                   )]
-#[cfg_attr(feature = "advanced-http"          , doc = "advanced-http"          )]
-#[cfg_attr(feature = "cache"                  , doc = "cache"                  )]
-#[cfg_attr(feature = "base64"                 , doc = "base64"                 )]
-#[cfg_attr(feature = "commands"               , doc = "commands"               )]
-#[cfg_attr(feature = "custom"                 , doc = "custom"                 )]
-#[cfg_attr(feature = "cache-redirects"        , doc = "cache-redirects"        )]
-#[cfg_attr(feature = "debug"                  , doc = "debug"                  )]
-#[cfg_attr(feature = "debug-time"             , doc = "debug-time"             )]
+#[cfg_attr(feature = "default-config"     , doc = "default-config"     )]
+#[cfg_attr(feature = "regex"              , doc = "regex"              )]
+#[cfg_attr(feature = "glob"               , doc = "glob"               )]
+#[cfg_attr(feature = "http"               , doc = "http"               )]
+#[cfg_attr(feature = "cache"              , doc = "cache"              )]
+#[cfg_attr(feature = "base64"             , doc = "base64"             )]
+#[cfg_attr(feature = "commands"           , doc = "commands"           )]
+#[cfg_attr(feature = "custom"             , doc = "custom"             )]
+#[cfg_attr(feature = "experiment-parallel", doc = "experiment-parallel")]
+#[cfg_attr(feature = "debug"              , doc = "debug"              )]
 /// 
 /// Disabled features:
-#[cfg_attr(not(feature = "default-config"         ), doc = "default-config"         )]
-#[cfg_attr(not(feature = "minify-included-strings"), doc = "minify-included-strings")]
-#[cfg_attr(not(feature = "regex"                  ), doc = "regex"                  )]
-#[cfg_attr(not(feature = "glob"                   ), doc = "glob"                   )]
-#[cfg_attr(not(feature = "http"                   ), doc = "http"                   )]
-#[cfg_attr(not(feature = "advanced-http"          ), doc = "advanced-http"          )]
-#[cfg_attr(not(feature = "cache"                  ), doc = "cache"                  )]
-#[cfg_attr(not(feature = "base64"                 ), doc = "base64"                 )]
-#[cfg_attr(not(feature = "commands"               ), doc = "commands"               )]
-#[cfg_attr(not(feature = "custom"                 ), doc = "custom"                 )]
-#[cfg_attr(not(feature = "cache-redirects"        ), doc = "cache-redirects"        )]
-#[cfg_attr(not(feature = "debug"                  ), doc = "debug"                  )]
-#[cfg_attr(not(feature = "debug-time"             ), doc = "debug-time"             )]
+#[cfg_attr(not(feature = "default-config"     ), doc = "default-config"     )]
+#[cfg_attr(not(feature = "regex"              ), doc = "regex"              )]
+#[cfg_attr(not(feature = "glob"               ), doc = "glob"               )]
+#[cfg_attr(not(feature = "http"               ), doc = "http"               )]
+#[cfg_attr(not(feature = "cache"              ), doc = "cache"              )]
+#[cfg_attr(not(feature = "base64"             ), doc = "base64"             )]
+#[cfg_attr(not(feature = "commands"           ), doc = "commands"           )]
+#[cfg_attr(not(feature = "custom"             ), doc = "custom"             )]
+#[cfg_attr(not(feature = "experiment-parallel"), doc = "experiment-parallel")]
+#[cfg_attr(not(feature = "debug"              ), doc = "debug"              )]
 pub struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     pub urls: Vec<String>,
@@ -94,8 +88,9 @@ pub struct Args {
     #[arg(             long, num_args(2..), value_names = ["NAME", "KEY1"])]
     pub remove_from_map: Vec<Vec<String>>,
     /// Overrides the config's [`Config::cache_path`].
+    #[cfg(feature = "cache")]
     #[arg(             long)]
-    pub cache_path: Option<String>,
+    pub cache_path: Option<CachePath>,
     /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
@@ -163,12 +158,8 @@ fn str_to_json_str(s: &str) -> String {
 }
 
 fn main() -> Result<ExitCode, CliError> {
-    #[cfg(feature = "debug-time")] let start_time = std::time::Instant::now();
-
     let some_ok = std::sync::Mutex::new(false);
     let some_error = std::sync::Mutex::new(false);
-
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
     let args = Args::parse();
 
@@ -193,20 +184,13 @@ fn main() -> Result<ExitCode, CliError> {
         }
     }
 
-    #[cfg(feature = "debug-time")] eprintln!("Parse args: {:?}", x.elapsed());
-
     let print_args = args.print_args;
     if print_args {println!("{args:?}");}
-
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
     #[cfg(feature = "default-config")]
     let mut config = Config::get_default_no_cache_or_load(args.config.as_deref())?;
     #[cfg(not(feature = "default-config"))]
     let mut config = Config::load_from_file(&args.config)?;
-
-    #[cfg(feature = "debug-time")] eprintln!("Load Config: {:?}", x.elapsed());
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
     let mut params_diffs = args.params_diff
         .into_iter()
@@ -249,18 +233,12 @@ fn main() -> Result<ExitCode, CliError> {
         });
     }
 
-    #[cfg(feature = "debug-time")] eprintln!("Args to ParamsDiffs: {:?}", x.elapsed());
-
     let print_params_diffs = args.print_params_diffs;
     if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
-
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
 
     for params_diff in params_diffs {
         params_diff.apply(&mut config.params);
     }
-
-    #[cfg(feature = "debug-time")] eprintln!("Apply ParamsDiffs: {:?}", x.elapsed());
 
     let json = args.json;
 
@@ -276,26 +254,6 @@ fn main() -> Result<ExitCode, CliError> {
 
     if no_cleaning {std::process::exit(0);}
 
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
-
-    #[cfg(not(feature = "experiment-parallel"))]
-    let mut jobs = Jobs {
-        #[cfg(feature = "cache")]
-        cache: args.cache_path.as_deref().unwrap_or(&*config.cache_path).into(),
-        job_configs_source: {
-            let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url));
-            if !io::stdin().is_terminal() {
-                Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?))))
-            } else {
-                Box::new(ret)
-            }
-        },
-        config: Cow::Owned(config)
-    };
-
-    #[cfg(feature = "debug-time")] eprintln!("Make Jobs: {:?}", x.elapsed());
-    #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
-
     #[cfg(feature = "experiment-parallel")]
     {
         let mut threads = args.threads;
@@ -303,9 +261,10 @@ fn main() -> Result<ExitCode, CliError> {
         let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<String, io::Error>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
         let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::sync_channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>(args.thread_queue)).collect::<(Vec<_>, Vec<_>)>();
 
-        #[cfg(feature = "cache")]
-        let cache: Cache = args.cache_path.as_deref().unwrap_or(&*config.cache_path).into();
         let config_ref = &config;
+        #[cfg(feature = "cache")]
+        let cache: Cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
+        #[cfg(feature = "cache")]
         let cache_ref = &cache;
 
         std::thread::scope(|s| {
@@ -319,6 +278,7 @@ fn main() -> Result<ExitCode, CliError> {
                                         url,
                                         context,
                                         config: config_ref,
+                                        #[cfg(feature = "cache")]
                                         cache: cache_ref
                                     }.r#do()
                                 )
@@ -334,29 +294,32 @@ fn main() -> Result<ExitCode, CliError> {
 
             if json {
                 s.spawn(move || {
-                    print!("{{\"Ok\":{{\"urls\":[");
-                    let mut first_job = true;
-
                     let mut disconnected = 0usize;
+                    let mut first_job = true;
+                    let mut some_ok_ref_lock = some_ok_ref.lock().expect("No panics.");
+                    let mut some_error_ref_lock = some_error_ref.lock().expect("No panics.");
+
+                    print!("{{\"Ok\":{{\"urls\":[");
+
                     for or in out_recievers.iter().cycle() {
                         let recieved = or.recv();
                         match recieved {
                             Ok(Ok(Ok(url))) => {
                                 if !first_job {print!(",");}
                                 print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
-                                *some_ok_ref.lock().expect("No panics.") = true;
+                                *some_ok_ref_lock = true;
                                 first_job = false;
                             },
                             Ok(Ok(Err(e))) => {
                                 if !first_job {print!(",");}
                                 print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                                *some_error_ref.lock().expect("No panics.") = true;
+                                *some_error_ref_lock = true;
                                 first_job = false;
                             },
                             Ok(Err(e)) => {
                                 if !first_job {print!(",");}
                                 print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                                *some_error_ref.lock().expect("No panics.") = true;
+                                *some_error_ref_lock = true;
                                 first_job = false;
                             },
                             Err(_) => {
@@ -372,22 +335,25 @@ fn main() -> Result<ExitCode, CliError> {
             } else {
                 s.spawn(move || {
                     let mut disconnected = 0usize;
+                    let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
+                    let mut some_error_ref_lock = some_error_ref.lock().expect("No panics.");
+
                     for or in out_recievers.iter().cycle() {
                         let recieved = or.recv();
                         match recieved {
                             Ok(Ok(Ok(url))) => {
                                 println!("{url}");
-                                *some_ok_ref.lock().expect("No panics.") = true;
+                                *some_ok_ref_lock = true;
                             },
                             Ok(Ok(Err(e))) => {
                                 println!();
                                 eprintln!("DoJobError\t{e:?}");
-                                *some_error_ref.lock().expect("No panics.") = true;
+                                *some_error_ref_lock = true;
                             }
                             Ok(Err(e)) => {
                                 println!();
                                 eprintln!("MakeJobError\t{e:?}");
-                                *some_error_ref.lock().expect("No panics.") = true;
+                                *some_error_ref_lock = true;
                             }
                             Err(_) => {
                                 #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
@@ -416,63 +382,71 @@ fn main() -> Result<ExitCode, CliError> {
     }
 
     #[cfg(not(feature = "experiment-parallel"))]
-    if json {
-        print!("{{\"Ok\":{{\"urls\":[");
-        let mut first_job = true;
+    {
+        let mut jobs = Jobs {
+            #[cfg(feature = "cache")]
+            cache: args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into(),
+            job_configs_source: {
+                let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url));
+                if !io::stdin().is_terminal() {
+                    Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?))))
+                } else {
+                    Box::new(ret)
+                }
+            },
+            config: Cow::Owned(config)
+        };
 
-        #[cfg(not(feature = "experiment-parallel"))]
-        for job in jobs.iter() {
-            if !first_job {print!(",");}
-            match job {
-                Ok(job) => match job.r#do() {
-                    Ok(url) => {
-                        print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
-                        *some_ok.lock().expect("No panics.") = true;
+        if json {
+            print!("{{\"Ok\":{{\"urls\":[");
+            let mut first_job = true;
+
+            #[cfg(not(feature = "experiment-parallel"))]
+            for job in jobs.iter() {
+                if !first_job {print!(",");}
+                match job {
+                    Ok(job) => match job.r#do() {
+                        Ok(url) => {
+                            print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
+                            *some_ok.lock().expect("No panics.") = true;
+                        },
+                        Err(e) => {
+                            print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                            *some_error.lock().expect("No panics.") = true;
+                        }
                     },
                     Err(e) => {
-                        print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                        print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
                         *some_error.lock().expect("No panics.") = true;
                     }
-                },
-                Err(e) => {
-                    print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                    *some_error.lock().expect("No panics.") = true;
                 }
+                first_job = false;
             }
-            first_job = false;
-        }
 
-        print!("]}}}}");
-    } else {
-        for job in jobs.iter() {
-            match job {
-                Ok(job) => match job.r#do() {
-                    Ok(url) => {
-                        println!("{url}");
-                        *some_ok.lock().expect("No panics.") = true;
+            print!("]}}}}");
+        } else {
+            for job in jobs.iter() {
+                match job {
+                    Ok(job) => match job.r#do() {
+                        Ok(url) => {
+                            println!("{url}");
+                            *some_ok.lock().expect("No panics.") = true;
+                        },
+                        Err(e) => {
+                            println!();
+                            eprintln!("DoJobError\t{e:?}");
+                            *some_error.lock().expect("No panics.") = true;
+                        }
                     },
                     Err(e) => {
                         println!();
-                        eprintln!("DoJobError\t{e:?}");
+                        eprintln!("MakeJobError\t{e:?}");
                         *some_error.lock().expect("No panics.") = true;
                     }
-                },
-                Err(e) => {
-                    println!();
-                    eprintln!("MakeJobError\t{e:?}");
-                    *some_error.lock().expect("No panics.") = true;
                 }
             }
         }
     }
-
-    #[cfg(feature = "debug-time")] eprintln!("Run Jobs: {:?}", x.elapsed());
-    // #[cfg(feature = "debug-time")] let x = std::time::Instant::now();
-
-    // #[cfg(feature = "debug-time")] drop(jobs);
-
-    // #[cfg(feature = "debug-time")] eprintln!("Drop Jobs: {:?}", x.elapsed());
-    #[cfg(feature = "debug-time")] eprintln!("Total: {:?}", start_time.elapsed());
 
     return Ok(match (*some_ok.lock().expect("No panics."), *some_error.lock().expect("No panics.")) {
         (false, false) => 0,

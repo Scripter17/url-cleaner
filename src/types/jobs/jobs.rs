@@ -10,6 +10,8 @@ use crate::glue::*;
 /// A [`Job`] creator.
 /// 
 /// Arguably the main API you should build upon.
+/// 
+/// For some tasks, like doing jobs in parallel, this is a bad API because it forces deserializing [`JobConfig`]s, a pretty complex task, in one thread.
 pub struct Jobs<'a> {
     /// The [`Config`] to use.
     pub config: Cow<'a, Config>,

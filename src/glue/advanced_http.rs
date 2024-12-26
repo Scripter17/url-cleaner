@@ -1,6 +1,6 @@
 //! Provides [`RequestConfig`], [`RequestBody`], and [`ResponseHandler`] which allows for sending HTTP requests and getting strings from their responses.
 //! 
-//! Enabled by the `advanced-http` feature flag.
+//! Enabled by the `http` feature flag.
 
 use std::collections::HashMap;
 

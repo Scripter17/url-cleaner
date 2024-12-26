@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use std::collections::HashMap;
 
 use thiserror::Error;
+#[expect(unused_imports, reason = "Doc comment.")]
 use serde::{Serialize, Deserialize};
 
 pub mod url_part;

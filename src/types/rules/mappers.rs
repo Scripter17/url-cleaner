@@ -328,7 +328,7 @@ pub enum Mapper {
     /// The default config handles this by configuring [`Self::ExpandRedirect::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
     /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while protecting privacy.
     /// # Errors
-    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`Cache::read`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::read`] returns an error, that error is returned.")]
     /// 
     /// If the call to [`Params::http_client`] returns an error, that error is returned.
     /// 
@@ -340,7 +340,7 @@ pub enum Mapper {
     /// 
     /// (3xx status code) If the call to [`Url::parse`] to parse the [`Location`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location) header returns an error, that error is returned.
     /// 
-    #[cfg_attr(feature = "cache-redirects", doc = "If the call to [`Cache::write`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::write`] returns an error, that error is returned.")]
     /// # Examples
     /// ```
     /// # use reqwest::header::HeaderMap;
@@ -709,7 +709,7 @@ impl Mapper {
 
             #[cfg(feature = "http")]
             Self::ExpandRedirect {headers, http_client_config_diff} => {
-                #[cfg(feature = "cache-redirects")]
+                #[cfg(feature = "cache")]
                 if job_state.params.read_cache {
                     if let Some(new_url) = job_state.cache.read("redirect", job_state.url.as_str())? {
                         *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
@@ -722,7 +722,7 @@ impl Mapper {
                 } else {
                     response.url().clone()
                 };
-                #[cfg(feature = "cache-redirects")]
+                #[cfg(feature = "cache")]
                 if job_state.params.write_cache {
                     job_state.cache.write("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
                 }

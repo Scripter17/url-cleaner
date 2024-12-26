@@ -184,9 +184,11 @@ Often the first few cleanings will take a few hundred milliseconds each because 
 
 Mileage varies wildly but as long as you're not spawning a new instance of URL Cleaner for each URL it should be fast enough.
 
-While URL Cleaner defaults to being single threaded, there is an experimental compilation feature flag to allow parallelization (`experiment-parallel`). For CPU bound jobs, increasing `--thread-queue` can give better times, where for network letency bound jobs increasing `--threads` can give *much* better times.
-
-Exact behavior and implementation of parallelization is still in flux, and it will likely never be added as a library feature due to some nonsense involving POSIX pthreads.
+There is (currently still experimental) support for multithreading.  
+In its default configuration, it's able to do 10k of the above amazon URL in 51 milliseconds on the same laptop, an almost 2x speedup on a computer with only 2 cores.  
+On a i5-8500 (6) @ 4.100GHz, times can get as low as 17 milliseconds. If anyone wants to test this on 32+ cores I would be quite interested in the result.  
+Additionally, spawning more threads than you have cores can be helpful in netowrk latency bound jobs, AKA redirects. What exactly the limits and side effects of that is is likely website-dependent.  
+Also its effects on caching are yet to be figured out.
 
 #### Credits
 
