@@ -289,12 +289,12 @@ impl Rule {
             } else {
                 Err(RuleError::FailedCondition)
             },
-            Self::PartMap        {part  , map, r#else} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::PartRuleMap    {part  , map, r#else} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).or(r#else.as_deref()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::PartRulesMap   {part  , map, r#else} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::StringMap      {value, map, r#else} => Ok(map.get(&get_option_string!(value, job_state)          ).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::StringRuleMap  {value, map, r#else} => Ok(map.get(&get_option_string!(value, job_state)          ).or(r#else.as_deref()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
-            Self::StringRulesMap {value, map, r#else} => Ok(map.get(&get_option_string!(value, job_state)          ).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::PartMap        {part , map, r#else} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::PartRuleMap    {part , map, r#else} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).or(r#else.as_deref()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::PartRulesMap   {part , map, r#else} => Ok(map.get(&part.get(job_state.url).map(|x| x.into_owned())).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringMap      {value, map, r#else} => Ok(map.get(&get_option_string!(value, job_state)           ).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringRuleMap  {value, map, r#else} => Ok(map.get(&get_option_string!(value, job_state)           ).or(r#else.as_deref()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
+            Self::StringRulesMap {value, map, r#else} => Ok(map.get(&get_option_string!(value, job_state)           ).or(r#else.as_ref  ()).ok_or(RuleError::ValueNotInMap)?.apply(job_state)?),
             Self::Repeat{rules, stop_loop_condition, limit} => {
 
                 // MAKE SURE THIS IS ALWAYS SYNCED UP WITH [`Rules::apply`]!!!
@@ -354,9 +354,9 @@ impl Rule {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
-            Self::PartMap        {part  , map, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::PartRuleMap    {part  , map, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::PartRulesMap   {part  , map, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::PartMap        {part , map, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::PartRuleMap    {part , map, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::PartRulesMap   {part , map, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
             Self::StringMap      {value, map, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
             Self::StringRuleMap  {value, map, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, rule)| rule.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
             Self::StringRulesMap {value, map, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, rules)| rules.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),

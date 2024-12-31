@@ -4,7 +4,6 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Serialize, Deserialize};
 
-#[allow(unused_imports, reason = "Used in a doc comment.")]
 use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
@@ -181,5 +180,130 @@ impl ParamsDiff {
 
         #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
         debug!(ParamsDiff::apply, self, old_to, to);
+    }
+}
+
+/// Shared argument parser for generating [`ParamsDiff`]s from the CLI.
+/// 
+/// Used with the [`#[command(flatten)]`](https://docs.rs/clap/latest/clap/_derive/index.html#command-attributes) part of [`clap::Parser`]'s derive macro.
+#[derive(Debug, Clone, PartialEq, Eq, clap::Args)]
+pub struct ParamsDiffArgParser {
+    /// Set flags.
+    #[arg(short      , long, value_names = ["NAME"])]
+    pub flag  : Vec<String>,
+    /// Unset flags set by the config.
+    #[arg(short = 'F', long, value_names = ["NAME"])]
+    pub unflag: Vec<String>,
+    /// For each occurrence of this option, its first argument is the variable name and the second argument is its value.
+    #[arg(short      , long, num_args(2), value_names = ["NAME", "VALUE"])]
+    pub var: Vec<Vec<String>>,
+    /// Unset variables set by the config.
+    #[arg(short = 'V', long, value_names = ["NAME"])]
+    pub unvar : Vec<String>,
+    /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to insert.
+    #[arg(             long, num_args(1..), value_names = ["NAME", "VALUE1"])]
+    pub insert_into_set: Vec<Vec<String>>,
+    /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to remove.
+    #[arg(             long, num_args(1..), value_names = ["NAME", "VALUE1"])]
+    pub remove_from_set: Vec<Vec<String>>,
+    /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to insert.
+    #[arg(             long, num_args(2..), value_names = ["NAME", "KEY1", "VALUE1"])]
+    pub insert_into_map: Vec<Vec<String>>,
+    /// For each occurrence of this option, its first argument is the map name, and subsequent arguments are the keys to remove.
+    #[arg(             long, num_args(1..), value_names = ["NAME", "KEY1"])]
+    pub remove_from_map: Vec<Vec<String>>,
+    /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
+    #[cfg(feature = "cache")]
+    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    pub read_cache : Option<bool>,
+    /// Write stuff to caches. Default value is controlled by the config. Omitting a value means true.
+    #[cfg(feature = "cache")]
+    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    pub write_cache: Option<bool>,
+    /// The proxy to use. Example: socks5://localhost:9150
+    #[cfg(feature = "http")]
+    #[arg(             long)]
+    pub proxy: Option<ProxyConfig>,
+    /// Disables all HTTP proxying.
+    #[cfg(feature = "http")]
+    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    pub no_proxy: Option<bool>
+}
+
+/// The errors that deriving [`clap::Parser`] can't catch.
+#[derive(Debug, Error)]
+pub enum ParamsDiffArgParserValueWrong {
+    /// --insert-into-map needs a map to insert key-value pairs into.
+    #[error("InsertIntoMapNeedsAMap")]
+    InsertIntoMapNeedsAMap,
+    /// --insert-into-map found a key without a value at the end.
+    #[error("InsertIntoMapNeedsAValue")]
+    InsertIntoMapNeedsAValue,
+    /// --remove-from-map needs a map to remove keys from.
+    #[error("RemoveFromMapNeedsAMap")]
+    RemoveFromMapNeedsAMap
+}
+
+impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
+    type Error = ParamsDiffArgParserValueWrong;
+
+    fn try_from(value: ParamsDiffArgParser) -> Result<Self, ParamsDiffArgParserValueWrong> {
+        for invocation in value.insert_into_map.iter() {
+            if invocation.is_empty() {
+                Err(ParamsDiffArgParserValueWrong::InsertIntoMapNeedsAMap)?;
+            }
+            if invocation.len() % 2 != 1 {
+                Err(ParamsDiffArgParserValueWrong::InsertIntoMapNeedsAValue)?;
+            }
+        }
+
+        for invocation in value.remove_from_map.iter() {
+            if invocation.is_empty() {
+                Err(ParamsDiffArgParserValueWrong::RemoveFromMapNeedsAMap)?;
+            }
+        }
+
+        Ok(ParamsDiff {
+            flags  : value.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
+            unflags: value.unflag.into_iter().collect(), // It's probably not a good thing to do a global impl for,
+            vars   : value.var   .into_iter().map(|x| x.try_into().expect("Clap guarantees the length is always 2")).map(|[name, value]: [String; 2]| (name, value)).collect(), // Either let me TryFrom a Vec into a tuple or let me collect a [T; 2] into a HashMap. Preferably both.
+            unvars : value.unvar .into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
+            init_sets: Default::default(),
+            insert_into_sets: value.insert_into_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+            remove_from_sets: value.remove_from_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+            delete_sets     : Default::default(),
+            init_maps       : Default::default(),
+            insert_into_maps: value.insert_into_map.into_iter().map(|x| {
+                let mut values = HashMap::new();
+                let mut args_iter = x.into_iter();
+                let map = args_iter.next().expect("The validation to have worked.");
+                while let Some(k) = args_iter.next() {
+                    values.insert(k, args_iter.next().expect("The validation to have worked."));
+                }
+                (map, values)
+            }).collect::<HashMap<_, _>>(),
+            remove_from_maps: value.remove_from_map.into_iter().map(|mut x| (x.swap_remove(0), x)).collect::<HashMap<_, _>>(),
+            delete_maps     : Default::default(),
+            #[cfg(feature = "cache")] read_cache : value.read_cache,
+            #[cfg(feature = "cache")] write_cache: value.write_cache,
+            #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
+                set_proxies: value.proxy.map(|x| vec![x]),
+                no_proxy: value.no_proxy,
+                ..HttpClientConfigDiff::default()
+            })
+        })
+    }
+}
+
+impl ParamsDiffArgParser {
+    /// Returns [`true`] if this would make a [`ParamsDiff`] that actually does anything.
+    /// 
+    /// It's much faster to check this than make and apply the [`ParamsDiff`].
+    pub fn does_anything(&self) -> bool {
+        let mut feature_flag_make_params_diff = false;
+        #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || self.read_cache.is_some()};
+        #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || self.write_cache.is_some()};
+        #[cfg(feature = "http" )] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || self.proxy.is_some()};
+        !self.flag.is_empty() || !self.unflag.is_empty() || !self.var.is_empty() || !self.unvar.is_empty() || !self.insert_into_set.is_empty() || !self.remove_from_set.is_empty() || !self.insert_into_map.is_empty() || !self.remove_from_map.is_empty() || feature_flag_make_params_diff
     }
 }

@@ -6,7 +6,7 @@ use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
-#[allow(unused_imports, reason = "Used in a doc comment.")]
+#[expect(unused_imports, reason = "Used in a doc comment.")]
 #[cfg(feature = "regex")]
 use ::regex::Regex;
 #[cfg(feature = "base64")]

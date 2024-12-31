@@ -45,8 +45,8 @@ for arg in "$@"; do
     --only-massif)     if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0          ; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-dhat)       if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0        ; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-memcheck)   if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0; dhat=0            ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --nums)            mode=nums    ; just_set_mode=1 ;;
     --urls)            mode=urls    ; just_set_mode=1 ;;
+    --nums)            mode=nums    ; just_set_mode=1 ;;
     --features)        mode=features; just_set_mode=1 ;;
     --out-file)        mode=out_file; just_set_mode=1 ;;
     --)                break ;;

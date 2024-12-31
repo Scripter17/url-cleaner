@@ -76,22 +76,21 @@
 				"nerd.whatever.social", "z.opnxng.com"
 			],
 			"redirect-host-without-www-dot-prefixes": [
-				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew",
-				"amzn.to", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly",
-				"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx",
-				"cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn",
-				"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com",
-				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd",
-				"iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "l.leparisien.fr", "l.leparisien.fr", "lin.ee",
-				"link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "msft.it", "mzl.la", "n.pr", "nas.cr",
-				"nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
-				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml",
-				"pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co",
-				"rdbl.co", "redd.it", "reurl.cc", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev", "shor.tf",
-				"shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io",
-				"thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa",
-				"uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com",
-				"yrp.ca"
+				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
+				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
+				"bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv",
+				"cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me",
+				"fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com", "go.nasa.gov", "gofund.me",
+				"goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es",
+				"k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.leparisien.fr", "l.leparisien.fr", "lin.ee", "link.animaapp.com",
+				"linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "msft.it", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "ninten.do",
+				"ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com",
+				"on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st",
+				"politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reurl.cc",
+				"reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals",
+				"spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co",
+				"tiny.cc", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org",
+				"visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-not-subdomains": [
 				"lnk.to", "visitlink.me", "goo.gl", "o93x.net", "pusle.ly"
@@ -1416,7 +1415,7 @@
 							"PartMap": {
 								"part": "Path",
 								"map": {
-									"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter"]},
+									"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs"]},
 									"/setprefs": {"RemoveQueryParams": ["sa", "ved"]}
 								}
 							}

@@ -8,7 +8,7 @@ use url::Url;
 use serde::{Deserialize, Serialize};
 use reqwest::{Method, header::{HeaderName, HeaderValue, HeaderMap}};
 use thiserror::Error;
-#[allow(unused_imports, reason = "Used in a doc comment.")]
+#[expect(unused_imports, reason = "Used in a doc comment.")]
 use reqwest::cookie::Cookie;
 
 use crate::types::*;

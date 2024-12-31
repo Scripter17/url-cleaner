@@ -259,7 +259,7 @@ impl InnerCache {
     /// 
     /// If unconnected, connect to the path then return the connection.
     /// 
-    /// If the path is a file and doesn't exist, writes [`EMPTY_CACHE`] to the path.
+    /// If the path is a file and doesn't exist, makes the file.
     /// 
     /// If the path is `:memory:`, the database is storeed ephemerally in RAM and not saved to disk.
     /// # Errors

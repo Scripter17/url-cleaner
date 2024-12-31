@@ -43,11 +43,6 @@
 //! }
 //! ```
 
-#[allow(unused_imports, reason = "Used in the module's doc comment.")]
-use std::str::FromStr;
-#[allow(unused_imports, reason = "Used in the module's doc comment.")]
-use serde::Deserialize;
-
 pub mod glue;
 pub mod types;
 pub(crate) mod util;

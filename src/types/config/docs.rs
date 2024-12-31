@@ -4,7 +4,6 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
-#[allow(unused_imports, reason = "Used in a doc comment.")]
 use crate::types::*;
 use crate::util::*;
 

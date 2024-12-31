@@ -13,7 +13,7 @@ There are several non-obvious privacy concerns you should keep in mind while usi
     - While this does prevent the redirect website from putting cookies on your browser and possibly gives it the false impression you clicked the link, it gives the website certainty you viewed the link.
         - In the hopefully never going to happen case of someone hijacking a supported redirect site, this could allow an attacker to reliably grab your IP by sending it in an email/DM.
             - While you can configure URL Cleaner to use a proxy to avoid the IP grabbing, it would still let them know when you're online.
-- For some websites URL Cleaner strips out more than just tracking stuff. I'm still not sure if or when this ever becomes a security issue.
+- For some websites, URL Cleaner strips out more than just tracking stuff. I'm still not sure if or when this ever becomes a security issue.
 
 If you are in any way using URL Cleaner in a life-or-death scenario, PLEASE always use the `no-network` flag and be extremely careful of people you even remotely don't trust sending you URLs.
 
@@ -180,15 +180,28 @@ On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running 
 ```
 
 In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is significantly (but not severely) worse.  
-Often the first few cleanings will take a few hundred milliseconds each because the page is still loading. Subsequent cleanings should generally be in the 10ms-50ms range.
+Often the first few cleanings will take a few hundred milliseconds each because the page is still loading.  
+However, because of the overhead of using HTTP (even if it's just to localhost) subsequent cleanings, for me, are basically always at least 10ms.
 
 Mileage varies wildly but as long as you're not spawning a new instance of URL Cleaner for each URL it should be fast enough.
 
-There is (currently still experimental) support for multithreading.  
-In its default configuration, it's able to do 10k of the above amazon URL in 51 milliseconds on the same laptop, an almost 2x speedup on a computer with only 2 cores.  
-On a i5-8500 (6) @ 4.100GHz, times can get as low as 17 milliseconds. If anyone wants to test this on 32+ cores I would be quite interested in the result.  
-Additionally, spawning more threads than you have cores can be helpful in netowrk latency bound jobs, AKA redirects. What exactly the limits and side effects of that is is likely website-dependent.  
-Also its effects on caching are yet to be figured out.
+Also startup time varies wildly. My laptop takes 5-6ms to start it but every other computer I've tested takes 10ms. Really not sure why because the other computers are massively faster.
+
+##### Parallelization
+
+There is (currently still experimental) support for parallelization.
+
+On the same laptop as the above benchmarks, the default settings make 10k of the amazon URL go from 95ms to 51ms.  
+On my desktop with an Intel i5-8500 (6) @ 4.100GHz, that benchmark gets around 17ms and one *hundred* thousand of the URL takes about 138ms.  
+On my friend's dekstop with an AMD Ryzen 9 7950X3D (32) @ 5.759GHz, doing the same 100k amazon URL benchmark takes about (TODO: REBENCH).  
+
+Network requests and interacting with the cache have effects on performance that I haven't yet properly looked into.
+
+Please note that at this time parallelization has no effects on the library's API.  
+It's not obvious how I would design it so I'm waiting for inspiration to strike.
+
+Also please note that compiling with parallelization then setting the thread count to 1 gives worse performance than not compiling with parallelization.  
+Through very basic testing, 2 threads seems to be about the same as not compiling with parallelization.
 
 #### Credits
 

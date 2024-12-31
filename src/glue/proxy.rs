@@ -11,7 +11,7 @@ use reqwest::Proxy;
 
 use crate::util::is_default;
 
-#[allow(unused_imports, reason = "Used in a doc comment.")]
+#[expect(unused_imports, reason = "Used in a doc comment.")]
 use crate::glue::HttpClientConfig;
 
 /// Used by [`HttpClientConfig`] to detail how a [`reqwest::Proxy`] should be made.
