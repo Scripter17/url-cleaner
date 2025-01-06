@@ -55,7 +55,8 @@
 			"unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist": "Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.",
 			"unmobile-not-subdomain-blacklist": "Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.",
 			"utps": "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.",
-			"utps-host-whitelist": "Hosts to never remove universal tracking parameters from."
+			"utps-host-whitelist": "Hosts to never remove universal tracking parameters from.",
+			"remove-www-subdomain-not-subdomain-whitelist": "`NotSubdomain`s where a `www` `Subdomain` is important and thus won't have it removed."
 		},
 		"lists": {
 			"utp-prefixes": "If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed."
@@ -134,7 +135,8 @@
 				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylink.onl",
 				"tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com"
 			],
-			"email-link-format-1-hosts": ["action.openmedia.org"]
+			"email-link-format-1-hosts": ["action.openmedia.org"],
+			"remove-www-subdomain-not-subdomain-whitelist": []
 		},
 		"lists": {
 			"utp-prefixes": [
@@ -153,18 +155,8 @@
 	},
 	"commons": {
 		"mappers": {
-			"utps-no-if": {
-				"RemoveQueryParamsMatching": {"Any": [
-					{"InSet": "utps"},
-					{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-				]}
-			},
-			"utps": {"IfCondition": {
-				"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-				"mapper": {"Common": "utps-no-if"}
-			}},
 			"extract-from-page-no-if": {"All": [
-				{"Common": "utps"},
+				{"Common": "universal"},
 				{"SetPart": {
 					"part": "Whole",
 					"value": {"Cache": {
@@ -178,25 +170,55 @@
 					}}
 				}}
 			]},
+
 			"extract-from-page": {"IfCondition": {
 				"condition": {"Not": {"FlagIsSet": "no-network"}},
 				"mapper": {"Common": {"name": "extract-from-page-no-if", "args": {"vars": {"start": {"CommonVar": "start"}, "end": {"CommonVar": "end"}}}}}
-			}}
+			}},
+
+			"universal": {"All": [
+				{"IfCondition": {
+					"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
+					"mapper": {
+						"RemoveQueryParamsMatching": {"Any": [
+							{"InSet": "utps"},
+							{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+						]}
+					}
+				}},
+				{"IfCondition": {
+					"condition": {"All": [
+						{"PartIs": {"part": "Subdomain", "value": "www"}},
+						{"Not": {"PartMatches": {"part": "NotSubdomain", "matcher": {"InSet": "remove-www-subdomain-not-subdomain-whitelist"}}}}
+					]},
+					"mapper": {"SetPart": {"part": "Subdomain", "value": null}}
+				}},
+				{"IfCondition": {
+					"condition": {"PartContains": {"part": "Host", "value": ".", "where": "End"}},
+					"mapper": {"SetPart": {
+						"part": "Host",
+						"value": {"Modified": {
+							"value": {"Part": "Host"},
+							"modification": {"StripSuffix": "."}
+						}}
+					}}
+				}}
+			]}
 		}
 	},
 	"tests": [
 		{
 			"expectations": [
-				{"job_config": "https://x.com?t=a&s=b", "result": "https://x.com/"},
-				{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
-				{"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "result": "https://www.amazon.ca/dp/B0C6DX66TN"},
-				{"job_config": "http://example.com", "result": "https://example.com/"},
+				{"job_config": "https://x.com?t=a&s=b"                                                                                                                                                                                                                , "result": "https://x.com/"},
+				{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id"                                                                                                                                            , "result": "https://example.com/"},
+				{"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8", "result": "https://amazon.ca/dp/B0C6DX66TN"},
+				{"job_config": "http://example.com"                                                                                                                                                                                                                   , "result": "https://example.com/"},
 
-				{"job_config": "https://bsky.app", "result": "https://bsky.app/"},
-				{"job_config": "https://fxbsky.app", "result": "https://bsky.app/"},
-				{"job_config": "https://bsky.app/profile/user", "result": "https://bsky.app/profile/user.bsky.social"},
-				{"job_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
-				{"job_config": "https://bsky.app/profile/user.com", "result": "https://bsky.app/profile/user.com"},
+				{"job_config": "https://bsky.app"                                                                                                                                                                                                                     , "result": "https://bsky.app/"},
+				{"job_config": "https://fxbsky.app"                                                                                                                                                                                                                   , "result": "https://bsky.app/"},
+				{"job_config": "https://bsky.app/profile/user"                                                                                                                                                                                                        , "result": "https://bsky.app/profile/user.bsky.social"},
+				{"job_config": "https://bsky.app/profile/user.bsky"                                                                                                                                                                                                   , "result": "https://bsky.app/profile/user.bsky.social"},
+				{"job_config": "https://bsky.app/profile/user.com"                                                                                                                                                                                                    , "result": "https://bsky.app/profile/user.com"},
 
 				{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
 				{"job_config": "https://com"      , "result": "https://com"},
@@ -207,14 +229,14 @@
 		{
 			"params_diff": {"flags": ["unmangle"]},
 			"expectations": [
-				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
+				{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
 				{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
-				{"job_config": "https://https//abc.tumblr.com.tumblr.com", "result": "https://abc.tumblr.com"},
-				{"job_config": "https://abc.deviantart.com.deviantart.com", "result": "https://deviantart.com/abc/"},
-				{"job_config": "https://https//example.com/abc", "result": "https://example.com/abc"},
-				{"job_config": "https://https//example1.com/example2.com/abc", "result": "https://example2.com/abc"},
-				{"job_config": "https://https//example1.com/user/example2.com/abc", "result": "https://example2.com/abc"},
-				{"job_config": "https://www.username.example.com", "result": "https://username.example.com"},
+				{"job_config": "https://https//abc.tumblr.com.tumblr.com"                    , "result": "https://abc.tumblr.com"},
+				{"job_config": "https://abc.deviantart.com.deviantart.com"                   , "result": "https://deviantart.com/abc/"},
+				{"job_config": "https://https//example.com/abc"                              , "result": "https://example.com/abc"},
+				{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
+				{"job_config": "https://https//example1.com/user/example2.com/abc"           , "result": "https://example2.com/abc"},
+				{"job_config": "https://www.username.example.com"                            , "result": "https://username.example.com"},
 
 				{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
 				{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
@@ -224,14 +246,14 @@
 				{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
 				{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
 				{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://www.x.com/user"},
-				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://www.x.com/user"},
-				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://www.x.com/user"}
+				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://x.com/user"},
+				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://x.com/user"},
+				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://x.com/user"},
+				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://x.com/user"},
+				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://x.com/user"},
+				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://x.com/user"}
 			]
 		},
 		{
@@ -375,7 +397,7 @@
 									"smarturl.it": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-network"}},
 										"mapper": {"All": [
-											{"Common": "utps"},
+											{"Common": "universal"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -405,7 +427,7 @@
 									"bfy.tw": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-network"}},
 										"mapper": {"All": [
-											{"Common": "utps"},
+											{"Common": "universal"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -424,7 +446,7 @@
 									"gprivate.com": {"IfCondition": {
 										"condition": {"Not": {"FlagIsSet": "no-network"}},
 										"mapper": {"All": [
-											{"Common": "utps"},
+											{"Common": "universal"},
 											{"CacheUrl": {
 												"category": "redirect",
 												"mapper": {"SetPart": {
@@ -643,7 +665,7 @@
 										"mapper": {"All": [
 											{"SetHost": "shareasale-analytics.com"},
 											{"AllowQueryParams": ["b", "u", "m"]},
-											{"Common": "utps"},
+											{"Common": "universal"},
 											{"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
@@ -666,7 +688,7 @@
 										"mapper": {"All": [
 											{"SetHost": "shareasale-analytics.com"},
 											{"AllowQueryParams": ["b", "u", "m"]},
-											{"Common": "utps"},
+											{"Common": "universal"},
 											{"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
@@ -738,7 +760,7 @@
 								{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "bypass.vip-host-without-www-dot-prefixes"}}}
 							]},
 							"mapper": {"All": [
-								{"Common": "utps"},
+								{"Common": "universal"},
 								{"CacheUrl": {
 									"category": "redirect",
 									"mapper": {"SetPart": {
@@ -844,7 +866,8 @@
 								]}
 							]},
 							"mapper": {"All": [
-								{"Common": "utps"},
+								{"Common": "universal"},
+								{"Common": "remove-unnecessary-www-subdomain"},
 								{"ExpandRedirect": {}}
 							]}
 						},
@@ -1511,7 +1534,7 @@
 							{"PartIs": {"part": "Scheme", "value": "https"}}
 						]},
 						"mapper": {"All": [
-							{"Common": "utps"},
+							{"Common": "universal"},
 							{"IgnoreError": {
 								"SetPart": {
 									"part": "Origin",
@@ -1552,8 +1575,8 @@
 
 		{
 			"comment": "The query paramaters to always remove.",
-			"condition": {"Not": {"PartMatches": {"part": "Host", "matcher": {"InSet": "utps-host-whitelist"}}}},
-			"mapper": {"Common": "utps-no-if"}
+			"condition": "Always",
+			"mapper": {"Common": "universal"}
 		}
 	]
 }
