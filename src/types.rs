@@ -7,6 +7,8 @@ use thiserror::Error;
 #[expect(unused_imports, reason = "Doc comment.")]
 use serde::{Serialize, Deserialize};
 
+pub mod better_url;
+pub use better_url::*;
 pub mod url_part;
 pub use url_part::*;
 pub mod config;

@@ -34,7 +34,7 @@ use crate::util::*;
 #[serde(remote = "Self")]
 pub struct JobConfig {
     /// The URL to modify.
-    pub url: Url,
+    pub url: BetterUrl,
     /// The context surrounding the URL.
     #[serde(default, skip_serializing_if = "is_default")]
     pub context: JobContext
@@ -42,6 +42,15 @@ pub struct JobConfig {
 
 impl From<Url> for JobConfig {
     fn from(value: Url) -> Self {
+        Self {
+            url: value.into(),
+            context: Default::default()
+        }
+    }
+}
+
+impl From<BetterUrl> for JobConfig {
+    fn from(value: BetterUrl) -> Self {
         Self {
             url: value,
             context: Default::default()

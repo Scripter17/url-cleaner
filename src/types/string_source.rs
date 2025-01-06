@@ -532,7 +532,7 @@ impl StringSource {
 
 
             Self::Part(part) => part.get(job_state.url),
-            Self::ExtractPart{value, part} => value.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
+            Self::ExtractPart{value, part} => value.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get_url(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::CommonVar(name) => job_state.common_args.ok_or(StringSourceError::NotInACommonContext)?.vars.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),

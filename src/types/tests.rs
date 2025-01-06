@@ -3,7 +3,6 @@
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use url::Url;
 
 use crate::types::*;
 #[allow(unused_imports, reason = "Needed for doc links.")]
@@ -43,7 +42,7 @@ pub struct Expectation {
     /// The URL to clean.
     pub job_config: JobConfig,
     /// The expected result of cleaning [`Self::job_config`].
-    pub result: Url
+    pub result: BetterUrl
 }
 
 impl Expectation {

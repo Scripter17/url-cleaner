@@ -1,7 +1,5 @@
 //! The state of a job as it's happening.
 
-use url::Url;
-
 use crate::types::*;
 use crate::glue::*;
 
@@ -9,7 +7,7 @@ use crate::glue::*;
 #[derive(Debug)]
 pub struct JobState<'a> {
     /// The URL being modified.
-    pub url: &'a mut Url,
+    pub url: &'a mut BetterUrl,
     /// Scratchpad space for [`Mapper`]s to store state in.
     pub scratchpad: &'a mut JobScratchpad,
     /// Vars used in common contexts.
@@ -58,7 +56,7 @@ macro_rules! job_state {
         let commons: $crate::types::Commons = Default::default();
         $(let commons = $commons;)?
         let cache = Default::default();
-        let mut url = ::url::Url::parse(url).unwrap();
+        let mut url = BetterUrl::parse(url).unwrap();
         let mut $job_state = url_cleaner::types::JobState {
             url: &mut url,
             scratchpad: &mut scratchpad,
@@ -85,7 +83,7 @@ macro_rules! job_state {
         $(let params = $params;)?
         let commons: $crate::types::Commons = Default::default();
         $(let commons = $commons;)?
-        let mut url = ::url::Url::parse(url).unwrap();
+        let mut url = BetterUrl::parse(url).unwrap();
         let mut $job_state = url_cleaner::types::JobState {
             url: &mut url,
             scratchpad: &mut scratchpad,
@@ -105,7 +103,7 @@ pub struct JobStateView<'a> {
     /// The URL being modified.
     /// 
     /// See [`JobState::url`].
-    pub url: &'a Url,
+    pub url: &'a BetterUrl,
     /// Scratchpad space for [`Mapper`]s to store state in.
     /// 
     /// See [`JobState::scratchpad`].

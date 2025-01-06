@@ -103,7 +103,7 @@ impl RequestConfig {
                 self.method.clone(),
                 match self.url {
                     Some(ref source) => Url::parse(get_str!(source, job_state, RequestConfigError))?,
-                    None => job_state.url.clone()
+                    None => (**job_state.url).clone()
                 }
             );
 

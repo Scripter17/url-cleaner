@@ -10,7 +10,7 @@ use crate::glue::*;
 #[derive(Debug)]
 pub struct Job<'a> {
     /// The URL to modify.
-    pub url: Url,
+    pub url: BetterUrl,
     /// The config to apply.
     pub config: &'a Config,
     /// The context of [`Self::url`].
@@ -35,7 +35,7 @@ impl Job<'_> {
             commons: &self.config.commons,
             common_args: None
         })?;
-        Ok(self.url)
+        Ok(self.url.into())
     }
 }
 

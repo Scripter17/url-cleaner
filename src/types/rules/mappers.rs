@@ -672,7 +672,7 @@ impl Mapper {
             },
             Self::GetUrlFromQueryParam(name) => {
                 match job_state.url.query_pairs().find(|(param_name, _)| param_name==name) {
-                    Some((_, new_url)) => {*job_state.url=Url::parse(&new_url)?},
+                    Some((_, new_url)) => {*job_state.url=Url::parse(&new_url)?.into()},
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
@@ -686,7 +686,7 @@ impl Mapper {
             // Other parts.
 
             Self::SetHost(new_host) => job_state.url.set_host(Some(new_host))?,
-            Self::Join(with) => *job_state.url=job_state.url.join(get_str!(with, job_state, MapperError))?,
+            Self::Join(with) => *job_state.url=job_state.url.join(get_str!(with, job_state, MapperError))?.into(),
 
             // Generic part handling.
 
@@ -712,7 +712,7 @@ impl Mapper {
                 #[cfg(feature = "cache")]
                 if job_state.params.read_cache {
                     if let Some(new_url) = job_state.cache.read("redirect", job_state.url.as_str())? {
-                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
+                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?.into();
                         return Ok(());
                     }
                 }
@@ -726,7 +726,7 @@ impl Mapper {
                 if job_state.params.write_cache {
                     job_state.cache.write("redirect", job_state.url.as_str(), Some(new_url.as_str()))?;
                 }
-                *job_state.url=new_url;
+                *job_state.url=new_url.into();
             },
 
             Self::SetScratchpadVar {name, value} => {let _ = job_state.scratchpad.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
@@ -751,7 +751,7 @@ impl Mapper {
                 let category = get_string!(category, job_state, MapperError);
                 if job_state.params.read_cache {
                     if let Some(new_url) = job_state.cache.read(&category, job_state.url.as_str())? {
-                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
+                        *job_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?.into();
                         return Ok(());
                     }
                 }

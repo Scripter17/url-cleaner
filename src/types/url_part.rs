@@ -31,11 +31,11 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Whole.get(&Url::parse("https://example.com").unwrap()), Some(Cow::Borrowed("https://example.com/")));
+    /// assert_eq!(UrlPart::Whole.get(&BetterUrl::parse("https://example.com").unwrap()), Some(Cow::Borrowed("https://example.com/")));
     /// 
-    /// let mut url=Url::parse("https://example.com").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Whole.set(&mut url, None).unwrap_err();
     /// assert_eq!(url.as_str(), "https://example.com/");
     /// UrlPart::Whole.set(&mut url, Some("https://example2.com")).unwrap();
@@ -51,13 +51,13 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Scheme.get(&Url::parse("https://example.com").unwrap()), Some(Cow::Borrowed("https")));
-    /// assert_eq!(UrlPart::Scheme.get(&Url::parse("http://example.com" ).unwrap()), Some(Cow::Borrowed("http" )));
-    /// assert_eq!(UrlPart::Scheme.get(&Url::parse("ftp://example.com"  ).unwrap()), Some(Cow::Borrowed("ftp"  )));
+    /// assert_eq!(UrlPart::Scheme.get(&BetterUrl::parse("https://example.com").unwrap()), Some(Cow::Borrowed("https")));
+    /// assert_eq!(UrlPart::Scheme.get(&BetterUrl::parse("http://example.com" ).unwrap()), Some(Cow::Borrowed("http" )));
+    /// assert_eq!(UrlPart::Scheme.get(&BetterUrl::parse("ftp://example.com"  ).unwrap()), Some(Cow::Borrowed("ftp"  )));
     /// 
-    /// let mut url=Url::parse("https://example.com").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Scheme.set(&mut url, Some("http")).unwrap();
     /// assert_eq!(url.scheme(), "http");
     /// UrlPart::Scheme.set(&mut url, None).unwrap_err();
@@ -73,25 +73,25 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Origin.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("https://example.com")));
-    /// assert_eq!(UrlPart::Origin.get(&Url::parse("https://example.com:443").unwrap()), Some(Cow::Borrowed("https://example.com")));
-    /// assert_eq!(UrlPart::Origin.get(&Url::parse("https://example.com:80" ).unwrap()), Some(Cow::Borrowed("https://example.com:80")));
+    /// assert_eq!(UrlPart::Origin.get(&BetterUrl::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("https://example.com")));
+    /// assert_eq!(UrlPart::Origin.get(&BetterUrl::parse("https://example.com:443").unwrap()), Some(Cow::Borrowed("https://example.com")));
+    /// assert_eq!(UrlPart::Origin.get(&BetterUrl::parse("https://example.com:80" ).unwrap()), Some(Cow::Borrowed("https://example.com:80")));
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Origin.set(&mut url, Some("https://example.com:443")).unwrap();
     /// assert_eq!(url.as_str(), "https://example.com/");
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Origin.set(&mut url, Some("http://example.com:443")).unwrap();
     /// assert_eq!(url.as_str(), "http://example.com:443/");
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Origin.set(&mut url, Some("http://example.com:80")).unwrap();
     /// assert_eq!(url.as_str(), "http://example.com/");
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Origin.set(&mut url, Some("http://example.com")).unwrap();
     /// assert_eq!(url.as_str(), "http://example.com/");
     /// ```
@@ -104,16 +104,16 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Username.get(&Url::parse("https://user:pass@example.com").unwrap()), Some(Cow::Borrowed("user")));
-    /// assert_eq!(UrlPart::Username.get(&Url::parse("http://user:pass@example.com" ).unwrap()), Some(Cow::Borrowed("user")));
-    /// assert_eq!(UrlPart::Username.get(&Url::parse("ftp://user:pass@example.com"  ).unwrap()), Some(Cow::Borrowed("user")));
-    /// assert_eq!(UrlPart::Username.get(&Url::parse("https://example.com").unwrap()), Some(Cow::Borrowed("")));
-    /// assert_eq!(UrlPart::Username.get(&Url::parse("http://example.com" ).unwrap()), Some(Cow::Borrowed("")));
-    /// assert_eq!(UrlPart::Username.get(&Url::parse("ftp://example.com"  ).unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::Username.get(&BetterUrl::parse("https://user:pass@example.com").unwrap()), Some(Cow::Borrowed("user")));
+    /// assert_eq!(UrlPart::Username.get(&BetterUrl::parse("http://user:pass@example.com" ).unwrap()), Some(Cow::Borrowed("user")));
+    /// assert_eq!(UrlPart::Username.get(&BetterUrl::parse("ftp://user:pass@example.com"  ).unwrap()), Some(Cow::Borrowed("user")));
+    /// assert_eq!(UrlPart::Username.get(&BetterUrl::parse("https://example.com").unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::Username.get(&BetterUrl::parse("http://example.com" ).unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::Username.get(&BetterUrl::parse("ftp://example.com"  ).unwrap()), Some(Cow::Borrowed("")));
     /// 
-    /// let mut url=Url::parse("https://example.com").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Username.set(&mut url, Some("test")).unwrap();
     /// assert_eq!(url.username(), "test");
     /// UrlPart::Username.set(&mut url, None).unwrap_err();
@@ -127,16 +127,16 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Password.get(&Url::parse("https://user:pass@example.com").unwrap()), Some(Cow::Borrowed("pass")));
-    /// assert_eq!(UrlPart::Password.get(&Url::parse("http://user:pass@example.com" ).unwrap()), Some(Cow::Borrowed("pass")));
-    /// assert_eq!(UrlPart::Password.get(&Url::parse("ftp://user:pass@example.com"  ).unwrap()), Some(Cow::Borrowed("pass")));
-    /// assert_eq!(UrlPart::Password.get(&Url::parse("https://example.com").unwrap()), None);
-    /// assert_eq!(UrlPart::Password.get(&Url::parse("http://example.com" ).unwrap()), None);
-    /// assert_eq!(UrlPart::Password.get(&Url::parse("ftp://example.com"  ).unwrap()), None);
+    /// assert_eq!(UrlPart::Password.get(&BetterUrl::parse("https://user:pass@example.com").unwrap()), Some(Cow::Borrowed("pass")));
+    /// assert_eq!(UrlPart::Password.get(&BetterUrl::parse("http://user:pass@example.com" ).unwrap()), Some(Cow::Borrowed("pass")));
+    /// assert_eq!(UrlPart::Password.get(&BetterUrl::parse("ftp://user:pass@example.com"  ).unwrap()), Some(Cow::Borrowed("pass")));
+    /// assert_eq!(UrlPart::Password.get(&BetterUrl::parse("https://example.com").unwrap()), None);
+    /// assert_eq!(UrlPart::Password.get(&BetterUrl::parse("http://example.com" ).unwrap()), None);
+    /// assert_eq!(UrlPart::Password.get(&BetterUrl::parse("ftp://example.com"  ).unwrap()), None);
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Password.set(&mut url, Some("xyz")).unwrap();
     /// assert_eq!(url.as_str(), "https://:xyz@example.com/");
     /// ```
@@ -149,12 +149,12 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Host.get(&Url::parse("https://127.0.0.1"      ).unwrap()), Some(Cow::Borrowed("127.0.0.1"      )));
-    /// assert_eq!(UrlPart::Host.get(&Url::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www.example.com")));
-    /// assert_eq!(UrlPart::Host.get(&Url::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b.example.com")));
-    /// assert_eq!(UrlPart::Host.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com"    )));
+    /// assert_eq!(UrlPart::Host.get(&BetterUrl::parse("https://127.0.0.1"      ).unwrap()), Some(Cow::Borrowed("127.0.0.1"      )));
+    /// assert_eq!(UrlPart::Host.get(&BetterUrl::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www.example.com")));
+    /// assert_eq!(UrlPart::Host.get(&BetterUrl::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b.example.com")));
+    /// assert_eq!(UrlPart::Host.get(&BetterUrl::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com"    )));
     /// ```
     Host,
     /// [`Self::Host`] but with the `www.` at the start, if it exists, removed.
@@ -183,8 +183,8 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url=Url::parse("https://example.com/a/b/c").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url=BetterUrl::parse("https://example.com/a/b/c").unwrap();
     /// UrlPart::BeforeDomainSegment(0).get(&url).is_none();
     /// UrlPart::BeforeDomainSegment(1).get(&url).is_none();
     /// UrlPart::BeforeDomainSegment(2).get(&url).is_none();
@@ -210,9 +210,9 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// let mut url=Url::parse("https://a.b.c.example.com").unwrap();
+    /// let mut url=BetterUrl::parse("https://a.b.c.example.com").unwrap();
     /// assert_eq!(UrlPart::DomainSegment(0).get(&url), Some(Cow::Borrowed("a")));
     /// assert_eq!(UrlPart::DomainSegment(1).get(&url), Some(Cow::Borrowed("b")));
     /// assert_eq!(UrlPart::DomainSegment(2).get(&url), Some(Cow::Borrowed("c")));
@@ -242,8 +242,8 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url=Url::parse("https://example.com/a/b/c").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url=BetterUrl::parse("https://example.com/a/b/c").unwrap();
     /// UrlPart::AfterDomainSegment(0).get(&url).is_none();
     /// UrlPart::AfterDomainSegment(1).get(&url).is_none();
     /// UrlPart::AfterDomainSegment(2).get(&url).is_none();
@@ -276,15 +276,15 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://127.0.0.1"      ).unwrap()), None);
-    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www")));
-    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b")));
-    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://example.com"    ).unwrap()), None);
-    /// assert_eq!(UrlPart::Subdomain.get(&Url::parse("https://.example.com"   ).unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::Subdomain.get(&BetterUrl::parse("https://127.0.0.1"      ).unwrap()), None);
+    /// assert_eq!(UrlPart::Subdomain.get(&BetterUrl::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www")));
+    /// assert_eq!(UrlPart::Subdomain.get(&BetterUrl::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b")));
+    /// assert_eq!(UrlPart::Subdomain.get(&BetterUrl::parse("https://example.com"    ).unwrap()), None);
+    /// assert_eq!(UrlPart::Subdomain.get(&BetterUrl::parse("https://.example.com"   ).unwrap()), Some(Cow::Borrowed("")));
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Subdomain.set(&mut url, Some("abc")).unwrap();
     /// assert_eq!(url.as_str(), "https://abc.example.com/");
     /// UrlPart::Subdomain.set(&mut url, Some("abc.def")).unwrap();
@@ -311,14 +311,14 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://127.0.0.1"      ).unwrap()), None);
-    /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("example.com")));
-    /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("example.com")));
-    /// assert_eq!(UrlPart::NotSubdomain.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(UrlPart::NotSubdomain.get(&BetterUrl::parse("https://127.0.0.1"      ).unwrap()), None);
+    /// assert_eq!(UrlPart::NotSubdomain.get(&BetterUrl::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(UrlPart::NotSubdomain.get(&BetterUrl::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(UrlPart::NotSubdomain.get(&BetterUrl::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com")));
     ///
-    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://abc.example.com").unwrap();
     /// UrlPart::NotSubdomain.set(&mut url, Some("example.co.uk")).unwrap();
     /// assert_eq!(url.as_str(), "https://abc.example.co.uk/");
     /// UrlPart::NotSubdomain.set(&mut url, None).unwrap();
@@ -354,12 +354,12 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::NotDomainSuffix.get(&Url::parse("https://abc.example.com").unwrap()), Some(Cow::Borrowed("abc.example")));
-    /// assert_eq!(UrlPart::NotDomainSuffix.get(&Url::parse("https://com").unwrap()            ), None);
+    /// assert_eq!(UrlPart::NotDomainSuffix.get(&BetterUrl::parse("https://abc.example.com").unwrap()), Some(Cow::Borrowed("abc.example")));
+    /// assert_eq!(UrlPart::NotDomainSuffix.get(&BetterUrl::parse("https://com").unwrap()            ), None);
     /// 
-    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://abc.example.com").unwrap();
     /// UrlPart::NotDomainSuffix.set(&mut url, Some("a")).unwrap();
     /// assert_eq!(url.as_str(), "https://a.com/");
     /// UrlPart::NotDomainSuffix.set(&mut url, None).unwrap();
@@ -381,39 +381,39 @@ pub enum UrlPart {
     /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://example.com."    ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://example.co.uk"   ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://example.co.uk."  ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://a.example.com"   ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://a.example.com."  ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://a.example.co.uk" ).unwrap()), Some(Cow::Borrowed("example")));
-    /// assert_eq!(UrlPart::DomainMiddle.get(&Url::parse("https://a.example.co.uk.").unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://example.com."    ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://example.co.uk"   ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://example.co.uk."  ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://a.example.com"   ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://a.example.com."  ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://a.example.co.uk" ).unwrap()), Some(Cow::Borrowed("example")));
+    /// assert_eq!(UrlPart::DomainMiddle.get(&BetterUrl::parse("https://a.example.co.uk.").unwrap()), Some(Cow::Borrowed("example")));
     /// 
-    /// let mut url = Url::parse("https://example.com.").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com.").unwrap();
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.as_str(), "https://example2.com./");
     /// 
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.as_str(), "https://example2.com/");
     /// 
-    /// let mut url = Url::parse("https://.example.com.").unwrap();
+    /// let mut url = BetterUrl::parse("https://.example.com.").unwrap();
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.as_str(), "https://.example2.com./");
     /// 
-    /// let mut url = Url::parse("https://.example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://.example.com").unwrap();
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.as_str(), "https://.example2.com/");
     /// 
-    /// let mut url = Url::parse("https://a.example.com.").unwrap();
+    /// let mut url = BetterUrl::parse("https://a.example.com.").unwrap();
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.as_str(), "https://a.example2.com./");
     /// 
-    /// let mut url = Url::parse("https://a.example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://a.example.com").unwrap();
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.as_str(), "https://a.example2.com/");
     /// ```
@@ -442,14 +442,14 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://127.0.0.1"      ).unwrap()), None);
-    /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www.example.com")));
-    /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b.example.com")));
-    /// assert_eq!(UrlPart::Domain.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com")));
+    /// assert_eq!(UrlPart::Domain.get(&BetterUrl::parse("https://127.0.0.1"      ).unwrap()), None);
+    /// assert_eq!(UrlPart::Domain.get(&BetterUrl::parse("https://www.example.com").unwrap()), Some(Cow::Borrowed("www.example.com")));
+    /// assert_eq!(UrlPart::Domain.get(&BetterUrl::parse("https://a.b.example.com").unwrap()), Some(Cow::Borrowed("a.b.example.com")));
+    /// assert_eq!(UrlPart::Domain.get(&BetterUrl::parse("https://example.com"    ).unwrap()), Some(Cow::Borrowed("example.com")));
     ///
-    /// let mut url = Url::parse("https://www.example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     /// UrlPart::Domain.set(&mut url, Some("example2.com")).unwrap();
     /// assert_eq!(url.as_str(), "https://example2.com/");
     /// UrlPart::Domain.set(&mut url, None).unwrap_err();
@@ -465,19 +465,19 @@ pub enum UrlPart {
     /// On URLs without a host and URLs with a non-domain host, no guarantees are made regarding this part's set-get identity.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.com"   ).unwrap()), Some(Cow::Borrowed("com"  )));
-    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.com."  ).unwrap()), Some(Cow::Borrowed("com"  )));
-    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.co.uk" ).unwrap()), Some(Cow::Borrowed("co.uk")));
-    /// assert_eq!(UrlPart::DomainSuffix.get(&Url::parse("https://example.co.uk.").unwrap()), Some(Cow::Borrowed("co.uk")));
+    /// assert_eq!(UrlPart::DomainSuffix.get(&BetterUrl::parse("https://example.com"   ).unwrap()), Some(Cow::Borrowed("com"  )), "https://example.com"   );
+    /// assert_eq!(UrlPart::DomainSuffix.get(&BetterUrl::parse("https://example.com."  ).unwrap()), Some(Cow::Borrowed("com"  )), "https://example.com."  );
+    /// assert_eq!(UrlPart::DomainSuffix.get(&BetterUrl::parse("https://example.co.uk" ).unwrap()), Some(Cow::Borrowed("co.uk")), "https://example.co.uk" );
+    /// assert_eq!(UrlPart::DomainSuffix.get(&BetterUrl::parse("https://example.co.uk.").unwrap()), Some(Cow::Borrowed("co.uk")), "https://example.co.uk.");
     /// 
-    /// let mut url = Url::parse("https://example.com.").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com.").unwrap();
     /// UrlPart::DomainSuffix.set(&mut url, Some("co.uk")).unwrap();
-    /// assert_eq!(url.as_str(), "https://example.co.uk/");
+    /// assert_eq!(url.as_str(), "https://example.co.uk./");
     /// UrlPart::DomainSuffix.set(&mut url, None).unwrap();
-    /// assert_eq!(url.as_str(), "https://example/");
+    /// assert_eq!(url.as_str(), "https://example./");
     /// ```
     DomainSuffix,
     /// Useful only for appending a domain segment to a URL as the getter is always `None`.
@@ -490,11 +490,11 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::NextDomainSegment.get(&Url::parse("https://example.com").unwrap()), None);
+    /// assert_eq!(UrlPart::NextDomainSegment.get(&BetterUrl::parse("https://example.com").unwrap()), None);
     /// 
-    /// let mut url=Url::parse("https://example.com").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::NextDomainSegment.set(&mut url, Some("a")).unwrap();
     /// assert_eq!(url.domain(), Some("example.com.a"));
     /// UrlPart::NextDomainSegment.set(&mut url, Some("b")).unwrap();
@@ -517,13 +517,13 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com"    ).unwrap()), Some(Cow::Owned("443".to_string())));
-    /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:443").unwrap()), Some(Cow::Owned("443".to_string())));
-    /// assert_eq!(UrlPart::Port.get(&Url::parse("https://example.com:80" ).unwrap()), Some(Cow::Owned("80" .to_string())));
+    /// assert_eq!(UrlPart::Port.get(&BetterUrl::parse("https://example.com"    ).unwrap()), Some(Cow::Owned("443".to_string())));
+    /// assert_eq!(UrlPart::Port.get(&BetterUrl::parse("https://example.com:443").unwrap()), Some(Cow::Owned("443".to_string())));
+    /// assert_eq!(UrlPart::Port.get(&BetterUrl::parse("https://example.com:80" ).unwrap()), Some(Cow::Owned("80" .to_string())));
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Port.set(&mut url, Some("80")).unwrap();
     /// assert_eq!(UrlPart::Port.get(&url), Some(Cow::Owned("80".to_string())));
     /// UrlPart::Port.set(&mut url, None).unwrap();
@@ -538,8 +538,8 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url=Url::parse("https://example.com/a/b/c").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url=BetterUrl::parse("https://example.com/a/b/c").unwrap();
     /// UrlPart::BeforePathSegment(0).get(&url).is_none();
     /// UrlPart::BeforePathSegment(1).get(&url).is_none();
     /// UrlPart::BeforePathSegment(2).get(&url).is_none();
@@ -567,15 +567,15 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::PathSegment(0).get(&Url::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("")));
-    /// assert_eq!(UrlPart::PathSegment(0).get(&Url::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("a")));
-    /// assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a"   ).unwrap()), None);
-    /// assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a/"  ).unwrap()), Some(Cow::Borrowed("")));
-    /// assert_eq!(UrlPart::PathSegment(1).get(&Url::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("b")));
+    /// assert_eq!(UrlPart::PathSegment(0).get(&BetterUrl::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::PathSegment(0).get(&BetterUrl::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("a")));
+    /// assert_eq!(UrlPart::PathSegment(1).get(&BetterUrl::parse("https://example.com/a"   ).unwrap()), None);
+    /// assert_eq!(UrlPart::PathSegment(1).get(&BetterUrl::parse("https://example.com/a/"  ).unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::PathSegment(1).get(&BetterUrl::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("b")));
     /// 
-    /// let mut url=Url::parse("https://example.com/a/b/c/d").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com/a/b/c/d").unwrap();
     /// UrlPart::PathSegment(1).set(&mut url, Some("e")).unwrap();
     /// assert_eq!(url.path(), "/a/e/c/d");
     /// UrlPart::PathSegment(1).set(&mut url, None).unwrap();
@@ -590,8 +590,8 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url=Url::parse("https://example.com/a/b/c").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url=BetterUrl::parse("https://example.com/a/b/c").unwrap();
     /// UrlPart::AfterPathSegment(0).get(&url).is_none();
     /// UrlPart::AfterPathSegment(1).get(&url).is_none();
     /// UrlPart::AfterPathSegment(2).get(&url).is_none();
@@ -617,14 +617,14 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::NextPathSegment.get(&Url::parse("https://example.com"   ).unwrap()), None);
-    /// assert_eq!(UrlPart::NextPathSegment.get(&Url::parse("https://example.com/"  ).unwrap()), None);
-    /// assert_eq!(UrlPart::NextPathSegment.get(&Url::parse("https://example.com/a" ).unwrap()), None);
-    /// assert_eq!(UrlPart::NextPathSegment.get(&Url::parse("https://example.com/a/").unwrap()), None);
+    /// assert_eq!(UrlPart::NextPathSegment.get(&BetterUrl::parse("https://example.com"   ).unwrap()), None);
+    /// assert_eq!(UrlPart::NextPathSegment.get(&BetterUrl::parse("https://example.com/"  ).unwrap()), None);
+    /// assert_eq!(UrlPart::NextPathSegment.get(&BetterUrl::parse("https://example.com/a" ).unwrap()), None);
+    /// assert_eq!(UrlPart::NextPathSegment.get(&BetterUrl::parse("https://example.com/a/").unwrap()), None);
     /// 
-    /// let mut url=Url::parse("https://example.com").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::NextPathSegment.set(&mut url, Some("a")).unwrap();
     /// assert_eq!(url.path(), "/a");
     /// UrlPart::NextPathSegment.set(&mut url, Some("b")).unwrap();
@@ -639,7 +639,7 @@ pub enum UrlPart {
     /// assert_eq!(url.path(), "/a/b/c");
     ///
     /// // Note that trailing empty path segments are replaced.
-    /// let mut url=Url::parse("https://example.com/a/b/c/").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com/a/b/c/").unwrap();
     /// UrlPart::NextPathSegment.set(&mut url, Some("d")).unwrap();
     /// assert_eq!(url.path(), "/a/b/c/d");
     /// ```
@@ -655,16 +655,16 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("/"   )));
-    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/"    ).unwrap()), Some(Cow::Borrowed("/"   )));
-    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("/a"  )));
-    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("/a"  )));
-    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a/"  ).unwrap()), Some(Cow::Borrowed("/a/" )));
-    /// assert_eq!(UrlPart::Path.get(&Url::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("/a/b")));
+    /// assert_eq!(UrlPart::Path.get(&BetterUrl::parse("https://example.com"     ).unwrap()), Some(Cow::Borrowed("/"   )));
+    /// assert_eq!(UrlPart::Path.get(&BetterUrl::parse("https://example.com/"    ).unwrap()), Some(Cow::Borrowed("/"   )));
+    /// assert_eq!(UrlPart::Path.get(&BetterUrl::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("/a"  )));
+    /// assert_eq!(UrlPart::Path.get(&BetterUrl::parse("https://example.com/a"   ).unwrap()), Some(Cow::Borrowed("/a"  )));
+    /// assert_eq!(UrlPart::Path.get(&BetterUrl::parse("https://example.com/a/"  ).unwrap()), Some(Cow::Borrowed("/a/" )));
+    /// assert_eq!(UrlPart::Path.get(&BetterUrl::parse("https://example.com/a/b" ).unwrap()), Some(Cow::Borrowed("/a/b")));
     ///
-    /// let mut url = Url::parse("https://example.com").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// UrlPart::Path.set(&mut url, Some("abc")).unwrap();
     /// assert_eq!(url.as_str(), "https://example.com/abc");
     /// UrlPart::Path.set(&mut url, Some("")).unwrap();
@@ -681,12 +681,12 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::QueryParam("a".to_string()).get(&Url::parse("https://example.com?a=2&b=3").unwrap()), Some(Cow::Borrowed("2")));
-    /// assert_eq!(UrlPart::QueryParam("c".to_string()).get(&Url::parse("https://example.com?a=2&b=3").unwrap()), None);
+    /// assert_eq!(UrlPart::QueryParam("a".to_string()).get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), Some(Cow::Borrowed("2")));
+    /// assert_eq!(UrlPart::QueryParam("c".to_string()).get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), None);
     /// 
-    /// let mut url=Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com?a=2&b=3").unwrap();
     /// UrlPart::QueryParam("b".to_string()).set(&mut url, Some("2")).unwrap();
     /// assert_eq!(url.query(), Some("a=2&b=2"));
     /// UrlPart::QueryParam("c".to_string()).set(&mut url, Some("4")).unwrap();
@@ -709,12 +709,12 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Query.get(&Url::parse("https://example.com"        ).unwrap()), None);
-    /// assert_eq!(UrlPart::Query.get(&Url::parse("https://example.com?a=2&b=3").unwrap()), Some(Cow::Borrowed("a=2&b=3")));
+    /// assert_eq!(UrlPart::Query.get(&BetterUrl::parse("https://example.com"        ).unwrap()), None);
+    /// assert_eq!(UrlPart::Query.get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), Some(Cow::Borrowed("a=2&b=3")));
     /// 
-    /// let mut url=Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com?a=2&b=3").unwrap();
     /// UrlPart::Query.set(&mut url, Some("c=4")).unwrap();
     /// assert_eq!(url.query(), Some("c=4"));
     /// UrlPart::Query.set(&mut url, None).unwrap();
@@ -731,12 +731,12 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::Fragment.get(&Url::parse("https://example.com"  ).unwrap()), None);
-    /// assert_eq!(UrlPart::Fragment.get(&Url::parse("https://example.com#a").unwrap()), Some(Cow::Borrowed("a")));
+    /// assert_eq!(UrlPart::Fragment.get(&BetterUrl::parse("https://example.com"  ).unwrap()), None);
+    /// assert_eq!(UrlPart::Fragment.get(&BetterUrl::parse("https://example.com#a").unwrap()), Some(Cow::Borrowed("a")));
     /// 
-    /// let mut url=Url::parse("https://example.com#abc").unwrap();
+    /// let mut url=BetterUrl::parse("https://example.com#abc").unwrap();
     /// UrlPart::Fragment.set(&mut url, Some("def")).unwrap();
     /// assert_eq!(url.fragment(), Some("def"));
     /// UrlPart::Fragment.set(&mut url, None).unwrap();
@@ -747,11 +747,11 @@ pub enum UrlPart {
     /// This is abstracted away in [`Self::PathSegment`] but not here.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
     /// let part = UrlPart::PartSegments {part: Box::new(UrlPart::Path), split: "/".to_string(), start: Some(1), end: Some(-1)};
-    /// let mut url = Url::parse("https://example.com/a/b/c/d/e").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com/a/b/c/d/e").unwrap();
     /// 
     /// assert_eq!(part.get(&url), Some(Cow::Owned("a/b/c/d".to_string())));
     /// 
@@ -783,8 +783,8 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.example.com").unwrap();
     /// let part = UrlPart::BeforePartSegment {part: Box::new(UrlPart::Domain), split: ".".to_string(), index: 1};
     /// assert_eq!(part.get(&url),  None);
     /// part.set(&mut url, Some("xyz")).unwrap();
@@ -805,8 +805,8 @@ pub enum UrlPart {
     /// ```
     /// # use std::borrow::Cow;
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.example.com").unwrap();
     /// let part = UrlPart::PartSegment {part: Box::new(UrlPart::Domain), split: ".".to_string(), index: 1};
     /// assert_eq!(part.get(&url),  Some(Cow::Borrowed("example")));
     /// part.set(&mut url, Some("xyz")).unwrap();
@@ -829,8 +829,8 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// # use url::Url;
-    /// # use url_cleaner::types::UrlPart;
-    /// let mut url = Url::parse("https://abc.example.com").unwrap();
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.example.com").unwrap();
     /// let part = UrlPart::AfterPartSegment {part: Box::new(UrlPart::Domain), split: ".".to_string(), index: 1};
     /// assert_eq!(part.get(&url),  None);
     /// part.set(&mut url, Some("xyz")).unwrap();
@@ -853,12 +853,12 @@ pub enum UrlPart {
     /// If the value provided to [`Self::set`] is `None`, it is replaced with `Some("")`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::UrlPart;
+    /// # use url_cleaner::types::*;
     /// # use url::Url;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::NoneToEmptyString(Box::new(UrlPart::Fragment)).get(&Url::parse("https://example.com").unwrap()), Some(Cow::Borrowed("")));
+    /// assert_eq!(UrlPart::NoneToEmptyString(Box::new(UrlPart::Fragment)).get(&BetterUrl::parse("https://example.com").unwrap()), Some(Cow::Borrowed("")));
     /// 
-    /// let mut url = Url::parse("https://example.com/abc").unwrap();
+    /// let mut url = BetterUrl::parse("https://example.com/abc").unwrap();
     /// UrlPart::NoneToEmptyString(Box::new(UrlPart::Path)).set(&mut url, None).unwrap();
     /// assert_eq!(url.path(), "/");
     /// ```
@@ -869,7 +869,7 @@ impl UrlPart {
     /// Extracts the specified part of the provided URL.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
+    pub fn get_url<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
         debug!(UrlPart::get, self, url);
         Some(match self {
             // Ordered hopefully most used to least used.
@@ -891,13 +891,13 @@ impl UrlPart {
                 Cow::Borrowed(url_domain.strip_suffix(psl::domain_str(url_domain)?)?.strip_suffix('.')?)
             },
             Self::NotSubdomain    => Cow::Borrowed(psl::domain_str(url.domain()?)?),
-            Self::MaybeWWWNotSubdomain => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::NotSubdomain.get(url)} else {None}?,
+            Self::MaybeWWWNotSubdomain => if matches!(Self::Subdomain.get_url(url).as_deref(), Some("www") | None) {Self::NotSubdomain.get_url(url)} else {None}?,
             Self::NotDomainSuffix => {
                 let domain=url.domain().map(|x| x.strip_suffix('.').unwrap_or(x))?;
                 Cow::Borrowed(domain.strip_suffix(psl::suffix_str(domain)?)?.strip_suffix('.')?)
             },
             Self::DomainMiddle => Cow::Borrowed(psl::domain_str(url.domain()?)?.split_once('.')?.0),
-            Self::MaybeWWWDomainMiddle => if matches!(Self::Subdomain.get(url).as_deref(), Some("www") | None) {Self::DomainMiddle.get(url)} else {None}?,
+            Self::MaybeWWWDomainMiddle => if matches!(Self::Subdomain.get_url(url).as_deref(), Some("www") | None) {Self::DomainMiddle.get_url(url)} else {None}?,
             Self::Domain       => Cow::Borrowed(url.domain()?),
             Self::DomainSuffix => Cow::Borrowed(url.domain().and_then(psl::suffix_str)?),
             Self::Port         => Cow::Owned(url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
@@ -907,9 +907,9 @@ impl UrlPart {
 
             Self::PartSegments {part, split, start, end} => {
                 // TODO: Change to always borrow when possible.
-                Cow::Owned(neg_vec_keep(part.get(url)?.split(split), *start, *end)?.join(split))
+                Cow::Owned(neg_vec_keep(part.get_url(url)?.split(split), *start, *end)?.join(split))
             },
-            Self::PartSegment {part, split, index} => match part.get(url)? {
+            Self::PartSegment {part, split, index} => match part.get_url(url)? {
                 Cow::Borrowed(v) => Cow::Borrowed(neg_nth(v.split(split), *index)?),
                 Cow::Owned   (v) => Cow::Owned   (neg_nth(v.split(split), *index)?.to_owned())
             },
@@ -931,26 +931,59 @@ impl UrlPart {
 
             // Miscellaneous.
 
-            Self::NoneToEmptyString(part) => part.get(url).unwrap_or(Cow::Borrowed("")),
+            Self::NoneToEmptyString(part) => part.get_url(url).unwrap_or(Cow::Borrowed("")),
             Self::Debug(part) => {
-                let ret = part.get(url);
+                let ret = part.get_url(url);
                 eprintln!("=== UrlPart::Debug ===\nUrlPart: {part:?}\nValue: {ret:?}");
                 ret?
             }
         })
     }
 
+    /// Extracts the specified part of the provided URL.
+    /// # Errors
+    /// See each of [`Self`]'s variant's documentation for details.
+    pub fn get<'a>(&self, url: &'a BetterUrl) -> Option<Cow<'a, str>> {
+        debug!(UrlPart::get_better, self, url);
+        match (self, url.host_details()) {
+            (Self::Subdomain      , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.subdomain_bounds    ()?).map(Into::into),
+            (Self::NotDomainSuffix, Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.not_suffix_bounds   ()?).map(Into::into),
+            (Self::DomainMiddle   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.middle_bounds       ()?).map(Into::into),
+            (Self::NotSubdomain   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.not_subdomain_bounds() ).map(Into::into),
+            (Self::DomainSuffix   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.suffix_bounds       () ).map(Into::into),
+            _ => self.get_url(url)
+        }
+    }
+
     /// Replaces the specified part of the provided URL with the provided value.
     /// If this method returns an error, `url` is left unchanged.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
-    pub fn set(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
+    pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), UrlPartSetError> {
+        debug!(UrlPart::set_better, self, url, to);
+        match self {
+            Self::Subdomain       => url.set_subdomain        (to),
+            Self::NotDomainSuffix => url.set_not_domain_suffix(to),
+            Self::DomainMiddle    => url.set_domain_middle    (to),
+            Self::NotSubdomain    => url.set_not_subdomain    (to),
+            Self::DomainSuffix    => url.set_domain_suffix    (to),
+            Self::Whole | Self::Host | Self::BeforeDomainSegment(_) | Self::DomainSegment(_) | Self::AfterDomainSegment(_) |
+                Self::MaybeWWWNotSubdomain | Self::MaybeWWWDomainMiddle | Self::NextDomainSegment => {self.set_url(url.inner_mut(), to)?; url.set_host_details(url.host().and_then(HostDetails::from_host)); Ok(())}
+            _ => self.set_url(url.inner_mut(), to)
+        }
+    }
+
+    /// Replaces the specified part of the provided URL with the provided value.
+    /// If this method returns an error, `url` is left unchanged.
+    /// # Errors
+    /// See each of [`Self`]'s variant's documentation for details.
+    pub fn set_url(&self, url: &mut Url, to: Option<&str>) -> Result<(), UrlPartSetError> {
         debug!(UrlPart::set, self, url, to);
         match (self, to) {
             (Self::Debug(part), _) => {
-                let old = part.get(url).to_owned();
+                let old = part.get_url(url).to_owned();
                 eprintln!("=== UrlPart::Debug ===\nUrlPart: {part:?}\nOld value: {old:?}\nNew value: {to:?}");
-                part.set(url, to)?;
+                part.set_url(url, to)?;
             }
             // Ordered hopefully most used to least used.
             (Self::Query, _) => url.set_query(to),
@@ -987,18 +1020,18 @@ impl UrlPart {
                     Some(to) => {
                         let mut new_domain=to.to_string();
                         new_domain.push('.');
-                        new_domain.push_str(&Self::NotSubdomain.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?);
+                        new_domain.push_str(&Self::NotSubdomain.get_url(url).ok_or(UrlPartGetError::HostIsNotADomain)?);
                         set_domain(url, &new_domain)?;
                     },
                     None => {
                         #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-                        set_domain(url, &Self::NotSubdomain.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?.into_owned())?;
+                        set_domain(url, &Self::NotSubdomain.get_url(url).ok_or(UrlPartGetError::HostIsNotADomain)?.into_owned())?;
                     }
                 }
             },
             (Self::NotSubdomain, _) => match to {
                 Some(to) => {
-                    let mut new_domain=Self::Subdomain.get(url).unwrap_or_default().to_string();
+                    let mut new_domain=Self::Subdomain.get_url(url).unwrap_or_default().to_string();
                     if !new_domain.is_empty() {
                         new_domain.push('.');
                     }
@@ -1007,23 +1040,23 @@ impl UrlPart {
                 },
                 None => {
                     #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-                    set_domain(url, &Self::Subdomain.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?.to_string())?;
+                    set_domain(url, &Self::Subdomain.get_url(url).ok_or(UrlPartGetError::HostIsNotADomain)?.to_string())?;
                 }
             },
-            (Self::MaybeWWWNotSubdomain, _) => match Self::Subdomain.get(url).as_deref() {
-                Some("www") | None => Self::NotSubdomain.set(url, to), // What did you think "behaves the same" meant? :P
+            (Self::MaybeWWWNotSubdomain, _) => match Self::Subdomain.get_url(url).as_deref() {
+                Some("www") | None => Self::NotSubdomain.set_url(url, to), // What did you think "behaves the same" meant? :P
                 _ => Err(UrlPartSetError::HostIsNotMaybeWWWDomain)
             }?,
             (Self::NotDomainSuffix, _) => {
                 let domain = match to {
-                    Some(to) => format!("{}.{}", to, Self::DomainSuffix.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?),
-                    None     => Self::DomainSuffix.get(url).ok_or(UrlPartGetError::HostIsNotADomain)?.to_string()
+                    Some(to) => format!("{}.{}", to, Self::DomainSuffix.get_url(url).ok_or(UrlPartGetError::HostIsNotADomain)?),
+                    None     => Self::DomainSuffix.get_url(url).ok_or(UrlPartGetError::HostIsNotADomain)?.to_string()
                 };
                 set_domain(url, &domain)?;
             },
             (Self::DomainMiddle, _) => {
                 #[allow(clippy::useless_format, reason = "Visual consistency/patterns.")]
-                set_domain(url, &match (Self::Subdomain.get(url), to, Self::DomainSuffix.get(url), url.domain().ok_or(UrlPartGetError::HostIsNotADomain)?.ends_with('.')) {
+                set_domain(url, &match (Self::Subdomain.get_url(url), to, Self::DomainSuffix.get_url(url), url.domain().ok_or(UrlPartGetError::HostIsNotADomain)?.ends_with('.')) {
                     // I do not know or care if any of these are impossible.
                     // Future me here: I care slightly.
                     (Some(subdomain), Some(to), Some(suffix), true ) => format!("{subdomain}.{to}.{suffix}."),
@@ -1044,13 +1077,13 @@ impl UrlPart {
                     (None           , None    , None        , false) => format!("")
                 })?;
             },
-            (Self::MaybeWWWDomainMiddle, _) => match Self::Subdomain.get(url).as_deref() {
-                Some("www") | None => Self::DomainMiddle.set(url, to), // What did you think "behaves the same" meant? :P
+            (Self::MaybeWWWDomainMiddle, _) => match Self::Subdomain.get_url(url).as_deref() {
+                Some("www") | None => Self::DomainMiddle.set_url(url, to), // What did you think "behaves the same" meant? :P
                 _ => Err(UrlPartSetError::HostIsNotMaybeWWWDomain)
             }?,
             (Self::Domain        , Some(to)) => set_domain(url, to)?,
             (Self::DomainSuffix  , _) => {
-                let not_suffix=Self::NotDomainSuffix.get(url).ok_or(UrlPartGetError::PartIsNone)?;
+                let not_suffix=Self::NotDomainSuffix.get_url(url).ok_or(UrlPartGetError::PartIsNone)?;
                 match &*match to {
                     Some(to) => format!("{}.{}", not_suffix, to),
                     None     => not_suffix.to_string()
@@ -1124,20 +1157,20 @@ impl UrlPart {
             }
 
             (Self::PartSegments {part, split, start, end}, _) => {
-                let temp=part.get(url).ok_or(UrlPartGetError::PartIsNone)?;
+                let temp=part.get_url(url).ok_or(UrlPartGetError::PartIsNone)?;
                 let mut temp2=temp.split(split).collect::<Vec<_>>();
                 temp2.splice(neg_range(*start, *end, temp2.len()).ok_or(UrlPartGetError::SegmentRangeNotFound)?, to);
-                part.set(url, Some(&temp2.join(split)))?;
+                part.set_url(url, Some(&temp2.join(split)))?;
             },
             (Self::BeforePartSegment{part, split, index}, _) => if let Some(to) = to {
-                let temp = part.get(url).ok_or(UrlPartGetError::PartIsNone)?;
+                let temp = part.get_url(url).ok_or(UrlPartGetError::PartIsNone)?;
                 let mut segments = temp.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_range_boundary(*index, segments.len()).ok_or(UrlPartGetError::SegmentNotFound)?;
                 segments.insert(fixed_n, to);
-                part.set(url, Some(&segments.join(split)))?;
+                part.set_url(url, Some(&segments.join(split)))?;
             },
             (Self::PartSegment      {part, split, index}, _) => {
-                let temp = part.get(url).ok_or(UrlPartGetError::PartIsNone)?;
+                let temp = part.get_url(url).ok_or(UrlPartGetError::PartIsNone)?;
                 let mut segments = temp.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_index(*index, segments.len()).ok_or(UrlPartGetError::SegmentNotFound)?;
                 if fixed_n==segments.len() {Err(UrlPartGetError::SegmentNotFound)?;}
@@ -1147,16 +1180,16 @@ impl UrlPart {
                     Some(to) => segments[fixed_n]=to,
                     None     => {segments.remove(fixed_n);}
                 }
-                part.set(url, Some(&segments.join(split)))?;
+                part.set_url(url, Some(&segments.join(split)))?;
             },
             (Self::AfterPartSegment {part, split, index}, _) => if let Some(to) = to {
-                let temp = part.get(url).ok_or(UrlPartGetError::PartIsNone)?;
+                let temp = part.get_url(url).ok_or(UrlPartGetError::PartIsNone)?;
                 let mut segments = temp.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_shifted_range_boundary(*index, segments.len(), 1).ok_or(UrlPartGetError::SegmentNotFound)?;
                 segments.insert(fixed_n, to);
-                part.set(url, Some(&segments.join(split)))?;
+                part.set_url(url, Some(&segments.join(split)))?;
             },
-            (Self::NoneToEmptyString(part), _) => part.set(url, to.or(Some("")))?,
+            (Self::NoneToEmptyString(part), _) => part.set_url(url, to.or(Some("")))?,
 
             // The things that are likely very rarely used.
 
@@ -1277,7 +1310,10 @@ pub enum UrlPartSetError {
     HostIsNotMaybeWWWDomain,
     /// Returned when Attempting to set a URL's UrlPart::HostWithoutWWWDotPrefix when its UrlPart::Host does not start with \"www.\".
     #[error("Attempted to set a URL's UrlPart::HostWithoutWWWDotPrefix when its UrlPart::Host does not start with \"www.\".")]
-    HostDoesNotStartWithWWWDot
+    HostDoesNotStartWithWWWDot,
+    /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
+    #[error("The URL's host is not a domain.")]
+    HostIsNotADomain
 }
 
 #[allow(clippy::unwrap_used, reason = "Panicking tests are easier to write than erroring tests.")]
@@ -1306,9 +1342,16 @@ mod tests {
     macro_rules! identity_check_2 {
         ($urls:expr, $($expr:expr),+) => {
             $(for mut url in $urls.iter().map(|url| Url::parse(url).unwrap()) {
-                let old=$expr.get(&url).map(Cow::into_owned);
-                $expr.set(&mut url, old.as_deref()).expect(&format!("{:?}: {url:?}", $expr));
-                assert_eq!($expr.get(&url).as_deref(), old.as_deref());
+                let old=$expr.get_url(&url).map(Cow::into_owned);
+                let old_better=$expr.get(&url.clone().into()).map(Cow::into_owned);
+                assert_eq!(old, old_better, "Url and BetterUrl disagree on {:?}", $expr);
+                $expr.set_url(&mut url, old.as_deref()).expect(&format!("Url: {:?}: {url:?}", $expr));
+                assert_eq!($expr.get_url(&url).as_deref(), old.as_deref(), "Url: {:?}", $expr);
+                let mut url = url.into();
+                println!("Before setting {:?} using BetterUrl: {url:?}", $expr);
+                $expr.set(&mut url, old.as_deref()).expect(&format!("BetterUrl: {:?}: {url:?}, {url:?}", $expr));
+                println!("After setting {:?} using BetterUrl: {url:?}", $expr);
+                assert_eq!($expr.get(&url).as_deref(), old.as_deref(), "BetterUrl: {:?}, {url:?}", $expr);
             })+
         };
     }

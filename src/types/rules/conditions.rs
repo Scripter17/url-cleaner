@@ -196,16 +196,16 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
     /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
     /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     UnqualifiedDomain(String),
@@ -219,13 +219,13 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
     /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://not.example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://not.example.com").unwrap();
     /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
     MaybeWWWDomain(String),
@@ -238,16 +238,16 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.com"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
     /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
     /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
     /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     QualifiedDomain(String),
@@ -264,7 +264,7 @@ pub enum Condition {
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://example2.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example2.com").unwrap();
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
@@ -281,37 +281,37 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.example.co.uk" ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.example.co.uk" ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
-    /// *job_state.url = Url::parse("https://www.aexample.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.aexample.example.co.uk").unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
-    /// *job_state.url = Url::parse("https://www.aexample.co.uk"        ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.aexample.co.uk"        ).unwrap();
     /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
     UnqualifiedAnySuffix(String),
@@ -328,17 +328,17 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = Url::parse("https://not.example.com"  ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://not.example.com"  ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = Url::parse("https://not.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://not.example.co.uk").unwrap();
     /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
     MaybeWWWAnySuffix(String),
@@ -354,28 +354,28 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.com"      ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.co.uk"    ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.com"  ).unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
-    /// *job_state.url = Url::parse("https://www.example.co.uk").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
     /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     QualifiedAnySuffix(String),
@@ -389,13 +389,13 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com?a=2&b=3").unwrap();
     /// assert_eq!(Condition::QueryHasParam("a".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com?a=2&b=3").unwrap();
     /// assert_eq!(Condition::QueryHasParam("b".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
-    /// *job_state.url = Url::parse("https://example.com?a=2&b=3").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com?a=2&b=3").unwrap();
     /// assert_eq!(Condition::QueryHasParam("c".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
     QueryHasParam(String),
@@ -407,16 +407,16 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// 
-    /// *job_state.url = Url::parse("https://example.com").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
-    /// *job_state.url = Url::parse("https://example.com/").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com/").unwrap();
     /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
-    /// *job_state.url = Url::parse("https://example.com/a").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com/a").unwrap();
     /// assert_eq!(Condition::PathIs("/a" .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
-    /// *job_state.url = Url::parse("https://example.com/a/").unwrap();
+    /// *job_state.url = BetterUrl::parse("https://example.com/a/").unwrap();
     /// assert_eq!(Condition::PathIs("/a/".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// ```
     PathIs(String),
