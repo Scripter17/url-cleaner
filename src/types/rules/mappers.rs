@@ -1,7 +1,7 @@
 //! The logic for how to modify a URL.
 
 use std::str::Utf8Error;
-use std::collections::hash_set::HashSet;
+use std::collections::HashSet;
 use std::time::Duration;
 
 use serde::{Serialize, Deserialize};
@@ -95,14 +95,12 @@ pub enum Mapper {
     AllIgnoreError(Vec<Self>),
     /// Indexes `map` with the string returned by `part` and applies that mapper.
     /// # Errors
-    /// If no mapper is found, returns the error [`MapperError::MapperNotFound`].
-    /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     PartMap {
         /// The part to index `map` with.
         part: UrlPart,
         /// The map specifying which values should apply which mapper.
-        map: HashMap<Option<String>, Self>,
+        map: HashMap<String, Self>,
         /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
         /// 
         /// Useful because JSON doesn't allow maps to use `null` as keys.
@@ -120,14 +118,12 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If no mapper is found, returns the error [`MapperError::MapperNotFound`].
-    /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     StringMap {
         /// The string to index `map` with.
-        value: Option<StringSource>,
+        value: StringSource,
         /// The map specifying which strings should apply which mapper.
-        map: HashMap<Option<String>, Self>,
+        map: HashMap<String, Self>,
         /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
         /// 
         /// Useful because JSON doesn't allow maps to use `null` as keys.
@@ -199,11 +195,11 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state; url = "https://example.com?a=2&b=3&c=4&d=5";);
     /// 
-    /// Mapper::RemoveQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
+    /// Mapper::RemoveQueryParams(["a".to_string()].into()).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.query(), Some("b=3&c=4&d=5"));
-    /// Mapper::RemoveQueryParams(HashSet::from(["b".to_string(), "c".to_string()])).apply(&mut job_state).unwrap();
+    /// Mapper::RemoveQueryParams(["b".to_string(), "c".to_string()].into()).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.query(), Some("d=5"));
-    /// Mapper::RemoveQueryParams(HashSet::from(["d".to_string()])).apply(&mut job_state).unwrap();
+    /// Mapper::RemoveQueryParams(["d".to_string()].into()).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.query(), None);
     /// ```
     RemoveQueryParams(HashSet<String>),
@@ -215,7 +211,7 @@ pub enum Mapper {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state; url = "https://example.com?a=2&b=3";);
     /// 
-    /// Mapper::AllowQueryParams(HashSet::from(["a".to_string()])).apply(&mut job_state).unwrap();
+    /// Mapper::AllowQueryParams(["a".to_string()].into()).apply(&mut job_state).unwrap();
     /// assert_eq!(job_state.url.as_str(), "https://example.com/?a=2");
     /// ```
     AllowQueryParams(HashSet<String>),
@@ -607,24 +603,8 @@ impl Mapper {
                     let _=mapper.apply(job_state);
                 }
             },
-            Self::PartMap {part, map, if_null, r#else} => {
-                let key = part.get(job_state.url).map(|x| x.into_owned());
-                match (key.is_none(), map.get(&key), if_null, r#else) {
-                    (_   , Some(mapper), _           , _           ) => mapper,
-                    (true, None        , Some(mapper), _           ) => mapper,
-                    (_   , _           , _           , Some(mapper)) => mapper,
-                    _ => Err(MapperError::MapperNotFound)?
-                }.apply(job_state)?
-            },
-            Self::StringMap {value, map, if_null, r#else} => {
-                let key = get_option_string!(value, job_state);
-                match (key.is_none(), map.get(&key), if_null, r#else) {
-                    (_   , Some(mapper), _           , _           ) => mapper,
-                    (true, _           , Some(mapper), _           ) => mapper,
-                    (_   , _           , _           , Some(mapper)) => mapper,
-                    _ => Err(MapperError::MapperNotFound)?
-                }.apply(job_state)?
-            },
+            Self::PartMap  {part , map, if_null, r#else} => if let Some(mapper) = part .get( job_state.url      ) .map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {mapper.apply(job_state)?},
+            Self::StringMap{value, map, if_null, r#else} => if let Some(mapper) = value.get(&job_state.to_view())?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {mapper.apply(job_state)?},
 
             // Error handling.
 
@@ -643,15 +623,15 @@ impl Mapper {
 
             Self::RemoveQuery => job_state.url.set_query(None),
             Self::RemoveQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(job_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len())).extend_pairs(job_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
                 job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::AllowQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(job_state.url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
+                let new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len())).extend_pairs(job_state.url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
                 job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
             Self::RemoveQueryParamsMatching(matcher) => {
-                let mut new_query=form_urlencoded::Serializer::new(String::new());
+                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len()));
                 for (name, value) in job_state.url.query_pairs() {
                     if !matcher.satisfied_by(&name, &job_state.to_view())? {
                         new_query.append_pair(&name, &value);
@@ -661,7 +641,7 @@ impl Mapper {
                 job_state.url.set_query((!x.is_empty()).then_some(&x));
             },
             Self::AllowQueryParamsMatching(matcher) => {
-                let mut new_query=form_urlencoded::Serializer::new(String::new());
+                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len()));
                 for (name, value) in job_state.url.query_pairs() {
                     if matcher.satisfied_by(&name, &job_state.to_view())? {
                         new_query.append_pair(&name, &value);
@@ -803,7 +783,7 @@ impl Mapper {
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
-            Self::StringMap {value, map, if_null, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::StringMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
             Self::IgnoreError(mapper) => mapper.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),

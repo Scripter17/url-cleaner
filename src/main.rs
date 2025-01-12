@@ -2,7 +2,6 @@
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
-use std::borrow::Cow;
 use std::process::ExitCode;
 use std::str::FromStr;
 
@@ -23,28 +22,26 @@ mod util;
 /// Source code: https://github.com/Scripter17/url-cleaner
 /// 
 /// Enabled features:
-#[cfg_attr(feature = "default-config"     , doc = "default-config"     )]
-#[cfg_attr(feature = "regex"              , doc = "regex"              )]
-#[cfg_attr(feature = "glob"               , doc = "glob"               )]
-#[cfg_attr(feature = "http"               , doc = "http"               )]
-#[cfg_attr(feature = "cache"              , doc = "cache"              )]
-#[cfg_attr(feature = "base64"             , doc = "base64"             )]
-#[cfg_attr(feature = "commands"           , doc = "commands"           )]
-#[cfg_attr(feature = "custom"             , doc = "custom"             )]
-#[cfg_attr(feature = "experiment-parallel", doc = "experiment-parallel")]
-#[cfg_attr(feature = "debug"              , doc = "debug"              )]
+#[cfg_attr(feature = "default-config"     , doc = "default-config")]
+#[cfg_attr(feature = "regex"              , doc = "regex"         )]
+#[cfg_attr(feature = "glob"               , doc = "glob"          )]
+#[cfg_attr(feature = "http"               , doc = "http"          )]
+#[cfg_attr(feature = "cache"              , doc = "cache"         )]
+#[cfg_attr(feature = "base64"             , doc = "base64"        )]
+#[cfg_attr(feature = "commands"           , doc = "commands"      )]
+#[cfg_attr(feature = "custom"             , doc = "custom"        )]
+#[cfg_attr(feature = "debug"              , doc = "debug"         )]
 /// 
 /// Disabled features:
-#[cfg_attr(not(feature = "default-config"     ), doc = "default-config"     )]
-#[cfg_attr(not(feature = "regex"              ), doc = "regex"              )]
-#[cfg_attr(not(feature = "glob"               ), doc = "glob"               )]
-#[cfg_attr(not(feature = "http"               ), doc = "http"               )]
-#[cfg_attr(not(feature = "cache"              ), doc = "cache"              )]
-#[cfg_attr(not(feature = "base64"             ), doc = "base64"             )]
-#[cfg_attr(not(feature = "commands"           ), doc = "commands"           )]
-#[cfg_attr(not(feature = "custom"             ), doc = "custom"             )]
-#[cfg_attr(not(feature = "experiment-parallel"), doc = "experiment-parallel")]
-#[cfg_attr(not(feature = "debug"              ), doc = "debug"              )]
+#[cfg_attr(not(feature = "default-config"), doc = "default-config")]
+#[cfg_attr(not(feature = "regex"         ), doc = "regex"         )]
+#[cfg_attr(not(feature = "glob"          ), doc = "glob"          )]
+#[cfg_attr(not(feature = "http"          ), doc = "http"          )]
+#[cfg_attr(not(feature = "cache"         ), doc = "cache"         )]
+#[cfg_attr(not(feature = "base64"        ), doc = "base64"        )]
+#[cfg_attr(not(feature = "commands"      ), doc = "commands"      )]
+#[cfg_attr(not(feature = "custom"        ), doc = "custom"        )]
+#[cfg_attr(not(feature = "debug"         ), doc = "debug"         )]
 pub struct Args {
     /// The URLs to clean before the URLs in the STDIN.
     pub urls: Vec<String>,
@@ -92,7 +89,6 @@ pub struct Args {
     /// Amount of threads to process jobs in.
     /// 
     /// Zero gets the current CPU threads.
-    #[cfg(feature = "experiment-parallel")]
     #[arg(long, default_value_t = 0)]
     pub threads: usize
 }
@@ -116,8 +112,8 @@ fn str_to_json_str(s: &str) -> String {
 }
 
 fn main() -> Result<ExitCode, CliError> {
-    let some_ok = std::sync::Mutex::new(false);
-    let some_error = std::sync::Mutex::new(false);
+    let some_ok  = std::sync::Mutex::new(false);
+    let some_err = std::sync::Mutex::new(false);
 
     let args = Args::parse();
 
@@ -138,14 +134,7 @@ fn main() -> Result<ExitCode, CliError> {
         match args.params_diff_args.try_into() {
             Ok(params_diff) => params_diffs.push(params_diff),
             Err(e) => Args::command()
-                .error(
-                    clap::error::ErrorKind::WrongNumberOfValues,
-                    match e {
-                        ParamsDiffArgParserValueWrong::InsertIntoMapNeedsAMap   => "--insert-into-map needs a map to insert key-value pairs into.",
-                        ParamsDiffArgParserValueWrong::InsertIntoMapNeedsAValue => "--insert-into-map found a key without a value at the end.",
-                        ParamsDiffArgParserValueWrong::RemoveFromMapNeedsAMap   => "--remove-from-map needs a map to remove keys from."
-                    }
-                )
+                .error(clap::error::ErrorKind::WrongNumberOfValues, e.as_str())
                 .exit()
         }
     }
@@ -171,201 +160,132 @@ fn main() -> Result<ExitCode, CliError> {
 
     if no_cleaning {std::process::exit(0);}
 
-    #[cfg(feature = "experiment-parallel")]
-    {
-        let mut threads = args.threads;
-        if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
-        let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
-        let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let mut threads = args.threads;
+    if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
+    let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>()).collect::<(Vec<_>, Vec<_>)>();
 
-        let config_ref = &config;
-        #[cfg(feature = "cache")]
-        let cache: Cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
-        #[cfg(feature = "cache")]
-        let cache_ref = &cache;
+    let config_ref = &config;
+    #[cfg(feature = "cache")]
+    let cache: Cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
+    #[cfg(feature = "cache")]
+    let cache_ref = &cache;
 
-        std::thread::scope(|s| {
-            s.spawn(move || {
-                let job_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
-                    let ret = args.urls.into_iter().map(Ok);
-                    if !io::stdin().is_terminal() {
-                        Box::new(ret.chain(io::stdin().lines()))
-                    } else {
-                        Box::new(ret)
-                    }
-                };
-
-                for (i, job_config_string) in job_config_strings_source.enumerate() {
-                    #[allow(clippy::arithmetic_side_effects, reason = "Whatever exactly the issue with `i % threads` is it will, at worst, give slightly worse load balancing around each multiple of usize::MAX jobs. I think that's fine.")]
-                    in_senders.get(i % threads).expect("The amount of senders to not exceed the count of senders to make.").send(job_config_string).expect("To successfuly send the Job.");
-                }
-            });
-
-            in_recievers.into_iter().zip(out_senders).map(|(ir, os)| {
-                s.spawn(move || {
-                    while let Ok(maybe_job_config_string) = ir.recv() {
-                        let ret = match maybe_job_config_string {
-                            Ok(job_config_string) => JobConfig::from_str(&job_config_string)
-                                .map(|JobConfig{url, context}|
-                                    Job {
-                                        url,
-                                        context,
-                                        config: config_ref,
-                                        #[cfg(feature = "cache")]
-                                        cache: cache_ref
-                                    }.r#do()
-                                )
-                                .map_err(MakeJobError::MakeJobConfigError),
-                            Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))
-                        };
-
-                        os.send(ret).expect("The receiver to still exist.");
-                    }
-                });
-            }).for_each(drop);
-
-            let some_ok_ref = &some_ok;
-            let some_error_ref = &some_error;
-
-            if json {
-                s.spawn(move || {
-                    let mut disconnected = 0usize;
-                    let mut first_job = true;
-                    let mut some_ok_ref_lock = some_ok_ref.lock().expect("No panics.");
-                    let mut some_error_ref_lock = some_error_ref.lock().expect("No panics.");
-
-                    print!("{{\"Ok\":{{\"urls\":[");
-                    for or in out_recievers.iter().cycle() {
-                        match or.recv() {
-                            Ok(Ok(Ok(url))) => {
-                                if !first_job {print!(",");}
-                                print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
-                                *some_ok_ref_lock = true;
-                                first_job = false;
-                            },
-                            Ok(Ok(Err(e))) => {
-                                if !first_job {print!(",");}
-                                print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                                *some_error_ref_lock = true;
-                                first_job = false;
-                            },
-                            Ok(Err(e)) => {
-                                if !first_job {print!(",");}
-                                print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                                *some_error_ref_lock = true;
-                                first_job = false;
-                            },
-                            Err(_) => {
-                                #[allow(clippy::arithmetic_side_effects, reason = "Can't even come close to usize::MAX threads and this is capped by thread count.")]
-                                {disconnected += 1;}
-                                if disconnected == threads {break;}
-                            }
-                        }
-                    }
-
-                    print!("]}}}}");
-                });
-            } else {
-                s.spawn(move || {
-                    let mut disconnected = 0usize;
-                    let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
-                    let mut some_error_ref_lock = some_error_ref.lock().expect("No panics.");
-
-                    for or in out_recievers.iter().cycle() {
-                        match or.recv() {
-                            Ok(Ok(Ok(url))) => {
-                                println!("{url}");
-                                *some_ok_ref_lock = true;
-                            },
-                            Ok(Ok(Err(e))) => {
-                                println!();
-                                eprintln!("DoJobError\t{e:?}");
-                                *some_error_ref_lock = true;
-                            }
-                            Ok(Err(e)) => {
-                                println!();
-                                eprintln!("MakeJobError\t{e:?}");
-                                *some_error_ref_lock = true;
-                            }
-                            Err(_) => {
-                                #[allow(clippy::arithmetic_side_effects, reason = "Can't even come close to usize::MAX threads and this is capped by thread count.")]
-                                {disconnected += 1;}
-                                if disconnected == threads {break;}
-                            }
-                        }
-                    }
-                });
-            }
-        })
-    }
-
-    #[cfg(not(feature = "experiment-parallel"))]
-    {
-        let mut jobs = Jobs {
-            #[cfg(feature = "cache")]
-            cache: args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into(),
-            job_configs_source: {
-                let ret = args.urls.into_iter().map(|url| JobConfig::from_str(&url));
+    std::thread::scope(|s| {
+        s.spawn(move || {
+            let job_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
+                let ret = args.urls.into_iter().map(Ok);
                 if !io::stdin().is_terminal() {
-                    Box::new(ret.chain(io::stdin().lines().map(|line| JobConfig::from_str(&line?))))
+                    Box::new(ret.chain(io::stdin().lines()))
                 } else {
                     Box::new(ret)
                 }
-            },
-            config: Cow::Owned(config)
-        };
+            };
+
+            for (i, job_config_string) in job_config_strings_source.enumerate() {
+                #[allow(clippy::arithmetic_side_effects, reason = "Whatever exactly the issue with `i % threads` is it will, at worst, give slightly worse load balancing around each multiple of usize::MAX jobs. I think that's fine.")]
+                in_senders.get(i % threads).expect("The amount of senders to not exceed the count of senders to make.").send(job_config_string).expect("To successfuly send the Job.");
+            }
+        });
+
+        in_recievers.into_iter().zip(out_senders).map(|(ir, os)| {
+            s.spawn(move || {
+                while let Ok(maybe_job_config_string) = ir.recv() {
+                    let ret = match maybe_job_config_string {
+                        Ok(job_config_string) => JobConfig::from_str(&job_config_string)
+                            .map(|JobConfig{url, context}|
+                                Job {
+                                    url,
+                                    context,
+                                    config: config_ref,
+                                    #[cfg(feature = "cache")]
+                                    cache: cache_ref
+                                }.r#do()
+                            )
+                            .map_err(MakeJobError::MakeJobConfigError),
+                        Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))
+                    };
+
+                    os.send(ret).expect("The receiver to still exist.");
+                }
+            });
+        }).for_each(drop);
+
+        let some_ok_ref  = &some_ok;
+        let some_err_ref = &some_err;
 
         if json {
-            print!("{{\"Ok\":{{\"urls\":[");
-            let mut first_job = true;
+            s.spawn(move || {
+                let mut disconnected = 0usize;
+                let mut first_job = true;
+                let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
+                let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
 
-            for job in jobs.iter() {
-                if !first_job {print!(",");}
-                match job {
-                    Ok(job) => match job.r#do() {
-                        Ok(url) => {
+                print!("{{\"Ok\":{{\"urls\":[");
+                for or in out_recievers.iter().cycle() {
+                    match or.recv() {
+                        Ok(Ok(Ok(url))) => {
+                            if !first_job {print!(",");}
                             print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
-                            *some_ok.lock().expect("No panics.") = true;
+                            *some_ok_ref_lock = true;
+                            first_job = false;
                         },
-                        Err(e) => {
+                        Ok(Ok(Err(e))) => {
+                            if !first_job {print!(",");}
                             print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                            *some_error.lock().expect("No panics.") = true;
+                            *some_err_ref_lock = true;
+                            first_job = false;
+                        },
+                        Ok(Err(e)) => {
+                            if !first_job {print!(",");}
+                            print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                            *some_err_ref_lock = true;
+                            first_job = false;
+                        },
+                        Err(_) => {
+                            #[allow(clippy::arithmetic_side_effects, reason = "Can't even come close to usize::MAX threads and this is capped by thread count.")]
+                            {disconnected += 1;}
+                            if disconnected == threads {break;}
                         }
-                    },
-                    Err(e) => {
-                        print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                        *some_error.lock().expect("No panics.") = true;
                     }
                 }
-                first_job = false;
-            }
 
-            print!("]}}}}");
+                print!("]}}}}");
+            });
         } else {
-            for job in jobs.iter() {
-                match job {
-                    Ok(job) => match job.r#do() {
-                        Ok(url) => {
-                            println!("{url}");
-                            *some_ok.lock().expect("No panics.") = true;
+            s.spawn(move || {
+                let mut disconnected = 0usize;
+                let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
+                let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
+
+                for or in out_recievers.iter().cycle() {
+                    match or.recv() {
+                        Ok(Ok(Ok(url))) => {
+                            println!("{}", url.as_str());
+                            *some_ok_ref_lock = true;
                         },
-                        Err(e) => {
+                        Ok(Ok(Err(e))) => {
                             println!();
                             eprintln!("DoJobError\t{e:?}");
-                            *some_error.lock().expect("No panics.") = true;
+                            *some_err_ref_lock = true;
                         }
-                    },
-                    Err(e) => {
-                        println!();
-                        eprintln!("MakeJobError\t{e:?}");
-                        *some_error.lock().expect("No panics.") = true;
+                        Ok(Err(e)) => {
+                            println!();
+                            eprintln!("MakeJobError\t{e:?}");
+                            *some_err_ref_lock = true;
+                        }
+                        Err(_) => {
+                            #[allow(clippy::arithmetic_side_effects, reason = "Can't even come close to usize::MAX threads and this is capped by thread count.")]
+                            {disconnected += 1;}
+                            if disconnected == threads {break;}
+                        }
                     }
                 }
-            }
+            });
         }
-    }
+    });
 
-    return Ok(match (*some_ok.lock().expect("No panics."), *some_error.lock().expect("No panics.")) {
+    return Ok(match (*some_ok.lock().expect("No panics."), *some_err.lock().expect("No panics.")) {
         (false, false) => 0,
         (false, true ) => 1,
         (true , false) => 0,

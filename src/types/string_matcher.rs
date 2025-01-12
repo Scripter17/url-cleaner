@@ -371,7 +371,7 @@ impl StringMatcher {
             Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, job_state)?; temp}, job_state)?,
             #[cfg(feature = "regex")] Self::Regex(regex) => regex.get_regex()?.is_match(haystack),
             #[cfg(feature = "glob" )] Self::Glob(glob) => glob.matches(haystack),
-            Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars)=="",
+            Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars).is_empty(),
             Self::AllCharsMatch(matcher) => {
                 for char in haystack.chars() {
                     if !matcher.satisfied_by(char)? {

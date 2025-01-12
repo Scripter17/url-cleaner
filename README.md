@@ -21,7 +21,7 @@ Also if you're using URL Cleaner in life-or-death scenarios please be extremely 
 
 ## C dependencies
 
-These packages are required on Kubuntu 2024.04 (and probably therefore all Debian based distros.):
+These packages are required on Kubuntu 2024.04 (and therefore probably all Debian based distros.):
 
 - `libssl-dev` for the `http` feature flag.
 - `libsqlite3-dev` for the `caching` feature flag.
@@ -148,60 +148,44 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-(The numbers are in milliseconds)
+Last updated 2025-01-11
+
+Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0":       5.142,
-    "1":       5.315,
-    "10":      5.384,
-    "100":     5.644,
-    "1000":    9.067,
-    "10000":  42.959
+    "0":        6.174,
+    "1":        6.167,
+    "10":       6.232,
+    "100":      6.466,
+    "1000":     8.574,
+    "10000":   27.958
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0":       5.156,
-    "1":       5.270,
-    "10":      5.275,
-    "100":     5.832,
-    "1000":   10.655,
-    "10000":  57.388
+    "0":        6.098,
+    "1":        6.188,
+    "10":       6.290,
+    "100":      6.505,
+    "1000":     9.231,
+    "10000":   39.425
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0":       5.233,
-    "1":       5.261,
-    "10":      5.331,
-    "100":     6.229,
-    "1000":   14.599,
-    "10000":  95.087
+    "0":        6.110,
+    "1":        6.139,
+    "10":       6.200,
+    "100":      6.654,
+    "1000":    10.530,
+    "10000":   52.233
   }
 }
 ```
 
+For reasons not yet known to me, everything from an Intel i5-8500 (6) @ 4.100GHz to an AMD Ryzen 9 7950X3D (32) @ 5.759GHz seems to max out at between 140 and 110ms per 100k (not a typo) of the amazon URL despite the second CPU being significantly more powerful.
+
 In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is significantly (but not severely) worse.  
 Often the first few cleanings will take a few hundred milliseconds each because the page is still loading.  
 However, because of the overhead of using HTTP (even if it's just to localhost) subsequent cleanings, for me, are basically always at least 10ms.
-
-Mileage varies wildly but as long as you're not spawning a new instance of URL Cleaner for each URL it should be fast enough.
-
-Also startup time varies wildly. My laptop takes 5-6ms to start it but every other computer I've tested takes 10ms. Really not sure why because the other computers are massively faster.
-
-##### Parallelization
-
-There is (currently still experimental) support for parallelization.
-
-On the same laptop as the above benchmarks, the default settings make 10k of the amazon URL go from 95ms to 51ms.  
-On my desktop with an Intel i5-8500 (6) @ 4.100GHz, that benchmark gets around 17ms and one *hundred* thousand of the URL takes about 138ms.  
-On my friend's dekstop with an AMD Ryzen 9 7950X3D (32) @ 5.759GHz, doing the same 100k amazon URL benchmark takes about (TODO: REBENCH).  
-
-Network requests and interacting with the cache have effects on performance that I haven't yet properly looked into.
-
-Please note that at this time parallelization has no effects on the library's API.  
-It's not obvious how I would design it so I'm waiting for inspiration to strike.
-
-Also please note that compiling with parallelization then setting the thread count to 1 gives worse performance than not compiling with parallelization.  
-Through very basic testing, 2 threads seems to be about the same as not compiling with parallelization.
 
 #### Credits
 
@@ -287,7 +271,7 @@ Currently, the exit code is determined by the following rules:
 - If no   cleanings work and none fail, returns 0. This only applies if no URLs are provided.
 - If no   cleanings work and some fail, returns 1.
 - If some cleanings work and none fail, returns 0.
-- If some cleanings work and some fail, returns 2.
+- If some cleanings work and some fail, returns 2. This only applies if multiple URLs are provided.
 
 ## Panic policy
 

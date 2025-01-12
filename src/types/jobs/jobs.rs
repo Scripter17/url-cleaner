@@ -1,5 +1,7 @@
 //! Bulk jobs using common configs and cache handlers.
 
+#![allow(dead_code, reason = "Public API partially not used by the CLI.")]
+
 use std::borrow::Cow;
 
 use thiserror::Error;

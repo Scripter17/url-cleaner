@@ -119,13 +119,18 @@ impl Config {
         })
     }
 
-    /// Applies the [`Self::rules`].
-    /// 
-    /// Exists for future compatibility.
+    /// Basic wrapper around [`Self::rules`]'s [`Rules::apply`].
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), ApplyConfigError> {
         self.rules.apply(job_state).map_err(Into::into)
+    }
+
+    /// Basic wrapper around [`Self::rules`]'s [`Rules::apply_no_revert`].
+    /// # Errors
+    /// If the call to [`Rules::apply_no_revert`] returns an error, that error is returned.
+    pub fn apply_no_revert(&self, job_state: &mut JobState) -> Result<(), ApplyConfigError> {
+        self.rules.apply_no_revert(job_state).map_err(Into::into)
     }
 
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
@@ -158,7 +163,7 @@ pub enum ApplyConfigError {
 
 /// The default [`Config`] as minified JSON.
 #[cfg(feature = "default-config")]
-pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.minified.json");
+pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json.minified");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 #[allow(dead_code, reason = "Public API.")]

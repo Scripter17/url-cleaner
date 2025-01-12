@@ -38,6 +38,7 @@ for arg in "$@"; do
     --no-massif)       massif=0 ;;
     --no-dhat)         dhat=0 ;;
     --no-memcheck)     memcheck=0 ;;
+    --only-compile)    if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0; valgrind=0; callgrind=0; cachegrind=0; massif=0; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-hyperfine)  if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1             ; valgrind=0                                                         ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-valgrind)   if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0                                                                     ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
     --only-callgrind)  if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0                         ; cachegrind=0; massif=0; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
@@ -108,7 +109,7 @@ if [ $hyperfine -eq 1 ]; then
   rm stdin
   cat hyperfine.out.json |\
     jq 'reduce .results[] as $result ({}; .[$result.parameters.url][$result.parameters.num] = ($result.mean * 1000000 | floor / 1000 | tonumber))' |\
-    sed -E ":a /^    .{0,7}\s\S/ s/:/: /g ; ta :b /^    .{,11}\./ s/:/: /g ; tb ; :c /^    .+\..{0,2}(,|$)/ s/,|$/0&/g ; tc" |\
+    sed -E ":a /^    .{0,7}\s\S/ s/:/: /g ; ta :b /^    .{,12}\./ s/:/: /g ; tb ; :c /^    .+\..{0,2}(,|$)/ s/,|$/0&/g ; tc" |\
     tee hyperfine.out-summary.json |\
     bat -pl json
 fi
@@ -119,23 +120,23 @@ if [ $valgrind -eq 1 ]; then
       for num in "${NUMS[@]}"; do
         if [ $callgrind -eq 1 ]; then
           echo "Callgrind  - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=callgrind  --scheduling-quantum=1000 --callgrind-out-file="callgrind.out-$file_safe_in_url-$num-%p"   $COMMAND > /dev/null
+          yes "$url" | head -n $num | valgrind --quiet --tool=callgrind  --separate-threads=yes --callgrind-out-file="callgrind.out-$file_safe_in_url-$num-%p"   $COMMAND > /dev/null
         fi
         if [ $cachegrind -eq 1 ]; then
           echo "Cachegrind - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=cachegrind --scheduling-quantum=1000 --cachegrind-out-file="cachegrind.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
+          yes "$url" | head -n $num | valgrind --quiet --tool=cachegrind                        --cachegrind-out-file="cachegrind.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
         fi
         if [ $massif -eq 1 ]; then
           echo "Massif     - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=massif     --scheduling-quantum=1000 --massif-out-file="massif.out-$file_safe_in_url-$num-%p"         $COMMAND > /dev/null
+          yes "$url" | head -n $num | valgrind --quiet --tool=massif                            --massif-out-file="massif.out-$file_safe_in_url-$num-%p"         $COMMAND > /dev/null
         fi
         if [ $dhat -eq 1 ]; then
           echo "Dhat       - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=dhat       --scheduling-quantum=1000 --dhat-out-file="dhat.out-$file_safe_in_url-$num-%p"             $COMMAND > /dev/null
+          yes "$url" | head -n $num | valgrind --quiet --tool=dhat                              --dhat-out-file="dhat.out-$file_safe_in_url-$num-%p"             $COMMAND > /dev/null
         fi
         if [ $memcheck -eq 1 ]; then
           echo "Memcheck   - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=memcheck   --scheduling-quantum=1000                                                                  $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
+          yes "$url" | head -n $num | valgrind --quiet --tool=memcheck                                                                                           $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
         fi
       done
   done

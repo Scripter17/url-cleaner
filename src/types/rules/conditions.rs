@@ -1,6 +1,6 @@
 //! The logic for when to modify a URL.
 
-use std::collections::hash_set::HashSet;
+use std::collections::HashSet;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
@@ -116,7 +116,12 @@ pub enum Condition {
         /// The part to get.
         part: UrlPart,
         /// The map specifying which values should run which conditions.
-        map: HashMap<Option<String>, Self>
+        map: HashMap<String, Self>,
+        /// The [`Mapper`] to use if [`Self::PartMap::part`] returns [`None`].
+        if_null: Option<Box<Self>>,
+        /// If the part isn't in the map, use this.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Option<Box<Self>>
     },
     /// Passes if the condition in `map` whose key is the value returned by `value`'s [`StringSource::get`] passes.
     /// # Errors
@@ -125,9 +130,14 @@ pub enum Condition {
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     StringMap {
         /// The string to index the map with.
-        value: Option<StringSource>,
+        value: StringSource,
         /// The map specifying which values should run which conditions.
-        map: HashMap<Option<String>, Self>
+        map: HashMap<String, Self>,
+        /// The [`Mapper`] to use if [`Self::PartMap::part`] returns [`None`].
+        if_null: Option<Box<Self>>,
+        /// If the part isn't in the map, use this.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Option<Box<Self>>
     },
 
     // Error handling.
@@ -256,17 +266,16 @@ pub enum Condition {
     /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`Self::UnqualifiedDomain`].
     /// # Examples
     /// ```
-    /// # use std::collections::HashSet;
     /// # use url::Url;
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::HostIsOneOf([    "example.com".to_string(), "example2.com".to_string()].into()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf(["www.example.com".to_string(), "example2.com".to_string()].into()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example2.com").unwrap();
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter([    "example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::HostIsOneOf(HashSet::from_iter(["www.example.com".to_string(), "example2.com".to_string()])).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf([    "example.com".to_string(), "example2.com".to_string()].into()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::HostIsOneOf(["www.example.com".to_string(), "example2.com".to_string()].into()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     HostIsOneOf(HashSet<String>),
     /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
@@ -379,6 +388,17 @@ pub enum Condition {
     /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     QualifiedAnySuffix(String),
+
+    /// Passes if the URL has a host that is a fully qualified domain name.
+    HostIsFqdn,
+    /// Passes if the URL has a host that is a domain.
+    HostIsDomain,
+    /// Passes if the URL has a host that is an IP address.
+    HostIsIp,
+    /// Passes if the URL has a host that is an IPv4 address.
+    HostIsIpv4,
+    /// Passes if the URL has a host that is an IPv6 address.
+    HostIsIpv6,
 
     // Specific parts.
 
@@ -505,12 +525,11 @@ pub enum Condition {
     /// Passes if the specified rule flag is set.
     /// # Examples
     /// ```
-    /// # use std::collections::HashSet;
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// // Putting this in the `job_state!` call doesn't work???`
-    /// let params = Params { flags: HashSet::from_iter(vec!["abc".to_string()]), ..Default::default() };
+    /// let params = Params { flags: ["abc".to_string()].into(), ..Default::default() };
     /// job_state.params = &params;
     /// 
     /// assert_eq!(Condition::FlagIsSet("abc".into()).satisfied_by(&job_state.to_view()).unwrap(), true );
@@ -691,14 +710,8 @@ impl Condition {
                 }
                 false
             },
-            Self::PartMap{part, map} => match map.get(&part.get(job_state.url).map(|x| x.into_owned())) {
-                Some(condition) => condition.satisfied_by(job_state)?,
-                None => false
-            },
-            Self::StringMap{value, map} => match map.get(&get_option_string!(value, job_state)) {
-                Some(condition) => condition.satisfied_by(job_state)?,
-                None => false
-            },
+            Self::PartMap  {part , map, if_null, r#else} => part .get(job_state.url) .map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
+            Self::StringMap{value, map, if_null, r#else} => value.get(job_state    )?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
 
             // Error handling.
 
@@ -740,6 +753,12 @@ impl Condition {
                         .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
                     )
                 ),
+
+            Self::HostIsFqdn => matches!(job_state.url.host_details(), Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..}))),
+            Self::HostIsDomain => matches!(job_state.url.host(), Some(url::Host::Domain(_))),
+            Self::HostIsIp   => matches!(job_state.url.host(), Some(url::Host::Ipv4(_) | url::Host::Ipv6(_))),
+            Self::HostIsIpv4 => matches!(job_state.url.host(), Some(url::Host::Ipv4(_))),
+            Self::HostIsIpv6 => matches!(job_state.url.host(), Some(url::Host::Ipv6(_))),
 
             // Specific parts.
 
@@ -798,8 +817,8 @@ impl Condition {
             Self::Not(condition) => condition.is_suitable_for_release(config),
             Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
             Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::PartMap {part, map} => part.is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
-            Self::StringMap {value, map} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)),
+            Self::PartMap   {part , map, if_null, r#else} => part .is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::StringMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
             Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(config),
             Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
@@ -817,7 +836,8 @@ impl Condition {
             Self::Always | Self::Never | Self::Error | Self::MaybeWWWDomain(_) |
                 Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
                 Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
-                Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet => true,
+                Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet |
+                Self::HostIsFqdn | Self::HostIsDomain | Self::HostIsIp | Self::HostIsIpv4 | Self::HostIsIpv6 => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             #[cfg(feature = "custom")]
             Self::Custom(_) => false

@@ -151,11 +151,11 @@ pub enum StringSource {
     /// If string returned by [`Self::Map::value`] is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
     Map {
         /// The string to index the map with.
-        value: Option<Box<Self>>,
+        value: Box<Self>,
         /// The map to map the string with.
         /// 
         /// God these docs need a total rewrite.
-        map: HashMap<Option<String>, Self>,
+        map: HashMap<String, Self>,
         /// JSON doesn't allow `null`/[`None`] to be a key in objects.
         /// 
         /// If `value` returns [`None`], there's no [`None`] in `map`, and `if_null` is not [`None`], the [`Self`] in `if_null` is used.
@@ -259,7 +259,7 @@ pub enum StringSource {
     /// Indexes into a [`Params::maps`] using `map` then indexes the returned [`HashMap`] with `key`.
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
-    MapKey {
+    ParamsMap {
         /// The map from [`Params::maps`] to index in.
         map: Box<Self>,
         /// The key to index the map with.
@@ -299,7 +299,7 @@ pub enum StringSource {
     /// 
     /// If an entry is found, return its value.
     /// 
-    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache, then returns it.
+    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache (if it's not an error), then returns it.
     /// 
     /// Please note that [`Self::Cache::category`] and [`Self::Cache::key`] should be chosen to make all possible collisions intentional.
     /// # Errors
@@ -519,15 +519,7 @@ impl StringSource {
                     r#else.get(job_state)?
                 }
             },
-            Self::Map {value, map, if_null, r#else} => {
-                let key = get_option_string!(value, job_state);
-                match (key.is_none(), map.get(&key), if_null, r#else) {
-                    (_   , Some(mapper), _           , _           ) => mapper,
-                    (true, _           , Some(mapper), _           ) => mapper,
-                    (_   , _           , _           , Some(mapper)) => mapper,
-                    _ => Err(StringSourceError::StringNotInMap)?
-                }.get(job_state)?
-            },
+            Self::Map {value, map, if_null, r#else} => value.get(job_state)?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?,
 
 
 
@@ -537,7 +529,7 @@ impl StringSource {
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
-            Self::MapKey {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
             Self::Modified {value, modification} => {
                 match value.as_ref().get(job_state)? {
                     Some(x) => {
@@ -622,14 +614,14 @@ impl StringSource {
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config) && check_docs!(config, flags, flag.as_ref()),
             Self::IfSourceMatches {value, matcher, then, r#else} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::IfSourceIsNone {value, then, r#else} => value.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Map {value, map, if_null, r#else} => value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)) && map.iter().all(|(_, value)| value.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::Map {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, value)| value.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
             Self::Part(part) => part.is_suitable_for_release(config),
             Self::ExtractPart {value, part} => value.is_suitable_for_release(config) && part.is_suitable_for_release(config),
             Self::CommonVar(name) => name.is_suitable_for_release(config),
             Self::Var(name) => name.is_suitable_for_release(config) && check_docs!(config, vars, name.as_ref()),
             Self::ScratchpadVar(name) => name.is_suitable_for_release(config),
             Self::ContextVar(name) => name.is_suitable_for_release(config),
-            Self::MapKey {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
+            Self::ParamsMap {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
             Self::Modified {value, modification} => value.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),
             #[cfg(feature = "cache")] Self::Cache {category, key, value} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && value.is_suitable_for_release(config),

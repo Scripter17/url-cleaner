@@ -1,6 +1,7 @@
 //! Provides [`UrlPart`] which allows for getting and setting various parts of a [`Url`].
 
 use std::borrow::Cow;
+use std::str::FromStr;
 
 use url::{Url, Origin};
 use thiserror::Error;
@@ -295,7 +296,11 @@ pub enum UrlPart {
     /// assert_eq!(url.as_str(), "https://example.com/");
     /// ```
     Subdomain,
-    /// The domain minus the subdomain. If the domain is `a.b.c.co.uk` value returned/changed by this is `c.co.uk`.
+    /// The domain's middle and suffix. If the domain is `a.b.c.co.uk`, the value returned/changed by this is `c.co.uk`.
+    ///
+    /// Please note that if a domain doesn't have a middle ([`Self::DomainMiddle`] returns [`None`]), this also returns [`None`].
+    ///
+    /// Should always correspond to [`psl::domain_str`]. Guarantees are not made but differences are probably bugs.
     /// # Footguns
     /// This uses [`psl::domain_str`] which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/) which has some... questionable decisions.
     /// 
@@ -683,24 +688,33 @@ pub enum UrlPart {
     /// # use url::Url;
     /// # use url_cleaner::types::*;
     /// # use std::borrow::Cow;
-    /// assert_eq!(UrlPart::QueryParam("a".to_string()).get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), Some(Cow::Borrowed("2")));
-    /// assert_eq!(UrlPart::QueryParam("c".to_string()).get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), None);
+    /// assert_eq!(UrlPart::QueryParam("a".into()).get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), Some(Cow::Borrowed("2")), "1");
+    /// assert_eq!(UrlPart::QueryParam("c".into()).get(&BetterUrl::parse("https://example.com?a=2&b=3").unwrap()), None, "2");
     /// 
-    /// let mut url=BetterUrl::parse("https://example.com?a=2&b=3").unwrap();
-    /// UrlPart::QueryParam("b".to_string()).set(&mut url, Some("2")).unwrap();
-    /// assert_eq!(url.query(), Some("a=2&b=2"));
-    /// UrlPart::QueryParam("c".to_string()).set(&mut url, Some("4")).unwrap();
-    /// assert_eq!(url.query(), Some("a=2&b=2&c=4"));
-    /// UrlPart::QueryParam("b".to_string()).set(&mut url, None).unwrap();
-    /// assert_eq!(url.query(), Some("a=2&c=4"));
-    /// UrlPart::QueryParam("a".to_string()).set(&mut url, None).unwrap();
-    /// assert_eq!(url.query(), Some("c=4"));
-    /// UrlPart::QueryParam("c".to_string()).set(&mut url, None).unwrap();
-    /// assert_eq!(url.query(), None);
-    /// UrlPart::QueryParam("d".to_string()).set(&mut url, Some("5")).unwrap();
-    /// assert_eq!(url.query(), Some("d=5"));
+    /// let mut url=BetterUrl::parse("https://example.com?a=2&b=3").expect("3");
+    /// UrlPart::QueryParam("b".into()).set(&mut url, Some("2")).expect("4");
+    /// assert_eq!(url.query(), Some("a=2&b=2"), "5");
+    /// UrlPart::QueryParam("c".into()).set(&mut url, Some("4")).expect("6");
+    /// assert_eq!(url.query(), Some("a=2&b=2&c=4"), "7");
+    /// UrlPart::QueryParam("b".into()).set(&mut url, None).expect("8");
+    /// assert_eq!(url.query(), Some("a=2&c=4"), "9");
+    /// UrlPart::QueryParam("a".into()).set(&mut url, None).expect("10");
+    /// assert_eq!(url.query(), Some("c=4"), "11");
+    /// UrlPart::QueryParam("c".into()).set(&mut url, None).expect("12");
+    /// assert_eq!(url.query(), None, "13");
+    /// UrlPart::QueryParam("d".into()).set(&mut url, Some("5")).expect("14");
+    /// assert_eq!(url.query(), Some("d=5"), "15");
+    ///
+    /// UrlPart::QueryParam(QueryParamSelector {name: "d".into(), index: 1}).set(&mut url, Some("6")).expect("16");
+    /// assert_eq!(url.query(), Some("d=5&d=6"), "17");
+    /// UrlPart::QueryParam("e".into()).set(&mut url, Some("7")).expect("18");
+    /// assert_eq!(url.query(), Some("d=5&d=6&e=7"), "19");
+    /// UrlPart::QueryParam(QueryParamSelector {name: "d".into(), index: 2}).set(&mut url, Some("8")).expect("20");
+    /// assert_eq!(url.query(), Some("d=5&d=6&e=7&d=8"), "21");
+    /// UrlPart::QueryParam(QueryParamSelector {name: "d".into(), index: 1}).set(&mut url, None).expect("22");
+    /// assert_eq!(url.query(), Some("d=5&e=7&d=8"), "23");
     /// ```
-    QueryParam(String),
+    QueryParam(QueryParamSelector),
     /// The query. Corresponds to [`Url::query`].
     /// # Getting
     /// Can be `None`.
@@ -865,7 +879,136 @@ pub enum UrlPart {
     NoneToEmptyString(Box<Self>)
 }
 
+/// Selector for the [`Self::index`] occurance of a query parameter named [`Self::name`]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(remote = "Self")]
+pub struct QueryParamSelector {
+    /// The name of the query parameter.
+    pub name: String,
+    /// The index of the query parameter among query parameters named [`Self::name`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub index: usize
+}
+
+string_or_struct_magic!(QueryParamSelector);
+
+impl FromStr for QueryParamSelector {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(s.into())
+    }
+}
+
+impl From<&str> for QueryParamSelector {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for QueryParamSelector {
+    fn from(value: String) -> Self {
+        Self {
+            name: value,
+            index: Default::default()
+        }
+    }
+}
+
+impl QueryParamSelector {
+    /// Gets the selected query parameter.
+    /// ```
+    /// # use std::borrow::Cow;
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 1}.get_url(&Url::parse("https://example.com?a=1&b=2&b=3").unwrap()), Some(Cow::Borrowed("3")));
+    /// ```
+    pub fn get_url<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
+        Some(url.query_pairs().filter(|(name, _)| **name==*self.name).enumerate().find(|(i, _)| *i==self.index)?.1.1)
+    }
+
+    /// Gets the selected query parameter and its index among all [`Url::query_pairs`].
+    /// ```
+    /// # use std::borrow::Cow;
+    /// # use url_cleaner::types::*;
+    /// # use url::Url;
+    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 1}.get_url_with_index(&Url::parse("https://example.com?a=1&b=2&b=3").unwrap()), Some((2usize, Cow::Borrowed("3"))));
+    /// ```
+    pub fn get_url_with_index<'a>(&self, url: &'a Url) -> Option<(usize, Cow<'a, str>)> {
+        url.query_pairs().enumerate().filter(|(_, (name, _))| **name==*self.name).enumerate().find_map(|(ni, (ai, (_, v)))| (ni==self.index).then_some((ai, v)))
+    }
+
+    /// Sets the selected query parameter.
+    /// # Errors
+    /// If [`Self::index`] is more than 1 above the number of query params named [`Self::name`], returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
+    pub fn set_url(&self, url: &mut Url, to: Option<&str>) -> Result<(), SetQueryParamError> {
+        Ok(match (to, url.query().map(|x| x.len()), self.index) {
+            (Some(_ ), None     , 1..) => Err(SetQueryParamError::QueryParamIndexNotFound)?,
+            (None    , None     , _  ) => {},
+            (Some(to), Some(len), ni  ) => if let Some((ai, _)) = self.get_url_with_index(url) {
+                url.set_query(Some(&form_urlencoded::Serializer::new(String::with_capacity(len))
+                    .extend_pairs(url.query_pairs().enumerate().map(|(i, (name, value))| (name, if i==ai {Cow::Borrowed(to)} else {value}))).finish()));
+            } else if url.query_pairs().filter(|(name, _)| **name==*self.name).count() == ni {
+                url.query_pairs_mut().append_pair(&self.name, to);
+            } else {
+                Err(SetQueryParamError::QueryParamIndexNotFound)?;
+            },
+            (None    , Some(len), _) => if let Some((ai, _)) = self.get_url_with_index(url) {
+                let new = form_urlencoded::Serializer::new(String::with_capacity(len)).extend_pairs(url.query_pairs().enumerate().filter_map(|(i, nv)| (i!=ai).then_some(nv))).finish();
+                if new.is_empty() {
+                    url.set_query(None);
+                } else {
+                    url.set_query(Some(&new));
+                }
+            },
+            #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+            (Some(to), None     , 0) => url.set_query(Some(&form_urlencoded::Serializer::new(String::with_capacity(self.name.len() + to.len() + 1)).append_pair(&self.name, to).finish()))
+        })
+    }
+}
+
+/// The set of errors [`QueryParamSelector::set_url`] can return.
+#[derive(Debug, Error)]
+pub enum SetQueryParamError {
+    /// Returned when a query parameter with the specified index cannot be set/created.
+    #[error("A query parameter with the specified index could not be set/created.")]
+    QueryParamIndexNotFound
+}
+
 impl UrlPart {
+    /// Extracts the specified part of the provided URL.
+    /// # Errors
+    /// See each of [`Self`]'s variant's documentation for details.
+    pub fn get<'a>(&self, url: &'a BetterUrl) -> Option<Cow<'a, str>> {
+        debug!(UrlPart::get_better, self, url);
+        match (self, url.host_details()) {
+            (Self::Subdomain      , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.subdomain_bounds    ()?).map(Into::into),
+            (Self::NotDomainSuffix, Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.not_suffix_bounds   ()?).map(Into::into),
+            (Self::DomainMiddle   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.middle_bounds       ()?).map(Into::into),
+            (Self::NotSubdomain   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.not_subdomain_bounds()?).map(Into::into),
+            (Self::DomainSuffix   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.suffix_bounds       () ).map(Into::into),
+            _ => self.get_url(url)
+        }
+    }
+
+    /// Replaces the specified part of the provided URL with the provided value.
+    /// If this method returns an error, `url` is left unchanged.
+    /// # Errors
+    /// See each of [`Self`]'s variant's documentation for details.
+    pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), UrlPartSetError> {
+        debug!(UrlPart::set_better, self, url, to);
+        match self {
+            Self::Subdomain       => url.set_subdomain        (to),
+            Self::NotDomainSuffix => url.set_not_domain_suffix(to),
+            Self::DomainMiddle    => url.set_domain_middle    (to),
+            Self::NotSubdomain    => url.set_not_subdomain    (to),
+            Self::DomainSuffix    => url.set_domain_suffix    (to),
+            Self::Whole | Self::Host | Self::BeforeDomainSegment(_) | Self::DomainSegment(_) | Self::AfterDomainSegment(_) |
+                Self::MaybeWWWNotSubdomain | Self::MaybeWWWDomainMiddle | Self::NextDomainSegment => {self.set_url(url.inner_mut(), to)?; url.set_host_details(url.host().map(HostDetails::from_host)); Ok(())}
+            _ => self.set_url(url.inner_mut(), to)
+        }
+    }
+
     /// Extracts the specified part of the provided URL.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
@@ -877,7 +1020,7 @@ impl UrlPart {
             // No shortcut conditions/mappers.
 
             Self::PathSegment(n)   => Cow::Borrowed(neg_nth(url.path_segments()?, *n)?),
-            Self::QueryParam(name) => url.query_pairs().find(|(name2, _)| name==name2)?.1,
+            Self::QueryParam(selector) => selector.get_url(url)?,
 
             // Miscellaneous.
 
@@ -938,39 +1081,6 @@ impl UrlPart {
                 ret?
             }
         })
-    }
-
-    /// Extracts the specified part of the provided URL.
-    /// # Errors
-    /// See each of [`Self`]'s variant's documentation for details.
-    pub fn get<'a>(&self, url: &'a BetterUrl) -> Option<Cow<'a, str>> {
-        debug!(UrlPart::get_better, self, url);
-        match (self, url.host_details()) {
-            (Self::Subdomain      , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.subdomain_bounds    ()?).map(Into::into),
-            (Self::NotDomainSuffix, Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.not_suffix_bounds   ()?).map(Into::into),
-            (Self::DomainMiddle   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.middle_bounds       ()?).map(Into::into),
-            (Self::NotSubdomain   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.not_subdomain_bounds() ).map(Into::into),
-            (Self::DomainSuffix   , Some(HostDetails::Domain(domain_details))) => url.host_str()?.get(domain_details.suffix_bounds       () ).map(Into::into),
-            _ => self.get_url(url)
-        }
-    }
-
-    /// Replaces the specified part of the provided URL with the provided value.
-    /// If this method returns an error, `url` is left unchanged.
-    /// # Errors
-    /// See each of [`Self`]'s variant's documentation for details.
-    pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), UrlPartSetError> {
-        debug!(UrlPart::set_better, self, url, to);
-        match self {
-            Self::Subdomain       => url.set_subdomain        (to),
-            Self::NotDomainSuffix => url.set_not_domain_suffix(to),
-            Self::DomainMiddle    => url.set_domain_middle    (to),
-            Self::NotSubdomain    => url.set_not_subdomain    (to),
-            Self::DomainSuffix    => url.set_domain_suffix    (to),
-            Self::Whole | Self::Host | Self::BeforeDomainSegment(_) | Self::DomainSegment(_) | Self::AfterDomainSegment(_) |
-                Self::MaybeWWWNotSubdomain | Self::MaybeWWWDomainMiddle | Self::NextDomainSegment => {self.set_url(url.inner_mut(), to)?; url.set_host_details(url.host().and_then(HostDetails::from_host)); Ok(())}
-            _ => self.set_url(url.inner_mut(), to)
-        }
     }
 
     /// Replaces the specified part of the provided URL with the provided value.
@@ -1139,22 +1249,7 @@ impl UrlPart {
                 (true , Some(_) ) => Err(UrlPartSetError::UrlCannotHaveAPath)?,
                 (true , None    ) => {}
             },
-            (Self::QueryParam(name), _) => {
-                if let Some(to) = to {
-                    if url.query().is_some() {
-                        url.set_query(Some(&if url.query_pairs().any(|(name2, _)| name==&name2) {
-                            form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().map(|(name2, value)| if name==&name2 {(name2, Cow::Borrowed(to))} else {(name2, value)})).finish()
-                        } else {
-                            form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().chain([(Cow::Borrowed(name.as_str()), Cow::Borrowed(to))])).finish()
-                        }));
-                    } else {
-                        url.set_query(Some(&form_urlencoded::Serializer::new(String::new()).append_pair(name, to).finish()));
-                    }
-                } else {
-                    let new_query=form_urlencoded::Serializer::new(String::new()).extend_pairs(url.query_pairs().filter(|(name2, _)| name!=name2)).finish();
-                    url.set_query((!new_query.is_empty()).then_some(&new_query));
-                }
-            }
+            (Self::QueryParam(selector), _) => selector.set_url(url, to)?,
 
             (Self::PartSegments {part, split, start, end}, _) => {
                 let temp=part.get_url(url).ok_or(UrlPartGetError::PartIsNone)?;
@@ -1313,7 +1408,13 @@ pub enum UrlPartSetError {
     HostDoesNotStartWithWWWDot,
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
     #[error("The URL's host is not a domain.")]
-    HostIsNotADomain
+    HostIsNotADomain,
+    /// Returneed when a [`SetQueryParamError`] is encountered.
+    #[error(transparent)]
+    SetQueryParamError(#[from] SetQueryParamError),
+    /// Returned when trying to set the Subdomain of a domain that doesn't have a NotSubdomain.
+    #[error("Attempted to set the Subdomain of a domain that doesn't have a NotSubdomain.")]
+    DoesntHaveNotSubdomain
 }
 
 #[allow(clippy::unwrap_used, reason = "Panicking tests are easier to write than erroring tests.")]
@@ -1380,7 +1481,7 @@ mod tests {
             UrlPart::BeforePathSegment(1),
             UrlPart::PathSegment(0),
             UrlPart::PathSegment(1),
-            UrlPart::QueryParam("a".to_string())
+            UrlPart::QueryParam("a".into())
         );
         identity_check_2!(
             IP_URLS,
@@ -1388,7 +1489,7 @@ mod tests {
             UrlPart::BeforePathSegment(1),
             UrlPart::PathSegment(0),
             UrlPart::PathSegment(1),
-            UrlPart::QueryParam("a".to_string())
+            UrlPart::QueryParam("a".into())
         );
     }
 

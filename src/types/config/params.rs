@@ -234,14 +234,25 @@ pub struct ParamsDiffArgParser {
 #[derive(Debug, Error)]
 pub enum ParamsDiffArgParserValueWrong {
     /// --insert-into-map needs a map to insert key-value pairs into.
-    #[error("InsertIntoMapNeedsAMap")]
+    #[error("--insert-into-map needs a map to insert key-value pairs into.")]
     InsertIntoMapNeedsAMap,
     /// --insert-into-map found a key without a value at the end.
-    #[error("InsertIntoMapNeedsAValue")]
+    #[error("--insert-into-map found a key without a value at the end.")]
     InsertIntoMapNeedsAValue,
     /// --remove-from-map needs a map to remove keys from.
-    #[error("RemoveFromMapNeedsAMap")]
+    #[error("--remove-from-map needs a map to remove keys from.")]
     RemoveFromMapNeedsAMap
+}
+
+impl ParamsDiffArgParserValueWrong {
+    /// Gets the error message.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::InsertIntoMapNeedsAMap   => "--insert-into-map needs a map to insert key-value pairs into.",
+            Self::InsertIntoMapNeedsAValue => "--insert-into-map found a key without a value at the end.",
+            Self::RemoveFromMapNeedsAMap   => "--remove-from-map needs a map to remove keys from."
+        }
+    }
 }
 
 impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
@@ -300,6 +311,7 @@ impl ParamsDiffArgParser {
     /// 
     /// It's much faster to check this than make and apply the [`ParamsDiff`].
     pub fn does_anything(&self) -> bool {
+        #[allow(unused_mut, reason = "It is used.")]
         let mut feature_flag_make_params_diff = false;
         #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || self.read_cache.is_some()};
         #[cfg(feature = "cache")] #[allow(clippy::unnecessary_operation, reason = "False positive.")] {feature_flag_make_params_diff = feature_flag_make_params_diff || self.write_cache.is_some()};

@@ -22,44 +22,44 @@ pub struct BetterUrl {
 }
 
 impl BetterUrl {
-    /// [`Url::set_fragment`]
+    /// [`Url::set_fragment`].
     pub fn set_fragment     (&mut self, fragment: Option<&str>)                                    {self.url.set_fragment(fragment)}
-    /// [`Url::set_query`]
+    /// [`Url::set_query`].
     pub fn set_query        (&mut self, query   : Option<&str>)                                    {self.url.set_query   (query   )}
-    /// [`Url::query_pairs_mut`]
+    /// [`Url::query_pairs_mut`].
     pub fn query_pairs_mut  (&mut self                        ) -> Serializer<'_, UrlQuery<'_>>    {self.url.query_pairs_mut()     }
-    /// [`Url::set_path`]
+    /// [`Url::set_path`].
     pub fn set_path         (&mut self, path    : &str        )                                    {self.url.set_path    (path    )}
-    /// [`Url::path_segments_mut`]
+    /// [`Url::path_segments_mut`].
     /// # Errors
     /// If the call to [`Url::path_segments_mut`] returns an error, that error is returned.
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
     pub fn path_segments_mut(&mut self                        ) -> Result<PathSegmentsMut<'_>, ()> {self.url.path_segments_mut()   }
-    /// [`Url::set_port`]
+    /// [`Url::set_port`].
     /// # Errors
     /// If the call to [`Url::set_port`] returns an error, that error is returned.
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
     pub fn set_port         (&mut self, port    : Option<u16> ) -> Result<(), ()>                  {self.url.set_port    (port    )}
-    /// [`Url::set_host`]
+    /// [`Url::set_host`].
     /// # Errors
     /// If the call to [`Url::set_host`] returns an error, that error is returned.
-    pub fn set_host         (&mut self, host    : Option<&str>) -> Result<(), ParseError>          {self.url.set_host    (host    )?; self.host_details = self.url.host().and_then(HostDetails::from_host); Ok(())}
-    /// [`Url::set_ip_host`]
+    pub fn set_host         (&mut self, host    : Option<&str>) -> Result<(), ParseError>          {self.url.set_host    (host    )?; self.host_details = self.url.host().map(HostDetails::from_host); Ok(())}
+    /// [`Url::set_ip_host`].
     /// # Errors
     /// If the call to [`Url::set_ip_host`] returns an error, that error is returned.
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
-    pub fn set_ip_host      (&mut self, address : IpAddr      ) -> Result<(), ()>                  {self.url.set_ip_host (address )?; self.host_details = self.url.host().and_then(HostDetails::from_host); Ok(())}
-    /// [`Url::set_password`]
+    pub fn set_ip_host      (&mut self, address : IpAddr      ) -> Result<(), ()>                  {self.url.set_ip_host (address )?; self.host_details = self.url.host().map(HostDetails::from_host); Ok(())}
+    /// [`Url::set_password`].
     /// # Errors
     /// If the call to [`Url::set_password`] returns an error, that error is returned.
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
     pub fn set_password     (&mut self, password: Option<&str>) -> Result<(), ()>                  {self.url.set_password(password)}
-    /// [`Url::set_username`]
+    /// [`Url::set_username`].
     /// # Errors
     /// If the call to [`Url::set_username`] returns an error, that error is returned.
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
     pub fn set_username     (&mut self, username: &str        ) -> Result<(), ()>                  {self.url.set_username(username)}
-    /// [`Url::set_scheme`]
+    /// [`Url::set_scheme`].
     /// # Errors
     /// If the call to [`Url::set_scheme`] returns an error, that error is returned.
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
@@ -72,7 +72,7 @@ impl BetterUrl {
     pub fn set_subdomain        (&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
-            Some(HostDetails::Domain(domain_details)) => match (to, self.url.host_str().expect(HDA).get(domain_details.not_subdomain_bounds()), domain_details.is_fqdn()) {
+            Some(HostDetails::Domain(domain_details)) => match (to, self.url.host_str().expect(HDA).get(domain_details.not_subdomain_bounds().ok_or(UrlPartSetError::DoesntHaveNotSubdomain)?), domain_details.is_fqdn()) {
                 (Some(to), Some(ns), false) => self.set_host(Some(&format!("{to}.{ns}")))?,
                 (Some(to), Some(ns), true ) => self.set_host(Some(&format!("{to}.{ns}.")))?,
                 (Some(to), None    , false) => self.set_host(Some(&format!("{to}")))?,
@@ -267,7 +267,7 @@ impl From<BetterUrl> for Url {
 impl From<Url> for BetterUrl {
     fn from(value: Url) -> Self {
         Self {
-            host_details: value.host().and_then(HostDetails::from_host),
+            host_details: value.host().map(HostDetails::from_host),
             url: value
         }
     }
@@ -309,22 +309,27 @@ impl TryFrom<&str> for BetterUrl {
 pub enum HostDetails {
     /// Details for a host that is a [`url::Host::Domain`].
     Domain(DomainDetails),
+    /// Details for a host that is a [`url::Host::Ipv4`].
+    Ipv4(Ipv4Details),
+    /// Details for a host that is a [`url::Host::Ipv6`].
+    Ipv6(Ipv6Details)
 }
 
 impl HostDetails {
     /// Creates a [`Self`] from a [`str`].
     /// # Errors
     /// If the call to [`url::Host::parse`] returns an error, that error is returned.
-    pub fn from_host_str(host: &str) -> Result<Option<Self>, url::ParseError> {
+    pub fn from_host_str(host: &str) -> Result<Self, url::ParseError> {
         url::Host::parse(host).map(Self::from_host)
     }
 
     /// Creates a [`Self`] from a [`url::Host`] so long as its domain variant is [`AsRef<str>`].
-    pub fn from_host<T: AsRef<str>>(host: url::Host<T>) -> Option<Self> {
-        Some(match host {
+    pub fn from_host<T: AsRef<str>>(host: url::Host<T>) -> Self {
+        match host {
             url::Host::Domain(domain) => Self::Domain(DomainDetails::from_domain_str(domain.as_ref())),
-            _ => None?
-        })
+            url::Host::Ipv4(_) => Self::Ipv4(Ipv4Details {}),
+            url::Host::Ipv6(_) => Self::Ipv6(Ipv6Details {})
+        }
     }
 }
 
@@ -379,7 +384,7 @@ impl DomainDetails {
     /// Gets the range in the domapin corresponding to [`UrlPart::DomainMiddle`].
     pub fn middle_bounds       (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_period.map(|x| (exorub(self.subdomain_period), Bound::Excluded(x)))}
     /// Gets the range in the domapin corresponding to [`UrlPart::NotSubdomain`].
-    pub fn not_subdomain_bounds(&self) ->        (Bound<usize>, Bound<usize>)  {(exorub(self.subdomain_period), exorub(self.fqdn_period))}
+    pub fn not_subdomain_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_period.map(|_| (exorub(self.subdomain_period), exorub(self.fqdn_period)))}
     /// Gets the range in the domapin corresponding to [`UrlPart::DomainSuffix`].
     pub fn suffix_bounds       (&self) ->        (Bound<usize>, Bound<usize>)  {(exorub(self.suffix_period), exorub(self.fqdn_period))}
 
@@ -394,3 +399,11 @@ fn exorub(i: Option<usize>) -> Bound<usize> {
         None => Bound::Unbounded
     }
 }
+
+/// Details of an IPv4 address.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Ipv4Details {}
+
+/// Details of an IPv4 address.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Ipv6Details {}

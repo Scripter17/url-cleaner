@@ -25,7 +25,7 @@ impl Job<'_> {
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     pub fn r#do(mut self) -> Result<Url, DoJobError> {
-        self.config.apply(&mut JobState {
+        self.config.apply_no_revert(&mut JobState {
             url: &mut self.url,
             params: &self.config.params,
             scratchpad: &mut Default::default(),
