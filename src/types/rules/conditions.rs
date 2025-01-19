@@ -197,9 +197,9 @@ pub enum Condition {
 
     // Domain conditions.
 
-    /// Passes if the URL's domain is or is a subdomain of the specified domain.
-    /// 
-    /// Similar to [`UrlPart::NotSubdomain`].
+    /// Passes if the URL's [`UrlPart::Host`] is the specified value.
+    HostIs(String),
+    /// Passes if the URL's [`UrlPart::NotSubdomain`] is the specified value.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -207,22 +207,13 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::NotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::UnqualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::UnqualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::NotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
-    UnqualifiedDomain(String),
-    /// Similar to [`Condition::UnqualifiedDomain`] but only checks if the subdomain is empty or `www`.
-    /// `Condition::MaybeWWWDomain("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedDomain("example.com".to_string()), Condition::QualifiedDomain("www.example.com".to_string())])`.
-    /// 
-    /// Similar to [`UrlPart::MaybeWWWNotSubdomain`].
+    NotSubdomainIs(String),
+    /// Passes if the URL's [`UrlPart::MaybeWWWNotSubdomain`] is the specified value.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -230,18 +221,16 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWNotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWNotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://not.example.com").unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomain("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWNotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
-    MaybeWWWDomain(String),
-    /// Passes if the URL's domain is the specified domain.
-    /// 
-    /// Similar to [`UrlPart::Domain`].
+    MaybeWWWNotSubdomainIs(String),
+    /// Passes if the URL's [`UrlPart::Domain`] is the specified value.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -249,21 +238,109 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainIs(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::DomainIs("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::QualifiedDomain(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::DomainIs(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::QualifiedDomain("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainIs("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
-    QualifiedDomain(String),
+    DomainIs(String),
+    /// Passes if the URL's [`UrlPart::DomainMiddle`] is the specified value.
+    /// # Footguns
+    /// Please see [`UrlPart::DomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.example.co.uk" ).unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.aexample.example.co.uk").unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.aexample.co.uk"        ).unwrap();
+    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// ```
+    DomainMiddleIs(String),
+    /// Passes if the URL's [`UrlPart::MaybeWWWDomainMiddle`] is the specified value.
+    /// # Footguns
+    /// Please see [`UrlPart::MaybeWWWDomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// *job_state.url = BetterUrl::parse("https://not.example.com"  ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// *job_state.url = BetterUrl::parse("https://not.example.co.uk").unwrap();
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// ```
+    MaybeWWWDomainMiddleIs(String),
+    /// Passes if the URL's [`UrlPart::NotDomainSuffix`] is the specified value.
+    /// # Footguns
+    /// Please see [`UrlPart::NotDomainSuffix`] for details on how "suffix" semantics can be counterintuitive.
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// 
+    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
+    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// ```
+    NotDomainSuffixIs(String),
     /// Passes if the URL's host is in the specified set of hosts.
-    /// Compared to having `n` rules of [`Self::MaybeWWWDomain`], this is `O(1)`.
-    /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`Self::UnqualifiedDomain`].
+    /// 
+    /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`UrlPart::HostWithoutWWWDotPrefix`].
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -278,116 +355,6 @@ pub enum Condition {
     /// assert_eq!(Condition::HostIsOneOf(["www.example.com".to_string(), "example2.com".to_string()].into()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     HostIsOneOf(HashSet<String>),
-    /// Passes if the URL's domain, minus the TLD/ccTLD, is or is a subdomain of the specified domain fragment.
-    /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
-    /// 
-    /// Similar to [`UrlPart::DomainMiddle`].
-    /// # Footguns
-    /// Please see [`UrlPart::DomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
-    /// # Examples
-    /// ```
-    /// # use url::Url;
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.example.co.uk" ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.aexample.example.co.uk").unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.aexample.co.uk"        ).unwrap();
-    /// assert_eq!(Condition::UnqualifiedAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// ```
-    UnqualifiedAnySuffix(String),
-    /// Similar to [`Condition::UnqualifiedAnySuffix`] but only checks if the subdomain is empty or `www`.
-    /// 
-    /// `Condition::MaybeWWWAnySuffix("example.com".to_string())` is effectively the same as `Condition::Any(vec![Condition::QualifiedAnySuffix("example.com".to_string()), Condition::QualifiedAnySuffix("www.example.com".to_string())])`.
-    /// 
-    /// Similar to [`UrlPart::MaybeWWWDomainMiddle`].
-    /// # Footguns
-    /// Please see [`UrlPart::MaybeWWWDomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
-    /// # Examples
-    /// ```
-    /// # use url::Url;
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = BetterUrl::parse("https://not.example.com"  ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// *job_state.url = BetterUrl::parse("https://not.example.co.uk").unwrap();
-    /// assert_eq!(Condition::MaybeWWWAnySuffix("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// ```
-    MaybeWWWAnySuffix(String),
-    /// Passes if the URL's domain, minus the TLD/ccTLD, is the specified domain fragment.
-    /// See [the psl crate](https://docs.rs/psl/latest/psl/) and [Mozilla's public suffix list](https://publicsuffix.org/) for details.
-    /// 
-    /// Similar to [`UrlPart::NotDomainSuffix`].
-    /// # Footguns
-    /// Please see [`UrlPart::NotDomainSuffix`] for details on how "suffix" semantics can be counterintuitive.
-    /// # Examples
-    /// ```
-    /// # use url::Url;
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// 
-    /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::QualifiedAnySuffix("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// ```
-    QualifiedAnySuffix(String),
 
     /// Passes if the URL has a host that is a fully qualified domain name.
     HostIsFqdn,
@@ -729,36 +696,21 @@ impl Condition {
 
             // Domain conditions.
 
-            Self::UnqualifiedDomain(domain_suffix) => job_state.url.domain().is_some_and(|url_domain| url_domain.strip_suffix(domain_suffix).is_some_and(|unqualified_part| unqualified_part.is_empty() || unqualified_part.ends_with('.'))),
-            Self::MaybeWWWDomain(domain_suffix) => job_state.url.domain().is_some_and(|url_domain| url_domain.strip_prefix("www.").unwrap_or(url_domain)==domain_suffix),
-            Self::QualifiedDomain(domain) => job_state.url.domain()==Some(domain),
-            Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
-            Self::UnqualifiedAnySuffix(middle) => job_state.url.domain()
-                .is_some_and(|url_domain| url_domain.rsplit_once(middle)
-                    .is_some_and(|(prefix_dot, dot_suffix)| (prefix_dot.is_empty() || prefix_dot.ends_with('.')) && dot_suffix.strip_prefix('.')
-                        .is_some_and(|suffix| psl::suffix_str(suffix)
-                            .is_some_and(|psl_suffix| psl_suffix==suffix)
-                        )
-                    )
-                ),
-            Self::MaybeWWWAnySuffix(middle) => job_state.url.domain().map(|domain| domain.strip_prefix("www.").unwrap_or(domain))
-                .is_some_and(|domain| domain.strip_prefix(middle)
-                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
-                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
-                    )
-                ),
-            Self::QualifiedAnySuffix(parts) => job_state.url.domain()
-                .is_some_and(|domain| domain.strip_prefix(parts)
-                    .is_some_and(|dot_suffix| dot_suffix.strip_prefix('.')
-                        .is_some_and(|suffix| Some(suffix)==psl::suffix_str(suffix))
-                    )
-                ),
+            Self::HostIs                (x) => UrlPart::Host                .get(job_state.url).as_deref() == Some(&**x),
+            Self::NotSubdomainIs        (x) => UrlPart::NotSubdomain        .get(job_state.url).as_deref() == Some(&**x),
+            Self::MaybeWWWNotSubdomainIs(x) => UrlPart::MaybeWWWNotSubdomain.get(job_state.url).as_deref() == Some(&**x),
+            Self::DomainIs              (x) => UrlPart::Domain              .get(job_state.url).as_deref() == Some(&**x),
+            Self::DomainMiddleIs        (x) => UrlPart::DomainMiddle        .get(job_state.url).as_deref() == Some(&**x),
+            Self::MaybeWWWDomainMiddleIs(x) => UrlPart::MaybeWWWDomainMiddle.get(job_state.url).as_deref() == Some(&**x),
+            Self::NotDomainSuffixIs     (x) => UrlPart::NotDomainSuffix     .get(job_state.url).as_deref() == Some(&**x),
 
-            Self::HostIsFqdn => matches!(job_state.url.host_details(), Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..}))),
-            Self::HostIsDomain => matches!(job_state.url.host(), Some(url::Host::Domain(_))),
-            Self::HostIsIp   => matches!(job_state.url.host(), Some(url::Host::Ipv4(_) | url::Host::Ipv6(_))),
-            Self::HostIsIpv4 => matches!(job_state.url.host(), Some(url::Host::Ipv4(_))),
-            Self::HostIsIpv6 => matches!(job_state.url.host(), Some(url::Host::Ipv6(_))),
+            Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
+
+            Self::HostIsFqdn   => matches!(job_state.url.host_details(), Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..}))),
+            Self::HostIsDomain => matches!(job_state.url.host_details(), Some(HostDetails::Domain(_))),
+            Self::HostIsIp     => matches!(job_state.url.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_))),
+            Self::HostIsIpv4   => matches!(job_state.url.host_details(), Some(HostDetails::Ipv4(_))),
+            Self::HostIsIpv6   => matches!(job_state.url.host_details(), Some(HostDetails::Ipv6(_))),
 
             // Specific parts.
 
@@ -833,9 +785,9 @@ impl Condition {
             Self::StringMatches {value, matcher} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             #[cfg(feature = "commands")] Self::CommandExists (_) => false,
             #[cfg(feature = "commands")] Self::CommandExitStatus {..} => false,
-            Self::Always | Self::Never | Self::Error | Self::MaybeWWWDomain(_) |
-                Self::QualifiedDomain(_) | Self::HostIsOneOf(_) | Self::UnqualifiedDomain(_) |
-                Self::UnqualifiedAnySuffix(_) | Self::MaybeWWWAnySuffix(_) | Self::QualifiedAnySuffix(_) |
+            Self::Always | Self::Never | Self::Error | Self::HostIs(_) | Self::NotSubdomainIs(_) |
+                Self::MaybeWWWNotSubdomainIs(_) | Self::HostIsOneOf(_) | Self::DomainIs(_) |
+                Self::DomainMiddleIs(_) | Self::MaybeWWWDomainMiddleIs(_) | Self::NotDomainSuffixIs(_) |
                 Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet |
                 Self::HostIsFqdn | Self::HostIsDomain | Self::HostIsIp | Self::HostIsIpv4 | Self::HostIsIpv6 => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),

@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
+use std::borrow::Cow;
 use std::process::ExitCode;
 use std::str::FromStr;
 
@@ -156,7 +157,10 @@ fn main() -> Result<ExitCode, CliError> {
 
     if print_params {println!("{}", serde_json::to_string(&config.params)?);}
     if print_config {println!("{}", serde_json::to_string(&config)?);}
-    if test_config {config.run_tests();}
+    if test_config {
+        config.run_tests();
+        println!("\nAll tests passed!");
+    }
 
     if no_cleaning {std::process::exit(0);}
 
@@ -165,14 +169,15 @@ fn main() -> Result<ExitCode, CliError> {
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>()).collect::<(Vec<_>, Vec<_>)>();
 
-    let config_ref = &config;
-    #[cfg(feature = "cache")]
-    let cache: Cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
-    #[cfg(feature = "cache")]
-    let cache_ref = &cache;
+    let jobs_config = JobsConfig {
+        #[cfg(feature = "cache")]
+        cache: args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into(),
+        config: Cow::Owned(config)
+    };
+    let jobs_config_ref = &jobs_config;
 
     std::thread::scope(|s| {
-        s.spawn(move || {
+        std::thread::Builder::new().name("Job Getter".to_string()).spawn_scoped(s, move || {
             let job_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
                 let ret = args.urls.into_iter().map(Ok);
                 if !io::stdin().is_terminal() {
@@ -186,40 +191,34 @@ fn main() -> Result<ExitCode, CliError> {
                 #[allow(clippy::arithmetic_side_effects, reason = "Whatever exactly the issue with `i % threads` is it will, at worst, give slightly worse load balancing around each multiple of usize::MAX jobs. I think that's fine.")]
                 in_senders.get(i % threads).expect("The amount of senders to not exceed the count of senders to make.").send(job_config_string).expect("To successfuly send the Job.");
             }
-        });
+        }).expect("Making threads to work fine.");
 
-        in_recievers.into_iter().zip(out_senders).map(|(ir, os)| {
-            s.spawn(move || {
+        in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
+            std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
                 while let Ok(maybe_job_config_string) = ir.recv() {
                     let ret = match maybe_job_config_string {
-                        Ok(job_config_string) => JobConfig::from_str(&job_config_string)
-                            .map(|JobConfig{url, context}|
-                                Job {
-                                    url,
-                                    context,
-                                    config: config_ref,
-                                    #[cfg(feature = "cache")]
-                                    cache: cache_ref
-                                }.r#do()
-                            )
-                            .map_err(MakeJobError::MakeJobConfigError),
+                        Ok(job_config_string) => match JobConfig::from_str(&job_config_string) {
+                            Ok(job_config) => Ok(jobs_config_ref.with_job_config(job_config).r#do()),
+                            Err(e) => Err(MakeJobError::MakeJobConfigError(e))
+                        },
                         Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))
                     };
 
                     os.send(ret).expect("The receiver to still exist.");
                 }
-            });
+            }).expect("Making threads to work fine.");
         }).for_each(drop);
 
         let some_ok_ref  = &some_ok;
         let some_err_ref = &some_err;
 
-        if json {
-            s.spawn(move || {
-                let mut disconnected = 0usize;
+        std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, move || {
+            let mut disconnected = 0usize;
+            let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
+            let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
+
+            if json {
                 let mut first_job = true;
-                let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
-                let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
 
                 print!("{{\"Ok\":{{\"urls\":[");
                 for or in out_recievers.iter().cycle() {
@@ -251,13 +250,7 @@ fn main() -> Result<ExitCode, CliError> {
                 }
 
                 print!("]}}}}");
-            });
-        } else {
-            s.spawn(move || {
-                let mut disconnected = 0usize;
-                let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
-                let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
-
+            } else {
                 for or in out_recievers.iter().cycle() {
                     match or.recv() {
                         Ok(Ok(Ok(url))) => {
@@ -281,8 +274,8 @@ fn main() -> Result<ExitCode, CliError> {
                         }
                     }
                 }
-            });
-        }
+            }
+        }).expect("Making threads to work fine.");
     });
 
     return Ok(match (*some_ok.lock().expect("No panics."), *some_err.lock().expect("No panics.")) {

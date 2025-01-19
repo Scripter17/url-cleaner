@@ -27,11 +27,13 @@
 //! };
 //! 
 //! let mut jobs = Jobs {
-//!     config: Cow::Borrowed(&config),
-#![cfg_attr(feature = "cache", doc = "    // Doesn't do anything expensive until actually used.")]
-#![cfg_attr(feature = "cache", doc = "    // You should use a global static `OnceLock` if you have to make multiple `Jobs`s with the same `Cache`.")]
-#![cfg_attr(feature = "cache", doc = "    // That's fine because cloning a `Cache` is extremely cheap, because it's an `Arc<Mutex<InnerCache>>`.")]
-#![cfg_attr(feature = "cache", doc = "    cache: config.cache_path.as_str().into(),")]
+//!     jobs_config: JobsConfig {
+//!         config: Cow::Borrowed(&config),
+#![cfg_attr(feature = "cache", doc = "        // Doesn't do anything expensive until actually used.")]
+#![cfg_attr(feature = "cache", doc = "        // You should use a global static `OnceLock` if you have to make multiple `Jobs`s with the same `Cache`.")]
+#![cfg_attr(feature = "cache", doc = "        // That's fine because cloning a `Cache` is extremely cheap, because it's an `Arc<Mutex<InnerCache>>`.")]
+#![cfg_attr(feature = "cache", doc = "        cache: config.cache_path.as_str().into()")]
+//!     },
 //!     // Ideally you'll be handling URLs in bulk.
 //!     job_configs_source: Box::new([
 //!         JobConfig::from_str("https://example.com?utm_source=url-cleaner-docs")

@@ -9,84 +9,57 @@ URLS=(\
 )
 NUMS=( 0 1 10 100 1000 10000 )
 
-rm -f *.out*
+if ls | grep -qF '.out'; then
+  rm *.out*
+fi
 
 compile=1
 hyperfine=1
-valgrind=1
-callgrind=1
-cachegrind=1
-massif=1
-dhat=1
-memcheck=1
-an_only_is_set=0
+callgrind=0
+massif=0
+
 mode=
 just_set_mode=0
 urls_are_reset=0
 nums_are_reset=0
+
 features=
-out_file="benchmarks-$(date +%s).tar.gz"
+
+out="benchmarks-$(date +%s).tar.gz"
 
 for arg in "$@"; do
   shift
   case "$arg" in
-    --no-compile)      compile=0 ;;
-    --no-hyperfine)    hyperfine=0 ;;
-    --no-valgrind)     valgrind=0 ;;
-    --no-callgrind)    callgrind=0 ;;
-    --no-cachegrind)   cachegrind=0 ;;
-    --no-massif)       massif=0 ;;
-    --no-dhat)         dhat=0 ;;
-    --no-memcheck)     memcheck=0 ;;
-    --only-compile)    if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0; valgrind=0; callgrind=0; cachegrind=0; massif=0; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-hyperfine)  if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1             ; valgrind=0                                                         ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-valgrind)   if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0                                                                     ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-callgrind)  if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0                         ; cachegrind=0; massif=0; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-cachegrind) if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0              ; massif=0; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-massif)     if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0          ; dhat=0; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-dhat)       if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0        ; memcheck=0; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
-    --only-memcheck)   if [ $an_only_is_set -eq 0 ]; then an_only_is_set=1; hyperfine=0            ; callgrind=0; cachegrind=0; massif=0; dhat=0            ; else echo "Error: Multiple --only- flags were set."; exit 1; fi ;;
+    --no-compile)      compile=0    ;;
+    --no-hyperfine)    hyperfine=0  ;;
+    --callgrind)       callgrind=1  ;;
+    --massif)          massif=1     ;;
+    --all)             hyperfine=1; callgrind=1; massif=1 ;;
     --urls)            mode=urls    ; just_set_mode=1 ;;
     --nums)            mode=nums    ; just_set_mode=1 ;;
     --features)        mode=features; just_set_mode=1 ;;
-    --out-file)        mode=out_file; just_set_mode=1 ;;
+    --out)             mode=out     ; just_set_mode=1 ;;
     --)                break ;;
     --*)               echo Unknown option \"$arg\"; exit 1 ;;
-    *)                 if [ "$mode" == "urls" ]; then
-                         if [ $urls_are_reset -eq 0 ]; then
-                           URLS=( )
-                           urls_are_reset=1
-                         fi
-                         URLS=( ${URLS[@]} "$arg" )
-                       elif [ "$mode" == "nums" ]; then
-                         if [ $nums_are_reset -eq 0 ]; then
-                           NUMS=( )
-                           nums_are_reset=1
-                         fi
-                         NUMS=( ${NUMS[@]} "$arg" )
-                       elif [ "$mode" == "features" ]; then
-                         features_arg=--features
-                         features="$arg"
-                         mode=
-                       elif [ "$mode" == "out_file" ]; then
-                         out_file="$arg"
-                         mode=
-                       else
-                         echo "Modal arguments provided without a mode."
-                         exit 1
-                       fi ;;
+    *) case "$mode" in
+      urls) if [ $urls_are_reset -eq 0 ]; then URLS=( ); urls_are_reset=1; fi; URLS=( ${URLS[@]} "$arg" ) ;;
+      nums) if [ $nums_are_reset -eq 0 ]; then NUMS=( ); nums_are_reset=1; fi; NUMS=( ${NUMS[@]} "$arg" ) ;;
+      features) features=(--features "$arg") ;;
+      out) out="$arg" ;;
+      "") echo "Modal argument without mode"; exit 1 ;;
+    esac
   esac
   if [[ "$arg" =~ ^"--" && $just_set_mode -eq 0 ]]; then mode=; fi
   just_set_mode=0
 done
 
-if [ $hyperfine -eq 1 ] && ! which -s hyperfine; then echo 'Hyperfine not found; Please run `cargo install hyperfine`.'                         ; exit 2; fi
-if [ $hyperfine -eq 1 ] && ! which -s jq       ; then echo 'Jq not found; Please install it. Also please learn it it'"'"'s a really handy tool.'; exit 2; fi
-if [ $hyperfine -eq 1 ] && ! which -s bat      ; then echo 'Bat not found; Please run `cargo install bat`.'                                     ; exit 2; fi
-if [ $valgrind  -eq 1 ] && ! which -s valgrind ; then echo 'Valgrind not found; Please install it.'                                             ; exit 2; fi
+if [  $hyperfine -eq 1                   ] && ! which -s hyperfine; then echo 'Hyperfine not found; Please run `cargo install hyperfine`.'                         ; exit 2; fi
+if [  $hyperfine -eq 1                   ] && ! which -s jq       ; then echo 'Jq not found; Please install it. Also please learn it it'"'"'s a really handy tool.'; exit 2; fi
+if [  $hyperfine -eq 1                   ] && ! which -s bat      ; then echo 'Bat not found; Please run `cargo install bat`.'                                     ; exit 2; fi
+if [[ $callgrind -eq 1 || $massif -eq 1 ]] && ! which -s valgrind ; then echo 'Valgrind not found; Please install it.'                                             ; exit 2; fi
 
 if [ $compile -eq 1 ]; then
-  cargo build -r $features_arg $features --config profile.release.strip=false --config profile.release.debug=2
+  cargo build -r ${features[@]} --config profile.release.strip=false --config profile.release.debug=2
   if [ $? -ne 0 ]; then exit 3; fi
 fi
 
@@ -107,41 +80,31 @@ if [ $hyperfine -eq 1 ]; then
     --export-json "hyperfine.out.json" \
     --command-name ""
   rm stdin
+  ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
+  pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
   cat hyperfine.out.json |\
     jq 'reduce .results[] as $result ({}; .[$result.parameters.url][$result.parameters.num] = ($result.mean * 1000000 | floor / 1000 | tonumber))' |\
-    sed -E ":a /^    .{0,7}\s\S/ s/:/: /g ; ta :b /^    .{,12}\./ s/:/: /g ; tb ; :c /^    .+\..{0,2}(,|$)/ s/,|$/0&/g ; tc" |\
+    sed -E "/^    / {\
+      /\./! s/(,?)$/.\1/;\
+      :a s/(\.[0123456789]{0,2})(,?$)/\10\2/; ta\
+      :b s/( \".{0,$ql}):/\1 :/; tb\
+      :c s/:(.{0,$pl}\.)/: \1/; tc\
+    }" |\
     tee hyperfine.out-summary.json |\
     bat -pl json
 fi
 
-if [ $valgrind -eq 1 ]; then
-  for url in "${URLS[@]}"; do
-    file_safe_in_url=$(echo $url | head -c 50 | sed "s/\//-/g")
-      for num in "${NUMS[@]}"; do
-        if [ $callgrind -eq 1 ]; then
-          echo "Callgrind  - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=callgrind  --separate-threads=yes --callgrind-out-file="callgrind.out-$file_safe_in_url-$num-%p"   $COMMAND > /dev/null
-        fi
-        if [ $cachegrind -eq 1 ]; then
-          echo "Cachegrind - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=cachegrind                        --cachegrind-out-file="cachegrind.out-$file_safe_in_url-$num-%p" $COMMAND > /dev/null
-        fi
-        if [ $massif -eq 1 ]; then
-          echo "Massif     - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=massif                            --massif-out-file="massif.out-$file_safe_in_url-$num-%p"         $COMMAND > /dev/null
-        fi
-        if [ $dhat -eq 1 ]; then
-          echo "Dhat       - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=dhat                              --dhat-out-file="dhat.out-$file_safe_in_url-$num-%p"             $COMMAND > /dev/null
-        fi
-        if [ $memcheck -eq 1 ]; then
-          echo "Memcheck   - $num - $url"
-          yes "$url" | head -n $num | valgrind --quiet --tool=memcheck                                                                                           $COMMAND > /dev/null 2> "memcheck.out-$file_safe_in_url-$num"
-        fi
-      done
+for url in "${URLS[@]}"; do
+  file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
+  for num in "${NUMS[@]}"; do
+    if [ $callgrind -eq 1 ]; then echo "Callgrind - $num - $url"; yes "$url" | head -n $num | valgrind --tool=callgrind --separate-threads=yes --callgrind-out-file="callgrind.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null; fi
+    if [ $massif    -eq 1 ]; then echo "Massif    - $num - $url"; yes "$url" | head -n $num | valgrind --tool=massif                           --massif-out-file="massif.out-$file_safe_url-$num-%p"       $COMMAND &> /dev/null; fi
   done
+done
+
+if ls | grep -qF '.out'; then
+  tar -czf $out *.out*
+  echo "Benchmark details compiled and compressed into $out"
+else
+  echo "No benchmark details generated."
 fi
-
-tar -czf $out_file *.out*
-
-echo "Benchmark details compiled and compressed into $out_file"

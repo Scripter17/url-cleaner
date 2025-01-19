@@ -67,6 +67,13 @@ pub struct InnerCache {
     connection: OnceCell<SqliteConnection>
 }
 
+impl PartialEq for InnerCache {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
+}
+impl Eq for InnerCache {}
+
 /// Specifies where to store the cache.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(remote = "Self")]

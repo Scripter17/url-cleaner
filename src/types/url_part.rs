@@ -159,6 +159,8 @@ pub enum UrlPart {
     /// ```
     Host,
     /// [`Self::Host`] but with the `www.` at the start, if it exists, removed.
+    ///
+    /// Currently, for `www.abc.example.com` this returns `abc.example.com`, even though the [`Self::Subdomain`] is `www.abc`.
     /// # Getting
     /// Can be [`None`]
     /// # Setting

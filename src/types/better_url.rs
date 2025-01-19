@@ -12,6 +12,8 @@ use form_urlencoded::Serializer;
 use crate::types::*;
 
 /// A wrapper around [`Url`] that allows for some faster operations.
+///
+/// Specifically, this also contains a [`HostDetails`], which allows for only paying for [`psl::suffix_str`] once, no matter how many times [`UrlPart::NotSubdomain`] and co. are used.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(from = "Url", into = "Url")]
 pub struct BetterUrl {
@@ -274,6 +276,7 @@ impl From<Url> for BetterUrl {
 }
 
 impl std::hash::Hash for BetterUrl {
+    /// Equivalent to hashing the inner [`Url`].
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         std::hash::Hash::hash(&self.url, state)
     }
@@ -401,9 +404,13 @@ fn exorub(i: Option<usize>) -> Bound<usize> {
 }
 
 /// Details of an IPv4 address.
+///
+/// Currently only exists for completeness, but may be extended in the future.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Ipv4Details {}
 
 /// Details of an IPv4 address.
+///
+/// Currently only exists for completeness, but may be extended in the future.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Ipv6Details {}

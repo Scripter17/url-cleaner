@@ -84,7 +84,7 @@ impl FromStr for JobConfig {
     /// 
     /// Otherwise uses [`Url::parse`] and [`Into::into`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(if s.starts_with('{') {
+        Ok(if s.starts_with(['{', '"']) {
             serde_json::from_str(s)?
         } else {
             Url::parse(s)?.into()

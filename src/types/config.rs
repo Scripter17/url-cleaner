@@ -146,7 +146,7 @@ impl Config {
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     pub(crate) fn is_suitable_for_release(&self) -> bool {
-        assert!(self.commons.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self), "Unsuitable Config detected: {self:?}");
+        assert!(self.commons.is_suitable_for_release(self) && self.params.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self), "Unsuitable Config detected: {self:?}");
         true
     }
 }
@@ -162,8 +162,11 @@ pub enum ApplyConfigError {
 }
 
 /// The default [`Config`] as minified JSON.
-#[cfg(feature = "default-config")]
+#[cfg(all(feature = "default-config", not(test)))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json.minified");
+/// The default [`Config`] as minified JSON.
+#[cfg(all(feature = "default-config", test))]
+pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 #[allow(dead_code, reason = "Public API.")]

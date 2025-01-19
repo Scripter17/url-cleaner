@@ -47,6 +47,9 @@ The default config is intended to always obey the following rules:
 - Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
 - The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
     The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
+- It is acceptable for websites to be able to tell a URL has been cleaned, and even for it to know it was URL Cleaner specifically.
+    - Blending in with other URL cleaning solutions is not considered a priority.
+    - For URL Cleaner Site, this extends to websites knowing they're being tampered with.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 
@@ -59,11 +62,16 @@ Flags let you specify behaviour with the `--flag name --flag name2` command line
 
 Various flags are included in the default config for things I want to do frequently.
 
-- `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
-- `breezewiki`: Sets the domain of `fandom.com` and [BreezeWiki](https://breezewiki.com/) to the domain specified by the `breezewiki-domain` variable.
-- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
-- `discord-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-domain` and `bsky.app` to the variable `bsky-embed-domain`.
+- `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki-host` variable.
+- `unbreezewiki`: Replace Breezewiki hosts with fandom.com.
+- `nitter`: Replace twitter/known Nitter hosts with the `nitter-host` variable.
+- `unnitter`: Replace Nitter hosts with x.com.
+- `invidious`: Replace youtube/known Invidious hosts with the `invidious-host` variabel.
+- `uninvidious`: Replace Invidious hosts with youtube.com
+- `embed-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-host` and `bsky.app` to the variable `bsky-embed-host`.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
+- `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
+- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-network`: Don't make any HTTP requests.
 - `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
@@ -77,7 +85,6 @@ Various flags are included in the default config for things I want to do frequen
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
-- `unbreezewiki`: Turn [BreezeWiki](https://breezewiki.com/) into `fandom.com`. See the `breezewiki-hosts` set for which hosts are replaced.
 - `unmangle`: "Unmangle" certain "invalid but I know what you mean" URLs. Should not be used with untrusted URLs as malicious actors can use this to sneak malicuous URLs past, for example, email spam filters.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
@@ -93,11 +100,13 @@ Variables let you specify behaviour with the `--var name value --var name2 value
 Various variables are included in the default config for things that have multiple useful values.
 
 - `SOURCE_URL`: Used by URL Cleaner Site to handle things wbesites do to links on their pages that's unsuitable to always remove.
-- `bluesky-embed-domain`: The domain to use for bluesky when the `discord-compatibility` flag is set. Defaults to `fxbsky.com`.
-- `breezewiki-domain`: The domain to use to turn `fandom.com` and BreezeWiki into [BreezeWiki](https://breezewiki.com/). Defaults to `breezewiki.com`
+- `breezewiki-host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
+- `nitter-host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
+- `invidious-host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
+- `twitter-embed-host`: The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`.
+- `bluesky-embed-host`: The domain to use for bluesky when the `embed-compatibility` flag is set. Defaults to `fxbsky.com`.
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
 - `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
-- `twitter-embed-domain`: The domain to use for twitter when the `discord-compatibility` flag is set. Defaults to `vxtwitter.com`.
 
 If a variable is specified in a config's `params` field, it can be unspecified using `--unvar var1 --unvar var2`.
 
@@ -113,19 +122,24 @@ Sets let you check if a string is one of many specific strings very quickly.
 
 Various sets are included in the default config.
 
-- `breezewiki-hosts`: Hosts to replace with the `breezewiki-domain` variable when the `breezewiki` flag is enabled. `fandom.com` is always replaced and is therefore not in this set.
+- `breezewiki-hosts`: The hosts of known Breezewiki instances that can be converted to fandom.com/the `breezewiki-host` variable.
+- `nitter-hosts`: The hosts of known Nitter instances that can be converted to x.com/the `nitter-host` variable.
+- `invidious-hosts`: The hosts of known Invidious instances that can be converted to youtube.com/the `invidious-host` variable
 - `bypass.vip-host-without-www-dot-prefixes`: `HostWithoutWWWDotPrefix`es to use bypass.vip for.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
 - `lmgtfy-hosts`: Hosts to replace with `google.com`.
 - `redirect-host-without-www-dot-prefixes`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
 - `redirect-not-subdomains`: The `redirect-host-without-www-dot-prefixes` set but using the `NotSubdomain` of the URL.
+- `remove-empty-fragment-not-subdomain-blacklist`: The NotSubdomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
+- `remove-empty-query-not-subdomain-blacklist`: The NotSubdomains to not remove an empty query from.
+- `remove-www-subdomain-not-subdomain-blacklist`: `NotSubdomain`s where a `www` `Subdomain` is important and thus won't have it removed.
 - `unmangle-path-is-url-blacklist`: Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.
-- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist`: Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-whitelist` flag for the specified `NotSubdomain`s.
-- `unmangle-subdomain-starting-with-www-segment-not-subdomain-whitelist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.
+- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-blacklist`: Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-blacklist` flag for the specified `NotSubdomain`s.
+- `unmangle-subdomain-starting-with-www-segment-not-subdomain-blacklist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.
 - `unmobile-not-subdomain-blacklist`: Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
-- `utps-host-whitelist`: Hosts to never remove universal tracking parameters from.
+- `utps-not-subdomain-whitelist`: NotSubdomains to never remove universal tracking parameters from.
 
 Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
 

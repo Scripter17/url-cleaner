@@ -73,6 +73,18 @@ impl Params {
             None => {self.http_client_config.apply(reqwest::blocking::ClientBuilder::new())}
         }?.build()
     }
+
+    /// Makes sure all the listed things are documented.
+    /// # Panics
+    /// When it fails, a panic occurs to make debugging easier.
+    pub fn is_suitable_for_release(&self, config: &Config) -> bool {
+        let x = self.flags.iter().find(|flag| !config.docs.flags.contains_key(&**flag)); assert!(x.is_none(), "Undocumented flag in params: {x:?}");
+        let x = self.vars .keys().find(|var | !config.docs.vars .contains_key(&**var )); assert!(x.is_none(), "Undocumented var in params: {x:?}" );
+        let x = self.sets .keys().find(|set | !config.docs.sets .contains_key(&**set )); assert!(x.is_none(), "Undocumented set in params: {x:?}" );
+        let x = self.lists.keys().find(|list| !config.docs.lists.contains_key(&**list)); assert!(x.is_none(), "Undocumented list in params: {x:?}");
+        let x = self.maps .keys().find(|map | !config.docs.maps .contains_key(&**map )); assert!(x.is_none(), "Undocumented map in params: {x:?}" );
+        true
+    }
 }
 
 /// Allows changing [`Config::params`].
