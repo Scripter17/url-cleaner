@@ -782,6 +782,45 @@ pub enum StringModification {
         /// The value to set. If `None` then the segment is removed.
         modification: Box<Self>
     },
+    /// Finds matching segments and removes.
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "not_utp=true&utm_location=fragment".into();
+    /// StringModification::RemoveMatchingSegments {
+    ///     split: "&".into(),
+    ///     matcher: Box::new(StringMatcher::Contains {value: "utm_".into(), r#where: StringLocation::Start})
+    /// }.apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "not_utp=true");
+    /// ```
+    RemoveMatchingSegments {
+        /// The value to split the string by.
+        split: StringSource,
+        /// The [`StringMatcher`] to test each segment with.
+        matcher: Box<StringMatcher>
+    },
+    /// [`Mapper::RemoveQueryParamsMatching`] but for strings because SOMEONE's been putting UTPs in their fragments.
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "not_utp=true&utm_location=fragment".into();
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Contains {value: "utm_".into(), r#where: StringLocation::Start})).apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "not_utp=true");
+    /// ```
+    RemoveQueryParamsMatching(Box<StringMatcher>),
+    /// [`Mapper::AllowQueryParamsMatching`] but for strings because SOMEONE's been putting UTPs in their fragments.
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// 
+    /// let mut x = "this_param_is_important=true&utm_location=fragment&other_crap=2".into();
+    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Contains {value: "important".into(), r#where: StringLocation::Anywhere})).apply(&mut x, &job_state.to_view()).unwrap();
+    /// assert_eq!(x, "this_param_is_important=true");
+    /// ```
+    AllowQueryParamsMatching(Box<StringMatcher>),
     /// If the provided string is in the specified map, return the value of its corresponding [`StringSource`].
     /// # Errors
     /// If the provided string is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
@@ -1325,6 +1364,26 @@ impl StringModification {
                 modification.apply(segment, job_state)?;
                 *to = segments.join(split);
             },
+            Self::RemoveMatchingSegments {split, matcher} => {
+                let split = get_str!(split, job_state, StringModificationError);
+                *to = to.split(split).filter_map(|segment| matcher.satisfied_by(segment, job_state).map(|x| (!x).then_some(segment)).transpose()).collect::<Result<Vec<_>, _>>()?.join(split);
+            },
+            Self::RemoveQueryParamsMatching(matcher) => *to = to.split('&').filter_map(|kev|
+                matcher.satisfied_by(
+                    kev.split('=').next().unwrap_or("Why can't I #[allow] an .expect() here?"),
+                    job_state
+                )
+                .map(|x| (!x).then_some(kev))
+                .transpose()
+            ).collect::<Result<Vec<_>, _>>()?.join("&"),
+            Self::AllowQueryParamsMatching(matcher) => *to = to.split('&').filter_map(|kev|
+                matcher.satisfied_by(
+                    kev.split('=').next().unwrap_or("Why can't I #[allow] an .expect() here?"),
+                    job_state
+                )
+                .map(|x| x.then_some(kev))
+                .transpose()
+            ).collect::<Result<Vec<_>, _>>()?.join("&"),
 
 
 
@@ -1362,7 +1421,8 @@ impl StringModification {
                         #[cfg(feature = "cache")]
                         cache: job_state.cache,
                         commons: job_state.commons,
-                        common_args: Some(&common_call.args.make(job_state)?)
+                        common_args: Some(&common_call.args.make(job_state)?),
+                        jobs_context: job_state.jobs_context
                     }
                 )?
             },
@@ -1430,6 +1490,9 @@ impl StringModification {
             Self::ModifySegments {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::ModifyNthMatchingSegment {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::ModifyAroundNthMatchingSegment {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
+            Self::RemoveMatchingSegments {split, matcher} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::RemoveQueryParamsMatching(matcher) => matcher.is_suitable_for_release(config),
+            Self::AllowQueryParamsMatching(matcher) => matcher.is_suitable_for_release(config),
             Self::ModifyMatchingSegments {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release(config)),
             Self::Debug(_) => false,

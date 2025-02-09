@@ -34,6 +34,7 @@
 #![cfg_attr(feature = "cache", doc = "        // That's fine because cloning a `Cache` is extremely cheap, because it's an `Arc<Mutex<InnerCache>>`.")]
 #![cfg_attr(feature = "cache", doc = "        cache: config.cache_path.as_str().into()")]
 //!     },
+//!     context: Default::default(),
 //!     // Ideally you'll be handling URLs in bulk.
 //!     job_configs_source: Box::new([
 //!         JobConfig::from_str("https://example.com?utm_source=url-cleaner-docs")

@@ -6,7 +6,6 @@ use std::borrow::Cow;
 use std::env::var;
 
 use serde::{Serialize, Deserialize};
-use url::Url;
 use thiserror::Error;
 
 use crate::types::*;
@@ -63,7 +62,7 @@ pub enum StringSource {
     ///     StringSource::Join {
     ///         sources: vec![
     ///             StringSource::String(".".to_string()),
-    ///             StringSource::Part(UrlPart::NotSubdomain)
+    ///             StringSource::Part(UrlPart::RegDomain)
     ///         ],
     ///         join: "".to_string()
     ///     }.get(&job_state.to_view()).unwrap(),
@@ -198,7 +197,7 @@ pub enum StringSource {
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`Url::parse`] returns an error, that error is returned.
+    /// If the call to [`BetterUrl::parse`] returns an error, that error is returned.
     /// 
     /// If the call to [`UrlPart::get`] returns an error, that error is returned.
     /// # Examples
@@ -251,11 +250,16 @@ pub enum StringSource {
     ScratchpadVar(Box<Self>),
     /// Gets the value of the specified [`JobContext::vars`]
     /// 
-    /// Returns [`None`] (NOT an error) if the string var is not set.
+    /// Returns [`None`] (NOT an error) if the var is not set.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
-    /// 
     ContextVar(Box<Self>),
+    /// Gets the value of the specified [`JobsContext::vars`]
+    ///
+    /// Returns [`None`] (NOT an error) if the var is not set.
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
+    JobsContextVar(Box<Self>),
     /// Indexes into a [`Params::maps`] using `map` then indexes the returned [`HashMap`] with `key`.
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
@@ -524,11 +528,12 @@ impl StringSource {
 
 
             Self::Part(part) => part.get(job_state.url),
-            Self::ExtractPart{value, part} => value.get(job_state)?.map(|url_str| Url::parse(&url_str)).transpose()?.and_then(|url| part.get_url(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
+            Self::ExtractPart{value, part} => value.get(job_state)?.map(|url_str| BetterUrl::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::CommonVar(name) => job_state.common_args.ok_or(StringSourceError::NotInACommonContext)?.vars.get(get_str!(name, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::Var(key) => job_state.params.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(value.as_str())),
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
+            Self::JobsContextVar(key) => job_state.jobs_context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
             Self::Modified {value, modification} => {
                 match value.as_ref().get(job_state)? {
@@ -597,7 +602,8 @@ impl StringSource {
                     #[cfg(feature = "cache")]
                     cache: job_state.cache,
                     commons: job_state.commons,
-                    common_args: Some(&common_call.args.make(job_state)?)
+                    common_args: Some(&common_call.args.make(job_state)?),
+                    jobs_context: job_state.jobs_context
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
             #[cfg(feature = "custom")]
@@ -621,6 +627,7 @@ impl StringSource {
             Self::Var(name) => name.is_suitable_for_release(config) && check_docs!(config, vars, name.as_ref()),
             Self::ScratchpadVar(name) => name.is_suitable_for_release(config),
             Self::ContextVar(name) => name.is_suitable_for_release(config),
+            Self::JobsContextVar(name) => name.is_suitable_for_release(config),
             Self::ParamsMap {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
             Self::Modified {value, modification} => value.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),

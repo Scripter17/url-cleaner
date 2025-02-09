@@ -28,11 +28,12 @@ impl<'a> JobsConfig<'a> {
     /// 
     /// Can be more convenient than [`Jobs::iter`].
     #[allow(dead_code, reason = "Public API.")]
-    pub fn with_job_config(&'a self, job_config: JobConfig) -> Job<'a> {
+    pub fn new_job(&'a self, job_config: JobConfig, jobs_context: &'a JobsContext) -> Job<'a> {
         Job {
             url: job_config.url,
             config: &self.config,
             context: job_config.context,
+            jobs_context,
             #[cfg(feature = "cache")]
             cache: &self.cache
         }
@@ -47,6 +48,8 @@ impl<'a> JobsConfig<'a> {
 pub struct Jobs<'a> {
     /// The [`JobsConfig`] to use.
     pub jobs_config: JobsConfig<'a>,
+    /// The context.
+    pub context: JobsContext,
     /// The iterator [`JobConfig`]s are acquired from.
     pub job_configs_source: Box<dyn Iterator<Item = Result<JobConfig, MakeJobConfigError>>>
 }
@@ -66,7 +69,7 @@ impl<'a> Jobs<'a> {
     pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, MakeJobError>> {
         (&mut self.job_configs_source)
             .map(|job_config_result| match job_config_result {
-                Ok(job_config) => Ok(self.jobs_config.with_job_config(job_config)),
+                Ok(job_config) => Ok(self.jobs_config.new_job(job_config, &self.context)),
                 Err(e) => Err(e.into())
             })
     }

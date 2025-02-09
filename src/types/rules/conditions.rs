@@ -199,7 +199,9 @@ pub enum Condition {
 
     /// Passes if the URL's [`UrlPart::Host`] is the specified value.
     HostIs(String),
-    /// Passes if the URL's [`UrlPart::NotSubdomain`] is the specified value.
+    /// Passes if the URL's [`UrlPart::Subdomain`] is the specified value.
+    SubdomainIs(String),
+    /// Passes if the URL's [`UrlPart::RegDomain`] is the specified value.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -207,13 +209,13 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::NotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::RegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::NotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::RegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
-    NotSubdomainIs(String),
-    /// Passes if the URL's [`UrlPart::MaybeWWWNotSubdomain`] is the specified value.
+    RegDomainIs(String),
+    /// Passes if the URL's [`UrlPart::MaybeWWWRegDomain`] is the specified value.
     /// # Examples
     /// ```
     /// # use url::Url;
@@ -221,15 +223,15 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWNotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWRegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::MaybeWWWNotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWRegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://not.example.com").unwrap();
-    /// assert_eq!(Condition::MaybeWWWNotSubdomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWRegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
-    MaybeWWWNotSubdomainIs(String),
+    MaybeWWWRegDomainIs(String),
     /// Passes if the URL's [`UrlPart::Domain`] is the specified value.
     /// # Examples
     /// ```
@@ -338,6 +340,8 @@ pub enum Condition {
     /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     NotDomainSuffixIs(String),
+    /// Passes if the URL's [`UrlPart::DomainSuffix`] is the specified value.
+    DomainSuffixIs(String),
     /// Passes if the URL's host is in the specified set of hosts.
     /// 
     /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`UrlPart::HostWithoutWWWDotPrefix`].
@@ -356,6 +360,8 @@ pub enum Condition {
     /// ```
     HostIsOneOf(HashSet<String>),
 
+    /// Passes if the URL has a host.
+    UrlHasHost,
     /// Passes if the URL has a host that is a fully qualified domain name.
     HostIsFqdn,
     /// Passes if the URL has a host that is a domain.
@@ -461,6 +467,13 @@ pub enum Condition {
         part: UrlPart,
         /// The [`StringMatcher`] used to check the part's value.
         matcher: StringMatcher
+    },
+    /// Passes if the specified part's value is in the specified set.
+    PartIsOneOf {
+        /// The part to check.
+        part: UrlPart,
+        /// The set of values to pass for.
+        values: HashSet<Option<String>>
     },
 
     // Miscellaneous.
@@ -697,16 +710,19 @@ impl Condition {
             // Domain conditions.
 
             Self::HostIs                (x) => UrlPart::Host                .get(job_state.url).as_deref() == Some(&**x),
-            Self::NotSubdomainIs        (x) => UrlPart::NotSubdomain        .get(job_state.url).as_deref() == Some(&**x),
-            Self::MaybeWWWNotSubdomainIs(x) => UrlPart::MaybeWWWNotSubdomain.get(job_state.url).as_deref() == Some(&**x),
+            Self::SubdomainIs           (x) => UrlPart::Subdomain           .get(job_state.url).as_deref() == Some(&**x),
+            Self::RegDomainIs           (x) => UrlPart::RegDomain           .get(job_state.url).as_deref() == Some(&**x),
+            Self::MaybeWWWRegDomainIs   (x) => UrlPart::MaybeWWWRegDomain   .get(job_state.url).as_deref() == Some(&**x),
             Self::DomainIs              (x) => UrlPart::Domain              .get(job_state.url).as_deref() == Some(&**x),
             Self::DomainMiddleIs        (x) => UrlPart::DomainMiddle        .get(job_state.url).as_deref() == Some(&**x),
             Self::MaybeWWWDomainMiddleIs(x) => UrlPart::MaybeWWWDomainMiddle.get(job_state.url).as_deref() == Some(&**x),
             Self::NotDomainSuffixIs     (x) => UrlPart::NotDomainSuffix     .get(job_state.url).as_deref() == Some(&**x),
+            Self::DomainSuffixIs        (x) => UrlPart::DomainSuffix        .get(job_state.url).as_deref() == Some(&**x),
 
             Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
 
-            Self::HostIsFqdn   => matches!(job_state.url.host_details(), Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..}))),
+            Self::UrlHasHost   => job_state.url.host().is_some(),
+            Self::HostIsFqdn   => matches!(job_state.url.host_details(), Some(HostDetails::Domain(d @ DomainDetails {..})) if d.is_fqdn()),
             Self::HostIsDomain => matches!(job_state.url.host_details(), Some(HostDetails::Domain(_))),
             Self::HostIsIp     => matches!(job_state.url.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_))),
             Self::HostIsIpv4   => matches!(job_state.url.host_details(), Some(HostDetails::Ipv4(_))),
@@ -726,6 +742,7 @@ impl Condition {
             Self::PartIs{part, value} => part.get(job_state.url).as_deref()==get_option_str!(value, job_state),
             Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(job_state.url).ok_or(ConditionError::UrlPartNotFound)?, get_str!(value, job_state, ConditionError))?,
             Self::PartMatches {part, matcher} => matcher.satisfied_by(&part.get(job_state.url).ok_or(ConditionError::UrlPartNotFound)?, job_state)?,
+            Self::PartIsOneOf {part, values} => values.contains(&part.get(job_state.url).map(|x| x.into_owned())),
 
             // Miscellaneous.
 
@@ -753,7 +770,8 @@ impl Condition {
                     #[cfg(feature = "cache")]
                     cache: job_state.cache,
                     commons: job_state.commons,
-                    common_args: Some(&common_call.args.make(job_state)?)
+                    common_args: Some(&common_call.args.make(job_state)?),
+                    jobs_context: job_state.jobs_context
                 })?
             },
             #[cfg(feature = "custom")]
@@ -778,6 +796,7 @@ impl Condition {
             Self::PartIs {part, value} => part.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::PartContains {part, value, r#where} => part.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
             Self::PartMatches {part, matcher} => part.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::PartIsOneOf {part, ..} => part.is_suitable_for_release(config),
             Self::VarIs {name, value} => name.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),
             Self::StringIs {left, right} => left.as_ref().is_none_or(|left| left.is_suitable_for_release(config)) && right.as_ref().is_none_or(|right| right.is_suitable_for_release(config)),
@@ -785,11 +804,11 @@ impl Condition {
             Self::StringMatches {value, matcher} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             #[cfg(feature = "commands")] Self::CommandExists (_) => false,
             #[cfg(feature = "commands")] Self::CommandExitStatus {..} => false,
-            Self::Always | Self::Never | Self::Error | Self::HostIs(_) | Self::NotSubdomainIs(_) |
-                Self::MaybeWWWNotSubdomainIs(_) | Self::HostIsOneOf(_) | Self::DomainIs(_) |
-                Self::DomainMiddleIs(_) | Self::MaybeWWWDomainMiddleIs(_) | Self::NotDomainSuffixIs(_) |
-                Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet |
-                Self::HostIsFqdn | Self::HostIsDomain | Self::HostIsIp | Self::HostIsIpv4 | Self::HostIsIpv6 => true,
+            Self::Always | Self::Never | Self::Error | Self::HostIs(_) | Self::SubdomainIs(_) |
+                Self::RegDomainIs(_) | Self::MaybeWWWRegDomainIs(_) | Self::HostIsOneOf(_) |
+                Self::DomainIs(_) | Self::DomainMiddleIs(_) | Self::MaybeWWWDomainMiddleIs(_) |
+                Self::NotDomainSuffixIs(_) | Self::DomainSuffixIs(_) | Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet |
+                Self::UrlHasHost | Self::HostIsFqdn | Self::HostIsDomain | Self::HostIsIp | Self::HostIsIpv4 | Self::HostIsIpv6 => true,
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             #[cfg(feature = "custom")]
             Self::Custom(_) => false

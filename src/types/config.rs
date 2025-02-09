@@ -162,8 +162,11 @@ pub enum ApplyConfigError {
 }
 
 /// The default [`Config`] as minified JSON.
-#[cfg(feature = "default-config")]
+#[cfg(all(feature = "default-config", not(test)))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-config.json.minified"));
+/// The default [`Config`] as minified JSON.
+#[cfg(all(feature = "default-config", test))]
+pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
 #[cfg(feature = "default-config")]
 #[allow(dead_code, reason = "Public API.")]

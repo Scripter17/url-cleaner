@@ -322,7 +322,7 @@ pub enum Mapper {
     /// However, this means that this mapper will by default send an HTTP GET request to all pages pointed to even if they're not redirects.
     /// 
     /// The default config handles this by configuring [`Self::ExpandRedirect::http_client_config_diff`]'s [`HttpClientConfigDiff::redirect_policy`] to `Some(`[`RedirectPolicy::None`]`)`.
-    /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while protecting privacy.
+    /// And, because it's in a [`Rule::Repeat`], it still handles recursion up to 10 levels deep while preventing leaks to the last page.
     /// # Errors
     #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::read`] returns an error, that error is returned.")]
     /// 
@@ -622,16 +622,16 @@ impl Mapper {
             // Query.
 
             Self::RemoveQuery => job_state.url.set_query(None),
-            Self::RemoveQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len())).extend_pairs(job_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
+            Self::RemoveQueryParams(names) => if let Some(query_len) = job_state.url.query().map(|x| x.len()) {
+                let new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(job_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
                 job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
-            Self::AllowQueryParams(names) => {
-                let new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len())).extend_pairs(job_state.url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
+            Self::AllowQueryParams(names) => if let Some(query_len) = job_state.url.query().map(|x| x.len()) {
+                let new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(job_state.url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
                 job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
             },
-            Self::RemoveQueryParamsMatching(matcher) => {
-                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len()));
+            Self::RemoveQueryParamsMatching(matcher) => if let Some(query_len) = job_state.url.query().map(|x| x.len()) {
+                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len));
                 for (name, value) in job_state.url.query_pairs() {
                     if !matcher.satisfied_by(&name, &job_state.to_view())? {
                         new_query.append_pair(&name, &value);
@@ -640,8 +640,8 @@ impl Mapper {
                 let x = new_query.finish();
                 job_state.url.set_query((!x.is_empty()).then_some(&x));
             },
-            Self::AllowQueryParamsMatching(matcher) => {
-                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(job_state.url.query().unwrap_or("").len()));
+            Self::AllowQueryParamsMatching(matcher) => if let Some(query_len) = job_state.url.query().map(|x| x.len()) {
+                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len));
                 for (name, value) in job_state.url.query_pairs() {
                     if matcher.satisfied_by(&name, &job_state.to_view())? {
                         new_query.append_pair(&name, &value);
@@ -765,7 +765,8 @@ impl Mapper {
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache: job_state.cache,
-                    commons: job_state.commons
+                    commons: job_state.commons,
+                    jobs_context: job_state.jobs_context
                 })?
             },
             #[cfg(feature = "custom")]

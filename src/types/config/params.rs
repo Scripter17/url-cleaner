@@ -245,24 +245,48 @@ pub struct ParamsDiffArgParser {
 /// The errors that deriving [`clap::Parser`] can't catch.
 #[derive(Debug, Error)]
 pub enum ParamsDiffArgParserValueWrong {
-    /// --insert-into-map needs a map to insert key-value pairs into.
-    #[error("--insert-into-map needs a map to insert key-value pairs into.")]
-    InsertIntoMapNeedsAMap,
-    /// --insert-into-map found a key without a value at the end.
-    #[error("--insert-into-map found a key without a value at the end.")]
-    InsertIntoMapNeedsAValue,
-    /// --remove-from-map needs a map to remove keys from.
-    #[error("--remove-from-map needs a map to remove keys from.")]
-    RemoveFromMapNeedsAMap
+    /// Returned when a `--var` invocation doesn't have a name (0 arguments).
+    #[error("--var didn't have a name specified.")]
+    VarNoNameSpecified,
+    /// Returned when a `--var` invocation doesn't have a value (1 argument).
+    #[error("--var didn't have a value specified.")]
+    VarNoValueSpecified,
+    /// Returned when a `--var` invocation has too many (3 or more arguments).
+    #[error("--var had too many arguments.")]
+    VarTooManyArguments,
+
+    /// Returned when an `--insert-into-set` invocation doesn't have a name (0 arguments).
+    #[error("--insert-into-set didn't have a name.")]
+    InsertIntoSetsNoName,
+    /// Returned when a `--remove-from-set` invocation doesn't have a name (0 arguments).
+    #[error("--remove-from-set didn't have a name.")]
+    RemoveFromSetsNoName,
+
+    /// Returned when an `--insert-into-map` invocation doesn't have a name. (0 arguments).
+    #[error("--insert-into-map didn't have a name.")]
+    InsertIntoMapNoName,
+    /// Returned when an `--insert-into-map` invocation has a key without a value (even number of arguments).
+    #[error("--insert-into-map found a key without a value.")]
+    InsertIntoMapKeyWithoutValue,
+    /// Returned when a `--remove-from-map` invocation doesn't have a map (0 arguments).
+    #[error("--remove-from-map didn't have a map specified.")]
+    RemoveFromMapNoMapSpecified,
 }
 
 impl ParamsDiffArgParserValueWrong {
     /// Gets the error message.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::InsertIntoMapNeedsAMap   => "--insert-into-map needs a map to insert key-value pairs into.",
-            Self::InsertIntoMapNeedsAValue => "--insert-into-map found a key without a value at the end.",
-            Self::RemoveFromMapNeedsAMap   => "--remove-from-map needs a map to remove keys from."
+            Self::VarNoNameSpecified           => "--var didn't have a name specified.",
+            Self::VarNoValueSpecified          => "--var didn't have a value specified.",
+            Self::VarTooManyArguments          => "--var had too many arguments.",
+
+            Self::InsertIntoSetsNoName         => "--insert-into-set didn't have a name.",
+            Self::RemoveFromSetsNoName         => "--remove-from-set didn't have a name.",
+
+            Self::InsertIntoMapNoName          => "--insert-into-map didn't have a name.",
+            Self::InsertIntoMapKeyWithoutValue => "--insert-into-map found a key without a value.",
+            Self::RemoveFromMapNoMapSpecified  => "--remove-from-map didn't have a map specified.",
         }
     }
 }
@@ -271,41 +295,33 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
     type Error = ParamsDiffArgParserValueWrong;
 
     fn try_from(value: ParamsDiffArgParser) -> Result<Self, ParamsDiffArgParserValueWrong> {
-        for invocation in value.insert_into_map.iter() {
-            if invocation.is_empty() {
-                Err(ParamsDiffArgParserValueWrong::InsertIntoMapNeedsAMap)?;
-            }
-            if invocation.len() % 2 != 1 {
-                Err(ParamsDiffArgParserValueWrong::InsertIntoMapNeedsAValue)?;
-            }
-        }
-
-        for invocation in value.remove_from_map.iter() {
-            if invocation.is_empty() {
-                Err(ParamsDiffArgParserValueWrong::RemoveFromMapNeedsAMap)?;
-            }
-        }
-
         Ok(ParamsDiff {
-            flags  : value.flag  .into_iter().collect(), // `impl<X: IntoIterator, Y: FromIterator<<X as IntoIterator>::Item>> From<X> for Y`?
-            unflags: value.unflag.into_iter().collect(), // It's probably not a good thing to do a global impl for,
-            vars   : value.var   .into_iter().map(|x| x.try_into().expect("Clap guarantees the length is always 2")).map(|[name, value]: [String; 2]| (name, value)).collect(), // Either let me TryFrom a Vec into a tuple or let me collect a [T; 2] into a HashMap. Preferably both.
-            unvars : value.unvar .into_iter().collect(), // but surely once specialization lands in Rust 2150 it'll be fine?
+            flags  : value.flag  .into_iter().collect(),
+            unflags: value.unflag.into_iter().collect(),
+            vars   : value.var   .into_iter().map(|kv| match <Vec<_> as TryInto<[String; 2]>>::try_into(kv) {
+                Ok([k, v]) => Ok((k, v)),
+                Err(x) => Err(match x.len() {
+                    0 => ParamsDiffArgParserValueWrong::VarNoNameSpecified,
+                    1 => ParamsDiffArgParserValueWrong::VarNoValueSpecified,
+                    2 => unreachable!(),
+                    _ => ParamsDiffArgParserValueWrong::VarTooManyArguments
+                })
+            }).collect::<Result<_, _>>()?,
+            unvars : value.unvar.into_iter().collect(),
             init_sets: Default::default(),
-            insert_into_sets: value.insert_into_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
-            remove_from_sets: value.remove_from_set.into_iter().map(|mut x| (x.swap_remove(0), x)).collect(),
+            insert_into_sets: value.insert_into_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::InsertIntoSetsNoName)}).collect::<Result<_, _>>()?,
+            remove_from_sets: value.remove_from_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromSetsNoName)}).collect::<Result<_, _>>()?,
             delete_sets     : Default::default(),
             init_maps       : Default::default(),
-            insert_into_maps: value.insert_into_map.into_iter().map(|x| {
-                let mut values = HashMap::new();
-                let mut args_iter = x.into_iter();
-                let map = args_iter.next().expect("The validation to have worked.");
-                while let Some(k) = args_iter.next() {
-                    values.insert(k, args_iter.next().expect("The validation to have worked."));
+            insert_into_maps: value.insert_into_map.into_iter().map(|x|
+                if x.len()%2 == 1 {
+                    let mut i = x.into_iter();
+                    Ok((i.next().ok_or(ParamsDiffArgParserValueWrong::InsertIntoMapNoName)?, std::iter::from_fn(|| i.next().zip(i.next())).collect()))
+                } else {
+                    Err(ParamsDiffArgParserValueWrong::InsertIntoMapKeyWithoutValue)?
                 }
-                (map, values)
-            }).collect::<HashMap<_, _>>(),
-            remove_from_maps: value.remove_from_map.into_iter().map(|mut x| (x.swap_remove(0), x)).collect::<HashMap<_, _>>(),
+            ).collect::<Result<_, _>>()?,
+            remove_from_maps: value.remove_from_map.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)}).collect::<Result<HashMap<_, _>, _>>()?,
             delete_maps     : Default::default(),
             #[cfg(feature = "cache")] read_cache : value.read_cache,
             #[cfg(feature = "cache")] write_cache: value.write_cache,
@@ -319,7 +335,7 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
 }
 
 impl ParamsDiffArgParser {
-    /// Returns [`true`] if this would make a [`ParamsDiff`] that actually does anything.
+    /// Returns [`true`] if this would make a [`ParamsDiff`] that actually does anything, or if making a [`ParamsDiff`] would error.
     /// 
     /// It's much faster to check this than make and apply the [`ParamsDiff`].
     pub fn does_anything(&self) -> bool {

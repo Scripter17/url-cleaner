@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2021"
 description = "A CLI tool and library for URL manipulation with a focus on stripping tracking garbage."
 repository = "https://github.com/Scripter17/url-cleaner"
@@ -11,24 +11,24 @@ license = "AGPL-3.0-or-later"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.5.26", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.28", features = ["derive", "unstable-v5"] }
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.136"
+serde_json = "1.0.138"
 url = { version = "2.5.4", features = ["serde"] }
 reqwest = { version = "0.12.12", features = ["blocking", "socks", "json", "cookies"], optional = true }
 thiserror = "2.0.11"
 regex = { version = "1.11.1", optional = true }
 glob = { version = "0.3.2", optional = true }
-psl = "2.1.79"
+psl = "2.1.83"
 form_urlencoded = "1.2.1"
 regex-syntax = { version = "0.8.5", optional = true }
 percent-encoding = "2.3.1"
-which = { version = "7.0.1", optional = true }
+which = { version = "7.0.2", optional = true }
 base64 = { version = "0.22.1", optional = true }
-diesel = { version = "2.2.6", features = ["sqlite", "returning_clauses_for_sqlite_3_35"], optional = true }
+diesel = { version = "2.2.7", features = ["sqlite", "returning_clauses_for_sqlite_3_35"], optional = true }
 
 [build-dependencies]
-serde_json = "1.0.136"
+serde_json = "1.0.138"
 
 [features]
 default = [
@@ -102,3 +102,4 @@ indexing_slicing = "deny"
 unit_arg = "allow"
 match_like_matches_macro = "allow"
 module_inception = "allow"
+useless_asref = "allow" # A false positive in src/types/better_url/host_details.rs that cannot be shut up.

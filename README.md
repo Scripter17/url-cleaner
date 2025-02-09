@@ -6,18 +6,24 @@ URL Cleaner is an extremely versatile tool designed to make this process as comp
 
 ## Privacy
 
-There are several non-obvious privacy concerns you should keep in mind while using URL Cleaner, and especially the default config.
+### Redirect sites
 
-- Carefully crafted links in emails/DMs/whatever might look fine to spam/mallink filters but, when cleaned (especially with the `unmangle` flag), become malicious.
-- When using [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) without the `no-network` flag, all (supported) redirects on a webpage are effectively automatically clicked.
-    - While this does prevent the redirect website from putting cookies on your browser and possibly gives it the false impression you clicked the link, it gives the website certainty you viewed the link.
-        - In the hopefully never going to happen case of someone hijacking a supported redirect site, this could allow an attacker to reliably grab your IP by sending it in an email/DM.
-            - While you can configure URL Cleaner to use a proxy to avoid the IP grabbing, it would still let them know when you're online.
-- For some websites, URL Cleaner strips out more than just tracking stuff. I'm still not sure if or when this ever becomes a security issue.
+The main privacy concern when using URL Cleaner for day-to-day activities is the fact URL Cleaner, when the `no-network` flag isn't set, expands redirects/shortlinks.  
+For example, passing a bit.ly link to URL Cleaner will effectively click on that URL will send an HTTP request to bit.ly.  
+While the default config removes as much tracking stuff as possible before sending the request, some redirect sites may merge the sender and the destination information into the same part of the URL.  
+For example, if Alice and Bob share the same social media post with you, the social media may give Alice the URL `https://example.com/share/1234` but give Bob the URL `https://example.com/share/5678`.  
+In this case, it's impossible (or extremely difficult to find a way) to expand either link without telling the social media who you got the URL from.
 
-If you are in any way using URL Cleaner in a life-or-death scenario, PLEASE always use the `no-network` flag and be extremely careful of people you even remotely don't trust sending you URLs.
+In general it's impossible to prove if a redirect website doesn't merge sender and destination information, so one should always assume it is.  
+If you consider this a problem, please use the `no-network` flag.  
+Some redirect websites will still be handled but that's only because they can be done entirely offline.
 
-Also if you're using URL Cleaner in life-or-death scenarios please be extremely careful. I'm still not confident I've minimized information leaks in handled websites.
+### You look like you use URL Cleaner
+
+The lesser main privacy concern is that the default config makes no attempt to hide from websites that you (or the person sending you a link) uses URL Cleaner.  
+For example, amazon product listings are shortened from a paragraph of crap to just `https://amazon.com/dp/PRODUCT-ID`.  
+In the past (and possibly the future), extreme cases of this were gated behind a `minimize` flag that would try to only remove tracking stuff.  
+It was made the default because I consider the benefit from blending into other URL cleaning programs extremely slim.
 
 ## C dependencies
 
@@ -33,6 +39,10 @@ If you can't compile it I'll try to help you out. And if you can make it work on
 ## Basic usage
 
 By default, compiling URL Cleaner includes the [`default-config.json`](default-config.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
+
+Additionally, URL Cleaner can take jobs from STDIN lines. `cat urls.txt | url-cleaner` works by printing each result on the same line as its input.
+
+See [Parsing output](#parsing-output) for details on the output format, and yes JSON output is supported.
 
 ### The default config
 
@@ -162,35 +172,35 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-01-11
+Last updated 2025-02-04.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0":        6.174,
-    "1":        6.167,
-    "10":       6.232,
-    "100":      6.466,
-    "1000":     8.574,
-    "10000":   27.958
+    "0"    :  5.948,
+    "1"    :  6.082,
+    "10"   :  6.136,
+    "100"  :  6.394,
+    "1000" :  8.797,
+    "10000": 29.497
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0":        6.098,
-    "1":        6.188,
-    "10":       6.290,
-    "100":      6.505,
-    "1000":     9.231,
-    "10000":   39.425
+    "0"    :  6.026,
+    "1"    :  6.087,
+    "10"   :  6.170,
+    "100"  :  6.424,
+    "1000" :  9.569,
+    "10000": 41.063
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0":        6.110,
-    "1":        6.139,
-    "10":       6.200,
-    "100":      6.654,
-    "1000":    10.530,
-    "10000":   52.233
+    "0"    :  6.032,
+    "1"    :  6.108,
+    "10"   :  6.117,
+    "100"  :  6.623,
+    "1000" : 10.810,
+    "10000": 53.806
   }
 }
 ```
@@ -210,48 +220,9 @@ The people and projects I have stolen various parts of the default config from.
 - [AdGuard's Tracking Parameters Filter](https://github.com/AdguardTeam/AdguardFilters/blob/master/TrackParamFilter/sections)
 - [FastForward](https://github.com/FastForwardTeam/FastForward)
 
-## Custom rules
-
-Although proper documentation of the config schema is pending me being bothered to do it, the `url_cleaner` crate itself is reasonably well documented and the various types are (I think) fairly easy to understand.  
-The main files you want to look at are [`conditions.rs`](src/rules/conditions.rs) and [`mappers.rs`](src/rules/mappers.rs).  
-Additionally [`url_part.rs`](src/types/url_part.rs), [`string_source.rs`](src/types/string_source.rs), and [`string_modification.rs`](src/types/string_modification.rs) are very important for more advanced rules.
-
-### Footguns
-
-There are various things in/about URL Cleaner that I or many consider stupid but for various reasons cannot/should not be "fixed". These include but are not limited to:
-
-- For `UrlPart`s and `Mapper`s that use "suffix" semantics (the idea that the '.co.uk" in "google.co.uk" is semantically the same as the ".com" in "google.com"'), the [psl](https://docs.rs/psl/latest/psl/) crate is used which in turn uses [Mozilla's Public Suffix List](https://publicsuffix.org/).
-    Various suffixes are included that one may expect to be normal domains, such as blogspot.com.
-    If for some reason a domain isn't working as expected, that may be the issue.
-
-### Reference for people who don't know Rust's syntax:
-
-- [`Option<...>`](https://doc.rust-lang.org/std/option/enum.Option.html) just means a value can be `null` in the JSON. `{"abc": "xyz"}` and `{"abc": null}` are both valid states for a `abc: Option<String>` field.
-- [`Box<...>`](https://doc.rust-lang.org/std/boxed/struct.Box.html) has no bearing on JSON syntax or possible values. It's just used so Rust can put types inside themselves.
-- [`Vec<...>`](https://doc.rust-lang.org/std/vec/struct.Vec.html) and [`HashSet<...>`](https://doc.rust-lang.org/std/collections/struct.HashSet.html) are written as lists.
-- [`HashMap<..., ...>`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) and [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) are written as maps.
-    - [`HeaderMap`](https://docs.rs/reqwest/latest/reqwest/header/struct.HeaderMap.html) keys are always lowercase.
-- [`u8`](https://doc.rust-lang.org/std/primitive.u8.html), [`u16`](https://doc.rust-lang.org/std/primitive.u16.html), [`u32`](https://doc.rust-lang.org/std/primitive.u32.html), [`u64`](https://doc.rust-lang.org/std/primitive.u64.html), [`u128`](https://doc.rust-lang.org/std/primitive.u128.html), and [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) are unsigned (never negative) integers. [`i8`](https://doc.rust-lang.org/std/primitive.i8.html), [`i16`](https://doc.rust-lang.org/std/primitive.i16.html), [`i32`](https://doc.rust-lang.org/std/primitive.i32.html), [`i64`](https://doc.rust-lang.org/std/primitive.i64.html), [`i128`](https://doc.rust-lang.org/std/primitive.i128.html), and [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) are signed (maybe negative) integers. [`usize`](https://doc.rust-lang.org/std/primitive.usize.html) is a [`u32`](https://doc.rust-lang.org/std/primitive.u32.html) on 32-bit computers and [`u64`](https://doc.rust-lang.org/std/primitive.u64.html) on 64-bit computers. Likewise [`isize`](https://doc.rust-lang.org/std/primitive.isize.html) is [`i32`](https://doc.rust-lang.org/std/primitive.i32.html) and [`i64`](https://doc.rust-lang.org/std/primitive.i64.html) under the same conditions. In practice, if a number makes sense to be used in a field then it'll fit.
-- [`Duration`](https://doc.rust-lang.org/nightly/core/time/struct.Duration.html) is written as `{"secs": u64, "nanos": 0..1000000000}`.
-- If a field starts with [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) you write it without the [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) (like `"else"`). [`r#`](https://doc.rust-lang.org/rust-by-example/compatibility/raw_identifiers.html) is just Rust syntax for "this isn't a keyword".
-- [`StringSource`](src/types/string_source.rs), [`GlobWrapper`](src/glue/glob.rs), [`RegexWrapper`](src/glue/regex.rs), [`RegexParts`](src/glue/regex/regex_parts.rs), and [`CommandWrapper`](src/glue/command.rs) can be written as both strings and maps.
-    - [`RegexWrapper`](src/glue/regex.rs) and [`RegexParts`](src/glue/regex/regex_parts.rs) don't do any handling of [`/.../i`](https://en.wikipedia.org/wiki/Regex#Delimiters)-style syntax.
-    - [`CommandWrapper`](src/glue/command.rs) doesn't do any argument parsing.
-- [`#[serde(default)]`](https://serde.rs/field-attrs.html#default) and [`#[serde(default = "...")]`](https://serde.rs/field-attrs.html#default--path) allow for a field to be omitted when the desired value is almost always the same.
-    - For [`Option<...>`](https://doc.rust-lang.org/std/option/enum.Option.html) fields, the default is `null`.
-    - For [`bool`](https://doc.rust-lang.org/std/primitive.bool.html) fields, the default is `false`.
-- [`#[serde(skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if) lets the `--print-config` CLI flag omit unnecessary details (like when a field's value is its default value).
-- [`#[serde(from = "...")]`](https://serde.rs/container-attrs.html#from), [`#[serde(into = "...")]`](https://serde.rs/container-attrs.html#into), [`#[serde(remote = "...")]`](https://serde.rs/container-attrs.html#remote), [`#[serde(serialize_with = "...")]`](https://serde.rs/field-attrs.html#serialize_with), [`#[serde(deserialize_with = "...")]`](https://serde.rs/field-attrs.html#deserialize_with), and [`#[serde(with = "...")]`](https://serde.rs/field-attrs.html#with) are implementation details that can be mostly ignored.
-- [`#[serde(remote = "Self")]`](https://serde.rs/container-attrs.html#remote) is a very strange way to allow a struct to be deserialized from a map or a string. See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
-
-Additionally, regex support uses the [regex](https://docs.rs/regex/latest/regex/index.html) crate, which doesn't support look-around and backreferences.  
-Certain common regex operations are not possible to express without those, but this should never come up in practice.
-
 ## MSRV
 
 The Minimum Supported Rust Version is the latest stable release. URL Cleaner may or may not work on older versions, but there's no guarantee.
-
-If this is an issue I'll do what I can to lower it but Diesel also keeps a fairly recent MSRV so you may lose caching.
 
 ## Untrusted input
 

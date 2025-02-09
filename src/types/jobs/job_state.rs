@@ -14,6 +14,8 @@ pub struct JobState<'a> {
     pub common_args: Option<&'a CommonArgs>,
     /// The context surrounding the URL.
     pub context: &'a JobContext,
+    /// The context surrounding the [`Jobs`].
+    pub jobs_context: &'a JobsContext,
     /// The flags, variables, etc. defined by the job initiator.
     pub params: &'a Params,
     /// Various things that are used multiple times.
@@ -29,14 +31,15 @@ impl<'a> JobState<'a> {
     /// Functions that don't have anything to do with [`Commons`] still take [`JobStateView`] for the consistency.
     pub fn to_view(&'a self) -> JobStateView<'a> {
         JobStateView {
-            url        : self.url,
-            scratchpad : self.scratchpad,
-            common_args: self.common_args,
-            context    : self.context,
-            params     : self.params,
-            commons    : self.commons,
+            url         : self.url,
+            scratchpad  : self.scratchpad,
+            common_args : self.common_args,
+            context     : self.context,
+            jobs_context: self.jobs_context,
+            params      : self.params,
+            commons     : self.commons,
             #[cfg(feature = "cache")]
-            cache      : self.cache
+            cache       : self.cache
         }
     }
 }
@@ -45,12 +48,14 @@ impl<'a> JobState<'a> {
 #[macro_export]
 #[cfg(feature = "cache")]
 macro_rules! job_state {
-    ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)?) => {
+    ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)? $(jobs_context = $jobs_context:expr;)?) => {
         let url = "https://example.com";
         $(let url = $url;)?
         let mut scratchpad = Default::default();
         let context: $crate::types::JobContext = Default::default();
         $(let context = $context;)?
+        let jobs_context: $crate::types::JobsContext = Default::default();
+        $(let jobs_context = $jobs_context;)?
         let params: $crate::types::Params = Default::default();
         $(let params = $params;)?
         let commons: $crate::types::Commons = Default::default();
@@ -62,6 +67,7 @@ macro_rules! job_state {
             scratchpad: &mut scratchpad,
             common_args: None,
             context: &context,
+            jobs_context: &jobs_context,
             params: &params,
             commons: &commons,
             cache: &cache
@@ -73,12 +79,14 @@ macro_rules! job_state {
 #[macro_export]
 #[cfg(not(feature = "cache"))]
 macro_rules! job_state {
-    ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)?) => {
+    ($job_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)? $(jobs_context = $jobs_context:expr;)?) => {
         let url = "https://example.com";
         $(let url = $url;)?
         let mut scratchpad = Default::default();
         let context: $crate::types::JobContext = Default::default();
         $(let context = $context;)?
+        let jobs_context: $crate::types::JobsContext = Default::default();
+        $(let jobs_context = $jobs_context;)?
         let params: $crate::types::Params = Default::default();
         $(let params = $params;)?
         let commons: $crate::types::Commons = Default::default();
@@ -89,6 +97,7 @@ macro_rules! job_state {
             scratchpad: &mut scratchpad,
             common_args: None,
             context: &context,
+            jobs_context: &jobs_context,
             params: &params,
             commons: &commons
         };
@@ -118,6 +127,10 @@ pub struct JobStateView<'a> {
     /// 
     /// See [`JobState::context`].
     pub context: &'a JobContext,
+    /// The context surrounding the [`Jobs`].
+    ///
+    /// See [`JobState::jobs_context`].
+    pub jobs_context: &'a JobsContext,
     /// The flags, variables, etc. defined by the job initiator.
     /// 
     /// See [`JobState::params`].

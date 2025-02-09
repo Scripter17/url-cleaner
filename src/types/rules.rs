@@ -361,7 +361,8 @@ impl Rule {
                     scratchpad: job_state.scratchpad,
                     #[cfg(feature = "cache")]
                     cache: job_state.cache,
-                    commons: job_state.commons
+                    commons: job_state.commons,
+                    jobs_context: job_state.jobs_context
                 })
             },
             #[cfg(feature = "custom")]

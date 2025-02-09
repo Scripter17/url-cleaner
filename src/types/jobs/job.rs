@@ -15,6 +15,8 @@ pub struct Job<'a> {
     pub config: &'a Config,
     /// The context of [`Self::url`].
     pub context: JobContext,
+    /// The context of the [`Jobs`] this came from.
+    pub jobs_context: &'a JobsContext,
     /// The cache to use.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
@@ -30,6 +32,7 @@ impl Job<'_> {
             params: &self.config.params,
             scratchpad: &mut Default::default(),
             context: &self.context,
+            jobs_context: self.jobs_context,
             #[cfg(feature = "cache")]
             cache: self.cache,
             commons: &self.config.commons,

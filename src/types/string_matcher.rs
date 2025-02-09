@@ -432,7 +432,8 @@ impl StringMatcher {
                         #[cfg(feature = "cache")]
                         cache: job_state.cache,
                         commons: job_state.commons,
-                        common_args: Some(&common_call.args.make(job_state)?)
+                        common_args: Some(&common_call.args.make(job_state)?),
+                        jobs_context: job_state.jobs_context
                     }
                 )?
             },

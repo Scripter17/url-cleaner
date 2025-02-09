@@ -91,7 +91,13 @@ pub struct Args {
     /// 
     /// Zero gets the current CPU threads.
     #[arg(long, default_value_t = 0)]
-    pub threads: usize
+    pub threads: usize,
+    /// When enabled, only prints timing info.
+    ///
+    /// Produces more relaible timing info for some reason.
+    #[cfg(feature = "debug")]
+    #[arg(long)]
+    pub debug_just_print_times: bool
 }
 
 /// The enum of all errors that can occur when using the URL Cleaner CLI tool.
@@ -118,6 +124,8 @@ fn main() -> Result<ExitCode, CliError> {
 
     let args = Args::parse();
 
+    #[cfg(feature = "debug")]
+    util::DEBUG_JUST_PRINT_TIMES.set(args.debug_just_print_times).expect("No poisoning.");
 
     let print_args = args.print_args;
     if print_args {println!("{args:?}");}
@@ -175,6 +183,8 @@ fn main() -> Result<ExitCode, CliError> {
         config: Cow::Owned(config)
     };
     let jobs_config_ref = &jobs_config;
+    let jobs_context = Default::default();
+    let jobs_context_ref = &jobs_context;
 
     std::thread::scope(|s| {
         std::thread::Builder::new().name("Job Getter".to_string()).spawn_scoped(s, move || {
@@ -198,7 +208,7 @@ fn main() -> Result<ExitCode, CliError> {
                 while let Ok(maybe_job_config_string) = ir.recv() {
                     let ret = match maybe_job_config_string {
                         Ok(job_config_string) => match JobConfig::from_str(&job_config_string) {
-                            Ok(job_config) => Ok(jobs_config_ref.with_job_config(job_config).r#do()),
+                            Ok(job_config) => Ok(jobs_config_ref.new_job(job_config, jobs_context_ref).r#do()),
                             Err(e) => Err(MakeJobError::MakeJobConfigError(e))
                         },
                         Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))

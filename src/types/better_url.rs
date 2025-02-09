@@ -1,6 +1,5 @@
 //! A wrapper around [`Url`] that allows for some faster operations.
 
-use std::ops::Bound;
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::ops::Index;
@@ -11,9 +10,12 @@ use form_urlencoded::Serializer;
 
 use crate::types::*;
 
+mod host_details;
+pub use host_details::*;
+
 /// A wrapper around [`Url`] that allows for some faster operations.
 ///
-/// Specifically, this also contains a [`HostDetails`], which allows for only paying for [`psl::suffix_str`] once, no matter how many times [`UrlPart::NotSubdomain`] and co. are used.
+/// Specifically, this also contains a [`HostDetails`], which allows for only paying for [`psl::suffix_str`] once, no matter how many times [`UrlPart::RegDomain`] and co. are used.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(from = "Url", into = "Url")]
 pub struct BetterUrl {
@@ -67,14 +69,23 @@ impl BetterUrl {
     #[allow(clippy::result_unit_err, reason = "API compatibility requires this bad API.")]
     pub fn set_scheme       (&mut self, scheme  : &str        ) -> Result<(), ()>                  {self.url.set_scheme  (scheme  )}
 
+    /// Sets the selected query parameter.
+    /// # Errors
+    /// If the call to [`QueryParamSelector::set`] returns an error, that error is returned.
+    pub fn set_query_param(&mut self, param: &QueryParamSelector, to: Option<&str>) -> Result<(), SetQueryParamError> {param.set(self.inner_mut(), to)}
+
     /// Sets the [`UrlPart::Subdomain`].
     /// # Errors
+    /// If the URL's host isn't a domain, returns the error [`UrlPartSetError::HostIsNotADomain`].
+    ///
+    /// If the domain doesn't have a registerable domain, returns the error [`UrlPartSetError::DoesntHaveRegDomain`].
+    ///
     /// If the call to [`Url::set_host`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
-    pub fn set_subdomain        (&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
+    pub fn set_subdomain(&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
-            Some(HostDetails::Domain(domain_details)) => match (to, self.url.host_str().expect(HDA).get(domain_details.not_subdomain_bounds().ok_or(UrlPartSetError::DoesntHaveNotSubdomain)?), domain_details.is_fqdn()) {
+            Some(HostDetails::Domain(domain_details)) => match (to, self.url.host_str().expect(HDA).get(domain_details.reg_domain_bounds().ok_or(UrlPartSetError::DoesntHaveRegDomain)?), domain_details.is_fqdn()) {
                 (Some(to), Some(ns), false) => self.set_host(Some(&format!("{to}.{ns}")))?,
                 (Some(to), Some(ns), true ) => self.set_host(Some(&format!("{to}.{ns}.")))?,
                 (Some(to), None    , false) => self.set_host(Some(&format!("{to}")))?,
@@ -82,7 +93,7 @@ impl BetterUrl {
                 (None    , Some(ns), false) => self.set_host(Some(&format!("{ns}")))?,
                 (None    , Some(ns), true ) => self.set_host(Some(&format!("{ns}.")))?,
                 (None    , None    , false) => self.set_host(Some(&format!("")))?,
-                (None    , None    , true ) => self.set_host(Some(&format!(",")))?,
+                (None    , None    , true ) => self.set_host(Some(&format!(".")))?,
             }
             _ => Err(UrlPartSetError::HostIsNotADomain)?
         })
@@ -90,12 +101,16 @@ impl BetterUrl {
 
     /// Sets the [`UrlPart::NotDomainSuffix`].
     /// # Errors
+    /// If the URL's host isn't a domain, returns the error [`UrlPartSetError::HostIsNotADomain`].
+    ///
+    /// If the domain doesn't have a suffix (which I don't think can happen?), returns the error [`UrlPartSetError::DoesntHaveDomainSuffix`].
+    ///
     /// If the call to [`Url::set_host`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
     pub fn set_not_domain_suffix(&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
-            Some(HostDetails::Domain(domain_details)) => match (to, self.url.host_str().expect(HDA).get(domain_details.suffix_bounds()), domain_details.is_fqdn()) {
+            Some(HostDetails::Domain(domain_details)) => match (to, self.url.host_str().expect(HDA).get(domain_details.suffix_bounds().ok_or(UrlPartSetError::DoesntHaveDomainSuffix)?), domain_details.is_fqdn()) {
                 (Some(to), Some(su), false) => self.set_host(Some(&format!("{to}.{su}")))?,
                 (Some(to), Some(su), true ) => self.set_host(Some(&format!("{to}.{su}.")))?,
                 (Some(to), None    , false) => self.set_host(Some(&format!("{to}")))?,
@@ -111,12 +126,16 @@ impl BetterUrl {
 
     /// Sets the [`UrlPart::DomainMiddle`].
     /// # Errors
+    /// If the URL's host isn't a domain, returns the error [`UrlPartSetError::HostIsNotADomain`].
+    ///
+    /// If the domain doesn't have a suffix (which I don't think can happen?), returns the error [`UrlPartSetError::DoesntHaveDomainSuffix`].
+    ///
     /// If the call to [`Url::set_host`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
-    pub fn set_domain_middle    (&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
+    pub fn set_domain_middle(&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
-            Some(HostDetails::Domain(domain_details)) => match (domain_details.subdomain_bounds().and_then(|bounds| self.url.host_str().expect(HDA).get(bounds)), to, self.url.host_str().expect(HDA).get(domain_details.suffix_bounds()), domain_details.is_fqdn()) {
+            Some(HostDetails::Domain(domain_details)) => match (domain_details.subdomain_bounds().and_then(|bounds| self.url.host_str().expect(HDA).get(bounds)), to, self.url.host_str().expect(HDA).get(domain_details.suffix_bounds().ok_or(UrlPartSetError::DoesntHaveDomainSuffix)?), domain_details.is_fqdn()) {
                 (Some(sd), Some(to), Some(suffix), false) => self.set_host(Some(&format!("{sd}.{to}.{suffix}")))?,
                 (Some(sd), Some(to), Some(suffix), true ) => self.set_host(Some(&format!("{sd}.{to}.{suffix}.")))?,
                 (Some(sd), Some(to), None        , false) => self.set_host(Some(&format!("{sd}.{to}")))?,
@@ -138,11 +157,11 @@ impl BetterUrl {
         })
     }
 
-    /// Sets the [`UrlPart::NotSubdomain`].
+    /// Sets the [`UrlPart::RegDomain`].
     /// # Errors
     /// If the call to [`Url::set_host`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
-    pub fn set_not_subdomain    (&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
+    pub fn set_reg_domain(&mut self, to: Option<&str>) -> Result<(), UrlPartSetError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
             Some(HostDetails::Domain(domain_details)) => match (domain_details.subdomain_bounds().and_then(|bounds| self.url.host_str().expect(HDA).get(bounds)), to, domain_details.is_fqdn()) {
@@ -188,6 +207,14 @@ impl BetterUrl {
     /// Gets the inner [`HostDetails`].
     pub fn host_details(&self) -> Option<&HostDetails> {
         self.host_details.as_ref()
+    }
+
+    /// Gets the [`Url`]'s [`url::Host`] and [`HostDetails`].
+    pub fn host_and_details(&self) -> Option<(&str, &HostDetails)> {
+        match (self.host_str(), self.host_details()) {
+            (Some(x), Some(y)) => Some((x, y)),
+            _ => None
+        }
     }
 
     /// Gets a mutable reference to the inner [`Url`].
@@ -306,111 +333,3 @@ impl TryFrom<&str> for BetterUrl {
         Self::from_str(value)
     }
 }
-
-/// Details for a [`BetterUrl`]'s [`Url`]'s host.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HostDetails {
-    /// Details for a host that is a [`url::Host::Domain`].
-    Domain(DomainDetails),
-    /// Details for a host that is a [`url::Host::Ipv4`].
-    Ipv4(Ipv4Details),
-    /// Details for a host that is a [`url::Host::Ipv6`].
-    Ipv6(Ipv6Details)
-}
-
-impl HostDetails {
-    /// Creates a [`Self`] from a [`str`].
-    /// # Errors
-    /// If the call to [`url::Host::parse`] returns an error, that error is returned.
-    pub fn from_host_str(host: &str) -> Result<Self, url::ParseError> {
-        url::Host::parse(host).map(Self::from_host)
-    }
-
-    /// Creates a [`Self`] from a [`url::Host`] so long as its domain variant is [`AsRef<str>`].
-    pub fn from_host<T: AsRef<str>>(host: url::Host<T>) -> Self {
-        match host {
-            url::Host::Domain(domain) => Self::Domain(DomainDetails::from_domain_str(domain.as_ref())),
-            url::Host::Ipv4(_) => Self::Ipv4(Ipv4Details {}),
-            url::Host::Ipv6(_) => Self::Ipv6(Ipv6Details {})
-        }
-    }
-}
-
-/// Details of a domain.
-/// ```
-/// # use url_cleaner::types::*;
-///
-/// assert_eq!(DomainDetails::from_domain_str("example.com"     ), DomainDetails {subdomain_period: None   , suffix_period: Some( 7), fqdn_period: None    });
-/// assert_eq!(DomainDetails::from_domain_str("abc.example.com" ), DomainDetails {subdomain_period: Some(3), suffix_period: Some(11), fqdn_period: None    });
-/// assert_eq!(DomainDetails::from_domain_str("abc.example.com."), DomainDetails {subdomain_period: Some(3), suffix_period: Some(11), fqdn_period: Some(15)});
-/// ```
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DomainDetails {
-    /// The location of the `'.'` separating the [`UrlPart::Subdomain`] and [`UrlPart::NotSubdomain`].
-    pub subdomain_period: Option<usize>,
-    /// The location of the `'.'` separating the [`UrlPart::NotDomainSuffix`] and [`UrlPart::DomainSuffix`].
-    pub suffix_period: Option<usize>,
-    /// The location of the `'.'` at the end of the domain, marking it as a [fully qualified domain names](https://en.wikipedia.org/wiki/Fully_qualified_domain_name).
-    pub fqdn_period: Option<usize>
-}
-
-impl DomainDetails {
-    /// Creates a [`Self`] from a domain [`str`].
-    #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible")]
-    pub fn from_domain_str(domain: &str) -> Self {
-        match psl::suffix_str(domain) {
-            Some(suffix) => match domain.strip_suffix('.').unwrap_or(domain).strip_suffix(suffix).expect("The domain suffix to be a suffix of the host string.").strip_suffix('.') {
-                #[allow(clippy::arithmetic_side_effects, reason = "Shouldn't be possible.")]
-                Some(not_suffix) => Self {
-                    fqdn_period: domain.ends_with('.').then_some(domain.len() - 1),
-                    subdomain_period: not_suffix.rsplit_once('.').map(|(_, middle)| domain.len() - suffix.len() - 1 - middle.len() - 1 - domain.ends_with('.') as usize),
-                    suffix_period: Some(domain.len() - suffix.len() - 1 - domain.ends_with('.') as usize)
-                },
-                None => Self {
-                    fqdn_period: domain.ends_with('.').then_some(domain.len()),
-                    subdomain_period: None,
-                    suffix_period: None
-                }
-            },
-            None => Self {
-                fqdn_period: domain.ends_with('.').then_some(domain.len()),
-                subdomain_period: None,
-                suffix_period: None
-            }
-        }
-    }
-
-    /// Gets the range in the domapin corresponding to [`UrlPart::Subdomain`].
-    pub fn subdomain_bounds    (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.subdomain_period.map(|x| (Bound::Unbounded, Bound::Excluded(x)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::NotDomainSuffix`].
-    pub fn not_suffix_bounds   (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_period.map(|x| (Bound::Unbounded, Bound::Excluded(x)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::DomainMiddle`].
-    pub fn middle_bounds       (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_period.map(|x| (exorub(self.subdomain_period), Bound::Excluded(x)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::NotSubdomain`].
-    pub fn not_subdomain_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_period.map(|_| (exorub(self.subdomain_period), exorub(self.fqdn_period)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::DomainSuffix`].
-    pub fn suffix_bounds       (&self) ->        (Bound<usize>, Bound<usize>)  {(exorub(self.suffix_period), exorub(self.fqdn_period))}
-
-    /// Returns [`true`] if [`Self::fqdn_period`] is [`Some`].
-    pub fn is_fqdn(&self) -> bool {self.fqdn_period.is_some()}
-}
-
-/// Helper function to make [`DomainDetails`]'s various bounds functions easier to read and write.
-fn exorub(i: Option<usize>) -> Bound<usize> {
-    match i {
-        Some(i) => Bound::Excluded(i),
-        None => Bound::Unbounded
-    }
-}
-
-/// Details of an IPv4 address.
-///
-/// Currently only exists for completeness, but may be extended in the future.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Ipv4Details {}
-
-/// Details of an IPv4 address.
-///
-/// Currently only exists for completeness, but may be extended in the future.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Ipv6Details {}
