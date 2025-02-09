@@ -259,9 +259,9 @@ pub enum Mapper {
         value: Option<StringSource>
     },
     /// Modifies the specified part of the URL.
+    ///
+    /// If the part is [`None`], does nothing.
     /// # Errors
-    /// If the call to [`UrlPart::get`] returns [`None`], returns the error [`MapperError::UrlPartIsNone`].
-    /// 
     /// If the call to [`StringModification::apply`] returns an error.
     /// 
     /// If the call to [`UrlPart::set`] returns an error, that error is returned.
@@ -381,7 +381,7 @@ pub enum Mapper {
     },
     /// Executes the contained [`Rule`].
     /// # Errors
-    /// If the call to [`Rule::apply`] returns an error other than [`RuleError::DontTriggerLoop`], [`RuleError::FailedCondition`], and [`RuleError::ValueNotInMap`], returns that error.
+    /// If the call to [`Rule::apply`] returns an error, that error is returned.
     Rule(Box<Rule>),
     /// Excites the contained [`Rules`].
     /// # Errors
@@ -671,8 +671,7 @@ impl Mapper {
             // Generic part handling.
 
             Self::SetPart{part, value} => part.set(job_state.url, get_option_string!(value, job_state).as_deref())?, // The deref is needed for borrow checking reasons.
-            Self::ModifyPart{part, modification} => {
-                let mut temp = part.get(job_state.url).ok_or(MapperError::UrlPartIsNone)?.into_owned();
+            Self::ModifyPart{part, modification} => if let Some(mut temp) = part.get(job_state.url).map(|x| x.into_owned()) {
                 modification.apply(&mut temp, &job_state.to_view())?;
                 part.set(job_state.url, Some(&temp))?;
             }
@@ -720,12 +719,8 @@ impl Mapper {
                 modification.apply(&mut temp, &job_state.to_view())?;
                 let _ = job_state.scratchpad.vars.insert(name, temp);
             },
-            Self::Rule(rule) => match rule.apply(job_state) {
-                Ok(x) => x,
-                Err(RuleError::DontTriggerLoop | RuleError::FailedCondition | RuleError::ValueNotInMap) => {},
-                Err(e) => Err(e)?
-            },
-            Self::Rules(rules) => rules.apply(job_state)?,
+            Self::Rule(rule) => {rule.apply(job_state)?;},
+            Self::Rules(rules) => {rules.apply(job_state)?;},
             #[cfg(feature = "cache")]
             Self::CacheUrl {category, mapper} => {
                 let category = get_string!(category, job_state, MapperError);

@@ -58,7 +58,7 @@
 			"bypass.vip-host-without-www-dot-prefixes": "The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.",
 			"email-link-format-1-hosts": "(TEMPORARY NAME) Hosts that use unknown link format 1.",
 			"https-upgrade-host-blacklist": "Hosts to never upgrade from `http` to `https`.",
-			"lmgtfy-hosts": "Hosts to replace with `google.com`.",
+			"lmgtfy-host-without-www-dot-prefixes": "`HostWithoutWWWDotPrefix`es to replace with `google.com` and set the path to `/search`.",
 			"redirect-host-without-www-dot-prefixes": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
 			"redirect-reg-domains": "The `redirect-host-without-www-dot-prefixes` set but using the `RegDomain` of the URL.",
 			"remove-empty-fragment-reg-domain-blacklist": "The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.",
@@ -139,7 +139,7 @@
 			],
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
-			"lmgtfy-hosts": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
+			"lmgtfy-host-without-www-dot-prefixes": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
 			"redirect-host-without-www-dot-prefixes": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
@@ -378,12 +378,12 @@
 						},
 						{
 							"condition": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "utps-reg-domain-whitelist"}}}},
-							"mapper": {"IgnoreError": {"ModifyPart": {
+							"mapper": {"ModifyPart": {
 								"part": "Fragment",
 								"modification": {"RemoveQueryParamsMatching": {"Any": [
 									{"InSet": "utps"},
 									{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-								]}}
+								]}
 							}}}
 						},
 						{
@@ -419,7 +419,6 @@
 						}
 					]
 				}}
-
 			]}
 		}
 	},
@@ -445,7 +444,6 @@
 									"skfb.ly", "smarturl.it", "ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com",
 									"tinyurl.com", "toyhou.se", "twpf.jp", "vk.com", "youtube.com"
 								]},
-								{"InSet": "lmgtfy-hosts"},
 								{"LengthIs": 4},
 								{"Contains": {"value": "google"}}
 							]}
@@ -910,19 +908,6 @@
 
 
 
-								{"DontTriggerLoop": {
-									"condition": {"PartMatches": {
-										"part": "HostWithoutWWWDotPrefix",
-										"matcher": {"InSet": "lmgtfy-hosts"}
-									}},
-									"mapper": {"All": [
-										{"SetHost": "google.com"},
-										{"SetPart": {"part": "Path", "value": "/search"}}
-									]}
-								}},
-
-
-
 								{
 									"condition": {"All": [
 										{"MaybeWWWDomainMiddleIs": "google"},
@@ -1169,6 +1154,19 @@
 							}
 						]
 					}
+				},
+
+
+
+				{
+					"condition": {"PartMatches": {
+						"part": "HostWithoutWWWDotPrefix",
+						"matcher": {"InSet": "lmgtfy-host-without-www-dot-prefixes"}
+					}},
+					"mapper": {"All": [
+						{"SetHost": "google.com"},
+						{"SetPart": {"part": "Path", "value": "/search"}}
+					]}
 				},
 
 
@@ -1690,8 +1688,7 @@
 								]},
 								"mapper": {"All": [
 									{"Common": "universal"},
-									{"IgnoreError": {
-										"SetPart": {
+									{"SetPart": {
 											"part": "Origin",
 											"value": {"Cache": {
 												"category": "onion-location",
@@ -1702,7 +1699,7 @@
 												}}
 											}}
 										}
-									}}
+									}
 								]}
 							},
 							{

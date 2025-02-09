@@ -29,8 +29,6 @@ pub mod char_matcher;
 pub use char_matcher::*;
 pub mod jobs;
 pub use jobs::*;
-pub mod stop_loop_condition;
-pub use stop_loop_condition::*;
 
 /// Wrapper around a function pointer that fakes [`Serialize`] and [`Deserialize`] implementations.
 /// 
