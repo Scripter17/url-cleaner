@@ -134,8 +134,8 @@
 				"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com",
 				"newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com",
 				"rebrand.ly", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "sub2get.com", "sub2unlock.com",
-				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylink.onl",
-				"tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com", "tinylf.com"
+				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylf.com",
+				"tinylink.onl", "tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com", "st.news"
 			],
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
@@ -144,22 +144,22 @@
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
 				"bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv",
-				"cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me",
-				"fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com", "go.nasa.gov", "gofund.me",
-				"goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr",
-				"katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr", "l.leparisien.fr", "lin.ee", "line.ee",
-				"link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "msft.it", "mzl.la", "n.pr", "nas.cr",
-				"nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com",
-				"on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml",
-				"pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co",
-				"rdbl.co", "redd.it", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev", "shor.tf", "shorturl.at",
-				"sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub",
-				"thr.cm", "thrn.co", "tiny.cc", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa",
-				"uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly",
-				"xhslink.com", "yrp.ca"
+				"cos.lv", "cutt.ly", "db.tt", "dcdr.me", "deezer.page.link", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn",
+				"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com",
+				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd",
+				"iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr",
+				"l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org",
+				"msft.it", "msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st",
+				"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc",
+				"operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li",
+				"pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team",
+				"s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to",
+				"t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to",
+				"tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link",
+				"wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-reg-domains": [
-				"lnk.to", "visitlink.me", "goo.gl", "o93x.net", "pusle.ly"
+				"goo.gl", "lnk.to", "o93x.net", "pusle.ly", "visitlink.me"
 			],
 			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at"],
 			"unmangle-path-is-url-blacklist": [],
@@ -205,129 +205,163 @@
 			"redirect_policy": "None"
 		}
 	},
-	"tests": [
-		{
-			"expectations": [
-				{"job_config": "https://x.com?t=a&s=b"                                                                    , "result": "https://x.com/"},
-				{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
-				{"job_config": "http://example.com"                                                                       , "result": "https://example.com/"},
-				{
-					"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
-					"result": "https://amazon.ca/dp/B0C6DX66TN"
-				},
+	"tests": {
+		"sets": [
+			{
+				"tests": [
+					{"job_config": "https://x.com?t=a&s=b"                                                                    , "result": "https://x.com/"},
+					{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
+					{"job_config": "http://example.com"                                                                       , "result": "https://example.com/"},
+					{
+						"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
+						"result": "https://amazon.ca/dp/B0C6DX66TN"
+					},
 
-				{"job_config": "https://bsky.app"                  , "result": "https://bsky.app/"},
-				{"job_config": "https://fxbsky.app"                , "result": "https://bsky.app/"},
-				{"job_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
-				{"job_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
-				{"job_config": "https://bsky.app/profile/user.com" , "result": "https://bsky.app/profile/user.com"},
-				{"job_config": "https://user.bsky.social"          , "result": "https://bsky.app/profile/user.bsky.social"},
-				{
-					"job_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
-					"result": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"
-				},
+					{"job_config": "https://bsky.app"                  , "result": "https://bsky.app/"},
+					{"job_config": "https://fxbsky.app"                , "result": "https://bsky.app/"},
+					{"job_config": "https://user.bsky.social"          , "result": "https://bsky.app/profile/user.bsky.social"},
+					{
+						"job_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
+						"result": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"
+					},
 
-				{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
-				{"job_config": "https://com"      , "result": "https://com"},
-				{"job_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1"},
-				{"job_config": "file://a/b/c"     , "result": "file://a/b/c"},
-				{"job_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["unmangle"]},
-			"expectations": [
-				{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
-				{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
-				{"job_config": "https://https//abc.tumblr.com.tumblr.com"                    , "result": "https://abc.tumblr.com"},
-				{"job_config": "https://abc.deviantart.com.deviantart.com"                   , "result": "https://deviantart.com/abc/"},
-				{"job_config": "https://https//example.com/abc"                              , "result": "https://example.com/abc"},
-				{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
-				{"job_config": "https://https//example1.com/user/example2.com/abc"           , "result": "https://example2.com/abc"},
-				{"job_config": "https://www.username.example.com"                            , "result": "https://username.example.com"},
+					{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
+					{"job_config": "https://com"      , "result": "https://com"},
+					{"job_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1"},
+					{"job_config": "file://a/b/c"     , "result": "file://a/b/c"},
+					{"job_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"},
 
-				{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/www.twitter.com/user"    , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/www.x.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/twitter.com/user"              , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://x.com/user"}
-			]
-		},
-		{
-			"params_diff": {"vars": {"tor2web-suffix": "example"}, "flags": ["tor2web"]},
-			"expectations": [{"job_config": "https://example.onion", "result": "https://example.onion.example"}]
-		},
-		{
-			"params_diff": {"flags": ["tor2web2tor"]},
-			"expectations": [
-				{"job_config": "https://example.onion.com"  , "result": "https://example.onion"},
-				{"job_config": "https://example.onion.co.uk", "result": "https://example.onion"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["unbreezewiki"]},
-			"expectations": [{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://tardis.fandom.com/wiki/Genocide"}]
-		},
-		{
-			"params_diff": {"flags": ["breezewiki"]},
-			"expectations": [
-				{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://breezewiki.com/tardis/wiki/Genocide"},
-				{"job_config": "https://tardis.fandom.com/wiki/Genocide"    , "result": "https://breezewiki.com/tardis/wiki/Genocide"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["unmobile"]},
-			"expectations": [
-				{"job_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
-				{"job_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["embed-compatibility"]},
-			"expectations": [
-				{"job_config": "https://bsky.app", "result": "https://fxbsky.app/"},
-				{"job_config": "https://fxbsky.app", "result": "https://fxbsky.app/"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["invidious"]},
-			"expectations": [
-				{"job_config": "https://youtube.com/watch?v=12345", "result": "https://yewtu.be/watch?v=12345"},
-				{"job_config": "https://yewtu.be/watch?v=12345"   , "result": "https://yewtu.be/watch?v=12345"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["uninvidious"]},
-			"expectations": [
-				{"job_config": "https://youtube.com/watch?v=12345", "result": "https://youtube.com/watch?v=12345"},
-				{"job_config": "https://yewtu.be/watch?v=12345"   , "result": "https://youtube.com/watch?v=12345"}
-			]
-		},
-		{
-			"expectations": [
-				{"job_config": "https://tinyurl.com/wp-tinyurl"        , "result": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"job_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"job_config": "https://smarturl.it/irl_s05e04?IQid=eg", "result": "https://irlpodcast.org/season5/episode4/"},
-				{"job_config": "https://gprivate.com/6bi5b"            , "result": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
-				{
-					"comment": "It was the only somewhat normal one I could find, okay?",
-					"job_config": "http://bfy.tw/9ZSk",
-					"result": "https://google.com/search?q=How+does+the+US+government+work"
-				}
-			]
-		}
-	],
+					{"job_config": "https://tinyurl.com/wp-tinyurl"        , "result": "https://en.wikipedia.org/wiki/TinyURL"},
+					{"job_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
+					{"job_config": "https://smarturl.it/irl_s05e04?IQid=eg", "result": "https://irlpodcast.org/season5/episode4/"},
+					{"job_config": "https://gprivate.com/6bi5b"            , "result": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
+					{
+						"comment": "It was the only somewhat normal one I could find, okay?",
+						"job_config": "http://bfy.tw/9ZSk",
+						"result": "https://google.com/search?q=How+does+the+US+government+work"
+					}
+				]
+			},
+			{
+				"params_diff": {"flags": ["unmangle"]},
+				"tests": [
+					{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
+					{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
+					{"job_config": "https://https//abc.tumblr.com.tumblr.com"                    , "result": "https://abc.tumblr.com"},
+					{"job_config": "https://abc.deviantart.com.deviantart.com"                   , "result": "https://deviantart.com/abc/"},
+					{"job_config": "https://https//example.com/abc"                              , "result": "https://example.com/abc"},
+					{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
+					{"job_config": "https://https//example1.com/user/example2.com/abc"           , "result": "https://example2.com/abc"},
+					{"job_config": "https://www.username.example.com"                            , "result": "https://username.example.com"},
+
+					{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
+					{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
+					{"job_config": "https://twitter.com/www.twitter.com/user"    , "result": "https://x.com/user"},
+					{"job_config": "https://twitter.com/www.x.com/user"          , "result": "https://x.com/user"},
+					{"job_config": "https://x.com/twitter.com/user"              , "result": "https://x.com/user"},
+					{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
+					{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
+					{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
+					{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://x.com/user"},
+					{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://x.com/user"},
+					{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://x.com/user"},
+					{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://x.com/user"},
+					{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://x.com/user"},
+					{"job_config": "https://www.x.com/x.com/user"                , "result": "https://x.com/user"},
+					{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://x.com/user"},
+					{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://x.com/user"},
+
+					{"job_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
+					{"job_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
+					{"job_config": "https://bsky.app/profile/user.com" , "result": "https://bsky.app/profile/user.com"}
+				]
+			},
+			{
+				"params_diff": {"vars": {"tor2web-suffix": "example"}, "flags": ["tor2web"]},
+				"tests": [{"job_config": "https://example.onion", "result": "https://example.onion.example"}]
+			},
+			{
+				"params_diff": {"flags": ["tor2web2tor"]},
+				"tests": [
+					{"job_config": "https://example.onion.com"  , "result": "https://example.onion"},
+					{"job_config": "https://example.onion.co.uk", "result": "https://example.onion"}
+				]
+			},
+			{
+				"params_diff": {"flags": ["unbreezewiki"]},
+				"tests": [{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://tardis.fandom.com/wiki/Genocide"}]
+			},
+			{
+				"params_diff": {"flags": ["breezewiki"]},
+				"tests": [
+					{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://breezewiki.com/tardis/wiki/Genocide"},
+					{"job_config": "https://tardis.fandom.com/wiki/Genocide"    , "result": "https://breezewiki.com/tardis/wiki/Genocide"}
+				]
+			},
+			{
+				"params_diff": {"flags": ["unmobile"]},
+				"tests": [
+					{"job_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+					{"job_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
+				]
+			},
+			{
+				"params_diff": {"flags": ["embed-compatibility"]},
+				"tests": [
+					{"job_config": "https://bsky.app", "result": "https://fxbsky.app/"},
+					{"job_config": "https://fxbsky.app", "result": "https://fxbsky.app/"}
+				]
+			},
+			{
+				"params_diff": {"flags": ["invidious"]},
+				"tests": [
+					{"job_config": "https://youtube.com/watch?v=12345", "result": "https://yewtu.be/watch?v=12345"},
+					{"job_config": "https://yewtu.be/watch?v=12345"   , "result": "https://yewtu.be/watch?v=12345"}
+				]
+			},
+			{
+				"params_diff": {"flags": ["uninvidious"]},
+				"tests": [
+					{"job_config": "https://youtube.com/watch?v=12345", "result": "https://youtube.com/watch?v=12345"},
+					{"job_config": "https://yewtu.be/watch?v=12345"   , "result": "https://youtube.com/watch?v=12345"}
+				]
+			},
+			{
+				"params_diff": {"flags": ["no-network"]},
+				"jobs_context": {"vars": {"SOURCE_REG_DOMAIN": "allmylinks.com"}},
+				"tests": [
+					{
+						"job_config": {
+							"url": "https://allmylinks.com/link/out?invalid",
+							"context": {
+								"vars": {
+									"redirect_shortcut": "https://example.com"
+								}
+							}
+						},
+						"result": "https://example.com"
+					}
+				]
+			},
+			{
+				"params_diff": {"flags": ["no-network"]},
+				"jobs_context": {"vars": {"SOURCE_REG_DOMAIN": "x.com"}},
+				"tests": [
+					{
+						"job_config": {
+							"url": "https://t.co/invalid",
+							"context": {
+								"vars": {
+									"redirect_shortcut": "https://example.com"
+								}
+							}
+						},
+						"result": "https://example.com"
+					}
+				]
+			}
+		]
+	},
 	"commons": {
 		"mappers": {
 			"extract-from-page-no-if": {"All": [
@@ -349,6 +383,18 @@
 			"extract-from-page": {"IfCondition": {
 				"condition": {"Not": {"FlagIsSet": "no-network"}},
 				"mapper": {"Common": {"name": "extract-from-page-no-if", "args": {"vars": {"start": {"CommonVar": "start"}, "end": {"CommonVar": "end"}}}}}
+			}},
+
+			"redirect-shortcut": {"IfCondition": {
+				"condition": {"All": [
+					{"Not": {"StringIs": {"left": {"ContextVar": "redirect_shortcut"}, "right": null}}},
+					{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": {"CommonVar": "expected_reg_domain"}}},
+					{"Not": {"StringIs": {"left": {"ScratchpadVar": "alt_text_used"}, "right": "true"}}}
+				]},
+				"mapper": {"All": [
+					{"SetPart": {"part": "Whole", "value": {"ContextVar": "redirect_shortcut"}}},
+					{"SetScratchpadVar": {"name": "redirect_shortcut_used", "value": "true"}}
+				]}
 			}},
 
 			"universal": {"Rules": [
@@ -486,9 +532,13 @@
 									"PartMap": {
 										"part": "HostWithoutWWWDotPrefix",
 										"map": {
-											"t.co": {"IfCondition": {
-												"condition": {"Not": {"StringIs": {"value": {"ContextVar": "alt_text"}, "value": null}}},
-												"mapper": {"SetPart": {"part": "Whole", "value": {"ContextVar": "alt_text"}}}
+											"t.co": {"Common": {
+												"name": "redirect-shortcut",
+												"args": {"vars": {"expected_reg_domain": "x.com"}}
+											}},
+											"allmylinks.com": {"Common": {
+												"name": "redirect-shortcut",
+												"args": {"vars": {"expected_reg_domain": "allmylinks.com"}}
 											}},
 											"t.umblr.com": {"GetUrlFromQueryParam": "z"},
 											"skfb.ly": {"All": [
@@ -525,43 +575,25 @@
 												}}
 											}},
 											"instagr.am": {"SetHost": "instagram.com"},
-											"bfy.tw": {"IfCondition": {
-												"condition": {"Not": {"FlagIsSet": "no-network"}},
-												"mapper": {"All": [
-													{"Common": "universal"},
-													{"CacheUrl": {
-														"category": "redirect",
-														"mapper": {"SetPart": {
-															"part": "Whole",
-															"value": {"ExtractBetween": {
-																"value": {"HttpRequest": {
-																	"http_client_config_diff": {"danger_accept_invalid_certs": true}
-																}},
-																"start": "href=\"",
-																"end": "\""
-															}}
-														}}
-													}}
-												]}
+											"bfy.tw": {"Common": {
+												"name": "extract-from-page",
+												"args": {
+													"vars": {
+														"start": "href=\"",
+														"end": "\""
+													},
+													"http_client_config_diff": {"danger_accept_invalid_certs": true}
+												}
 											}},
-											"gprivate.com": {"IfCondition": {
-												"condition": {"Not": {"FlagIsSet": "no-network"}},
-												"mapper": {"All": [
-													{"Common": "universal"},
-													{"CacheUrl": {
-														"category": "redirect",
-														"mapper": {"SetPart": {
-															"part": "Whole",
-															"value": {"ExtractBetween": {
-																"value": {"HttpRequest": {
-																	"http_client_config_diff": {"danger_accept_invalid_certs": true}
-																}},
-																"start": "window.location = \"",
-																"end": "\""
-															}}
-														}}
-													}}
-												]}
+											"gprivate.com": {"Common": {
+												"name": "extract-from-page",
+												"args": {
+													"vars": {
+														"start": "window.location = \"",
+														"end": "\""
+													},
+													"http_client_config_diff": {"danger_accept_invalid_certs": true}
+												}
 											}},
 											"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
 											"buymeacoff.ee": {"SetHost": "buymeacoffee.com"},
@@ -811,7 +843,18 @@
 												{"SetPart": {"part": "Path", "value": "/show_bug.cgi"}}
 											]},
 											"o93x.net": {"GetUrlFromQueryParam": "u"},
-											"ss3.shipstation.com": {"SetPart": {"part": "Whole", "value": {"Join": {"sources": ["https://", {"Modified": {"value": {"Part": "Whole"}, "modification": {"StripPrefix": "https://ss3.shipstation.com/"}}}]}}}},
+											"ss3.shipstation.com": {"SetPart": {
+												"part": "Whole",
+												"value": {"Join": {
+													"sources": [
+														"https://",
+														{"Modified": {
+															"value": {"Part": "Whole"},
+															"modification": {"StripPrefix": "https://ss3.shipstation.com/"}
+														}}
+													]
+												}}
+											}},
 											"twpf.jp": {"IfCondition": {
 												"condition": {"PartIs": {"part": "Path", "value": "/home/jump"}},
 												"mapper": {"SetPart": {
@@ -920,6 +963,22 @@
 
 								{
 									"condition": {"All": [
+										{"PartMatches": {
+											"part": "HostWithoutWWWDotPrefix",
+											"matcher": {"InSet": "email-link-format-1-hosts"}
+										}},
+										{"PartContains": {"part": "Path", "value": "/page/email/redirect", "where": "Start"}}
+									]},
+									"mapper": {"All": [
+										{"CopyPart": {"from": {"QueryParam": "campaignpageurl"}, "to": "Whole"}},
+										{"RemoveQueryParams": ["ea.url.id"]}
+									]}
+								},
+
+
+
+								{
+									"condition": {"All": [
 										{"Not": {"FlagIsSet": "no-network"}},
 										{"Any": [
 											{"All": [
@@ -967,19 +1026,6 @@
 									"mapper": {"All": [
 										{"Common": "universal"},
 										{"ExpandRedirect": {}}
-									]}
-								},
-								{
-									"condition": {"All": [
-										{"PartMatches": {
-											"part": "HostWithoutWWWDotPrefix",
-											"matcher": {"InSet": "email-link-format-1-hosts"}
-										}},
-										{"PartContains": {"part": "Path", "value": "/page/email/redirect", "where": "Start"}}
-									]},
-									"mapper": {"All": [
-										{"CopyPart": {"from": {"QueryParam": "campaignpageurl"}, "to": "Whole"}},
-										{"RemoveQueryParams": ["ea.url.id"]}
 									]}
 								}
 							]
@@ -1191,10 +1237,9 @@
 				{
 					"PartMap": {
 						"comment-1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
-						"comment-2": "There's another PartMap below this one for UrlPart::DomainSuffix.",
 						"part": "RegDomain",
 						"map": {
-							"theonion.com" : "RemoveQuery",
+							"theonion.com" : {"AllowQueryParams": ["s"]},
 							"teespring.com": "RemoveQuery",
 							"twitter.com"     : {"SetPart": {"part": "RegDomain", "value": "x.com"}},
 							"fxbsky.app": {"IfCondition": {
@@ -1376,7 +1421,11 @@
 							"pawoo.net": {"RemoveQueryParams": ["provider"]},
 							"snapchat.com": {"RemoveQueryParams": ["purpose", "sp"]},
 							"be.net": {"SetHost": "behance.net"},
-							"tiktok.com": {"RemoveQueryParamsMatching": {"Contains": {"value": "_", "where": "Start"}}},
+							"tiktok.com": {"RemoveQueryParamsMatching": {"Any": [
+								{"IsOneOf": ["checksum"]},
+								{"Contains": {"value": "_", "where": "Start"}},
+								{"Contains": {"value": "sec_", "where": "Start"}}
+							]}},
 							"beacons.ai": {"RemoveQueryParamsMatching": {"Contains": {"value": "refer", "where": "Start"}}},
 							"atom.bio": {"RemoveQueryParams": ["menu_origin"]},
 							"cnbc.com": {"RemoveQueryParams": ["par"]},
@@ -1391,15 +1440,6 @@
 								]},
 								"mapper": {"RemoveQueryParams": ["tags"]}
 							}}
-						}
-					}
-				},
-				{
-					"PartMap": {
-						"comment": "Some things that look like domains are actually considered suffixes by Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart.",
-						"part": "DomainSuffix",
-						"map": {
-							"blogspot.com": {"RemoveQueryParams": ["zx"]}
 						}
 					}
 				},
@@ -1453,6 +1493,7 @@
 							"bsky.app": {"Rules": [
 								{
 									"condition": {"All": [
+										{"FlagIsSet": "unmangle"},
 										{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
 										{"PartContains": {"part": {"PathSegment": 1}, "where": "End", "value": ".bsky"}}
 									]},
@@ -1460,6 +1501,7 @@
 								},
 								{
 									"condition": {"All": [
+										{"FlagIsSet": "unmangle"},
 										{"PartIs": {"part": {"PathSegment": 0}, "value": "profile"}},
 										{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": "."}}},
 										{"Not": {"PartContains": {"part": {"PathSegment": 1}, "value": ":"}}}
@@ -1477,7 +1519,8 @@
 								"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "p"}},
 								"mapper": {"RemoveQueryParams": ["wx_navbar_transparent", "path", "ncms_spm", "prefetchKey", "wx_xpage", "spm", "cardType"]}
 							}},
-							"wlo.link": {"SetHost": "link.space"}
+							"wlo.link": {"SetHost": "link.space"},
+							"support.google.com": {"RemoveQueryParams": ["ref_topic"]}
 						}
 					}
 				},
@@ -1588,7 +1631,7 @@
 
 				{
 					"StringMap": {
-						"value": {"Var": "SOURCE_REG_DOMAIN"},
+						"value": {"JobsContextVar": "SOURCE_REG_DOMAIN"},
 						"map": {
 							"alibaba.com": {"RemoveQueryParams": ["spm", "file"]},
 							"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]}

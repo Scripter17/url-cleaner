@@ -2,12 +2,14 @@
 
 use std::str::FromStr;
 use std::collections::HashMap;
+use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
 use crate::types::*;
 use crate::util::*;
+use crate::glue::*;
 
 /// The name of the common to call and the arguments to call it with.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -17,7 +19,7 @@ pub struct CommonCall {
     pub name: Box<StringSource>,
     /// The arguments to call it with.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub args: CommonCallArgs
+    pub args: CommonCallArgsSource
 }
 
 impl FromStr for CommonCall {
@@ -44,14 +46,17 @@ impl CommonCall {
     }
 }
 
-/// The rules used to make a [`CommonArgs`].
+/// The rules used to make a [`CommonCallArgs`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CommonCallArgs {
+pub struct CommonCallArgsSource {
     /// The variables for a common.
-    pub vars: HashMap<String, StringSource>
+    pub vars: HashMap<String, StringSource>,
+    /// The [`HttpClientConfigDiff`] to use for the duration of a common call.
+    #[cfg(feature = "http")]
+    pub http_client_config_diff: Option<HttpClientConfigDiff>
 }
 
-/// The enum of errors that [`CommonCallArgs::make`] can return.
+/// The enum of errors that [`CommonCallArgsSource::make`] can return.
 #[derive(Debug, Error)]
 pub enum CommonCallArgsError {
     /// Returned when a [`StringSourceError`] is encountered.
@@ -65,13 +70,15 @@ impl From<StringSourceError> for CommonCallArgsError {
     }
 }
 
-impl CommonCallArgs {
-    /// Makes a [`CommonArgs`].
+impl CommonCallArgsSource {
+    /// Makes a [`CommonCallArgs`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &JobStateView) -> Result<CommonArgs, CommonCallArgsError> {
-        Ok(CommonArgs {
-            vars: self.vars.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, _>>()?
+    pub fn make<'a>(&'a self, job_state: &JobStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
+        Ok(CommonCallArgs {
+            vars: self.vars.iter().map(|(k, v)| Ok((Cow::Borrowed(&**k), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
+            #[cfg(feature = "http")]
+            http_client_config_diff: self.http_client_config_diff.as_ref().map(Cow::Borrowed)
         })
     }
 
@@ -87,7 +94,10 @@ impl CommonCallArgs {
 
 /// The arguments for a common.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CommonArgs {
+pub struct CommonCallArgs<'a> {
     /// The variables for a common.
-    pub vars: HashMap<String, String>
+    pub vars: HashMap<Cow<'a, str>, String>,
+    /// The [`HttpClientConfigDiff`] to use for the duration of a common call.
+    #[cfg(feature = "http")]
+    pub http_client_config_diff: Option<Cow<'a, HttpClientConfigDiff>>
 }

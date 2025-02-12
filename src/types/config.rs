@@ -46,7 +46,7 @@ pub struct Config {
     pub params: Params,
     /// The tests to make sure the config is working as intended.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub tests: Vec<TestSet>,
+    pub tests: Tests,
     /// Various things that are used in multiple spots.
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
@@ -57,18 +57,18 @@ pub struct Config {
 impl Config {
     /// Loads and parses the specified file.
     /// # Errors
-    /// If the specified file can't be loaded, returns the error [`GetConfigError::CantLoadConfigFile`].
+    /// If the specified file can't be loaded, returns the error [`GetConfigError::CantLoadConfig`].
     /// 
-    /// If the config contained in the specified file can't be parsed, returns the error [`GetConfigError::CantParseConfigFile`].
+    /// If the config contained in the specified file can't be parsed, returns the error [`GetConfigError::CantParseConfig`].
     pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetConfigError> {
-        serde_json::from_str(&read_to_string(path).map_err(GetConfigError::CantLoadConfigFile)?).map_err(GetConfigError::CantParseConfigFile)
+        serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
     }
 
     /// Gets the config compiled into the URL Cleaner binary.
     /// 
     /// On the first call, it parses [`DEFAULT_CONFIG_STR`] and caches it in [`DEFAULT_CONFIG`]. On all future calls it simply returns the cached value.
     /// # Errors
-    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
+    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseConfig`].
     #[allow(dead_code, reason = "Public API.")]
     #[cfg(feature = "default-config")]
     pub fn get_default() -> Result<&'static Self, GetConfigError> {
@@ -84,10 +84,10 @@ impl Config {
     /// 
     /// Generally, [`Self::get_default`] should be used over calling this function multiple times.
     /// # Errors
-    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
+    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseConfig`].
     #[cfg(feature = "default-config")]
     pub fn get_default_no_cache() -> Result<Self, GetConfigError> {
-        serde_json::from_str(DEFAULT_CONFIG_STR).map_err(GetConfigError::CantParseDefaultConfig)
+        serde_json::from_str(DEFAULT_CONFIG_STR).map_err(Into::into)
     }
 
     /// If `path` is `Some`, returns [`Self::load_from_file`].
@@ -110,7 +110,7 @@ impl Config {
     /// 
     /// Generally, [`Self::get_default_or_load`] should be used over calling this function with the same argument multiple times.
     /// # Errors
-    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseDefaultConfig`].
+    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseConfig`].
     #[cfg(feature = "default-config")]
     pub fn get_default_no_cache_or_load<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetConfigError> {
         Ok(match path {
@@ -139,9 +139,7 @@ impl Config {
     pub fn run_tests(&self) {
         // Changing the if's braces to parenthesis causes some really weird syntax errors. Including the `Ok(DEFAULT_CONFIG.get_or_init(|| config))` line above complaining about needing braces???
         if self.strict_mode {assert!(self.is_suitable_for_release());}
-        for test in &self.tests {
-            test.run(self);
-        }
+        self.tests.r#do(self);
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
@@ -164,7 +162,7 @@ pub enum ApplyConfigError {
 /// The default [`Config`] as minified JSON.
 #[cfg(all(feature = "default-config", not(test)))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-config.json.minified"));
-/// The default [`Config`] as minified JSON.
+/// The default [`Config`] as unminified JSON.
 #[cfg(all(feature = "default-config", test))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
@@ -175,16 +173,12 @@ pub static DEFAULT_CONFIG: OnceLock<Config> = OnceLock::new();
 /// An enum containing all possible errors that can happen when loading/parsing a config.
 #[derive(Debug, Error)]
 pub enum GetConfigError {
-    /// Could not load the specified config file.
+    /// Could not load the config.
     #[error(transparent)]
-    CantLoadConfigFile(io::Error),
+    CantLoadConfig(#[from] io::Error),
     /// The loaded config file did not contain valid JSON.
     #[error(transparent)]
-    CantParseConfigFile(serde_json::Error),
-    /// The default config compiled into URL Cleaner isn't valid JSON.
-    #[error(transparent)]
-    #[cfg(feature = "default-config")]
-    CantParseDefaultConfig(serde_json::Error)
+    CantParseConfig(#[from] serde_json::Error),
 }
 
 #[cfg(test)]

@@ -58,22 +58,6 @@ impl Default for Params {
 }
 
 impl Params {
-    /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
-    /// # Errors
-    /// Errors if [`reqwest::ClientBuilder::build`] errors.
-    #[cfg(feature = "http")]
-    pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        debug!(Params::http_client, self, http_client_config_diff);
-        match http_client_config_diff {
-            Some(http_client_config_diff) => {
-                let mut temp_http_client_config = self.http_client_config.clone();
-                http_client_config_diff.apply(&mut temp_http_client_config);
-                temp_http_client_config.apply(reqwest::blocking::ClientBuilder::new())
-            },
-            None => {self.http_client_config.apply(reqwest::blocking::ClientBuilder::new())}
-        }?.build()
-    }
-
     /// Makes sure all the listed things are documented.
     /// # Panics
     /// When it fails, a panic occurs to make debugging easier.

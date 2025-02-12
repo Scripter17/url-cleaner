@@ -1,74 +1,87 @@
-//! Basic testing framework to ensure configs are working as intended.
+//! Allows including tests in the [`Config`],
 
 use std::borrow::Cow;
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
+use url::Url;
 
 use crate::types::*;
-#[allow(unused_imports, reason = "Needed for doc links.")]
-use crate::glue::*;
-#[allow(unused_imports, reason = "Needed for doc links.")]
 use crate::util::*;
 
-/// Tests to make sure a [`Config`] is working as intended.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// The main API for running tests.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Tests {
+    /// The [`TestSet`]s to run.
+    pub sets: Vec<TestSet>
+}
+
+impl Tests {
+    /// Run all the tests.
+    /// # Panics
+    /// If a test fails, panics.
+    pub fn r#do(&self, config: &Config) {
+        for set in self.sets.iter() {
+            set.r#do(config)
+        }
+    }
+}
+
+/// A group of [`Test`]s that share a [`ParamsDiff`] and [`JobsContext`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TestSet {
-    /// The [`ParamsDiff`] to apply to the [`Config::params`] for this test.
+    /// The [`ParamsDiff`] to use.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
-    /// A list of URLs to test and the expected results.
-    pub expectations: Vec<Expectation>
+    /// The [`JobsContext`] to use.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub jobs_context: JobsContext,
+    /// The [`Test`]s to run.
+    pub tests: Vec<Test>
 }
 
 impl TestSet {
-    /// Runs the tests.
+    /// Runs all the tests
     /// # Panics
-    /// Panics if a call to [`Expectation::run`] panics.
-    pub fn run(&self, config: &Config) {
-        println!("Testing the following test set:\n{}", serde_json::to_string(self).expect("The entire config to be serializable"));
+    /// If a test fails, panics.
+    pub fn r#do(&self, config: &Config) {
         let mut config = Cow::Borrowed(config);
         if let Some(params_diff) = &self.params_diff {
             params_diff.apply(&mut config.to_mut().params);
         }
-        for expectation in &self.expectations {
-            expectation.run(&config);
+
+        let (configs, results) = self.tests.clone().into_iter().map(|Test {job_config, result}| (job_config, result)).collect::<(Vec<_>, Vec<_>)>();
+
+        let mut jobs = Jobs {
+            jobs_config: JobsConfig {
+                config,
+                #[cfg(feature = "cache")]
+                cache: Default::default()
+            },
+            context: Cow::Borrowed(&self.jobs_context),
+            job_configs_source: Box::new(configs.into_iter().map(|x| serde_json::from_value(x).map_err(Into::into)))
+        };
+
+        for (i, (job, result)) in jobs.iter().zip(results.into_iter()).enumerate() {
+            assert_eq!(
+                job.expect("The job to be makable.").r#do().expect("The job to succeed."),
+                Url::from_str(&result).expect("The result to be a valid BetterUrl."),
+                "Test failed\nparams_diff: {:?}\njobs_context: {:?}\ntest: {:?}",
+                self.params_diff,
+                self.jobs_context,
+                self.tests.get(i).expect("`i` to never be out of bounds.")
+            );
         }
     }
 }
 
-/// Individual [`TestSet`] test.
+/// An individual test.
+///
+/// Needs the config from a [`TestSet`] to be run.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Expectation {
-    /// The URL to clean.
+pub struct Test {
+    /// The [`JobConfig`] to use.
     pub job_config: serde_json::Value,
-    /// The expected result of cleaning [`Self::job_config`].
+    /// The expected result URL.
     pub result: String
-}
-
-impl Expectation {
-    /// Runs the test.
-    /// # Panics
-    /// If serializing `self` fails, panics.
-    /// 
-    /// If the call to [`Config::apply`] fails, panics.
-    /// 
-    /// If the expectation fails, you guessed it, panics.
-    pub fn run(&self, config: &Config) {
-        println!("Testing the following expectation:\n{}", serde_json::to_string(self).expect("The entire config to be serializable"));
-        let job_config: JobConfig = serde_json::from_value(self.job_config.clone()).expect("The job_config to be a valid JobConfig.");
-        let mut url = job_config.url.clone();
-        config.apply(&mut JobState {
-            url: &mut url,
-            params: &config.params,
-            scratchpad: &mut Default::default(),
-            context: &job_config.context,
-            #[cfg(feature = "cache")]
-            cache: &Default::default(),
-            commons: &config.commons,
-            common_args: None,
-            jobs_context: &Default::default()
-        }).expect("The URL to be modified without errors.");
-        assert_eq!(url, BetterUrl::from_str(&self.result).expect("The job result to be a valid BetterUrl."));
-    }
 }

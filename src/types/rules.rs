@@ -257,7 +257,7 @@ impl Rule {
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
     ///
-    /// If an error is returned, `job_state` is unmodified.
+    /// If an error occurs, `job_state` is effectively unmodified, though the mutable parts may be clones.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         debug!(Rule::apply, self, job_state);
         Ok(match self {

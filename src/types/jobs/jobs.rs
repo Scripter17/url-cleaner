@@ -49,7 +49,7 @@ pub struct Jobs<'a> {
     /// The [`JobsConfig`] to use.
     pub jobs_config: JobsConfig<'a>,
     /// The context.
-    pub context: JobsContext,
+    pub context: Cow<'a, JobsContext>,
     /// The iterator [`JobConfig`]s are acquired from.
     pub job_configs_source: Box<dyn Iterator<Item = Result<JobConfig, MakeJobConfigError>>>
 }
@@ -59,6 +59,7 @@ impl ::core::fmt::Debug for Jobs<'_> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         let mut x = f.debug_struct("Jobs");
         x.field("jobs_config", &self.jobs_config);
+        x.field("context", &self.context);
         x.field("job_configs_source", &"...");
         x.finish()
     }

@@ -67,6 +67,9 @@ pub struct Args {
     /// Stuff to make a [`ParamsDiff`] from the CLI.
     #[command(flatten)]
     pub params_diff_args: ParamsDiffArgParser,
+    /// The JobsContext.
+    #[arg(             long)]
+    pub jobs_context: Option<String>,
     /// Print the parsed arguments for debugging.
     /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
@@ -109,6 +112,8 @@ pub enum CliError {
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when URL Cleaner fails to parse a [`ParamsDiff`] file's contents.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
+    /// Returned when URL Cleaner fails to parse a [`JobsContext`].
+    #[error(transparent)] CantParseJobsContext(serde_json::Error),
     /// Returned when a [`SerdeJsonError`] is encountered.
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
 }
@@ -183,7 +188,11 @@ fn main() -> Result<ExitCode, CliError> {
         config: Cow::Owned(config)
     };
     let jobs_config_ref = &jobs_config;
-    let jobs_context = Default::default();
+    let jobs_context = if let Some(jobs_context_string) = args.jobs_context {
+        serde_json::from_str(&jobs_context_string).map_err(CliError::CantParseJobsContext)?
+    } else {
+        Default::default()
+    };
     let jobs_context_ref = &jobs_context;
 
     std::thread::scope(|s| {

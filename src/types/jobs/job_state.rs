@@ -1,6 +1,7 @@
 //! The state of a job as it's happening.
 
 use crate::types::*;
+use crate::util::*;
 use crate::glue::*;
 
 /// The current state of a [`Job`].
@@ -11,7 +12,7 @@ pub struct JobState<'a> {
     /// Scratchpad space for [`Mapper`]s to store state in.
     pub scratchpad: &'a mut JobScratchpad,
     /// Vars used in common contexts.
-    pub common_args: Option<&'a CommonArgs>,
+    pub common_args: Option<&'a CommonCallArgs<'a>>,
     /// The context surrounding the URL.
     pub context: &'a JobContext,
     /// The context surrounding the [`Jobs`].
@@ -120,9 +121,9 @@ pub struct JobStateView<'a> {
     /// Vars used in common contexts.
     /// 
     /// See [`JobState::common_args`].
-    // One could argue this should be a `&'a Option<CommonArgs>`, but that'd break ABI compatibility or whatever it's called.
+    // One could argue this should be a `&'a Option<CommonCallArgs>`, but that'd break ABI compatibility or whatever it's called.
     // Transmuting a `JobState` to a `JobStateView` is effectively safe and that change would break that (I think?).
-    pub common_args: Option<&'a CommonArgs>,
+    pub common_args: Option<&'a CommonCallArgs<'a>>,
     /// The context surrounding the URL.
     /// 
     /// See [`JobState::context`].
@@ -147,6 +148,23 @@ pub struct JobStateView<'a> {
 }
 
 impl<'a> JobStateView<'a> {
+    /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
+    /// # Errors
+    /// Errors if [`reqwest::ClientBuilder::build`] errors.
+    #[cfg(feature = "http")]
+    pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
+        debug!(Params::http_client, self, http_client_config_diff);
+        match http_client_config_diff {
+            Some(http_client_config_diff) => {
+                let mut temp_http_client_config = self.params.http_client_config.clone();
+                if let Some(CommonCallArgs {http_client_config_diff: Some(x), ..}) = self.common_args {x.apply(&mut temp_http_client_config);}
+                http_client_config_diff.apply(&mut temp_http_client_config);
+                temp_http_client_config.apply(reqwest::blocking::ClientBuilder::new())
+            },
+            None => {self.params.http_client_config.apply(reqwest::blocking::ClientBuilder::new())}
+        }?.build()
+    }
+
     /// Just returns itself.
     /// 
     /// Exists for internal ergonomics reasons.

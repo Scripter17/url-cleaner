@@ -18,7 +18,7 @@ use crate::util::*;
 mod string_source_json_value;
 pub use string_source_json_value::*;
 
-/// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`Params::http_client`].
+/// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`JobStateView::http_client`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 pub struct RequestConfig {
     /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
@@ -87,7 +87,7 @@ impl From<StringSourceError> for RequestConfigError {
 impl RequestConfig {
     /// Makes a [`reqwest::blocking::RequestBuilder`].
     /// # Errors
-    /// If the call to [`Params::http_client`] returns an error, that error is returned.
+    /// If the call to [`JobStateView::http_client`] returns an error, that error is returned.
     /// 
     /// If any of the header names in [`Self::headers`] are, once [`str::to_lowercase`] is applied, an invalid [`HeaderName`], the error is returned in a [`RequestConfigError::MakeHeaderMapError`].
     /// 
@@ -97,8 +97,7 @@ impl RequestConfig {
     /// 
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
     pub fn make(&self, job_state: &JobStateView) -> Result<reqwest::blocking::RequestBuilder, RequestConfigError> {
-        let mut ret=job_state.params
-            .http_client(self.client_config_diff.as_ref())?
+        let mut ret=job_state.http_client(self.client_config_diff.as_ref())?
             .request(
                 self.method.clone(),
                 match self.url {

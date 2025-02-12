@@ -326,7 +326,7 @@ pub enum Mapper {
     /// # Errors
     #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::read`] returns an error, that error is returned.")]
     /// 
-    /// If the call to [`Params::http_client`] returns an error, that error is returned.
+    /// If the call to [`JobStateView::http_client`] returns an error, that error is returned.
     /// 
     /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
     /// 
@@ -551,6 +551,8 @@ impl Mapper {
     /// Applies the mapper to the provided URL.
     /// # Errors
     /// See each of [`Self`]'s variant's documentation for details.
+    ///
+    /// If an error occurs, `job_state` is effectively unmodified, though the mutable parts may be clones.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), MapperError> {
         debug!(Mapper::apply, self, job_state);
         match self {
@@ -695,7 +697,7 @@ impl Mapper {
                         return Ok(());
                     }
                 }
-                let response = job_state.params.http_client(http_client_config_diff.as_deref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
+                let response = job_state.to_view().http_client(http_client_config_diff.as_deref())?.get(job_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
                     Url::parse(std::str::from_utf8(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.as_bytes())?)?
                 } else {

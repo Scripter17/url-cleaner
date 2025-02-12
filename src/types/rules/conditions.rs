@@ -799,7 +799,7 @@ impl Condition {
             Self::PartIsOneOf {part, ..} => part.is_suitable_for_release(config),
             Self::VarIs {name, value} => name.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),
-            Self::StringIs {left, right} => left.as_ref().is_none_or(|left| left.is_suitable_for_release(config)) && right.as_ref().is_none_or(|right| right.is_suitable_for_release(config)),
+            Self::StringIs {left, right} => (left.is_some() || right.is_some()) && left.as_ref().is_none_or(|left| left.is_suitable_for_release(config)) && right.as_ref().is_none_or(|right| right.is_suitable_for_release(config)),
             Self::StringContains {value, substring, r#where} => value.is_suitable_for_release(config) && substring.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
             Self::StringMatches {value, matcher} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
             #[cfg(feature = "commands")] Self::CommandExists (_) => false,
