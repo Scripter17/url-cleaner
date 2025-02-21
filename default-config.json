@@ -34,6 +34,7 @@
 			"youtube-unlive": "Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.",
 			"youtube-unplaylist": "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
 			"youtube-unshort": "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.",
+			"youtube-unembed": "Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.",
 			"remove-unused-search-query": "Remove search queries from URLs that aren't search results (for example, posts)."
 		},
 		"vars": {
@@ -135,7 +136,7 @@
 				"newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com",
 				"rebrand.ly", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "sub2get.com", "sub2unlock.com",
 				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylf.com",
-				"tinylink.onl", "tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com", "st.news"
+				"tinylink.onl", "tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com", "st.news", "ift.tt"
 			],
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
@@ -156,7 +157,7 @@
 				"s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to",
 				"t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to",
 				"tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link",
-				"wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "tinylf.com"
 			],
 			"redirect-reg-domains": [
 				"goo.gl", "lnk.to", "o93x.net", "pusle.ly", "visitlink.me"
@@ -1042,10 +1043,30 @@
 							{"Any": [
 								{"HostIsOneOf": ["http", "https"]},
 								{"PartContains": {"part": "Path", "value": "http"}},
-								{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}}
+								{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}},
+								{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}}
 							]}
 						]},
 						"rules": [
+							{
+								"condition": {"All": [
+									{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}},
+									{"Not": {"StringIs": {"left": {"ContextVar": "link_text"}, "right": null}}}
+								]},
+								"mapper": {"SetPart": {
+									"part": "Whole",
+									"value": {"Modified": {
+										"value": {"Part": "Whole"},
+										"modification": {"Replace": {
+											"find": {"Modified": {
+												"value": {"ContextVar": "link_text"},
+												"modification": "UrlEncode"
+											}},
+											"replace": {"ContextVar": "link_text"}
+										}}
+									}}
+								}}
+							},
 							{
 								"SharedCondition": {
 									"condition": {"All": [
@@ -1264,6 +1285,10 @@
 										{"All": [
 											{"FlagIsSet": "youtube-unlive"},
 											{"PartIs": {"part": {"PathSegment": 0}, "value": "live"}}
+										]},
+										{"All": [
+											{"FlagIsSet": "youtube-unembed"},
+											{"PartIs": {"part": {"PathSegment": 0}, "value": "embed"}}
 										]}
 									]},
 									"mapper": {"All": [
@@ -1439,6 +1464,14 @@
 									{"PartIs": {"part": {"QueryParam": "s"}, "value": "view"}}
 								]},
 								"mapper": {"RemoveQueryParams": ["tags"]}
+							}},
+							"spotify.com": {"RemoveQueryParams": ["si"]},
+							"overpass-turbo.eu": {"IfCondition": {
+								"condition": {"All": [
+									{"Not": {"FlagIsSet": "no-network"}},
+									{"PartIs": {"part": {"PathSegment": 0}, "value": "s"}}
+								]},
+								"mapper": {"ExpandRedirect": {}}
 							}}
 						}
 					}

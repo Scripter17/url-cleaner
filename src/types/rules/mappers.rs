@@ -311,11 +311,6 @@ pub enum Mapper {
     /// Please note that some websites (like `tinyurl.com` and `duckduckgo.com`) don't do redirects properly and therefore need to be fixed via more complex methods.
     /// If you know how to detect when a DDG search query has a bang that DDG will actually use (`"a !g"` doesn't redirect to google), please let me know as that would be immensely useful.
     /// 
-    /// # Implementation details
-    /// 
-    /// According to [`reqwest::header::HeaderValue`], the HTTP spec specifies that non-ASCII bytes mark the whole entire  as "opaque", and thus the [`reqwest::header::HeaderValue::to_str`] does not handle UTF-8
-    /// This mapper bypasses that by using [`reqwest::header::HeaderValue::as_bytes`] and [`std::str::from_utf8`].
-    /// 
     /// # Privacy
     /// 
     /// Please note that, by default, this mapper recursively expands short links. If a `t.co` link links to a `bit.ly` link, it'll return the page the `bit.ly` link links to.
@@ -351,7 +346,7 @@ pub enum Mapper {
         /// The headers to send alongside the param's default headers.
         #[serde(default, with = "headermap")]
         headers: HeaderMap,
-        /// Rules for how to make the HTTP client.
+        /// Rules for how to create the HTTP client in addition to [`Params::http_client_config`] and [`CommonCallArgs::http_client_config_diff`].
         #[serde(default)]
         http_client_config_diff: Option<Box<HttpClientConfigDiff>>
     },

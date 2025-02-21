@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC};
+use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC, AsciiSet};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 #[cfg(feature = "regex")]
 use ::regex::Regex;
@@ -417,10 +417,10 @@ pub enum StringModification {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a/b/c".to_string();
-    /// StringModification::UrlEncode.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::UrlEncode(Default::default()).apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a%2Fb%2Fc");
     /// ```
-    UrlEncode,
+    UrlEncode(UrlEncodeAlphabet),
     /// [`percent_encoding::percent_decode_str`]
     /// # Errors
     /// If the call to [`percent_encoding::percent_decode_str`] errors, returns that error.
@@ -899,6 +899,45 @@ pub enum StringModification {
     Custom(FnWrapper<fn(&mut String, &JobStateView) -> Result<(), StringModificationError>>)
 }
 
+/// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent#description
+const JS_ENCODE_URI_COMPONENT_ASCII_SET: AsciiSet = percent_encoding::NON_ALPHANUMERIC
+    .remove(b'-').remove(b'_').remove(b'.')
+    .remove(b'!').remove(b'~').remove(b'*')
+    .remove(b'\'').remove(b'(').remove(b')');
+/// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI#description
+const JS_ENCODE_URI_ASCII_SET: AsciiSet = JS_ENCODE_URI_COMPONENT_ASCII_SET
+    .remove(b';').remove(b'/').remove(b'?')
+    .remove(b':').remove(b'@').remove(b'&')
+    .remove(b'=').remove(b'+').remove(b'$')
+    .remove(b',').remove(b'#');
+
+/// Alphabets for [`StringModification::UrlEncode`].
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum UrlEncodeAlphabet {
+    /// The alphabet defined by JavaScript's [`encodeURIComponent`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent#description)
+    #[default]
+    JsEncodeUriComponent,
+    /// The alphabet defined by JavaScript's [`encodeURI`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI#description)
+    JsEncodeUri,
+    /// [`NON_ALPHANUMERIC`].
+    NonAlphanumeric
+}
+
+impl UrlEncodeAlphabet {
+    /// Gets the alphabet.
+    ///
+    /// For some reason, [`AsciiSet`], as of latest version when I write this (2.3.1), does not implment any non-auto/blanket traits.
+    ///
+    /// As I write this, there's a merged pull request for [`Debug`], [`PartialEq`], and [`Eq`] and an unmerged pull request for [`Clone`] and [`Copy`].
+    pub fn get(&self) -> &'static AsciiSet {
+        match self {
+            Self::JsEncodeUriComponent => &JS_ENCODE_URI_COMPONENT_ASCII_SET,
+            Self::JsEncodeUri          => &JS_ENCODE_URI_ASCII_SET,
+            Self::NonAlphanumeric      => NON_ALPHANUMERIC
+        }
+    }
+}
+
 /// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CharNotFoundBehavior {
@@ -935,7 +974,7 @@ impl FromStr for StringModification {
             #[cfg(feature = "base64")] "Base64Decode" => StringModification::Base64Decode(Default::default()),
             #[cfg(feature = "base64")] "Base64Encode" => StringModification::Base64Encode(Default::default()),
             "UrlDecode" => StringModification::UrlDecode,
-            "UrlEncode" => StringModification::UrlEncode,
+            "UrlEncode" => StringModification::UrlEncode(Default::default()),
             "None"      => StringModification::None,
             "Error"     => StringModification::Error,
             "Lowercase" => StringModification::Lowercase,
@@ -1172,7 +1211,7 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to = regex.get_regex()?.replace_all(to,     get_str!(replace, job_state, StringModificationError)).into_owned(),
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to = regex.get_regex()?.replacen   (to, *n, get_str!(replace, job_state, StringModificationError)).into_owned(),
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(get_str!(flag, job_state, StringModificationError)) {then} else {r#else}.apply(to, job_state)?,
-            Self::UrlEncode => *to=utf8_percent_encode(to, NON_ALPHANUMERIC).to_string(),
+            Self::UrlEncode(alphabet) => *to=utf8_percent_encode(to, alphabet.get()).to_string(),
             Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.make_engine()?.encode(to.as_bytes()),
             #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.make_engine()?.decode(to.as_bytes())?)?,
@@ -1497,7 +1536,7 @@ impl StringModification {
             Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release(config)),
             Self::Debug(_) => false,
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
-                Self::KeepRange {..} | Self::UrlEncode | Self::UrlDecode | Self::RunEscapeCodes(_) => true,
+                Self::KeepRange {..} | Self::UrlEncode(_) | Self::UrlDecode | Self::RunEscapeCodes(_) => true,
             #[cfg(feature = "regex")]
             Self::RegexFind(_) => true,
             #[cfg(feature = "base64")]
