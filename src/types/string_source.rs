@@ -342,6 +342,18 @@ pub enum StringSource {
         /// The [`Self`] to look for after the substring.
         end: Box<Self>
     },
+    /// Calls [`::regex::Regex::find`] on `value`.
+    /// # Errors
+    /// If the call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    ///
+    /// If the call to [`RegexWrapper::get_regex`] returns an error, that error is returned.
+    #[cfg(feature = "regex")]
+    RegexFind {
+        /// The value to search in.
+        value: Box<Self>,
+        /// The [`RegexWrapper`] to search with.
+        regex: RegexWrapper
+    },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
     Common(CommonCall),
     /// Uses a function pointer.
@@ -466,6 +478,10 @@ pub enum StringSourceError {
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Returned when a [`::regex::Error`] is encountered.
+    #[error(transparent)]
+    #[cfg(feature = "regex")]
+    RegexError(#[from] ::regex::Error),
     /// Custom error.
     #[error(transparent)]
     #[cfg(feature = "custom")]
@@ -544,6 +560,11 @@ impl StringSource {
                     },
                     None => None
                 }
+            },
+            #[cfg(feature = "regex")]
+            Self::RegexFind {value, regex} => match value.get(job_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+                Cow::Owned   (value) => regex.get_regex()?.find(&value).map(|x| Cow::Owned   (x.as_str().to_string())),
+                Cow::Borrowed(value) => regex.get_regex()?.find( value).map(|x| Cow::Borrowed(x.as_str()))
             },
 
             // External state.
@@ -639,6 +660,8 @@ impl StringSource {
             #[cfg(feature = "http")]
             Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
             Self::ExtractBetween {value, start, end} => value.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
+            #[cfg(feature = "regex")]
+            Self::RegexFind {value, regex} => value.is_suitable_for_release(config) && regex.get_regex().is_ok(),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             #[cfg(feature = "custom")]
             Self::Custom(_) => false

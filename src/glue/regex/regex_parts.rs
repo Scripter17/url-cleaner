@@ -8,10 +8,10 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use regex::{Regex, RegexBuilder};
-use regex_syntax::{ParserBuilder, Parser, Error as RegexSyntaxError};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use super::RegexWrapper;
 
+use crate::types::*;
 use crate::util::*;
 
 /// Contains the rules for constructing a [`Regex`].
@@ -21,45 +21,33 @@ use crate::util::*;
 #[serde(remote = "Self")]
 pub struct RegexParts {
     /// The pattern passed into [`RegexBuilder::new`].
-    pattern: String,
+    pub pattern: String,
     /// The configuration flags.
     #[serde(flatten)]
-    config: RegexConfig
+    pub config: RegexConfig
 }
 
 crate::util::string_or_struct_magic!(RegexParts);
 
 impl FromStr for RegexParts {
-    type Err=Box<RegexSyntaxError>;
+    type Err = std::convert::Infallible;
 
     /// [`Self::new`]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::new(s)
+        Ok(Self::new(s))
     }
 }
 
-impl TryFrom<&str> for RegexParts {
-    type Error = <Self as FromStr>::Err;
-
+impl From<&str> for RegexParts {
     /// [`Self::new`].
-    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
-        Self::from_str(s)
-    }
-}
-
-impl From<RegexParts> for (String, RegexConfig) {
-    fn from(value: RegexParts) -> Self {
-        (value.pattern, value.config)
+    fn from(s: &str) -> Self {
+        Self::new(s)
     }
 }
 
 impl RegexParts {
     /// Creates a [`RegexParts`] with the provided pattern and a default config.
-    /// # Errors
-    /// If the pattern is invalid, the error encountered by the parser is returned.
-    /// 
-    /// The error is boxed because it's massive.
-    pub fn new(pattern: &str) -> Result<Self, Box<RegexSyntaxError>> {
+    pub fn new(pattern: &str) -> Self {
         Self::new_with_config(pattern, RegexConfig::default())
     }
 
@@ -74,16 +62,11 @@ impl RegexParts {
     }
 
     /// Creates a [`RegexParts`] with the provided pattern and config.
-    /// # Errors
-    /// If the pattern is invalid, the error encountered by the parser is returned.
-    /// 
-    /// The error is boxed because it's massive.
-    pub fn new_with_config(pattern: &str, config: RegexConfig) -> Result<Self, Box<RegexSyntaxError>> {
-        config.build_parser().parse(pattern).map_err(Box::new)?;
-        Ok(Self {
+    pub fn new_with_config(pattern: &str, config: RegexConfig) -> Self {
+        Self {
             pattern: pattern.to_string(),
             config
-        })
+        }
     }
 
     /// Creates the regex.
@@ -102,6 +85,14 @@ impl RegexParts {
             .swap_greed(self.config.swap_greed)
             .unicode(self.config.unicode)
             .build()
+    }
+
+    /// Verifies at suitability test time that the regex actually compiles.
+    /// # Panics
+    /// If the regex doesn't compile, panics.
+    pub fn is_suitable_for_release(&self, _config: &Config) -> bool {
+        self.build().expect("The regex to compile.");
+        true
     }
 }
 
@@ -233,20 +224,5 @@ impl RegexConfig {
         if self.swap_greed          {ret.push('U');}
         if self.unicode             {ret.push('u');}
         ret
-    }
-
-    /// Makes a [`Parser`].
-    pub fn build_parser(&self) -> Parser {
-        ParserBuilder::new()
-            .case_insensitive(self.case_insensitive)
-            .crlf(self.crlf)
-            .dot_matches_new_line(self.dot_matches_new_line)
-            .ignore_whitespace(self.ignore_whitespace)
-            .line_terminator(self.line_terminator)
-            .multi_line(self.multi_line)
-            .octal(self.octal)
-            .swap_greed(self.swap_greed)
-            .utf8(self.unicode)
-            .build()
     }
 }

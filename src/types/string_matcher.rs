@@ -113,7 +113,7 @@ pub enum StringMatcher {
     /// # use url_cleaner::glue::RegexParts;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").unwrap().try_into().unwrap()).satisfied_by("axc", &job_state.to_view()).unwrap(), true);
+    /// assert_eq!(StringMatcher::Regex(RegexParts::new("a.c").try_into().unwrap()).satisfied_by("axc", &job_state.to_view()).unwrap(), true);
     /// ```
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),

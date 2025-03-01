@@ -594,6 +594,46 @@ pub enum Condition {
     /// 
     /// A rarely useful optimization but an optimization none the less.
     AnyFlagIsSet,
+    /// Checks that each path segment after `start` matches each [`StringMatcher`] in `matchers`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    ///
+    /// url_cleaner::job_state!(job_state; url="https://example.com/a/b/c";);
+    ///
+    /// assert!( Condition::PathSegmentsMatch {start:  0, matchers: vec![StringMatcher::Equals("a".into())], strict: false}.satisfied_by(&job_state.to_view()).unwrap());
+    /// assert!(!Condition::PathSegmentsMatch {start:  0, matchers: vec![StringMatcher::Equals("b".into())], strict: false}.satisfied_by(&job_state.to_view()).unwrap());
+    /// 
+    /// assert!( Condition::PathSegmentsMatch {start:  1, matchers: vec![StringMatcher::Equals("b".into())], strict: false}.satisfied_by(&job_state.to_view()).unwrap());
+    /// assert!( Condition::PathSegmentsMatch {start: -1, matchers: vec![StringMatcher::Equals("c".into())], strict: false}.satisfied_by(&job_state.to_view()).unwrap());
+    /// 
+    /// assert!( Condition::PathSegmentsMatch {start: 0, matchers: vec![
+    ///     StringMatcher::Equals("a".into()),
+    ///     StringMatcher::Equals("b".into()),
+    ///     StringMatcher::Equals("c".into()),
+    ///     StringMatcher::Equals("d".into())
+    /// ], strict: false}.satisfied_by(&job_state.to_view()).unwrap());
+    /// assert!(!Condition::PathSegmentsMatch {start: 0, matchers: vec![
+    ///     StringMatcher::Equals("a".into()),
+    ///     StringMatcher::Equals("b".into()),
+    ///     StringMatcher::Equals("c".into()),
+    ///     StringMatcher::Equals("d".into())
+    /// ], strict: true}.satisfied_by(&job_state.to_view()).unwrap());
+    /// ```
+    PathSegmentsMatch {
+        /// The start of the segments to matcg.
+        #[serde(default, skip_serializing_if = "is_default")]
+        start: isize,
+        /// The matchers to test with.
+        matchers: Vec<StringMatcher>,
+        /// If [`true`], having more matchers than segments returns [`false`].
+        ///
+        /// If [`false`], having more matchers than segments just pretends all the extra matchers passed.
+        ///
+        /// Defaults to [`true`].
+        #[serde(default = "get_true", skip_serializing_if = "is_true")]
+        strict: bool
+    },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::conditions`].`
     Common(CommonCall),
     /// Uses a function pointer.
@@ -737,6 +777,21 @@ impl Condition {
                 job_state.url.path()==value
             },
 
+            Self::PathSegmentsMatch {start, matchers, strict} => {
+                let segments_count = job_state.url.path_segments().ok_or(UrlPartGetError::UrlDoesNotHaveAPath)?.count();
+                let segments_skip = neg_index(*start, segments_count).ok_or(UrlPartGetError::SegmentRangeNotFound)?;
+                let segments = job_state.url.path_segments().ok_or(UrlPartGetError::UrlDoesNotHaveAPath)?.skip(segments_skip);
+
+                if *strict && segments_count.checked_sub(segments_skip).is_none_or(|x| x <= matchers.len()) {return Ok(false);}
+
+                for (segment, matcher) in segments.zip(matchers.iter()) {
+                    if !matcher.satisfied_by(segment, job_state)? {
+                        return Ok(false);
+                    }
+                };
+                true
+            },
+
             // General parts.
 
             Self::PartIs{part, value} => part.get(job_state.url).as_deref()==get_option_str!(value, job_state),
@@ -796,6 +851,7 @@ impl Condition {
             Self::PartIs {part, value} => part.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::PartContains {part, value, r#where} => part.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
             Self::PartMatches {part, matcher} => part.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
+            Self::PathSegmentsMatch {start: _, matchers, strict: _} => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
             Self::PartIsOneOf {part, ..} => part.is_suitable_for_release(config),
             Self::VarIs {name, value} => name.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
             Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),

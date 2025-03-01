@@ -2,16 +2,16 @@
 //! 
 //! Enabled by the `regex` feature flag.
 
-mod regex_parts;
-pub use regex_parts::*;
-
 use std::str::FromStr;
 use std::sync::OnceLock;
 
 use serde::{Serialize, Deserialize};
-
-use regex_syntax::Error as RegexSyntaxError;
 use regex::Regex;
+
+use crate::types::*;
+
+mod regex_parts;
+pub use regex_parts::*;
 
 /// A wrapper around both a [`OnceLock`] of a [`Regex`] and a [`RegexParts`].
 /// 
@@ -36,26 +36,16 @@ impl From<RegexParts> for RegexWrapper {
 }
 
 impl FromStr for RegexWrapper {
-    type Err = Box<RegexSyntaxError>;
+    type Err = std::convert::Infallible;
 
-    /// [`RegexParts::from_str`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        RegexParts::from_str(s).map(Into::into)
+        Ok(RegexParts::from(s).into())
     }
 }
 
-impl TryFrom<&str> for RegexWrapper {
-    type Error = <Self as FromStr>::Err;
-
-    /// [`Self::from_str`].
-    fn try_from(s: &str) -> Result<Self, <Self as TryFrom<&str>>::Error> {
-        Self::from_str(s)
-    }
-}
-
-impl From<RegexWrapper> for (OnceLock<Regex>, RegexParts) {
-    fn from(value: RegexWrapper) -> Self {
-        (value.regex, value.parts)
+impl From<&str> for RegexWrapper {
+    fn from(s: &str) -> Self {
+        RegexParts::from(s).into()
     }
 }
 
@@ -84,7 +74,7 @@ impl TryFrom<&RegexWrapper> for Regex {
 
     /// [`RegexParts::build`].
     fn try_from(value: &RegexWrapper) -> Result<Self, Self::Error> {
-        value.parts.build()
+        value.get_regex().cloned()
     }
 }
 
@@ -110,5 +100,13 @@ impl RegexWrapper {
             let temp = self.parts.build()?;
             Ok(self.regex.get_or_init(|| temp))
         }
+    }
+
+    /// Verifies at suitability test time that the regex actually compiles.
+    /// # Panics
+    /// If the regex doesn't compile, panics.
+    pub fn is_suitable_for_release(&self, _config: &Config) -> bool {
+        self.get_regex().expect("The regex to compile.");
+        true
     }
 }

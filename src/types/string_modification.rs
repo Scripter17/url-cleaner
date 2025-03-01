@@ -875,7 +875,7 @@ pub enum StringModification {
     /// Be careful to make sure no element key is a prefix of any other element key.
     /// 
     /// The current implementation sucks and can't handle that.
-    /// # Tests
+    /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
@@ -889,6 +889,24 @@ pub enum StringModification {
     /// assert_eq!(x, "/a\n\\n");
     /// ```
     RunEscapeCodes(HashMap<String, String>),
+    /// Gets `value` and does the first applicable action:
+    /// 1. If the value is in `map`, applies that entry's [`Self`].
+    /// 2. If the value is [`None`] and `if_null` is [`Some`], applies that [`Self`].
+    /// 3. If `else` is [`Some`], applies that [`Self`].
+    /// 
+    /// Note that if `value` and `if_null` are [`None`], `else` is still applied.
+    StringMap {
+        /// The value to branch with.
+        value: Box<StringSource>,
+        /// The map of branches.
+        map: HashMap<String, Self>,
+        /// If [`Some`], the branch where `value` is [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        if_null: Option<Box<Self>>,
+        /// If [`Some`], the branch used when no other branch applies.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Option<Box<Self>>
+    },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
     Common(CommonCall),
     /// Uses a function pointer.
@@ -1435,7 +1453,7 @@ impl StringModification {
                     .split_once(get_str!(end, job_state, StringModificationError))
                     .ok_or(StringModificationError::ExtractBetweenEndNotFound)?
                     .0
-                    .to_string()
+                    .to_string();
             },
             Self::MapChars {map, not_found_behavior} => {
                 *to = match not_found_behavior {
@@ -1482,6 +1500,9 @@ impl StringModification {
                 }
                 *to=ret;
             },
+
+            Self::StringMap {value, map, if_null, r#else} => if let Some(x) = value.get(job_state)?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {x.apply(to, job_state)?;},
+
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, job_state)?
         };
@@ -1510,11 +1531,11 @@ impl StringModification {
             Self::StripMaybeSuffix(source) => source.is_suitable_for_release(config),
             Self::Replacen {find, replace, ..} => find.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
             Self::Insert {value, ..} => value.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexCaptures {replace, ..} => replace.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {replace, join, ..} => replace.is_suitable_for_release(config) && join.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexReplace {replace, ..} => replace.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexReplaceAll {replace, ..} => replace.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexReplacen {replace, ..} => replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexCaptures        {regex, replace      } => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {regex, replace, join} => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config) && join.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexReplace         {regex, replace,     } => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexReplaceAll      {regex, replace      } => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
+            #[cfg(feature = "regex")] Self::RegexReplacen        {regex, replace, n: _} => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::JsonPointer(pointer) => pointer.is_suitable_for_release(config),
             Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(config),
@@ -1538,11 +1559,12 @@ impl StringModification {
             Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
                 Self::KeepRange {..} | Self::UrlEncode(_) | Self::UrlDecode | Self::RunEscapeCodes(_) => true,
             #[cfg(feature = "regex")]
-            Self::RegexFind(_) => true,
+            Self::RegexFind(regex) => regex.is_suitable_for_release(config),
             #[cfg(feature = "base64")]
             Self::Base64Encode(_) | Self::Base64Decode(_) => true,
             Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
+            Self::StringMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, v)| v.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             #[cfg(feature = "custom")]
             Self::Custom(_) => false

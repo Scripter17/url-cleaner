@@ -130,13 +130,13 @@
 			"fixvx-host-without-www-dot-prefixes": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 			"bypass.vip-host-without-www-dot-prefixes": [
 				"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "bit.ly", "booo.st", "boost.ink", "bst.gg",
-				"cemendemons.com", "depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "is.gd",
+				"cemendemons.com", "depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "ift.tt", "is.gd",
 				"leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com", "loot-link.com", "loot-links.com", "lootdest.com",
 				"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com",
 				"newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com",
-				"rebrand.ly", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "sub2get.com", "sub2unlock.com",
+				"rebrand.ly", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com",
 				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylf.com",
-				"tinylink.onl", "tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com", "st.news", "ift.tt"
+				"tinylink.onl", "tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com", "go.undp.org"
 			],
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
@@ -146,21 +146,21 @@
 				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
 				"bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv",
 				"cos.lv", "cutt.ly", "db.tt", "dcdr.me", "deezer.page.link", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn",
-				"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.microsoft.com",
-				"go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd",
-				"iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr",
-				"l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "lnk.to", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org",
-				"msft.it", "msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st",
-				"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc",
-				"operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li",
-				"pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team",
-				"s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to",
-				"t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to",
-				"tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com", "wlo.link",
-				"wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "tinylf.com"
+				"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.icj-cij.org",
+				"go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
+				"is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr",
+				"l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "msft.it",
+				"msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms",
+				"nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "operagx.gg",
+				"orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly",
+				"py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team", "s76.co",
+				"share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co",
+				"t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org",
+				"tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "w.wiki", "wlgrn.com",
+				"wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-reg-domains": [
-				"goo.gl", "lnk.to", "o93x.net", "pusle.ly", "visitlink.me"
+				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me"
 			],
 			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at"],
 			"unmangle-path-is-url-blacklist": [],
@@ -186,8 +186,8 @@
 				"oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "pk_campaign", "pk_cid",
 				"pk_medium", "pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "s_cid", "sms_click", "sms_source", "sms_uph", "source",
 				"spot_im_redirect_source", "srsltid", "ss_email_id", "sscid", "tduid", "ttclid", "twclid", "unicorn_click_id", "user_email_address",
-				"usqp", "utm", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wt_mc", "xtor",
-				"yclid", "ymclid", "ymid", "ysclid"
+				"usqp", "utm", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wpb_advertiser",
+				"wpb_id", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid"
 			],
 			"utps-reg-domain-whitelist": ["bambulab.com"]
 		},
@@ -240,7 +240,9 @@
 						"comment": "It was the only somewhat normal one I could find, okay?",
 						"job_config": "http://bfy.tw/9ZSk",
 						"result": "https://google.com/search?q=How+does+the+US+government+work"
-					}
+					},
+					{"job_config": "https://billieeilish.lnk.to/LinktreeStore", "result": "https://store.billieeilish.com/"},
+					{"job_config": "https://theheadandtheheart.lnk.to/aperture", "result": "https://theheadandtheheart.lnk.to/aperture_ca"}
 				]
 			},
 			{
@@ -470,6 +472,17 @@
 		}
 	},
 	"rules": [
+		{
+			"condition": {"All": [
+				{"PartIs": {"part": "Whole", "value": "javascript:void(0);"}},
+				{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}},
+				{"StringIs": {"left": {"Modified": {"value": {"ContextVar": "site_name"}, "modification": "Lowercase"}}, "right": "website"}}
+			]},
+			"mapper": {"SetPart": {
+				"part": "Whole",
+				"value": {"Join": {"sources": ["https://", {"ContextVar": "link_text"}]}}
+			}}
+		},
 		{"SharedCondition": {
 			"condition": {"PartIsOneOf": {"part": "Scheme", "values": ["http", "https"]}},
 			"rules": [
@@ -489,7 +502,7 @@
 									"old.reddit.com", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
 									"rd.goodreads.com", "reddit.com", "reurl.cc", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com",
 									"skfb.ly", "smarturl.it", "ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com",
-									"tinyurl.com", "toyhou.se", "twpf.jp", "vk.com", "youtube.com"
+									"tinyurl.com", "toyhou.se", "twpf.jp", "vk.com", "youtube.com", "urldefense.com"
 								]},
 								{"LengthIs": 4},
 								{"Contains": {"value": "google"}}
@@ -497,7 +510,10 @@
 						}},
 						{"TreatErrorAsFail": {"PartMatches": {
 							"part": "RegDomain",
-							"matcher": {"InSet": "redirect-reg-domains"}
+							"matcher": {"Any": [
+								{"IsOneOf": ["smartadserver.com", "lnk.to"]},
+								{"InSet": "redirect-reg-domains"}
+							]}
 						}}}
 					]},
 					"mapper": {"Rule": {
@@ -879,7 +895,20 @@
 												{"SetPart": {"part": "Subdomain", "value": "www"}},
 												{"ExpandRedirect": {}}
 											]},
-											"shorturl.at": {"SetPart": {"part": "Subdomain", "value": "www"}}
+											"shorturl.at": {"SetPart": {"part": "Subdomain", "value": "www"}},
+											"urldefense.com": {"IfCondition": {
+												"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "v3"}},
+												"mapper": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"value": {"Part": "Whole"},
+														"modification": {"All": [
+															{"KeepSegmentRange": {"split": "__;!!", "end": -1}},
+															{"KeepSegmentRange": {"split": "__", "start": 1}}
+														]}
+													}}
+												}}
+											}}
 										}
 									}
 								},
@@ -902,6 +931,35 @@
 											"vk.com": {"IfCondition": {
 												"condition": {"PathIs": "/away.php"},
 												"mapper": {"GetUrlFromQueryParam": "to"}
+											}},
+											"smartadserver.com": {"IfCondition": {
+												"condition": {"PathIs": "/click"},
+												"mapper": {"GetUrlFromQueryParam": "go"}
+											}},
+											"lnk.to": {"IfCondition": {
+												"condition": {"Not": {"FlagIsSet": "no-network"}},
+												"mapper": {"CacheUrl": {
+													"category": "redirect",
+													"mapper": {"All": [
+														{"SetPart": {
+															"part": "Whole",
+															"value": {"Modified": {
+																"value": {"HttpRequest": {}},
+																"modification": {"TryElse": {
+																	"try": {"All": [
+																		{"ExtractBetween": {"start": "destination = ", "end": ";\n"}},
+																		{"JsonPointer": "/url"}
+																	]},
+																	"else": {"Set": {"Part": "Whole"}}
+																}}
+															}}
+														}},
+														{"IfCondition": {
+															"condition": {"Not": {"RegDomainIs": "lnk.to"}},
+															"mapper": {"RemoveQueryParams": ["lf"]}
+														}}
+													]}
+												}}
 											}}
 										}
 									}
@@ -1043,30 +1101,10 @@
 							{"Any": [
 								{"HostIsOneOf": ["http", "https"]},
 								{"PartContains": {"part": "Path", "value": "http"}},
-								{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}},
-								{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}}
+								{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}}
 							]}
 						]},
 						"rules": [
-							{
-								"condition": {"All": [
-									{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}},
-									{"Not": {"StringIs": {"left": {"ContextVar": "link_text"}, "right": null}}}
-								]},
-								"mapper": {"SetPart": {
-									"part": "Whole",
-									"value": {"Modified": {
-										"value": {"Part": "Whole"},
-										"modification": {"Replace": {
-											"find": {"Modified": {
-												"value": {"ContextVar": "link_text"},
-												"modification": "UrlEncode"
-											}},
-											"replace": {"ContextVar": "link_text"}
-										}}
-									}}
-								}}
-							},
 							{
 								"SharedCondition": {
 									"condition": {"All": [
@@ -1472,7 +1510,20 @@
 									{"PartIs": {"part": {"PathSegment": 0}, "value": "s"}}
 								]},
 								"mapper": {"ExpandRedirect": {}}
+							}},
+							"minds.com": {"RemoveQueryParams": ["referrer"]},
+							"history.com": {"IfCondition": {
+								"condition": {"PartMatches": {"part": "Fragment", "matcher": {"Contains": {"value": "link_time", "where": "Start"}}}},
+								"mapper": {"SetPart": {"part": "Fragment", "value": null}}
 							}}
+						}
+					}
+				},
+				{
+					"PartMap": {
+						"part": "DomainSuffix",
+						"map": {
+							"carrd.co": {"RemoveQueryParams": ["ref"]}
 						}
 					}
 				},
@@ -1507,7 +1558,7 @@
 									}}
 								},
 								{
-									"condition": "Always",
+									"condition": {"Not": {"PartIs": {"part": {"PathSegment": 0}, "value": "intent"}}},
 									"mapper": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
 								},
 								{
@@ -1653,7 +1704,7 @@
 								},
 								{
 									"condition": "Always",
-									"mapper": {"RemoveQueryParams": ["sca_esv"]}
+									"mapper": {"RemoveQueryParams": ["sca_esv", "usp"]}
 								}
 							]}
 						}
@@ -1667,7 +1718,51 @@
 						"value": {"JobsContextVar": "SOURCE_REG_DOMAIN"},
 						"map": {
 							"alibaba.com": {"RemoveQueryParams": ["spm", "file"]},
-							"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]}
+							"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]},
+							"furaffinity.net": {"IfCondition": {
+								"condition": {"All": [
+									{"FlagIsSet": "unmangle"},
+									{"TreatErrorAsFail": {"StringMatches": {
+										"value": {"ContextVar": "link_text"},
+										"matcher": {"AnyCharMatches": {"IsOneOf": [":", "/", "@", "?", "#"]}}
+									}}}
+								]},
+								"mapper": {"SetPart": {
+									"part": "Whole",
+									"value": {"Modified": {
+										"value": {"ContextVar": "link_text"},
+										"modification": {"StringMap": {
+											"value": {"Modified": {"value": {"ContextVar": "site_name"}, "modification": "Lowercase"}},
+											"map": {
+												"youtube"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com/)?([^/]+)$"                     , "replace": "https://youtube.com/$1"            }},
+												"twitter"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
+												"x"            : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
+												"bluesky"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/)?(?:profile/)?([^/]+)$"           , "replace": "https://bsky.app/profile/$1"       }},
+												"dealer's den" : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/)?(?:store/)?([^/]+)$"    , "replace": "https://thedealersden.com/store/$1"}},
+												"twitch"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv)?([^/]+)$"                        , "replace": "https://twitch.tv/$1"              }},
+												"facebook"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com/)?([^/]+)$"                    , "replace": "https://facebook.com/$1"           }},
+												"cara"         : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app/)?([^/]+)$"                        , "replace": "https://cara.app/$1"               }},
+												"piczel"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/)?(?:watch/)?([^/]+)$"            , "replace": "https://piczel.tv/watch/$1"        }},
+												"etsy"         : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/)?(?:shop/)?([^/]+)$"              , "replace": "https://etsy.com/shop/$1"          }},
+												"patreon"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com/)?([^/]+)$"                     , "replace": "https://patreon.com/$1"            }},
+												"ko-fi"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com/)?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"              }},
+												"sofurry"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+)\\.sofurry\\.com)?$"                   , "replace": "https://$1.sofurry.com"            }},
+												"inkbunny"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net/)?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"           }},
+												"deviantArt"   : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?deviantart\\.com/?)?([^/]*)$"      , "replace": "https://deviantart.com/$1$2"       }},
+												"weasyl"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com/)?~?([^/]+)$"                    , "replace": "https://weasyl.com/~$1"            }},
+												"tumblr"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?tumblr\\.com/?)?([^/]*)$"          , "replace": "https://$1$2.tumblr.com"           }},
+												"transfur"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com/)?(?:users/)?([^/]+)$"         , "replace": "https://transfur.com/users/$1"     }},
+												"pictaro"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pictaro\\.tv/)?([^/]+)$"                      , "replace": "https://pictaro.tv/$1"             }},
+												"furry network": {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com/)?([^/]+)$"                , "replace": "https://furrynetwork.com/$1"       }},
+												"itaku"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/)?(?:profile/)?([^/]+)$"           , "replace": "https://itaku.ee/profile/$1"       }},
+												"pixiv"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/)?(?:[a-z-]/)?(?:users/)?([^/]+)$", "replace": "https://pixiv.net/en/users/$1"     }},
+												"steam"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/)?(?:id/)?([^/]+)$"      , "replace": "https://steamcommunity.com/id/$1"  }}
+											},
+											"else": {"Set": {"Part": "Whole"}}
+										}}
+									}}
+								}}
+							}}
 						}
 					}
 				},

@@ -595,6 +595,49 @@ pub enum UrlPart {
     /// assert_eq!(url.path(), "/a/c/d");
     /// ```
     PathSegment(isize),
+    /// # Examples
+    /// ```
+    /// # use url::Url;
+    /// # use url_cleaner::types::*;
+    /// # use std::borrow::Cow;
+    ///
+    /// assert_eq!(UrlPart::PathSegments {start: Some(-2), end: None   }.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("3/4".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some(-1), end: None   }.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("4".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: None    , end: None   }.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("0/1/2/3/4".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some( 0), end: None   }.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("0/1/2/3/4".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some( 1), end: None   }.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("1/2/3/4".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some( 2), end: None   }.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("2/3/4".into())));
+    ///
+    /// assert_eq!(UrlPart::PathSegments {start: None    , end: Some(1)}.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("0".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some( 0), end: Some(1)}.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("0".into())));
+    ///
+    /// assert_eq!(UrlPart::PathSegments {start: None    , end: Some(2)}.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("0/1".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some( 0), end: Some(2)}.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("0/1".into())));
+    /// assert_eq!(UrlPart::PathSegments {start: Some( 1), end: Some(2)}.get(&BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap()), Some(Cow::Owned("1".into())));
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4").unwrap();
+    ///
+    /// UrlPart::PathSegments {start: Some(2), end: Some(-1)}.set(&mut url, Some("abc")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/abc/4");
+    ///
+    /// UrlPart::PathSegments {start: Some(1), end: Some(-1)}.set(&mut url, None).unwrap();
+    /// assert_eq!(url.path(), "/0/4");
+    ///
+    /// UrlPart::PathSegments {start: Some(-1), end: None}.set(&mut url, None).unwrap();
+    /// assert_eq!(url.path(), "/0");
+    /// ```
+    PathSegments {
+        /// The start of the range of segments to get.
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        start: Option<isize>,
+        /// The end of the range of segments to get.
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        end: Option<isize>
+    },
     /// The path segment between segments N and N+1.
     /// # Getting
     /// Is always `None`.
@@ -686,6 +729,8 @@ pub enum UrlPart {
     /// assert_eq!(url.as_str(), "https://example.com/");
     /// ```
     Path,
+    /// Makes some internal stuff easier.
+    PathWithoutLeadingSlash,
     /// A specific query parameter. The contained string is the parameter's name and the setter sets the parameter's value.
     /// # Getting
     /// Can be `None`.
@@ -1024,12 +1069,17 @@ impl UrlPart {
             Self::MaybeWWWRegDomain => if Self::Subdomain.get(url).is_none_or(|x| x=="www") {Self::RegDomain.get(url)?} else {None?},
             Self::Port         => Cow::Owned(url.port_or_known_default()?.to_string()), // I cannot be bothered to add number handling.
             Self::Path         => if url.cannot_be_a_base() {None?} else {Cow::Borrowed(url.path())},
+            Self::PathWithoutLeadingSlash => Cow::Borrowed((!url.cannot_be_a_base()).then_some(url.path())?.strip_prefix('/')?),
 
             Self::Origin => Cow::Owned(url.origin().unicode_serialization()),
 
             Self::PartSegments {part, split, start, end} => {
                 // TODO: Change to always borrow when possible.
                 Cow::Owned(neg_vec_keep(part.get(url)?.split(split), *start, *end)?.join(split))
+            },
+            Self::PathSegments {start, end} => {
+                // TODO: Change to always borrow.
+                Cow::Owned(neg_vec_keep(Self::Path.get(url)?.strip_prefix('/')?.split('/'), *start, *end)?.join("/"))
             },
             Self::PartSegment {part, split, index} => match part.get(url)? {
                 Cow::Borrowed(v) => Cow::Borrowed(neg_nth(v.split(split), *index)?),
@@ -1146,6 +1196,9 @@ impl UrlPart {
                 };
                 url.set_path(&segments.join("/"));
             },
+            (Self::PathSegments{start, end}, _) => {
+                Self::PartSegments{part: Self::PathWithoutLeadingSlash.into(), split: "/".into(), start: *start, end: *end}.set(url, to)?;
+            },
             (Self::AfterPathSegment(n), _) => if let Some(to) = to {
                 let mut segments = url.path_segments().ok_or(UrlPartGetError::UrlDoesNotHaveAPath)?.collect::<Vec<_>>();
                 let fixed_n = neg_shifted_range_boundary(*n, segments.len(), 1).ok_or(UrlPartGetError::SegmentBoundaryNotFound)?;
@@ -1159,6 +1212,7 @@ impl UrlPart {
                 (true , Some(_) ) => Err(UrlPartSetError::UrlCannotHaveAPath)?,
                 (true , None    ) => {}
             },
+            (Self::PathWithoutLeadingSlash, _) => Self::Path.set(url, to.map(|x| format!("/{x}")).as_deref())?,
             (Self::QueryParam(selector), _) => url.set_query_param(selector, to)?,
 
             (Self::PartSegments {part, split, start, end}, _) => {
