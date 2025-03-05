@@ -153,6 +153,16 @@ macro_rules! check_docs {
             },
             _ => true
         }
+    };
+    ($config:expr, $subdoc:ident, $type:ident, $name:expr) => {
+        match $name {
+            StringSource::String(name) => if $config.docs.$subdoc.$type.contains_key(name) {
+                true
+            } else {
+                panic!(concat!("Missing docs for ", stringify!($subdoc), " ", stringify!($type), " {}"), name)
+            },
+            _ => true
+        }
     }
 }
 

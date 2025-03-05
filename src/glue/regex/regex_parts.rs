@@ -165,14 +165,14 @@ impl RegexConfig {
     /// 
     /// I have chosen to give the octal flag `'o'` because the `regex` crate forgot.
     pub fn set_flags(&mut self, flags: &str) {
-        self.case_insensitive    =flags.contains('i');
-        self.crlf                =flags.contains('R');
-        self.dot_matches_new_line=flags.contains('s');
-        self.ignore_whitespace   =flags.contains('x');
-        self.multi_line          =flags.contains('m');
-        self.octal               =flags.contains('o');
-        self.swap_greed          =flags.contains('U');
-        self.unicode             =flags.contains('u');
+        self.case_insensitive     = flags.contains('i');
+        self.crlf                 = flags.contains('R');
+        self.dot_matches_new_line = flags.contains('s');
+        self.ignore_whitespace    = flags.contains('x');
+        self.multi_line           = flags.contains('m');
+        self.octal                = flags.contains('o');
+        self.swap_greed           = flags.contains('U');
+        self.unicode              = flags.contains('u');
     }
 
     /// Sets each flag to `true` if its character is in `flags`.

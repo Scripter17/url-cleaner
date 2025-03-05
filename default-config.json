@@ -35,11 +35,10 @@
 			"youtube-unplaylist": "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
 			"youtube-unshort": "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.",
 			"youtube-unembed": "Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.",
-			"remove-unused-search-query": "Remove search queries from URLs that aren't search results (for example, posts)."
+			"remove-unused-search-query": "Remove search queries from URLs that aren't search results (for example, posts).",
+			"instagram-unprofilecard": "Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`."
 		},
 		"vars": {
-			"SOURCE_URL": "Used by URL Cleaner Site to handle things wbesites do to links on their pages that's unsuitable to always remove.",
-			"SOURCE_REG_DOMAIN": "The registerable domain of the `SOURCE_URL` var.",
 			"breezewiki-host": "The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled",
 			"nitter-host": "The domain to replace twitter/nitter domains with when the `nitter` flag is enabled",
 			"invidious-host": "The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled",
@@ -74,6 +73,19 @@
 		},
 		"lists": {
 			"utp-prefixes": "If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed."
+		},
+		"job_context": {
+			"vars": {
+				"redirect_shortcut": "For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.",
+				"site_name": "For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.",
+				"link_text": "The text of the link the job came from."
+			}
+		},
+		"jobs_context": {
+			"vars": {
+				"SOURCE_REG_DOMAIN": "The RegDomain of the \"source\" of the jobs. Usually the webpage it came from.",
+				"SOURCE_URL": "The URL of the \"source\" of the jobs. Usually the webpage it came from."
+			}
 		}
 	},
 	"params": {
@@ -160,7 +172,7 @@
 				"wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-reg-domains": [
-				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me"
+				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link"
 			],
 			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at"],
 			"unmangle-path-is-url-blacklist": [],
@@ -242,7 +254,8 @@
 						"result": "https://google.com/search?q=How+does+the+US+government+work"
 					},
 					{"job_config": "https://billieeilish.lnk.to/LinktreeStore", "result": "https://store.billieeilish.com/"},
-					{"job_config": "https://theheadandtheheart.lnk.to/aperture", "result": "https://theheadandtheheart.lnk.to/aperture_ca"}
+					{"job_config": "https://theheadandtheheart.lnk.to/aperture", "result": "https://theheadandtheheart.lnk.to/aperture_ca"},
+					{"job_config": "https://fireship.page.link/slack", "result": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"}
 				]
 			},
 			{
@@ -892,6 +905,7 @@
 												}
 											}},
 											"boxd.it": {"All": [
+												{"Common": "universal"},
 												{"SetPart": {"part": "Subdomain", "value": "www"}},
 												{"ExpandRedirect": {}}
 											]},
@@ -960,6 +974,17 @@
 														}}
 													]}
 												}}
+											}},
+											"page.link": {"IfCondition": {
+												"condition": {"Not": {"FlagIsSet": "no-network"}},
+												"mapper": {"All": [
+													{"Common": "universal"},
+													{"ExpandRedirect": {
+														"http_client_config_diff": {
+															"add_default_headers": {"User-Agent": "Firefox"}
+														}
+													}}
+												]}
 											}}
 										}
 									}
@@ -1101,10 +1126,58 @@
 							{"Any": [
 								{"HostIsOneOf": ["http", "https"]},
 								{"PartContains": {"part": "Path", "value": "http"}},
-								{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}}
+								{"Not": {"PartIs": {"part": {"DomainSegment": 3}, "value": null}}},
+								{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}}
 							]}
 						]},
 						"rules": [
+							{
+								"condition": {"All": [
+									{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": "furaffinity.net"}},
+									{"TreatErrorAsFail": {"StringMatches": {
+										"value": {"ContextVar": "link_text"},
+										"matcher": {"AnyCharMatches": {"IsOneOf": [":", "/", "@", "?", "#"]}}
+									}}}
+								]},
+								"mapper": {"SetPart": {
+									"part": "Whole",
+									"value": {"Modified": {
+										"value": {"ContextVar": "link_text"},
+										"modification": {"StringMap": {
+											"value": {"Modified": {"value": {"ContextVar": "site_name"}, "modification": "Lowercase"}},
+											"map": {
+												"youtube"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com/)?([^/]+)$"                     , "replace": "https://youtube.com/$1"            }},
+												"twitter"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
+												"x"            : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
+												"bluesky"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/)?(?:profile/)?([^/]+)$"           , "replace": "https://bsky.app/profile/$1"       }},
+												"dealer's den" : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/)?(?:store/)?([^/]+)$"    , "replace": "https://thedealersden.com/store/$1"}},
+												"twitch"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv/)?([^/]+)$"                       , "replace": "https://twitch.tv/$1"              }},
+												"facebook"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com/)?([^/]+)$"                    , "replace": "https://facebook.com/$1"           }},
+												"cara"         : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app/)?([^/]+)$"                        , "replace": "https://cara.app/$1"               }},
+												"piczel"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/)?(?:watch/)?([^/]+)$"            , "replace": "https://piczel.tv/watch/$1"        }},
+												"etsy"         : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/)?(?:shop/)?([^/]+)$"              , "replace": "https://etsy.com/shop/$1"          }},
+												"patreon"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com/)?([^/]+)$"                     , "replace": "https://patreon.com/$1"            }},
+												"ko-fi"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com/)?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"              }},
+												"sofurry"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:www\\.)?([^.]+)\\.sofurry\\.com/?$"                      , "replace": "https://$1.sofurry.com"            }},
+												"inkbunny"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net/)?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"           }},
+												"deviantArt"   : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?deviantart\\.com/?)?([^/]*)$"      , "replace": "https://deviantart.com/$1$2"       }},
+												"weasyl"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com/)?~?([^/]+)$"                    , "replace": "https://weasyl.com/~$1"            }},
+												"tumblr"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?tumblr\\.com/?)?([^/]*)$"          , "replace": "https://$1$2.tumblr.com"           }},
+												"transfur"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com/)?(?:users/)?([^/]+)$"         , "replace": "https://transfur.com/users/$1"     }},
+												"pictaro"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pictaro\\.tv/)?([^/]+)$"                      , "replace": "https://pictaro.tv/$1"             }},
+												"furry network": {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com/)?([^/]+)$"                , "replace": "https://furrynetwork.com/$1"       }},
+												"itaku"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/)?(?:profile/)?([^/]+)$"           , "replace": "https://itaku.ee/profile/$1"       }},
+												"pixiv"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/)?(?:[a-z-]/)?(?:users/)?([^/]+)$", "replace": "https://pixiv.net/en/users/$1"     }},
+												"steam"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/)?(?:id/)?([^/]+)$"      , "replace": "https://steamcommunity.com/id/$1"  }}
+											},
+											"else": {"Set": {"Part": "Whole"}}
+										}}
+									}}
+								}}
+							},
+
+
+
 							{
 								"SharedCondition": {
 									"condition": {"All": [
@@ -1348,7 +1421,16 @@
 								{"SetPart" : {"part": "Path", "value": "watch"}},
 								{"RemoveQueryParams": ["si", "feature", "pp"]}
 							]},
-							"instagram.com": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
+							"instagram.com": {"All": [
+								{"IfCondition": {
+									"condition": {"All": [
+										{"FlagIsSet": "instagram-unprofilecard"},
+										{"PartIs": {"part": {"PathSegment": 1}, "value": "profilecard"}}
+									]},
+									"mapper": {"SetPart": {"part": {"PathSegment": 1}, "value": null}}
+								}},
+								{"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]}
+							]},
 							"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
 							"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 							"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
@@ -1396,7 +1478,8 @@
 								{"PartMap": {
 									"part": {"PathSegment": 0},
 									"map": {
-										"search": {"RemoveQueryParams": ["cid"]}
+										"search": {"RemoveQueryParams": ["cid"]},
+										"domain": {"AllowQueryParams": ["count", "after"]}
 									},
 									"else": {"AllowQueryParams": ["f"]}
 								}}
@@ -1509,7 +1592,10 @@
 									{"Not": {"FlagIsSet": "no-network"}},
 									{"PartIs": {"part": {"PathSegment": 0}, "value": "s"}}
 								]},
-								"mapper": {"ExpandRedirect": {}}
+								"mapper": {"All": [
+									{"Common": "universal"},
+									{"ExpandRedirect": {}}
+								]}
 							}},
 							"minds.com": {"RemoveQueryParams": ["referrer"]},
 							"history.com": {"IfCondition": {
@@ -1693,15 +1779,13 @@
 								}
 							]},
 							"google": {"Rules": [
-								{
-									"PartMap": {
-										"part": "Path",
-										"map": {
-											"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs", "nfpr"]},
-											"/setprefs": {"RemoveQueryParams": ["sa", "ved"]}
-										}
+								{"PartMap": {
+									"part": "Path",
+									"map": {
+										"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs", "nfpr"]},
+										"/setprefs": {"RemoveQueryParams": ["sa", "ved"]}
 									}
-								},
+								}},
 								{
 									"condition": "Always",
 									"mapper": {"RemoveQueryParams": ["sca_esv", "usp"]}
@@ -1718,51 +1802,7 @@
 						"value": {"JobsContextVar": "SOURCE_REG_DOMAIN"},
 						"map": {
 							"alibaba.com": {"RemoveQueryParams": ["spm", "file"]},
-							"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]},
-							"furaffinity.net": {"IfCondition": {
-								"condition": {"All": [
-									{"FlagIsSet": "unmangle"},
-									{"TreatErrorAsFail": {"StringMatches": {
-										"value": {"ContextVar": "link_text"},
-										"matcher": {"AnyCharMatches": {"IsOneOf": [":", "/", "@", "?", "#"]}}
-									}}}
-								]},
-								"mapper": {"SetPart": {
-									"part": "Whole",
-									"value": {"Modified": {
-										"value": {"ContextVar": "link_text"},
-										"modification": {"StringMap": {
-											"value": {"Modified": {"value": {"ContextVar": "site_name"}, "modification": "Lowercase"}},
-											"map": {
-												"youtube"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com/)?([^/]+)$"                     , "replace": "https://youtube.com/$1"            }},
-												"twitter"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
-												"x"            : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
-												"bluesky"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/)?(?:profile/)?([^/]+)$"           , "replace": "https://bsky.app/profile/$1"       }},
-												"dealer's den" : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/)?(?:store/)?([^/]+)$"    , "replace": "https://thedealersden.com/store/$1"}},
-												"twitch"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv)?([^/]+)$"                        , "replace": "https://twitch.tv/$1"              }},
-												"facebook"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com/)?([^/]+)$"                    , "replace": "https://facebook.com/$1"           }},
-												"cara"         : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app/)?([^/]+)$"                        , "replace": "https://cara.app/$1"               }},
-												"piczel"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/)?(?:watch/)?([^/]+)$"            , "replace": "https://piczel.tv/watch/$1"        }},
-												"etsy"         : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/)?(?:shop/)?([^/]+)$"              , "replace": "https://etsy.com/shop/$1"          }},
-												"patreon"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com/)?([^/]+)$"                     , "replace": "https://patreon.com/$1"            }},
-												"ko-fi"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com/)?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"              }},
-												"sofurry"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+)\\.sofurry\\.com)?$"                   , "replace": "https://$1.sofurry.com"            }},
-												"inkbunny"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net/)?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"           }},
-												"deviantArt"   : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?deviantart\\.com/?)?([^/]*)$"      , "replace": "https://deviantart.com/$1$2"       }},
-												"weasyl"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com/)?~?([^/]+)$"                    , "replace": "https://weasyl.com/~$1"            }},
-												"tumblr"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?tumblr\\.com/?)?([^/]*)$"          , "replace": "https://$1$2.tumblr.com"           }},
-												"transfur"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com/)?(?:users/)?([^/]+)$"         , "replace": "https://transfur.com/users/$1"     }},
-												"pictaro"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pictaro\\.tv/)?([^/]+)$"                      , "replace": "https://pictaro.tv/$1"             }},
-												"furry network": {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com/)?([^/]+)$"                , "replace": "https://furrynetwork.com/$1"       }},
-												"itaku"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/)?(?:profile/)?([^/]+)$"           , "replace": "https://itaku.ee/profile/$1"       }},
-												"pixiv"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/)?(?:[a-z-]/)?(?:users/)?([^/]+)$", "replace": "https://pixiv.net/en/users/$1"     }},
-												"steam"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/)?(?:id/)?([^/]+)$"      , "replace": "https://steamcommunity.com/id/$1"  }}
-											},
-											"else": {"Set": {"Part": "Whole"}}
-										}}
-									}}
-								}}
-							}}
+							"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]}
 						}
 					}
 				},

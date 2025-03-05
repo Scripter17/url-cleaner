@@ -69,26 +69,20 @@ impl AsRef<RegexParts> for RegexWrapper {
     }
 }
 
-impl TryFrom<&RegexWrapper> for Regex {
-    type Error = regex::Error;
-
-    /// [`RegexParts::build`].
-    fn try_from(value: &RegexWrapper) -> Result<Self, Self::Error> {
-        value.get_regex().cloned()
-    }
-}
-
 impl TryFrom<RegexWrapper> for Regex {
     type Error = regex::Error;
 
-    /// [`RegexParts::build`].
     fn try_from(value: RegexWrapper) -> Result<Self, Self::Error> {
-        (&value).try_into()
+        if let Some(regex) = value.regex.into_inner() {
+            Ok(regex)
+        } else {
+            value.parts.build()
+        }
     }
 }
 
 impl RegexWrapper {
-    /// Gets the cached compiled regex and compiles it first if it's not already cached.
+    /// Gets the cached compiled regex or compiles it first if it's not already cached.
     /// # Errors
     /// Although regexes are ensured to be syntactically valid when a [`Self`] is created, it is possible for actually compiling a regex to result in a DFA bigger than the default limit in the [`regex`] crate which causes an error.
     /// 

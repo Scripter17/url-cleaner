@@ -65,12 +65,8 @@ Currently no guarantees are made, though when the above rules are broken it is c
 
 Additionally, these rules may be changed at any time for any reason. Usually just for clarification.
 
-<!--cmd scripts/gen-docs.sh-->
+<!--cmd scripts/gen-docs.py-->
 #### Flags
-
-Flags let you specify behaviour with the `--flag name --flag name2` command line syntax.
-
-Various flags are included in the default config for things I want to do frequently.
 
 - `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki-host` variable.
 - `unbreezewiki`: Replace Breezewiki hosts with fandom.com.
@@ -88,7 +84,7 @@ Various flags are included in the default config for things I want to do frequen
 - `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
 - `no-unmangle-path-is-url-encoded-url`: Don't convert `https://example.com/https%3A%2F%2Fexample.com%2Fuser` to `https://example.com/user`.
 - `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
-- `no-unmangle-subdomain-ends-in-not-subdomain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
+- `no-unmangle-subdomain-ends-in-reg-domain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
 - `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.
 - `no-unmangle-twitter-first-path-segment-is-twitter-domain`: If a twitter domain's first path segment is a twitter domain, don't remove it.
 - `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present. This makes an HTTP request one time per domain and caches it.
@@ -100,16 +96,12 @@ Various flags are included in the default config for things I want to do frequen
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
+- `youtube-unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
+- `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
+- `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
 
-If a flag is enabled in a config's `params` field, it can be disabled using `--unflag flag1 --unflag flag1`.
+#### Vars
 
-#### Variables
-
-Variables let you specify behaviour with the `--var name value --var name2 value2` command line syntax.
-
-Various variables are included in the default config for things that have multiple useful values.
-
-- `SOURCE_URL`: Used by URL Cleaner Site to handle things wbesites do to links on their pages that's unsuitable to always remove.
 - `breezewiki-host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
 - `nitter-host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
 - `invidious-host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
@@ -118,52 +110,50 @@ Various variables are included in the default config for things that have multip
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
 - `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
 
-If a variable is specified in a config's `params` field, it can be unspecified using `--unvar var1 --unvar var2`.
-
-#### Environment variables
-
-There are some things you don't want in the config, like API keys, that are also a pain to repeatedly insert via `--var abc xyz`. For this, URL Cleaner uses environment variables.
+#### Environment Vars
 
 - `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
 
 #### Sets
 
-Sets let you check if a string is one of many specific strings very quickly.
-
-Various sets are included in the default config.
-
-- `breezewiki-hosts`: The hosts of known Breezewiki instances that can be converted to fandom.com/the `breezewiki-host` variable.
-- `nitter-hosts`: The hosts of known Nitter instances that can be converted to x.com/the `nitter-host` variable.
-- `invidious-hosts`: The hosts of known Invidious instances that can be converted to youtube.com/the `invidious-host` variable
-- `bypass.vip-host-without-www-dot-prefixes`: `HostWithoutWWWDotPrefix`es to use bypass.vip for.
+- `breezewiki-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known Breezewiki instances that can be converted to fandom.com/the `breezewiki-host` variable.
+- `nitter-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known Nitter instances that can be converted to x.com/the `nitter-host` variable.
+- `invidious-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known Invidious instances that can be converted to youtube.com/the `invidious-host` variable
+- `fixvx-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known FixVx instances that can be converted to x.com/the `twitter-embed` variable.
+- `bypass.vip-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
-- `https-upgrade-host-blacklist`: Hosts to not upgrade from `http` to `https` even when the `no-https-upgrade` flag isn't enabled.
-- `lmgtfy-hosts`: Hosts to replace with `google.com`.
+- `https-upgrade-host-blacklist`: Hosts to never upgrade from `http` to `https`.
+- `lmgtfy-host-without-www-dot-prefixes`: `HostWithoutWWWDotPrefix`es to replace with `google.com` and set the path to `/search`.
 - `redirect-host-without-www-dot-prefixes`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
-- `redirect-not-subdomains`: The `redirect-host-without-www-dot-prefixes` set but using the `NotSubdomain` of the URL.
-- `remove-empty-fragment-not-subdomain-blacklist`: The NotSubdomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
-- `remove-empty-query-not-subdomain-blacklist`: The NotSubdomains to not remove an empty query from.
-- `remove-www-subdomain-not-subdomain-blacklist`: `NotSubdomain`s where a `www` `Subdomain` is important and thus won't have it removed.
+- `redirect-reg-domains`: The `redirect-host-without-www-dot-prefixes` set but using the `RegDomain` of the URL.
+- `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
+- `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
+- `remove-www-subdomain-reg-domain-blacklist`: `RegDomain`s where a `www` `Subdomain` is important and thus won't have it removed.
 - `unmangle-path-is-url-blacklist`: Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.
-- `unmangle-subdomain-ends-in-not-subdomain-not-subdomain-blacklist`: Effectively the `no-unmangle-subdomain-ends-in-not-subdomain-not-subdomain-blacklist` flag for the specified `NotSubdomain`s.
-- `unmangle-subdomain-starting-with-www-segment-not-subdomain-blacklist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `NotSubdomain`s.
-- `unmobile-not-subdomain-blacklist`: Effectively unsets the `unmobile` flag for the specified `NotSubdomain`s.
+- `unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist`: Effectively the `no-unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist` flag for the specified `RegDomain`s.
+- `unmangle-subdomain-starting-with-www-segment-reg-domain-blacklist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `RegDomain`s.
+- `unmobile-reg-domain-blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
-- `utps-not-subdomain-whitelist`: NotSubdomains to never remove universal tracking parameters from.
-
-Sets can have elements inserted into them using `--insert-into-set name1 value1 value2 --insert-into-set name2 value3 value4`.
-
-Sets can have elements removed from them using `--remove-from-set name1 value1 value2 --remove-from-set name2 value3 value4`.
+- `utps-reg-domain-whitelist`: RegDomains to never remove universal tracking parameters from.
 
 #### Lists
 
-Lists allow you to iterate over strings for things like checking if another string contains any of them.
-
-Currently only one list is included in the default config:
-
 - `utp-prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
 
-Currently there is no command line syntax for them. There really should be.
+#### Job Context
+
+##### Vars
+
+- `redirect_shortcut`: For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.
+- `site_name`: For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.
+- `link_text`: The text of the link the job came from.
+
+#### Jobs Context
+
+##### Vars
+
+- `SOURCE_REG_DOMAIN`: The RegDomain of the "source" of the jobs. Usually the webpage it came from.
+- `SOURCE_URL`: The URL of the "source" of the jobs. Usually the webpage it came from.
 <!--/cmd-->
 
 #### But how fast is it?
@@ -172,35 +162,35 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-02-04.
+Last updated 2025-03-01.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  5.948,
-    "1"    :  6.082,
-    "10"   :  6.136,
-    "100"  :  6.394,
-    "1000" :  8.797,
-    "10000": 29.497
+    "0"    :  7.090,
+    "1"    :  7.176,
+    "10"   :  7.294,
+    "100"  :  7.574,
+    "1000" :  9.770,
+    "10000": 32.284
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  6.026,
-    "1"    :  6.087,
-    "10"   :  6.170,
-    "100"  :  6.424,
-    "1000" :  9.569,
-    "10000": 41.063
+    "0"    :  7.054,
+    "1"    :  7.247,
+    "10"   :  7.348,
+    "100"  :  7.617,
+    "1000" : 11.003,
+    "10000": 45.275
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  6.032,
-    "1"    :  6.108,
-    "10"   :  6.117,
-    "100"  :  6.623,
-    "1000" : 10.810,
-    "10000": 53.806
+    "0"    :  7.092,
+    "1"    :  7.207,
+    "10"   :  7.302,
+    "100"  :  7.839,
+    "1000" : 13.581,
+    "10000": 58.615
   }
 }
 ```
