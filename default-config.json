@@ -156,9 +156,9 @@
 			"redirect-host-without-www-dot-prefixes": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
-				"bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv",
-				"cos.lv", "cutt.ly", "db.tt", "dcdr.me", "deezer.page.link", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn",
-				"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.icj-cij.org",
+				"bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it",
+				"cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "deezer.page.link", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me",
+				"fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.icj-cij.org",
 				"go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
 				"is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr",
 				"l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "msft.it",
@@ -174,7 +174,7 @@
 			"redirect-reg-domains": [
 				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link"
 			],
-			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at"],
+			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at", "teepublic.com"],
 			"unmangle-path-is-url-blacklist": [],
 			"unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist": [],
 			"unmangle-subdomain-starting-with-www-segment-reg-domain-blacklist": ["uscourts.gov"],
@@ -514,8 +514,8 @@
 									"href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "m.vk.com",
 									"old.reddit.com", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
 									"rd.goodreads.com", "reddit.com", "reurl.cc", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com",
-									"skfb.ly", "smarturl.it", "ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com",
-									"tinyurl.com", "toyhou.se", "twpf.jp", "vk.com", "youtube.com", "urldefense.com"
+									"skfb.ly", "smarturl.it", "ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub",
+									"teepublic.com", "tinyurl.com", "toyhou.se", "twpf.jp", "urldefense.com", "vk.com", "youtube.com"
 								]},
 								{"LengthIs": 4},
 								{"Contains": {"value": "google"}}
@@ -922,7 +922,8 @@
 														]}
 													}}
 												}}
-											}}
+											}},
+											"tee.pub": {"SetHost": "www.teepublic.com"}
 										}
 									}
 								},
@@ -1104,6 +1105,10 @@
 													"matcher": {"InSet": "email-link-format-1-hosts"}
 												}},
 												{"PartContains": {"part": "Path", "value": "/page/email/click", "where": "Start"}}
+											]},
+											{"All": [
+												{"RegDomainIs": "teepublic.com"},
+												{"PartIs": {"part": {"PathSegment": 0}, "value": "lic"}}
 											]}
 										]}
 									]},
