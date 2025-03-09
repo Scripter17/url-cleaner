@@ -22,7 +22,7 @@ pub struct Map<T> {
 }
 
 impl<T> Map<T> {
-    /// Index tha map
+    /// Index the map
     ///
     /// 1. If `value` is `Some(k)` and `k` is in [`Self::map`], return [`Self::map`]'s value for `k`.
     /// 2. If `value` is `None` and [`Self::if_null`] is `Some(v)`, return `Some(v)`.

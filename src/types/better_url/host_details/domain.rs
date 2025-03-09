@@ -38,8 +38,8 @@ use crate::types::*;
 ///         for suffix in [None, Some(""), Some("com"), Some("co.uk")] {
 ///             for fqdn_period in [None, Some(".")] {
 ///                 let domain = [subdomain, middle, suffix, fqdn_period].into_iter().filter_map(|x| x).collect::<String>();
-///                 // Checks that, at the very least, [`Self::suffix_bounds`] and [`Self::reg_domain_bounds`] agree wity [`psl`].
-///                 // The other boundses have no equivalents in [`psl`].
+///                 // Checks that, at the very least, [`Self::suffix_bounds`] and [`Self::reg_domain_bounds`] agree with [`psl`].
+///                 // The other bounds have no equivalents in [`psl`].
 ///                 let domain_details = DomainDetails::from_domain_str(&domain);
 ///                 assert_eq!(psl::suffix_str(&domain), domain_details.suffix_bounds    ().and_then(|bounds| domain.get(bounds)),     "suffix, {domain:?}, {domain_details:?}");
 ///                 assert_eq!(psl::domain_str(&domain), domain_details.reg_domain_bounds().and_then(|bounds| domain.get(bounds)), "reg_domain, {domain:?}, {domain_details:?}");
@@ -83,17 +83,17 @@ impl DomainDetails {
 
     /// Everything but the fqdn period.
     pub fn domain_bounds    (&self) ->        (Bound<usize>, Bound<usize>)  {(Bound::Unbounded, exorub(self.fqdn_period))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::Subdomain`].
+    /// Gets the range in the domain corresponding to [`UrlPart::Subdomain`].
     pub fn subdomain_bounds (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.subdomain_period().map(|x| (Bound::Unbounded, Bound::Excluded(x)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::NotDomainSuffix`].
+    /// Gets the range in the domain corresponding to [`UrlPart::NotDomainSuffix`].
     pub fn not_suffix_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_period()   .map(|x| (Bound::Unbounded, Bound::Excluded(x)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::DomainMiddle`].
+    /// Gets the range in the domain corresponding to [`UrlPart::DomainMiddle`].
     pub fn middle_bounds    (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.middle_start.zip(self.suffix_period()).map(|(ms, sp)| (Bound::Included(ms), Bound::Excluded(sp)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::RegDomain`].
+    /// Gets the range in the domain corresponding to [`UrlPart::RegDomain`].
     ///
     /// Intended to give the same substring as [`psl::domain_str`].
     pub fn reg_domain_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {self.middle_start.map(|x| (Bound::Included(x), exorub(self.fqdn_period)))}
-    /// Gets the range in the domapin corresponding to [`UrlPart::DomainSuffix`].
+    /// Gets the range in the domain corresponding to [`UrlPart::DomainSuffix`].
     ///
     /// Intended to give the same substring as [`psl::suffix_str`].
     pub fn suffix_bounds    (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_start.map(|x| (Bound::Included(x), exorub(self.fqdn_period)))}

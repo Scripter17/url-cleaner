@@ -268,7 +268,7 @@ impl InnerCache {
     /// 
     /// If the path is a file and doesn't exist, makes the file.
     /// 
-    /// If the path is `:memory:`, the database is storeed ephemerally in RAM and not saved to disk.
+    /// If the path is `:memory:`, the database is stored ephemerally in RAM and not saved to disk.
     /// # Errors
     /// If the call to [`std::fs::exists`] returns an error, that error is returned.
     /// 

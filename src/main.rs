@@ -98,7 +98,7 @@ pub struct Args {
     pub threads: usize,
     /// When enabled, only prints timing info.
     ///
-    /// Produces more relaible timing info for some reason.
+    /// Produces more reliable timing info for some reason.
     #[cfg(feature = "debug")]
     #[arg(long)]
     pub debug_just_print_times: bool
@@ -213,7 +213,7 @@ fn main() -> Result<ExitCode, CliError> {
 
             for (i, job_config_string) in job_config_strings_source.enumerate() {
                 #[allow(clippy::arithmetic_side_effects, reason = "Whatever exactly the issue with `i % threads` is it will, at worst, give slightly worse load balancing around each multiple of usize::MAX jobs. I think that's fine.")]
-                in_senders.get(i % threads).expect("The amount of senders to not exceed the count of senders to make.").send(job_config_string).expect("To successfuly send the Job.");
+                in_senders.get(i % threads).expect("The amount of senders to not exceed the count of senders to make.").send(job_config_string).expect("To successfully send the Job.");
             }
         }).expect("Making threads to work fine.");
 

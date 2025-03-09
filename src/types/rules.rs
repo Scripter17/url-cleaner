@@ -11,7 +11,7 @@ mod mappers;
 pub use mappers::*;
 
 use crate::types::*;
-#[expect(unused_imports, reason = "Used be Rule::Custom")]
+#[expect(unused_imports, reason = "Used in Rule::Custom")]
 use crate::glue::*;
 
 /// The main API for modifying URLs.

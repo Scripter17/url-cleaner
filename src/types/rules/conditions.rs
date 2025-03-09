@@ -613,7 +613,7 @@ pub enum Condition {
     /// ], strict: true}.satisfied_by(&job_state.to_view()).unwrap());
     /// ```
     PathSegmentsMatch {
-        /// The start of the segments to matcg.
+        /// The start of the segments to match.
         #[serde(default, skip_serializing_if = "is_default")]
         start: isize,
         /// The matchers to test with.

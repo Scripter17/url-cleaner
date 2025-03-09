@@ -17,7 +17,7 @@ use crate::util::*;
 /// 
 /// For example, `{"url": "https://example.com"}` and `"{\"url\": \"https://example.com\"}"` deserialize to the same value.
 /// 
-/// This allows for more flexible APIs where having to input JSON objects is infeasable, like in command line interfaces.
+/// This allows for more flexible APIs where having to input JSON objects is infeasible, like in command line interfaces.
 /// ```
 /// # use std::str::FromStr;
 /// # use url_cleaner::types::*;
@@ -60,7 +60,7 @@ impl From<BetterUrl> for JobConfig {
 
 /// The enum of errors [`JobConfig::from_str`] and [`<JobConfig as TryFrom<&str>>::try_from`] can return.
 /// 
-/// Additionally has [`Self::IoError`] and [`Self::Other`] to accomodate [`Jobs::job_configs_source`] iterators.
+/// Additionally has [`Self::IoError`] and [`Self::Other`] to accommodate [`Jobs::job_configs_source`] iterators.
 #[derive(Debug, Error)]
 pub enum MakeJobConfigError {
     /// Returned when a [`url::ParseError`] is encountered.

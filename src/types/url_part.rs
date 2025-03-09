@@ -932,7 +932,7 @@ pub enum UrlPart {
     NoneToEmptyString(Box<Self>)
 }
 
-/// Selector for the [`Self::index`] occurance of a query parameter named [`Self::name`]
+/// Selector for the [`Self::index`] occurrence of a query parameter named [`Self::name`]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(remote = "Self")]
 pub struct QueryParamSelector {
@@ -1366,7 +1366,7 @@ pub enum UrlPartSetError {
     /// Returned by `UrlPart::Subdomain.get` when `UrlPart::Domain.get` returns `None`.
     #[error("The URL's host is not a domain.")]
     HostIsNotADomain,
-    /// Returneed when a [`SetQueryParamError`] is encountered.
+    /// Returned when a [`SetQueryParamError`] is encountered.
     #[error(transparent)]
     SetQueryParamError(#[from] SetQueryParamError),
     /// Returned when trying to set the Subdomain of a domain that doesn't have a RegDomain.

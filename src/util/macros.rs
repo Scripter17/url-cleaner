@@ -21,7 +21,7 @@ pub(crate) struct Deindenter;
 #[cfg(feature = "debug")]
 impl std::ops::Drop for Deindenter {
     /// Decrements [`DEBUG_INDENT`]
-    #[allow(clippy::arithmetic_side_effects, reason = "DEBUG_INDENT gets decremented exactly once per incrementation and always after.")]
+    #[allow(clippy::arithmetic_side_effects, reason = "DEBUG_INDENT gets decremented exactly once per increment and always after.")]
     fn drop(&mut self) {
         *crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.")-=1;
     }

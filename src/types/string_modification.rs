@@ -935,7 +935,7 @@ pub enum UrlEncodeAlphabet {
 impl UrlEncodeAlphabet {
     /// Gets the alphabet.
     ///
-    /// For some reason, [`AsciiSet`], as of latest version when I write this (2.3.1), does not implment any non-auto/blanket traits.
+    /// For some reason, [`AsciiSet`], as of latest version when I write this (2.3.1), does not implement any non-auto/blanket traits.
     ///
     /// As I write this, there's a merged pull request for [`Debug`], [`PartialEq`], and [`Eq`] and an unmerged pull request for [`Clone`] and [`Copy`].
     pub fn get(&self) -> &'static AsciiSet {

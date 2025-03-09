@@ -66,7 +66,7 @@ impl TestSet {
 
         for (i, (job, result)) in jobs.iter().zip(results).enumerate() {
             assert_eq!(
-                job.expect("The job to be makable.").r#do().expect("The job to succeed."),
+                job.expect("The job to be makeable.").r#do().expect("The job to succeed."),
                 result,
                 "Test failed\nparams_diff: {params_diff_json}\njobs_context: {}\ntest: {}",
                 serde_json::to_string(&self.jobs_context).expect("Serialization to never fail"),
