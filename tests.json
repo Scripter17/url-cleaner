@@ -34,8 +34,6 @@
 					"job_config": "http://bfy.tw/9ZSk",
 					"result": "https://google.com/search?q=How+does+the+US+government+work"
 				},
-				{"job_config": "https://billieeilish.lnk.to/LinktreeStore", "result": "https://store.billieeilish.com/"},
-				{"job_config": "https://theheadandtheheart.lnk.to/aperture", "result": "https://theheadandtheheart.lnk.to/aperture_ca"},
 				{"job_config": "https://fireship.page.link/slack", "result": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"}
 			]
 		},
