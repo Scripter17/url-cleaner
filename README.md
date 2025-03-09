@@ -173,28 +173,28 @@ Also the numbers are in milliseconds.
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  7.270,
-    "1"    :  7.246,
-    "10"   :  7.370,
-    "100"  :  7.673,
-    "1000" :  9.991,
-    "10000": 32.840
+    "0"    :  7.383,
+    "1"    :  7.478,
+    "10"   :  7.485,
+    "100"  :  7.840,
+    "1000" : 10.115,
+    "10000": 32.909
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  7.278,
-    "1"    :  7.317,
-    "10"   :  7.491,
-    "100"  :  7.878,
-    "1000" : 11.110,
-    "10000": 44.700
+    "0"    :  7.380,
+    "1"    :  7.451,
+    "10"   :  7.549,
+    "100"  :  7.872,
+    "1000" : 11.211,
+    "10000": 45.314
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  7.399,
-    "1"    :  7.343,
-    "10"   :  7.568,
-    "100"  :  8.050,
-    "1000" : 12.757,
-    "10000": 59.879
+    "0"    :  7.378,
+    "1"    :  7.391,
+    "10"   :  7.614,
+    "100"  :  8.530,
+    "1000" : 12.563,
+    "10000": 60.176
   }
 }
 ```
