@@ -47,6 +47,7 @@
 
 pub mod glue;
 pub mod types;
+pub mod testing;
 pub(crate) mod util;
 
 pub use types::{Config, Jobs, JobConfig};

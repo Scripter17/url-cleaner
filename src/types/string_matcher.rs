@@ -1,6 +1,8 @@
 //! Provides [`StringMatcher`] which allows for testing if a [`str`] matches a certain rule.
 
 use std::collections::HashSet;
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;

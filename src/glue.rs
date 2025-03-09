@@ -19,3 +19,5 @@
 #[cfg(feature = "cache"   )] pub use caching::*;
 #[cfg(feature = "base64"  )] pub mod base64;
 #[cfg(feature = "base64"  )] pub use base64::*;
+#[cfg(feature = "custom"  )] pub mod fn_wrapper;
+#[cfg(feature = "custom"  )] pub use fn_wrapper::*;

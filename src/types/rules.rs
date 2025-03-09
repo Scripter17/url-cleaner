@@ -10,7 +10,9 @@ pub use conditions::*;
 mod mappers;
 pub use mappers::*;
 
-pub use crate::types::*;
+use crate::types::*;
+#[expect(unused_imports, reason = "Used be Rule::Custom")]
+use crate::glue::*;
 
 /// The main API for modifying URLs.
 /// 

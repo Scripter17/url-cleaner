@@ -4,6 +4,8 @@ use std::str::FromStr;
 use std::convert::Infallible;
 use std::borrow::Cow;
 use std::env::var;
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -24,6 +26,19 @@ pub enum StringSource {
     /// # Errors
     /// Always returns the error [`StringSourceError::ExplicitError`].
     Error,
+    /// If the call to [`Self::get`] returns an error, returns [`None`].
+    ErrorToNone(Box<Self>),
+    /// If the call to [`Self::get`] returns an error, returns `Some(Cow::Borrowed(""))`.
+    ErrorToEmptyString(Box<Self>),
+    /// If `value`'s call to [`Self::get`] returns an error, returns `if_error`.
+    /// # Errors
+    /// If `if_error`'s call to [`Self::get`] returns an error, that error is returned.
+    ErrorTo {
+        /// The value to get.
+        value: Box<Self>,
+        /// The value to get if getting `value` returned an error.
+        if_error: Box<Self>
+    },
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// 
     /// Intended primarily for debugging logic errors.
@@ -256,6 +271,17 @@ pub enum StringSource {
         /// The key to index the map with.
         key: Option<Box<Self>>
     },
+    /// Indexes into a [`Params::named_partitionings`] using [`Self::ParamsNamedPartitioning::name`] then indexes the returned [`NamedPartitioning`] with [`Self::ParamsNamedPartitioning::element`].
+    /// # Errors
+    /// If [`Params::named_partitionings`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::NamedPartitioningNotFound`].
+    ///
+    /// If either call to [`Self::get`] return an error, that error is returned.
+    ParamsNamedPartitioning {
+        /// The [`NamedPartitioning`] to get from [`Params::named_partitionings`].
+        name: Box<Self>,
+        /// The value to index the [`NamedPartitioning`] with.
+        element: Box<Self>
+    },
     /// Gets a string with `value`, modifies it with `modification`, and returns the result.
     /// # Errors
     /// If the call to [`StringModification::apply`] errors, returns that error.
@@ -450,6 +476,9 @@ pub enum StringSourceError {
     /// Returned when the requested map is not found.
     #[error("The requested map was not found.")]
     MapNotFound,
+    /// Returned when the requested [`NamedPartitioning`] is not found.
+    #[error("The requested NamedPartitioning was not found.")]
+    NamedPartitioningNotFound,
     /// Returned when [`StringSource::Common`] is used outside of a common context.
     #[error("Not in a common context.")]
     NotInACommonContext,
@@ -498,6 +527,9 @@ impl StringSource {
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::Error => Err(StringSourceError::ExplicitError)?,
+            Self::ErrorToNone(value) => value.get(job_state).ok().flatten(),
+            Self::ErrorToEmptyString(value) => value.get(job_state).unwrap_or(Some(Cow::Borrowed(""))),
+            Self::ErrorTo{value, if_error} => value.get(job_state).or_else(|_| if_error.get(job_state))?,
             Self::Debug(source) => {
                 let ret = source.get(job_state);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nJob state: {job_state:?}\nret: {ret:?}");
@@ -538,6 +570,9 @@ impl StringSource {
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::JobsContextVar(key) => job_state.jobs_context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_option_str!(key, job_state)).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsNamedPartitioning {name, element} => job_state.params.named_partitionings
+                .get(get_str!(name, job_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
+                .get_partition(get_str!(element, job_state, StringSourceError)).map(Cow::Borrowed),
             Self::Modified {value, modification} => {
                 match value.as_ref().get(job_state)? {
                     Some(x) => {
@@ -624,6 +659,9 @@ impl Suitable for StringSource {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
     fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
+            Self::ErrorToNone(value) => value.is_suitable_for_release(config),
+            Self::ErrorToEmptyString(value) => value.is_suitable_for_release(config),
+            Self::ErrorTo{value, if_error} => value.is_suitable_for_release(config) && if_error.is_suitable_for_release(config),
             Self::NoneToEmptyString(value) => value.is_suitable_for_release(config),
             Self::NoneTo {value, if_none} => value.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
             Self::Join {sources, ..} => sources.iter().all(|value| value.is_suitable_for_release(config)),
@@ -639,6 +677,7 @@ impl Suitable for StringSource {
             Self::ContextVar(name) => name.is_suitable_for_release(config) && check_docs!(config, job_context, vars, name.as_ref()),
             Self::JobsContextVar(name) => name.is_suitable_for_release(config) && check_docs!(config, jobs_context, vars, name.as_ref()),
             Self::ParamsMap {map, key} => map.is_suitable_for_release(config) && key.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && check_docs!(config, maps, map.as_ref()),
+            Self::ParamsNamedPartitioning {name, element} => name.is_suitable_for_release(config) && element.is_suitable_for_release(config) && check_docs!(config, named_partitionings, element.as_ref()),
             Self::Modified {value, modification} => value.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),
             #[cfg(feature = "cache")] Self::Cache {category, key, value} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && value.is_suitable_for_release(config),

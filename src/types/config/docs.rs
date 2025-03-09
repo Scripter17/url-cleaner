@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
+#[expect(unused_imports, reason = "Used in a doc comment.")]
 use crate::types::*;
 use crate::util::*;
 
@@ -31,6 +32,9 @@ pub struct ConfigDocs {
     /// The docs for [`Params::maps`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub maps: HashMap<String, String>,
+    /// The docs for [`Params::named_partitionings`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub named_partitionings: HashMap<String, String>,
     /// The docs for [`JobContext`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub job_context: JobContextDocs,

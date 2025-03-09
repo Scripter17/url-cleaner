@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 
 use serde::{Serialize, Deserialize};
+use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
@@ -26,6 +27,9 @@ pub struct Params {
     /// Map variables used to determine behavior.
     #[serde(default, skip_serializing_if = "is_default")]
     pub maps: HashMap<String, Map<String>>,
+    /// [`NamedPartitioning`] variables to determine behavior.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub named_partitionings: HashMap<String, NamedPartitioning>,
     /// If [`true`], enables reading from caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
@@ -49,6 +53,7 @@ impl Default for Params {
             sets : HashMap::default(),
             lists: HashMap::default(),
             maps : HashMap::default(),
+            named_partitionings: HashMap::default(),
             #[cfg(feature = "cache")] read_cache: true,
             #[cfg(feature = "cache")] write_cache: true,
             #[cfg(feature = "http")]
@@ -62,11 +67,12 @@ impl Params {
     /// # Panics
     /// When it fails, a panic occurs to make debugging easier.
     pub fn is_suitable_for_release(&self, config: &Config) -> bool {
-        let x = self.flags.iter().find(|flag| !config.docs.flags.contains_key(&**flag)); assert!(x.is_none(), "Undocumented flag in params: {x:?}");
-        let x = self.vars .keys().find(|var | !config.docs.vars .contains_key(&**var )); assert!(x.is_none(), "Undocumented var in params: {x:?}" );
-        let x = self.sets .keys().find(|set | !config.docs.sets .contains_key(&**set )); assert!(x.is_none(), "Undocumented set in params: {x:?}" );
-        let x = self.lists.keys().find(|list| !config.docs.lists.contains_key(&**list)); assert!(x.is_none(), "Undocumented list in params: {x:?}");
-        let x = self.maps .keys().find(|map | !config.docs.maps .contains_key(&**map )); assert!(x.is_none(), "Undocumented map in params: {x:?}" );
+        let x = self.flags              .iter().find(|flag| !config.docs.flags              .contains_key(&**flag)); assert!(x.is_none(), "Undocumented flag in params: {x:?}"              );
+        let x = self.vars               .keys().find(|var | !config.docs.vars               .contains_key(&**var )); assert!(x.is_none(), "Undocumented var in params: {x:?}"               );
+        let x = self.sets               .keys().find(|set | !config.docs.sets               .contains_key(&**set )); assert!(x.is_none(), "Undocumented set in params: {x:?}"               );
+        let x = self.lists              .keys().find(|list| !config.docs.lists              .contains_key(&**list)); assert!(x.is_none(), "Undocumented list in params: {x:?}"              );
+        let x = self.maps               .keys().find(|map | !config.docs.maps               .contains_key(&**map )); assert!(x.is_none(), "Undocumented map in params: {x:?}"               );
+        let x = self.named_partitionings.keys().find(|map | !config.docs.named_partitionings.contains_key(&**map )); assert!(x.is_none(), "Undocumented named_partitioning in params: {x:?}");
         true
     }
 }
@@ -119,12 +125,11 @@ impl ParamsDiff {
     /// 7. Removes all values from sets as specified by [`Self::remove_from_sets`].
     /// 8. Deletes all sets specified in [`Self::delete_sets`].
     /// 9. Initializes all maps specified by [`Self::init_maps`] to [`HashSet::default`] if they don't exist.
-    /// 10. Inserts all values into maps as specified by [`Self::insert_into_maps`].
-    /// 11. Removes all values from maps as specified by [`Self::remove_from_maps`].
-    /// 12. Deletes all maps specified in [`Self::delete_maps`].
-    /// 13. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
-    /// 14. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
-    /// 15. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
+    /// 10. Applies all [`Self::map_diffs`].
+    /// 11. Deletes all maps specified in [`Self::delete_maps`].
+    /// 12. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
+    /// 13. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
+    /// 14. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
     pub fn apply(self, to: &mut Params) {
         #[cfg(feature = "debug")]
         let old_to = to.clone();

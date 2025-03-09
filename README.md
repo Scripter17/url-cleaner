@@ -99,6 +99,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `youtube-unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
 - `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
+- `keep-lang`: Keeps language query parameters.
 
 #### Vars
 
@@ -116,14 +117,9 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 #### Sets
 
-- `breezewiki-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known Breezewiki instances that can be converted to fandom.com/the `breezewiki-host` variable.
-- `nitter-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known Nitter instances that can be converted to x.com/the `nitter-host` variable.
-- `invidious-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known Invidious instances that can be converted to youtube.com/the `invidious-host` variable
-- `fixvx-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of known FixVx instances that can be converted to x.com/the `twitter-embed` variable.
 - `bypass.vip-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to never upgrade from `http` to `https`.
-- `lmgtfy-host-without-www-dot-prefixes`: `HostWithoutWWWDotPrefix`es to replace with `google.com` and set the path to `/search`.
 - `redirect-host-without-www-dot-prefixes`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
 - `redirect-reg-domains`: The `redirect-host-without-www-dot-prefixes` set but using the `RegDomain` of the URL.
 - `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
@@ -139,6 +135,14 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 #### Lists
 
 - `utp-prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
+
+#### Maps
+
+- `hwwwwdp_lang_query_params`: The name of the `HostWithoutWWWDotPrefix`'s language query parameter.
+
+#### Named Partitionings
+
+- `hwwwwdp_categories`: Categories of similar websites with shared cleaning methods.
 
 #### Job Context
 
@@ -162,35 +166,35 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-03-01.
+Last updated 2025-03-09.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  7.090,
-    "1"    :  7.176,
-    "10"   :  7.294,
-    "100"  :  7.574,
-    "1000" :  9.770,
-    "10000": 32.284
+    "0"    :  7.270,
+    "1"    :  7.246,
+    "10"   :  7.370,
+    "100"  :  7.673,
+    "1000" :  9.991,
+    "10000": 32.840
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  7.054,
-    "1"    :  7.247,
-    "10"   :  7.348,
-    "100"  :  7.617,
-    "1000" : 11.003,
-    "10000": 45.275
+    "0"    :  7.278,
+    "1"    :  7.317,
+    "10"   :  7.491,
+    "100"  :  7.878,
+    "1000" : 11.110,
+    "10000": 44.700
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  7.092,
-    "1"    :  7.207,
-    "10"   :  7.302,
-    "100"  :  7.839,
-    "1000" : 13.581,
-    "10000": 58.615
+    "0"    :  7.399,
+    "1"    :  7.343,
+    "10"   :  7.568,
+    "100"  :  8.050,
+    "1000" : 12.757,
+    "10000": 59.879
   }
 }
 ```

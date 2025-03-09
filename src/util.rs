@@ -7,6 +7,8 @@ use std::ops::Bound;
 
 mod macros;
 pub(crate) use macros::*;
+mod suitability;
+pub(crate) use suitability::*;
 
 /// For use with [`#[serde(default, skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if).
 pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {t == &T::default()}

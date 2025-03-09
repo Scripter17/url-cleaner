@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 use std::str::FromStr;
+use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -889,7 +890,7 @@ pub enum StringModification {
     /// assert_eq!(x, "/a\n\\n");
     /// ```
     RunEscapeCodes(HashMap<String, String>),
-    /// Indexes [`Self::StringMap::map`] with [`Self::StirngMap::value`] and, if it returns [`Some`], applies that [`Self`].
+    /// Indexes [`Self::StringMap::map`] with [`Self::StringMap::value`] and, if it returns [`Some`], applies that [`Self`].
     StringMap {
         /// The value to branch with.
         value: Box<StringSource>,

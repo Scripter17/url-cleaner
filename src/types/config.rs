@@ -8,9 +8,11 @@ use std::io;
 use std::sync::OnceLock;
 
 use serde::{Serialize, Deserialize};
+use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
+use crate::testing::*;
 use crate::util::*;
 
 mod params;
@@ -130,7 +132,7 @@ impl Config {
         self.rules.apply_no_revert(job_state).map_err(Into::into)
     }
 
-    /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
+    /// Runs the provided [`Tests`], panicking when any error happens or test fails.
     /// # Panics
     /// Panics if a test fails.
     pub fn run_tests(&self, tests: Tests) {

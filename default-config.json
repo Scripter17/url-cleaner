@@ -52,14 +52,9 @@
 			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable."
 		},
 		"sets": {
-			"breezewiki-host-without-www-dot-prefixes": "The `HostWithoutWWWDotPrefix`es of known Breezewiki instances that can be converted to fandom.com/the `breezewiki-host` variable.",
-			"nitter-host-without-www-dot-prefixes"    : "The `HostWithoutWWWDotPrefix`es of known Nitter instances that can be converted to x.com/the `nitter-host` variable.",
-			"invidious-host-without-www-dot-prefixes" : "The `HostWithoutWWWDotPrefix`es of known Invidious instances that can be converted to youtube.com/the `invidious-host` variable",
-			"fixvx-host-without-www-dot-prefixes"     : "The `HostWithoutWWWDotPrefix`es of known FixVx instances that can be converted to x.com/the `twitter-embed` variable.",
 			"bypass.vip-host-without-www-dot-prefixes": "The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.",
 			"email-link-format-1-hosts": "(TEMPORARY NAME) Hosts that use unknown link format 1.",
 			"https-upgrade-host-blacklist": "Hosts to never upgrade from `http` to `https`.",
-			"lmgtfy-host-without-www-dot-prefixes": "`HostWithoutWWWDotPrefix`es to replace with `google.com` and set the path to `/search`.",
 			"redirect-host-without-www-dot-prefixes": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
 			"redirect-reg-domains": "The `redirect-host-without-www-dot-prefixes` set but using the `RegDomain` of the URL.",
 			"remove-empty-fragment-reg-domain-blacklist": "The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.",
@@ -76,7 +71,10 @@
 			"utp-prefixes": "If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed."
 		},
 		"maps": {
-			"host_without_www_dot_prefix_lang_query_params": "The name of the `HostWithoutWWWDotPrefix`'s language query parameter."
+			"hwwwwdp_lang_query_params": "The name of the `HostWithoutWWWDotPrefix`'s language query parameter."
+		},
+		"named_partitionings": {
+			"hwwwwdp_categories": "Categories of similar websites with shared cleaning methods."
 		},
 		"job_context": {
 			"vars": {
@@ -101,49 +99,6 @@
 			"twitter-embed-host": "vxtwitter.com"
 		},
 		"sets": {
-			"breezewiki-host-without-www-dot-prefixes": [
-				"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org",
-				"breezewiki.catsarch.com", "breezewiki.com", "breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net",
-				"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe",
-				"bw.artemislena.eu", "bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
-				"nerd.whatever.social", "z.opnxng.com"
-			],
-			"nitter-host-without-www-dot-prefixes": [
-				"26oq3gioiwcmfojub37nz5gzbkdiqp7fue5kvye7d4txv4ny6fb4wwid.onion", "4g47cxugkohbweao2x66nnxxfoe3k7gdfzxej537nhdbwr522sbjxeqd.onion", "4kzgzonccxuv4ctforjqx565jgd4bocgnzsy3dg4fmdf3ye2iciq.b32.i2p",
-				"6g7w5lt6qcidh6vtue64udzld2mjnvxlpgddvn34qywxafxdv6a3w5id.onion", "aaaaaxx74hbzeibageieowryhsqvimbdiitfkfe47tvgawkwkjh3coqd.onion",
-				"axd6uavsstsrvstva4mzlzh4ct76rc6zdug3nxdgeitrzczhzf4q.b32.i2p", "bird.habedieeh.re",
-				"bird.habeehrhadazsw3izbrbilqajalfyqqln54mrja3iwpqxgcuxnus7eid.onion", "ckzuw5misyahmg7j5t5xwwuj3bwy62jfolxyux4brfflramzsvvd3syd.onion",
-				"ec5nvbycpfa5k6ro77blxgkyrzbkv7uy6r5cngcbkadtjj2733nm3uyd.onion", "erpnncl5nhyji3c32dcfmztujtl3xaddqb457jsbkulq24zqq7ifdgad.onion",
-				"fbdi323aj3t6hdx4jtkuwxrnafzskquciowu2yu3jizfssaq35aow6ad.onion", "gseczlzmiv23p5vhsktyd7whquq2uy3c5fgkmdohh453qp3daoua.b32.i2p",
-				"i23nv6w3juvzlw32xzoxcqzktegd4i4fu3nmnc2ewv4ggiu4ledwklad.onion", "ibsboeui2im5o7dxnik3s5yghufumgy5abevtij5nbizequfpu4qi4ad.onion",
-				"iwgu3cv7ywf3gssed5iqtavmrlszgsxazkmwwnt4h2kdait75thdyrqd.onion", "jebqj47jgxleaiosfcxfibx2xdahjettuydlxbg64azd4khsxv6kawid.onion",
-				"n.sneed4fmhevap3ci4xhf4wgkf72lwk275lcgomnfgwniwmqvaxyluuid.onion", "nitraeju2mipeziu2wtcrqsxg7h62v5y4eqgwi75uprynkj74gevvuqd.onion",
-				"nitter.catsarchywsyuss6jdxlypsw5dc7owd5u5tr6bujxb7o6xw2hipqehyd.onion",
-				"nitter.coffee2m3bjsrrqqycx6ghkxrnejl2q6nl7pjw2j4clchjj6uk5zozad.onion",
-				"nitter.daturab6drmkhyeia4ch5gvfc2f3wgo6bhjrv3pz6n7kxmvoznlkq4yd.onion",
-				"nitter.esmail5pdn24shtvieloeedh7ehz3nrwcdivnfhfcedl7gf4kwddhkqd.onion",
-				"nitter.g4c3eya4clenolymqbpgwz3q3tawoxw56yhzk4vugqrl6dtu3ejvhjid.onion", "nitter.holo-mix.com", "nitter.io.lol", "nitter.kavin.rocks",
-				"nitter.kylrth.com", "nitter.l4qlywnpwqsluw65ts7md3khrivpirse744un3x7mlskqauz5pyuzgqd.onion", "nitter.lucabased.xyz",
-				"nitter.lunar.icu", "nitter.micohauwkjbyw5meacrb4ipicwvwg4xtzl7y7viv53kig2mdcsvwkyyd.onion", "nitter.moomoo.me", "nitter.net",
-				"nitter.pjsfkvpxlinjamtawaksbnnaqs2fc2mtvmozrzckxh7f3kis6yea25ad.onion", "nitter.poast.org", "nitter.priv.loki",
-				"nitter.privacydev.net", "nitter.privpw3tndpkw6pnp3g727zfgfdzbu3k6a7chv226s3xymv2p4eiuqyd.onion", "nitter.qwik.space",
-				"nitter.rawbit.ninja", "nitter.tiekoetter.com", "nitter.v6vgyqpa7yefkorazmg5d5fimstmvm2vtbirt6676mt7qmllrcnwycqd.onion",
-				"nitter7bryz3jv7e3uekphigvmoyoem4al3fynerxkj22dmoxoq553qd.onion", "npf37k3mtzwxreiw52ccs5ay4e6qt2fkcs2ndieurdyn2cuzzsfyfvid.onion",
-				"nt.vernccvbvyi5qhfzyqengccj7lkove6bjot2xhh5kajhwvidqafczrad.onion", "nttr2iupbb6fazdpr2rgbooon2tzbbsvvkagkgkwohhodjzj43stxhad.onion",
-				"pjsfs4ukb6prmfx3qx3a5ef2cpcupkvcrxdh72kqn2rxc2cw4nka.b32.i2p", "pxrhfmieeeqdu5pi4duscycsxqefqphaxgvvrvdtc3ckqn2mcora.b32.i2p",
-				"qwikxx2erhx6qrymued6ox2qkf2yeogjwypqvzoif4fqkljixasr6oid.onion", "r2eqimhkvxboaltbdsectoo3hkf476pyemsdykclexzajbfx5v6ojlyd.onion",
-				"tm4rwkeysv3zz3q5yacyr4rlmca2c4etkdobfvuqzt6vsfsu4weq.b32.i2p", "twitit.gq",
-		    "twitter.ap3jtgssd7qn4vfoa62gi2ijddoblslbeuw5dan3xt7myvqpura5i4qd.onion",
-		    "twitter.cepyxplublbyw2f4axy4pyztfbxmf63lrt2c7uwv6wl4iixz53czload.onion",
-		    "twitter.prnoid54e44a4bduq5due64jkk7wcnkxcp5kv3juncm7veptjcqudgyd.onion", "u6ikd6zndl3c4dsdq4mmujpntgeevdk5qzkfb57r4tnfeccrn2qa.b32.i2p",
-		    "vernzdedoxuflrrxc4vbatbkpjh4k22ecgiqgimdiif62onhagva.b32.i2p", "vfaomgh4jxphpbdfizkm5gbtjahmei234giqj4facbwhrfjtcldauqad.onion",
-		    "wiio4sgs4247brk7hj6qck2jxnvldwfdbguigc5ivpxrsegnliyfvuqd.onion", "xcancel.com", "xnaas.github.io"
-			],
-			"invidious-host-without-www-dot-prefixes": [
-				"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be",
-				"zzlsbhhfvwg3oh36tcvx4r7n6jrw7zibvyvfxqlodcwn3mfrvzuq.b32.i2p"
-			],
-			"fixvx-host-without-www-dot-prefixes": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 			"bypass.vip-host-without-www-dot-prefixes": [
 				"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "bit.ly", "booo.st", "boost.ink", "bst.gg",
 				"cemendemons.com", "depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "ift.tt", "is.gd",
@@ -156,7 +111,6 @@
 			],
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
-			"lmgtfy-host-without-www-dot-prefixes": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
 			"redirect-host-without-www-dot-prefixes": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
@@ -213,12 +167,64 @@
 			]
 		},
 		"maps": {
-			"host_without_www_dot_prefix_lang_query_params": {
+			"hwwwwdp_lang_query_params": {
 				"map": {
 					"instagram.com": "hl",
 					"threads.net": "hl"
 				},
 				"else": "lang"
+			}
+		},
+		"named_partitionings": {
+			"hwwwwdp_categories": {
+				"disney": ["disney.com", "marvel.com"],
+				"alibaba": ["alibaba.com", "aliexpress.com"],
+				"nitter": [
+					"26oq3gioiwcmfojub37nz5gzbkdiqp7fue5kvye7d4txv4ny6fb4wwid.onion", "4g47cxugkohbweao2x66nnxxfoe3k7gdfzxej537nhdbwr522sbjxeqd.onion", "4kzgzonccxuv4ctforjqx565jgd4bocgnzsy3dg4fmdf3ye2iciq.b32.i2p",
+					"6g7w5lt6qcidh6vtue64udzld2mjnvxlpgddvn34qywxafxdv6a3w5id.onion", "aaaaaxx74hbzeibageieowryhsqvimbdiitfkfe47tvgawkwkjh3coqd.onion",
+					"axd6uavsstsrvstva4mzlzh4ct76rc6zdug3nxdgeitrzczhzf4q.b32.i2p", "bird.habedieeh.re",
+					"bird.habeehrhadazsw3izbrbilqajalfyqqln54mrja3iwpqxgcuxnus7eid.onion", "ckzuw5misyahmg7j5t5xwwuj3bwy62jfolxyux4brfflramzsvvd3syd.onion",
+					"ec5nvbycpfa5k6ro77blxgkyrzbkv7uy6r5cngcbkadtjj2733nm3uyd.onion", "erpnncl5nhyji3c32dcfmztujtl3xaddqb457jsbkulq24zqq7ifdgad.onion",
+					"fbdi323aj3t6hdx4jtkuwxrnafzskquciowu2yu3jizfssaq35aow6ad.onion", "gseczlzmiv23p5vhsktyd7whquq2uy3c5fgkmdohh453qp3daoua.b32.i2p",
+					"i23nv6w3juvzlw32xzoxcqzktegd4i4fu3nmnc2ewv4ggiu4ledwklad.onion", "ibsboeui2im5o7dxnik3s5yghufumgy5abevtij5nbizequfpu4qi4ad.onion",
+					"iwgu3cv7ywf3gssed5iqtavmrlszgsxazkmwwnt4h2kdait75thdyrqd.onion", "jebqj47jgxleaiosfcxfibx2xdahjettuydlxbg64azd4khsxv6kawid.onion",
+					"n.sneed4fmhevap3ci4xhf4wgkf72lwk275lcgomnfgwniwmqvaxyluuid.onion", "nitraeju2mipeziu2wtcrqsxg7h62v5y4eqgwi75uprynkj74gevvuqd.onion",
+					"nitter.catsarchywsyuss6jdxlypsw5dc7owd5u5tr6bujxb7o6xw2hipqehyd.onion",
+					"nitter.coffee2m3bjsrrqqycx6ghkxrnejl2q6nl7pjw2j4clchjj6uk5zozad.onion",
+					"nitter.daturab6drmkhyeia4ch5gvfc2f3wgo6bhjrv3pz6n7kxmvoznlkq4yd.onion",
+					"nitter.esmail5pdn24shtvieloeedh7ehz3nrwcdivnfhfcedl7gf4kwddhkqd.onion",
+					"nitter.g4c3eya4clenolymqbpgwz3q3tawoxw56yhzk4vugqrl6dtu3ejvhjid.onion", "nitter.holo-mix.com", "nitter.io.lol", "nitter.kavin.rocks",
+					"nitter.kylrth.com", "nitter.l4qlywnpwqsluw65ts7md3khrivpirse744un3x7mlskqauz5pyuzgqd.onion", "nitter.lucabased.xyz",
+					"nitter.lunar.icu", "nitter.micohauwkjbyw5meacrb4ipicwvwg4xtzl7y7viv53kig2mdcsvwkyyd.onion", "nitter.moomoo.me", "nitter.net",
+					"nitter.pjsfkvpxlinjamtawaksbnnaqs2fc2mtvmozrzckxh7f3kis6yea25ad.onion", "nitter.poast.org", "nitter.priv.loki",
+					"nitter.privacydev.net", "nitter.privpw3tndpkw6pnp3g727zfgfdzbu3k6a7chv226s3xymv2p4eiuqyd.onion", "nitter.qwik.space",
+					"nitter.rawbit.ninja", "nitter.tiekoetter.com", "nitter.v6vgyqpa7yefkorazmg5d5fimstmvm2vtbirt6676mt7qmllrcnwycqd.onion",
+					"nitter7bryz3jv7e3uekphigvmoyoem4al3fynerxkj22dmoxoq553qd.onion", "npf37k3mtzwxreiw52ccs5ay4e6qt2fkcs2ndieurdyn2cuzzsfyfvid.onion",
+					"nt.vernccvbvyi5qhfzyqengccj7lkove6bjot2xhh5kajhwvidqafczrad.onion", "nttr2iupbb6fazdpr2rgbooon2tzbbsvvkagkgkwohhodjzj43stxhad.onion",
+					"pjsfs4ukb6prmfx3qx3a5ef2cpcupkvcrxdh72kqn2rxc2cw4nka.b32.i2p", "pxrhfmieeeqdu5pi4duscycsxqefqphaxgvvrvdtc3ckqn2mcora.b32.i2p",
+					"qwikxx2erhx6qrymued6ox2qkf2yeogjwypqvzoif4fqkljixasr6oid.onion", "r2eqimhkvxboaltbdsectoo3hkf476pyemsdykclexzajbfx5v6ojlyd.onion",
+					"tm4rwkeysv3zz3q5yacyr4rlmca2c4etkdobfvuqzt6vsfsu4weq.b32.i2p", "twitit.gq",
+			    "twitter.ap3jtgssd7qn4vfoa62gi2ijddoblslbeuw5dan3xt7myvqpura5i4qd.onion",
+			    "twitter.cepyxplublbyw2f4axy4pyztfbxmf63lrt2c7uwv6wl4iixz53czload.onion",
+			    "twitter.prnoid54e44a4bduq5due64jkk7wcnkxcp5kv3juncm7veptjcqudgyd.onion", "u6ikd6zndl3c4dsdq4mmujpntgeevdk5qzkfb57r4tnfeccrn2qa.b32.i2p",
+			    "vernzdedoxuflrrxc4vbatbkpjh4k22ecgiqgimdiif62onhagva.b32.i2p", "vfaomgh4jxphpbdfizkm5gbtjahmei234giqj4facbwhrfjtcldauqad.onion",
+			    "wiio4sgs4247brk7hj6qck2jxnvldwfdbguigc5ivpxrsegnliyfvuqd.onion", "xcancel.com", "xnaas.github.io"
+				],
+				"fixvx": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
+				"lmgtfy": ["lmgtfy.com", "lmgtfy.app", "letmegooglethat.com", "lmgtfy.click", "letmegoogleforyou.com", "lmgt.org"],
+				"breezewiki": [
+					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org",
+					"breezewiki.catsarch.com", "breezewiki.com", "breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net",
+					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe",
+					"bw.artemislena.eu", "bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
+					"nerd.whatever.social", "z.opnxng.com"
+				],
+				"invidious": [
+					"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be",
+					"zzlsbhhfvwg3oh36tcvx4r7n6jrw7zibvyvfxqlodcwn3mfrvzuq.b32.i2p"
+				],
+				"discord-external": ["images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net"],
+				"instagram": ["instagram.com", "threads.net"]
 			}
 		},
 		"http_client_config": {
@@ -336,7 +342,7 @@
 				}},
 				{
 					"condition": {"Not": {"FlagIsSet": "keep-lang"}},
-					"mapper": {"RemoveQueryParam": {"ParamsMap": {"map": "host_without_www_dot_prefix_lang_query_params", "key": {"Part": "HostWithoutWWWDotPrefix"}}}}
+					"mapper": {"RemoveQueryParam": {"ParamsMap": {"map": "hwwwwdp_lang_query_params", "key": {"Part": "HostWithoutWWWDotPrefix"}}}}
 				}
 			]}
 		}
@@ -1198,32 +1204,71 @@
 
 
 
-				{
-					"condition": {"PartMatches": {
-						"part": "HostWithoutWWWDotPrefix",
-						"matcher": {"InSet": "lmgtfy-host-without-www-dot-prefixes"}
-					}},
-					"mapper": {"All": [
-						{"SetHost": "google.com"},
-						{"SetPart": {"part": "Path", "value": "/search"}}
-					]}
-				},
-
-
-
-				{
-					"condition": {"Any": [
-						{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "fixvx-host-without-www-dot-prefixes"}}},
-						{"All": [
-							{"Any": [
-								{"FlagIsSet": "nitter"},
-								{"FlagIsSet": "unnitter"}
+				{"StringMap": {
+					"value": {"ParamsNamedPartitioning": {"name": "hwwwwdp_categories", "element": {"Part": "HostWithoutWWWDotPrefix"}}},
+					"map": {
+						"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
+						"fixvx": {"SetHost": "x.com"},
+						"nitter": {"IfCondition": {
+							"condition": {"All": [
+								{"Any": [
+									{"FlagIsSet": "nitter"},
+									{"FlagIsSet": "unnitter"}
+								]},
+								{"Not": {"PathIs": "/"}}
 							]},
-							{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "nitter-host-without-www-dot-prefixes"}}},
-							{"Not": {"PathIs": "/"}}
-						]}
-					]},
-					"mapper": {"SetHost": "x.com"}
+							"mapper": {"SetHost": "x.com"}
+						}},
+						"lmgtfy": {"All": [
+							{"SetHost": "google.com"},
+							{"SetPart": {"part": "Path", "value": "/search"}}
+						]},
+						"breezewiki": {"IfCondition": {
+							"condition": {"All": [
+								{"Any": [
+									{"FlagIsSet": "breezewiki"},
+									{"FlagIsSet": "unbreezewiki"}
+								]},
+								{"Not": {"PathIs": "/"}}
+							]},
+							"mapper": {"All": [
+								{"SetHost": "fandom.com"},
+								{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
+							]}
+						}},
+						"invidious": {"IfCondition": {
+							"condition": {"All": [
+								{"Any": [
+									{"FlagIsSet": "invidious"},
+									{"FlagIsSet": "uninvidious"}
+								]},
+								{"Not": {"PathIs": "/"}}
+							]},
+							"mapper": {"SetHost": "youtube.com"}
+						}},
+						"discord-external": {"IfCondition": {
+							"condition": {"FlagIsSet": "discord-unexternal"},
+							"mapper": {"All": [
+								{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
+								{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
+								{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}},
+								"RemoveQuery"
+							]}
+						}},
+						"instagram": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
+						"alibaba": {"RemoveQueryParams": ["spm"]}
+					}
+				}},
+
+
+
+				{
+					"StringMap": {
+						"value": {"ErrorToNone": {"ErrorToNone": {"ParamsNamedPartitioning": {"name": "hwwwwdp_categories", "element": {"JobsContextVar": "SOURCE_REG_DOMAIN"}}}}},
+						"map": {
+							"alibaba": {"RemoveQueryParams": ["spm", "file"]}
+						}
+					}
 				},
 
 
@@ -1250,20 +1295,14 @@
 							"youtube.com"  : {"All": [
 								{"RemoveQueryParams": ["si", "feature", "pp"]},
 								{"IfCondition": {
-									"condition": {"Any": [
-										{"All": [
-											{"FlagIsSet": "youtube-unshort"},
-											{"PartIs": {"part": {"PathSegment": 0}, "value": "shorts"}}
-										]},
-										{"All": [
-											{"FlagIsSet": "youtube-unlive"},
-											{"PartIs": {"part": {"PathSegment": 0}, "value": "live"}}
-										]},
-										{"All": [
-											{"FlagIsSet": "youtube-unembed"},
-											{"PartIs": {"part": {"PathSegment": 0}, "value": "embed"}}
-										]}
-									]},
+									"condition": {"PartMap": {
+										"part": {"PathSegment": 0},
+										"map": {
+											"shorts": {"FlagIsSet": "youtube-unshort"},
+											"live"  : {"FlagIsSet": "youtube-unlive"},
+											"embed" : {"FlagIsSet": "youtube-unembed"}
+										}
+									}},
 									"mapper": {"All": [
 										{"CopyPart": {"from": {"PathSegment": 1}, "to": {"QueryParam": "v"}}},
 										{"SetPart": {"part": "Path", "value": "watch"}}
@@ -1275,6 +1314,10 @@
 										{"PartIs": {"part": {"PathSegment": 0}, "value": "watch"}}
 									]},
 									"mapper": {"RemoveQueryParams": ["list"]}
+								}},
+								{"IfCondition": {
+									"condition": {"FlagIsSet": "invidious"},
+									"mapper": {"SetPart": {"part": "Host", "value": {"Var": "invidious-host"}}}
 								}}
 							]},
 							"youtu.be": {"All": [
@@ -1283,17 +1326,13 @@
 								{"SetPart" : {"part": "Path", "value": "watch"}},
 								{"RemoveQueryParams": ["si", "feature", "pp"]}
 							]},
-							"instagram.com": {"All": [
-								{"IfCondition": {
-									"condition": {"All": [
-										{"FlagIsSet": "instagram-unprofilecard"},
-										{"PartIs": {"part": {"PathSegment": 1}, "value": "profilecard"}}
-									]},
-									"mapper": {"SetPart": {"part": {"PathSegment": 1}, "value": null}}
-								}},
-								{"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]}
-							]},
-							"threads.net"  : {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
+							"instagram.com": {"IfCondition": {
+								"condition": {"All": [
+									{"FlagIsSet": "instagram-unprofilecard"},
+									{"PartIs": {"part": {"PathSegment": 1}, "value": "profilecard"}}
+								]},
+								"mapper": {"SetPart": {"part": {"PathSegment": 1}, "value": null}}
+							}},
 							"stackoverflow.com" : {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 							"duckduckgo.com"    : {"RemoveQueryParams": ["t", "atb", "ia"]},
 							"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion": {"RemoveQueryParams": ["t", "atb", "ia"]},
@@ -1463,6 +1502,13 @@
 							"history.com": {"IfCondition": {
 								"condition": {"PartMatches": {"part": "Fragment", "matcher": {"Contains": {"value": "link_time", "where": "Start"}}}},
 								"mapper": {"SetPart": {"part": "Fragment", "value": null}}
+							}},
+							"fandom.com": {"IfCondition": {
+								"condition": {"FlagIsSet": "breezewiki"},
+								"mapper": {"All": [
+									{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
+									{"SetPart": {"part": "Host", "value": {"Var": "breezewiki-host"}}}
+								]}
 							}}
 						}
 					}
@@ -1552,7 +1598,11 @@
 								"mapper": {"RemoveQueryParams": ["wx_navbar_transparent", "path", "ncms_spm", "prefetchKey", "wx_xpage", "spm", "cardType"]}
 							}},
 							"wlo.link": {"SetHost": "link.space"},
-							"support.google.com": {"RemoveQueryParams": ["ref_topic"]}
+							"support.google.com": {"RemoveQueryParams": ["ref_topic"]},
+							"aliexpress.com": {"IfCondition": {
+								"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "item"}},
+								"mapper": "RemoveQuery"
+							}}
 						}
 					}
 				},
@@ -1660,99 +1710,9 @@
 
 
 				{
-					"StringMap": {
-						"value": {"JobsContextVar": "SOURCE_REG_DOMAIN"},
-						"map": {
-							"alibaba.com": {"RemoveQueryParams": ["spm", "file"]},
-							"aliexpress.com": {"RemoveQueryParams": ["spm", "file"]}
-						}
-					}
-				},
-
-
-
-				{
-					"condition": {"TreatErrorAsFail": {"PartContains": {
-						"part": "DomainMiddle",
-						"value": "disney"
-					}}},
-					"mapper": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]}
-				},
-
-
-
-				{
 					"SharedCondition": {
 						"condition": "AnyFlagIsSet",
 						"rules": [
-							{
-								"comment": "Discord embeds images using dedicated \"external images\" server(s). This gets the original image.",
-								"condition": {"All": [
-									{"FlagIsSet": "discord-unexternal"},
-									{"HostIsOneOf": [
-										"images-ext-1.discordapp.net",
-										"images-ext-2.discordapp.net",
-										"images-ext-3.discordapp.net"
-									]}
-								]},
-								"mapper": {"All": [
-									{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
-									{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
-									{"CopyPart": {"from": {"PartSegments": {"part": "Path", "split": "/", "start": 5}}, "to": "Path"}},
-									"RemoveQuery"
-								]}
-							},
-
-
-
-							{
-								"condition": {"All": [
-									{"Any": [
-										{"FlagIsSet": "breezewiki"},
-										{"FlagIsSet": "unbreezewiki"}
-									]},
-									{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "breezewiki-host-without-www-dot-prefixes"}}},
-									{"Not": {"PathIs": "/"}}
-								]},
-								"mapper": {"All": [
-									{"SetHost": "fandom.com"},
-									{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
-								]}
-							},
-							{
-								"condition": {"All": [
-									{"FlagIsSet": "breezewiki"},
-									{"RegDomainIs": "fandom.com"}
-								]},
-								"mapper": {"All": [
-									{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-									{"SetPart": {"part": "Host", "value": {"Var": "breezewiki-host"}}}
-								]}
-							},
-
-
-
-							{
-								"condition": {"All": [
-									{"Any": [
-										{"FlagIsSet": "invidious"},
-										{"FlagIsSet": "uninvidious"}
-									]},
-									{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "invidious-host-without-www-dot-prefixes"}}},
-									{"Not": {"PathIs": "/"}}
-								]},
-								"mapper": {"SetHost": "youtube.com"}
-							},
-							{
-								"condition": {"All": [
-									{"FlagIsSet": "invidious"},
-									{"HostIs": "youtube.com"}
-								]},
-								"mapper": {"SetPart": {"part": "Host", "value": {"Var": "invidious-host"}}}
-							},
-
-
-
 							{
 								"condition": {"All": [
 									{"FlagIsSet": "onion-location"},

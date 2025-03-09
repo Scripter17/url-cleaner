@@ -13,6 +13,7 @@ mod glue;
 use glue::*;
 mod types;
 use types::*;
+mod testing;
 mod util;
 
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
@@ -175,7 +176,7 @@ fn main() -> Result<ExitCode, CliError> {
     if print_params {println!("{}", serde_json::to_string(&config.params)?);}
     if print_config {println!("{}", serde_json::to_string(&config)?);}
     if let Some(tests_path) = tests {
-        config.run_tests(serde_json::from_str::<Tests>(&std::fs::read_to_string(tests_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
+        config.run_tests(serde_json::from_str::<testing::Tests>(&std::fs::read_to_string(tests_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
         println!("\nAll tests passed!");
     }
 
