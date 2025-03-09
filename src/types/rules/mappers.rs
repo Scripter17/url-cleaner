@@ -100,19 +100,8 @@ pub enum Mapper {
         /// The part to index `map` with.
         part: UrlPart,
         /// The map specifying which values should apply which mapper.
-        map: HashMap<String, Self>,
-        /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
-        /// 
-        /// Useful because JSON doesn't allow maps to use `null` as keys.
-        /// 
-        /// Defaults to [`None`].
-        #[serde(default)]
-        if_null: Option<Box<Self>>,
-        /// The mapper to use if the part is not found in `map` and `if_null` isn't used.
-        /// 
-        /// Defaults to [`None`].
-        #[serde(default)]
-        r#else: Option<Box<Self>>
+        #[serde(flatten)]
+        map: Map<Self>
     },
     /// Indexes `map` with the string returned by `value` and applies that mapper.
     /// # Errors
@@ -123,19 +112,8 @@ pub enum Mapper {
         /// The string to index `map` with.
         value: StringSource,
         /// The map specifying which strings should apply which mapper.
-        map: HashMap<String, Self>,
-        /// The mapper to use if the part is [`None`] and there is no [`None`] key in `map`.
-        /// 
-        /// Useful because JSON doesn't allow maps to use `null` as keys.
-        /// 
-        /// Defaults to [`None`].
-        #[serde(default)]
-        if_null: Option<Box<Self>>,
-        /// The mapper to use if the part is not found in `map` and `if_null` isn't used.
-        /// 
-        /// Defaults to [`None`].
-        #[serde(default)]
-        r#else: Option<Box<Self>>
+        #[serde(flatten)]
+        map: Map<Self>
     },
 
     // Error handling.
@@ -187,6 +165,10 @@ pub enum Mapper {
     /// Removes the URL's entire query.
     /// Useful for websites that only use the query for tracking.
     RemoveQuery,
+    /// Removes a single query parameter with the specified name.
+    ///
+    /// Unlike [`Self::RemoveQueryParams`] and [`Self::AllowQueryParams`], this uses a [`StringSource`] to be a lot more versatile.
+    RemoveQueryParam(StringSource),
     /// Removes all query parameters whose name exists in the specified [`std::collections::HashMap`].
     /// Useful for websites that append random stuff to shared URLs so the website knows your friend got that link from you.
     /// # Examples
@@ -600,8 +582,8 @@ impl Mapper {
                     let _=mapper.apply(job_state);
                 }
             },
-            Self::PartMap  {part , map, if_null, r#else} => if let Some(mapper) = part .get( job_state.url      ) .map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {mapper.apply(job_state)?},
-            Self::StringMap{value, map, if_null, r#else} => if let Some(mapper) = value.get(&job_state.to_view())?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {mapper.apply(job_state)?},
+            Self::PartMap  {part , map} => if let Some(mapper) = map.get(part .get( job_state.url      ) ) {mapper.apply(job_state)?},
+            Self::StringMap{value, map} => if let Some(mapper) = map.get(value.get(&job_state.to_view())?) {mapper.apply(job_state)?},
 
             // Error handling.
 
@@ -619,6 +601,12 @@ impl Mapper {
             // Query.
 
             Self::RemoveQuery => job_state.url.set_query(None),
+            Self::RemoveQueryParam(name) => if let Some(query_len) = job_state.url.query().map(|x| x.len()) {
+                let job_state_view = job_state.to_view();
+                let name = get_cow!(name, job_state_view, MapperError);
+                let new_query = form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(job_state.url.query_pairs().filter(|(x, _)| *x != name)).finish();
+                job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
+            },
             Self::RemoveQueryParams(names) => if let Some(query_len) = job_state.url.query().map(|x| x.len()) {
                 let new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(job_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
                 job_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
@@ -766,17 +754,19 @@ impl Mapper {
         };
         Ok(())
     }
+}
 
+impl Suitable for Mapper {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+    fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.as_ref().is_none_or(|else_mapper| else_mapper.is_suitable_for_release(config)),
             Self::ConditionChain(chain) => chain.iter().all(|link| link.condition.is_suitable_for_release(config) && link.mapper.is_suitable_for_release(config)),
             Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
             Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
-            Self::PartMap {part, map, if_null, r#else} => part.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
-            Self::StringMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::PartMap   {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::StringMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
             Self::IgnoreError(mapper) => mapper.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
@@ -791,6 +781,7 @@ impl Mapper {
             Self::Rules(rules) => rules.is_suitable_for_release(config),
             #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),
             Self::Retry {mapper, ..} => mapper.is_suitable_for_release(config),
+            Self::RemoveQueryParam(name) => name.is_suitable_for_release(config),
             Self::Debug(_) => false,
             Self::None  | Self::Error | Self::RemoveQuery |
                 Self::RemoveQueryParams(_) | Self::AllowQueryParams(_) |

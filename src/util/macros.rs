@@ -100,10 +100,17 @@ macro_rules! get_string {
     }
 }
 
-/// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
+/// A macro that makes handling the difference between [`StringSource`] and [`str`] easier.
 macro_rules! get_str {
     ($value:expr, $job_state:expr, $error:ty) => {
         &*$value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
+    }
+}
+
+/// A macro that makes handling the difference between [`StringSource`] and [`Cow`]s of [`str`]s easier.
+macro_rules! get_cow {
+    ($value:expr, $job_state:expr, $error:ty) => {
+        $value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
     }
 }
 
@@ -121,14 +128,14 @@ macro_rules! get_option_string {
     }
 }
 
-/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
+/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`str`] easier.
 macro_rules! get_option_str {
     ($value:expr, $job_state:expr) => {
         $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().as_deref()
     }
 }
 
-/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`String`] easier.
+/// A macro that makes handling the difference between [`Option`]s of [`StringSource`] and [`Cow`]s of [`str`]s easier.
 macro_rules! get_option_cow {
     ($value:expr, $job_state:expr) => {
         // $value.as_ref().map(|source| source.get(&$job_state.to_view())).transpose()?.flatten().as_deref()
@@ -170,6 +177,7 @@ pub(crate) use debug;
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
 pub(crate) use get_string;
+pub(crate) use get_cow;
 pub(crate) use get_option_str;
 pub(crate) use get_option_string;
 pub(crate) use get_option_cow;

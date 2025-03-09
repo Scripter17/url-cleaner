@@ -44,9 +44,6 @@ pub struct Config {
     /// The parameters passed into the rule's conditions and mappers.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
-    /// The tests to make sure the config is working as intended.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub tests: Tests,
     /// Various things that are used in multiple spots.
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
@@ -136,10 +133,10 @@ impl Config {
     /// Runs the tests specified in [`Self::tests`], panicking when any error happens.
     /// # Panics
     /// Panics if a test fails.
-    pub fn run_tests(&self) {
+    pub fn run_tests(&self, tests: Tests) {
         // Changing the if's braces to parenthesis causes some really weird syntax errors. Including the `Ok(DEFAULT_CONFIG.get_or_init(|| config))` line above complaining about needing braces???
         if self.strict_mode {assert!(self.is_suitable_for_release());}
-        self.tests.r#do(self);
+        tests.r#do(self);
     }
 
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
@@ -217,6 +214,6 @@ mod tests {
     #[test]
     #[cfg(feature = "default-config")]
     fn test_default_config() {
-        Config::get_default().unwrap().clone().run_tests();
+        Config::get_default().unwrap().clone().run_tests(serde_json::from_str(&read_to_string("tests.json").expect("Loading tests to work")).expect("Parsing tests to work"));
     }
 }

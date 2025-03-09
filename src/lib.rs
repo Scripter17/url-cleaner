@@ -16,7 +16,6 @@
 //!     strict_mode: false,
 #![cfg_attr(feature = "cache", doc = "    cache_path: Default::default(),")]
 //!     params: Default::default(),
-//!     tests: Default::default(),
 //!     commons: Default::default(),
 //!     rules: Rules(vec![
 //!         Rule::Normal {

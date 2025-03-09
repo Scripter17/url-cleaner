@@ -152,21 +152,8 @@ pub enum StringSource {
         /// The string to index the map with.
         value: Box<Self>,
         /// The map to map the string with.
-        /// 
-        /// God these docs need a total rewrite.
-        map: HashMap<String, Self>,
-        /// JSON doesn't allow `null`/[`None`] to be a key in objects.
-        /// 
-        /// If `value` returns [`None`], there's no [`None`] in `map`, and `if_null` is not [`None`], the [`Self`] in `if_null` is used.
-        /// 
-        /// Defaults to [`None`].
-        #[serde(default)]
-        if_null: Option<Box<Self>>,
-        /// The [`Self`] to use if the string is not found in `map` and `if_null` isn't used.
-        /// 
-        /// Defaults to [`None`].
-        #[serde(default)]
-        r#else: Option<Box<Self>>
+        #[serde(flatten)]
+        map: Map<Self>,
     },
 
     // Basic stuff.
@@ -267,7 +254,7 @@ pub enum StringSource {
         /// The map from [`Params::maps`] to index in.
         map: Box<Self>,
         /// The key to index the map with.
-        key: Box<Self>
+        key: Option<Box<Self>>
     },
     /// Gets a string with `value`, modifies it with `modification`, and returns the result.
     /// # Errors
@@ -539,7 +526,7 @@ impl StringSource {
                     r#else.get(job_state)?
                 }
             },
-            Self::Map {value, map, if_null, r#else} => value.get(job_state)?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?,
+            Self::Map {value, map} => map.get(value.get(job_state)?).ok_or(StringSourceError::StringNotInMap)?.get(job_state)?,
 
 
 
@@ -550,7 +537,7 @@ impl StringSource {
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::JobsContextVar(key) => job_state.jobs_context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
-            Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_str!(key, job_state, StringSourceError)).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_option_str!(key, job_state)).map(|x| Cow::Borrowed(&**x)),
             Self::Modified {value, modification} => {
                 match value.as_ref().get(job_state)? {
                     Some(x) => {
@@ -631,9 +618,11 @@ impl StringSource {
             Self::Custom(function) => function(job_state)?
         })
     }
+}
 
+impl Suitable for StringSource {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+    fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::NoneToEmptyString(value) => value.is_suitable_for_release(config),
             Self::NoneTo {value, if_none} => value.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
@@ -641,7 +630,7 @@ impl StringSource {
             Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config) && check_docs!(config, flags, flag.as_ref()),
             Self::IfSourceMatches {value, matcher, then, r#else} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::IfSourceIsNone {value, then, r#else} => value.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Map {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, value)| value.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|if_null| if_null.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|r#else| r#else.is_suitable_for_release(config)),
+            Self::Map {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
             Self::Part(part) => part.is_suitable_for_release(config),
             Self::ExtractPart {value, part} => value.is_suitable_for_release(config) && part.is_suitable_for_release(config),
             Self::CommonVar(name) => name.is_suitable_for_release(config),
@@ -649,7 +638,7 @@ impl StringSource {
             Self::ScratchpadVar(name) => name.is_suitable_for_release(config),
             Self::ContextVar(name) => name.is_suitable_for_release(config) && check_docs!(config, job_context, vars, name.as_ref()),
             Self::JobsContextVar(name) => name.is_suitable_for_release(config) && check_docs!(config, jobs_context, vars, name.as_ref()),
-            Self::ParamsMap {map, key} => map.is_suitable_for_release(config) && key.is_suitable_for_release(config) && check_docs!(config, maps, map.as_ref()),
+            Self::ParamsMap {map, key} => map.is_suitable_for_release(config) && key.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && check_docs!(config, maps, map.as_ref()),
             Self::Modified {value, modification} => value.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
             Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),
             #[cfg(feature = "cache")] Self::Cache {category, key, value} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && value.is_suitable_for_release(config),

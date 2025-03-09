@@ -889,23 +889,13 @@ pub enum StringModification {
     /// assert_eq!(x, "/a\n\\n");
     /// ```
     RunEscapeCodes(HashMap<String, String>),
-    /// Gets `value` and does the first applicable action:
-    /// 1. If the value is in `map`, applies that entry's [`Self`].
-    /// 2. If the value is [`None`] and `if_null` is [`Some`], applies that [`Self`].
-    /// 3. If `else` is [`Some`], applies that [`Self`].
-    /// 
-    /// Note that if `value` and `if_null` are [`None`], `else` is still applied.
+    /// Indexes [`Self::StringMap::map`] with [`Self::StirngMap::value`] and, if it returns [`Some`], applies that [`Self`].
     StringMap {
         /// The value to branch with.
         value: Box<StringSource>,
         /// The map of branches.
-        map: HashMap<String, Self>,
-        /// If [`Some`], the branch where `value` is [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Box<Self>>,
-        /// If [`Some`], the branch used when no other branch applies.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Box<Self>>
+        #[serde(flatten)]
+        map: Map<Self>,
     },
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_modifications`].
     Common(CommonCall),
@@ -973,9 +963,9 @@ string_or_struct_magic!(StringModification);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StringMatcherChainLink {
     /// The [`StringMatcher`] to apply [`Self::modification`] under.
-    matcher: StringMatcher,
+    pub matcher: StringMatcher,
     /// The [`StringModification`] to apply if [`Self::matcher`] is satisfied.
-    modification: StringModification
+    pub modification: StringModification
 }
 
 /// Returned when trying to call [`StringModification::from_str`] with a variant name that has non-defaultable fields.
@@ -1501,16 +1491,18 @@ impl StringModification {
                 *to=ret;
             },
 
-            Self::StringMap {value, map, if_null, r#else} => if let Some(x) = value.get(job_state)?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {x.apply(to, job_state)?;},
+            Self::StringMap {value, map} => if let Some(x) = map.get(value.get(job_state)?) {x.apply(to, job_state)?;},
 
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, job_state)?
         };
         Ok(())
     }
+}
 
+impl Suitable for StringModification {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+    fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config) && else_modification.as_ref().is_none_or(|else_modification| else_modification.is_suitable_for_release(config)),
             Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release(config) && link.modification.is_suitable_for_release(config)),
@@ -1564,7 +1556,7 @@ impl StringModification {
             Self::Base64Encode(_) | Self::Base64Decode(_) => true,
             Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
             Self::MapChars{..} => true,
-            Self::StringMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, v)| v.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::StringMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
             Self::Common(common_call) => common_call.is_suitable_for_release(config),
             #[cfg(feature = "custom")]
             Self::Custom(_) => false

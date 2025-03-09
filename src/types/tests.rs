@@ -1,7 +1,6 @@
 //! Allows including tests in the [`Config`],
 
 use std::borrow::Cow;
-use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use url::Url;
@@ -20,8 +19,8 @@ impl Tests {
     /// Run all the tests.
     /// # Panics
     /// If a test fails, panics.
-    pub fn r#do(&self, config: &Config) {
-        for set in self.sets.iter() {
+    pub fn r#do(self, config: &Config) {
+        for set in self.sets {
             set.r#do(config)
         }
     }
@@ -44,13 +43,16 @@ impl TestSet {
     /// Runs all the tests
     /// # Panics
     /// If a test fails, panics.
-    pub fn r#do(&self, config: &Config) {
+    pub fn r#do(self, config: &Config) {
         let mut config = Cow::Borrowed(config);
-        if let Some(params_diff) = &self.params_diff {
+
+        let params_diff_json = serde_json::to_string(&self.params_diff).expect("Serialization to never fail");
+        
+        if let Some(params_diff) = self.params_diff {
             params_diff.apply(&mut config.to_mut().params);
         }
 
-        let (configs, results) = self.tests.clone().into_iter().map(|Test {job_config, result}| (job_config, result)).collect::<(Vec<_>, Vec<_>)>();
+        let (job_configs, results) = self.tests.clone().into_iter().map(|Test {job_config, result}| (job_config, result)).collect::<(Vec<_>, Vec<_>)>();
 
         let mut jobs = Jobs {
             jobs_config: JobsConfig {
@@ -59,17 +61,16 @@ impl TestSet {
                 cache: Default::default()
             },
             context: Cow::Borrowed(&self.jobs_context),
-            job_configs_source: Box::new(configs.into_iter().map(|x| serde_json::from_value(x).map_err(Into::into)))
+            job_configs_source: Box::new(job_configs.into_iter().map(Ok))
         };
 
-        for (i, (job, result)) in jobs.iter().zip(results.into_iter()).enumerate() {
+        for (i, (job, result)) in jobs.iter().zip(results).enumerate() {
             assert_eq!(
                 job.expect("The job to be makable.").r#do().expect("The job to succeed."),
-                Url::from_str(&result).expect("The result to be a valid BetterUrl."),
-                "Test failed\nparams_diff: {:?}\njobs_context: {:?}\ntest: {:?}",
-                self.params_diff,
-                self.jobs_context,
-                self.tests.get(i).expect("`i` to never be out of bounds.")
+                result,
+                "Test failed\nparams_diff: {params_diff_json}\njobs_context: {}\ntest: {}",
+                serde_json::to_string(&self.jobs_context).expect("Serialization to never fail"),
+                serde_json::to_string(self.tests.get(i).expect("`i` to never be out of bounds.")).expect("Serialization to never fail")
             );
         }
     }
@@ -81,7 +82,7 @@ impl TestSet {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Test {
     /// The [`JobConfig`] to use.
-    pub job_config: serde_json::Value,
+    pub job_config: JobConfig,
     /// The expected result URL.
-    pub result: String
+    pub result: Url
 }

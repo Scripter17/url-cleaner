@@ -25,7 +25,7 @@ pub struct Params {
     pub lists: HashMap<String, Vec<String>>,
     /// Map variables used to determine behavior.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub maps: HashMap<String, HashMap<String, String>>,
+    pub maps: HashMap<String, Map<String>>,
     /// If [`true`], enables reading from caches. Defaults to [`true`]
     #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
@@ -92,10 +92,8 @@ pub struct ParamsDiff {
     #[serde(default, skip_serializing_if = "is_default")] pub delete_sets: Vec<String>,
     /// Initializes new maps in [`Params::maps`].
     #[serde(default, skip_serializing_if = "is_default")] pub init_maps: Vec<String>,
-    /// Initializes new maps in [`Params::maps`] if they don't already exist, then inserts values into them.
-    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, HashMap<String, String>>,
     /// If the maps exist in [`Params::maps`], removes values from them.
-    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub map_diffs: HashMap<String, MapDiff<String>>,
     /// If the maps exist in [`Params::maps`], remove them.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_maps: Vec<String>,
     /// If [`Some`], sets [`Params::read_cache`]. Defaults to [`None`].
@@ -127,48 +125,41 @@ impl ParamsDiff {
     /// 13. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
     /// 14. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
     /// 15. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
-    pub fn apply(&self, to: &mut Params) {
+    pub fn apply(self, to: &mut Params) {
         #[cfg(feature = "debug")]
         let old_to = to.clone();
 
-        to.flags.extend(self.flags.clone());
-        for flag in &self.unflags {to.flags.remove(flag);}
+        to.flags.extend(self.flags);
+        for flag in self.unflags {to.flags.remove(&flag);}
 
-        to.vars.extend(self.vars.clone());
-        for var in &self.unvars {to.vars.remove(var);}
+        to.vars.extend(self.vars);
+        for var in self.unvars {to.vars.remove(&var);}
 
-        for k in self.init_sets.iter() {
-            if !to.sets.contains_key(k) {to.sets.insert(k.clone(), Default::default());}
+        for k in self.init_sets {
+            to.sets.entry(k).or_default();
         }
-        for (k, v) in self.insert_into_sets.iter() {
-            to.sets.entry(k.clone()).or_default().extend(v.clone());
+        for (k, v) in self.insert_into_sets {
+            to.sets.entry(k).or_default().extend(v);
         }
-        for (k, vs) in self.remove_from_sets.iter() {
-            if let Some(x) = to.sets.get_mut(k) {
-                for v in vs.iter() {
-                    x.remove(v);
-                }
-            }
-        }
-        for k in self.delete_sets.iter() {
-            to.sets.remove(k);
-        }
-
-        for k in self.init_maps.iter() {
-            if !to.maps.contains_key(k) {to.maps.insert(k.clone(), Default::default());}
-        }
-        for (k, v) in self.insert_into_maps.iter() {
-            to.maps.entry(k.clone()).or_default().extend(v.clone());
-        }
-        for (k, vs) in self.remove_from_maps.iter() {
-            if let Some(x) = to.maps.get_mut(k) {
+        for (k, vs) in self.remove_from_sets {
+            if let Some(x) = to.sets.get_mut(&k) {
                 for v in vs {
-                    x.remove(v);
+                    x.remove(&v);
                 }
             }
         }
-        for k in self.delete_maps.iter() {
-            to.maps.remove(k);
+        for k in self.delete_sets {
+            to.sets.remove(&k);
+        }
+
+        for k in self.init_maps {
+            to.maps.entry(k).or_default();
+        }
+        for (k, v) in self.map_diffs {
+            v.apply(to.maps.entry(k).or_default());
+        }
+        for k in self.delete_maps {
+            to.maps.remove(&k);
         }
 
         #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
@@ -297,15 +288,30 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
             remove_from_sets: value.remove_from_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromSetsNoName)}).collect::<Result<_, _>>()?,
             delete_sets     : Default::default(),
             init_maps       : Default::default(),
-            insert_into_maps: value.insert_into_map.into_iter().map(|x|
-                if x.len()%2 == 1 {
-                    let mut i = x.into_iter();
-                    Ok((i.next().ok_or(ParamsDiffArgParserValueWrong::InsertIntoMapNoName)?, std::iter::from_fn(|| i.next().zip(i.next())).collect()))
-                } else {
-                    Err(ParamsDiffArgParserValueWrong::InsertIntoMapKeyWithoutValue)?
+            map_diffs       : {
+                let mut ret = HashMap::<String, MapDiff<String>>::new();
+
+                for invocation in value.insert_into_map {
+                    if invocation.len() % 2 == 1 {
+                        let mut x = invocation.into_iter();
+                        ret.entry(x.next().ok_or(ParamsDiffArgParserValueWrong::InsertIntoMapNoName)?).or_default().insert_into_map = std::iter::from_fn(|| x.next().zip(x.next())).collect();
+                    } else {
+                        Err(ParamsDiffArgParserValueWrong::InsertIntoMapKeyWithoutValue)?
+                    }
                 }
-            ).collect::<Result<_, _>>()?,
-            remove_from_maps: value.remove_from_map.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)}).collect::<Result<HashMap<_, _>, _>>()?,
+
+                for invocation in value.remove_from_map {
+                    if !invocation.is_empty() {
+                        let mut x = invocation.into_iter();
+                        let name = x.next().ok_or(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)?;
+                        ret.entry(name).or_default().remove_from_map = x.collect();
+                    } else {
+                        Err(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)?
+                    }
+                }
+
+                ret
+            },
             delete_maps     : Default::default(),
             #[cfg(feature = "cache")] read_cache : value.read_cache,
             #[cfg(feature = "cache")] write_cache: value.write_cache,

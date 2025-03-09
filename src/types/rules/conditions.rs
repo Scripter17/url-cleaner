@@ -116,12 +116,8 @@ pub enum Condition {
         /// The part to get.
         part: UrlPart,
         /// The map specifying which values should run which conditions.
-        map: HashMap<String, Self>,
-        /// The [`Mapper`] to use if [`Self::PartMap::part`] returns [`None`].
-        if_null: Option<Box<Self>>,
-        /// If the part isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Box<Self>>
+        #[serde(flatten)]
+        map: Map<Self>
     },
     /// Passes if the condition in `map` whose key is the value returned by `value`'s [`StringSource::get`] passes.
     /// # Errors
@@ -132,12 +128,8 @@ pub enum Condition {
         /// The string to index the map with.
         value: StringSource,
         /// The map specifying which values should run which conditions.
-        map: HashMap<String, Self>,
-        /// The [`Mapper`] to use if [`Self::PartMap::part`] returns [`None`].
-        if_null: Option<Box<Self>>,
-        /// If the part isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Box<Self>>
+        #[serde(flatten)]
+        map: Map<Self>
     },
 
     // Error handling.
@@ -730,8 +722,8 @@ impl Condition {
                 }
                 false
             },
-            Self::PartMap  {part , map, if_null, r#else} => part .get(job_state.url) .map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
-            Self::StringMap{value, map, if_null, r#else} => value.get(job_state    )?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
+            Self::PartMap  {part , map} => map.get(part .get(job_state.url) ).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
+            Self::StringMap{value, map} => map.get(value.get(job_state    )?).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
 
             // Error handling.
 
@@ -833,17 +825,19 @@ impl Condition {
             Self::Custom(function) => function(job_state)?
         })
     }
+}
 
+impl Suitable for Condition {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+    fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
             Self::Debug(_) => false,
             Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
             Self::Not(condition) => condition.is_suitable_for_release(config),
             Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
             Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::PartMap   {part , map, if_null, r#else} => part .is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::StringMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, condition)| condition.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::PartMap   {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::StringMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
             Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(config),
             Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(config),
             Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),

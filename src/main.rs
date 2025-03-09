@@ -89,7 +89,7 @@ pub struct Args {
     /// Run the config's tests.
     /// When this or any `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
-    pub test_config : bool,
+    pub tests: Option<PathBuf>,
     /// Amount of threads to process jobs in.
     /// 
     /// Zero gets the current CPU threads.
@@ -115,7 +115,11 @@ pub enum CliError {
     /// Returned when URL Cleaner fails to parse a [`JobsContext`].
     #[error(transparent)] CantParseJobsContext(serde_json::Error),
     /// Returned when a [`SerdeJsonError`] is encountered.
-    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error)
+    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when trying to load a [`Tests`] file fails.
+    #[error(transparent)] CantLoadTests(io::Error),
+    /// Returned when trying to parse a [`Tests`] file fails.
+    #[error(transparent)] CantParseTests(serde_json::Error)
 }
 
 /// Shorthand for serializing a string to JSON.
@@ -164,14 +168,14 @@ fn main() -> Result<ExitCode, CliError> {
 
     let print_params = args.print_params;
     let print_config = args.print_config;
-    let test_config  = args.test_config;
+    let tests        = args.tests;
 
-    let no_cleaning = print_args || print_params_diffs || print_params || print_config || test_config;
+    let no_cleaning = print_args || print_params_diffs || print_params || print_config || tests.is_some();
 
     if print_params {println!("{}", serde_json::to_string(&config.params)?);}
     if print_config {println!("{}", serde_json::to_string(&config)?);}
-    if test_config {
-        config.run_tests();
+    if let Some(tests_path) = tests {
+        config.run_tests(serde_json::from_str::<Tests>(&std::fs::read_to_string(tests_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
         println!("\nAll tests passed!");
     }
 

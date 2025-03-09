@@ -1,6 +1,5 @@
 //! The part of a config that actually modified URLs.
 
-use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 use serde::{Serialize, Deserialize};
@@ -12,7 +11,6 @@ mod mappers;
 pub use mappers::*;
 
 pub use crate::types::*;
-use crate::util::*;
 
 /// The main API for modifying URLs.
 /// 
@@ -28,13 +26,8 @@ pub enum Rule {
         /// The part to get.
         part: UrlPart,
         /// The map determining which [`Mapper`] to apply.
-        map: HashMap<String, Mapper>,
-        /// The [`Mapper`] to use if [`Self::PartMap::part`] returns [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Mapper>,
-        /// If the part isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Mapper>
+        #[serde(flatten)]
+        map: Map<Mapper>
     },
     /// Gets a certain part of a URL then applies a [`Rule`] depending on the returned value.
     ///
@@ -45,13 +38,8 @@ pub enum Rule {
         /// The part to get.
         part: UrlPart,
         /// The map determining which [`Rule`] to apply.
-        map: HashMap<String, Rule>,
-        /// The [`Rule`] to use if [`Self::PartRuleMap::part`] returns [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Box<Rule>>,
-        /// If the part isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Box<Rule>>
+        #[serde(flatten)]
+        map: Map<Self>
     },
     /// Gets a certain part of a URL then applies a [`Rules`] depending on the returned value.
     ///
@@ -62,13 +50,8 @@ pub enum Rule {
         /// The part to get.
         part: UrlPart,
         /// The map determining which [`Rules`] to apply.
-        map: HashMap<String, Rules>,
-        /// The [`Rules`] to use if [`Self::PartRulesMap::part`] returns [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Rules>,
-        /// If the part isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Rules>
+        #[serde(flatten)]
+        map: Map<Rules>
     },
     /// Gets a string from a [`StringSource`] then applies a [`Mapper`] depending on the returned value.
     ///
@@ -81,13 +64,8 @@ pub enum Rule {
         /// The [`StringSource`] to get the string from.
         value: StringSource,
         /// The map determining which [`Mapper`] to apply.
-        map: HashMap<String, Mapper>,
-        /// The [`Mapper`] to use if [`Self::StringMap::value`] returns [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Mapper>,
-        /// If the string isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Mapper>
+        #[serde(flatten)]
+        map: Map<Mapper>
     },
     /// Gets a string from a [`StringSource`] then applies a [`Rule`] depending on the returned value.
     ///
@@ -100,13 +78,8 @@ pub enum Rule {
         /// The [`StringSource`] to get the string from.
         value: StringSource,
         /// The map determining which [`Mapper`] to apply.
-        map: HashMap<String, Rule>,
-        /// The [`Rule`] to use if [`Self::StringRuleMap::value`] returns [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Box<Rule>>,
-        /// If the string isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Box<Rule>>
+        #[serde(flatten)]
+        map: Map<Self>
     },
     /// Gets a string from a [`StringSource`] then applies a [`Rules`] depending on the returned value.
     ///
@@ -119,13 +92,8 @@ pub enum Rule {
         /// The [`StringSource`] to get the string from.
         value: StringSource,
         /// The map determining which [`Mapper`] to apply.
-        map: HashMap<String, Rules>,
-        /// The [`Rules`] to use if [`Self::StringRulesMap::value`] returns [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: Option<Rules>,
-        /// If the string isn't in the map, use this.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Rules>
+        #[serde(flatten)]
+        map: Map<Rules>
     },
     /// Repeatedly runs the contained [`Rules`] until neither [`JobState::url`] nor [`JobState::scratchpad`] change.
     /// 
@@ -264,12 +232,12 @@ impl Rule {
             Self::Normal{condition, mapper} => if condition.satisfied_by(&job_state.to_view())? {
                 mapper.apply(job_state)?;
             },
-            Self::PartMap        {part , map, if_null, r#else} => if let Some(x) = part .get( job_state.url      ) .map(|x| map.get(&*x)).unwrap_or(if_null.as_ref  ()).or(r#else.as_ref  ()) {x.apply(job_state)?;},
-            Self::PartRuleMap    {part , map, if_null, r#else} => if let Some(x) = part .get( job_state.url      ) .map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {x.apply(job_state)?;},
-            Self::PartRulesMap   {part , map, if_null, r#else} => if let Some(x) = part .get( job_state.url      ) .map(|x| map.get(&*x)).unwrap_or(if_null.as_ref  ()).or(r#else.as_ref  ()) {x.apply(job_state)?;},
-            Self::StringMap      {value, map, if_null, r#else} => if let Some(x) = value.get(&job_state.to_view())?.map(|x| map.get(&*x)).unwrap_or(if_null.as_ref  ()).or(r#else.as_ref  ()) {x.apply(job_state)?;},
-            Self::StringRuleMap  {value, map, if_null, r#else} => if let Some(x) = value.get(&job_state.to_view())?.map(|x| map.get(&*x)).unwrap_or(if_null.as_deref()).or(r#else.as_deref()) {x.apply(job_state)?;},
-            Self::StringRulesMap {value, map, if_null, r#else} => if let Some(x) = value.get(&job_state.to_view())?.map(|x| map.get(&*x)).unwrap_or(if_null.as_ref  ()).or(r#else.as_ref  ()) {x.apply(job_state)?;},
+            Self::PartMap        {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
+            Self::PartRuleMap    {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
+            Self::PartRulesMap   {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
+            Self::StringMap      {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
+            Self::StringRuleMap  {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
+            Self::StringRulesMap {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
             Self::Repeat{rules, limit} => {
                 let original_url = job_state.url.clone();
                 let original_scratchpad = job_state.scratchpad.clone();
@@ -314,16 +282,18 @@ impl Rule {
             Self::Custom(function) => function(job_state)?
         })
     }
+}
 
+impl Suitable for Rule {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+    fn is_suitable_for_release(&self, config: &Config) -> bool {
         assert!(match self {
-            Self::PartMap        {part , map, if_null, r#else} => part .is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::PartRuleMap    {part , map, if_null, r#else} => part .is_suitable_for_release(config) && map.iter().all(|(_, rule  )| rule  .is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::PartRulesMap   {part , map, if_null, r#else} => part .is_suitable_for_release(config) && map.iter().all(|(_, rules )| rules .is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::StringMap      {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, mapper)| mapper.is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::StringRuleMap  {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, rule  )| rule  .is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
-            Self::StringRulesMap {value, map, if_null, r#else} => value.is_suitable_for_release(config) && map.iter().all(|(_, rules )| rules .is_suitable_for_release(config)) && if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config)),
+            Self::PartMap        {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::PartRuleMap    {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::PartRulesMap   {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::StringMap      {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::StringRuleMap  {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
+            Self::StringRulesMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
             Self::Repeat {rules, ..} => rules.is_suitable_for_release(config),
             Self::SharedCondition {condition, rules} => condition.is_suitable_for_release(config) && rules.is_suitable_for_release(config),
             Self::Rules(rules) => rules.is_suitable_for_release(config),
@@ -399,9 +369,11 @@ impl Rules {
         }
         Ok(())
     }
+}
 
+impl Suitable for Rules {
     /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
+    fn is_suitable_for_release(&self, config: &Config) -> bool {
         self.0.iter().all(|rule| rule.is_suitable_for_release(config))
     }
 }
