@@ -34,10 +34,11 @@ impl<'de> Visitor<'de> for NamedPartitioningVisitor {
 
         while let Some((k, vs)) = map.next_entry::<String, Vec<String>>()? {
             let partition_name: Arc<str> = Arc::from(&*k);
+            if ret.partition_names.iter().any(|x| **x == *partition_name) {Err(A::Error::custom(format!("Duplicate partition name: {partition_name}")))?;}
             for v in vs {
                 match ret.map.entry(v) {
                     Entry::Vacant(e) => {e.insert(partition_name.clone());},
-                    Entry::Occupied(e) => Err(A::Error::custom(format!("Duplicate element: {}", e.key())))?
+                    Entry::Occupied(e) => Err(A::Error::custom(format!("Attempted to assign element {:?} to partitions {:?} and {:?}", e.key(), e.get(), partition_name)))?
                 }
             }
             ret.partition_names.push(partition_name)

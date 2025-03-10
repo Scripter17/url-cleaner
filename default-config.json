@@ -132,7 +132,7 @@
 			"redirect-reg-domains": [
 				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link"
 			],
-			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at", "teepublic.com"],
+			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at", "teepublic.com", "gofundme.com"],
 			"unmangle-path-is-url-blacklist": [],
 			"unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist": [],
 			"unmangle-subdomain-starting-with-www-segment-reg-domain-blacklist": ["uscourts.gov"],
@@ -152,9 +152,9 @@
 				"hsa_tgt", "hsa_ver", "hsctatracking", "icid", "iclid", "intcmp", "ir_adid", "ir_campaignid", "ir_partnerid", "irclickid", "irgwc",
 				"is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "maf", "mc_eid", "message",
 				"mindbox", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "ml_subscriber", "ml_subscriber_hash", "msclkid", "mt_link_id",
-				"mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "nx_source", "oft_c",
-				"oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "pk_campaign", "pk_cid",
-				"pk_medium", "pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "s_cid", "sms_click", "sms_source", "sms_uph", "source",
+				"mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "nx_source",
+				"oft_c", "oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "pk_campaign",
+				"pk_cid", "pk_medium", "pk_source", "pk_vid", "rb_clickid", "ref", "referer", "rtkcid", "s_cid", "sms_click", "sms_source", "sms_uph",
 				"spot_im_redirect_source", "srsltid", "ss_email_id", "sscid", "tduid", "ttclid", "twclid", "unicorn_click_id", "user_email_address",
 				"usqp", "utm", "vc_lpp", "vero_conv", "vero_id", "vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wpb_advertiser",
 				"wpb_id", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid"
@@ -603,10 +603,7 @@
 													}}
 												}}
 											}},
-											"gf.me": {"All": [
-												{"SetHost": "gofundme.com"},
-												{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "url_shortener"}}
-											]},
+											"gf.me": {"SetHost": "www.gofundme.com"},
 											"action.openmedia.org": {"IfCondition": {
 												"condition": {"PartContains": {"part": "Path", "value": "/page/email/click", "where": "Start"}},
 												"mapper": "RemoveQuery"
@@ -651,26 +648,26 @@
 																	"g": {"Map": {
 																		"value": {"Part": {"QueryParam": "t"}},
 																		"map": {
-																			"w": "https://www.google.com/search?q=",
-																			"i": "https://www.google.com/search?tbm=isch&q=",
-																			"v": "https://www.google.com/search?tbm=vid&q=",
-																			"m": "https://www.google.com/maps?q=",
-																			"n": "https://www.google.com/search?tbm=nws&q=",
-																			"s": "https://www.google.com/search?tbm=shop&q=",
-																			"b": "https://www.google.com/search?tbm=bks&q=",
-																			"f": "https://www.google.com/finance?q=",
+																			"w" : "https://google.com/search?q=",
+																			"i" : "https://google.com/search?tbm=isch&q=",
+																			"v" : "https://google.com/search?tbm=vid&q=",
+																			"m" : "https://google.com/maps?q=",
+																			"n" : "https://google.com/search?tbm=nws&q=",
+																			"s" : "https://google.com/search?tbm=shop&q=",
+																			"b" : "https://google.com/search?tbm=bks&q=",
+																			"f" : "https://google.com/finance?q=",
 																			"sc": "https://scholar.google.com/scholar?q="
 																		},
 																		"if_null": "https://www.google.com/search?q="
 																	}},
-																	"c": "https://www.chat.openai.com/search?q=",
-																	"b": "https://www.startpage.com/search?q=",
+																	"c": "https://chat.openai.com/search?q=",
+																	"b": "https://startpage.com/search?q=",
 																	"y": "https://search.yahoo.com/search?q=",
 																	"d": "https://duckduckgo.com/?q=",
-																	"k": "http://www.ask.com/web?q=",
-																	"a": "http://search.aol.com/aol/search?q=",
+																	"k": "https://ask.com/web?q=",
+																	"a": "https://search.aol.com/aol/search?q=",
 																	"w": "https://wikipedia.org/w/index.php?search=",
-																	"s": "http://www.snopes.com/search/?q="
+																	"s": "https://snopes.com/search/?q="
 																}
 															}},
 															"modification": {"Append": {"Part": {"QueryParam": "q"}}}
@@ -681,29 +678,52 @@
 											"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
 											"awin1.com": {"IfCondition": {
 												"condition": {"PathIs": "/cread.php"},
-												"mapper": {"GetUrlFromQueryParam": "ued"}
+												"mapper": {"FirstNotError": [
+													{"GetUrlFromQueryParam": "ued"},
+													{"IfCondition": {
+														"condition": {"Not": {"FlagIsSet": "no-network"}},
+														"mapper": {"All": [
+															{"Common": "universal"},
+															{"ExpandRedirect": {}},
+															{"RemoveQueryParams": ["source", "awc"]}
+														]}
+													}}
+												]}
 											}},
 											"shareasale-analytics.com": {"IfCondition": {
 												"condition": {"PathIs": "/r.cfm"},
-												"mapper": {"All": [
-													{"SetHost": "shareasale-analytics.com"},
-													{"AllowQueryParams": ["b", "u", "m"]},
-													{"Common": "universal"},
+												"mapper": {"FirstNotError": [
 													{"SetPart": {
 														"part": "Whole",
 														"value": {"Modified": {
-															"value": {"Cache": {
-																"category": "sharesale-escaped-redirect",
-																"key": {"Part": "Whole"},
-																"value": {"ExtractBetween": {
-																	"value": {"HttpRequest": {}},
-																	"start": "replace('",
-																	"end": "')"
-																}}
-															}},
-															"modification": {"RunEscapeCodes": {"\\/": "/"}}
+															"value": {"Part": {"QueryParam": "urllink"}},
+															"modification": {"All": [
+																{"StripMaybePrefix": "http://"},
+																{"StripMaybePrefix": "https://"},
+																{"Insert": {"where": 0, "value": "https://"}}
+															]}
 														}}
-													}}
+													}},
+													{"All": [
+														{"SetHost": "shareasale-analytics.com"},
+														{"AllowQueryParams": ["b", "u", "m"]},
+														{"Common": "universal"},
+														{"SetPart": {
+															"part": "Whole",
+															"value": {"Modified": {
+																"value": {"Cache": {
+																	"category": "sharesale-escaped-redirect",
+																	"key": {"Part": "Whole"},
+																	"value": {"ExtractBetween": {
+																		"value": {"HttpRequest": {}},
+																		"start": "replace('",
+																		"end": "')"
+																	}}
+																}},
+																"modification": {"RunEscapeCodes": {"\\/": "/"}}
+															}}
+														}}
+													]}
 												]}
 											}},
 											"shareasale.com": {"IfCondition": {
@@ -769,8 +789,7 @@
 											}},
 											"boxd.it": {"All": [
 												{"Common": "universal"},
-												{"SetPart": {"part": "Subdomain", "value": "www"}},
-												{"ExpandRedirect": {}}
+												{"SetPart": {"part": "Subdomain", "value": null}}
 											]},
 											"shorturl.at": {"SetPart": {"part": "Subdomain", "value": "www"}},
 											"urldefense.com": {"IfCondition": {
@@ -1276,6 +1295,7 @@
 				{
 					"PartMap": {
 						"comment-1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
+						"comment-2": "There's a PartMap under this one for DomainSuffix. Try it there.",
 						"part": "RegDomain",
 						"map": {
 							"theonion.com" : {"AllowQueryParams": ["s"]},
@@ -1293,7 +1313,7 @@
 								]}
 							}},
 							"youtube.com"  : {"All": [
-								{"RemoveQueryParams": ["si", "feature", "pp"]},
+								{"RemoveQueryParams": ["si", "feature", "pp", "app"]},
 								{"IfCondition": {
 									"condition": {"PartMap": {
 										"part": {"PathSegment": 0},
@@ -1500,7 +1520,7 @@
 							}},
 							"minds.com": {"RemoveQueryParams": ["referrer"]},
 							"history.com": {"IfCondition": {
-								"condition": {"PartMatches": {"part": "Fragment", "matcher": {"Contains": {"value": "link_time", "where": "Start"}}}},
+								"condition": {"TreatErrorAsFail": {"PartMatches": {"part": "Fragment", "matcher": {"Contains": {"value": "link_time", "where": "Start"}}}}},
 								"mapper": {"SetPart": {"part": "Fragment", "value": null}}
 							}},
 							"fandom.com": {"IfCondition": {
