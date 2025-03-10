@@ -6,6 +6,8 @@ URL Cleaner is an extremely versatile tool designed to make this process as comp
 
 ## Privacy
 
+There are some things you need to be careful about both with URL cleaning in general and URL Cleaner specifically.
+
 ### Redirect sites
 
 The main privacy concern when using URL Cleaner for day-to-day activities is the fact URL Cleaner, when the `no-network` flag isn't set, expands redirects/shortlinks.  
@@ -24,6 +26,10 @@ The lesser main privacy concern is that the default config makes no attempt to h
 For example, amazon product listings are shortened from a paragraph of crap to just `https://amazon.com/dp/PRODUCT-ID`.  
 In the past (and possibly the future), extreme cases of this were gated behind a `minimize` flag that would try to only remove tracking stuff.  
 It was made the default because I consider the benefit from blending into other URL cleaning programs extremely slim.
+
+### Misc.
+
+- For redirect URLs that can be expanded both by clicking on them and by getting the destination from the URL itself (`website.com/go?url=https://...`), it's possible for malicious sources to change the URL so that clicking it and extracting the destination from it give different results. There are currently no plans to address this but the issue is known.
 
 ## C dependencies
 
@@ -117,11 +123,11 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 #### Sets
 
-- `bypass.vip-host-without-www-dot-prefixes`: The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.
+- `bypass.vip-hwwwwdps`: The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to never upgrade from `http` to `https`.
-- `redirect-host-without-www-dot-prefixes`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
-- `redirect-reg-domains`: The `redirect-host-without-www-dot-prefixes` set but using the `RegDomain` of the URL.
+- `redirect-hwwwwdps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
+- `redirect-reg-domains`: The `redirect-hwwwwdpes` set but using the `RegDomain` of the URL.
 - `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
 - `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
 - `remove-www-subdomain-reg-domain-blacklist`: `RegDomain`s where a `www` `Subdomain` is important and thus won't have it removed.

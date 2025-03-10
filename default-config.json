@@ -52,11 +52,11 @@
 			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable."
 		},
 		"sets": {
-			"bypass.vip-host-without-www-dot-prefixes": "The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.",
+			"bypass.vip-hwwwwdps": "The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.",
 			"email-link-format-1-hosts": "(TEMPORARY NAME) Hosts that use unknown link format 1.",
 			"https-upgrade-host-blacklist": "Hosts to never upgrade from `http` to `https`.",
-			"redirect-host-without-www-dot-prefixes": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
-			"redirect-reg-domains": "The `redirect-host-without-www-dot-prefixes` set but using the `RegDomain` of the URL.",
+			"redirect-hwwwwdps": "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` mapper applied.",
+			"redirect-reg-domains": "The `redirect-hwwwwdpes` set but using the `RegDomain` of the URL.",
 			"remove-empty-fragment-reg-domain-blacklist": "The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.",
 			"remove-empty-query-reg-domain-blacklist": "The RegDomains to not remove an empty query from.",
 			"remove-www-subdomain-reg-domain-blacklist": "`RegDomain`s where a `www` `Subdomain` is important and thus won't have it removed.",
@@ -99,7 +99,7 @@
 			"twitter-embed-host": "vxtwitter.com"
 		},
 		"sets": {
-			"bypass.vip-host-without-www-dot-prefixes": [
+			"bypass.vip-hwwwwdps": [
 				"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "bit.ly", "booo.st", "boost.ink", "bst.gg",
 				"cemendemons.com", "depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "ift.tt", "is.gd",
 				"leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com", "loot-link.com", "loot-links.com", "lootdest.com",
@@ -111,13 +111,13 @@
 			],
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
-			"redirect-host-without-www-dot-prefixes": [
+			"redirect-hwwwwdps": [
 				"2kgam.es", "4.nbcla.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew", "amzn.to",
 				"api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co",
 				"bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "cnb.cx", "cnn.it",
 				"cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "deezer.page.link", "depop.app.link", "dis.gd", "dlvr.it", "econ.st", "etsy.me",
 				"fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com", "go.icj-cij.org",
-				"go.microsoft.com", "go.nasa.gov", "gofund.me", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
+				"go.microsoft.com", "go.nasa.gov", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
 				"is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr",
 				"l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "msft.it",
 				"msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms",
@@ -132,7 +132,7 @@
 			"redirect-reg-domains": [
 				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link"
 			],
-			"remove-www-subdomain-reg-domain-blacklist": ["facebook.com", "shorturl.at", "teepublic.com", "gofundme.com"],
+			"remove-www-subdomain-reg-domain-blacklist": ["shorturl.at"],
 			"unmangle-path-is-url-blacklist": [],
 			"unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist": [],
 			"unmangle-subdomain-starting-with-www-segment-reg-domain-blacklist": ["uscourts.gov"],
@@ -310,7 +310,16 @@
 						{
 							"condition": {"All": [
 								{"SubdomainIs": "www"},
-								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-www-subdomain-reg-domain-blacklist"}}}}
+								{"Not": {"Any": [
+									{"PartMap": {
+										"part": "RegDomain",
+										"map": {
+											"facebook.com" : {"PartIs": {"part": {"PathSegment": 0}, "value": "share"}},
+											"teepublic.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "lic"}}
+										}
+									}},
+									{"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-www-subdomain-reg-domain-blacklist"}}}
+								]}}
 							]},
 							"mapper": {"SetPart": {"part": "Subdomain", "value": null}}
 						},
@@ -367,13 +376,13 @@
 						{"PartMatches": {
 							"part": "HostWithoutWWWDotPrefix",
 							"matcher": {"Any": [
-								{"InSet": "redirect-host-without-www-dot-prefixes"},
-								{"InSet": "bypass.vip-host-without-www-dot-prefixes"},
+								{"InSet": "redirect-hwwwwdps"},
+								{"InSet": "bypass.vip-hwwwwdps"},
 								{"IsOneOf": [
 									"1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "boxd.it",
 									"bugzil.la", "buymeacoff.ee", "buymeacoffee.com", "cach.me", "carleton.ca", "cash.app", "click.notification.elsevier.com",
 									"deviantart.com", "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion",
-									"e.emailalerts.cnn.com", "facebook.com", "gf.me", "gofundme.com", "gofundme.com", "goodreads.com", "google.com", "gprivate.com",
+									"e.emailalerts.cnn.com", "facebook.com", "goodreads.com", "google.com", "gprivate.com",
 									"href.li", "instagr.am", "instagram.com", "l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "m.vk.com",
 									"old.reddit.com", "open.substack.com", "out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
 									"rd.goodreads.com", "reddit.com", "reurl.cc", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com",
@@ -603,7 +612,6 @@
 													}}
 												}}
 											}},
-											"gf.me": {"SetHost": "www.gofundme.com"},
 											"action.openmedia.org": {"IfCondition": {
 												"condition": {"PartContains": {"part": "Path", "value": "/page/email/click", "where": "Start"}},
 												"mapper": "RemoveQuery"
@@ -851,10 +859,7 @@
 																}}
 															}}
 														}},
-														{"IfCondition": {
-															"condition": {"Not": {"RegDomainIs": "lnk.to"}},
-															"mapper": {"RemoveQueryParams": ["lf"]}
-														}}
+														{"RemoveQueryParams": ["lf"]}
 													]}
 												}}
 											}},
@@ -879,7 +884,7 @@
 									"condition": {"All": [
 										{"FlagIsSet": "bypass.vip"},
 										{"Not": {"FlagIsSet": "no-network"}},
-										{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "bypass.vip-host-without-www-dot-prefixes"}}}
+										{"PartMatches": {"part": "HostWithoutWWWDotPrefix", "matcher": {"InSet": "bypass.vip-hwwwwdps"}}}
 									]},
 									"mapper": {"All": [
 										{"Common": "universal"},
@@ -954,7 +959,7 @@
 											]},
 											{"PartMatches": {
 												"part": "HostWithoutWWWDotPrefix",
-												"matcher": {"InSet": "redirect-host-without-www-dot-prefixes"}
+												"matcher": {"InSet": "redirect-hwwwwdps"}
 											}},
 											{"TreatErrorAsFail": {"PartMatches": {
 												"part": "RegDomain",
@@ -966,7 +971,6 @@
 													"pawoo.net"        : {"PartIs": {"part": {"PathSegment": 0}, "value": "oauth_authentications"}},
 													"api.pinterest.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
 													"allmylinks.com"   : {"PathIs": "/link/out"},
-													"gofundme.com"     : {"PartIs": {"part": {"PathSegment": 0}, "value": "url_shortener"}},
 													"substack.com"     : {"Any": [
 														{"All": [
 															{"PartIs": {"part": {"PathSegment": 0}, "value": "redirect"}},
@@ -978,7 +982,8 @@
 													"qudsnen.co": {"Not": {"PartIs": {"part": {"QueryParam": "p"}, "value": null}}},
 													"facebook.com": {"PartContains": {"part": "Path", "where": "Start", "value": "/share/r/"}},
 													"reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}},
-													"old.reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}}
+													"old.reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}},
+													"teepublic.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "lic"}}
 												}
 											}},
 											{"All": [
@@ -987,10 +992,6 @@
 													"matcher": {"InSet": "email-link-format-1-hosts"}
 												}},
 												{"PartContains": {"part": "Path", "value": "/page/email/click", "where": "Start"}}
-											]},
-											{"All": [
-												{"RegDomainIs": "teepublic.com"},
-												{"PartIs": {"part": {"PathSegment": 0}, "value": "lic"}}
 											]}
 										]}
 									]},
