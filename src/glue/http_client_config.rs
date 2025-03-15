@@ -4,13 +4,12 @@ use serde::{Serialize, Deserialize};
 #[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
 
-#[expect(unused_imports, reason = "Used for doc links.")]
 use crate::types::*;
 use crate::glue::*;
-use crate::util::is_default;
+use crate::util::*;
 
 /// Used by [`Params`] to detail how a [`reqwest::blocking::Client`] should be made.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct HttpClientConfig {
     /// [`reqwest::blocking::ClientBuilder::default_headers`]. Defaults to an empty [`HeaderMap`].
     #[serde(default, skip_serializing_if = "is_default", with = "crate::glue::headermap")]
@@ -36,7 +35,7 @@ pub struct HttpClientConfig {
 }
 
 /// Bandaid fix until [`reqwest::redirect::Policy`] stops sucking.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum RedirectPolicy {
     /// [`reqwest::redirect::Policy::limited`].
     Limited(usize),
@@ -79,7 +78,7 @@ impl HttpClientConfig {
 }
 
 /// Allows changing [`HttpClientConfig`].
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, Suitability)]
 pub struct HttpClientConfigDiff {
     /// If [`Some`], overwrites [`HttpClientConfig::redirect_policy`]. Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]

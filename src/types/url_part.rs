@@ -16,7 +16,7 @@ use crate::util::*;
 /// [`isize`] is used to allow for Python-style indexing from the end. `-1` is the last element, `-2` is the second last element, etc.
 /// 
 /// In general (except for domain parts on non-domain URLs and [`Self::PathSegment`]), setting a part to its own value is effectively a no-op.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum UrlPart {
     /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
     /// 
@@ -933,7 +933,7 @@ pub enum UrlPart {
 }
 
 /// Selector for the [`Self::index`] occurrence of a query parameter named [`Self::name`]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub struct QueryParamSelector {
     /// The name of the query parameter.
@@ -1260,16 +1260,6 @@ impl UrlPart {
             (_, None) => Err(UrlPartSetError::PartCannotBeNone)?
         }
         Ok(())
-    }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
-    pub(crate) fn is_suitable_for_release(&self, _config: &Config) -> bool {
-        assert!(match self {
-            Self::Debug(_) => false,
-            _ => true
-        }, "Unsuitable UrlPart detected: {self:?}");
-        true
     }
 }
 

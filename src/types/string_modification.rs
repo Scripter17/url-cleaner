@@ -20,7 +20,7 @@ use crate::util::*;
 /// Various ways to modify a [`String`].
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringModification {
     /// Does nothing.
@@ -34,6 +34,7 @@ pub enum StringModification {
     /// Intended primarily for debugging logic errors.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
+    #[suitable(never)]
     Debug(Box<Self>),
     /// If `matcher` passes, apply `modification`, otherwise apply `else_modification`.
     /// # Errors
@@ -905,6 +906,7 @@ pub enum StringModification {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
+    #[suitable(never)]
     Custom(FnWrapper<fn(&mut String, &JobStateView) -> Result<(), StringModificationError>>)
 }
 
@@ -921,7 +923,7 @@ const JS_ENCODE_URI_ASCII_SET: AsciiSet = JS_ENCODE_URI_COMPONENT_ASCII_SET
     .remove(b',').remove(b'#');
 
 /// Alphabets for [`StringModification::UrlEncode`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum UrlEncodeAlphabet {
     /// The alphabet defined by JavaScript's [`encodeURIComponent`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent#description)
     #[default]
@@ -948,7 +950,7 @@ impl UrlEncodeAlphabet {
 }
 
 /// Tells [`StringModification::MapChars`] what to do when a [`char`] isn't found in the map.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum CharNotFoundBehavior {
     /// Leave the [`char`] as-is.
     Nothing,
@@ -961,7 +963,7 @@ pub enum CharNotFoundBehavior {
 string_or_struct_magic!(StringModification);
 
 /// Individual links in the [`StringModification::StringMatcherChain`] chain.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct StringMatcherChainLink {
     /// The [`StringMatcher`] to apply [`Self::modification`] under.
     pub matcher: StringMatcher,
@@ -1498,70 +1500,5 @@ impl StringModification {
             Self::Custom(function) => function(to, job_state)?
         };
         Ok(())
-    }
-}
-
-impl Suitable for StringModification {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::IfStringMatches {matcher, modification, else_modification} => matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config) && else_modification.as_ref().is_none_or(|else_modification| else_modification.is_suitable_for_release(config)),
-            Self::StringMatcherChain(chain) => chain.iter().all(|link| link.matcher.is_suitable_for_release(config) && link.modification.is_suitable_for_release(config)),
-            Self::IgnoreError(modification) => modification.is_suitable_for_release(config),
-            Self::All(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
-            Self::AllNoRevert(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
-            Self::AllIgnoreError(modifications) => modifications.iter().all(|modification| modification.is_suitable_for_release(config)),
-            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Set(source) => source.is_suitable_for_release(config),
-            Self::Append(source) => source.is_suitable_for_release(config),
-            Self::Prepend(source) => source.is_suitable_for_release(config),
-            Self::Replace {find, replace} => find.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
-            Self::ReplaceRange {replace, ..} => replace.is_suitable_for_release(config),
-            Self::StripPrefix(source) => source.is_suitable_for_release(config),
-            Self::StripSuffix(source) => source.is_suitable_for_release(config),
-            Self::StripMaybePrefix(source) => source.is_suitable_for_release(config),
-            Self::StripMaybeSuffix(source) => source.is_suitable_for_release(config),
-            Self::Replacen {find, replace, ..} => find.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
-            Self::Insert {value, ..} => value.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexCaptures        {regex, replace      } => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::JoinAllRegexCaptures {regex, replace, join} => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config) && join.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexReplace         {regex, replace,     } => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexReplaceAll      {regex, replace      } => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
-            #[cfg(feature = "regex")] Self::RegexReplacen        {regex, replace, n: _} => regex.is_suitable_for_release(config) && replace.is_suitable_for_release(config),
-            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::JsonPointer(pointer) => pointer.is_suitable_for_release(config),
-            Self::KeepNthSegment {split, ..} => split.is_suitable_for_release(config),
-            Self::KeepSegmentRange {split, ..} => split.is_suitable_for_release(config),
-            Self::SetNthSegment {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::SetNthMatchingSegment {split, matcher, value, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::SetAroundNthMatchingSegment {split, matcher, value, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::SetSegmentRange {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::InsertSegmentBefore {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::InsertSegmentAfter {split, value, ..} => split.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::ModifyNthSegment {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::ModifySegments {split, modification, ..} => split.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::ModifyNthMatchingSegment {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::ModifyAroundNthMatchingSegment {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::RemoveMatchingSegments {split, matcher} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
-            Self::RemoveQueryParamsMatching(matcher) => matcher.is_suitable_for_release(config),
-            Self::AllowQueryParamsMatching(matcher) => matcher.is_suitable_for_release(config),
-            Self::ModifyMatchingSegments {split, matcher, modification, ..} => split.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::Map(map) => map.iter().all(|(_, x)| x.is_suitable_for_release(config)),
-            Self::Debug(_) => false,
-            Self::None | Self::Error | Self::Lowercase | Self::Uppercase | Self::Remove(_) |
-                Self::KeepRange {..} | Self::UrlEncode(_) | Self::UrlDecode | Self::RunEscapeCodes(_) => true,
-            #[cfg(feature = "regex")]
-            Self::RegexFind(regex) => regex.is_suitable_for_release(config),
-            #[cfg(feature = "base64")]
-            Self::Base64Encode(_) | Self::Base64Decode(_) => true,
-            Self::ExtractBetween {start, end} => start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
-            Self::MapChars{..} => true,
-            Self::StringMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "custom")]
-            Self::Custom(_) => false
-        }, "Unsuitable StringModification detected: {self:?}");
-        true
     }
 }

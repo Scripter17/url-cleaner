@@ -149,30 +149,6 @@ macro_rules! get_option_cow {
     }
 }
 
-/// Shorthand for checking a [`Config::docs`] has an entry for [`StringSource::String`] flags/sets/etc..
-macro_rules! check_docs {
-    ($config:expr, $type:ident, $name:expr) => {
-        match $name {
-            StringSource::String(name) => if $config.docs.$type.contains_key(name) {
-                true
-            } else {
-                panic!(concat!("Missing docs for ", stringify!($type), " {}"), name)
-            },
-            _ => true
-        }
-    };
-    ($config:expr, $subdoc:ident, $type:ident, $name:expr) => {
-        match $name {
-            StringSource::String(name) => if $config.docs.$subdoc.$type.contains_key(name) {
-                true
-            } else {
-                panic!(concat!("Missing docs for ", stringify!($subdoc), " ", stringify!($type), " {}"), name)
-            },
-            _ => true
-        }
-    }
-}
-
 pub(crate) use debug;
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
@@ -181,4 +157,3 @@ pub(crate) use get_cow;
 pub(crate) use get_option_str;
 pub(crate) use get_option_string;
 pub(crate) use get_option_cow;
-pub(crate) use check_docs;

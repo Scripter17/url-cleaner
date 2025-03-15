@@ -9,7 +9,7 @@ use crate::types::*;
 use crate::util::*;
 
 /// Helper type to handle [`HashMap`]s with fallbacks.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct Map<T> {
     /// The map to branch with.
     pub map: HashMap<String, T>,
@@ -52,13 +52,5 @@ impl<T> MapDiff<T> {
     pub fn apply(self, to: &mut Map<T>) {
         to.map.extend(self.insert_into_map);
         to.map.retain(|k, _| !self.remove_from_map.contains(k));
-    }
-}
-
-impl<T: Suitable> Suitable for Map<T> {
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        self.map.values().all(|x| x.is_suitable_for_release(config)) &&
-            self.if_null.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) &&
-            self.r#else.as_ref().is_none_or(|x| x.is_suitable_for_release(config))
     }
 }

@@ -17,6 +17,7 @@ compile=1
 hyperfine=1
 callgrind=0
 massif=0
+ignore_failure=
 
 mode=
 just_set_mode=0
@@ -34,6 +35,7 @@ for arg in "$@"; do
     --no-hyperfine)    hyperfine=0  ;;
     --callgrind)       callgrind=1  ;;
     --massif)          massif=1     ;;
+    --ignore-failure)   ignore_failure=--ignore-failure ;;
     --all)             hyperfine=1; callgrind=1; massif=1 ;;
     --urls)            mode=urls    ; just_set_mode=1 ;;
     --nums)            mode=nums    ; just_set_mode=1 ;;
@@ -78,7 +80,8 @@ if [ $hyperfine -eq 1 ]; then
     "$COMMAND" \
     --sort command \
     --export-json "hyperfine.out.json" \
-    --command-name ""
+    --command-name ""\
+    $ignore_failure
   rm stdin
   ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
   pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
@@ -91,7 +94,7 @@ if [ $hyperfine -eq 1 ]; then
       :c s/:(.{0,$pl}\.)/: \1/; tc\
     }" |\
     tee hyperfine.out-summary.json |\
-    bat -pl json
+    bat -pl json --paging=never
 fi
 
 for url in "${URLS[@]}"; do

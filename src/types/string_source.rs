@@ -15,7 +15,7 @@ use crate::glue::*;
 use crate::util::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSource {
     // Error handling/prevention.
@@ -44,6 +44,7 @@ pub enum StringSource {
     /// Intended primarily for debugging logic errors.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
+    #[suitable(never)]
     Debug(Box<Self>),
     /// If the call to [`Self::get`] returns `None`, instead return `Some(Cow::Borrowed(""))`
     /// # Errors
@@ -242,31 +243,32 @@ pub enum StringSource {
     /// 
     /// assert_eq!(StringSource::Var("abc".into()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("xyz")));
     /// ```
-    Var(Box<Self>),
+    Var(#[suitable(assert = "var_is_documented")] Box<Self>),
     /// Gets the value of the specified [`JobState::scratchpad`]'s [`JobScratchpad::vars`].
     /// 
     /// Returns [`None`] (NOT an error) if the string var is not set.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
-    /// 
+    ///
     ScratchpadVar(Box<Self>),
     /// Gets the value of the specified [`JobContext::vars`]
     /// 
     /// Returns [`None`] (NOT an error) if the var is not set.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
-    ContextVar(Box<Self>),
+    ContextVar(#[suitable(assert = "context_var_is_documented")] Box<Self>),
     /// Gets the value of the specified [`JobsContext::vars`]
     ///
     /// Returns [`None`] (NOT an error) if the var is not set.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
-    JobsContextVar(Box<Self>),
+    JobsContextVar(#[suitable(assert = "jobs_context_var_is_documented")] Box<Self>),
     /// Indexes into a [`Params::maps`] using `map` then indexes the returned [`HashMap`] with `key`.
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
     ParamsMap {
         /// The map from [`Params::maps`] to index in.
+        #[suitable(assert = "map_is_documented")]
         map: Box<Self>,
         /// The key to index the map with.
         key: Option<Box<Self>>
@@ -278,6 +280,7 @@ pub enum StringSource {
     /// If either call to [`Self::get`] return an error, that error is returned.
     ParamsNamedPartitioning {
         /// The [`NamedPartitioning`] to get from [`Params::named_partitionings`].
+        #[suitable(assert = "named_partitioning_is_documented")]
         name: Box<Self>,
         /// The value to index the [`NamedPartitioning`] with.
         element: Box<Self>
@@ -301,7 +304,7 @@ pub enum StringSource {
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotUnicode`], returns the error [`StringSourceError::EnvVarIsNotUtf8`].
-    EnvVar(Box<Self>),
+    EnvVar(#[suitable(assert = "env_var_is_documented")] Box<Self>),
     /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
     /// # Errors
     /// If the call to [`RequestConfig::response`] returns an error, that error is returned.
@@ -374,6 +377,7 @@ pub enum StringSource {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
+    #[suitable(never)]
     Custom(FnWrapper<for<'a> fn(&'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>>)
 }
 
@@ -652,48 +656,5 @@ impl StringSource {
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(job_state)?
         })
-    }
-}
-
-impl Suitable for StringSource {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::ErrorToNone(value) => value.is_suitable_for_release(config),
-            Self::ErrorToEmptyString(value) => value.is_suitable_for_release(config),
-            Self::ErrorTo{value, if_error} => value.is_suitable_for_release(config) && if_error.is_suitable_for_release(config),
-            Self::NoneToEmptyString(value) => value.is_suitable_for_release(config),
-            Self::NoneTo {value, if_none} => value.is_suitable_for_release(config) && if_none.is_suitable_for_release(config),
-            Self::Join {sources, ..} => sources.iter().all(|value| value.is_suitable_for_release(config)),
-            Self::IfFlag {flag, then, r#else} => flag.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config) && check_docs!(config, flags, flag.as_ref()),
-            Self::IfSourceMatches {value, matcher, then, r#else} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::IfSourceIsNone {value, then, r#else} => value.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Map {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::Part(part) => part.is_suitable_for_release(config),
-            Self::ExtractPart {value, part} => value.is_suitable_for_release(config) && part.is_suitable_for_release(config),
-            Self::CommonVar(name) => name.is_suitable_for_release(config),
-            Self::Var(name) => name.is_suitable_for_release(config) && check_docs!(config, vars, name.as_ref()),
-            Self::ScratchpadVar(name) => name.is_suitable_for_release(config),
-            Self::ContextVar(name) => name.is_suitable_for_release(config) && check_docs!(config, job_context, vars, name.as_ref()),
-            Self::JobsContextVar(name) => name.is_suitable_for_release(config) && check_docs!(config, jobs_context, vars, name.as_ref()),
-            Self::ParamsMap {map, key} => map.is_suitable_for_release(config) && key.as_ref().is_none_or(|x| x.is_suitable_for_release(config)) && check_docs!(config, maps, map.as_ref()),
-            Self::ParamsNamedPartitioning {name, element} => name.is_suitable_for_release(config) && element.is_suitable_for_release(config) && check_docs!(config, named_partitionings, element.as_ref()),
-            Self::Modified {value, modification} => value.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::EnvVar(name) => name.is_suitable_for_release(config) && check_docs!(config, environment_vars, name.as_ref()),
-            #[cfg(feature = "cache")] Self::Cache {category, key, value} => category.is_suitable_for_release(config) && key.is_suitable_for_release(config) && value.is_suitable_for_release(config),
-            Self::Debug(_) => false,
-            #[cfg(feature = "commands")]
-            Self::CommandOutput(_) => false,
-            Self::Error | Self::String(_) => true,
-            #[cfg(feature = "http")]
-            Self::HttpRequest(request_config) => request_config.is_suitable_for_release(config),
-            Self::ExtractBetween {value, start, end} => value.is_suitable_for_release(config) && start.is_suitable_for_release(config) && end.is_suitable_for_release(config),
-            #[cfg(feature = "regex")]
-            Self::RegexFind {value, regex} => value.is_suitable_for_release(config) && regex.get_regex().is_ok(),
-            Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "custom")]
-            Self::Custom(_) => false
-       }, "Unsuitable StringSource detected: {self:?}");
-        true
     }
 }

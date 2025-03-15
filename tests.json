@@ -25,47 +25,6 @@
 				{"job_config": "file://a/b/c"     , "result": "file://a/b/c"},
 				{"job_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"},
 
-				{"job_config": "https://tinyurl.com/wp-tinyurl"        , "result": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"job_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"job_config": "https://smarturl.it/irl_s05e04?IQid=eg", "result": "https://irlpodcast.org/season5/episode4/"},
-				{"job_config": "https://gprivate.com/6bi5b"            , "result": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
-				{
-					"comment": "It was the only somewhat normal one I could find, okay?",
-					"job_config": "http://bfy.tw/9ZSk",
-					"result": "https://google.com/search?q=How+does+the+US+government+work"
-				},
-				{"job_config": "https://fireship.page.link/slack", "result": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["unmangle"]},
-			"tests": [
-				{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
-				{"job_config": "https://http//www.deviantart.com/user.deviantart.com/gallery", "result": "https://deviantart.com/user/gallery"},
-				{"job_config": "https://https//abc.tumblr.com.tumblr.com"                    , "result": "https://abc.tumblr.com"},
-				{"job_config": "https://abc.deviantart.com.deviantart.com"                   , "result": "https://deviantart.com/abc/"},
-				{"job_config": "https://https//example.com/abc"                              , "result": "https://example.com/abc"},
-				{"job_config": "https://https//example1.com/example2.com/abc"                , "result": "https://example2.com/abc"},
-				{"job_config": "https://https//example1.com/user/example2.com/abc"           , "result": "https://example2.com/abc"},
-				{"job_config": "https://www.username.example.com"                            , "result": "https://username.example.com"},
-
-				{"job_config": "https://twitter.com/twitter.com/user"        , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/x.com/user"              , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/www.twitter.com/user"    , "result": "https://x.com/user"},
-				{"job_config": "https://twitter.com/www.x.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/twitter.com/user"              , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/x.com/user"                    , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/www.twitter.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://x.com/www.x.com/user"                , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/twitter.com/user"    , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/x.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/www.twitter.com/user", "result": "https://x.com/user"},
-				{"job_config": "https://www.twitter.com/www.x.com/user"      , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/twitter.com/user"          , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/x.com/user"                , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/www.twitter.com/user"      , "result": "https://x.com/user"},
-				{"job_config": "https://www.x.com/www.x.com/user"            , "result": "https://x.com/user"},
-
 				{"job_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
 				{"job_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
 				{"job_config": "https://bsky.app/profile/user.com" , "result": "https://bsky.app/profile/user.com"}
@@ -154,7 +113,23 @@
 					"result": "https://example.com"
 				}
 			]
+		},
+		{
+			"jobs_context": {"vars": {"SOURCE_HOST": "furaffinity.net", "SOURCE_REG_DOMAIN": "furaffinity.net"}},
+			"tests": [
+				{
+					"job_config": {
+						"url": "https://twitter.com/not-actually-important",
+						"context": {
+							"vars": {
+								"site_name": "twitter",
+								"link_text": "@example"
+							}
+						}
+					},
+					"result": "https://x.com/example"
+				}
+			]
 		}
 	]
 }
-

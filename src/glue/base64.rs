@@ -7,12 +7,17 @@ use std::str::FromStr;
 use thiserror::Error;
 use serde::{Serialize, Deserialize, Deserializer, de::Visitor};
 
+use crate::types::*;
 use crate::util::*;
 
 /// A wrapper around [`base64::engine::DecodePaddingMode`] that has a more complete set of trait implementations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct DecodePaddingMode(pub base64::engine::DecodePaddingMode);
+
+impl Suitability for DecodePaddingMode {
+    fn assert_suitability(&self, _: &Config) {}
+}
 
 /// Returned when trying to create an invalid [`DecodePaddingMode`].
 #[derive(Debug, Error)]
@@ -113,7 +118,7 @@ impl Default for DecodePaddingMode {
 /// The alphabet.
 /// 
 /// Defaults to [`Self::UrlSafe`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Suitability)]
 pub enum Base64Alphabet {
     /// [`base64::alphabet::URL_SAFE`].
     /// 
@@ -209,7 +214,7 @@ impl TryFrom<&Base64Alphabet> for base64::alphabet::Alphabet {
 }
 
 /// Instructions on how to make a [`base64::engine::general_purpose::GeneralPurpose`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct Base64Config {
     /// Defaults to [`Base64Alphabet::UrlSafe`].
     #[serde(default)]

@@ -86,13 +86,12 @@ impl RegexParts {
             .unicode(self.config.unicode)
             .build()
     }
+}
 
-    /// Verifies at suitability test time that the regex actually compiles.
-    /// # Panics
-    /// If the regex doesn't compile, panics.
-    pub fn is_suitable_for_release(&self, _config: &Config) -> bool {
-        self.build().expect("The regex to compile.");
-        true
+impl Suitability for RegexParts {
+    fn assert_suitability(&self, config: &Config) {
+        self.build().unwrap_or_else(|_| panic!("Regex to be buildable: {self:?}"));
+        self.config.assert_suitability(config);
     }
 }
 
@@ -115,7 +114,7 @@ impl TryFrom<RegexParts> for Regex {
 }
 
 /// The configuration determining how a regular expression works.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 pub struct RegexConfig {
     /// The value passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,

@@ -10,7 +10,7 @@ use crate::types::*;
 use crate::util::*;
 
 /// "What if [`serde_json::Value`] used [`StringSource`]" and other horrible sentences my eternal torment has doomed me to.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSourceJsonValue {
     /// [`serde_json::Value::Null`].
@@ -110,16 +110,5 @@ impl StringSourceJsonValue {
             Self::Array (x) => Value::Array(x.iter().map(|x| x.make(job_state)).collect::<Result<_, _>>()?),
             Self::Object(x) => Value::Object(x.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), v.make(job_state)?))).collect::<Result<_, _>>()?)
         })
-    }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::Null | Self::Bool(_) | Self::Number(_) => true,
-            Self::String(x) => x.is_suitable_for_release(config),
-            Self::Array(x) => x.iter().all(|x| x.is_suitable_for_release(config)),
-            Self::Object(x) => x.iter().all(|(_, v)| v.is_suitable_for_release(config))
-        }, "Unsuitable StringSourceJsonValue found: {self:?}");
-        true
     }
 }

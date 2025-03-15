@@ -13,11 +13,12 @@ pub use mappers::*;
 use crate::types::*;
 #[expect(unused_imports, reason = "Used in Rule::Custom")]
 use crate::glue::*;
+use crate::util::*;
 
 /// The main API for modifying URLs.
 /// 
 /// [`Rule::Normal`] is almost always what you want.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Rule {
     /// Gets a certain part of a URL then applies a [`Mapper`] depending on the returned value.
     ///
@@ -158,6 +159,10 @@ pub enum Rule {
         /// The mapper to use if the condition fails.
         else_mapper: Mapper
     },
+    /// Runs the specified [`Mapper`].
+    /// # Errors
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    Mapper(Mapper),
     /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::rules`].
     Common(CommonCall),
     /// Uses a function pointer.
@@ -165,6 +170,7 @@ pub enum Rule {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
+    #[suitable(never)]
     Custom(FnWrapper<fn(&mut JobState) -> Result<(), RuleError>>),
     /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
     /// 
@@ -267,6 +273,7 @@ impl Rule {
             } else {
                 else_mapper.apply(job_state)?;
             },
+            Self::Mapper(mapper) => mapper.apply(job_state)?,
             Self::Common(common_call) => {
                 job_state.commons.rules.get(get_str!(common_call.name, job_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut JobState {
                     common_args: Some(&common_call.args.make(&job_state.to_view())?),
@@ -286,38 +293,10 @@ impl Rule {
     }
 }
 
-impl Suitable for Rule {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::PartMap        {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::PartRuleMap    {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::PartRulesMap   {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::StringMap      {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::StringRuleMap  {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::StringRulesMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::Repeat {rules, ..} => rules.is_suitable_for_release(config),
-            Self::SharedCondition {condition, rules} => condition.is_suitable_for_release(config) && rules.is_suitable_for_release(config),
-            Self::Rules(rules) => rules.is_suitable_for_release(config),
-            Self::IfElse {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.is_suitable_for_release(config),
-            Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            Self::Normal {condition, mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),
-            #[cfg(feature = "custom")]
-            Self::Custom(_) => false
-        }, "Unsuitable Rule detected: {self:?}");
-        let self_debug_string = format!("{self:?}");
-        assert!(
-            self_debug_string.contains("no-network") == (self_debug_string.contains("ExpandRedirect") || self_debug_string.contains("HttpRequest")),
-            "Network call without no-network flag: {self_debug_string}"
-        );
-        true
-    }
-}
-
 /// A wrapper around a vector of rules.
 /// 
 /// Exists mainly for convenience.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[repr(transparent)]
 pub struct Rules(pub Vec<Rule>);
 
@@ -370,12 +349,5 @@ impl Rules {
             rule.apply(job_state)?;
         }
         Ok(())
-    }
-}
-
-impl Suitable for Rules {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        self.0.iter().all(|rule| rule.is_suitable_for_release(config))
     }
 }

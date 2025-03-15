@@ -10,7 +10,7 @@ use crate::glue::*;
 use crate::util::*;
 
 /// Configuration options to choose the behaviour of various URL Cleaner types.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub struct Params {
     /// Booleans variables used to determine behavior.
     #[serde(default, skip_serializing_if = "is_default")]
@@ -59,21 +59,6 @@ impl Default for Params {
             #[cfg(feature = "http")]
             http_client_config: HttpClientConfig::default()
         }
-    }
-}
-
-impl Params {
-    /// Makes sure all the listed things are documented.
-    /// # Panics
-    /// When it fails, a panic occurs to make debugging easier.
-    pub fn is_suitable_for_release(&self, config: &Config) -> bool {
-        let x = self.flags              .iter().find(|flag| !config.docs.flags              .contains_key(&**flag)); assert!(x.is_none(), "Undocumented flag in params: {x:?}"              );
-        let x = self.vars               .keys().find(|var | !config.docs.vars               .contains_key(&**var )); assert!(x.is_none(), "Undocumented var in params: {x:?}"               );
-        let x = self.sets               .keys().find(|set | !config.docs.sets               .contains_key(&**set )); assert!(x.is_none(), "Undocumented set in params: {x:?}"               );
-        let x = self.lists              .keys().find(|list| !config.docs.lists              .contains_key(&**list)); assert!(x.is_none(), "Undocumented list in params: {x:?}"              );
-        let x = self.maps               .keys().find(|map | !config.docs.maps               .contains_key(&**map )); assert!(x.is_none(), "Undocumented map in params: {x:?}"               );
-        let x = self.named_partitionings.keys().find(|map | !config.docs.named_partitionings.contains_key(&**map )); assert!(x.is_none(), "Undocumented named_partitioning in params: {x:?}");
-        true
     }
 }
 
@@ -133,6 +118,8 @@ impl ParamsDiff {
     pub fn apply(self, to: &mut Params) {
         #[cfg(feature = "debug")]
         let old_to = to.clone();
+        #[cfg(feature = "debug")]
+        let self_backup = self.clone();
 
         to.flags.extend(self.flags);
         for flag in self.unflags {to.flags.remove(&flag);}
@@ -171,7 +158,7 @@ impl ParamsDiff {
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
 
         #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
-        debug!(ParamsDiff::apply, self, old_to, to);
+        debug!(ParamsDiff::apply, self_backup, old_to, to);
     }
 }
 

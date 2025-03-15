@@ -72,25 +72,29 @@ pub struct Args {
     #[arg(             long)]
     pub jobs_context: Option<String>,
     /// Print the parsed arguments for debugging.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
+    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_args: bool,
     /// Print the ParamsDiffs loaded from `--params--diff` files and derived from the parsed arguments for debugging.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
+    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_params_diffs: bool,
     /// Print the config's params after applying the ParamsDiff.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
+    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_params: bool,
     /// Print the specified config as JSON after applying the ParamsDiff.
-    /// When this, any other `--print-...` flag, or `--test-config` is set, no URLs are cleaned.
+    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_config: bool,
-    /// Run the config's tests.
+    /// Tests to check the config is written correctly.
     /// When this or any `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
-    pub tests: Option<PathBuf>,
+    pub tests: Option<Vec<PathBuf>>,
+    /// Tests the config for suitability to be the default config.
+    /// Exact behavior is unspecified, but generally restricts noisy and insecure stuff like Debug variants and commands.
+    #[arg(             long, verbatim_doc_comment)]
+    pub test_suitability: bool,
     /// Amount of threads to process jobs in.
     /// 
     /// Zero gets the current CPU threads.
@@ -167,16 +171,20 @@ fn main() -> Result<ExitCode, CliError> {
 
     let json = args.json;
 
-    let print_params = args.print_params;
-    let print_config = args.print_config;
-    let tests        = args.tests;
+    let print_params     = args.print_params;
+    let print_config     = args.print_config;
+    let tests            = args.tests;
+    let test_suitability = args.test_suitability;
 
-    let no_cleaning = print_args || print_params_diffs || print_params || print_config || tests.is_some();
+    let no_cleaning = print_args || print_params_diffs || print_params || print_config || test_suitability || tests.is_some();
 
     if print_params {println!("{}", serde_json::to_string(&config.params)?);}
     if print_config {println!("{}", serde_json::to_string(&config)?);}
-    if let Some(tests_path) = tests {
-        config.run_tests(serde_json::from_str::<testing::Tests>(&std::fs::read_to_string(tests_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
+    if test_suitability {config.assert_suitability()}
+    if let Some(tests) = tests {
+        for test_path in tests {
+            config.run_tests(serde_json::from_str::<testing::Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
+        }
         println!("\nAll tests passed!");
     }
 

@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::types::*;
 
 /// A general API for matching [`char`]s with a variety of methods.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum CharMatcher {
     /// Always passes.
     Always,
@@ -23,6 +23,7 @@ pub enum CharMatcher {
     /// Intended primarily for debugging logic errors.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] errors, returns that error.
+    #[suitable(never)]
     Debug(Box<Self>),
 
     // Logic
@@ -236,22 +237,5 @@ impl CharMatcher {
             Self::IsUppercase         => c.is_uppercase(),
             Self::IsWhitespace        => c.is_whitespace()
         })
-    }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::only_used_in_recursion, reason = "Keeps the pattern.")]
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::All(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
-            Self::Any(matchers) => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
-            Self::Not(matcher) => matcher.is_suitable_for_release(config),
-            Self::TreatErrorAsPass(matcher) => matcher.is_suitable_for_release(config),
-            Self::TreatErrorAsFail(matcher) => matcher.is_suitable_for_release(config),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Debug(_) => false,
-            _ => true
-        }, "Unsuitable CharMatcher detected: {self:?}");
-        true
     }
 }

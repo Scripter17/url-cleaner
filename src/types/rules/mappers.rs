@@ -15,7 +15,7 @@ use crate::types::*;
 use crate::util::*;
 
 /// The part of a [`Rule`] that specifies how to modify a [`Url`] if the rule's condition passes.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Mapper {
 
     // Testing.
@@ -31,6 +31,7 @@ pub enum Mapper {
     /// Intended primarily for debugging logic errors.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
+    #[suitable(never)]
     Debug(Box<Self>),
 
     // Logic.
@@ -332,7 +333,18 @@ pub enum Mapper {
         #[serde(default)]
         http_client_config_diff: Option<Box<HttpClientConfigDiff>>
     },
-    /// Sets the current job's `name` string var to `value`.
+    /// Sets the the specified flag in [`JobScratchpad::flags`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    SetScratchpadFlag {
+        /// The name of the flag to set.
+        name: StringSource,
+        /// The value to set it to.
+        value: bool
+    },
+    /// Sets the specified var in [`JobScratchpad::vars`].
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
     SetScratchpadVar {
@@ -411,11 +423,12 @@ pub enum Mapper {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
+    #[suitable(never)]
     Custom(FnWrapper<fn(&mut JobState) -> Result<(), MapperError>>)
 }
 
 /// Individual links in the [`Mapper::ConditionChain`] chain.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct ConditionChainLink {
     /// The [`Condition`] to apply [`Self::mapper`] under.
     pub condition: Condition,
@@ -693,6 +706,13 @@ impl Mapper {
                 *job_state.url=new_url.into();
             },
 
+            Self::SetScratchpadFlag {name, value} => {
+                let name = get_string!(name, job_state, MapperError);
+                match value {
+                    true  => job_state.scratchpad.flags.insert( name),
+                    false => job_state.scratchpad.flags.remove(&name)
+                };
+            },
             Self::SetScratchpadVar {name, value} => {let _ = job_state.scratchpad.vars.insert(get_string!(name, job_state, MapperError).to_owned(), get_string!(value, job_state, MapperError).to_owned());},
             Self::DeleteScratchpadVar(name) => {
                 let name = get_string!(name, job_state, MapperError).to_owned();
@@ -753,47 +773,5 @@ impl Mapper {
             Self::Custom(function) => function(job_state)?
         };
         Ok(())
-    }
-}
-
-impl Suitable for Mapper {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::IfCondition {condition, mapper, else_mapper} => condition.is_suitable_for_release(config) && mapper.is_suitable_for_release(config) && else_mapper.as_ref().is_none_or(|else_mapper| else_mapper.is_suitable_for_release(config)),
-            Self::ConditionChain(chain) => chain.iter().all(|link| link.condition.is_suitable_for_release(config) && link.mapper.is_suitable_for_release(config)),
-            Self::All(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
-            Self::AllNoRevert(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
-            Self::AllIgnoreError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
-            Self::PartMap   {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::StringMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::IgnoreError(mapper) => mapper.is_suitable_for_release(config),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::FirstNotError(mappers) => mappers.iter().all(|mapper| mapper.is_suitable_for_release(config)),
-            Self::Join(value) => value.is_suitable_for_release(config),
-            Self::SetPart {part, value} => part.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::ModifyPart {part, modification} => part.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::CopyPart {from, to} => from.is_suitable_for_release(config) && to.is_suitable_for_release(config),
-            Self::SetScratchpadVar {name, value} => name.is_suitable_for_release(config) && value.is_suitable_for_release(config),
-            Self::DeleteScratchpadVar(name) => name.is_suitable_for_release(config),
-            Self::ModifyScratchpadVar {name, modification} => name.is_suitable_for_release(config) && modification.is_suitable_for_release(config),
-            Self::Rule(rule) => rule.is_suitable_for_release(config),
-            Self::Rules(rules) => rules.is_suitable_for_release(config),
-            #[cfg(feature = "cache")] Self::CacheUrl {category, mapper} => category.is_suitable_for_release(config) && mapper.is_suitable_for_release(config),
-            Self::Retry {mapper, ..} => mapper.is_suitable_for_release(config),
-            Self::RemoveQueryParam(name) => name.is_suitable_for_release(config),
-            Self::Debug(_) => false,
-            Self::None  | Self::Error | Self::RemoveQuery |
-                Self::RemoveQueryParams(_) | Self::AllowQueryParams(_) |
-                Self::RemoveQueryParamsMatching(_) | Self::AllowQueryParamsMatching(_) | 
-                Self::GetUrlFromQueryParam(_) | Self::GetPathFromQueryParam(_) |
-                Self::SetHost(_) | Self::MovePart {..} => true,
-            #[cfg(feature = "http")]
-            Self::ExpandRedirect {..} => true,
-            Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "custom")]
-            Self::Custom(_) => false
-        }, "Unsuitable Mapper detected: {self:?}");
-        true
     }
 }

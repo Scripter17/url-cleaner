@@ -25,18 +25,11 @@ mod commons;
 pub use commons::*;
 
 /// The rules and rule parameters describing how to modify URLs.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub struct Config {
     /// The documentation.
     #[serde(default, skip_serializing_if = "is_default")]
     pub docs: ConfigDocs,
-    /// Restricts this [`Config`] to only allow stuff suitable for the default config.
-    /// 
-    /// The exact behavior from setting this to [`true`] is currently unspecified and subject to change.
-    /// 
-    /// Defaults to [`false`].
-    #[serde(default = "get_false", skip_serializing_if = "is_false")]
-    pub strict_mode: bool,
     /// The path to use for the [`Cache`].
     /// 
     /// Defaults to `:memory:` to store the cache in RAM and not read/write any files.
@@ -121,6 +114,7 @@ impl Config {
     /// Basic wrapper around [`Self::rules`]'s [`Rules::apply`].
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    #[allow(dead_code, reason = "Public API.")]
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), ApplyConfigError> {
         self.rules.apply(job_state).map_err(Into::into)
     }
@@ -136,15 +130,16 @@ impl Config {
     /// # Panics
     /// Panics if a test fails.
     pub fn run_tests(&self, tests: Tests) {
-        // Changing the if's braces to parenthesis causes some really weird syntax errors. Including the `Ok(DEFAULT_CONFIG.get_or_init(|| config))` line above complaining about needing braces???
-        if self.strict_mode {assert!(self.is_suitable_for_release());}
         tests.r#do(self);
     }
 
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self) -> bool {
-        assert!(self.commons.is_suitable_for_release(self) && self.params.is_suitable_for_release(self) && self.rules.is_suitable_for_release(self), "Unsuitable Config detected: {self:?}");
-        true
+    /// If `self` is "unsuitable" for being the default config, panics.
+    ///
+    /// Exact behavior is unspecified, but generally restricts noisy and insecure stuff like Debug variants and commands.
+    /// # Panics
+    /// If `self` is "unsuitable" for being the default config, panics.
+    pub fn assert_suitability(&self) {
+        Suitability::assert_suitability(self, self)
     }
 }
 
@@ -159,9 +154,13 @@ pub enum ApplyConfigError {
 }
 
 /// The default [`Config`] as minified JSON.
+///
+/// When running `cargo test`, the unminified version is used.
 #[cfg(all(feature = "default-config", not(test)))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-config.json.minified"));
 /// The default [`Config`] as unminified JSON.
+///
+/// When not running `cargo test`, the minified version is used.
 #[cfg(all(feature = "default-config", test))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
 /// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].

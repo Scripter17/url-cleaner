@@ -4,12 +4,11 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
-#[expect(unused_imports, reason = "Used in a doc comment.")]
 use crate::types::*;
 use crate::util::*;
 
 /// In-config documentation.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct ConfigDocs {
     /// The basic description of the config.
     #[serde(default, skip_serializing_if = "is_default")]
@@ -44,7 +43,7 @@ pub struct ConfigDocs {
 }
 
 /// The docs for [`JobContext`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct JobContextDocs {
     /// The docs for [`JobContext::vars`]
     #[serde(default, skip_serializing_if = "is_default")]
@@ -52,7 +51,7 @@ pub struct JobContextDocs {
 }
 
 /// The docs for [`JobContext`]
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct JobsContextDocs {
     /// The docs for [`JobsContext::vars`]
     #[serde(default, skip_serializing_if = "is_default")]

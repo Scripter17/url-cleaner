@@ -10,7 +10,7 @@ use crate::types::*;
 use crate::util::*;
 
 /// The part of a [`Rule`] that specifies when the rule's mapper will be applied.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Condition {
     // Debug/constants.
 
@@ -34,6 +34,7 @@ pub enum Condition {
     /// Intended primarily for debugging logic errors.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
+    #[suitable(never)]
     Debug(Box<Self>),
 
     // Logic.
@@ -190,9 +191,9 @@ pub enum Condition {
     // Domain conditions.
 
     /// Passes if the URL's [`UrlPart::Host`] is the specified value.
-    HostIs(String),
+    HostIs(Option<String>),
     /// Passes if the URL's [`UrlPart::Subdomain`] is the specified value.
-    SubdomainIs(String),
+    SubdomainIs(Option<String>),
     /// Passes if the URL's [`UrlPart::RegDomain`] is the specified value.
     /// # Examples
     /// ```
@@ -201,12 +202,12 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::RegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::RegDomainIs(Some("example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::RegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::RegDomainIs(Some("example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
-    RegDomainIs(String),
+    RegDomainIs(Option<String>),
     /// Passes if the URL's [`UrlPart::MaybeWWWRegDomain`] is the specified value.
     /// # Examples
     /// ```
@@ -215,15 +216,15 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWRegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWRegDomainIs(Some("example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::MaybeWWWRegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWRegDomainIs(Some("example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://not.example.com").unwrap();
-    /// assert_eq!(Condition::MaybeWWWRegDomainIs("example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWRegDomainIs(Some("example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
-    MaybeWWWRegDomainIs(String),
+    MaybeWWWRegDomainIs(Option<String>),
     /// Passes if the URL's [`UrlPart::Domain`] is the specified value.
     /// # Examples
     /// ```
@@ -232,18 +233,18 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::DomainIs(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainIs(Some(    "example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"    ).unwrap();
-    /// assert_eq!(Condition::DomainIs("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::DomainIs(Some("www.example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::DomainIs(    "example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::DomainIs(Some(    "example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com").unwrap();
-    /// assert_eq!(Condition::DomainIs("www.example.com".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainIs(Some("www.example.com".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
-    DomainIs(String),
+    DomainIs(Option<String>),
     /// Passes if the URL's [`UrlPart::DomainMiddle`] is the specified value.
     /// # Footguns
     /// Please see [`UrlPart::DomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
@@ -254,27 +255,27 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.example.co.uk" ).unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.aexample.example.co.uk").unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.aexample.co.uk"        ).unwrap();
-    /// assert_eq!(Condition::DomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::DomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
-    DomainMiddleIs(String),
+    DomainMiddleIs(Option<String>),
     /// Passes if the URL's [`UrlPart::MaybeWWWDomainMiddle`] is the specified value.
     /// # Footguns
     /// Please see [`UrlPart::MaybeWWWDomainMiddle`] for details on how "suffix" semantics can be counterintuitive.
@@ -285,19 +286,19 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// *job_state.url = BetterUrl::parse("https://not.example.com"  ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// *job_state.url = BetterUrl::parse("https://not.example.co.uk").unwrap();
-    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs("example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::MaybeWWWDomainMiddleIs(Some("example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
-    MaybeWWWDomainMiddleIs(String),
+    MaybeWWWDomainMiddleIs(Option<String>),
     /// Passes if the URL's [`UrlPart::NotDomainSuffix`] is the specified value.
     /// # Footguns
     /// Please see [`UrlPart::NotDomainSuffix`] for details on how "suffix" semantics can be counterintuitive.
@@ -308,32 +309,32 @@ pub enum Condition {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some(    "example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com"      ).unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some("www.example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some(    "example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.co.uk"    ).unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some("www.example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some(    "example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.com"  ).unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some("www.example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs(    "example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some(    "example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// 
     /// *job_state.url = BetterUrl::parse("https://www.example.co.uk").unwrap();
-    /// assert_eq!(Condition::NotDomainSuffixIs("www.example".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::NotDomainSuffixIs(Some("www.example".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
-    NotDomainSuffixIs(String),
+    NotDomainSuffixIs(Option<String>),
     /// Passes if the URL's [`UrlPart::DomainSuffix`] is the specified value.
-    DomainSuffixIs(String),
+    DomainSuffixIs(Option<String>),
     /// Passes if the URL's host is in the specified set of hosts.
     /// 
     /// Strips `www.` from the start of the host if it exists. This makes it work similar to [`UrlPart::HostWithoutWWWDotPrefix`].
@@ -393,18 +394,18 @@ pub enum Condition {
     /// 
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com").unwrap();
-    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs(Some("/"  .to_string())).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com/").unwrap();
-    /// assert_eq!(Condition::PathIs("/"  .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs(Some("/"  .to_string())).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com/a").unwrap();
-    /// assert_eq!(Condition::PathIs("/a" .to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs(Some("/a" .to_string())).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// 
     /// *job_state.url = BetterUrl::parse("https://example.com/a/").unwrap();
-    /// assert_eq!(Condition::PathIs("/a/".to_string()).satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PathIs(Some("/a/".to_string())).satisfied_by(&job_state.to_view()).unwrap(), true);
     /// ```
-    PathIs(String),
+    PathIs(Option<String>),
 
     // General parts.
 
@@ -430,7 +431,7 @@ pub enum Condition {
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
-    /// If the specified part is `None`, returns the error [`ConditionError::UrlPartNotFound`].
+    /// If the specified part is `None`, returns the error [`ConditionError::PartIsNone`].
     /// 
     /// If `value.get` returns `None`, returns the error [`ConditionError::StringSourceIsNone`].
     /// # Examples
@@ -445,10 +446,20 @@ pub enum Condition {
         /// The name of the part to check.
         part: UrlPart,
         /// The value to look for.
-        value: StringSource,
+        value: Option<StringSource>,
         /// Where to look for the value. Defaults to [`StringLocation::Anywhere`].
         #[serde(default)]
-        r#where: StringLocation
+        r#where: StringLocation,
+        /// Whether to pass, fail, or error when `part` is [`None`].
+        ///
+        /// Defaults [`IfError::Error`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        if_part_null: IfError,
+        /// Whether to pass, fail, or error when `value` is [`None`].
+        ///
+        /// Defaults [`IfError::Error`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        if_value_null: IfError
     },
 
     /// Passes if the specified part's value matches the specified [`StringMatcher`].
@@ -458,14 +469,20 @@ pub enum Condition {
         /// The part to check.
         part: UrlPart,
         /// The [`StringMatcher`] used to check the part's value.
-        matcher: StringMatcher
+        matcher: StringMatcher,
+        /// Determines whether to pass/fail if the part is [`None`] or just return the error [`ConditionError::PartIsNone`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        if_null: IfError
     },
     /// Passes if the specified part's value is in the specified set.
     PartIsOneOf {
         /// The part to check.
         part: UrlPart,
         /// The set of values to pass for.
-        values: HashSet<Option<String>>
+        values: HashSet<String>,
+        /// If [`true`], pass when `part` is [`None`]. Defaults to [`false`].
+        #[serde(default)]
+        if_null: bool
     },
 
     // Miscellaneous.
@@ -489,11 +506,18 @@ pub enum Condition {
     /// ```
     VarIs {
         /// The name of the variable to check.
+        #[suitable(assert = "var_is_documented")]
         name: StringSource,
         /// The expected value of the variable.
         value: Option<StringSource>
     },
 
+    /// Passes if the specified scratchpad flag is set.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    ScratchpadFlagIsSet(StringSource),
     /// Passes if the specified rule flag is set.
     /// # Examples
     /// ```
@@ -507,7 +531,7 @@ pub enum Condition {
     /// assert_eq!(Condition::FlagIsSet("abc".into()).satisfied_by(&job_state.to_view()).unwrap(), true );
     /// assert_eq!(Condition::FlagIsSet("xyz".into()).satisfied_by(&job_state.to_view()).unwrap(), false);
     /// ```
-    FlagIsSet(StringSource),
+    FlagIsSet(#[suitable(assert = "flag_is_documented")] StringSource),
 
     // String source.
 
@@ -633,6 +657,7 @@ pub enum Condition {
     /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
+    #[suitable(never)]
     Custom(FnWrapper<fn(&JobStateView) -> Result<bool, ConditionError>>)
 }
 
@@ -644,7 +669,7 @@ pub enum ConditionError {
     ExplicitError,
     /// Returned when a call to [`UrlPart::get`] returns `None` where it has to return `Some`.
     #[error("The provided URL does not have the requested part.")]
-    UrlPartNotFound,
+    PartIsNone,
     /// Returned when a [`CommandError`] is encountered.
     #[cfg(feature = "commands")]
     #[error(transparent)]
@@ -741,15 +766,15 @@ impl Condition {
 
             // Domain conditions.
 
-            Self::HostIs                (x) => UrlPart::Host                .get(job_state.url).as_deref() == Some(&**x),
-            Self::SubdomainIs           (x) => UrlPart::Subdomain           .get(job_state.url).as_deref() == Some(&**x),
-            Self::RegDomainIs           (x) => UrlPart::RegDomain           .get(job_state.url).as_deref() == Some(&**x),
-            Self::MaybeWWWRegDomainIs   (x) => UrlPart::MaybeWWWRegDomain   .get(job_state.url).as_deref() == Some(&**x),
-            Self::DomainIs              (x) => UrlPart::Domain              .get(job_state.url).as_deref() == Some(&**x),
-            Self::DomainMiddleIs        (x) => UrlPart::DomainMiddle        .get(job_state.url).as_deref() == Some(&**x),
-            Self::MaybeWWWDomainMiddleIs(x) => UrlPart::MaybeWWWDomainMiddle.get(job_state.url).as_deref() == Some(&**x),
-            Self::NotDomainSuffixIs     (x) => UrlPart::NotDomainSuffix     .get(job_state.url).as_deref() == Some(&**x),
-            Self::DomainSuffixIs        (x) => UrlPart::DomainSuffix        .get(job_state.url).as_deref() == Some(&**x),
+            Self::HostIs                (x) => UrlPart::Host                .get(job_state.url).as_deref() == x.as_deref(),
+            Self::SubdomainIs           (x) => UrlPart::Subdomain           .get(job_state.url).as_deref() == x.as_deref(),
+            Self::RegDomainIs           (x) => UrlPart::RegDomain           .get(job_state.url).as_deref() == x.as_deref(),
+            Self::MaybeWWWRegDomainIs   (x) => UrlPart::MaybeWWWRegDomain   .get(job_state.url).as_deref() == x.as_deref(),
+            Self::DomainIs              (x) => UrlPart::Domain              .get(job_state.url).as_deref() == x.as_deref(),
+            Self::DomainMiddleIs        (x) => UrlPart::DomainMiddle        .get(job_state.url).as_deref() == x.as_deref(),
+            Self::MaybeWWWDomainMiddleIs(x) => UrlPart::MaybeWWWDomainMiddle.get(job_state.url).as_deref() == x.as_deref(),
+            Self::NotDomainSuffixIs     (x) => UrlPart::NotDomainSuffix     .get(job_state.url).as_deref() == x.as_deref(),
+            Self::DomainSuffixIs        (x) => UrlPart::DomainSuffix        .get(job_state.url).as_deref() == x.as_deref(),
 
             Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
 
@@ -763,10 +788,11 @@ impl Condition {
             // Specific parts.
 
             Self::QueryHasParam(name) => job_state.url.query_pairs().any(|(ref name2, _)| name2==name),
-            Self::PathIs(value) => if job_state.url.cannot_be_a_base() {
-                Err(UrlPartGetError::UrlDoesNotHaveAPath)?
-            } else {
-                job_state.url.path()==value
+            Self::PathIs(value) => match (job_state.url.cannot_be_a_base(), value.as_deref()) {
+                (false, None   ) => false,
+                (false, Some(x)) => job_state.url.path() == x,
+                (true , None   ) => true,
+                (true , Some(_)) => false
             },
 
             Self::PathSegmentsMatch {start, matchers, strict} => {
@@ -787,12 +813,22 @@ impl Condition {
             // General parts.
 
             Self::PartIs{part, value} => part.get(job_state.url).as_deref()==get_option_str!(value, job_state),
-            Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(job_state.url).ok_or(ConditionError::UrlPartNotFound)?, get_str!(value, job_state, ConditionError))?,
-            Self::PartMatches {part, matcher} => matcher.satisfied_by(&part.get(job_state.url).ok_or(ConditionError::UrlPartNotFound)?, job_state)?,
-            Self::PartIsOneOf {part, values} => values.contains(&part.get(job_state.url).map(|x| x.into_owned())),
+            Self::PartContains{part, value, r#where, if_part_null, if_value_null} => match part.get(job_state.url) {
+                None    => if_part_null.apply(Err(ConditionError::PartIsNone))?,
+                Some(part) => match get_option_str!(value, job_state) {
+                    None        => if_value_null.apply(Err(ConditionError::StringSourceIsNone))?,
+                    Some(value) => r#where.satisfied_by(&part, value)?,
+                }
+            },
+            Self::PartMatches {part, matcher, if_null} => match part.get(job_state.url) {
+                None    => if_null.apply(Err(ConditionError::PartIsNone))?,
+                Some(x) => matcher.satisfied_by(&x, job_state)?,
+            },
+            Self::PartIsOneOf {part, values, if_null} => part.get(job_state.url).map(|x| values.contains(&*x)).unwrap_or(*if_null),
 
             // Miscellaneous.
 
+            Self::ScratchpadFlagIsSet(name) => job_state.scratchpad.flags.contains(get_str!(name, job_state, ConditionError)),
             Self::FlagIsSet(name) => job_state.params.flags.contains(get_str!(name, job_state, ConditionError)),
             Self::AnyFlagIsSet => !job_state.params.flags.is_empty(),
             Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x)==get_option_str!(value, job_state),
@@ -824,45 +860,5 @@ impl Condition {
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(job_state)?
         })
-    }
-}
-
-impl Suitable for Condition {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::Debug(_) => false,
-            Self::If {r#if, then, r#else} => r#if.is_suitable_for_release(config) && then.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::Not(condition) => condition.is_suitable_for_release(config),
-            Self::All(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::Any(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::PartMap   {part , map} => part .is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::StringMap {value, map} => value.is_suitable_for_release(config) && map.is_suitable_for_release(config),
-            Self::TreatErrorAsPass(condition) => condition.is_suitable_for_release(config),
-            Self::TreatErrorAsFail(condition) => condition.is_suitable_for_release(config),
-            Self::TryElse {r#try, r#else} => r#try.is_suitable_for_release(config) && r#else.is_suitable_for_release(config),
-            Self::FirstNotError(conditions) => conditions.iter().all(|condition| condition.is_suitable_for_release(config)),
-            Self::PartIs {part, value} => part.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::PartContains {part, value, r#where} => part.is_suitable_for_release(config) && value.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
-            Self::PartMatches {part, matcher} => part.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
-            Self::PathSegmentsMatch {start: _, matchers, strict: _} => matchers.iter().all(|matcher| matcher.is_suitable_for_release(config)),
-            Self::PartIsOneOf {part, ..} => part.is_suitable_for_release(config),
-            Self::VarIs {name, value} => name.is_suitable_for_release(config) && value.as_ref().is_none_or(|value| value.is_suitable_for_release(config)),
-            Self::FlagIsSet(name) => name.is_suitable_for_release(config) && check_docs!(config, flags, name),
-            Self::StringIs {left, right} => (left.is_some() || right.is_some()) && left.as_ref().is_none_or(|left| left.is_suitable_for_release(config)) && right.as_ref().is_none_or(|right| right.is_suitable_for_release(config)),
-            Self::StringContains {value, substring, r#where} => value.is_suitable_for_release(config) && substring.is_suitable_for_release(config) && r#where.is_suitable_for_release(config),
-            Self::StringMatches {value, matcher} => value.is_suitable_for_release(config) && matcher.is_suitable_for_release(config),
-            #[cfg(feature = "commands")] Self::CommandExists (_) => false,
-            #[cfg(feature = "commands")] Self::CommandExitStatus {..} => false,
-            Self::Always | Self::Never | Self::Error | Self::HostIs(_) | Self::SubdomainIs(_) |
-                Self::RegDomainIs(_) | Self::MaybeWWWRegDomainIs(_) | Self::HostIsOneOf(_) |
-                Self::DomainIs(_) | Self::DomainMiddleIs(_) | Self::MaybeWWWDomainMiddleIs(_) |
-                Self::NotDomainSuffixIs(_) | Self::DomainSuffixIs(_) | Self::QueryHasParam(_) | Self::PathIs(_) | Self::AnyFlagIsSet |
-                Self::UrlHasHost | Self::HostIsFqdn | Self::HostIsDomain | Self::HostIsIp | Self::HostIsIpv4 | Self::HostIsIpv6 => true,
-            Self::Common(common_call) => common_call.is_suitable_for_release(config),
-            #[cfg(feature = "custom")]
-            Self::Custom(_) => false
-        }, "Unsuitable Condition detected: {self:?}");
-        true
     }
 }

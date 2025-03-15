@@ -19,8 +19,9 @@ use crate::types::*;
 use crate::util::*;
 
 /// Instructions on how to make and run a [`Command`] object.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(remote= "Self")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+#[suitable(never)]
+#[serde(remote="Self")]
 pub struct CommandConfig {
     /// The program to run.
     pub program: String,

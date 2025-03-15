@@ -86,18 +86,10 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
 - `no-https-upgrade`: Disable replacing `http://` with `https://`.
 - `no-network`: Don't make any HTTP requests.
-- `no-unmangle-host-is-http-or-https`: Don't convert `https://https//example.com/abc` to `https://example.com/abc`.
-- `no-unmangle-path-is-url`: Don't convert `https://example1.com/https://example2.com/user` to `https://example2.com/abc`.
-- `no-unmangle-path-is-url-encoded-url`: Don't convert `https://example.com/https%3A%2F%2Fexample.com%2Fuser` to `https://example.com/user`.
-- `no-unmangle-second-path-segment-is-url`: Don't convert `https://example1.com/profile/https://example2.com/profile/user` to `https://example2.com/profile/user`.
-- `no-unmangle-subdomain-ends-in-reg-domain`: Don't convert `https://profile.example.com.example.com` to `https://profile.example.com`.
-- `no-unmangle-subdomain-starting-with-www-segment`: Don't convert `https://www.username.example.com` to `https://username.example.com`.
-- `no-unmangle-twitter-first-path-segment-is-twitter-domain`: If a twitter domain's first path segment is a twitter domain, don't remove it.
 - `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present. This makes an HTTP request one time per domain and caches it.
 - `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
-- `unmangle`: "Unmangle" certain "invalid but I know what you mean" URLs. Should not be used with untrusted URLs as malicious actors can use this to sneak malicuous URLs past, for example, email spam filters.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
@@ -106,6 +98,8 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
 - `keep-lang`: Keeps language query parameters.
+- `furaffinity-sfw`: Turn `furaffinity.net` into `sfw.furaffinity.net`
+- `furaffinity-unsfw`: Turn `sfw.furaffinity.net` into `furaffinity.net`
 
 #### Vars
 
@@ -131,9 +125,6 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
 - `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
 - `remove-www-subdomain-reg-domain-blacklist`: `RegDomain`s where a `www` `Subdomain` is important and thus won't have it removed.
-- `unmangle-path-is-url-blacklist`: Effectively the `no-unmangle-path-is-url` flag for the specified `Host`s.
-- `unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist`: Effectively the `no-unmangle-subdomain-ends-in-reg-domain-reg-domain-blacklist` flag for the specified `RegDomain`s.
-- `unmangle-subdomain-starting-with-www-segment-reg-domain-blacklist`: Effectively the `no-unmangle-subdomain-starting-with-www-segment` flag for the specified `RegDomain`s.
 - `unmobile-reg-domain-blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
 - `utps-reg-domain-whitelist`: RegDomains to never remove universal tracking parameters from.
@@ -162,8 +153,14 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 ##### Vars
 
-- `SOURCE_REG_DOMAIN`: The RegDomain of the "source" of the jobs. Usually the webpage it came from.
 - `SOURCE_URL`: The URL of the "source" of the jobs. Usually the webpage it came from.
+- `SOURCE_HOST`: The `Host` of the "source" of the jobs. Usually the webpage it came from.
+- `SOURCE_DOMAIN`: The `Domain` of the "source" of the jobs, Usually the webpage it came from.
+- `SOURCE_SUBDOMAIN`: The `Subdomain` of the "source" of the jobs, Usually the webpage it came from.
+- `SOURCE_NOT_DOMAIN_SUFFIX`: The `NotDomainSuffix` of the "source" of the jobs, Usually the webpage it came from.
+- `SOURCE_DOMAIN_MIDDLE`: The `DomainMiddle` of the "source" of the jobs, Usually the webpage it came from.
+- `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the jobs, Usually the webpage it came from.
+- `SOURCE_DOMAIN_SUFFIX`: The `DomainSuffix` of the "source" of the jobs, Usually the webpage it came from.
 <!--/cmd-->
 
 #### But how fast is it?

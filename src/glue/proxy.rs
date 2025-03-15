@@ -9,13 +9,14 @@ use url::Url;
 use reqwest::header::HeaderValue;
 use reqwest::Proxy;
 
-use crate::util::is_default;
+use crate::types::*;
+use crate::util::*;
 
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use crate::glue::HttpClientConfig;
 
 /// Used by [`HttpClientConfig`] to detail how a [`reqwest::Proxy`] should be made.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub struct ProxyConfig {
     /// The URL to proxy traffic to. Not the URL whose traffic to proxy.
@@ -60,7 +61,7 @@ impl From<Url> for ProxyConfig {
 }
 
 /// The types of traffic to proxy. Defaults to [`Self::All`].
-#[derive(Debug, Clone, Copy, PartialEq, Default, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, Eq, Serialize, Deserialize, Suitability)]
 pub enum ProxyMode {
     /// [`reqwest::Proxy::all`].
     #[default]
@@ -72,7 +73,7 @@ pub enum ProxyMode {
 }
 
 /// Authentication for the proxy server.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum ProxyAuth {
     /// [`reqwest::Proxy::basic_auth`].
     Basic {

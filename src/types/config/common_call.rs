@@ -12,7 +12,7 @@ use crate::util::*;
 use crate::glue::*;
 
 /// The name of the common to call and the arguments to call it with.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub struct CommonCall {
     /// The name of the common to call.
@@ -35,19 +35,8 @@ impl FromStr for CommonCall {
 
 string_or_struct_magic!(CommonCall);
 
-impl CommonCall {
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(
-            self.name.is_suitable_for_release(config) && self.args.is_suitable_for_release(config),
-            "Unsuitable CommonCall detected: {self:?}"
-        );
-        true
-    }
-}
-
 /// The rules used to make a [`CommonCallArgs`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgsSource {
     /// The variables for a common.
     pub vars: HashMap<String, StringSource>,
@@ -81,19 +70,10 @@ impl CommonCallArgsSource {
             http_client_config_diff: self.http_client_config_diff.as_ref().map(Cow::Borrowed)
         })
     }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(
-            self.vars.iter().all(|(_, v)| v.is_suitable_for_release(config)),
-            "Unsuitable CommonCallArgs detected: {self:?}"
-        );
-        true
-    }
 }
 
 /// The arguments for a common.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgs<'a> {
     /// The variables for a common.
     pub vars: HashMap<Cow<'a, str>, String>,

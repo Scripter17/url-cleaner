@@ -22,7 +22,7 @@ cat reddit-data.json | jq '
   [
     ["https://reddit.com" + .[].data.children[].data.permalink],
     [.[].data.children[].data.url | gsub("&amp;"; "&") | gsub("%25"; "%")]
-  ] | transpose | map({source: .[0], url: .[1]})' > reddit-inputs.json
+  ] | transpose | map({source: .[0], url: .[1]}) | unique_by(.url) | sort_by(.url)' > reddit-inputs.json
 
 echo "Cleaning URLs"
 cat reddit-inputs.json | jq '.[].url' -r | target/release/url-cleaner --config default-config.json --cache-path reddit-cache.sqlite --json > reddit-outputs.json

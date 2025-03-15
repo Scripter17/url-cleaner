@@ -7,12 +7,15 @@ use std::collections::HashSet;
 
 use serde::{Serialize, Deserialize, ser::{Serializer, SerializeMap}, de::{Visitor, MapAccess, Deserializer, Error}};
 
+use crate::types::*;
+use crate::util::*;
+
 /// Maps elements of a set to the name of the partition it belongs to.
 ///
 /// For example, websites into the names of the company that owns them or the software they're an instance of.
 /// 
 /// See [the Wikipedia article](https://en.wikipedia.org/wiki/Partition_of_a_set) for precise math stuff.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Suitability)]
 pub struct NamedPartitioning {
     /// The maps of values to their class names.
     map: HashMap<String, Arc<str>>,

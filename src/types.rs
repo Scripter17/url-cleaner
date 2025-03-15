@@ -24,5 +24,7 @@ pub mod named_partitioning;
 pub use named_partitioning::*;
 pub mod map;
 pub use map::*;
+pub mod error_behavior;
+pub use error_behavior::*;
 
 use crate::util::*;

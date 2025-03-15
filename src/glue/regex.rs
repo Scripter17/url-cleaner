@@ -9,6 +9,7 @@ use serde::{Serialize, Deserialize};
 use regex::Regex;
 
 use crate::types::*;
+use crate::util::*;
 
 mod regex_parts;
 pub use regex_parts::*;
@@ -95,12 +96,10 @@ impl RegexWrapper {
             Ok(self.regex.get_or_init(|| temp))
         }
     }
+}
 
-    /// Verifies at suitability test time that the regex actually compiles.
-    /// # Panics
-    /// If the regex doesn't compile, panics.
-    pub fn is_suitable_for_release(&self, _config: &Config) -> bool {
-        self.get_regex().expect("The regex to compile.");
-        true
+impl Suitability for RegexWrapper {
+    fn assert_suitability(&self, config: &Config) {
+        self.parts.assert_suitability(config)
     }
 }

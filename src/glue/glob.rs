@@ -12,10 +12,11 @@ use serde::{
     de::{Error as _, Deserializer}
 };
 
+use crate::types::*;
 use crate::util::*;
 
 /// A wrapper around [`glob::Pattern`] and [`glob::MatchOptions`].
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash, Suitability)]
 #[serde(remote= "Self")]
 pub struct GlobWrapper {
     /// The pattern used to match stuff.
@@ -57,7 +58,7 @@ impl TryFrom<&str> for GlobWrapper {
 crate::util::string_or_struct_magic!(GlobWrapper);
 
 /// A serialization/deserialization helper for [`MatchOptions`].
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Suitability)]
 #[serde(remote = "MatchOptions")]
 struct SerdeMatchOptions {
     /// [`MatchOptions::case_sensitive`].

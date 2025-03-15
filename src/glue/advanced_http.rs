@@ -19,7 +19,7 @@ mod string_source_json_value;
 pub use string_source_json_value::*;
 
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`JobStateView::http_client`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 pub struct RequestConfig {
     /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
@@ -139,22 +139,10 @@ impl RequestConfig {
     pub fn response(&self, job_state: &JobStateView) -> Result<String, RequestConfigError> {
         Ok(self.response_handler.handle(self.make(job_state)?.send()?, job_state)?)
     }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(
-            (self.url.as_ref().is_none_or(|url| url.is_suitable_for_release(config))) &&
-            self.headers.iter().all(|(_, v)| v.as_ref().is_none_or(|v| v.is_suitable_for_release(config))) &&
-            (self.body.as_ref().is_none_or(|body| body.is_suitable_for_release(config))) &&
-            self.response_handler.is_suitable_for_release(config),
-            "Unsuitable RequestConfig: {self:?}"
-        );
-        true
-    }
 }
 
 /// The ways one can set the body in an HTTP request.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub enum RequestBody {
     /// [`reqwest::blocking::RequestBuilder::body`].
     /// # Errors
@@ -209,20 +197,10 @@ impl RequestBody {
             Self::Json(json) => request.json(&json.make(job_state)?)
         })
     }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::Text(text) => text.is_suitable_for_release(config),
-            Self::Form(map) => map.iter().all(|(_, v)| v.is_suitable_for_release(config)),
-            Self::Json(json) => json.is_suitable_for_release(config)
-        }, "Unsuitable RequestBody: {self:?}");
-        true
-    }
 }
 
 /// The ways one can get a [`String`] from a [`reqwest::blocking::Response`].
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Suitability)]
 pub enum ResponseHandler {
     /// [`reqwest::blocking::Response::text`].
     /// # Errors
@@ -290,15 +268,5 @@ impl ResponseHandler {
                 response.cookies().find(|cookie| cookie.name()==name).ok_or(ResponseHandlerError::CookieNotFound)?.value().to_string()
             }
         })
-    }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    pub(crate) fn is_suitable_for_release(&self, config: &Config) -> bool {
-        assert!(match self {
-            Self::Body | Self::Url => true,
-            Self::Header(name) => name.is_suitable_for_release(config),
-            Self::Cookie(name) => name.is_suitable_for_release(config)
-        }, "Unsuitable ResponseHandler: {self:?}");
-        true
     }
 }

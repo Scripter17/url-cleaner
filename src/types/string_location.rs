@@ -9,7 +9,7 @@ use crate::util::*;
 /// A wrapper around [`str`]'s various substring searching functions.
 /// 
 /// [`isize`] is used to allow Python-style negative indexing.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 pub enum StringLocation {
     /// Always passes.
     Always,
@@ -24,6 +24,7 @@ pub enum StringLocation {
     /// Intended primarily for debugging logic errors.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] return an error, that error is returned after the debug info is printed.
+    #[suitable(never)]
     Debug(Box<Self>),
 
     // Logic.
@@ -321,15 +322,5 @@ impl StringLocation {
             },
             Self::NthSegment {split, n, location} => location.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?
         })
-    }
-
-    /// Internal method to make sure I don't accidentally commit Debug variants and other stuff unsuitable for the default config.
-    #[allow(clippy::missing_const_for_fn, reason = "No reason to/consistency.")]
-    pub(crate) fn is_suitable_for_release(&self, _config: &Config) -> bool {
-        assert!(match self {
-            Self::Debug(_) => false,
-            _ => true
-        }, "Unsuitable StringLocation detected: {self:?}");
-        true
     }
 }

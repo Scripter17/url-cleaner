@@ -6,10 +6,14 @@ use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
+use crate::types::*;
+use crate::util::*;
+
 /// Wrapper around a function pointer that fakes [`Serialize`] and [`Deserialize`] implementations.
 /// 
 /// Please note that, once it's stabilized, this will require [`T: FnPtr`](FnPtr) and that will not be considered a breaking change.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Suitability)]
+#[suiatble(never)]
 #[repr(transparent)]
 pub struct FnWrapper<T>(pub T);
 

@@ -13,7 +13,6 @@
 //! // Also when using serde to deserialize a `Config` from a file (the intended experience), you can omit all fields except for `rules`.
 //! let config = Config {
 //!     docs: Default::default(),
-//!     strict_mode: false,
 #![cfg_attr(feature = "cache", doc = "    cache_path: Default::default(),")]
 //!     params: Default::default(),
 //!     commons: Default::default(),
