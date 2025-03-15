@@ -439,14 +439,51 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::Anywhere}.satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: "ple".into(), r#where: StringLocation::End     }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// 
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// 
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: ".com".into(), r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    ///
+    ///
+    ///
+    ///            Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap_err();
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    ///            Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap_err();
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// 
+    ///            Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap_err();
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Domain, value: StringSource::None, r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true );
+    ///
+    ///
+    ///
+    ///            Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap_err();
+    ///            Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap_err();
+    ///            Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Error, if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap_err();
+    /// 
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Fail , if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// 
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Error}.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Fail }.satisfied_by(&job_state.to_view()).unwrap(), true);
+    /// assert_eq!(Condition::PartContains {part: UrlPart::Password, value: "test".into(), r#where: StringLocation::End, if_part_null: IfError::Pass , if_value_null: IfError::Pass }.satisfied_by(&job_state.to_view()).unwrap(), true);
     /// ```
     PartContains {
         /// The name of the part to check.
         part: UrlPart,
         /// The value to look for.
-        value: Option<StringSource>,
+        value: StringSource,
         /// Where to look for the value. Defaults to [`StringLocation::Anywhere`].
         #[serde(default)]
         r#where: StringLocation,
@@ -815,9 +852,9 @@ impl Condition {
             Self::PartIs{part, value} => part.get(job_state.url).as_deref()==get_option_str!(value, job_state),
             Self::PartContains{part, value, r#where, if_part_null, if_value_null} => match part.get(job_state.url) {
                 None    => if_part_null.apply(Err(ConditionError::PartIsNone))?,
-                Some(part) => match get_option_str!(value, job_state) {
+                Some(part) => match value.get(&job_state.to_view())? {
                     None        => if_value_null.apply(Err(ConditionError::StringSourceIsNone))?,
-                    Some(value) => r#where.satisfied_by(&part, value)?,
+                    Some(value) => r#where.satisfied_by(&part, &value)?,
                 }
             },
             Self::PartMatches {part, matcher, if_null} => match part.get(job_state.url) {

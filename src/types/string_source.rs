@@ -18,6 +18,10 @@ use crate::util::*;
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSource {
+    /// Simply returns [`None`].
+    ///
+    /// Cannot be deserialized from a string.
+    None,
     // Error handling/prevention.
 
     /// Always returns the error [`StringSourceError::ExplicitError`].
@@ -530,6 +534,7 @@ impl StringSource {
         debug!(StringSource::get, self, job_state);
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
+            Self::None => None,
             Self::Error => Err(StringSourceError::ExplicitError)?,
             Self::ErrorToNone(value) => value.get(job_state).ok().flatten(),
             Self::ErrorToEmptyString(value) => value.get(job_state).unwrap_or(Some(Cow::Borrowed(""))),
