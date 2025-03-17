@@ -15,12 +15,19 @@ use crate::glue::*;
 use crate::util::*;
 
 /// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSource {
     /// Simply returns [`None`].
     ///
-    /// Cannot be deserialized from a string.
+    /// Deserialized from and serialized into `null`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(serde_json::from_str::<StringSource>("null"             ).unwrap(), StringSource::None);
+    /// assert_eq!(serde_json::to_string               (&StringSource::None).unwrap(), "null"            );
+    /// ```
+    #[default]
     None,
     // Error handling/prevention.
 
@@ -96,7 +103,7 @@ pub enum StringSource {
         #[serde(default, skip_serializing_if = "is_default")]
         join: String
     },
-    /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `r#else`.
+    /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `else`.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
@@ -129,6 +136,34 @@ pub enum StringSource {
     /// ```
     IfFlag {
         /// The name of the flag to check.
+        flag: Box<Self>,
+        /// If the flag is set, use this.
+        then: Box<Self>,
+        /// If the flag is not set, use this.
+        r#else: Box<Self>
+    },
+    /// If the scratchpad flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `else`.
+    /// # Errors
+    /// If any call to [`Self::get`] returns an error, that error is returned.
+    ///
+    /// If `flag` returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    IfScratchpadFlag {
+        /// The name of the scratchpad flag to check.
+        flag: Box<Self>,
+        /// If the flag is set, use this.
+        then: Box<Self>,
+        /// If the flag is not set, use this.
+        r#else: Box<Self>
+    },
+    /// If the common flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `else`.
+    /// # Errors
+    /// If this is called outside of a [`Commons::StringSource`] call, retursn the error [`StringSourceError::NotInACommonContext`].
+    /// 
+    /// If any call to [`Self::get`] returns an error, that error is returned.
+    ///
+    /// If `flag` returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    IfCommonFlag {
+        /// The name of the common flag to check.
         flag: Box<Self>,
         /// If the flag is set, use this.
         then: Box<Self>,
@@ -275,7 +310,7 @@ pub enum StringSource {
         #[suitable(assert = "map_is_documented")]
         map: Box<Self>,
         /// The key to index the map with.
-        key: Option<Box<Self>>
+        key: Box<Self>
     },
     /// Indexes into a [`Params::named_partitionings`] using [`Self::ParamsNamedPartitioning::name`] then indexes the returned [`NamedPartitioning`] with [`Self::ParamsNamedPartitioning::element`].
     /// # Errors
@@ -425,8 +460,50 @@ impl From<String> for Box<StringSource> {
         Box::new(value.into())
     }
 }
+/// Serialize the object. Although the macro this implementation came from allows [`Self::deserialize`]ing from a string, this currently always serializes to a map, though that may change eventually.
+impl Serialize for StringSource {
+    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Self::None => serializer.serialize_none(),
+            _ => StringSource::serialize(self, serializer)
+        }
+    }
+}
 
-crate::util::string_or_struct_magic!(StringSource);
+/// This particular implementation allows for deserializing from a string using [`Self::from_str`].
+/// 
+/// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
+impl<'de> Deserialize<'de> for StringSource {
+    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct V;
+
+        impl<'de> serde::de::Visitor<'de> for V {
+            type Value = StringSource;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+                f.write_str("Expected a string or a map.")
+            }
+
+            fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                Self::Value::from_str(s).map_err(E::custom)
+            }
+
+            fn visit_none<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(Self::Value::None)
+            }
+
+            fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(Self::Value::None)
+            }
+
+            fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
+                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+            }
+        }
+
+        deserializer.deserialize_any(V)
+    }
+}
 
 /// The enum of all possible errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
@@ -553,6 +630,8 @@ impl StringSource {
             // It's so silly but it works SO well.
             Self::Join {sources, join} => sources.iter().map(|value| value.get(job_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             Self::IfFlag {flag, then, r#else} => if job_state.params.flags.contains(&get_string!(flag, job_state, StringSourceError)) {then} else {r#else}.get(job_state)?,
+            Self::IfScratchpadFlag {flag, then, r#else} => if job_state.scratchpad.flags.contains(&get_string!(flag, job_state, StringSourceError)) {then} else {r#else}.get(job_state)?,
+            Self::IfCommonFlag     {flag, then, r#else} => if job_state.common_args.ok_or(StringSourceError::NotInACommonContext)?.flags.contains(&get_cow!(flag, job_state, StringSourceError)) {then} else {r#else}.get(job_state)?,
             Self::IfSourceMatches {value, matcher, then, r#else} => {
                 if matcher.satisfied_by(get_str!(value, job_state, StringSourceError), job_state)? {
                     then.get(job_state)?
@@ -578,7 +657,7 @@ impl StringSource {
             Self::ScratchpadVar(key) => job_state.scratchpad.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::ContextVar(key) => job_state.context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
             Self::JobsContextVar(key) => job_state.jobs_context.vars.get(get_str!(key, job_state, StringSourceError)).map(|value| Cow::Borrowed(&**value)),
-            Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(get_option_str!(key, job_state)).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {map, key} => job_state.params.maps.get(get_str!(map, job_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(job_state)?).map(|x| Cow::Borrowed(&**x)),
             Self::ParamsNamedPartitioning {name, element} => job_state.params.named_partitionings
                 .get(get_str!(name, job_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
                 .get_partition(get_str!(element, job_state, StringSourceError)).map(Cow::Borrowed),

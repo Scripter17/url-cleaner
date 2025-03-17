@@ -416,18 +416,18 @@ pub enum Condition {
     /// # use url_cleaner::types::*;
     /// url_cleaner::job_state!(job_state;);
     /// 
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: None}.satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: None}.satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: None}.satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(1), value: None}.satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Path          , value: None}.satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// assert_eq!(Condition::PartIs{part: UrlPart::Fragment      , value: None}.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Username      , value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Password      , value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(0), value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::PathSegment(1), value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Path          , value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::PartIs{part: UrlPart::Fragment      , value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     PartIs {
         /// The name of the part to check.
         part: UrlPart,
         /// The expected value of the part.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// Passes if the specified part contains the specified value in a range specified by `where`.
     /// # Errors
@@ -535,20 +535,26 @@ pub enum Condition {
     /// let params = Params { vars: vec![("a".to_string(), "2".to_string())].into_iter().collect(), ..Default::default() };
     /// job_state.params = &params;
     /// 
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("2".into())}.satisfied_by(&job_state.to_view()).unwrap(), true );
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// assert_eq!(Condition::VarIs{name: "a".into(), value: Some("3".into())}.satisfied_by(&job_state.to_view()).unwrap(), false);
-    /// assert_eq!(Condition::VarIs{name: "b".into(), value: None            }.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: "2".into()        }.satisfied_by(&job_state.to_view()).unwrap(), true );
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: "3".into()        }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: "3".into()        }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "a".into(), value: "3".into()        }.satisfied_by(&job_state.to_view()).unwrap(), false);
+    /// assert_eq!(Condition::VarIs{name: "b".into(), value: StringSource::None}.satisfied_by(&job_state.to_view()).unwrap(), true );
     /// ```
     VarIs {
         /// The name of the variable to check.
         #[suitable(assert = "var_is_documented")]
         name: StringSource,
         /// The expected value of the variable.
-        value: Option<StringSource>
+        value: StringSource
     },
 
+    /// Passes if the specified common flag is set.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    CommonFlagIsSet(StringSource),
     /// Passes if the specified scratchpad flag is set.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
@@ -577,9 +583,9 @@ pub enum Condition {
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
     StringIs {
         /// The left hand side of the `==` operation.
-        left: Option<StringSource>,
+        left: StringSource,
         /// The right hand side of the `==` operation.`
-        right: Option<StringSource>
+        right: StringSource
     },
     /// Passes if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::where`].
     /// # Errors
@@ -734,6 +740,9 @@ pub enum ConditionError {
         /// The error returned by [`Condition::TryElse::else`],
         else_error: Box<Self>
     },
+    /// Returned when [`Condition::CommonFlagIsSet`] is used outside of a common context.
+    #[error("Not in a common context.")]
+    NotInACommonContext,
     /// Returned when the common [`Condition`] is not found.
     #[error("The common Condition was not found.")]
     CommonConditionNotFound,
@@ -849,10 +858,10 @@ impl Condition {
 
             // General parts.
 
-            Self::PartIs{part, value} => part.get(job_state.url).as_deref()==get_option_str!(value, job_state),
+            Self::PartIs{part, value} => part.get(job_state.url).as_deref() == value.get(job_state)?.as_deref(),
             Self::PartContains{part, value, r#where, if_part_null, if_value_null} => match part.get(job_state.url) {
                 None    => if_part_null.apply(Err(ConditionError::PartIsNone))?,
-                Some(part) => match value.get(&job_state.to_view())? {
+                Some(part) => match value.get(job_state)? {
                     None        => if_value_null.apply(Err(ConditionError::StringSourceIsNone))?,
                     Some(value) => r#where.satisfied_by(&part, &value)?,
                 }
@@ -865,14 +874,15 @@ impl Condition {
 
             // Miscellaneous.
 
+            Self::CommonFlagIsSet(name) => job_state.common_args.ok_or(ConditionError::NotInACommonContext)?.flags.contains(get_str!(name, job_state, ConditionError)),
             Self::ScratchpadFlagIsSet(name) => job_state.scratchpad.flags.contains(get_str!(name, job_state, ConditionError)),
             Self::FlagIsSet(name) => job_state.params.flags.contains(get_str!(name, job_state, ConditionError)),
             Self::AnyFlagIsSet => !job_state.params.flags.is_empty(),
-            Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x)==get_option_str!(value, job_state),
+            Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x) == value.get(job_state)?.as_deref(),
 
             // String source.
 
-            Self::StringIs {left, right} => get_option_str!(left, job_state)==get_option_str!(right, job_state),
+            Self::StringIs {left, right} => left.get(job_state)? == right.get(job_state)?,
             Self::StringContains {value, substring, r#where} => r#where.satisfied_by(get_str!(value, job_state, ConditionError), get_str!(substring, job_state, ConditionError))?,
             Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, job_state, ConditionError), job_state)?,
 

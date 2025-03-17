@@ -21,9 +21,11 @@ pub use string_source_json_value::*;
 /// Configuration for how to make a [`reqwest::blocking::RequestBuilder`] from the client built from [`JobStateView::http_client`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 pub struct RequestConfig {
-    /// The URL to send the request to. If [`None`], uses the URL being cleaned. Defaults to [`None`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub url: Option<StringSource>,
+    /// The URL to send the request to.
+    ///
+    /// Defaults to [`JobStateView::url`] via [`StringSource::Part`]`(`[`UrlPart::Whole`]`)`
+    #[serde(default = "get_string_source_part_whole", skip_serializing_if = "is_string_source_part_whole")]
+    pub url: StringSource,
     /// The HTTP method to use. Defaults to [`Method::GET`].
     #[serde(default, skip_serializing_if = "is_default", with = "method")]
     pub method: Method,
@@ -33,7 +35,7 @@ pub struct RequestConfig {
     /// 
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub headers: HashMap<String, Option<StringSource>>,
+    pub headers: HashMap<String, StringSource>,
     /// The request body to send. Works with all methods but intended only for [`Method::POST`] requests.
     /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
@@ -46,6 +48,11 @@ pub struct RequestConfig {
     #[serde(default, skip_serializing_if = "is_default")]
     pub client_config_diff: Option<HttpClientConfigDiff>
 }
+
+/// Default value for [`RequestConfig::url`].
+fn get_string_source_part_whole() -> StringSource {StringSource::Part(UrlPart::Whole)}
+/// Checks if `value` is the default value for [`RequestConfig::url`].
+fn is_string_source_part_whole(value: &StringSource) -> bool {value == &get_string_source_part_whole()}
 
 /// The enum of all possible errors [`RequestConfig::make`] and [`RequestConfig::response`] can return.
 #[derive(Debug, Error)]
@@ -100,19 +107,16 @@ impl RequestConfig {
         let mut ret=job_state.http_client(self.client_config_diff.as_ref())?
             .request(
                 self.method.clone(),
-                match self.url {
-                    Some(ref source) => Url::parse(get_str!(source, job_state, RequestConfigError))?,
-                    None => (**job_state.url).clone()
-                }
+                Url::parse(get_str!(self.url, job_state, RequestConfigError))?,
             );
 
         ret = ret.headers(self.headers
             .iter()
             .map(
-                |(k, v)| Ok(get_option_str!(v, job_state)
+                |(k, v)| Ok(v.get(job_state)?
                     .map(|v| (
                         HeaderName::from_lowercase(k.to_lowercase().as_bytes()),
-                        HeaderValue::from_str(v)
+                        HeaderValue::from_str(&v)
                     ))
                 )
             )

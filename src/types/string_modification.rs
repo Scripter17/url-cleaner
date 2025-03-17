@@ -509,15 +509,15 @@ pub enum StringModification {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c.d.e.f".to_string();
-    /// StringModification::SetNthSegment{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.c.d.e.f");
-    /// StringModification::SetNthSegment{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.c.d.e.-1");
-    /// StringModification::SetNthSegment{split: ".".into(), n: -2, value: None}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -2, value: StringSource::None}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.c.d.-1");
-    /// StringModification::SetNthSegment{split: ".".into(), n:  5, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::SetNthSegment{split: ".".into(), n: -6, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::SetNthSegment{split: ".".into(), n: -5, value: Some("-5".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::SetNthSegment{split: ".".into(), n:  5, value:  "E".into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -6, value:  "E".into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::SetNthSegment{split: ".".into(), n: -5, value: "-5".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "-5.1.c.d.-1");
     /// ```
     SetNthSegment {
@@ -526,7 +526,7 @@ pub enum StringModification {
         /// The index of the segment to modify.
         n: isize,
         /// The value to set. If `None` then the segment is removed.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// Finds the `n`th segment matching `matcher` and sets it to `value`.
     /// # Errors
@@ -543,7 +543,7 @@ pub enum StringModification {
         /// The [`StringMatcher`] to test each segment with.
         matcher: Box<StringMatcher>,
         /// The value to set. If `None` then the segment is removed.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// # Examples
     /// ```
@@ -555,7 +555,7 @@ pub enum StringModification {
     ///     n: 0,
     ///     matcher: Box::new(StringMatcher::Equals("b".into())),
     ///     shift: 1,
-    ///     value: None
+    ///     value: StringSource::None
     /// };
     /// 
     /// let mut x = "a b c".to_string();
@@ -572,7 +572,7 @@ pub enum StringModification {
     ///     n: 0,
     ///     matcher: Box::new(StringMatcher::Equals("b".into())),
     ///     shift: -1,
-    ///     value: None
+    ///     value: StringSource::None
     /// };
     /// 
     /// let mut x = "a b c".to_string();
@@ -592,7 +592,7 @@ pub enum StringModification {
         /// The offset of the segment to set.
         shift: isize,
         /// The value to set. If `None` then the segment is removed.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// Splits the provided string by `split`, replaces the range of segments specified by `start` and `end` with `value`,  then joins the segments back together.
     /// # Errors
@@ -609,7 +609,7 @@ pub enum StringModification {
         /// The end of the range of segments to replace.
         end: Option<isize>,
         /// The value to replace the segments with.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// Like [`Self::SetNthSegment`] except it inserts `value` before the `n`th segment instead of overwriting.
     /// # Errors
@@ -622,17 +622,17 @@ pub enum StringModification {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.b.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.4.c");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value: Some( "6".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  6, value:  "6".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.1.b.-1.4.c.6");
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: Some("-7".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n:  8, value:  "E".into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -8, value:  "E".into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentBefore{split: ".".into(), n: -7, value: "-7".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "-7.a.1.b.-1.4.c.6");
     /// ```
     InsertSegmentBefore {
@@ -641,7 +641,7 @@ pub enum StringModification {
         /// The segment index to insert before.
         n: isize,
         /// The value to insert.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// Like [`Self::SetNthSegment`] except it inserts `value` after the `n`th segment instead of overwriting.
     /// # Errors
@@ -654,15 +654,15 @@ pub enum StringModification {
     /// url_cleaner::job_state!(job_state;);
     /// 
     /// let mut x = "a.b.c".to_string();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value: Some( "1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  1, value:  "1".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.b.1.c");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: Some("-1".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -1, value: "-1".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.b.1.c.-1");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value: Some( "4".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  4, value:  "4".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.b.1.c.-1.4");
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value: Some( "E".into())}.apply(&mut x, &job_state.to_view()).unwrap_err();
-    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: Some("-6".into())}.apply(&mut x, &job_state.to_view()).unwrap();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n:  6, value:  "E".into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -7, value:  "E".into()}.apply(&mut x, &job_state.to_view()).unwrap_err();
+    /// StringModification::InsertSegmentAfter{split: ".".into(), n: -6, value: "-6".into()}.apply(&mut x, &job_state.to_view()).unwrap();
     /// assert_eq!(&x, "a.-6.b.1.c.-1.4");
     /// ```
     InsertSegmentAfter {
@@ -671,7 +671,7 @@ pub enum StringModification {
         /// The segment index to insert before.
         n: isize,
         /// The value to insert.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// # Examples
     /// ```
@@ -1239,7 +1239,7 @@ impl StringModification {
                 let split = get_str!(split, job_state, StringModificationError);
                 let mut temp=to.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_index(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                let x = get_option_string!(value, job_state);
+                let x = value.get(job_state)?;
                 #[expect(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
                 match x.as_deref() {
                     Some(value) => temp[fixed_n]=value,
@@ -1251,7 +1251,7 @@ impl StringModification {
                 let split = get_str!(split, job_state, StringModificationError);
                 let mut segments = to.split(split).collect::<Vec<_>>();
                 let fixed_n=neg_index(*n, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                let x = get_option_string!(value, job_state);
+                let x = value.get(job_state)?;
                 let mut count = 0usize;
                 let mut nth_match_found = false;
                 for (index, segment) in segments.iter_mut().enumerate() {
@@ -1295,7 +1295,7 @@ impl StringModification {
                 if !nth_match_found {Err(StringModificationError::SegmentNotFound)?;}
                 #[allow(clippy::arithmetic_side_effects, reason = "The length of a vector is at most isize::MAX so `matched + didnt_match` is always a valid isize.")]
                 let shifted_n = ((matched + didnt_match) as isize).checked_add(*shift).ok_or(StringModificationError::SegmentNotFound)?.try_into().map_err(|_| StringModificationError::SegmentNotFound)?;
-                match get_option_cow!(value, job_state) {
+                match value.get(job_state)? {
                     Some(value) => *segments.get_mut(shifted_n).ok_or(StringModificationError::SegmentNotFound)? = value,
                     None        => if shifted_n >= segments.len() {Err(StringModificationError::SegmentNotFound)?} else {segments.remove(shifted_n);}
                 }
@@ -1306,25 +1306,25 @@ impl StringModification {
                 let mut segments = to.split(split).collect::<Vec<_>>();
                 let fixed_n = neg_index(start.unwrap_or(0), segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 let _ = segments.drain(neg_range(*start, *end, segments.len()).ok_or(StringModificationError::SegmentRangeNotFound)?).collect::<Vec<_>>();
-                let x = get_option_string!(value, job_state);
+                let x = value.get(job_state)?;
                 if let Some(x) = &x {segments.insert(fixed_n, x);}
                 *to = segments.join(split);
             }
             Self::InsertSegmentBefore{split, n, value} => {
-                if let Some(new_segment) = get_option_str!(value, job_state) {
+                if let Some(new_segment) = value.get(job_state)? {
                     let split = get_str!(split, job_state, StringModificationError);
                     let mut temp=to.split(split).collect::<Vec<_>>();
                     let fixed_n=neg_range_boundary(*n, temp.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                    temp.insert(fixed_n, new_segment);
+                    temp.insert(fixed_n, &new_segment);
                     *to=temp.join(split);
                 }
             },
             Self::InsertSegmentAfter{split, n, value} => {
-                if let Some(new_segment) = get_option_str!(value, job_state) {
+                if let Some(new_segment) = value.get(job_state)? {
                     let split = get_str!(split, job_state, StringModificationError);
                     let mut temp=to.split(split).collect::<Vec<_>>();
                     let fixed_n=neg_shifted_range_boundary(*n, temp.len(), 1).ok_or(StringModificationError::SegmentNotFound)?;
-                    temp.insert(fixed_n, new_segment);
+                    temp.insert(fixed_n, &new_segment);
                     *to=temp.join(split);
                 }
             },

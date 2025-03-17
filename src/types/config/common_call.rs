@@ -1,7 +1,7 @@
 //! Unified logic for calling commons.
 
 use std::str::FromStr;
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
@@ -38,7 +38,9 @@ string_or_struct_magic!(CommonCall);
 /// The rules used to make a [`CommonCallArgs`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgsSource {
-    /// The variables for a common.
+    /// The flags for a common call.
+    pub flags: HashSet<String>,
+    /// The vars for a common call.
     pub vars: HashMap<String, StringSource>,
     /// The [`HttpClientConfigDiff`] to use for the duration of a common call.
     #[cfg(feature = "http")]
@@ -65,6 +67,7 @@ impl CommonCallArgsSource {
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
     pub fn make<'a>(&'a self, job_state: &JobStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
         Ok(CommonCallArgs {
+            flags: self.flags.iter().map(|x| Cow::Borrowed(&**x)).collect(),
             vars: self.vars.iter().map(|(k, v)| Ok((Cow::Borrowed(&**k), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
             #[cfg(feature = "http")]
             http_client_config_diff: self.http_client_config_diff.as_ref().map(Cow::Borrowed)
@@ -75,7 +78,9 @@ impl CommonCallArgsSource {
 /// The arguments for a common.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgs<'a> {
-    /// The variables for a common.
+    /// The flags for a common call.
+    pub flags: HashSet<Cow<'a, str>>,
+    /// The vars for a common call.
     pub vars: HashMap<Cow<'a, str>, String>,
     /// The [`HttpClientConfigDiff`] to use for the duration of a common call.
     #[cfg(feature = "http")]

@@ -39,7 +39,7 @@ pub struct CommandConfig {
     /// 
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub envs: HashMap<String, Option<StringSource>>,
+    pub envs: HashMap<String, StringSource>,
     /// The STDIN to feed into the command.
     /// 
     /// Defaults to [`None`].
@@ -113,7 +113,11 @@ impl CommandConfig {
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
         }
-        ret.envs(self.envs.iter().map(|(k, v)| Ok(get_option_string!(v, job_state).map(|v| (k, v)))).filter_map(|x| x.transpose()).collect::<Result<HashMap<_, _>, StringSourceError>>()?);
+        for (k, v) in self.envs.iter() {
+            if let Some(v) = v.get(job_state)? {
+                ret.env(k, &*v);
+            }
+        }
         Ok(ret)
     }
 

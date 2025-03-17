@@ -25,6 +25,7 @@
 			"youtube-unplaylist": "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
 			"youtube-unshort": "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.",
 			"youtube-unembed": "Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.",
+			"youtube-keep-sub-confirmation": "Don't remove the `sub_confirmation` query param from youtube.com URLs.",
 			"remove-unused-search-query": "Remove search queries from URLs that aren't search results (for example, posts).",
 			"instagram-unprofilecard": "Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.",
 			"keep-lang": "Keeps language query parameters.",
@@ -110,15 +111,15 @@
 				"etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app", "go.forbes.com",
 				"go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "goo.gl", "goo.su", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly",
 				"interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com",
-				"l.leparisien.fr", "l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "loom.ly", "loom.ly", "lpc.ca",
-				"m.sesame.org", "msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws",
-				"ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz",
-				"onl.la", "onl.sc", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "politi.co",
-				"prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reut.rs", "rzr.to",
-				"s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "spoti.fi", "spr.ly",
-				"spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com",
-				"tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org",
-				"visitlink.me", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"l.leparisien.fr", "l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org",
+				"msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm",
+				"nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc",
+				"operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "politi.co", "prn.to", "propub.li",
+				"pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reut.rs", "rzr.to", "s.goodsmile.link", "s.team",
+				"s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly", "spr.ly",
+				"sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "tmz.me",
+				"to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "w.wiki",
+				"wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-reg-domains": [
 				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link"
@@ -401,15 +402,25 @@
 									"PartMap": {
 										"part": "HostWithoutWWWDotPrefix",
 										"map": {
-											"pixiv.net"     : {"IfCondition": {
+											"pixiv.net": {"IfCondition": {
 												"condition": {"PathIs": "/jump.php"},
-												"mapper": {"GetUrlFromQueryParam": "url"}
+												"mapper": {"FirstNotError": [
+													{"GetUrlFromQueryParam": "url"},
+													{"CopyPart": {"from": "Query", "to": "Whole"}},
+													{"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"value": {"Part": "Query"},
+															"modification": "UrlDecode"
+														}}
+													}}
+												]}
 											}},
 											"deviantart.com": {"IfCondition": {
 												"condition": {"PathIs": "/users/outgoing"},
 												"mapper": {"GetUrlFromQueryParam": "url"}
 											}},
-											"api.linkr.bio" : {"IfCondition": {
+											"api.linkr.bio": {"IfCondition": {
 												"condition": {"PathIs": "/callbacks/go"},
 												"mapper": {"GetUrlFromQueryParam": "url"}
 											}},
@@ -1180,6 +1191,10 @@
 										{"PartIs": {"part": {"PathSegment": 0}, "value": "watch"}}
 									]},
 									"mapper": {"RemoveQueryParams": ["list"]}
+								}},
+								{"IfCondition": {
+									"condition": {"Not": {"FlagIsSet": "youtube-keep-sub-confirmation"}},
+									"mapper": {"RemoveQueryParams": ["sub_confirmation"]}
 								}},
 								{"IfCondition": {
 									"condition": {"FlagIsSet": "invidious"},

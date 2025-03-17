@@ -10,9 +10,9 @@
 					"result": "https://amazon.ca/dp/B0C6DX66TN"
 				},
 
-				{"job_config": "https://bsky.app"                  , "result": "https://bsky.app/"},
-				{"job_config": "https://fxbsky.app"                , "result": "https://bsky.app/"},
-				{"job_config": "https://user.bsky.social"          , "result": "https://bsky.app/profile/user.bsky.social"},
+				{"job_config": "https://bsky.app"        , "result": "https://bsky.app/"},
+				{"job_config": "https://fxbsky.app"      , "result": "https://bsky.app/"},
+				{"job_config": "https://user.bsky.social", "result": "https://bsky.app/profile/user.bsky.social"},
 				{
 					"job_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
 					"result": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"

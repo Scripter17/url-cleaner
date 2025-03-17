@@ -114,7 +114,7 @@ pub enum Rule {
     ///             condition: Condition::Always,
     ///             mapper: Mapper::SetPart {
     ///                 part: UrlPart::NextPathSegment,
-    ///                 value: Some("a".into())
+    ///                 value: "a".into()
     ///             }
     ///         }
     ///     ]),

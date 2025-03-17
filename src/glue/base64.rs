@@ -11,13 +11,10 @@ use crate::types::*;
 use crate::util::*;
 
 /// A wrapper around [`base64::engine::DecodePaddingMode`] that has a more complete set of trait implementations.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Suitability)]
+#[suitable(always)]
 #[repr(transparent)]
 pub struct DecodePaddingMode(pub base64::engine::DecodePaddingMode);
-
-impl Suitability for DecodePaddingMode {
-    fn assert_suitability(&self, _: &Config) {}
-}
 
 /// Returned when trying to create an invalid [`DecodePaddingMode`].
 #[derive(Debug, Error)]

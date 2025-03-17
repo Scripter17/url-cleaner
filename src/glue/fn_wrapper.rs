@@ -13,7 +13,7 @@ use crate::util::*;
 /// 
 /// Please note that, once it's stabilized, this will require [`T: FnPtr`](FnPtr) and that will not be considered a breaking change.
 #[derive(Debug, Clone, PartialEq, Eq, Suitability)]
-#[suiatble(never)]
+#[suitable(never)]
 #[repr(transparent)]
 pub struct FnWrapper<T>(pub T);
 

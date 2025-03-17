@@ -3,6 +3,7 @@
 use std::str::Utf8Error;
 use std::collections::HashSet;
 use std::time::Duration;
+use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -239,7 +240,7 @@ pub enum Mapper {
         /// The name of the part to replace.
         part: UrlPart,
         /// The value to set the part to.
-        value: Option<StringSource>
+        value: StringSource
     },
     /// Modifies the specified part of the URL.
     ///
@@ -668,7 +669,7 @@ impl Mapper {
 
             // Generic part handling.
 
-            Self::SetPart{part, value} => part.set(job_state.url, get_option_string!(value, job_state).as_deref())?, // The deref is needed for borrow checking reasons.
+            Self::SetPart{part, value} => part.set(job_state.url, value.get(&job_state.to_view())?.map(Cow::into_owned).as_deref())?, // The deref is needed for borrow checking reasons.
             Self::ModifyPart{part, modification} => if let Some(mut temp) = part.get(job_state.url).map(|x| x.into_owned()) {
                 modification.apply(&mut temp, &job_state.to_view())?;
                 part.set(job_state.url, Some(&temp))?;

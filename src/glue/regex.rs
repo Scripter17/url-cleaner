@@ -18,10 +18,11 @@ pub use regex_parts::*;
 /// 
 /// Both are included to allow both lazy compilation and turning a [`Self`] back into a [`RegexParts`].
 /// Unfortunately, as they need to always be the same value, the fields of this struct are private.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Suitability)]
 #[serde(from = "RegexParts", into = "RegexParts")]
 pub struct RegexWrapper {
     /// Allows the [`Regex`] to only be constructed when needed.
+    #[suitable(always)]
     regex: OnceLock<Regex>,
     /// Instructions for how to create the [`Regex`] to put in [`Self::regex`].
     parts: RegexParts
@@ -95,11 +96,5 @@ impl RegexWrapper {
             let temp = self.parts.build()?;
             Ok(self.regex.get_or_init(|| temp))
         }
-    }
-}
-
-impl Suitability for RegexWrapper {
-    fn assert_suitability(&self, config: &Config) {
-        self.parts.assert_suitability(config)
     }
 }
