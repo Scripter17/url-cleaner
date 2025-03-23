@@ -1,11 +1,9 @@
-//! Provides [`StringSource`] which allows for getting strings from various parts of a [`JobStateView`].
+//! Dynamically get strings from various part of a [`JobState`].
 
 use std::str::FromStr;
 use std::convert::Infallible;
 use std::borrow::Cow;
 use std::env::var;
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -13,407 +11,187 @@ use thiserror::Error;
 use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
-
-/// Allows conditions and mappers to get strings from various sources without requiring different conditions and mappers for each source.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSource {
-    /// Simply returns [`None`].
-    ///
-    /// Deserialized from and serialized into `null`.
+    /// Always returns [`None`].
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
-    /// assert_eq!(serde_json::from_str::<StringSource>("null"             ).unwrap(), StringSource::None);
-    /// assert_eq!(serde_json::to_string               (&StringSource::None).unwrap(), "null"            );
+    /// url_cleaner::job_state!(job_state;);
+    /// let job_state_view = job_state.to_view();
+    /// 
+    /// assert_eq!(StringSource::None.get(&job_state_view).unwrap(), None);
     /// ```
     #[default]
     None,
-    // Error handling/prevention.
-
-    /// Always returns the error [`StringSourceError::ExplicitError`].
-    /// 
-    /// Cannot be deserialized as `"Error"` becomes `Self::String("Error".into())`. I think this is less surprising behavior.
+    /// Always returns [`StringSourceError::ExplicitError`].
     /// # Errors
     /// Always returns the error [`StringSourceError::ExplicitError`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// let job_state_view = job_state.to_view();
+    /// 
+    /// StringSource::Error.get(&job_state_view).unwrap_err();
+    /// ```
     Error,
-    /// If the call to [`Self::get`] returns an error, returns [`None`].
+    /// If the call to [`Self::get`] returns an error, instead returns [`None`].
+    ///
+    /// Otherwise leaves the return value unchanged.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// let job_state_view = job_state.to_view();
+    ///
+    /// assert_eq!(StringSource::ErrorToNone(Box::new(StringSource::Error)).get(&job_state_view).unwrap(), None);
+    /// ```
     ErrorToNone(Box<Self>),
-    /// If the call to [`Self::get`] returns an error, returns `Some(Cow::Borrowed(""))`.
+    /// If the call to [`Self::get`] returns an error, instead returns an empty string.
+    ///
+    /// Otherwise leaves the return value unchanged.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// let job_state_view = job_state.to_view();
+    ///
+    /// assert_eq!(StringSource::ErrorToEmptyString(Box::new(StringSource::Error)).get(&job_state_view).unwrap(), Some("".into()));
+    /// ```
     ErrorToEmptyString(Box<Self>),
-    /// If `value`'s call to [`Self::get`] returns an error, returns `if_error`.
+    /// If [`Self::TryElse::try`]'s call to [`Self::get`] returns an error, instead return the value of [`Self::TryElse::else`].
     /// # Errors
-    /// If `if_error`'s call to [`Self::get`] returns an error, that error is returned.
-    ErrorTo {
-        /// The value to get.
-        value: Box<Self>,
-        /// The value to get if getting `value` returned an error.
-        if_error: Box<Self>
+    /// If both [`Self::TryElse::try`] and [`Self::TryElse::else`]'s calls to [`Self::get`] return an error, [`Self::TryElse::else`]'s error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// let job_state_view = job_state.to_view();
+    ///
+    /// assert_eq!(StringSource::TryElse {r#try: Box::new(StringSource::Error), r#else: Box::new(StringSource::None)}.get(&job_state_view).unwrap(), None);
+    /// ```
+    TryElse {
+        r#try: Box<Self>,
+        r#else: Box<Self>
     },
-    /// Prints debugging information about the contained [`Self`] and the details of its execution to STDERR.
-    /// 
-    /// Intended primarily for debugging logic errors.
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
-    #[suitable(never)]
-    Debug(Box<Self>),
-    /// If the call to [`Self::get`] returns `None`, instead return `Some(Cow::Borrowed(""))`
+    /// Print debug info about the contained [`Self`] and its call to [`Self::get`].
+    ///
+    /// The exact info printed is unspecified and subject to change at any time for any reason.
+    /// # Suitability
+    /// Always unsuiable to be in the default config.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
-    NoneToEmptyString(Box<Self>),
-    /// If [`Self::NoneTo::value`] returns `None`, instead return the value of [`Self::NoneTo::if_none`].
-    /// 
-    /// Please note that [`Self::NoneTo::if_none`] can still return [`None`] and does not return an error when it does so.
+    #[suitable(never)]
+    Debug(Box<Self>),
+    /// If the call to [`Self::get`] returns [`None`], instead returns an empty string.
+    ///
+    /// Otherwise leaves the return value unchanged.
     /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
+    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// url_cleaner::job_state!(job_state;);
+    /// let job_state_view = job_state.to_view();
+    ///
+    /// assert_eq!(StringSource::NoneToEmptyString(Box::new(StringSource::None)).get(&job_state_view).unwrap(), Some("".into()));
+    /// ```
+    NoneToEmptyString(Box<Self>),
     NoneTo {
-        /// The [`Self`] to use by default.
         value: Box<Self>,
-        /// The [`Self`] to use if [`Self::NoneTo::value`] returns [`None`].
         if_none: Box<Self>
     },
 
     // Logic.
-
-    /// Joins a list of strings. Effectively a [`slice::join`].
-    /// By default, `join` is `""` so the strings are concatenated.
-    /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use std::borrow::Cow;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// assert_eq!(
-    ///     StringSource::Join {
-    ///         sources: vec![
-    ///             StringSource::String(".".to_string()),
-    ///             StringSource::Part(UrlPart::RegDomain)
-    ///         ],
-    ///         join: "".to_string()
-    ///     }.get(&job_state.to_view()).unwrap(),
-    ///     Some(Cow::Owned(".example.com".to_string()))
-    /// );
-    /// ```
     Join {
-        /// The list of string sources to join.
         sources: Vec<Self>,
-        /// The value to join `sources` with. Defaults to an empty string.
         #[serde(default, skip_serializing_if = "is_default")]
         join: String
     },
-    /// If the flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `else`.
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use std::borrow::Cow;
-    /// # use std::collections::HashSet;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// // Putting this in the `job_state!` call doesn't work???`
-    /// let params = url_cleaner::types::Params { flags: vec!["abc".to_string()].into_iter().collect(), ..Default::default() };
-    /// job_state.params = &params;
-    /// 
-    /// assert_eq!(
-    ///     StringSource::IfFlag {
-    ///         flag: Box::new("abc".into()),
-    ///         then: "abc".into(),
-    ///         r#else: Box::new(StringSource::Part(UrlPart::Domain))
-    ///     }.get(&job_state.to_view()).unwrap(),
-    ///     Some(Cow::Borrowed("abc"))
-    /// );
-    /// assert_eq!(
-    ///     StringSource::IfFlag {
-    ///         flag: Box::new("xyz".into()),
-    ///         then: "xyz".into(),
-    ///         r#else: Box::new(StringSource::Part(UrlPart::Domain))
-    ///     }.get(&job_state.to_view()).unwrap(),
-    ///     Some(Cow::Borrowed("example.com"))
-    /// );
-    /// ```
     IfFlag {
-        /// The name of the flag to check.
         flag: Box<Self>,
-        /// If the flag is set, use this.
         then: Box<Self>,
-        /// If the flag is not set, use this.
         r#else: Box<Self>
     },
-    /// If the scratchpad flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `else`.
-    /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If `flag` returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
     IfScratchpadFlag {
-        /// The name of the scratchpad flag to check.
         flag: Box<Self>,
-        /// If the flag is set, use this.
         then: Box<Self>,
-        /// If the flag is not set, use this.
         r#else: Box<Self>
     },
-    /// If the common flag specified by `flag` is set, return the result of `then`. Otherwise return the result of `else`.
-    /// # Errors
-    /// If this is called outside of a [`Commons::StringSource`] call, retursn the error [`StringSourceError::NotInACommonContext`].
-    /// 
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If `flag` returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
     IfCommonFlag {
-        /// The name of the common flag to check.
         flag: Box<Self>,
-        /// If the flag is set, use this.
         then: Box<Self>,
-        /// If the flag is not set, use this.
         r#else: Box<Self>
     },
-    /// If the value of `value` matches `matcher`, returns the value of `then`, otherwise returns the value of `else`.
-    /// # Errors
-    /// If any call to [`StringSource::get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     IfSourceMatches {
-        /// The [`Self`] to match on.
         value: Box<Self>,
-        /// The matcher.
         matcher: Box<StringMatcher>,
-        /// The [`Self`] to return if the matcher passes.
         then: Box<Self>,
-        /// The [`Self`] to return if the matcher fails.
         r#else: Box<Self>
     },
-    /// If the value of `value` is [`None`], returns the value of `then`, otherwise returns the value of `else`.
-    /// # Errors
-    /// If any of the calls to [`StringSource::get`] return an error, that error is returned.
     IfSourceIsNone {
-        /// The value to check the [`None`]ness of.
         value: Box<Self>,
-        /// The value to return if `value` is [`None`].
         then: Box<Self>,
-        /// The value to return if `value` is not [`None`]
         r#else: Box<Self>
     },
-    /// Gets the `Option<String>` from [`Self::Map::value`] then, if it exists in [`Self::Map::map`], gets its corresponding [`Self`]'s value.
-    /// 
-    /// The main benefit of this over [`StringModification::Map`] is this can handle [`None`].
-    /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
-    /// 
-    /// If string returned by [`Self::Map::value`] is not in the specified map, returns the error [`StringModificationError::StringNotInMap`].
     Map {
-        /// The string to index the map with.
         value: Box<Self>,
-        /// The map to map the string with.
         #[serde(flatten)]
         map: Map<Self>,
     },
 
     // Basic stuff.
-
-    /// Just a string. The most common variant.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use std::borrow::Cow;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// assert_eq!(StringSource::String("abc".to_string()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("abc")));
-    /// ```
     String(String),
-    /// Gets the specified URL part.
-    /// # Errors
-    /// If the call to [`UrlPart::get`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use std::borrow::Cow;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// assert_eq!(StringSource::Part(UrlPart::Domain).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("example.com")));
-    /// ```
     Part(UrlPart),
-    /// Parses `value` as a URL and gets the specified part.
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`BetterUrl::parse`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`UrlPart::get`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use std::borrow::Cow;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// assert_eq!(
-    ///     StringSource::ExtractPart {
-    ///         value: "https://example.com".into(),
-    ///         part: UrlPart::Scheme
-    ///     }.get(&job_state.to_view()).unwrap(),
-    ///     Some(Cow::Borrowed("https"))
-    /// );
-    /// ```
     ExtractPart {
-        /// The string to parse and extract `part` from.
         value: Box<Self>,
-        /// The part to extract from `value`.
         part: UrlPart
     },
-    /// Indexes [`JobState::common_args`].
-    /// # Errors
-    /// If [`JobState::common_args`] is [`None`], returns the error [`StringSourceError::NotInACommonContext`].
     CommonVar(Box<Self>),
-    /// Gets the specified variable's value.
-    /// 
-    /// Returns [`None`] (NOT an error) if the variable is not set.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// # use std::borrow::Cow;
-    /// # use std::collections::HashMap;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// // Putting this in the `job_state!` call doesn't work???`
-    /// let params = Params {vars: HashMap::from_iter([("abc".to_string(), "xyz".to_string())]), ..Params::default()};
-    /// job_state.params = &params;
-    /// 
-    /// assert_eq!(StringSource::Var("abc".into()).get(&job_state.to_view()).unwrap(), Some(Cow::Borrowed("xyz")));
-    /// ```
     Var(#[suitable(assert = "var_is_documented")] Box<Self>),
-    /// Gets the value of the specified [`JobState::scratchpad`]'s [`JobScratchpad::vars`].
-    /// 
-    /// Returns [`None`] (NOT an error) if the string var is not set.
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
-    ///
     ScratchpadVar(Box<Self>),
-    /// Gets the value of the specified [`JobContext::vars`]
-    /// 
-    /// Returns [`None`] (NOT an error) if the var is not set.
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
     ContextVar(#[suitable(assert = "context_var_is_documented")] Box<Self>),
-    /// Gets the value of the specified [`JobsContext::vars`]
-    ///
-    /// Returns [`None`] (NOT an error) if the var is not set.
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
     JobsContextVar(#[suitable(assert = "jobs_context_var_is_documented")] Box<Self>),
-    /// Indexes into a [`Params::maps`] using `map` then indexes the returned [`HashMap`] with `key`.
-    /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
     ParamsMap {
-        /// The map from [`Params::maps`] to index in.
         #[suitable(assert = "map_is_documented")]
         map: Box<Self>,
-        /// The key to index the map with.
         key: Box<Self>
     },
-    /// Indexes into a [`Params::named_partitionings`] using [`Self::ParamsNamedPartitioning::name`] then indexes the returned [`NamedPartitioning`] with [`Self::ParamsNamedPartitioning::element`].
-    /// # Errors
-    /// If [`Params::named_partitionings`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::NamedPartitioningNotFound`].
-    ///
-    /// If either call to [`Self::get`] return an error, that error is returned.
     ParamsNamedPartitioning {
-        /// The [`NamedPartitioning`] to get from [`Params::named_partitionings`].
         #[suitable(assert = "named_partitioning_is_documented")]
         name: Box<Self>,
-        /// The value to index the [`NamedPartitioning`] with.
         element: Box<Self>
     },
-    /// Gets a string with `value`, modifies it with `modification`, and returns the result.
-    /// # Errors
-    /// If the call to [`StringModification::apply`] errors, returns that error.
     Modified {
-        /// The [`Self`] get the string from.
         value: Box<Self>,
-        /// The modification to apply to the string.
         modification: Box<StringModification>
     },
 
     // External state.
-
-    /// Gets the environment variable.
-    /// 
-    /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotPresent`], returns [`None`].
-    /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`std::env::var`] returns the error [`std::env::VarError::NotUnicode`], returns the error [`StringSourceError::EnvVarIsNotUtf8`].
     EnvVar(#[suitable(assert = "env_var_is_documented")] Box<Self>),
-    /// Sends an HTTP request and returns a string from the response determined by the specified [`ResponseHandler`].
-    /// # Errors
-    /// If the call to [`RequestConfig::response`] returns an error, that error is returned.
     #[cfg(feature = "http")]
     HttpRequest(Box<RequestConfig>),
-    /// Run a command and return its output.
-    /// # Errors
-    /// If the call to [`CommandConfig::output`] returns an error, that error is returned.
     #[cfg(feature = "commands")]
     CommandOutput(Box<CommandConfig>),
-    /// Read from the cache.
-    /// 
-    /// If an entry is found, return its value.
-    /// 
-    /// If an entry is not found, calls [`StringSource::get`], writes its value to the cache (if it's not an error), then returns it.
-    /// 
-    /// Please note that [`Self::Cache::category`] and [`Self::Cache::key`] should be chosen to make all possible collisions intentional.
-    /// # Errors
-    /// If the call to [`Cache::read`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`Cache::write`] returns an error, that error is returned.
     #[cfg(feature = "cache")]
     Cache {
-        /// The category to cache in.
         category: Box<Self>,
-        /// The key to cache with.
         key: Box<Self>,
-        /// The [`Self`] to cache.
         value: Box<Self>
     },
-    /// Extracts the substring of `value` found between the first `start` and the first subsequent `end`.
-    /// 
-    /// The same as [`StringModification::ExtractBetween`] but preserves borrowedness.
-    /// 
-    /// If `value` returns a [`Cow::Borrowed`], this will also return a [`Cow::Borrowed`].
-    /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    /// 
-    /// If any call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
-    /// 
-    /// If `start` is not found in `value`, returns the error [`StringSourceError::ExtractBetweenStartNotFound`].
-    /// 
-    /// If `end` is not found in `value` after `start`, returns the error [`StringSourceError::ExtractBetweenEndNotFound`].
     ExtractBetween {
-        /// The [`Self`] to get a substring from.
         value: Box<Self>,
-        /// The [`Self`] to look for before the substring.
         start: Box<Self>,
-        /// The [`Self`] to look for after the substring.
         end: Box<Self>
     },
-    /// Calls [`::regex::Regex::find`] on `value`.
-    /// # Errors
-    /// If the call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
-    ///
-    /// If the call to [`RegexWrapper::get_regex`] returns an error, that error is returned.
     #[cfg(feature = "regex")]
     RegexFind {
-        /// The value to search in.
         value: Box<Self>,
-        /// The [`RegexWrapper`] to search with.
         regex: RegexWrapper
     },
-    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::string_sources`].
     Common(CommonCall),
-    /// Uses a function pointer.
-    /// 
-    /// Cannot be serialized or deserialized.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
@@ -422,45 +200,34 @@ pub enum StringSource {
 
 impl FromStr for StringSource {
     type Err = Infallible;
-
-    /// Returns a [`Self::String`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::String(s.to_string()))
     }
 }
 
 impl From<&str> for StringSource {
-    /// Returns a [`Self::String`].
     fn from(value: &str) -> Self {
         Self::String(value.into())
     }
 }
 
 impl From<String> for StringSource {
-    /// Returns a [`Self::String`].
     fn from(value: String) -> Self {
         Self::String(value)
     }
 }
 
 impl From<&str> for Box<StringSource> {
-    /// Returns a [`StringSource::String`].
-    /// 
-    /// Exists for convenience.
     fn from(value: &str) -> Self {
         Box::new(value.into())
     }
 }
 
 impl From<String> for Box<StringSource> {
-    /// Returns a [`StringSource::String`].
-    /// 
-    /// Exists for convenience.
     fn from(value: String) -> Self {
         Box::new(value.into())
     }
 }
-/// Serialize the object. Although the macro this implementation came from allows [`Self::deserialize`]ing from a string, this currently always serializes to a map, though that may change eventually.
 impl Serialize for StringSource {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
@@ -469,10 +236,6 @@ impl Serialize for StringSource {
         }
     }
 }
-
-/// This particular implementation allows for deserializing from a string using [`Self::from_str`].
-/// 
-/// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 impl<'de> Deserialize<'de> for StringSource {
     fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct V;
@@ -504,86 +267,61 @@ impl<'de> Deserialize<'de> for StringSource {
         deserializer.deserialize_any(V)
     }
 }
-
-/// The enum of all possible errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringSourceError {
-    /// Returned when [`StringSource::Error`] is used.
     #[error("StringSource::Error was used.")]
     ExplicitError,
-    /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
-    /// Returned when [`reqwest::Error`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
-    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
     HeaderToStrError(#[from] reqwest::header::ToStrError),
-    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when a [`RequestConfigError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
-    RequestConfigError(#[from] RequestConfigError),
-    /// Returned when a [`ResponseHandlerError`] is encountered.
+    HttpResponseError(#[from] HttpResponseError),
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReponseHandlerError(#[from] ResponseHandlerError),
-    /// Returned when a [`CommandError`] is encountered.
     #[cfg(feature = "commands")]
     #[error(transparent)]
     CommandError(Box<CommandError>),
-    /// Returned when the provided string is not in the specified map.
     #[error("The provided string was not in the specified map.")]
     StringNotInMap,
-    /// Returned when a [`ReadFromCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
-    /// Returned when a [`WriteToCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
-    /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] Box<StringMatcherError>),
-    /// Returned when the value of a requested environment variable is not UTF-8.
     #[error("The value of the requested environment variable was not UTF-8.")]
     EnvVarIsNotUtf8,
-    /// Returned when the requested map is not found.
     #[error("The requested map was not found.")]
     MapNotFound,
-    /// Returned when the requested [`NamedPartitioning`] is not found.
     #[error("The requested NamedPartitioning was not found.")]
     NamedPartitioningNotFound,
-    /// Returned when [`StringSource::Common`] is used outside of a common context.
     #[error("Not in a common context.")]
     NotInACommonContext,
-    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `value`.
     #[error("The `start` of an `ExtractBetween` was not found in the string.")]
     ExtractBetweenStartNotFound,
-    /// Returned when the `start` of a [`StringSource::ExtractBetween`] is not found in the `value`.
     #[error("The `end` of an `ExtractBetween` was not found in the string.")]
     ExtractBetweenEndNotFound,
-    /// Returned when the common [`StringSource`] is not found.
     #[error("The common StringSource was not found.")]
     CommonStringSourceNotFound,
-    /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
-    /// Returned when a [`::regex::Error`] is encountered.
     #[error(transparent)]
     #[cfg(feature = "regex")]
     RegexError(#[from] ::regex::Error),
-    /// Custom error.
     #[error(transparent)]
     #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error + Send>)
@@ -604,9 +342,9 @@ impl From<StringMatcherError> for StringSourceError {
 }
 
 impl StringSource {
-    /// Gets the string from the source.
+    /// Get the string.
     /// # Errors
-    /// See each of [`Self`]'s variant's documentation for details.
+    /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'a>(&'a self, job_state: &'a JobStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         debug!(StringSource::get, self, job_state);
         Ok(match self {
@@ -615,7 +353,7 @@ impl StringSource {
             Self::Error => Err(StringSourceError::ExplicitError)?,
             Self::ErrorToNone(value) => value.get(job_state).ok().flatten(),
             Self::ErrorToEmptyString(value) => value.get(job_state).unwrap_or(Some(Cow::Borrowed(""))),
-            Self::ErrorTo{value, if_error} => value.get(job_state).or_else(|_| if_error.get(job_state))?,
+            Self::TryElse{r#try, r#else} => r#try.get(job_state).or_else(|_| r#else.get(job_state))?,
             Self::Debug(source) => {
                 let ret = source.get(job_state);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nJob state: {job_state:?}\nret: {ret:?}");
@@ -673,8 +411,8 @@ impl StringSource {
             },
             #[cfg(feature = "regex")]
             Self::RegexFind {value, regex} => match value.get(job_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
-                Cow::Owned   (value) => regex.get_regex()?.find(&value).map(|x| Cow::Owned   (x.as_str().to_string())),
-                Cow::Borrowed(value) => regex.get_regex()?.find( value).map(|x| Cow::Borrowed(x.as_str()))
+                Cow::Owned   (value) => regex.get()?.find(&value).map(|x| Cow::Owned   (x.as_str().to_string())),
+                Cow::Borrowed(value) => regex.get()?.find( value).map(|x| Cow::Borrowed(x.as_str()))
             },
 
             // External state.
@@ -733,7 +471,7 @@ impl StringSource {
                     #[cfg(feature = "cache")]
                     cache: job_state.cache,
                     commons: job_state.commons,
-                    common_args: Some(&common_call.args.make(job_state)?),
+                    common_args: Some(&common_call.args.build(job_state)?),
                     jobs_context: job_state.jobs_context
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },

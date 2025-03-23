@@ -1,24 +1,23 @@
-//! Allows including tests in the [`Config`],
+//! A basic and not very good testing framework.
 
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use url::Url;
 
 use crate::types::*;
 use crate::util::*;
 
-/// The main API for running tests.
+/// Tests.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tests {
-    /// The [`TestSet`]s to run.
+    /// The individual [`TestSet`]s.
     pub sets: Vec<TestSet>
 }
 
 impl Tests {
-    /// Run all the tests.
+    /// Do the tests. Panicking if any fail.
     /// # Panics
-    /// If a test fails, panics.
+    /// If any call to [`TestSet::do`] panics, "returns" that panic.
     pub fn r#do(self, config: &Config) {
         for set in self.sets {
             set.r#do(config)
@@ -26,13 +25,13 @@ impl Tests {
     }
 }
 
-/// A group of [`Test`]s that share a [`ParamsDiff`] and [`JobsContext`].
+/// Rules for how to construct a [`JobsSource`] from a [`Config`] and the [`Test`]s to run on it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TestSet {
-    /// The [`ParamsDiff`] to use.
+    /// The [`ParamsDiff`] to apply to the [`Config`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
-    /// The [`JobsContext`] to use.
+    /// The [`JobsContext`] to give to the [`JobsSource`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub jobs_context: JobsContext,
     /// The [`Test`]s to run.
@@ -40,9 +39,13 @@ pub struct TestSet {
 }
 
 impl TestSet {
-    /// Runs all the tests
+    /// Do the tests, panicking if any fail.
     /// # Panics
-    /// If a test fails, panics.
+    /// If a value from [`JobsSource::iter`] is an error, panics.
+    ///
+    /// If a call to [`Job::do`] returns an error, panics.
+    /// 
+    /// If any test fails, panics.
     pub fn r#do(self, config: &Config) {
         let mut config = Cow::Borrowed(config);
 
@@ -54,7 +57,7 @@ impl TestSet {
 
         let (job_configs, results) = self.tests.clone().into_iter().map(|Test {job_config, result}| (job_config, result)).collect::<(Vec<_>, Vec<_>)>();
 
-        let mut jobs = Jobs {
+        let mut jobs = JobsSource {
             jobs_config: JobsConfig {
                 config,
                 #[cfg(feature = "cache")]
@@ -77,14 +80,10 @@ impl TestSet {
 }
 
 /// An individual test.
-///
-/// Needs the config from a [`TestSet`] to be run.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Test {
-    /// The [`JobConfig`] to use.
+    /// The [`JobConfig`].
     pub job_config: JobConfig,
-    /// The expected result URL.
-    pub result: Url
+    /// The expected result.
+    pub result: BetterUrl
 }
-
-

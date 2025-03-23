@@ -1,30 +1,31 @@
-//! Details of a host.
+//! Details for hosts not stored/exposed by [`url`].
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-#[allow(unused_imports, reason = "Doc links.")]
+#[expect(unused_imports, reason = "Doc links.")]
 use url::Url;
-#[allow(unused_imports, reason = "Doc links.")]
+#[expect(unused_imports, reason = "Doc links.")]
 use crate::types::*;
 
 mod domain;
 pub use domain::*;
-mod ipv4;
-pub use ipv4::*;
-mod ipv6;
-pub use ipv6::*;
+mod ip;
+pub use ip::*;
 
-/// Details for a [`BetterUrl`]'s [`Url`]'s host.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[expect(unused_imports, reason = "Doc links.")]
+use crate::types::*;
+
+/// The details of a [`BetterUrl`]'s host.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HostDetails {
-    /// Details for a host that is a [`url::Host::Domain`].
+    /// Details of a [`BetterUrl`]'s domain host.
     Domain(DomainDetails),
-    /// Details for a host that is a [`url::Host::Ipv4`].
+    /// Details of a [`BetterUrl`]'s IPv4 host.
     Ipv4(Ipv4Details),
-    /// Details for a host that is a [`url::Host::Ipv6`].
+    /// Details of a [`BetterUrl`]'s IPv6 host.
     Ipv6(Ipv6Details)
 }
 
@@ -46,7 +47,7 @@ impl From<Ipv6Details> for HostDetails {
     }
 }
 
-/// Returned when trying to convert a non-domain [`HostDetails`] into a [`DomainDetails`].
+/// The error returned when trying to convert a non-[`HostDetails::Domain`] into a [`DomainDetails`].
 #[derive(Debug, Error)]
 #[error("The host is not a domain.")]
 pub struct HostIsNotDomain;
@@ -62,7 +63,7 @@ impl TryFrom<HostDetails> for DomainDetails {
     }
 }
 
-/// Returned when trying to convert a non-IPv4 address [`HostDetails`] into a [`Ipv4Details`].
+/// The error returned when trying to convert a non-[`HostDetails::Ipv4`] into a [`Ipv4Details`].
 #[derive(Debug, Error)]
 #[error("The host is not an IPv4 address.")]
 pub struct HostIsNotIpv4;
@@ -78,7 +79,7 @@ impl TryFrom<HostDetails> for Ipv4Details {
     }
 }
 
-/// Returned when trying to convert a non-IPv6 address [`HostDetails`] into a [`Ipv6Details`].
+/// The error returned when trying to convert a non-[`HostDetails::Ipv6`] into a [`Ipv6Details`].
 #[derive(Debug, Error)]
 #[error("The host is not an IPv6 address.")]
 pub struct HostIsNotIpv6;
@@ -97,44 +98,65 @@ impl TryFrom<HostDetails> for Ipv6Details {
 impl HostDetails {
     /// Gets the details of a host [`str`].
     /// # Errors
-    /// If the call to [`url::Host::parse`] returns an error, that error is returned.
+    /// If the call to [`url::Host::parse`] reutrns an error, that error is returned.
     pub fn from_host_str(host: &str) -> Result<Self, url::ParseError> {
-        url::Host::parse(host).map(Self::from_host)
+        url::Host::parse(host).map(|host| Self::from_host(&host))
     }
-
-    /// Gets the details of a domain [`str`].
-    ///
-    /// PLEASE note that passing, for example, `"127.0.0.1"` gives very nonsensical results.
-    ///
-    /// If you are even remotely possibly not always handling domains, please use [`HostDetails::from_host`] or [`HostDetails::from_host_str`].
-    pub fn from_domain_str(domain: &str) -> Self {
-        Self::Domain(DomainDetails::from_domain_str(domain.as_ref()))
+    /// Gets the details of a domain host.
+    /// # Errors
+    /// If the call to [`DomainDetails::from_domain_str] returns an error, that error is returned.
+    pub fn from_domain_str(domain: &str) -> Result<Self, GetDomainDetailsError> {
+        Ok(DomainDetails::from_domain_str(domain)?.into())
     }
-
-    /// Gets the details of an [`Ipv4Addr`].
+    /// Gets the details of a domain host without checking if it's a domain.
+    pub fn from_domain_str_unchecked(domain: &str) -> Self {
+        DomainDetails::from_domain_str_unchecked(domain).into()
+    }
+    /// Gets the details of an [`Ipv4Addr`] host.
     pub fn from_ipv4_addr(addr: Ipv4Addr) -> Self {
         Self::Ipv4(Ipv4Details::from_addr(addr))
     }
-
-    /// Gets the details of an [`Ipv6Addr`].
+    /// Gets the details of an [`Ipv6Addr`] host.
     pub fn from_ipv6_addr(addr: Ipv6Addr) -> Self {
         Self::Ipv6(Ipv6Details::from_addr(addr))
     }
-
-    /// Gets the details of an [`IpAddr`].
+    /// Gets the details of an [`IpAddr`] host.
     pub fn from_ip_addr(addr: IpAddr) -> Self {
         match addr {
             IpAddr::V4(addr) => Self::from_ipv4_addr(addr),
             IpAddr::V6(addr) => Self::from_ipv6_addr(addr)
         }
     }
-
-    /// Gets the details of a [`url::Host`] as long as its domain variant is [`AsRef<str>`].
-    pub fn from_host<T: AsRef<str>>(host: url::Host<T>) -> Self {
+    /// Gets the details of a [`url::Host`].
+    pub fn from_host<T: AsRef<str>>(host: &url::Host<T>) -> Self {
         match host {
-            url::Host::Domain(domain) => Self::from_domain_str(domain.as_ref()),
-            url::Host::Ipv4  (addr  ) => Self::from_ipv4_addr(addr),
-            url::Host::Ipv6  (addr  ) => Self::from_ipv6_addr(addr)
+            url::Host::Domain(domain) => Self::from_domain_str_unchecked(domain.as_ref()),
+            url::Host::Ipv4  (addr  ) => Self::from_ipv4_addr(*addr),
+            url::Host::Ipv6  (addr  ) => Self::from_ipv6_addr(*addr)
+        }
+    }
+
+    /// If `self` is [`Self::Domain`], return it.
+    pub fn domain_details(&self) -> Option<&DomainDetails> {
+        match self {
+            Self::Domain(ret) => Some(ret),
+            _ => None
+        }
+    }
+
+    /// If `self` is [`Self::Ipv4`], return it.
+    pub fn ipv4_details(&self) -> Option<&Ipv4Details> {
+        match self {
+            Self::Ipv4(ret) => Some(ret),
+            _ => None
+        }
+    }
+
+    /// If `self` is [`Self::Ipv6`], return it.
+    pub fn ipv6_details(&self) -> Option<&Ipv6Details> {
+        match self {
+            Self::Ipv6(ret) => Some(ret),
+            _ => None
         }
     }
 }

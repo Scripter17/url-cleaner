@@ -1,9 +1,7 @@
-//! Various macros to make repetitive tasks simpler and cleaner.
+//! Macros.
 
 #[cfg(feature = "debug")]
 use std::sync::{Mutex, OnceLock};
-
-/// Used by [`debug`] to control the indentation level.
 #[cfg(feature = "debug")]
 pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
 
@@ -12,22 +10,17 @@ pub(crate) static DEBUG_TIME: Mutex<Option<std::time::Instant>> = Mutex::new(Non
 
 #[cfg(feature = "debug")]
 pub(crate) static DEBUG_JUST_PRINT_TIMES: OnceLock<bool> = OnceLock::new();
-
-/// The thing that decrements [`DEBUG_INDENT`] when dropped.
 #[cfg(feature = "debug")]
 pub(crate) struct Deindenter;
-
-/// Decrements [`DEBUG_INDENT`].
 #[cfg(feature = "debug")]
 impl std::ops::Drop for Deindenter {
-    /// Decrements [`DEBUG_INDENT`]
     #[allow(clippy::arithmetic_side_effects, reason = "DEBUG_INDENT gets decremented exactly once per increment and always after.")]
     fn drop(&mut self) {
         *crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.")-=1;
     }
 }
 
-/// Print debugging for the win!
+/// When the debug feature is enabled, print debug info.
 macro_rules! debug {
     ($func:pat, $($comment:literal,)? $($name:ident),*) => {
         #[cfg(feature = "debug")]
@@ -52,21 +45,16 @@ macro_rules! debug {
     }
 }
 
-/// Macro that allows types to be have [`serde::Deserialize`] use [`std::str::FromStr`] as a fallback.
-/// 
+/// Helper macro to make serde use [`FromStr`] to deserialize strings.
+///
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
 macro_rules! string_or_struct_magic {
     ($type:ty) => {
-        /// Serialize the object. Although the macro this implementation came from allows [`Self::deserialize`]ing from a string, this currently always serializes to a map, though that may change eventually.
         impl Serialize for $type {
             fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
                 <$type>::serialize(self, serializer)
             }
         }
-
-        /// This particular implementation allows for deserializing from a string using [`Self::from_str`].
-        /// 
-        /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
         impl<'de> Deserialize<'de> for $type {
             fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
                 struct V;
@@ -93,21 +81,21 @@ macro_rules! string_or_struct_magic {
     }
 }
 
-/// A macro that makes handling the difference between [`StringSource`] and [`String`] easier.
+/// Helper macro to get a [`StringSource`]'s value as a [`String`] or return an error if it's [`None`].
 macro_rules! get_string {
     ($value:expr, $job_state:expr, $error:ty) => {
         $value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
     }
 }
 
-/// A macro that makes handling the difference between [`StringSource`] and [`str`] easier.
+/// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
 macro_rules! get_str {
     ($value:expr, $job_state:expr, $error:ty) => {
         &*$value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
     }
 }
 
-/// A macro that makes handling the difference between [`StringSource`] and [`Cow`]s of [`str`]s easier.
+/// Helper macro to get a [`StringSource`]'s value as a [`Cow`] or return an error if it's [`None`].
 macro_rules! get_cow {
     ($value:expr, $job_state:expr, $error:ty) => {
         $value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?

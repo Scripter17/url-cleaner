@@ -1,44 +1,76 @@
-//! Allows passing additional details into various types in URL Cleaner.
+//! Flags, variables, etc. that adjust the exact behavior of a config.
 
 use std::collections::{HashMap, HashSet};
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
+use serde_with::serde_as;
 
 use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// Configuration options to choose the behaviour of various URL Cleaner types.
+/// Flags, variables, etc. that adjust the exact behavior of a config.
+///
+/// Bundles all the state that determines how the [`Config`] works in one conenient area.
+#[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub struct Params {
-    /// Booleans variables used to determine behavior.
+    /// Flags allow enabling and disabling certain behavior.
+    ///
+    /// Defaults to an empty [`HashSet`].
+    #[serde_with = "SetPreventDuplicates<_>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub flags: HashSet<String>,
-    /// String variables used to determine behavior.
+    /// Vars allow setting strings used for certain behaviors.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>,
-    /// Set variables used to determine behavior.
+    /// Sets allow quickly checking if a string is in a certain genre of possible values.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub sets: HashMap<String, HashSet<String>>,
-    /// List variables used to determine behavior.
+    /// Lists are a niche thing that lets you iterate over a set of values in a known order.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub lists: HashMap<String, Vec<String>>,
-    /// Map variables used to determine behavior.
+    /// Maps allow mapping input values to output values.
+    ///
+    /// Please note that [`Map`]s make this more powerful than a normal [`HashMap`], notably including a default value.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub maps: HashMap<String, Map<String>>,
-    /// [`NamedPartitioning`] variables to determine behavior.
+    /// Named partitionings effectively let you check which if several sets a value is in.
+    ///
+    /// See [this Wikipedia article](https://en.wikipedia.org/wiki/Partition_of_a_set) for the math end of this idea.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub named_partitionings: HashMap<String, NamedPartitioning>,
-    /// If [`true`], enables reading from caches. Defaults to [`true`]
+    /// If [`true`], things that interact with the cache will read from the cache.
+    ///
+    /// Defaults to true.
     #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub read_cache: bool,
-    /// If [`true`], enables writing to caches. Defaults to [`true`]
+    /// If [`true`], things that interact with the cache will write to the cache.
+    ///
+    /// Defaults to [`true`].
     #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write_cache: bool,
-    /// The default headers to send in HTTP requests.
+    /// The default [`HttpClientConfig`], prior to relevant [`HttpClientConfigDiff`]s.
+    ///
+    /// Defaults to [`HttpClientConfig::default`].
     #[cfg(feature = "http")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub http_client_config: HttpClientConfig
@@ -62,59 +94,62 @@ impl Default for Params {
     }
 }
 
-/// Allows changing [`Config::params`].
+/// Rules for updating a [`Params`].
+///
+/// Often you'll have a default [`ParamsDiff`] you use for all your URLs and only sometimes you want to change that behavior.
+///
+/// The diff pattern handles this use case very well without requiring you change the actual config file.
+#[serde_as]
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ParamsDiff {
-    /// Adds to [`Params::flags`]. Defaults to an empty [`HashSet`].
+    /// [`Params::flags`] to set.
+    #[serde_with = "SetPreventDuplicates<_>"]
     #[serde(default, skip_serializing_if = "is_default")] pub flags  : HashSet<String>,
-    /// Removes from [`Params::flags`] Defaults to an empty [`HashSet`].
+    /// [`Params::flags`] to unset.
+    #[serde_with = "SetPreventDuplicates<_>"]
     #[serde(default, skip_serializing_if = "is_default")] pub unflags: HashSet<String>,
-    /// Adds to [`Params::vars`]. Defaults to an empty [`HashMap`].
+    /// [`Params::vars`] to set.
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")] pub vars  : HashMap<String, String>,
-    /// Removes from [`Params::vars`]. Defaults to an empty [`HashSet`].
+    /// [`Params::vars`] to unset.
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")] pub unvars: HashSet<String>,
-    /// Initializes new sets in [`Params::sets`].
+    /// [`Params::sets`] to init.
+    ///
+    /// Shouldn't ever actually change anything, but if you're really fussy or something.
     #[serde(default, skip_serializing_if = "is_default")] pub init_sets: Vec<String>,
-    /// Initializes new sets in [`Params::sets`] if they don't already exist, then inserts values into them.
+    /// [`Params::sets`] and values to insert into them.
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")] pub insert_into_sets: HashMap<String, Vec<String>>,
-    /// If the sets exist in [`Params::sets`], removes values from them.
+    /// [`Params::sets`] and values to remove from them.
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, Vec<String>>,
-    /// If the sets exist in [`Params::sets`], remove them.
+    /// [`Params::sets`] to delete.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_sets: Vec<String>,
-    /// Initializes new maps in [`Params::maps`].
+    /// [`Params::maps`] to init.
+    ///
+    /// Shouldn't ever actually change anything, but if you're really fussy or something.
     #[serde(default, skip_serializing_if = "is_default")] pub init_maps: Vec<String>,
-    /// If the maps exist in [`Params::maps`], removes values from them.
+    /// [`MapDiff`]s to apply to [`Params::maps`].
+    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")] pub map_diffs: HashMap<String, MapDiff<String>>,
-    /// If the maps exist in [`Params::maps`], remove them.
+    /// [`Params::maps`] to delete.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_maps: Vec<String>,
-    /// If [`Some`], sets [`Params::read_cache`]. Defaults to [`None`].
+    /// If [`Some`], sets, [`Params::read_cache`].
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")] pub read_cache : Option<bool>,
-    /// If [`Some`], sets [`Params::write_cache`]. Defaults to [`None`].
+    /// If [`Some`], sets [`Params::write_cache`].
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")] pub write_cache: Option<bool>,
-    /// If [`Some`], calls [`HttpClientConfigDiff::apply`] with `to`'s [`HttpClientConfig`]. Defaults to [`None`].
+    /// If [`Some`], applies the [`HttpClientConfigDiff`] to [`Params::http_client_config`].
     #[cfg(feature = "http")]
     #[serde(default, skip_serializing_if = "is_default")] pub http_client_config_diff: Option<HttpClientConfigDiff>
 }
 
 impl ParamsDiff {
-    /// Applies the differences specified in `self` to `to`.
-    /// In order:
-    /// 1. Extends `to.flags` with [`Self::flags`].
-    /// 2. Removes all flags found in [`Self::unflags`] from `to.flags`.
-    /// 3. Extends `to.vars` with [`Self::vars`], overwriting any keys found in both.
-    /// 4. Removes all keys found in [`Self::unvars`] from `to.vars`.
-    /// 5. Initializes all sets specified by [`Self::init_sets`] to [`HashSet::default`] if they don't exist.
-    /// 6. Inserts all values into sets as specified by [`Self::insert_into_sets`].
-    /// 7. Removes all values from sets as specified by [`Self::remove_from_sets`].
-    /// 8. Deletes all sets specified in [`Self::delete_sets`].
-    /// 9. Initializes all maps specified by [`Self::init_maps`] to [`HashSet::default`] if they don't exist.
-    /// 10. Applies all [`Self::map_diffs`].
-    /// 11. Deletes all maps specified in [`Self::delete_maps`].
-    /// 12. If [`Self::read_cache`] is [`Some`], sets `to.read_cache` to the contained value.
-    /// 13. If [`Self::write_cache`] is [`Some`], sets `to.write_cache` to the contained value.
-    /// 14. If [`Self::http_client_config_diff`] is [`Some`], calls [`HttpClientConfigDiff::apply`] with `to.http_client_config`.
+    /// Applies the diff.
+    ///
+    /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
     pub fn apply(self, to: &mut Params) {
         #[cfg(feature = "debug")]
         let old_to = to.clone();
@@ -162,86 +197,96 @@ impl ParamsDiff {
     }
 }
 
-/// Shared argument parser for generating [`ParamsDiff`]s from the CLI.
-/// 
-/// Used with the [`#[command(flatten)]`](https://docs.rs/clap/latest/clap/_derive/index.html#command-attributes) part of [`clap::Parser`]'s derive macro.
+/// Allows generating [`ParamsDiff`]s from [`clap::Args`].
+/// # Examples
+/// ```
+/// # use url_cleaner::types::*;
+///
+/// #[derive(clap::Args)]
+/// pub struct Args {
+///     // Your stuff goes here
+///     #[command(flatten)]
+///     pub params_diff_args: ParamsDiffArgParser,
+///     // Your stuff also goes here
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, clap::Args)]
 pub struct ParamsDiffArgParser {
-    /// Set flags.
+    /// Set a params flag.
     #[arg(short      , long, value_names = ["NAME"])]
     pub flag  : Vec<String>,
-    /// Unset flags set by the config.
+    /// Unset a params flag.
     #[arg(short = 'F', long, value_names = ["NAME"])]
     pub unflag: Vec<String>,
-    /// For each occurrence of this option, its first argument is the variable name and the second argument is its value.
+    /// Set a params var.
     #[arg(short      , long, num_args(2), value_names = ["NAME", "VALUE"])]
     pub var: Vec<Vec<String>>,
-    /// Unset variables set by the config.
+    /// Unset a params var.
     #[arg(short = 'V', long, value_names = ["NAME"])]
     pub unvar : Vec<String>,
-    /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to insert.
+    /// Insert a value into a params set.
     #[arg(             long, num_args(1..), value_names = ["NAME", "VALUE1"])]
     pub insert_into_set: Vec<Vec<String>>,
-    /// For each occurrence of this option, its first argument is the set name and subsequent arguments are the values to remove.
+    /// Remove a value from a params set.
     #[arg(             long, num_args(1..), value_names = ["NAME", "VALUE1"])]
     pub remove_from_set: Vec<Vec<String>>,
-    /// For each occurrence of this option, its first argument is the map name, the second is the map key, and subsequent arguments are the values to insert.
+    /// Insert a value into a params map.
     #[arg(             long, num_args(2..), value_names = ["NAME", "KEY1", "VALUE1"])]
     pub insert_into_map: Vec<Vec<String>>,
-    /// For each occurrence of this option, its first argument is the map name, and subsequent arguments are the keys to remove.
+    /// Remove a value from a params map.
     #[arg(             long, num_args(1..), value_names = ["NAME", "KEY1"])]
     pub remove_from_map: Vec<Vec<String>>,
-    /// Read stuff from caches. Default value is controlled by the config. Omitting a value means true.
+    /// Whether or not to read from the cache. If no value is provided, assumes `true`.
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
     pub read_cache : Option<bool>,
-    /// Write stuff to caches. Default value is controlled by the config. Omitting a value means true.
+    /// Whether or not to write to the cache. If no value is provided, assumes `true`.
     #[cfg(feature = "cache")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
     pub write_cache: Option<bool>,
-    /// The proxy to use. Example: socks5://localhost:9150
+    /// The proxy to use.
     #[cfg(feature = "http")]
     #[arg(             long)]
     pub proxy: Option<ProxyConfig>,
-    /// Disables all HTTP proxying.
+    /// Whether or not to ignore all proxies. If no value is provided, assumes `true`.
     #[cfg(feature = "http")]
     #[arg(             long, num_args(0..=1), default_missing_value("true"))]
     pub no_proxy: Option<bool>
 }
 
-/// The errors that deriving [`clap::Parser`] can't catch.
+/// The enum of errors [`ParamsDiffArgParser::build`] can return
+///
+/// [`clap`] is currently missing ways to express certain requirements at parse time.
 #[derive(Debug, Error)]
 pub enum ParamsDiffArgParserValueWrong {
-    /// Returned when a `--var` invocation doesn't have a name (0 arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::var`] doesn't have a name specified.
     #[error("--var didn't have a name specified.")]
     VarNoNameSpecified,
-    /// Returned when a `--var` invocation doesn't have a value (1 argument).
+    /// Returned when an invocation of [`ParamsDiffArgParser::var`] doesn't have a value specified.
     #[error("--var didn't have a value specified.")]
     VarNoValueSpecified,
-    /// Returned when a `--var` invocation has too many (3 or more arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::var`] has too many arguments.
     #[error("--var had too many arguments.")]
     VarTooManyArguments,
-
-    /// Returned when an `--insert-into-set` invocation doesn't have a name (0 arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::insert_into_set`] doesn't have a name.
     #[error("--insert-into-set didn't have a name.")]
     InsertIntoSetsNoName,
-    /// Returned when a `--remove-from-set` invocation doesn't have a name (0 arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::remove_from_set`] doesn't have a name.
     #[error("--remove-from-set didn't have a name.")]
     RemoveFromSetsNoName,
-
-    /// Returned when an `--insert-into-map` invocation doesn't have a name. (0 arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::insert_into_map`] doesn't have a name.
     #[error("--insert-into-map didn't have a name.")]
     InsertIntoMapNoName,
-    /// Returned when an `--insert-into-map` invocation has a key without a value (even number of arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::insert_into_map`] has a key without a value.
     #[error("--insert-into-map found a key without a value.")]
     InsertIntoMapKeyWithoutValue,
-    /// Returned when a `--remove-from-map` invocation doesn't have a map (0 arguments).
+    /// Returned when an invocation of [`ParamsDiffArgParser::remove_from_map`] doesn't have a map specified.
     #[error("--remove-from-map didn't have a map specified.")]
     RemoveFromMapNoMapSpecified,
 }
 
 impl ParamsDiffArgParserValueWrong {
-    /// Gets the error message.
+    /// Gets a [`str`] of the error message.
     pub fn as_str(&self) -> &str {
         match self {
             Self::VarNoNameSpecified           => "--var didn't have a name specified.",
@@ -262,10 +307,33 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
     type Error = ParamsDiffArgParserValueWrong;
 
     fn try_from(value: ParamsDiffArgParser) -> Result<Self, ParamsDiffArgParserValueWrong> {
+        value.build()
+    }
+}
+
+impl ParamsDiffArgParser {
+    /// Builds the [`ParamsDiff`].
+    /// # Errors
+    /// If an invokation of [`Self::var`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::VarNoNameSpecified`].
+    /// 
+    /// If an invokation of [`Self::var`] doesn't have a value specified, returns the error [`ParamsDiffArgParserValueWrong::VarNoValueSpecified`].
+    ///
+    /// If an invokation of [`Self::var`] has more than 2 values, returns the error [`ParamsDiffArgParserValueWrong::VarTooManyArguments`].
+    ///
+    /// If an invocation of [`Self::insert_into_set`] doesn't have a name spacified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoSetsNoName`].
+    ///
+    /// If an invokation of [`Self::remove_from_set`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::RemoveFromSetsNoName`].
+    ///
+    /// If an invokation of [`Self::insert_into_map`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoMapNoName`].
+    ///
+    /// If an invocation of [`Self::insert_into_map`] has a key with no value specified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoMapKeyWithoutValue`].
+    ///
+    /// If an invocation of [`Self::remove_from_map`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified`].
+    pub fn build(self) -> Result<ParamsDiff, ParamsDiffArgParserValueWrong> {
         Ok(ParamsDiff {
-            flags  : value.flag  .into_iter().collect(),
-            unflags: value.unflag.into_iter().collect(),
-            vars   : value.var   .into_iter().map(|kv| match <Vec<_> as TryInto<[String; 2]>>::try_into(kv) {
+            flags  : self.flag  .into_iter().collect(),
+            unflags: self.unflag.into_iter().collect(),
+            vars   : self.var   .into_iter().map(|kv| match <Vec<_> as TryInto<[String; 2]>>::try_into(kv) {
                 Ok([k, v]) => Ok((k, v)),
                 Err(x) => Err(match x.len() {
                     0 => ParamsDiffArgParserValueWrong::VarNoNameSpecified,
@@ -274,16 +342,16 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
                     _ => ParamsDiffArgParserValueWrong::VarTooManyArguments
                 })
             }).collect::<Result<_, _>>()?,
-            unvars : value.unvar.into_iter().collect(),
+            unvars : self.unvar.into_iter().collect(),
             init_sets: Default::default(),
-            insert_into_sets: value.insert_into_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::InsertIntoSetsNoName)}).collect::<Result<_, _>>()?,
-            remove_from_sets: value.remove_from_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromSetsNoName)}).collect::<Result<_, _>>()?,
+            insert_into_sets: self.insert_into_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::InsertIntoSetsNoName)}).collect::<Result<_, _>>()?,
+            remove_from_sets: self.remove_from_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromSetsNoName)}).collect::<Result<_, _>>()?,
             delete_sets     : Default::default(),
             init_maps       : Default::default(),
             map_diffs       : {
                 let mut ret = HashMap::<String, MapDiff<String>>::new();
 
-                for invocation in value.insert_into_map {
+                for invocation in self.insert_into_map {
                     if invocation.len() % 2 == 1 {
                         let mut x = invocation.into_iter();
                         ret.entry(x.next().ok_or(ParamsDiffArgParserValueWrong::InsertIntoMapNoName)?).or_default().insert_into_map = std::iter::from_fn(|| x.next().zip(x.next())).collect();
@@ -292,7 +360,7 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
                     }
                 }
 
-                for invocation in value.remove_from_map {
+                for invocation in self.remove_from_map {
                     if !invocation.is_empty() {
                         let mut x = invocation.into_iter();
                         let name = x.next().ok_or(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)?;
@@ -305,21 +373,19 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
                 ret
             },
             delete_maps     : Default::default(),
-            #[cfg(feature = "cache")] read_cache : value.read_cache,
-            #[cfg(feature = "cache")] write_cache: value.write_cache,
+            #[cfg(feature = "cache")] read_cache : self.read_cache,
+            #[cfg(feature = "cache")] write_cache: self.write_cache,
             #[cfg(feature = "http")] http_client_config_diff: Some(HttpClientConfigDiff {
-                set_proxies: value.proxy.map(|x| vec![x]),
-                no_proxy: value.no_proxy,
+                set_proxies: self.proxy.map(|x| vec![x]),
+                no_proxy: self.no_proxy,
                 ..HttpClientConfigDiff::default()
             })
         })
     }
-}
 
-impl ParamsDiffArgParser {
-    /// Returns [`true`] if this would make a [`ParamsDiff`] that actually does anything, or if making a [`ParamsDiff`] would error.
-    /// 
-    /// It's much faster to check this than make and apply the [`ParamsDiff`].
+    /// Checks if calling [`Self::build`] and applying the resulting [`ParamsDiff`] would do anything.
+    ///
+    /// MUCH faster than just unconditionally trying it.
     pub fn does_anything(&self) -> bool {
         #[allow(unused_mut, reason = "It is used.")]
         let mut feature_flag_make_params_diff = false;

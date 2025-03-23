@@ -1,4 +1,4 @@
-//! Trait to unify "suitability".
+//! A system to stop me from accidentally comitting debug stuff to the default config.
 
 use std::fmt::Debug;
 use std::collections::{HashSet, HashMap};
@@ -11,13 +11,15 @@ use crate::types::*;
 
 pub(crate) use url_cleaner_macros::Suitability;
 
-/// Trait to stop me from comitting debug stuff.
+/// A trait for things that may or may not be suitable for use in the default config.
 pub(crate) trait Suitability: Debug {
-    /// Panics if `self` is deemed "unsuitable" for being in the default config.
+    /// If `self` is deemed unsuitable to be in the default config, panics.
+    /// # Panics
+    /// If `self` is deemed unsuitable to be in the default config, panics.
     fn assert_suitability(&self, config: &Config);
 }
 
-/// Quick implementations for types that are always suitable.
+/// Generate [`Suitability`] impls for types that are always suitable for use in the default config.
 macro_rules! always_suitable {
     ($($t:ty),+) => {
         $(impl Suitability for $t {fn assert_suitability(&self, _: &Config) {}})+
@@ -28,21 +30,21 @@ always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
 #[cfg(feature = "glob")] always_suitable!(glob::Pattern, glob::MatchOptions);
 
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a context var is documented.
 pub(crate) fn context_var_is_documented       (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.job_context.vars   .contains_key(name), "Undocumented JobContext var: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a jobs context var is documented.
 pub(crate) fn jobs_context_var_is_documented  (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.jobs_context.vars  .contains_key(name), "Undocumented JobsContext var: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a flag is documented.
 pub(crate) fn flag_is_documented              (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.flags              .contains_key(name), "Undocumented Flag: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a var is documented.
 pub(crate) fn var_is_documented               (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.vars               .contains_key(name), "Undocumented Var: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a set is documented.
 pub(crate) fn set_is_documented               (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.sets               .contains_key(name), "Undocumented Set: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a map is documented.
 pub(crate) fn map_is_documented               (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.maps               .contains_key(name), "Undocumented Map: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a env var is documented.
 pub(crate) fn env_var_is_documented           (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.environment_vars   .contains_key(name), "Undocumented Env var: {name}")}}
-/// Helper function to make sure I don't miss documenting anything.
+/// Suitability helper function to check that a named partitioning is documented.
 pub(crate) fn named_partitioning_is_documented(name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}")}}
 
 impl<K: Suitability, V: Suitability> Suitability for HashMap<K, V> {

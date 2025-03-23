@@ -1,26 +1,28 @@
-//! More granular error handling.
+//! Experimental type that allows for more granular error handling.
 
 use serde::{Serialize, Deserialize, ser::Serializer, de::{Visitor, Deserializer, Error}};
 
 use crate::types::*;
 use crate::util::*;
 
-/// Allows treating specific errors as passes/fails without ignoring all error.
+/// Experimental type that allows for more granual error handling.
+///
+/// Defaults to [`Self::Error`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Suitability)]
 pub enum IfError {
-    /// Maps [`Condition`] errors to passes.
+    /// If given an error, return [`true`].
     Pass,
-    /// Maps [`Condition`] errors to fails.
+    /// If given an error, return [`false`].
     Fail,
-    /// Leaves [`Condition`] errors as-is.
+    /// If given an error, return that error.
     #[default]
     Error
 }
 
 impl IfError {
-    /// If `x` is [`Err`], returns the value specified by `self`.
+    /// if `x` is an error, modify it according to `self`.
     /// # Errors
-    /// If `x` is [`Err`] and `self is [`IfError::Error`], the error is returned.
+    /// If `x` is an error and `self` is [`Self::Error`], return that error.
     pub fn apply<T>(self, x: Result<bool, T>) -> Result<bool, T> {
         match (self, x) {
             (_          , Ok (x)) => Ok(x),
@@ -31,7 +33,7 @@ impl IfError {
     }
 }
 
-/// [`Visitor`] to [`Deserialize`] [`IfError`]
+/// Serde helper for deserializing [`IfError`].
 struct IfErrorVisitor;
 
 impl Visitor<'_> for IfErrorVisitor {

@@ -1,8 +1,4 @@
-//! Provides [`RegexParts`] and [`RegexConfig`] which are instructions for how to create a [`Regex`].
-//! 
-//! Used by [`RegexWrapper`].
-//! 
-//! Enabled by the `regex` feature flag.
+//! Parts of a [`Regex`] for easy portability and lazy compilation.
 
 use std::str::FromStr;
 
@@ -14,62 +10,19 @@ use super::RegexWrapper;
 use crate::types::*;
 use crate::util::*;
 
-/// Contains the rules for constructing a [`Regex`].
-/// 
-/// The pattern is guaranteed to be valid.
+/// Config on how to make a [`Regex`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(remote = "Self")]
 pub struct RegexParts {
-    /// The pattern passed into [`RegexBuilder::new`].
+    /// The regex pattern to use.
     pub pattern: String,
-    /// The configuration flags.
+    /// Config to pass into [`RegexBuilder`].
     #[serde(flatten)]
     pub config: RegexConfig
 }
 
-crate::util::string_or_struct_magic!(RegexParts);
-
-impl FromStr for RegexParts {
-    type Err = std::convert::Infallible;
-
-    /// [`Self::new`]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::new(s))
-    }
-}
-
-impl From<&str> for RegexParts {
-    /// [`Self::new`].
-    fn from(s: &str) -> Self {
-        Self::new(s)
-    }
-}
-
 impl RegexParts {
-    /// Creates a [`RegexParts`] with the provided pattern and a default config.
-    pub fn new(pattern: &str) -> Self {
-        Self::new_with_config(pattern, RegexConfig::default())
-    }
-
-    /// Getter for the pattern.
-    pub fn pattern(&self) -> &str {
-        &self.pattern
-    }
-
-    /// Getter for the config.
-    pub const fn config(&self) -> &RegexConfig {
-        &self.config
-    }
-
-    /// Creates a [`RegexParts`] with the provided pattern and config.
-    pub fn new_with_config(pattern: &str, config: RegexConfig) -> Self {
-        Self {
-            pattern: pattern.to_string(),
-            config
-        }
-    }
-
-    /// Creates the regex.
+    /// Compile the regex.
     /// # Errors
     /// If the call to [`RegexBuilder::build`] returns an error, that error is returned.
     pub fn build(&self) -> Result<Regex, regex::Error> {
@@ -88,6 +41,30 @@ impl RegexParts {
     }
 }
 
+crate::util::string_or_struct_magic!(RegexParts);
+
+impl FromStr for RegexParts {
+    type Err = std::convert::Infallible;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(s.into())
+    }
+}
+
+impl From<&str> for RegexParts {
+    fn from(s: &str) -> Self {
+        s.to_string().into()
+    }
+}
+
+impl From<String> for RegexParts {
+    fn from(value: String) -> Self {
+        Self {
+            pattern: value,
+            config: Default::default()
+        }
+    }
+}
+
 impl Suitability for RegexParts {
     fn assert_suitability(&self, config: &Config) {
         self.build().unwrap_or_else(|_| panic!("Regex to be buildable: {self:?}"));
@@ -98,7 +75,6 @@ impl Suitability for RegexParts {
 impl TryFrom<&RegexParts> for Regex {
     type Error = regex::Error;
 
-    /// [`RegexParts::build`].
     fn try_from(value: &RegexParts) -> Result<Self, Self::Error> {
         value.build()
     }
@@ -107,38 +83,71 @@ impl TryFrom<&RegexParts> for Regex {
 impl TryFrom<RegexParts> for Regex {
     type Error = regex::Error;
 
-    /// [`RegexParts::build`].
     fn try_from(value: RegexParts) -> Result<Self, Self::Error> {
         (&value).try_into()
     }
 }
 
-/// The configuration determining how a regular expression works.
+/// Configuration given to [`RegexBuilder`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 pub struct RegexConfig {
-    /// The value passed into [`RegexBuilder::case_insensitive`]. Defaults to `false`. This flags character is `'i'`.
-    #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive: bool,
-    /// The value passed into [`RegexBuilder::crlf`]. Defaults to `false`. This flags character is `'R'`.
-    #[serde(default               , skip_serializing_if = "is_false")] pub crlf: bool,
-    /// The value passed into [`RegexBuilder::dot_matches_new_line`]. Defaults to `false`. This flags character is `'s'`.
+    /// The value passed to [`RegexBuilder::case_insensitive`].
+    ///
+    /// The character for this flag is `i`
+    ///
+    /// Defaults to [`false`].
+    #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive    : bool,
+    /// The value passed to [`RegexBuilder::crlf`].
+    ///
+    /// The character for this flag is `R`
+    ///
+    /// Defaults to [`false`].
+    #[serde(default               , skip_serializing_if = "is_false")] pub crlf                : bool,
+    /// The value passed to [`RegexBuilder::dot_matches_new_line`].
+    ///
+    /// The character for this flag is `s`
+    ///
+    /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub dot_matches_new_line: bool,
-    /// The value passed into [`RegexBuilder::ignore_whitespace`]. Defaults to `false`. This flags character is `'x'`.
-    #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace: bool,
-    /// The value passed into [`RegexBuilder::line_terminator`]. Defaults to `b'\n'` (`10`).
-    #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator: u8,
-    /// The value passed into [`RegexBuilder::multi_line`]. Defaults to `false`. This flags character is `'m'`.
-    #[serde(default               , skip_serializing_if = "is_false")] pub multi_line: bool,
-    /// The value passed into [`RegexBuilder::octal`]. Defaults to `false`. This flags character is `'o'` because the `regex` crate forgot and I said so.
-    #[serde(default               , skip_serializing_if = "is_false")] pub octal: bool,
-    /// The value passed into [`RegexBuilder::swap_greed`]. Defaults to `false`. This flags character is `'U'`.
-    #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed: bool,
-    /// The value passed into [`RegexBuilder::unicode`]. Defaults to `true`. This flags character is `'u'`.
-    #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode: bool
+    /// The value passed to [`RegexBuilder::ignore_whitespace`].
+    ///
+    /// The character for this flag is `x`
+    ///
+    /// Defaults to [`false`].
+    #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace   : bool,
+    /// The value passed to [`RegexBuilder::line_terminator`].
+    ///
+    /// Defaults to `b'\n'` (`10`).
+    #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator     : u8,
+    /// The value passed to [`RegexBuilder::multi_line`].
+    ///
+    /// The character for this flag is `m`
+    ///
+    /// Defaults to [`false`].
+    #[serde(default               , skip_serializing_if = "is_false")] pub multi_line          : bool,
+    /// The value passed to [`RegexBuilder::octal`].
+    ///
+    /// The character for this flag is `o`
+    ///
+    /// Defaults to [`false`].
+    #[serde(default               , skip_serializing_if = "is_false")] pub octal               : bool,
+    /// The value passed to [`RegexBuilder::swap_greed`].
+    ///
+    /// The character for this flag is `U`
+    ///
+    /// Defaults to [`false`].
+    #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed          : bool,
+    /// The value passed to [`RegexBuilder::unicode`].
+    ///
+    /// The character for this flag is `u`
+    ///
+    /// Defaults to [`true`].
+    #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode             : bool
 }
 
-/// Serde helper function used by [`RegexConfig`].
+/// Serde helper function.
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
-/// Serde helper function used by [`RegexConfig`].
+/// Serde helper function.
 const fn newline_u8() -> u8 {b'\n'}
 
 impl Default for RegexConfig {
@@ -158,11 +167,19 @@ impl Default for RegexConfig {
 }
 
 impl RegexConfig {
-    /// Sets each flag to `true` if its character is in `flags`, otherwise `false`.
-    /// 
-    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details on which character is which flag.
-    /// 
-    /// I have chosen to give the octal flag `'o'` because the `regex` crate forgot.
+    /// Sets the flags whose characters are in `flags` and unsets the flags whose characters aren't in `flags`.
+    ///
+    /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::glue::*;
+    /// let mut config = RegexConfig::default();
+    ///
+    /// config.set_flags("i");
+    ///
+    /// assert!( config.case_insensitive);
+    /// assert!(!config.unicode); // Unicode is enabled by default, but was disabled.
+    /// ```
     pub fn set_flags(&mut self, flags: &str) {
         self.case_insensitive     = flags.contains('i');
         self.crlf                 = flags.contains('R');
@@ -174,11 +191,19 @@ impl RegexConfig {
         self.unicode              = flags.contains('u');
     }
 
-    /// Sets each flag to `true` if its character is in `flags`.
-    /// 
-    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details on which character is which flag.
-    /// 
-    /// I have chosen to give the octal flag `'o'` because the `regex` crate forgot.
+    /// Sets the flags whose characters are in `flags` and leavs the others unchanged.
+    ///
+    /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::glue::*;
+    /// let mut config = RegexConfig::default();
+    ///
+    /// config.add_flags("i");
+    ///
+    /// assert!(config.case_insensitive);
+    /// assert!(config.unicode); // Was enabled by default and left unchanged.
+    /// ```
     pub fn add_flags(&mut self, flags: &str) {
         if flags.contains('i') {self.case_insensitive    =true;}
         if flags.contains('R') {self.crlf                =true;}
@@ -190,11 +215,20 @@ impl RegexConfig {
         if flags.contains('u') {self.unicode             =true;}
     }
 
-    /// Sets each flag to `false` if its character is in `flags`.
-    /// 
-    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details on which character is which flag.
-    /// 
-    /// I have chosen to give the octal flag `'o'` because the `regex` crate forgot.
+    /// Unsets the flags whose characters are in `flags` and leaves the others unchanged.
+    ///
+    /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::glue::*;
+    /// let mut config = RegexConfig::default();
+    ///
+    /// config.add_flags("i");
+    /// config.remove_flags("u");
+    ///
+    /// assert!( config.case_insensitive); // Set by the call to [`Self::add_flags`] and left unchanged by the call to [`Self::remove_flags`].
+    /// assert!(!config.unicode); // Set by default, left unchanged by the call to [`Self::add_flags`], and unset by the call to [`Self::remove_flags`].
+    /// ```
     pub fn remove_flags(&mut self, flags: &str) {
         if flags.contains('i') {self.case_insensitive    =false;}
         if flags.contains('R') {self.crlf                =false;}
@@ -206,11 +240,20 @@ impl RegexConfig {
         if flags.contains('u') {self.unicode             =false;}
     }
 
-    /// Returns the flags as a string. `regex_parts.set_flags(&regex_parts.get_flags())` does nothing.
-    /// 
-    /// See [the `regex` crate's docs](https://docs.rs/regex/latest/regex/index.html#grouping-and-flags) for details on which character is which flag.
-    /// 
-    /// I have chosen to give the octal flag `'o'` because the `regex` crate forgot.
+    /// Gets the set flags.
+    ///
+    /// Exact order is not officially stable, but is unlikely to ever be changed from `iRsxmoUu` and VERY unlikely to ever be changed after that.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::glue::*;
+    /// let mut config = RegexConfig::default();
+    ///
+    /// assert_eq!(config.get_flags(), "u");
+    ///
+    /// config.case_insensitive = true;
+    ///
+    /// assert_eq!(config.get_flags(), "iu");
+    /// ```
     #[must_use]
     pub fn get_flags(&self) -> String {
         let mut ret=String::new();

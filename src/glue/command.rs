@@ -1,6 +1,6 @@
-//! Provides [`CommandConfig`] to allow usage of external commands.
-//! 
-//! Enabled by the `commands` feature flag.
+//! Allows executing system commands.
+//!
+//! No the default config does not and will never use this.
 
 use std::process::{Command, Stdio};
 use std::io::Write;
@@ -18,39 +18,31 @@ use which::which;
 use crate::types::*;
 use crate::util::*;
 
-/// Instructions on how to make and run a [`Command`] object.
+/// Config on how to make a [`Command`].
+///
+/// No the default config does not and will never use this.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[suitable(never)]
 #[serde(remote="Self")]
 pub struct CommandConfig {
-    /// The program to run.
+    /// The program.
     pub program: String,
-    /// The arguments to run [`Self::program`] with
     #[serde(default, skip_serializing_if = "is_default")]
+    /// The arguments to pass to the program.
     pub args: Vec<StringSource>,
-    /// The directory to run [`Self::program`] in.
-    /// 
-    /// Defaults to [`None`].
+    /// The directory to run the program in.
     #[serde(default, skip_serializing_if = "is_default")]
     pub current_dir: Option<PathBuf>,
-    /// The environment arguments to run [`Self::program`] with.
-    /// 
-    /// If a call to [`StringSource::get`] returns [`None`], that environment variable is omitted from the request. For an environment variable with an empty value, use [`StringSource::NoneToEmptyString`].
-    /// 
-    /// Defaults to an empty [`HashMap`].
+    /// The environment variables to run the program with.
     #[serde(default, skip_serializing_if = "is_default")]
     pub envs: HashMap<String, StringSource>,
-    /// The STDIN to feed into the command.
-    /// 
-    /// Defaults to [`None`].
+    /// The STDIN to give the programl.
     #[serde(default, skip_serializing_if = "is_default")]
     pub stdin: Option<StringSource>
 }
 
 impl FromStr for CommandConfig {
     type Err = Infallible;
-
-    /// Simply treats the string as the command to run.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::from(s))
     }
@@ -76,22 +68,24 @@ impl From<String> for CommandConfig {
 
 crate::util::string_or_struct_magic!(CommandConfig);
 
-/// The enum of all possible errors [`CommandConfig::exit_code`], [`CommandConfig::output`], and [`CommandConfig::get_url`] can return.
+/// The enum of errors the various [`CommandConfig`] methods can return.
 #[derive(Debug, Error)]
 pub enum CommandError {
-    /// Returned when a [`std::io::Error`] is encountered.
+    /// Returned when an [`io::Error`] is encountered.
     #[error(transparent)]
     IoError(#[from] std::io::Error),
-    /// Returned when a [`std::str::Utf8Error`] is encountered.
+    /// Returned when an [`std::str::Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
-    /// Returned when a [`url::ParseError`] is encountered.
+    /// Returned when a [`url::ParseError`] is returned.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-    /// Returned when a command is terminated by a signal. See [`std::process::ExitStatus::code`] for details.
+    /// Returned when the command is terminated by a signal.
+    ///
+    /// See [`std::process::ExitStatus::code`] for details.
     #[error("The command was terminated by a signal. See std::process::ExitStatus::code for details.")]
     SignalTermination,
-    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
+    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
     /// Returned when a [`StringSourceError`] is encountered.
@@ -100,12 +94,10 @@ pub enum CommandError {
 }
 
 impl CommandConfig {
-    /// Creates a [`Command`] using [`Self`].
-    /// 
-    /// DOES NOT APPLY STDIN.
+    /// Builds the [`Command`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make_command(&self, job_state: &JobStateView) -> Result<Command, CommandError> {
+    pub fn build(&self, job_state: &JobStateView) -> Result<Command, CommandError> {
         let mut ret = Command::new(&self.program);
         for arg in self.args.iter() {
             ret.arg(OsString::from(get_string!(arg, job_state, CommandError)));
@@ -121,32 +113,40 @@ impl CommandConfig {
         Ok(ret)
     }
 
-    /// Checks if the path at [`Self::program`] exists.
-    /// 
-    /// Currently does not do any permissions or executability checks.
-    /// 
-    /// Uses [`which::which`] to emulate PATH handling.
+    /// Returns [`true`] if [`Self::program`] is findable and exists.
     #[must_use]
     pub fn exists(&self) -> bool {
         PathBuf::from(&self.program).exists() || which(&self.program).is_ok()
     }
 
-    /// Runs the command and gets the exit code.
+    /// Executes the command and gets its exit code.
     /// # Errors
-    /// If the command returns no exit code, returns the error [`CommandError::SignalTermination`].
+    /// If the call to [`Self::build`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Command::status`] returns an error, that error is returned.
+    ///
+    /// If the call to [`ExitStatus::code`] returns [`None`], returns the error [`CommandError::SignalTermination`].
     pub fn exit_code(&self, job_state: &JobStateView) -> Result<i32, CommandError> {
-        self.make_command(job_state)?.status()?.code().ok_or(CommandError::SignalTermination)
+        self.build(job_state)?.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
-    /// Run the command from [`Self::make_command`] and returns the STDOUT.
+    /// Executes the command and returns its STDOUT.
     /// # Errors
-    /// If `stdin` is `Some` and the calls to [`Command::spawn`], [`std::process::ChildStdin::write_all`], or [`std::process::Child::wait_with_output`] returns an error, that error is returned.
-    /// 
-    /// If `stdin` is `None` and the call to [`Command::output`] returns an error, that error is returned.
+    /// If the call to [`Self::build`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Command::spawn`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the errorr [`CommandError::StringSourceIsNone`].
+    ///
+    /// If the call to [`ChildStdin::write_all`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Child::wait_with_output`] returns an error, that error is returned.
+    ///
+    /// If the call to [`std::str::from_utf8`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever panic.")]
     pub fn output(&self, job_state: &JobStateView) -> Result<String, CommandError> {
         // https://stackoverflow.com/a/49597789/10720231
-        let mut command = self.make_command(job_state)?;
+        let mut command = self.build(job_state)?;
         command.stdout(Stdio::piped());
         command.stderr(Stdio::null());
         let child = if let Some(stdin) = &self.stdin {
@@ -161,10 +161,10 @@ impl CommandConfig {
         Ok(from_utf8(&child.wait_with_output()?.stdout)?.to_string())
     }
 
-    /// Runs the command, gets the STDOUT, trims trailing newlines and carriage returns form the output using [`str::trim_end_matches`], then extracts the URL.
+    /// Executes the command and gets a [`Url`] from the first and only line of its STDOUT, trimming any trailing `\r` and `\n`.
     /// # Errors
     /// If the call to [`Self::output`] returns an error, that error is returned.
-    /// 
+    ///
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
     pub fn get_url(&self, job_state: &JobStateView) -> Result<Url, CommandError> {

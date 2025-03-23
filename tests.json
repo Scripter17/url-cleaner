@@ -31,10 +31,6 @@
 			]
 		},
 		{
-			"params_diff": {"vars": {"tor2web-suffix": "example"}, "flags": ["tor2web"]},
-			"tests": [{"job_config": "https://example.onion", "result": "https://example.onion.example"}]
-		},
-		{
 			"params_diff": {"flags": ["tor2web2tor"]},
 			"tests": [
 				{"job_config": "https://example.onion.com"  , "result": "https://example.onion"},

@@ -82,12 +82,9 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `uninvidious`: Replace Invidious hosts with youtube.com
 - `embed-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-host` and `bsky.app` to the variable `bsky-embed-host`.
 - `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
-- `assume-1-dot-2-is-redirect`: Treat all hosts that match the Regex `^.\...$` as redirects. Let's be real, they all are.
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
-- `no-https-upgrade`: Disable replacing `http://` with `https://`.
-- `no-network`: Don't make any HTTP requests.
-- `onion-location`: Replace hosts with results from the `Onion-Location` HTTP header if present. This makes an HTTP request one time per domain and caches it.
-- `tor2web`: Append the suffix specified by the `tor2web-suffix` variable to `.onion` domains.
+- `no-https-upgrade`: Disable upgrading `http` URLs to `https`.
+- `no-network`: Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
@@ -95,6 +92,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
+- `youtube-keep-sub-confirmation`: Don't remove the `sub_confirmation` query param from youtube.com URLs.
 - `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
 - `keep-lang`: Keeps language query parameters.
@@ -109,7 +107,6 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `twitter-embed-host`: The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`.
 - `bluesky-embed-host`: The domain to use for bluesky when the `embed-compatibility` flag is set. Defaults to `fxbsky.com`.
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
-- `tor2web-suffix`: The suffix to append to the end of `.onion` domains if the flag `tor2web` is enabled. Should not start with `.` as that's added automatically. Left unset by default.
 
 #### Environment Vars
 
@@ -117,11 +114,11 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 #### Sets
 
-- `bypass.vip-hwwwwdps`: The `HostWithoutWWWDotPrefix`es of websites bypass.vip can expand.
+- `bypass.vip-hwwwwdpafqdnps`: The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to never upgrade from `http` to `https`.
-- `redirect-hwwwwdps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
-- `redirect-reg-domains`: The `redirect-hwwwwdpes` set but using the `RegDomain` of the URL.
+- `redirect-hwwwwdpafqdnps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
+- `redirect-reg-domains`: The `redirect-hwwwwdpafqdnpes` set but using the `RegDomain` of the URL.
 - `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
 - `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
 - `remove-www-subdomain-reg-domain-blacklist`: `RegDomain`s where a `www` `Subdomain` is important and thus won't have it removed.
@@ -135,11 +132,18 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 #### Maps
 
-- `hwwwwdp_lang_query_params`: The name of the `HostWithoutWWWDotPrefix`'s language query parameter.
+- `hwwwwdpafqdnp_lang_query_params`: The name of the `HostWithoutWWWDotPrefixAndFqdnPeriod`'s language query parameter.
 
 #### Named Partitionings
 
-- `hwwwwdp_categories`: Categories of similar websites with shared cleaning methods.
+- `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
+
+#### Jobs Context
+
+##### Vars
+
+- `SOURCE_HOST`: The `Host` of the "source" of the jobs. Usually the webpage it came from.
+- `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the jobs, Usually the webpage it came from.
 
 #### Job Context
 
@@ -148,19 +152,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `redirect_shortcut`: For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.
 - `site_name`: For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.
 - `link_text`: The text of the link the job came from.
-
-#### Jobs Context
-
-##### Vars
-
-- `SOURCE_URL`: The URL of the "source" of the jobs. Usually the webpage it came from.
-- `SOURCE_HOST`: The `Host` of the "source" of the jobs. Usually the webpage it came from.
-- `SOURCE_DOMAIN`: The `Domain` of the "source" of the jobs, Usually the webpage it came from.
-- `SOURCE_SUBDOMAIN`: The `Subdomain` of the "source" of the jobs, Usually the webpage it came from.
-- `SOURCE_NOT_DOMAIN_SUFFIX`: The `NotDomainSuffix` of the "source" of the jobs, Usually the webpage it came from.
-- `SOURCE_DOMAIN_MIDDLE`: The `DomainMiddle` of the "source" of the jobs, Usually the webpage it came from.
-- `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the jobs, Usually the webpage it came from.
-- `SOURCE_DOMAIN_SUFFIX`: The `DomainSuffix` of the "source" of the jobs, Usually the webpage it came from.
+- `bsky_handle`: The handle of an `@user.bsky.social`, used to replace the `/did:plc:12345678` in the URL with the actual handle.
 <!--/cmd-->
 
 #### But how fast is it?

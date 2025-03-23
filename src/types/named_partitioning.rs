@@ -1,4 +1,4 @@
-//! Effectively a [`HashSet`] with named partitions.
+//! Effectively a way to query multiple [`HashSet`]s at once.
 
 use std::collections::{HashMap, hash_map::Entry};
 use std::sync::Arc;
@@ -10,20 +10,24 @@ use serde::{Serialize, Deserialize, ser::{Serializer, SerializeMap}, de::{Visito
 use crate::types::*;
 use crate::util::*;
 
-/// Maps elements of a set to the name of the partition it belongs to.
+/// A [`NamedPartitioning`] effectively allows you to query multiple [`HashSet`]s at once and finding which one an element belongs to.
 ///
-/// For example, websites into the names of the company that owns them or the software they're an instance of.
-/// 
-/// See [the Wikipedia article](https://en.wikipedia.org/wiki/Partition_of_a_set) for precise math stuff.
+/// Semantically, this is done by joining the sets into one and partitioning them into regions. Technically this is just a fancy [`HashMap`] with basic optimizations.
+///
+/// Unfortunately (or fortunately depending on yuor use case) this does have the limitation that a value cannot be in multiple partitions at once.
+///
+/// For the math end of this idea, see [this Wikipedia article](https://en.wikipedia.org/wiki/Partition_of_a_set).
 #[derive(Debug, Clone, PartialEq, Eq, Suitability)]
 pub struct NamedPartitioning {
-    /// The maps of values to their class names.
+    /// The map from values to their partitions.
     map: HashMap<String, Arc<str>>,
-    /// The class names.
+    /// The list of partition names.
+    ///
+    /// Used for serialization.
     partition_names: Vec<Arc<str>>
 }
 
-/// [`Visitor`] to [`Deserialize`] [`NamedPartitioning`]s.
+/// Serde helper for deserializing [`NamedPartitioning`].
 struct NamedPartitioningVisitor;
 
 impl<'de> Visitor<'de> for NamedPartitioningVisitor {
@@ -80,14 +84,12 @@ impl Serialize for NamedPartitioning {
 }
 
 impl NamedPartitioning {
-    /// Gets the name of the partition `element` belongs to.
+    /// If `element`] is in `self`, return the partition it belongs to.
     pub fn get_partition<'a>(&'a self, element: &str) -> Option<&'a str> {
         self.map.get(element).map(|x| &**x)
     }
 
-    /// Gets the names of the partitions.
-    ///
-    /// Once <https://github.com/rust-lang/rust/pull/132553> lands, this will probably be changed to return `&[&str]`.
+    /// The list of partition names.
     pub fn partition_names(&self) -> &[Arc<str>] {
         &self.partition_names
     }

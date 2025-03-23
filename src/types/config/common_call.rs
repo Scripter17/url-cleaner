@@ -1,4 +1,4 @@
-//! Unified logic for calling commons.
+//! Details on how to call a [`Commons`] thing.
 
 use std::str::FromStr;
 use std::collections::{HashSet, HashMap};
@@ -11,13 +11,15 @@ use crate::types::*;
 use crate::util::*;
 use crate::glue::*;
 
-/// The name of the common to call and the arguments to call it with.
+/// Instructions on how to call a [`Commons`] thing.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub struct CommonCall {
-    /// The name of the common to call.
+    /// The name of the [`Commons`] thing to call.
     pub name: Box<StringSource>,
-    /// The arguments to call it with.
+    /// The args to call the [`Commons`] thing with.
+    ///
+    /// Defaults to [`CommonCallArgsSource::default`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub args: CommonCallArgsSource
 }
@@ -35,19 +37,24 @@ impl FromStr for CommonCall {
 
 string_or_struct_magic!(CommonCall);
 
-/// The rules used to make a [`CommonCallArgs`].
+/// Instructions on how to make the args to call a [`Commons`] thing.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgsSource {
-    /// The flags for a common call.
+    /// The flags to set.
+    #[serde(default, skip_serializing_if = "is_default")]
     pub flags: HashSet<String>,
-    /// The vars for a common call.
+    /// The vars to set.
+    #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, StringSource>,
-    /// The [`HttpClientConfigDiff`] to use for the duration of a common call.
+    /// The [`HttpClientConfigDiff`] to apply.
+    ///
+    /// Yes this is a questionable design choice. It's just the least questionable of the choices I knew I could make.
     #[cfg(feature = "http")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub http_client_config_diff: Option<HttpClientConfigDiff>
 }
 
-/// The enum of errors that [`CommonCallArgsSource::make`] can return.
+/// The enum of errors [`CommonCallArgsSource::build`] can return.
 #[derive(Debug, Error)]
 pub enum CommonCallArgsError {
     /// Returned when a [`StringSourceError`] is encountered.
@@ -62,10 +69,10 @@ impl From<StringSourceError> for CommonCallArgsError {
 }
 
 impl CommonCallArgsSource {
-    /// Makes a [`CommonCallArgs`].
+    /// Builds the [`CommonCallArgs`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make<'a>(&'a self, job_state: &JobStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
+    pub fn build<'a>(&'a self, job_state: &JobStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
         Ok(CommonCallArgs {
             flags: self.flags.iter().map(|x| Cow::Borrowed(&**x)).collect(),
             vars: self.vars.iter().map(|(k, v)| Ok((Cow::Borrowed(&**k), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
@@ -75,14 +82,14 @@ impl CommonCallArgsSource {
     }
 }
 
-/// The arguments for a common.
+/// The args a [`Commons`] thing is called with.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgs<'a> {
-    /// The flags for a common call.
+    /// The flags that are set.
     pub flags: HashSet<Cow<'a, str>>,
-    /// The vars for a common call.
+    /// The vars that are set.
     pub vars: HashMap<Cow<'a, str>, String>,
-    /// The [`HttpClientConfigDiff`] to use for the duration of a common call.
+    /// The [`HttpClientConfigDiff`] to apply.
     #[cfg(feature = "http")]
     pub http_client_config_diff: Option<Cow<'a, HttpClientConfigDiff>>
 }

@@ -24,5 +24,6 @@ def thing(x, i):
 
 with open("default-config.json", "r") as f:
     x = json.loads(f.read())["docs"]
+    del x["title"]
     del x["description"]
     thing(x, 4)

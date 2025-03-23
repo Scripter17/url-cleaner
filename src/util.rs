@@ -1,30 +1,31 @@
-//! Various helper functions and macros.
-//! Very weird, very jank.
-//! May or may not be made pub if useful.
-//! Which is to say probably not.
+//! General utility functions.
 
 use std::ops::Bound;
+
+use thiserror::Error;
 
 mod macros;
 pub(crate) use macros::*;
 mod suitability;
 pub(crate) use suitability::*;
 
-/// For use with [`#[serde(default, skip_serializing_if = "...")]`](https://serde.rs/field-attrs.html#skip_serializing_if).
-pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {t == &T::default()}
+/// Serde helper function that returns true if `x` is `T`'s [`Default::default`] value.
+pub(crate) fn is_default<T: Default + PartialEq>(x: &T) -> bool {x == &T::default()}
 
-/// Loops negative `index`es around similar to Python.
+/// Simulates Python's indexing to allow using `-1` to mean the last element.
 pub(crate) const fn neg_index(index: isize, len: usize) -> Option<usize> {
-    if index<0 {
-        len.checked_sub(index.unsigned_abs())
-    } else if (index as usize)<len {
+    if index < 0 {
+        len.checked_add_signed(index)
+    } else if (index as usize) < len {
         Some(index as usize)
     } else {
         None
     }
 }
 
-/// [`neg_index`] but doesn't [`None`] when `index == len`.
+/// [`neg_index`] but if the index is equal to the length, doesn't return [`None`].
+///
+/// Useful for [`Vec::insert`] type functions.
 pub(crate) const fn neg_range_boundary(index: isize, len: usize) -> Option<usize> {
     if index as usize == len {
         Some(len)
@@ -33,21 +34,18 @@ pub(crate) const fn neg_range_boundary(index: isize, len: usize) -> Option<usize
     }
 }
 
-/// Used for inserting after segments.
-#[expect(clippy::arithmetic_side_effects, reason = "Shouldn't ever occur.")]
-pub(crate) const fn neg_shifted_range_boundary(index: isize, len: usize, shift: isize) -> Option<usize> {
-    if let Some(x) = neg_range_boundary(index, len) {
-        if x as isize + shift <= 0 || x as isize + shift > len as isize {
-            None
-        } else {
-            Some((x as isize + shift) as usize)
-        }
-    } else {
-        None
-    }
+/// Returns [`true`] if [`Ord::clamp`] returns `x`.
+fn is_inside_range<T: Ord + Copy>(x: T, min: T, max: T) -> bool {
+    x.clamp(min, max) == x
 }
 
-/// Equivalent to how python handles indexing. Minus the panicking, of course.
+/// [`neg_range_boundary`] but shifts its result while keeping it in bounds.
+#[expect(clippy::arithmetic_side_effects, reason = "Shouldn't ever occur.")]
+pub(crate) fn neg_shifted_range_boundary(index: isize, len: usize, shift: isize) -> Option<usize> {
+    neg_range_boundary(index, len)?.checked_add_signed(shift).filter(|x| is_inside_range(*x, 0, len))
+}
+
+/// Gets the [`neg_index`] item of `iter`.
 pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
     if i<0 {
         let temp=iter.into_iter().collect::<Vec<_>>();
@@ -58,32 +56,26 @@ pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
     }
 }
 
-/// [`neg_maybe_index`] but doesn't [`None`] when `index == len`.
-fn neg_maybe_range_boundary(index: Option<isize>, len: usize) -> Option<Option<usize>> {
-    index.map(|index| neg_range_boundary(index, len))
+/// Return the range between `start` (inclusive) and `end` (exclusive) if the range is within `0..=len` and the resulting range is in ascending order.
+pub(crate) fn neg_range(start: isize, end: Option<isize>, len: usize) -> Option<(Bound<usize>, Bound<usize>)> {
+    let ret = (
+        Bound::Included(neg_range_boundary(start, len)?),
+        match end {
+            Some(end) => Bound::Excluded(neg_range_boundary(end, len)?),
+            None => Bound::Unbounded
+        }
+    );
+
+    // If the resulting range is "backwards", return None.
+    if matches!(ret, (Bound::Included(start), Bound::Excluded(end)) if end < start) {return None;}
+
+    Some(ret)
 }
 
-/// A range that may or may not have one or both ends open.
-pub(crate) fn neg_range(start: Option<isize>, end: Option<isize>, len: usize) -> Option<(Bound<usize>, Bound<usize>)> {
-    match (start, end) {
-        (Some(start), Some(end)) if neg_range_boundary(start, len)? > neg_range_boundary(end, len)? => None,
-        _ => Some((
-            match neg_maybe_range_boundary(start, len) {
-                Some(Some(start)) => Bound::Included(start),
-                Some(None       ) => None?,
-                None              => Bound::Unbounded
-            },
-            match neg_maybe_range_boundary(end, len) {
-                Some(Some(end)) => Bound::Excluded(end),
-                Some(None     ) => None?,
-                None            => Bound::Unbounded
-            }
-        ))
-    }
-}
-
-/// Makes a [`Vec`] from `iter` then keeps only elements specified by [`neg_range`]ing `start` and `end`.
-pub(crate) fn neg_vec_keep<I: IntoIterator>(iter: I, start: Option<isize>, end: Option<isize>) -> Option<Vec<I::Item>> {
+/// Gets the range of elements form `iter`.
+///
+/// Technically the things this is used for shouldn't be using this at all, but for now it works.
+pub(crate) fn neg_vec_keep<I: IntoIterator>(iter: I, start: isize, end: Option<isize>) -> Option<Vec<I::Item>> {
     let mut ret=iter.into_iter().collect::<Vec<_>>();
     Some(ret.drain(neg_range(start, end, ret.len())?).collect())
 }
@@ -96,6 +88,32 @@ pub(crate) const fn is_false(x: &bool) -> bool {!*x}
 pub(crate) const fn get_true() -> bool {true}
 /// Serde helper function.
 pub(crate) const fn is_true(x: &bool) -> bool {*x}
+
+/// Converts an `end` bound to a [`Bound`].
+///
+/// Specifically, if `i` is [`Some`], return [`Bound::Excluded`] or [`Bound::Unbounded`] if it's [`None`].
+pub(crate) fn exorub(i: Option<usize>) -> Bound<usize> {
+    match i {
+        Some(i) => Bound::Excluded(i),
+        None => Bound::Unbounded
+    }
+}
+
+/// Returned by [`set_segment_range`] when trying to construct an invalid range.
+#[derive(Debug, Error)]
+#[error("Tried to construct an invalid range.")]
+pub struct InvalidRange;
+
+/// Removes the range from `x` then, if `to` is [`Some`], insert it at where the range used to be.
+pub(crate) fn set_segment_range<T>(x: &mut Vec<T>, start: isize, end: Option<isize>, to: Option<T>) -> Result<(), InvalidRange> {
+    let fixed_start = neg_index(start, x.len()).ok_or(InvalidRange)?;
+    let range = neg_range(start, end, x.len()).ok_or(InvalidRange)?;
+    x.drain(range).collect::<Vec<_>>();
+    if let Some(to) = to {
+        x.insert(fixed_start, to);
+    }
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
@@ -129,60 +147,60 @@ mod tests {
 
     #[test]
     fn neg_range_test() {
-        assert_eq!(neg_range(Some(-3), Some(-3), 2), None);
-        assert_eq!(neg_range(Some(-2), Some(-3), 2), None);
-        assert_eq!(neg_range(Some(-1), Some(-3), 2), None);
-        assert_eq!(neg_range(Some( 0), Some(-3), 2), None);
-        assert_eq!(neg_range(Some( 1), Some(-3), 2), None);
-        assert_eq!(neg_range(Some( 2), Some(-3), 2), None);
-        assert_eq!(neg_range(Some( 3), Some(-3), 2), None);
+        assert_eq!(neg_range(-3, Some(-3), 2), None);
+        assert_eq!(neg_range(-2, Some(-3), 2), None);
+        assert_eq!(neg_range(-1, Some(-3), 2), None);
+        assert_eq!(neg_range( 0, Some(-3), 2), None);
+        assert_eq!(neg_range( 1, Some(-3), 2), None);
+        assert_eq!(neg_range( 2, Some(-3), 2), None);
+        assert_eq!(neg_range( 3, Some(-3), 2), None);
 
-        assert_eq!(neg_range(Some(-3), Some(-2), 2), None);
-        assert_eq!(neg_range(Some(-2), Some(-2), 2), Some((Bound::Included(0), Bound::Excluded(0))));
-        assert_eq!(neg_range(Some(-1), Some(-2), 2), None);
-        assert_eq!(neg_range(Some( 0), Some(-2), 2), Some((Bound::Included(0), Bound::Excluded(0))));
-        assert_eq!(neg_range(Some( 1), Some(-2), 2), None);
-        assert_eq!(neg_range(Some( 2), Some(-2), 2), None);
-        assert_eq!(neg_range(Some( 3), Some(-2), 2), None);
+        assert_eq!(neg_range(-3, Some(-2), 2), None);
+        assert_eq!(neg_range(-2, Some(-2), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range(-1, Some(-2), 2), None);
+        assert_eq!(neg_range( 0, Some(-2), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range( 1, Some(-2), 2), None);
+        assert_eq!(neg_range( 2, Some(-2), 2), None);
+        assert_eq!(neg_range( 3, Some(-2), 2), None);
 
-        assert_eq!(neg_range(Some(-3), Some(-1), 2), None);
-        assert_eq!(neg_range(Some(-2), Some(-1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some(-1), Some(-1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some( 0), Some(-1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some( 1), Some(-1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some( 2), Some(-1), 2), None);
-        assert_eq!(neg_range(Some( 3), Some(-1), 2), None);
+        assert_eq!(neg_range(-3, Some(-1), 2), None);
+        assert_eq!(neg_range(-2, Some(-1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(-1, Some(-1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range( 0, Some(-1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range( 1, Some(-1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range( 2, Some(-1), 2), None);
+        assert_eq!(neg_range( 3, Some(-1), 2), None);
 
-        assert_eq!(neg_range(Some(-3), Some( 0), 2), None);
-        assert_eq!(neg_range(Some(-2), Some( 0), 2), Some((Bound::Included(0), Bound::Excluded(0))));
-        assert_eq!(neg_range(Some(-1), Some( 0), 2), None);
-        assert_eq!(neg_range(Some( 0), Some( 0), 2), Some((Bound::Included(0), Bound::Excluded(0))));
-        assert_eq!(neg_range(Some( 1), Some( 0), 2), None);
-        assert_eq!(neg_range(Some( 2), Some( 0), 2), None);
-        assert_eq!(neg_range(Some( 3), Some( 0), 2), None);
+        assert_eq!(neg_range(-3, Some( 0), 2), None);
+        assert_eq!(neg_range(-2, Some( 0), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range(-1, Some( 0), 2), None);
+        assert_eq!(neg_range( 0, Some( 0), 2), Some((Bound::Included(0), Bound::Excluded(0))));
+        assert_eq!(neg_range( 1, Some( 0), 2), None);
+        assert_eq!(neg_range( 2, Some( 0), 2), None);
+        assert_eq!(neg_range( 3, Some( 0), 2), None);
 
-        assert_eq!(neg_range(Some(-3), Some( 1), 2), None);
-        assert_eq!(neg_range(Some(-2), Some( 1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some(-1), Some( 1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some( 0), Some( 1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some( 1), Some( 1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
-        assert_eq!(neg_range(Some( 2), Some( 1), 2), None);
-        assert_eq!(neg_range(Some( 3), Some( 1), 2), None);
+        assert_eq!(neg_range(-3, Some( 1), 2), None);
+        assert_eq!(neg_range(-2, Some( 1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range(-1, Some( 1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range( 0, Some( 1), 2), Some((Bound::Included(0), Bound::Excluded(1))));
+        assert_eq!(neg_range( 1, Some( 1), 2), Some((Bound::Included(1), Bound::Excluded(1))));
+        assert_eq!(neg_range( 2, Some( 1), 2), None);
+        assert_eq!(neg_range( 3, Some( 1), 2), None);
 
-        assert_eq!(neg_range(Some(-3), Some( 2), 2), None);
-        assert_eq!(neg_range(Some(-2), Some( 2), 2), Some((Bound::Included(0), Bound::Excluded(2))));
-        assert_eq!(neg_range(Some(-1), Some( 2), 2), Some((Bound::Included(1), Bound::Excluded(2))));
-        assert_eq!(neg_range(Some( 0), Some( 2), 2), Some((Bound::Included(0), Bound::Excluded(2))));
-        assert_eq!(neg_range(Some( 1), Some( 2), 2), Some((Bound::Included(1), Bound::Excluded(2))));
-        assert_eq!(neg_range(Some( 2), Some( 2), 2), Some((Bound::Included(2), Bound::Excluded(2))));
-        assert_eq!(neg_range(Some( 3), Some( 2), 2), None);
+        assert_eq!(neg_range(-3, Some( 2), 2), None);
+        assert_eq!(neg_range(-2, Some( 2), 2), Some((Bound::Included(0), Bound::Excluded(2))));
+        assert_eq!(neg_range(-1, Some( 2), 2), Some((Bound::Included(1), Bound::Excluded(2))));
+        assert_eq!(neg_range( 0, Some( 2), 2), Some((Bound::Included(0), Bound::Excluded(2))));
+        assert_eq!(neg_range( 1, Some( 2), 2), Some((Bound::Included(1), Bound::Excluded(2))));
+        assert_eq!(neg_range( 2, Some( 2), 2), Some((Bound::Included(2), Bound::Excluded(2))));
+        assert_eq!(neg_range( 3, Some( 2), 2), None);
 
-        assert_eq!(neg_range(Some(-3), Some( 3), 2), None);
-        assert_eq!(neg_range(Some(-2), Some( 3), 2), None);
-        assert_eq!(neg_range(Some(-1), Some( 3), 2), None);
-        assert_eq!(neg_range(Some( 0), Some( 3), 2), None);
-        assert_eq!(neg_range(Some( 1), Some( 3), 2), None);
-        assert_eq!(neg_range(Some( 2), Some( 3), 2), None);
-        assert_eq!(neg_range(Some( 3), Some( 3), 2), None);
+        assert_eq!(neg_range(-3, Some( 3), 2), None);
+        assert_eq!(neg_range(-2, Some( 3), 2), None);
+        assert_eq!(neg_range(-1, Some( 3), 2), None);
+        assert_eq!(neg_range( 0, Some( 3), 2), None);
+        assert_eq!(neg_range( 1, Some( 3), 2), None);
+        assert_eq!(neg_range( 2, Some( 3), 2), None);
+        assert_eq!(neg_range( 3, Some( 3), 2), None);
     }
 }

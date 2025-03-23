@@ -1,4 +1,4 @@
-//! The core tools of URL Cleaner.
+//! Foundtional types containing the bulk of a [`Config`]'s logic.
 
 pub mod better_url;
 pub use better_url::*;
@@ -26,5 +26,3 @@ pub mod map;
 pub use map::*;
 pub mod error_behavior;
 pub use error_behavior::*;
-
-use crate::util::*;

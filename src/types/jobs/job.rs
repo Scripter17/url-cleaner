@@ -1,6 +1,5 @@
-//! An individual job.
+//! A [`Job`] is the unit cleaning is done to.
 
-use url::Url;
 use thiserror::Error;
 
 use crate::types::*;
@@ -9,25 +8,25 @@ use crate::glue::*;
 /// An individual job.
 #[derive(Debug)]
 pub struct Job<'a> {
-    /// The URL to modify.
+    /// The [`BetterUrl`] to modify.
     pub url: BetterUrl,
-    /// The config to apply.
+    /// The [`Config`] to use.
     pub config: &'a Config,
-    /// The context of [`Self::url`].
+    /// The [`JobContext`] to use.
     pub context: JobContext,
-    /// The context of the [`Jobs`] this came from.
+    /// The [`JobsContext`] to use.
     pub jobs_context: &'a JobsContext,
-    /// The cache to use.
+    /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
 }
 
 impl Job<'_> {
-    /// Does the job and returns the resulting [`Url`].
+    /// Do the job, returning the resulting [`BetterUrl`].
     /// # Errors
-    /// If the call to [`Rules::apply`] returns an error, that error is returned.
-    pub fn r#do(mut self) -> Result<Url, DoJobError> {
-        self.config.apply_no_revert(&mut JobState {
+    /// If the call to [`Config::apply`] returns an error, that error is returned.
+    pub fn r#do(mut self) -> Result<BetterUrl, DoJobError> {
+        self.config.apply(&mut JobState {
             url: &mut self.url,
             params: &self.config.params,
             scratchpad: &mut Default::default(),
@@ -38,13 +37,13 @@ impl Job<'_> {
             commons: &self.config.commons,
             common_args: None
         })?;
-        Ok(self.url.into())
+        Ok(self.url)
     }
 }
 
-/// The enums of error [`Job::do`] can return.
+/// The enums of errros that [`Job::do`] can return.
 #[derive(Debug, Error)]
 pub enum DoJobError {
-    /// Returned when a [`ApplyConfigError`] is encountered.
+    /// Returned when an [`ApplyConfigError`] is encountered.
     #[error(transparent)] ApplyConfigError(#[from] ApplyConfigError)
 }

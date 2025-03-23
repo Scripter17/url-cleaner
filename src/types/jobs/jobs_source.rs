@@ -1,4 +1,4 @@
-//! Bulk jobs using common configs and cache handlers.
+//! Convenient wrapper to turn an iterator of [`JobConfig`]s into an iterator of [`Job`]s.
 
 #![allow(dead_code, reason = "Public API partially not used by the CLI.")]
 
@@ -9,24 +9,18 @@ use thiserror::Error;
 use crate::types::*;
 use crate::glue::*;
 
-/// The details of how to turn [`JobConfig`]s into [`Job`]s.
+/// Behavior shared by all [`Job`]s from a [`JobsSource`] and possibly mutliple [`JobsSource`]s.
 #[derive(Debug, Clone)]
 pub struct JobsConfig<'a> {
     /// The [`Config`] to use.
     pub config: Cow<'a, Config>,
-    /// The cache handler.
-    /// 
-    /// Normally should be created via [`Self::config`]'s [`Config::cache_path`] but doesn't need to be.
-    /// 
-    /// This is intentional so you can override it using, for example, command line arguments.
+    /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: Cache,
 }
 
 impl<'a> JobsConfig<'a> {
-    /// Creates a new [`Job`] with the provided [`JobConfig`].
-    /// 
-    /// Can be more convenient than [`Jobs::iter`].
+    /// Createsa new [`Job`] using the provided [`JobConfig`] and [`JobsContext`].
     #[allow(dead_code, reason = "Public API.")]
     pub fn new_job(&'a self, job_config: JobConfig, jobs_context: &'a JobsContext) -> Job<'a> {
         Job {
@@ -40,24 +34,20 @@ impl<'a> JobsConfig<'a> {
     }
 }
 
-/// A [`Job`] creator.
-/// 
-/// Arguably the main API you should build upon.
-/// 
-/// For some tasks, like doing jobs in parallel, this is a bad API because it forces deserializing [`JobConfig`]s, a pretty complex task, in one thread.
-pub struct Jobs<'a> {
-    /// The [`JobsConfig`] to use.
+/// Source for [`Job`]s.
+pub struct JobsSource<'a> {
+    /// Configuration shared between [`Self`]s.
     pub jobs_config: JobsConfig<'a>,
-    /// The context.
+    /// The context shared by this [`Self`]'s [`Job`]s.
     pub context: Cow<'a, JobsContext>,
-    /// The iterator [`JobConfig`]s are acquired from.
+    /// Source of [`JobConfig`]s.
     pub job_configs_source: Box<dyn Iterator<Item = Result<JobConfig, MakeJobConfigError>>>
 }
 
-impl ::core::fmt::Debug for Jobs<'_> {
+impl ::core::fmt::Debug for JobsSource<'_> {
     #[inline]
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        let mut x = f.debug_struct("Jobs");
+        let mut x = f.debug_struct("JobsSource");
         x.field("jobs_config", &self.jobs_config);
         x.field("context", &self.context);
         x.field("job_configs_source", &"...");
@@ -65,8 +55,8 @@ impl ::core::fmt::Debug for Jobs<'_> {
     }
 }
 
-impl<'a> Jobs<'a> {
-    /// Iterates over [`Job`]s created from [`JobConfig`]s returned from [`Self::job_configs_source`].
+impl<'a> JobsSource<'a> {
+    /// Makes an iterator of [`Job`]s.
     pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Job<'a>, MakeJobError>> {
         (&mut self.job_configs_source)
             .map(|job_config_result| match job_config_result {
@@ -76,7 +66,7 @@ impl<'a> Jobs<'a> {
     }
 }
 
-/// The enum of errors that can happen when [`Jobs::iter`] tries to get a URL.
+/// The enum of errors that can happen when trying to make a [`Job`].
 #[derive(Debug, Error)]
 pub enum MakeJobError {
     /// Returned when a [`MakeJobConfigError`] is encountered.

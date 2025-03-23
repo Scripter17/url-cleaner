@@ -1,4 +1,4 @@
-//! "What if [`serde_json::Value`] used [`StringSource`]" and other horrible sentences my eternal torment has doomed me to.
+//! Generating [`serde_json::Value`]s using [`StringSource`]s.
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -9,56 +9,74 @@ use serde_json::Value;
 use crate::types::*;
 use crate::util::*;
 
-/// "What if [`serde_json::Value`] used [`StringSource`]" and other horrible sentences my eternal torment has doomed me to.
+/// Rules for making a [`serde_json::Value`] using [`StringSource`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSourceJsonValue {
-    /// [`serde_json::Value::Null`].
+    /// [`Value::Null`].
     Null,
-    /// [`serde_json::Value::Bool`].
+    /// [`Value::Bool`].
     Bool(bool),
-    /// [`serde_json::Value::Number`].
+    /// [`Value::Number`].
     Number(serde_json::value::Number),
-    /// [`serde_json::Value::String`].
+    /// [`Value::String`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
     String(StringSource),
-    /// [`serde_json::Value::Array`].
+    /// [`Value::Array`].
+    /// # Errors
+    /// If any call to [`StringSource::get`] returns an error, that error is returned.
     Array(Vec<Self>),
-    /// [`serde_json::Value::Object`].
+    /// [`Value::Object`].
+    /// # Errors
+    /// If any call to [`StringSource::get`] returns an error, that error is returned.
     Object(HashMap<String, Self>)
 }
 
 impl FromStr for StringSourceJsonValue {
     type Err = std::convert::Infallible;
 
+    /// Makes a [`Self::String`]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::String(s.into()))
+        Ok(s.into())
     }
 }
 
-/// Serialize the object. Although the macro this implementation came from allows [`Self::deserialize`]ing from a string, this currently always serializes to a map, though that may change eventually.
+impl From<&str> for StringSourceJsonValue {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for StringSourceJsonValue {
+    fn from(value: String) -> Self {
+        Self::String(value.into())
+    }
+}
+
+#[allow(clippy::missing_errors_doc, reason = "Who cares?")]
 impl Serialize for StringSourceJsonValue {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         <StringSourceJsonValue>::serialize(self, serializer)
     }
 }
 
-/// This particular implementation allows for deserializing from a string using [`Self::from_str`], an [`i64`], [`u64`], and [`f64`].
-/// 
-/// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.
+#[allow(clippy::missing_errors_doc, reason = "Who cares?")]
 impl<'de> Deserialize<'de> for StringSourceJsonValue {
     fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        /// Gonna be honest, this feels like an odd way to design the API.
         struct V;
 
         impl<'de> serde::de::Visitor<'de> for V {
             type Value = StringSourceJsonValue;
 
             fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-                f.write_str("Expected a string or a map.")
+                f.write_str("Expected all JSON values to be valid. If you're getting this error from JSON it's a bug and you should tell me.")
             }
 
             fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
-                Self::Value::from_str(s).map_err(E::custom)
+                Ok(Self::Value::from(s))
             }
 
             fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
@@ -82,9 +100,9 @@ impl<'de> Deserialize<'de> for StringSourceJsonValue {
     }
 }
 
-impl<T: Into<Value>> From<T> for StringSourceJsonValue {
-    fn from(value: T) -> Self {
-        match value.into() {
+impl From<Value> for StringSourceJsonValue {
+    fn from(value: Value) -> Self {
+        match value {
             Value::Null      => Self::Null,
             Value::Bool  (x) => Self::Bool  (x),
             Value::Number(x) => Self::Number(x),
@@ -96,9 +114,11 @@ impl<T: Into<Value>> From<T> for StringSourceJsonValue {
 }
 
 impl StringSourceJsonValue {
-    /// Turns a [`Self`] into a [`serde_json::Value`] using [`StringSource::get`].
+    /// Makes a [`serde_json::Value`].
     /// # Errors
-    /// If a call to [`StringSource::get`] returns an error, that error is returned.
+    /// See each variant of [`Self`] for when each variant returns an error.
+    ///
+    /// But TL;DR: If any call to [`StringSource::get`] returns an error, that error is returned.
     pub fn make(&self, job_state: &JobStateView) -> Result<Value, StringSourceError> {
         debug!(StringSourceJsonValue::make, self, job_state);
 

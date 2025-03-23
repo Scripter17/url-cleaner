@@ -1,4 +1,4 @@
-//! URL Cleaner originally started as a project to remove tracking garbage from URLs but has since grown into a very powerful URL manipulation tool.
+
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
@@ -17,13 +17,6 @@ mod testing;
 mod util;
 
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
-/// URL Cleaner - Explicit non-consent to URL-based tracking.
-/// 
-/// Released under the GNU Affero General Public License 3.0 or later (AGPL-3.0-or-later).
-/// 
-/// Source code: https://github.com/Scripter17/url-cleaner
-/// 
-/// Enabled features:
 #[cfg_attr(feature = "default-config"     , doc = "default-config")]
 #[cfg_attr(feature = "regex"              , doc = "regex"         )]
 #[cfg_attr(feature = "glob"               , doc = "glob"          )]
@@ -33,8 +26,6 @@ mod util;
 #[cfg_attr(feature = "commands"           , doc = "commands"      )]
 #[cfg_attr(feature = "custom"             , doc = "custom"        )]
 #[cfg_attr(feature = "debug"              , doc = "debug"         )]
-/// 
-/// Disabled features:
 #[cfg_attr(not(feature = "default-config"), doc = "default-config")]
 #[cfg_attr(not(feature = "regex"         ), doc = "regex"         )]
 #[cfg_attr(not(feature = "glob"          ), doc = "glob"          )]
@@ -45,89 +36,52 @@ mod util;
 #[cfg_attr(not(feature = "custom"        ), doc = "custom"        )]
 #[cfg_attr(not(feature = "debug"         ), doc = "debug"         )]
 pub struct Args {
-    /// The URLs to clean before the URLs in the STDIN.
     pub urls: Vec<String>,
-    /// The JSON config to use. If unspecified and URL Cleaner was compiled with the default-config feature, use the default config compiled into URL Cleaner.
     #[cfg(feature = "default-config")]
     #[arg(short      , long)]
     pub config: Option<PathBuf>,
-    /// The JSON config to use. Has to be set because this instance of URL Cleaner was compiled without a default config.
     #[cfg(not(feature = "default-config"))]
     #[arg(short      , long)]
     pub config: PathBuf,
-    /// Overrides the config's [`Config::cache_path`].
     #[cfg(feature = "cache")]
     #[arg(             long)]
     pub cache_path: Option<CachePath>,
-    /// Output JSON. It is intended to be identical to URL Cleaner Site's output, so while some of the output is "redundant", it's important.
     #[arg(short      , long)]
     pub json: bool,
-    /// Additional ParamsDiffs to apply before the rest of the options.
     #[arg(             long)]
     pub params_diff: Vec<PathBuf>,
-    /// Stuff to make a [`ParamsDiff`] from the CLI.
     #[command(flatten)]
     pub params_diff_args: ParamsDiffArgParser,
-    /// The JobsContext.
     #[arg(             long)]
     pub jobs_context: Option<String>,
-    /// Print the parsed arguments for debugging.
-    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_args: bool,
-    /// Print the ParamsDiffs loaded from `--params--diff` files and derived from the parsed arguments for debugging.
-    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_params_diffs: bool,
-    /// Print the config's params after applying the ParamsDiff.
-    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_params: bool,
-    /// Print the specified config as JSON after applying the ParamsDiff.
-    /// When this, any other `--print-...` flag, or `--tests` is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub print_config: bool,
-    /// Tests to check the config is written correctly.
-    /// When this or any `--print-...` flag is set, no URLs are cleaned.
     #[arg(             long, verbatim_doc_comment)]
     pub tests: Option<Vec<PathBuf>>,
-    /// Tests the config for suitability to be the default config.
-    /// Exact behavior is unspecified, but generally restricts noisy and insecure stuff like Debug variants and commands.
     #[arg(             long, verbatim_doc_comment)]
     pub test_suitability: bool,
-    /// Amount of threads to process jobs in.
-    /// 
-    /// Zero gets the current CPU threads.
     #[arg(long, default_value_t = 0)]
     pub threads: usize,
-    /// When enabled, only prints timing info.
-    ///
-    /// Produces more reliable timing info for some reason.
     #[cfg(feature = "debug")]
     #[arg(long)]
     pub debug_just_print_times: bool
 }
-
-/// The enum of all errors that can occur when using the URL Cleaner CLI tool.
 #[derive(Debug, Error)]
 pub enum CliError {
-    /// Returned when a [`GetConfigError`] is encountered.
     #[error(transparent)] GetConfigError(#[from] GetConfigError),
-    /// Returned when URL Cleaner fails to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
-    /// Returned when URL Cleaner fails to parse a [`ParamsDiff`] file's contents.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
-    /// Returned when URL Cleaner fails to parse a [`JobsContext`].
     #[error(transparent)] CantParseJobsContext(serde_json::Error),
-    /// Returned when a [`SerdeJsonError`] is encountered.
     #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when trying to load a [`Tests`] file fails.
     #[error(transparent)] CantLoadTests(io::Error),
-    /// Returned when trying to parse a [`Tests`] file fails.
     #[error(transparent)] CantParseTests(serde_json::Error)
 }
-
-/// Shorthand for serializing a string to JSON.
 fn str_to_json_str(s: &str) -> String {
     serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
@@ -145,7 +99,7 @@ fn main() -> Result<ExitCode, CliError> {
     if print_args {println!("{args:?}");}
 
     #[cfg(feature = "default-config")]
-    let mut config = Config::get_default_no_cache_or_load(args.config.as_deref())?;
+    let mut config = Config::load_or_get_default_no_cache(args.config.as_deref())?;
     #[cfg(not(feature = "default-config"))]
     let mut config = Config::load_from_file(&args.config)?;
 
@@ -193,7 +147,7 @@ fn main() -> Result<ExitCode, CliError> {
     let mut threads = args.threads;
     if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<url::Url, DoJobError>, MakeJobError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoJobError>, MakeJobError>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let jobs_config = JobsConfig {
         #[cfg(feature = "cache")]

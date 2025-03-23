@@ -1,4 +1,4 @@
-//! The part of a config that actually modified URLs.
+//! Logic for when and how [`JobState`]s should be modified.
 
 use std::ops::{Deref, DerefMut};
 
@@ -15,230 +15,183 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// The main API for modifying URLs.
-/// 
-/// [`Rule::Normal`] is almost always what you want.
+/// When and how to modify a [`JobState`].
+///
+/// I'm sorry for the dogshit diagnostics on typos. I tried setting a bounty for serde to fix it but they didn't let me.
+///
+/// For now, [`Self::Normal`] being `#[serde(untagged)]` is one of my many eternal torments.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Rule {
-    /// Gets a certain part of a URL then applies a [`Mapper`] depending on the returned value.
+    /// Gets the specified [`UrlPart`] and uses it to select a [`Mapper`].
     ///
-    /// If no [`Mapper`] is found, does nothing and doesn't return an error.
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
     /// # Errors
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     PartMap {
         /// The part to get.
         part: UrlPart,
-        /// The map determining which [`Mapper`] to apply.
+        /// The map to branch with.
         #[serde(flatten)]
         map: Map<Mapper>
     },
-    /// Gets a certain part of a URL then applies a [`Rule`] depending on the returned value.
+    /// Gets the specified [`UrlPart`] and uses it to select a [`Rule`].
     ///
-    /// If no [`Mapper`] is found, does nothing and doesn't return an error.
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
     /// # Errors
-    /// If the call to [`Rule::apply`] returns an error, that error is returned.
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     PartRuleMap {
         /// The part to get.
         part: UrlPart,
-        /// The map determining which [`Rule`] to apply.
+        /// The map to branch with.
         #[serde(flatten)]
         map: Map<Self>
     },
-    /// Gets a certain part of a URL then applies a [`Rules`] depending on the returned value.
+    /// Gets the specified [`UrlPart`] and uses it to select a [`Rules`].
     ///
-    /// If no [`Mapper`] is found, does nothing and doesn't return an error.
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     PartRulesMap {
         /// The part to get.
         part: UrlPart,
-        /// The map determining which [`Rules`] to apply.
+        /// The map to branch with.
         #[serde(flatten)]
         map: Map<Rules>
     },
-    /// Gets a string from a [`StringSource`] then applies a [`Mapper`] depending on the returned value.
+    /// Gets the specified [`UrlPart`] and uses it to select a [`Mapper`].
     ///
-    /// If no [`Mapper`] is found, does nothing and doesn't return an error.
-    /// # Rules
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     StringMap {
-        /// The [`StringSource`] to get the string from.
+        /// The stringto get.
         value: StringSource,
-        /// The map determining which [`Mapper`] to apply.
+        /// The map to branch with.
         #[serde(flatten)]
         map: Map<Mapper>
     },
-    /// Gets a string from a [`StringSource`] then applies a [`Rule`] depending on the returned value.
+    /// Gets the specified [`UrlPart`] and uses it to select a [`Rule`].
     ///
-    /// If no [`Mapper`] is found, does nothing and doesn't return an error.
-    /// # Rules
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
-    /// If the call to [`Rule::apply`] returns an error, that error is returned.
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     StringRuleMap {
-        /// The [`StringSource`] to get the string from.
+        /// The stringto get.
         value: StringSource,
-        /// The map determining which [`Mapper`] to apply.
+        /// The map to branch with.
         #[serde(flatten)]
         map: Map<Self>
     },
-    /// Gets a string from a [`StringSource`] then applies a [`Rules`] depending on the returned value.
+    /// Gets the specified [`UrlPart`] and uses it to select a [`Rules`].
     ///
-    /// If no [`Mapper`] is found, does nothing and doesn't return an error.
-    /// # Rules
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     StringRulesMap {
-        /// The [`StringSource`] to get the string from.
+        /// The stringto get.
         value: StringSource,
-        /// The map determining which [`Mapper`] to apply.
+        /// The map to branch with.
         #[serde(flatten)]
         map: Map<Rules>
     },
-    /// Repeatedly runs the contained [`Rules`] until neither [`JobState::url`] nor [`JobState::scratchpad`] change.
-    /// 
-    /// Runs at most `limit` times. (Defaults to 10).
+    /// Repeat [`Self::Repeat::rules`] until either no changes happen or the rules were executed [`Self::Repeat::limit`] times.
     /// # Errors
-    /// If call to [`Rules::apply`] returns an error, the error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// Rule::Repeat {
-    ///     rules: Rules(vec![
-    ///         Rule::Normal {
-    ///             condition: Condition::Always,
-    ///             mapper: Mapper::SetPart {
-    ///                 part: UrlPart::NextPathSegment,
-    ///                 value: "a".into()
-    ///             }
-    ///         }
-    ///     ]),
-    ///     limit: 10
-    /// }.apply(&mut job_state).unwrap();
-    /// assert_eq!(job_state.url.as_str(), "https://example.com/a/a/a/a/a/a/a/a/a/a");
-    /// ```
+    /// If any call to [`Rules::apply`] returns an error, that error is returned.
     Repeat {
-        /// The rules to repeat.
+        /// The [`Rules`] to repeat.
         rules: Rules,
-        /// The max amount of times to repeat them.
-        /// 
+        /// The maximum amount of times to repeat.
+        ///
         /// Defaults to 10.
         #[serde(default = "get_10_u64")]
         limit: u64
     },
-    /// When many rules share a common condition (such as `{"UnqualifiedAnySuffix": "amazon"}`), it often makes semantic and performance sense to merge them all into one.
-    /// # Errors
-    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    /// If [`Self::SharedCondition::condition`] passes, apply [`Self::SharedCondition::rules`].
     SharedCondition {
-        /// The condition they all share. Note that [`Condition::All`] and [`Condition::Any`] can be used to have multiple common conditions.
+        /// The [`Condition`] to share between [`Rules`].
         condition: Condition,
-        /// The rules to run if [`Self::SharedCondition::condition`] passes.
+        /// The [`Rules`] to apply.
         rules: Rules
     },
-    /// Applies the contained [`Rules`].
-    /// # Errors
-    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    /// Apply a list of [`Rules`].
     Rules(Rules),
-    /// If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Self::IfElse::mapper`]'s [`Mapper::apply`] on the provided URL, otherwise use [`Self::IfElse::else_mapper`].
-    /// # Errors
-    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
-    /// 
-    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
-    IfElse {
-        /// The condition to decide which mapper to use.
-        condition: Condition,
-        /// The mapper to use if the condition passes.
-        mapper: Mapper,
-        /// The mapper to use if the condition fails.
-        else_mapper: Mapper
-    },
-    /// Runs the specified [`Mapper`].
-    /// # Errors
-    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    /// Apply a [`Mapper`].
     Mapper(Mapper),
-    /// Uses a [`Self`] from the [`JobState::commons`]'s [`Commons::rules`].
+    /// Apply a [`Self`] from [`Commons::rules`].
     Common(CommonCall),
-    /// Uses a function pointer.
-    /// 
-    /// Cannot be serialized or deserialized.
+    /// Apply a custom [`Self`].
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
     Custom(FnWrapper<fn(&mut JobState) -> Result<(), RuleError>>),
-    /// The most basic type of rule. If the call to [`Condition::satisfied_by`] returns `Ok(true)`, calls [`Mapper::apply`] on the provided URL.
-    /// 
-    /// This is the last variant because of the [`#[serde(untageed)]`](https://serde.rs/variant-attrs.html#untagged) macro.
+    /// If [`Self::Normal::condition`] passes, apply [`Self::Normal::mapper`].
+    ///
+    /// If [`Self::Normal::condition`] fails and [`Self::Normal::else_mapper`] is [`Some`], apply [`Self::Normal::else_mapper`].
     /// # Errors
     /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
-    /// 
+    ///
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// url_cleaner::job_state!(job_state;);
-    /// 
-    /// Rule::Normal {
-    ///     condition: Condition::Always,
-    ///     mapper: Mapper::None
-    /// }.apply(&mut job_state).unwrap();
-    /// ```
     #[serde(untagged)]
     Normal {
-        /// The condition under which the provided URL is modified.
+        /// The [`Condition`] to test to determine which [`Mapper`] to apply.
         condition: Condition,
-        /// The mapper used to modify the provided URL.
-        mapper: Mapper
+        /// The [`Mapper`] that's applied if [`Self::Normal::condition`] passes.
+        mapper: Mapper,
+        /// If [`Some`], the [`Mapper`] that's applied if [`Self::Normal::condition`] fails.
+        #[serde(default, skip_serializing_if = "is_default")]
+        else_mapper: Option<Mapper>
     }
 }
 
-/// Serde helper function. The default value of [`Rule::Repeat::limit`].
+/// Helper function to get the default [`Rule::Repeat::limit`].
 const fn get_10_u64() -> u64 {10}
 
-/// The errors that [`Rule`] can return.
+/// The enum of errors [`Rule::apply`] can return.
 #[derive(Debug, Error)]
 pub enum RuleError {
-    /// The condition returned an error.
+    /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] ConditionError),
-    /// The mapper returned an error.
+    /// Returned whan a [`MapperError`] is encountered.
     #[error(transparent)]
     MapperError(#[from] MapperError),
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
-    /// Returned when a call to [`StringSource::get`] returns `None` where it has to be `Some`.
+    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when the common [`Rule`] is not found.
+    /// Returned when trying to call an unknown [`Commons::rules`].
     #[error("The common Rule was not found.")]
     CommonRuleNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
-    /// Custom error.
+    /// Returned by [`Rule::Custom`] functions when their errors don't fit in any of the other variants of [`Self`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error + Send>)
 }
 
 impl Rule {
-    /// Apply the rule to the url in-place.
-    /// # Errors
-    /// See each of [`Self`]'s variant's documentation for details.
+    /// See each variant of [`Self`] for behvaior.
     ///
-    /// If an error occurs, `job_state` is effectively unmodified, though the mutable parts may be clones.
+    /// If an error is returned, `job_state` may be left in a partially modified state.
+    /// # Errors
+    /// See each variant of [`Self`] for errors.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         debug!(Rule::apply, self, job_state);
         Ok(match self {
-            Self::Normal{condition, mapper} => if condition.satisfied_by(&job_state.to_view())? {
+            Self::Normal{condition, mapper, else_mapper} => if condition.satisfied_by(&job_state.to_view())? {
                 mapper.apply(job_state)?;
+            } else if let Some(else_mapper) = else_mapper {
+                else_mapper.apply(job_state)?
             },
             Self::PartMap        {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
             Self::PartRuleMap    {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
@@ -247,36 +200,23 @@ impl Rule {
             Self::StringRuleMap  {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
             Self::StringRulesMap {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
             Self::Repeat{rules, limit} => {
-                let original_url = job_state.url.clone();
-                let original_scratchpad = job_state.scratchpad.clone();
                 let mut previous_url;
                 let mut previous_scratchpad;
                 for _ in 0..*limit {
                     previous_url = job_state.url.clone();
                     previous_scratchpad = job_state.scratchpad.clone();
-                    match rules.apply_no_revert(job_state) {
-                        Ok(()) => if job_state.url == &previous_url && job_state.scratchpad == &previous_scratchpad {break;},
-                        e @ Err(_) => {
-                            *job_state.url = original_url;
-                            *job_state.scratchpad = original_scratchpad;
-                            return e;
-                        }
-                    }
+                    rules.apply(job_state)?;
+                    if job_state.url == &previous_url && job_state.scratchpad == &previous_scratchpad {break;}
                 }
             },
             Self::SharedCondition{condition, rules} => if condition.satisfied_by(&job_state.to_view())? {
                 rules.apply(job_state)?
             },
             Self::Rules(rules) => rules.apply(job_state)?,
-            Self::IfElse {condition, mapper, else_mapper} => if condition.satisfied_by(&job_state.to_view())? {
-                mapper.apply(job_state)?;
-            } else {
-                else_mapper.apply(job_state)?;
-            },
             Self::Mapper(mapper) => mapper.apply(job_state)?,
             Self::Common(common_call) => {
                 job_state.commons.rules.get(get_str!(common_call.name, job_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut JobState {
-                    common_args: Some(&common_call.args.make(&job_state.to_view())?),
+                    common_args: Some(&common_call.args.build(&job_state.to_view())?),
                     url: job_state.url,
                     context: job_state.context,
                     params: job_state.params,
@@ -293,9 +233,9 @@ impl Rule {
     }
 }
 
-/// A wrapper around a vector of rules.
-/// 
-/// Exists mainly for convenience.
+/// A list of [`Rule`]s
+/// .
+/// Exists mainly to provide [`Self::apply`] as a wrapper around [`Rule::apply`]ing each contained [`Rule`] in order.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[repr(transparent)]
 pub struct Rules(pub Vec<Rule>);
@@ -315,36 +255,13 @@ impl DerefMut for Rules {
 }
 
 impl Rules {
-    /// Applies each contained [`Rule`] to the provided [`JobState::url`] in order.
-    /// 
-    /// If an error is returned, `job_state.url` and `job_state.scratchpad` are left unmodified.
-    /// 
-    /// Caching may still happen and won't be reverted.
+    /// Applies each contained [`Rule`] in order.
+    ///
+    /// If an error is returned, `job_state` may be left in a partially modified state.
     /// # Errors
-    /// If any contained [`Rule`] returns an error, that error is returned.
+    /// If any call to [`Rule::apply`] returns an error, that error is returned.
     pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
         debug!(Rules::apply, self, job_state);
-        let old_url = job_state.url.clone();
-        let old_scratchpad = job_state.scratchpad.clone();
-        match self.apply_no_revert(job_state) {
-            x @ Ok(_) => x,
-            e @ Err(_) => {
-                *job_state.scratchpad = old_scratchpad;
-                *job_state.url = old_url;
-                e
-            }
-        }
-    }
-
-    /// Applies each contained [`Rule`] to the provided [`JobState::url`] in order.
-    /// 
-    /// If an error is returned, `job_state.url` and `job_state.scratchpad` are not reverted.
-    ///
-    /// This is fine if you guarantee discarding the URL on an error, such as [`Job::do`], but can result in unpredictable and undefined outputs.
-    /// # Errors
-    /// If any contained [`Rule`] returns an error, that error is returned.
-    pub fn apply_no_revert(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        debug!(Rules::apply_no_revert, self, job_state);
         for rule in &self.0 {
             rule.apply(job_state)?;
         }

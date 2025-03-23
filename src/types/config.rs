@@ -1,4 +1,4 @@
-//! Provides [`Config`] which controls all details of how URL Cleaner works.
+//! The configuration for how a URL should be cleaned.
 
 use std::fs::read_to_string;
 use std::path::Path;
@@ -24,43 +24,47 @@ pub use common_call::*;
 mod commons;
 pub use commons::*;
 
-/// The rules and rule parameters describing how to modify URLs.
+/// The config that determines all behavior of how URLs are cleaned.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub struct Config {
     /// The documentation.
     #[serde(default, skip_serializing_if = "is_default")]
     pub docs: ConfigDocs,
-    /// The path to use for the [`Cache`].
-    /// 
-    /// Defaults to `:memory:` to store the cache in RAM and not read/write any files.
+    /// The location of the cache.
+    ///
+    /// Defaults to being stored in memory and destroyed on program exit.
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_path: CachePath,
-    /// The parameters passed into the rule's conditions and mappers.
+    /// The config for the config.
+    ///
+    /// Allows fine tuning the exact behavior of [`Self::rules`] to allow for multiple similar use cases.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
-    /// Various things that are used in multiple spots.
+    /// Common things that are basically functions.
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
-    /// The [`Rule`]s that modify the URLS.
+    /// The [`Rule`]s.
     pub rules: Rules
 }
 
 impl Config {
-    /// Loads and parses the specified file.
+    /// Load [`Self`] from a JSON file.
     /// # Errors
-    /// If the specified file can't be loaded, returns the error [`GetConfigError::CantLoadConfig`].
-    /// 
-    /// If the config contained in the specified file can't be parsed, returns the error [`GetConfigError::CantParseConfig`].
+    /// If the call to [`std::fs::read_to_string`] returns an error, that error is returned.
+    ///
+    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
     pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetConfigError> {
         serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
     }
 
-    /// Gets the config compiled into the URL Cleaner binary.
-    /// 
-    /// On the first call, it parses [`DEFAULT_CONFIG_STR`] and caches it in [`DEFAULT_CONFIG`]. On all future calls it simply returns the cached value.
+    /// Gets the default [`Self`] compiled into the binary itself.
+    ///
+    /// Caching is done by putting the [`Self`] in [`DEFAULT_CONFIG`] and only returning references to it.
+    ///
+    /// If you know you're only going to get the default config once, [`Self::get_default_no_cache`] is better because you can apply [`ParamsDiff`]s to it without [`Clone::clone`]ing.
     /// # Errors
-    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseConfig`].
+    /// If the call to [`Self::get_default_no_cache`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
     #[cfg(feature = "default-config")]
     pub fn get_default() -> Result<&'static Self, GetConfigError> {
@@ -72,46 +76,50 @@ impl Config {
         }
     }
 
-    /// Useful for when you know you're only getting the config once and, if needed, caching it yourself.
-    /// 
-    /// Generally, [`Self::get_default`] should be used over calling this function multiple times.
+    /// Deserializes [`DEFAULT_CONFIG_STR`] and returns it without caching in [`DEFAULT_CONFIG`]
+    ///
+    /// If you're getting the default config often and rarely using [`ParamsDiff`]s, [`Self::get_default`] may be better due to it only deserializing the config once.
     /// # Errors
-    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseConfig`].
+    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
     #[cfg(feature = "default-config")]
     pub fn get_default_no_cache() -> Result<Self, GetConfigError> {
         serde_json::from_str(DEFAULT_CONFIG_STR).map_err(Into::into)
     }
 
-    /// If `path` is `Some`, returns [`Self::load_from_file`].
-    /// 
-    /// If `path` is `None`, returns [`Self::get_default`].
+    /// If `path` is [`Some`], returns the result of [`Self::load_from_file`] in a [`Cow::Owned`].
+    ///
+    /// If `path` is [`None`], returns the result of [`Self::get_default`] in a [`Cow::Borrowed`].
     /// # Errors
-    /// If `path` is `None` and the call to [`Self::get_default`] returns an error, that error is returned.
-    /// 
-    /// If `path` is `Some` and the call to [`Self::load_from_file`] returns an error, that error is returned.
+    /// If the call to [`Self::load_from_file`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::get_default`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
     #[cfg(feature = "default-config")]
-    pub fn get_default_or_load<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Self>, GetConfigError> {
+    pub fn load_or_get_default<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Self>, GetConfigError> {
         Ok(match path {
             Some(path) => Cow::Owned(Self::load_from_file(path)?),
             None => Cow::Borrowed(Self::get_default()?)
         })
     }
 
-    /// Useful for when you know you're only getting the config once and, if needed, caching it yourself.
-    /// 
-    /// Generally, [`Self::get_default_or_load`] should be used over calling this function with the same argument multiple times.
+    /// If `path` is [`Some`], returns the result of [`Self::load_from_file`].
+    ///
+    /// If `path` is [`None`], returns the result of [`Self::get_default_no_cache`].
     /// # Errors
-    /// If the default config cannot be parsed, returns the error [`GetConfigError::CantParseConfig`].
+    /// If the call to [`Self::load_from_file`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::get_default`] returns an error, that error is returned.
     #[cfg(feature = "default-config")]
-    pub fn get_default_no_cache_or_load<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetConfigError> {
+    pub fn load_or_get_default_no_cache<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetConfigError> {
         Ok(match path {
             Some(path) => Self::load_from_file(path)?,
             None => Self::get_default_no_cache()?
         })
     }
 
-    /// Basic wrapper around [`Self::rules`]'s [`Rules::apply`].
+    /// Applies [`Self::rules`] to the provided [`JobState`].
+    ///
+    /// If an error is returned, `job_state` may be left in a partially modified state.
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
@@ -119,33 +127,27 @@ impl Config {
         self.rules.apply(job_state).map_err(Into::into)
     }
 
-    /// Basic wrapper around [`Self::rules`]'s [`Rules::apply_no_revert`].
-    /// # Errors
-    /// If the call to [`Rules::apply_no_revert`] returns an error, that error is returned.
-    pub fn apply_no_revert(&self, job_state: &mut JobState) -> Result<(), ApplyConfigError> {
-        self.rules.apply_no_revert(job_state).map_err(Into::into)
-    }
-
-    /// Runs the provided [`Tests`], panicking when any error happens or test fails.
+    /// Runs the provided [`Tests`], panicking if any of them fail.
     /// # Panics
-    /// Panics if a test fails.
+    /// If any [`Test`] fails, panics.
     pub fn run_tests(&self, tests: Tests) {
         tests.r#do(self);
     }
 
-    /// If `self` is "unsuitable" for being the default config, panics.
-    ///
-    /// Exact behavior is unspecified, but generally restricts noisy and insecure stuff like Debug variants and commands.
+    /// Asserts the suitability of `self` to be URL Cleaner's default config.
     /// # Panics
-    /// If `self` is "unsuitable" for being the default config, panics.
+    /// If `self` is deemed unsuitable to be URL Cleaner's default config, panics.
+    #[cfg_attr(feature = "default-config", doc = "# Examples")]
+    #[cfg_attr(feature = "default-config", doc = "```")]
+    #[cfg_attr(feature = "default-config", doc = "# use url_cleaner::types::*;")]
+    #[cfg_attr(feature = "default-config", doc = "Config::get_default().unwrap().assert_suitability();")]
+    #[cfg_attr(feature = "default-config", doc = "```")]
     pub fn assert_suitability(&self) {
         Suitability::assert_suitability(self, self)
     }
 }
 
 /// The enum of errors [`Config::apply`] can return.
-/// 
-/// Exists for future compatibility.
 #[derive(Debug, Error)]
 pub enum ApplyConfigError {
     /// Returned when a [`RuleError`] is encountered.
@@ -153,68 +155,49 @@ pub enum ApplyConfigError {
     RuleError(#[from] RuleError)
 }
 
-/// The default [`Config`] as minified JSON.
-///
-/// When running `cargo test`, the unminified version is used.
+/// The JSON text of the default config.
 #[cfg(all(feature = "default-config", not(test)))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-config.json.minified"));
-/// The default [`Config`] as unminified JSON.
-///
-/// When not running `cargo test`, the minified version is used.
+/// The JSON text of the default config.
 #[cfg(all(feature = "default-config", test))]
 pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
-/// The container for caching the parsed version of [`DEFAULT_CONFIG_STR`].
+/// The cached deserialization of the default config.
 #[cfg(feature = "default-config")]
 #[allow(dead_code, reason = "Public API.")]
 pub static DEFAULT_CONFIG: OnceLock<Config> = OnceLock::new();
 
-/// An enum containing all possible errors that can happen when loading/parsing a config.
+/// The enum of errors that can happen when loading a [`Config`].
 #[derive(Debug, Error)]
 pub enum GetConfigError {
-    /// Could not load the config.
+    /// Returned when loading a [`Config`] fails.
     #[error(transparent)]
     CantLoadConfig(#[from] io::Error),
-    /// The loaded config file did not contain valid JSON.
+    /// Returned when deserializing a [`Config`] fails.
     #[error(transparent)]
     CantParseConfig(#[from] serde_json::Error),
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, reason = "Panicking tests are easier to write than erroring tests.")]
 mod tests {
     use super::*;
 
     #[test]
     #[cfg(feature = "default-config")]
-    fn deserialize_default_config() {
+    fn default_config_is_json() {
+        serde_json::from_str::<serde_json::Value>(DEFAULT_CONFIG_STR).unwrap();
+    }
+
+    #[test]
+    #[cfg(feature = "default-config")]
+    fn default_config_is_valid() {
         Config::get_default().unwrap();
     }
 
     #[test]
     #[cfg(feature = "default-config")]
-    fn reserialize_default_config() {
-        serde_json::to_string(&Config::get_default().unwrap()).unwrap();
-    }
+    fn serde_roundtrip_equality() {
+        let default_config = Config::get_default().unwrap();
 
-    /// Does not work when generic.
-    /// 
-    /// <'a, T: Serialize+Deserialize<'a>> throws nonsensical errors like `y.to_owned()` freed while still in use despite being an owned value.
-    #[cfg(feature = "default-config")]
-    fn de_ser(config: &Config) -> Config {
-        serde_json::from_str(&serde_json::to_string(config).unwrap()).unwrap()
-    }
-
-    #[test]
-    #[cfg(feature = "default-config")]
-    fn default_config_de_ser_identity() {
-        assert_eq!(Config::get_default().unwrap(),                 &de_ser(Config::get_default().unwrap())  );
-        assert_eq!(Config::get_default().unwrap(),         &de_ser(&de_ser(Config::get_default().unwrap())) );
-        assert_eq!(Config::get_default().unwrap(), &de_ser(&de_ser(&de_ser(Config::get_default().unwrap()))));
-    }
-
-    #[test]
-    #[cfg(feature = "default-config")]
-    fn test_default_config() {
-        Config::get_default().unwrap().clone().run_tests(serde_json::from_str(&read_to_string("tests.json").expect("Loading tests to work")).expect("Parsing tests to work"));
+        assert_eq!(&serde_json::from_str::<Config>(&serde_json::to_string(default_config).unwrap()).unwrap(), default_config);
     }
 }

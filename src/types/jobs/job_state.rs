@@ -1,35 +1,39 @@
-//! The state of a job as it's happening.
+//! The current state of an in-progress [`Job`].
+
+use std::borrow::Cow;
 
 use crate::types::*;
 use crate::util::*;
 use crate::glue::*;
 
-/// The current state of a [`Job`].
+/// The state of a [`Job`] being done.
 #[derive(Debug)]
 pub struct JobState<'a> {
-    /// The URL being modified.
+    /// The [`BetterUrl`] being modified.
     pub url: &'a mut BetterUrl,
-    /// Scratchpad space for [`Mapper`]s to store state in.
+    /// The [`JobScratchpad`] being used.
     pub scratchpad: &'a mut JobScratchpad,
-    /// Vars used in common contexts.
+    /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
     pub common_args: Option<&'a CommonCallArgs<'a>>,
-    /// The context surrounding the URL.
+    /// The [`JobContext`] of the [`Job`] this came form.
     pub context: &'a JobContext,
-    /// The context surrounding the [`Jobs`].
+    /// The [`JobsContext`] of the [`JobsSource`] this came from.
     pub jobs_context: &'a JobsContext,
-    /// The flags, variables, etc. defined by the job initiator.
+    /// The [`Params`] being used.
     pub params: &'a Params,
-    /// Various things that are used multiple times.
+    /// The [`Commons`] that can be called.
     pub commons: &'a Commons,
-    /// The cache handler.
+    /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
 }
 
 impl<'a> JobState<'a> {
-    /// For optimization purposes, functions that could take `&JobState` instead take `&JobStateView` to make [`Commons`] easier to handle.
-    /// 
-    /// Functions that don't have anything to do with [`Commons`] still take [`JobStateView`] for the consistency.
+    /// Converts `self` tp a [`JobStateView`], which just makes the references immutable.
+    ///
+    /// `&job_state.to_view()` should always effectively compile down to a [`std::mem::transmute`].
+    ///
+    /// Though you shouldn't do that since I don't have any way to tell Rust to always make that sound.
     pub fn to_view(&'a self) -> JobStateView<'a> {
         JobStateView {
             url         : self.url,
@@ -45,7 +49,7 @@ impl<'a> JobState<'a> {
     }
 }
 
-/// Helper macro to make doctests less noisy.
+/// Helper macro to make docs briefer.
 #[macro_export]
 #[cfg(feature = "cache")]
 macro_rules! job_state {
@@ -76,7 +80,7 @@ macro_rules! job_state {
     };
 }
 
-/// Helper macro to make doctests less noisy.
+/// Helper macro to make docs briefer.
 #[macro_export]
 #[cfg(not(feature = "cache"))]
 macro_rules! job_state {
@@ -106,68 +110,46 @@ macro_rules! job_state {
 }
 
 /// An immutable view of a [`JobState`].
-/// 
-/// Exists for nuanced optimization reasons. Sorry for the added API complexity.
 #[derive(Debug, Clone, Copy)]
 pub struct JobStateView<'a> {
-    /// The URL being modified.
-    /// 
-    /// See [`JobState::url`].
+    /// The [`BetterUrl`] being modified.
     pub url: &'a BetterUrl,
-    /// Scratchpad space for [`Mapper`]s to store state in.
-    /// 
-    /// See [`JobState::scratchpad`].
+    /// The [`JobScratchpad`] being used.
     pub scratchpad: &'a JobScratchpad,
-    /// Vars used in common contexts.
-    /// 
-    /// See [`JobState::common_args`].
-    // One could argue this should be a `&'a Option<CommonCallArgs>`, but that'd break ABI compatibility or whatever it's called.
-    // Transmuting a `JobState` to a `JobStateView` is effectively safe and that change would break that (I think?).
+    /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
     pub common_args: Option<&'a CommonCallArgs<'a>>,
-    /// The context surrounding the URL.
-    /// 
-    /// See [`JobState::context`].
+    /// The [`JobContext`] of the [`Job`] this came form.
     pub context: &'a JobContext,
-    /// The context surrounding the [`Jobs`].
-    ///
-    /// See [`JobState::jobs_context`].
+    /// The [`JobsContext`] of the [`JobsSource`] this came from.
     pub jobs_context: &'a JobsContext,
-    /// The flags, variables, etc. defined by the job initiator.
-    /// 
-    /// See [`JobState::params`].
+    /// The [`Params`] being used.
     pub params: &'a Params,
-    /// Various things that are used multiple times.
-    /// 
-    /// See [`JobState::commons`].
+    /// The [`Commons`] that can be called.
     pub commons: &'a Commons,
-    /// The cache handler.
-    /// 
-    /// See [`JobState::cache`].
+    /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
 }
 
 impl<'a> JobStateView<'a> {
-    /// Gets an HTTP client with [`Self`]'s configuration pre-applied.
+    /// Makes an [`reqwest::blocking::Client`] using the relevant [`HttpClientConfig`] and [`HttpClientConfigDiff`]s.
     /// # Errors
-    /// Errors if [`reqwest::ClientBuilder::build`] errors.
+    /// If the call to [`HttpClientConfig::make`] returns ane error, that error is returned.
+    /// 
+    /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns ane error, that error is returned.
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
         debug!(Params::http_client, self, http_client_config_diff);
-        match http_client_config_diff {
-            Some(http_client_config_diff) => {
-                let mut temp_http_client_config = self.params.http_client_config.clone();
-                if let Some(CommonCallArgs {http_client_config_diff: Some(x), ..}) = self.common_args {x.apply(&mut temp_http_client_config);}
-                http_client_config_diff.apply(&mut temp_http_client_config);
-                temp_http_client_config.apply(reqwest::blocking::ClientBuilder::new())
-            },
-            None => {self.params.http_client_config.apply(reqwest::blocking::ClientBuilder::new())}
-        }?.build()
+
+        let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
+
+        if let Some(CommonCallArgs {http_client_config_diff: Some(diff), ..}) = self.common_args {diff.apply(http_client_config.to_mut());}
+        if let Some(diff) = http_client_config_diff {diff.apply(http_client_config.to_mut());}
+
+        http_client_config.make()
     }
 
-    /// Just returns itself.
-    /// 
-    /// Exists for internal ergonomics reasons.
+    /// No-op to make some internal macros more convenient.
     #[allow(clippy::wrong_self_convention, reason = "Don't care.")]
     pub(crate) const fn to_view(&'a self) -> &'a JobStateView<'a> {
         self
