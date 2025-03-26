@@ -593,15 +593,71 @@ pub enum UrlPart {
 
 
     /// The query. Does not include the `?`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// assert_eq!(UrlPart::Query.get(&url), None);
+    ///
+    /// UrlPart::Query.set(&mut url, Some("")).unwrap();
+    /// assert_eq!(UrlPart::Query.get(&url), Some("".into()));
+    ///
+    /// UrlPart::Query.set(&mut url, Some("abc")).unwrap();
+    /// assert_eq!(UrlPart::Query.get(&url), Some("abc".into()));
+    ///
+    /// UrlPart::Query.set(&mut url, Some("abc=def")).unwrap();
+    /// assert_eq!(UrlPart::Query.get(&url), Some("abc=def".into()));
+    ///
+    /// UrlPart::Query.set(&mut url, Some("")).unwrap();
+    /// assert_eq!(UrlPart::Query.get(&url), Some("".into()));
+    ///
+    /// UrlPart::Query.set(&mut url, None).unwrap();
+    /// assert_eq!(UrlPart::Query.get(&url), None);
+    /// ```
     Query,
     /// The selected query parameter.
     ///
     /// Setting a query parameter with a [`QueryParamSelector::index`] of exactly one more than the current count of query parameters with the matching [`QueryParamSelector::name`] will append a new query paramter.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).get(&url), None);
+    ///
+    /// UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).set(&mut url, Some("2")).unwrap();
+    /// assert_eq!(url.query(), Some("a=2"));
+    /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).get(&url), Some("2".into()));
+    ///
+    /// UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 1}).set(&mut url, Some("3")).unwrap();
+    /// assert_eq!(url.query(), Some("a=2&a=3"));
+    /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).get(&url), Some("2".into()));
+    /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 1}).get(&url), Some("3".into()));
+    ///
+    /// UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).set(&mut url, None).unwrap();
+    /// assert_eq!(url.query(), Some("a=3"));
+    /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).get(&url), Some("3".into()));
+    /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 1}).get(&url), None);
+    /// ```
     QueryParam(QueryParamSelector),
 
 
 
     /// The fragment. Does not include the `#`.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// assert_eq!(UrlPart::Fragment.get(&url), None);
+    ///
+    /// UrlPart::Fragment.set(&mut url, Some("a")).unwrap();
+    /// assert_eq!(UrlPart::Fragment.get(&url), Some("a".into()));
+    ///
+    /// UrlPart::Fragment.set(&mut url, None).unwrap();
+    /// assert_eq!(UrlPart::Fragment.get(&url), None);
+    /// ```
     Fragment
 }
 

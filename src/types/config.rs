@@ -135,6 +135,8 @@ impl Config {
     }
 
     /// Asserts the suitability of `self` to be URL Cleaner's default config.
+    ///
+    /// Exact behavior is unspecified and changes are not considered breaking.
     /// # Panics
     /// If `self` is deemed unsuitable to be URL Cleaner's default config, panics.
     #[cfg_attr(feature = "default-config", doc = "# Examples")]

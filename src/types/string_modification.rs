@@ -2,10 +2,8 @@
 
 use std::borrow::Cow;
 use std::str::FromStr;
-use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, MapPreventDuplicates};
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC, AsciiSet};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
@@ -18,7 +16,6 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-#[serde_as]
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringModification {
@@ -131,12 +128,7 @@ pub enum StringModification {
     Base64Encode(#[serde(default)] Base64Config),
     #[cfg(feature = "base64")]
     Base64Decode(#[serde(default)] Base64Config),
-    /// If the string starts with a valid javascript string literal (including the quotes), returns the contents of that string literal.
-    ///
-    /// Because javascript string literals can be multiple lines, it's hard to tell when they actually stop. With this design, you don't need to.
-    ///
-    /// Currently does not support template strings because it's more complicated than I know how to simplify.
-    GetJsStringLiteralPrefix,
+    Unescape(UnescapeMode),
 
 
 
@@ -229,7 +221,6 @@ impl FromStr for StringModification {
             "Error"                    => StringModification::Error,
             "Lowercase"                => StringModification::Lowercase,
             "Uppercase"                => StringModification::Uppercase,
-            "GetJsStringLiteralPrefix" => StringModification::GetJsStringLiteralPrefix,
             _                          => Err(NonDefaultableVariant)?
         })
     }
@@ -288,7 +279,7 @@ pub enum StringModificationError {
     #[error("The `end` of an `ExtractBetween` was not found in the provided string.")]
     ExtractBetweenEndNotFound,
     #[error(transparent)]
-    JsUnescapeError(#[from] JsUnescapeError),
+    UnescapeError(#[from] UnescapeError),
     #[error("The common StringModification was not found.")]
     CommonStringModificationNotFound,
     #[error(transparent)]
@@ -507,7 +498,7 @@ impl StringModification {
                     }
                 )?
             },
-            Self::GetJsStringLiteralPrefix => *to = js_get_string_literal_prefix(to)?,
+            Self::Unescape(mode) => *to = mode.unescape(to)?,
 
             Self::StringMap {value, map} => if let Some(x) = map.get(value.get(job_state)?) {x.apply(to, job_state)?;},
 

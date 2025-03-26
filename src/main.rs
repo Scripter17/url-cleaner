@@ -16,7 +16,13 @@ use types::*;
 mod testing;
 mod util;
 
-#[derive(Debug, Clone, PartialEq, Eq, Parser)]
+/// URL Cleaner v0.9.0
+///
+/// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
+///
+/// Source code available at https://github.com/Scripter17/url-cleaner
+///
+/// Enabled features:
 #[cfg_attr(feature = "default-config"     , doc = "default-config")]
 #[cfg_attr(feature = "regex"              , doc = "regex"         )]
 #[cfg_attr(feature = "glob"               , doc = "glob"          )]
@@ -26,6 +32,8 @@ mod util;
 #[cfg_attr(feature = "commands"           , doc = "commands"      )]
 #[cfg_attr(feature = "custom"             , doc = "custom"        )]
 #[cfg_attr(feature = "debug"              , doc = "debug"         )]
+///
+/// Disabled features:
 #[cfg_attr(not(feature = "default-config"), doc = "default-config")]
 #[cfg_attr(not(feature = "regex"         ), doc = "regex"         )]
 #[cfg_attr(not(feature = "glob"          ), doc = "glob"          )]
@@ -35,33 +43,42 @@ mod util;
 #[cfg_attr(not(feature = "commands"      ), doc = "commands"      )]
 #[cfg_attr(not(feature = "custom"        ), doc = "custom"        )]
 #[cfg_attr(not(feature = "debug"         ), doc = "debug"         )]
+#[derive(Debug, Clone, PartialEq, Eq, Parser)]
 pub struct Args {
+    /// The URLs to clean before STDIN.
+    ///
+    /// Can contain job context by using {"url":"https://example.com","context":{...}}
     pub urls: Vec<String>,
+    /// The config file to use.
+    ///
+    /// Omit to use the built in default config.
     #[cfg(feature = "default-config")]
     #[arg(short      , long)]
     pub config: Option<PathBuf>,
+    /// The config file to use.
+    ///
+    /// Required as the `default-config` feature is disabled.
     #[cfg(not(feature = "default-config"))]
     #[arg(short      , long)]
     pub config: PathBuf,
+    /// The cache to use.
+    ///
+    /// Defaults to the value specified by the config.
     #[cfg(feature = "cache")]
     #[arg(             long)]
     pub cache_path: Option<CachePath>,
+    /// JSON output.
     #[arg(short      , long)]
     pub json: bool,
+    /// The ParamsDiff files to apply to the config's Params.
     #[arg(             long)]
     pub params_diff: Vec<PathBuf>,
+    /// Generate a ParamsDiff from CLI arguments.
     #[command(flatten)]
     pub params_diff_args: ParamsDiffArgParser,
+    /// The context to share between all Jobs.
     #[arg(             long)]
     pub jobs_context: Option<String>,
-    #[arg(             long, verbatim_doc_comment)]
-    pub print_args: bool,
-    #[arg(             long, verbatim_doc_comment)]
-    pub print_params_diffs: bool,
-    #[arg(             long, verbatim_doc_comment)]
-    pub print_params: bool,
-    #[arg(             long, verbatim_doc_comment)]
-    pub print_config: bool,
     #[arg(             long, verbatim_doc_comment)]
     pub tests: Option<Vec<PathBuf>>,
     #[arg(             long, verbatim_doc_comment)]
@@ -78,7 +95,6 @@ pub enum CliError {
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
     #[error(transparent)] CantParseJobsContext(serde_json::Error),
-    #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
     #[error(transparent)] CantLoadTests(io::Error),
     #[error(transparent)] CantParseTests(serde_json::Error)
 }
@@ -95,9 +111,6 @@ fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "debug")]
     util::DEBUG_JUST_PRINT_TIMES.set(args.debug_just_print_times).expect("No poisoning.");
 
-    let print_args = args.print_args;
-    if print_args {println!("{args:?}");}
-
     #[cfg(feature = "default-config")]
     let mut config = Config::load_or_get_default_no_cache(args.config.as_deref())?;
     #[cfg(not(feature = "default-config"))]
@@ -107,6 +120,7 @@ fn main() -> Result<ExitCode, CliError> {
         .into_iter()
         .map(|path| serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile))
         .collect::<Result<Vec<_>, _>>()?;
+
     if args.params_diff_args.does_anything() {
         match args.params_diff_args.try_into() {
             Ok(params_diff) => params_diffs.push(params_diff),
@@ -116,25 +130,19 @@ fn main() -> Result<ExitCode, CliError> {
         }
     }
 
-    let print_params_diffs = args.print_params_diffs;
-    if print_params_diffs {println!("{}", serde_json::to_string(&params_diffs)?);}
-
     for params_diff in params_diffs {
         params_diff.apply(&mut config.params);
     }
 
     let json = args.json;
 
-    let print_params     = args.print_params;
-    let print_config     = args.print_config;
     let tests            = args.tests;
     let test_suitability = args.test_suitability;
 
-    let no_cleaning = print_args || print_params_diffs || print_params || print_config || test_suitability || tests.is_some();
+    let no_cleaning = test_suitability || tests.is_some();
 
-    if print_params {println!("{}", serde_json::to_string(&config.params)?);}
-    if print_config {println!("{}", serde_json::to_string(&config)?);}
-    if test_suitability {config.assert_suitability()}
+    if test_suitability {config.assert_suitability();}
+
     if let Some(tests) = tests {
         for test_path in tests {
             config.run_tests(serde_json::from_str::<testing::Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
@@ -163,6 +171,9 @@ fn main() -> Result<ExitCode, CliError> {
     let jobs_context_ref = &jobs_context;
 
     std::thread::scope(|s| {
+
+        // Job getter thread.
+        
         std::thread::Builder::new().name("Job Getter".to_string()).spawn_scoped(s, move || {
             let job_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
                 let ret = args.urls.into_iter().map(Ok);
@@ -173,11 +184,12 @@ fn main() -> Result<ExitCode, CliError> {
                 }
             };
 
-            for (i, job_config_string) in job_config_strings_source.enumerate() {
-                #[allow(clippy::arithmetic_side_effects, reason = "Whatever exactly the issue with `i % threads` is it will, at worst, give slightly worse load balancing around each multiple of usize::MAX jobs. I think that's fine.")]
-                in_senders.get(i % threads).expect("The amount of senders to not exceed the count of senders to make.").send(job_config_string).expect("To successfully send the Job.");
+            for (in_sender, job_config_string) in in_senders.iter().cycle().zip(job_config_strings_source) {
+                in_sender.send(job_config_string).expect("The in reciever to still exist.");
             }
         }).expect("Making threads to work fine.");
+
+        // Worker threads.
 
         in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
@@ -190,7 +202,7 @@ fn main() -> Result<ExitCode, CliError> {
                         Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))
                     };
 
-                    os.send(ret).expect("The receiver to still exist.");
+                    os.send(ret).expect("The out receiver to still exist.");
                 }
             }).expect("Making threads to work fine.");
         }).for_each(drop);
@@ -198,8 +210,9 @@ fn main() -> Result<ExitCode, CliError> {
         let some_ok_ref  = &some_ok;
         let some_err_ref = &some_err;
 
+        // Stdout thread.
+
         std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, move || {
-            let mut disconnected = 0usize;
             let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
             let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
 
@@ -213,26 +226,20 @@ fn main() -> Result<ExitCode, CliError> {
                             if !first_job {print!(",");}
                             print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
                             *some_ok_ref_lock = true;
-                            first_job = false;
                         },
                         Ok(Ok(Err(e))) => {
                             if !first_job {print!(",");}
                             print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
                             *some_err_ref_lock = true;
-                            first_job = false;
                         },
                         Ok(Err(e)) => {
                             if !first_job {print!(",");}
                             print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
                             *some_err_ref_lock = true;
-                            first_job = false;
                         },
-                        Err(_) => {
-                            #[allow(clippy::arithmetic_side_effects, reason = "Can't even come close to usize::MAX threads and this is capped by thread count.")]
-                            {disconnected += 1;}
-                            if disconnected == threads {break;}
-                        }
+                        Err(_) => break
                     }
+                    first_job = false;
                 }
 
                 print!("]}}}}");
@@ -253,21 +260,17 @@ fn main() -> Result<ExitCode, CliError> {
                             eprintln!("MakeJobError\t{e:?}");
                             *some_err_ref_lock = true;
                         }
-                        Err(_) => {
-                            #[allow(clippy::arithmetic_side_effects, reason = "Can't even come close to usize::MAX threads and this is capped by thread count.")]
-                            {disconnected += 1;}
-                            if disconnected == threads {break;}
-                        }
+                        Err(_) => break
                     }
                 }
             }
         }).expect("Making threads to work fine.");
     });
 
-    return Ok(match (*some_ok.lock().expect("No panics."), *some_err.lock().expect("No panics.")) {
+    Ok(match (*some_ok.lock().expect("No panics."), *some_err.lock().expect("No panics.")) {
         (false, false) => 0,
         (false, true ) => 1,
         (true , false) => 0,
         (true , true ) => 2
-    }.into());
+    }.into())
 }

@@ -726,7 +726,7 @@
 																		"end": ")"
 																	}}
 																}},
-																"modification": "GetJsStringLiteralPrefix"
+																"modification": {"Unescape": "JavascriptStringLiteralPrefix"}
 															}}
 														}}
 													]}
@@ -750,7 +750,7 @@
 																	"end": ")"
 																}}
 															}},
-															"modification": "GetJsStringLiteralPrefix"
+															"modification": {"Unescape": "JavascriptStringLiteralPrefix"}
 														}}
 													}}
 												]}
@@ -1043,22 +1043,7 @@
 				{"StringMap": {
 					"value": {"ParamsNamedPartitioning": {"name": "hwwwwdpafqdnp_categories", "element": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}},
 					"map": {
-						"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
-						"fixvx": {"SetHost": "x.com"},
-						"nitter": {"If": {
-							"condition": {"All": [
-								{"Any": [
-									{"FlagIsSet": "nitter"},
-									{"FlagIsSet": "unnitter"}
-								]},
-								{"Not": {"PathIs": "/"}}
-							]},
-							"mapper": {"SetHost": "x.com"}
-						}},
-						"lmgtfy": {"All": [
-							{"SetHost": "google.com"},
-							{"SetPart": {"part": "Path", "value": "/search"}}
-						]},
+						"alibaba": {"RemoveQueryParams": ["spm"]},
 						"breezewiki": {"If": {
 							"condition": {"All": [
 								{"Any": [
@@ -1072,6 +1057,20 @@
 								{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
 							]}
 						}},
+						"discord-external": {"If": {
+							"condition": {"FlagIsSet": "discord-unexternal"},
+							"mapper": {"All": [
+								{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
+								{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
+								{"CopyPart": {"from": {"PathSegments": {"start": 5}}, "to": "Path"}},
+								"RemoveQuery"
+							]}
+						}},
+						"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
+						"fixvx": {"SetHost": "x.com"},
+						"fxbsky": {"SetPart": {"part": "RegDomain", "value": "bsky.app"}},
+						"fxdeviantart": {"SetPart": {"part": "RegDomain", "value": "deviantart.com"}},
+						"instagram": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
 						"invidious": {"If": {
 							"condition": {"All": [
 								{"Any": [
@@ -1082,18 +1081,20 @@
 							]},
 							"mapper": {"SetHost": "youtube.com"}
 						}},
-						"discord-external": {"If": {
-							"condition": {"FlagIsSet": "discord-unexternal"},
-							"mapper": {"All": [
-								{"CopyPart": {"from": {"PathSegment": 2}, "to": "Scheme"}},
-								{"CopyPart": {"from": {"PathSegment": 3}, "to": "Host"}},
-								{"CopyPart": {"from": {"PathSegments": {"start": 5}}, "to": "Path"}},
-								"RemoveQuery"
-							]}
-						}},
-						"instagram": {"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
-						"alibaba": {"RemoveQueryParams": ["spm"]},
-						"fxbsky": {"SetPart": {"part": "RegDomain", "value": "bsky.app"}}
+						"lmgtfy": {"All": [
+							{"SetHost": "google.com"},
+							{"SetPart": {"part": "Path", "value": "/search"}}
+						]},
+						"nitter": {"If": {
+							"condition": {"All": [
+								{"Any": [
+									{"FlagIsSet": "nitter"},
+									{"FlagIsSet": "unnitter"}
+								]},
+								{"Not": {"PathIs": "/"}}
+							]},
+							"mapper": {"SetHost": "x.com"}
+						}}
 					}
 				}},
 
@@ -1157,8 +1158,7 @@
 										}}
 									}}
 								}}
-							}},
-							"fxdeviantart": {"SetPart": {"part": "RegDomain", "value": "deviantart.com"}}
+							}}
 						}
 					}
 				},

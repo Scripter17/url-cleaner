@@ -145,76 +145,198 @@ impl BetterUrl {
     /// Parse a URL.
     /// # Errors
     /// If the call to [`Url::parse`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let url = BetterUrl::parse("https://example.com").unwrap();
+    /// ```
     pub fn parse(value: &str) -> Result<Self, <Self as FromStr>::Err> {
         Self::from_str(value)
     }
 
     /// Get the contained [`HostDetails`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// assert_eq!(url.host_details(), Some(&HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
+    /// 
+    /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
+    ///
+    /// assert_eq!(url.host_details(), Some(&HostDetails::Ipv4(Ipv4Details {})));
+    /// 
+    /// let url = BetterUrl::parse("https://[::1]").unwrap();
+    ///
+    /// assert_eq!(url.host_details(), Some(&HostDetails::Ipv6(Ipv6Details {})));
+    /// ```
     pub fn host_details(&self) -> Option<&HostDetails> {
         self.host_details.as_ref()
     }
 
     /// If [`Self::host_details`] returns [`HostDetails::Domain`], return it.
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// assert_eq!(url.domain_details(), Some(&DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}));
+    /// assert_eq!(url.ipv4_details  (), None);
+    /// assert_eq!(url.ipv6_details  (), None);
+    /// ```
     pub fn domain_details(&self) -> Option<&DomainDetails> {self.host_details()?.domain_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
-    pub fn ipv4_details  (&self) -> Option<&Ipv4Details  > {self.host_details()?.ipv4_details  ()}
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
+    ///
+    /// assert_eq!(url.domain_details(), None);
+    /// assert_eq!(url.ipv4_details  (), Some(&Ipv4Details {}));
+    /// assert_eq!(url.ipv6_details  (), None);
+    /// ```
+    pub fn ipv4_details  (&self) -> Option<&Ipv4Details> {self.host_details()?.ipv4_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
-    pub fn ipv6_details  (&self) -> Option<&Ipv6Details  > {self.host_details()?.ipv6_details  ()}
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let url = BetterUrl::parse("https://[::1]").unwrap();
+    ///
+    /// assert_eq!(url.domain_details(), None);
+    /// assert_eq!(url.ipv4_details  (), None);
+    /// assert_eq!(url.ipv6_details  (), Some(&Ipv6Details {}));
+    /// ```
+    pub fn ipv6_details  (&self) -> Option<&Ipv6Details> {self.host_details()?.ipv6_details()}
 
-    /// [`Url::domain`] but without the FQDN period.
-    pub fn domain           (&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_bounds           () )}
+    /// [`Url::domain`] but without the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain(), Some("example.com"      ));
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain(), Some("example.co.uk"    ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain(), Some("www.example.com"  ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().domain(), Some("www.example.co.uk"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().domain(), Some("www.example.com"  ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain(), Some("www.example.co.uk"));
+    /// ```
+    pub fn domain(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_bounds())}
     /// If [`Self`] has a [`UrlPart::Subdomain`], return it.
-    pub fn subdomain        (&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.subdomain_bounds        ()?)}
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().subdomain(), None);
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().subdomain(), None);
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().subdomain(), Some("www"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().subdomain(), Some("www"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().subdomain(), Some("www"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().subdomain(), Some("www"));
+    /// ```
+    pub fn subdomain(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.subdomain_bounds()?)}
     /// If [`Self`] has a [`UrlPart::NotDomainSuffix`], return it.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().not_domain_suffix(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().not_domain_suffix(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().not_domain_suffix(), Some("www.example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().not_domain_suffix(), Some("www.example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().not_domain_suffix(), Some("www.example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().not_domain_suffix(), Some("www.example"));
+    /// ```
     pub fn not_domain_suffix(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.not_domain_suffix_bounds()?)}
     /// If [`Self`] has a [`UrlPart::DomainMiddle`], return it.
-    pub fn domain_middle    (&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_middle_bounds    ()?)}
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain_middle(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain_middle(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain_middle(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().domain_middle(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().domain_middle(), Some("example"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain_middle(), Some("example"));
+    /// ```
+    pub fn domain_middle(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_middle_bounds()?)}
     /// If [`Self`] has a [`UrlPart::RegDomain`], return it.
-    pub fn reg_domain       (&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.reg_domain_bounds       ()?)}
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().reg_domain(), Some("example.com"  ));
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().reg_domain(), Some("example.co.uk"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().reg_domain(), Some("example.com"  ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().reg_domain(), Some("example.co.uk"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().reg_domain(), Some("example.com"  ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().reg_domain(), Some("example.co.uk"));
+    /// ```
+    pub fn reg_domain(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.reg_domain_bounds()?)}
     /// If [`Self`] has a [`UrlPart::DomainSuffix`], return it.
-    pub fn domain_suffix    (&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_suffix_bounds    ()?)}
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain_suffix(), Some("com"  ));
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain_suffix(), Some("co.uk"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain_suffix(), Some("com"  ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().domain_suffix(), Some("co.uk"));
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().domain_suffix(), Some("com"  ));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain_suffix(), Some("co.uk"));
+    /// ```
+    pub fn domain_suffix(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_suffix_bounds()?)}
 
     /// Gets an object that can iterate over the segments of [`Self`]'s path.
     /// # Errors
     /// If the call to [`Url::path_segments`] returns [`None`], returns the error [`UrlDoesNotHavePathSegments`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().path_segments().unwrap().collect::<Vec<_>>(), [""]);
+    /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c" ).unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c"]);
+    /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c/").unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c", ""]);
+    /// ```
     pub fn path_segments    (&self) -> Result<Split<'_, char>, UrlDoesNotHavePathSegments> {self.url.path_segments().ok_or(UrlDoesNotHavePathSegments)}
+    /// Gets an object that can mutate the segments of [`Self`]'s path.
+    /// # Errors
+    /// If the call to [`Url::path_segments_mut`] returns an error, returns the error [`UrlDoesNotHavePathSegments`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://example.com/a/b/c/").unwrap();
+    ///
+    /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/a/b/c");
+    /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/a/b");
+    /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/a");
+    /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/");
+    /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/");
+    /// ```
+    pub fn path_segments_mut(&mut self                        ) -> Result<PathSegmentsMut<'_>, UrlDoesNotHavePathSegments> {self.url.path_segments_mut().map_err(|()| UrlDoesNotHavePathSegments)}
 
     /// Sets the [`UrlPart::Scheme`].
     /// # Errors
     /// If the call to [`Url::set_scheme`] returns an error, returns the error [`SetSchemeError`].
-    pub fn set_scheme       (&mut self, scheme  : &str                              ) -> Result<(), SetSchemeError>                              {self.url.set_scheme  (scheme  ).map_err(|()| SetSchemeError)}
+    pub fn set_scheme       (&mut self, scheme  : &str        ) -> Result<(), SetSchemeError>   {self.url.set_scheme(scheme).map_err(|()| SetSchemeError)}
     /// Sets the [`UrlPart::Username`].
     /// # Errors
     /// If the call to [`Url::set_username`] returns an error, returns the error [`SetUsernameError`].
-    pub fn set_username     (&mut self, username: &str                              ) -> Result<(), SetUsernameError>                            {self.url.set_username(username).map_err(|()| SetUsernameError)}
+    pub fn set_username     (&mut self, username: &str        ) -> Result<(), SetUsernameError> {self.url.set_username(username).map_err(|()| SetUsernameError)}
     /// Sets the [`UrlPart::Password`].
     /// # Errors
     /// If the call to [`Url::set_password`] returns an error, returns the error [`SetPasswordError`].
-    pub fn set_password     (&mut self, password: Option<&str>                      ) -> Result<(), SetPasswordError>                            {self.url.set_password(password).map_err(|()| SetPasswordError)}
+    pub fn set_password     (&mut self, password: Option<&str>) -> Result<(), SetPasswordError> {self.url.set_password(password).map_err(|()| SetPasswordError)}
     /// Sets the [`UrlPart::Host`].
     /// # Errors
     /// If the call to [`Url::set_host`] returns an error, the error is returned..
-    pub fn set_host         (&mut self, host    : Option<&str>                      ) -> Result<(), ParseError>                                  {self.url.set_host    (host    )?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
+    pub fn set_host         (&mut self, host    : Option<&str>) -> Result<(), ParseError>       {self.url.set_host(host)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
     /// Sets the [`UrlPart::Host`].
     /// # Errors
     /// If the call to [`Url::set_ip_host`] returns an error, returns the error [`SetIpHostError`].
-    pub fn set_ip_host      (&mut self, address : IpAddr                            ) -> Result<(), SetIpHostError>                              {self.url.set_ip_host (address ).map_err(|()| SetIpHostError)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
+    pub fn set_ip_host      (&mut self, address : IpAddr      ) -> Result<(), SetIpHostError>   {self.url.set_ip_host(address).map_err(|()| SetIpHostError)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
     /// Sets the [`UrlPart::Port`].
     /// # Errors
     /// If the call to [`Url::set_port`] returns an error, returns the error [`SetPortError`].
-    pub fn set_port         (&mut self, port    : Option<u16>                       ) -> Result<(), SetPortError>                                {self.url.set_port    (port    ).map_err(|()| SetPortError)}
+    pub fn set_port         (&mut self, port    : Option<u16> ) -> Result<(), SetPortError>     {self.url.set_port(port).map_err(|()| SetPortError)}
     /// [`Url::set_path`].
-    pub fn set_path         (&mut self, path    : &str                              )                                                            {self.url.set_path    (path    )}
-    /// Gets an object that can mutate the segments of [`Self`]'s path.
-    /// # Errors
-    /// If the call to [`Url::path_segments_mut`] returns an error, returns the error [`UrlDoesNotHavePathSegments`].
-    pub fn path_segments_mut(&mut self                                              ) -> Result<PathSegmentsMut<'_>, UrlDoesNotHavePathSegments> {self.url.path_segments_mut().map_err(|()| UrlDoesNotHavePathSegments)}
+    pub fn set_path         (&mut self, path    : &str        )                                 {self.url.set_path(path)}
     /// [`Url::set_query`].
-    pub fn set_query        (&mut self, query   : Option<&str>                      )                                                            {self.url.set_query   (query   )}
+    pub fn set_query        (&mut self, query   : Option<&str>)                                 {self.url.set_query(query)}
     /// [`Url::query_pairs_mut`].
-    pub fn query_pairs_mut  (&mut self                                              ) -> Serializer<'_, UrlQuery<'_>>                            {self.url.query_pairs_mut()}
+    pub fn query_pairs_mut  (&mut self                        ) -> Serializer<'_, UrlQuery<'_>> {self.url.query_pairs_mut()}
     /// [`Url::set_fragment`].
-    pub fn set_fragment     (&mut self, fragment: Option<&str>                      )                                                            {self.url.set_fragment(fragment)}
+    pub fn set_fragment     (&mut self, fragment: Option<&str>)                                 {self.url.set_fragment(fragment)}
 
 
 

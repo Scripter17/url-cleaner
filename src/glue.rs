@@ -21,8 +21,8 @@
 #[cfg(feature = "custom"  )] pub mod fn_wrapper;
 #[cfg(feature = "custom"  )] pub use fn_wrapper::*;
 
-pub mod unescape_js;
-pub use unescape_js::*;
+pub mod unescape;
+pub use unescape::*;
 
 /// Glue to allow [`reqwest::Method`] to be used with serde.
 #[cfg(feature = "http")]

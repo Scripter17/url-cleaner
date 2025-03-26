@@ -10,6 +10,10 @@ use serde::{Serialize, Deserialize};
 
 use crate::types::*;
 use crate::util::*;
+
+/// Wrapper for function pointers.
+///
+/// Implements [`Serialize`] and [`Deserialize`], but they always return [`Err`].
 #[derive(Debug, Clone, PartialEq, Eq, Suitability)]
 #[suitable(never)]
 #[repr(transparent)]
@@ -30,6 +34,7 @@ impl<T> std::ops::DerefMut for FnWrapper<T> {
 }
 
 impl<T> serde::Serialize for FnWrapper<T> {
+    /// Always returns [`Err`].
     fn serialize<S: serde::ser::Serializer>(&self, _: S) -> Result<S::Ok, S::Error> {
         use serde::ser::Error;
         Err(S::Error::custom("FnWrapper fakes its Serialize impl."))
@@ -37,6 +42,7 @@ impl<T> serde::Serialize for FnWrapper<T> {
 }
 
 impl<'de, T> serde::Deserialize<'de> for FnWrapper<T> {
+    /// Always returns [`Err`].
     fn deserialize<D: serde::de::Deserializer<'de>>(_: D) -> Result<Self, D::Error> {
         use serde::de::Error;
         Err(D::Error::custom("FnWrapper fakes its Deserialize impl."))
