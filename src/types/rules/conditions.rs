@@ -1,4 +1,4 @@
-//! Logic for when a [`JobState`] should be modified.
+//! Logic for when a [`TaskState`] should be modified.
 
 use std::collections::HashSet;
 
@@ -205,13 +205,10 @@ pub enum Condition {
 
 
 
-    AnyFlagIsSet,
-    FlagIsSet(#[suitable(assert = "flag_is_documented")] StringSource),
-    CommonFlagIsSet(StringSource),
-    ScratchpadFlagIsSet(StringSource),
+    FlagIsSet(FlagRef),
     VarIs {
-        #[suitable(assert = "var_is_documented")]
-        name: StringSource,
+        #[serde(flatten)]
+        name: VarRef,
         value: StringSource
     },
 
@@ -246,7 +243,7 @@ pub enum Condition {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&JobStateView) -> Result<bool, ConditionError>>)
+    Custom(FnWrapper<fn(&TaskStateView) -> Result<bool, ConditionError>>)
 }
 
 #[derive(Debug, Error)]
@@ -281,15 +278,19 @@ pub enum ConditionError {
     CommonCallArgsError(#[from] CommonCallArgsError),
     #[error(transparent)]
     #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error + Send>)
+    Custom(Box<dyn std::error::Error + Send>),
+    #[error(transparent)]
+    GetFlagError(#[from] GetFlagError),
+    #[error(transparent)]
+    GetVarError(#[from] GetVarError)
 }
 
 impl Condition {
     /// If the specified variant of [`Self`] passes, return [`true`], otherwise return [`false`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn satisfied_by(&self, job_state: &JobStateView) -> Result<bool, ConditionError> {
-        debug!(Condition::satisfied_by, self, job_state);
+    pub fn satisfied_by(&self, task_state: &TaskStateView) -> Result<bool, ConditionError> {
+        debug!(Condition::satisfied_by, self, task_state);
         Ok(match self {
             // Debug/constants.
 
@@ -297,18 +298,18 @@ impl Condition {
             Self::Never => false,
             Self::Error => Err(ConditionError::ExplicitError)?,
             Self::Debug(condition) => {
-                let is_satisfied=condition.satisfied_by(job_state);
-                eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\nJob state: {job_state:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=condition.satisfied_by(task_state);
+                eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
 
             // Logic.
 
-            Self::If {r#if, then, r#else} => if r#if.satisfied_by(job_state)? {then} else {r#else}.satisfied_by(job_state)?,
-            Self::Not(condition) => !condition.satisfied_by(job_state)?,
+            Self::If {r#if, then, r#else} => if r#if.satisfied_by(task_state)? {then} else {r#else}.satisfied_by(task_state)?,
+            Self::Not(condition) => !condition.satisfied_by(task_state)?,
             Self::All(conditions) => {
                 for condition in conditions {
-                    if !condition.satisfied_by(job_state)? {
+                    if !condition.satisfied_by(task_state)? {
                         return Ok(false);
                     }
                 }
@@ -316,24 +317,24 @@ impl Condition {
             },
             Self::Any(conditions) => {
                 for condition in conditions {
-                    if condition.satisfied_by(job_state)? {
+                    if condition.satisfied_by(task_state)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::PartMap  {part , map} => map.get(part .get(job_state.url) ).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
-            Self::StringMap{value, map} => map.get(value.get(job_state    )?).map(|x| x.satisfied_by(job_state)).unwrap_or(Ok(false))?,
+            Self::PartMap  {part , map} => map.get(part .get(task_state.url) ).map(|x| x.satisfied_by(task_state)).unwrap_or(Ok(false))?,
+            Self::StringMap{value, map} => map.get(value.get(task_state    )?).map(|x| x.satisfied_by(task_state)).unwrap_or(Ok(false))?,
 
             // Error handling.
 
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by(job_state).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by(job_state).unwrap_or(false),
-            Self::TryElse{ r#try, r#else } => r#try.satisfied_by(job_state).or_else(|try_error| r#else.satisfied_by(job_state).map_err(|else_error| ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by(task_state).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by(task_state).unwrap_or(false),
+            Self::TryElse{ r#try, r#else } => r#try.satisfied_by(task_state).or_else(|try_error| r#else.satisfied_by(task_state).map_err(|else_error| ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(conditions) => {
                 let mut result = Ok(false); // Initial value doesn't mean anything.
                 for condition in conditions {
-                    result = condition.satisfied_by(job_state);
+                    result = condition.satisfied_by(task_state);
                     if result.is_ok() {return result}
                 }
                 result?
@@ -341,78 +342,75 @@ impl Condition {
 
             // Domain conditions.
 
-            Self::HostIs           (x) => UrlPart::Host           .get(job_state.url).as_deref() == x.as_deref(),
-            Self::SubdomainIs      (x) => UrlPart::Subdomain      .get(job_state.url).as_deref() == x.as_deref(),
-            Self::RegDomainIs      (x) => UrlPart::RegDomain      .get(job_state.url).as_deref() == x.as_deref(),
-            Self::DomainIs         (x) => UrlPart::Domain         .get(job_state.url).as_deref() == x.as_deref(),
-            Self::DomainMiddleIs   (x) => UrlPart::DomainMiddle   .get(job_state.url).as_deref() == x.as_deref(),
-            Self::NotDomainSuffixIs(x) => UrlPart::NotDomainSuffix.get(job_state.url).as_deref() == x.as_deref(),
-            Self::DomainSuffixIs   (x) => UrlPart::DomainSuffix   .get(job_state.url).as_deref() == x.as_deref(),
+            Self::HostIs           (x) => UrlPart::Host           .get(task_state.url).as_deref() == x.as_deref(),
+            Self::SubdomainIs      (x) => UrlPart::Subdomain      .get(task_state.url).as_deref() == x.as_deref(),
+            Self::RegDomainIs      (x) => UrlPart::RegDomain      .get(task_state.url).as_deref() == x.as_deref(),
+            Self::DomainIs         (x) => UrlPart::Domain         .get(task_state.url).as_deref() == x.as_deref(),
+            Self::DomainMiddleIs   (x) => UrlPart::DomainMiddle   .get(task_state.url).as_deref() == x.as_deref(),
+            Self::NotDomainSuffixIs(x) => UrlPart::NotDomainSuffix.get(task_state.url).as_deref() == x.as_deref(),
+            Self::DomainSuffixIs   (x) => UrlPart::DomainSuffix   .get(task_state.url).as_deref() == x.as_deref(),
 
-            Self::HostIsOneOf(hosts) => job_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
+            Self::HostIsOneOf(hosts) => task_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
 
-            Self::UrlHasHost   => job_state.url.host().is_some(),
-            Self::HostIsFqdn   => matches!(job_state.url.host_details(), Some(HostDetails::Domain(d @ DomainDetails {..})) if d.is_fqdn()),
-            Self::HostIsDomain => matches!(job_state.url.host_details(), Some(HostDetails::Domain(_))),
-            Self::HostIsIp     => matches!(job_state.url.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_))),
-            Self::HostIsIpv4   => matches!(job_state.url.host_details(), Some(HostDetails::Ipv4(_))),
-            Self::HostIsIpv6   => matches!(job_state.url.host_details(), Some(HostDetails::Ipv6(_))),
+            Self::UrlHasHost   => task_state.url.host().is_some(),
+            Self::HostIsFqdn   => matches!(task_state.url.host_details(), Some(HostDetails::Domain(d @ DomainDetails {..})) if d.is_fqdn()),
+            Self::HostIsDomain => matches!(task_state.url.host_details(), Some(HostDetails::Domain(_))),
+            Self::HostIsIp     => matches!(task_state.url.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_))),
+            Self::HostIsIpv4   => matches!(task_state.url.host_details(), Some(HostDetails::Ipv4(_))),
+            Self::HostIsIpv6   => matches!(task_state.url.host_details(), Some(HostDetails::Ipv6(_))),
 
             // Specific parts.
 
-            Self::QueryHasParam(name) => job_state.url.query_pairs().any(|(ref name2, _)| name2==name),
-            Self::PathIs(value) => job_state.url.path() == value,
+            Self::QueryHasParam(name) => task_state.url.query_pairs().any(|(ref name2, _)| name2==name),
+            Self::PathIs(value) => task_state.url.path() == value,
 
             // General parts.
 
-            Self::PartIs{part, value} => part.get(job_state.url).as_deref() == value.get(job_state)?.as_deref(),
-            Self::PartContains{part, value, r#where, if_part_null, if_value_null} => match part.get(job_state.url) {
+            Self::PartIs{part, value} => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
+            Self::PartContains{part, value, r#where, if_part_null, if_value_null} => match part.get(task_state.url) {
                 None    => if_part_null.apply(Err(ConditionError::PartIsNone))?,
-                Some(part) => match value.get(job_state)? {
+                Some(part) => match value.get(task_state)? {
                     None        => if_value_null.apply(Err(ConditionError::StringSourceIsNone))?,
                     Some(value) => r#where.satisfied_by(&part, &value)?,
                 }
             },
-            Self::PartMatches {part, matcher, if_null} => match part.get(job_state.url) {
+            Self::PartMatches {part, matcher, if_null} => match part.get(task_state.url) {
                 None    => if_null.apply(Err(ConditionError::PartIsNone))?,
-                Some(x) => matcher.satisfied_by(&x, job_state)?,
+                Some(x) => matcher.satisfied_by(&x, task_state)?,
             },
-            Self::PartIsOneOf {part, values, if_null} => part.get(job_state.url).map(|x| values.contains(&*x)).unwrap_or(*if_null),
+            Self::PartIsOneOf {part, values, if_null} => part.get(task_state.url).map(|x| values.contains(&*x)).unwrap_or(*if_null),
 
             // Miscellaneous.
 
-            Self::CommonFlagIsSet(name) => job_state.common_args.ok_or(ConditionError::NotInACommonContext)?.flags.contains(get_str!(name, job_state, ConditionError)),
-            Self::ScratchpadFlagIsSet(name) => job_state.scratchpad.flags.contains(get_str!(name, job_state, ConditionError)),
-            Self::FlagIsSet(name) => job_state.params.flags.contains(get_str!(name, job_state, ConditionError)),
-            Self::AnyFlagIsSet => !job_state.params.flags.is_empty(),
-            Self::VarIs {name, value} => job_state.params.vars.get(get_str!(name, job_state, ConditionError)).map(|x| &**x) == value.get(job_state)?.as_deref(),
+            Self::FlagIsSet(flag)     => flag.get(task_state)?,
+            Self::VarIs {name, value} => name.get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
 
             // String source.
 
-            Self::StringIs {left, right} => left.get(job_state)? == right.get(job_state)?,
-            Self::StringContains {value, substring, r#where} => r#where.satisfied_by(get_str!(value, job_state, ConditionError), get_str!(substring, job_state, ConditionError))?,
-            Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, job_state, ConditionError), job_state)?,
+            Self::StringIs {left, right} => left.get(task_state)? == right.get(task_state)?,
+            Self::StringContains {value, substring, r#where} => r#where.satisfied_by(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
+            Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, task_state, ConditionError), task_state)?,
 
             // Commands.
 
             #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
-            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(job_state)?==expected},
+            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(task_state)?==expected},
 
             Self::Common(common_call) => {
-                job_state.commons.conditions.get(get_str!(common_call.name, job_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.satisfied_by(&JobStateView {
-                    url: job_state.url,
-                    context: job_state.context,
-                    params: job_state.params,
-                    scratchpad: job_state.scratchpad,
+                task_state.commons.conditions.get(get_str!(common_call.name, task_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.satisfied_by(&TaskStateView {
+                    url: task_state.url,
+                    context: task_state.context,
+                    params: task_state.params,
+                    scratchpad: task_state.scratchpad,
                     #[cfg(feature = "cache")]
-                    cache: job_state.cache,
-                    commons: job_state.commons,
-                    common_args: Some(&common_call.args.build(job_state)?),
-                    jobs_context: job_state.jobs_context
+                    cache: task_state.cache,
+                    commons: task_state.commons,
+                    common_args: Some(&common_call.args.build(task_state)?),
+                    job_context: task_state.job_context
                 })?
             },
             #[cfg(feature = "custom")]
-            Self::Custom(function) => function(job_state)?
+            Self::Custom(function) => function(task_state)?
         })
     }
 }

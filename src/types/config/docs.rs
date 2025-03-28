@@ -48,29 +48,29 @@ pub struct ConfigDocs {
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub named_partitionings: HashMap<String, String>,
-    /// The documentation of the stuff used in [`JobsContext`]s.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub jobs_context: JobsContextDocs,
     /// The documentation of the stuff used in [`JobContext`]s.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub job_context: JobContextDocs
-}
-
-/// Documentation for the stuff used in [`JobsContext`].
-#[serde_as]
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub struct JobsContextDocs {
-    /// Documentation for the vars in [`JobsContext::vars`]
-    #[serde_with = "MapPreventDuplicates<_, _>"]
+    pub job_context: JobContextDocs,
+    /// The documentation of the stuff used in [`TaskContext`]s.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, String>
+    pub task_context: TaskContextDocs
 }
 
 /// Documentation for the stuff used in [`JobContext`].
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct JobContextDocs {
-    /// Documentation for the vars in [`JobContext::vars`].
+    /// Documentation for the vars in [`JobContext::vars`]
+    #[serde_with = "MapPreventDuplicates<_, _>"]
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub vars: HashMap<String, String>
+}
+
+/// Documentation for the stuff used in [`TaskContext`].
+#[serde_as]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+pub struct TaskContextDocs {
+    /// Documentation for the vars in [`TaskContext::vars`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>

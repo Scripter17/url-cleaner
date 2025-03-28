@@ -2,78 +2,78 @@
 	"sets": [
 		{
 			"tests": [
-				{"job_config": "https://x.com?t=a&s=b"                                                                    , "result": "https://x.com/"},
-				{"job_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
-				{"job_config": "http://example.com"                                                                       , "result": "https://example.com/"},
+				{"task_config": "https://x.com?t=a&s=b"                                                                    , "result": "https://x.com/"},
+				{"task_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
+				{"task_config": "http://example.com"                                                                       , "result": "https://example.com/"},
 				{
-					"job_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
+					"task_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
 					"result": "https://amazon.ca/dp/B0C6DX66TN"
 				},
 
-				{"job_config": "https://bsky.app"        , "result": "https://bsky.app/"},
-				{"job_config": "https://fxbsky.app"      , "result": "https://bsky.app/"},
-				{"job_config": "https://user.bsky.social", "result": "https://bsky.app/profile/user.bsky.social"},
+				{"task_config": "https://bsky.app"        , "result": "https://bsky.app/"},
+				{"task_config": "https://fxbsky.app"      , "result": "https://bsky.app/"},
+				{"task_config": "https://user.bsky.social", "result": "https://bsky.app/profile/user.bsky.social"},
 				{
-					"job_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
+					"task_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
 					"result": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"
 				},
-				{"job_config": "https://instagram.com/username?hl=en", "result": "https://instagram.com/username"},
+				{"task_config": "https://instagram.com/username?hl=en", "result": "https://instagram.com/username"},
 
-				{"job_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
-				{"job_config": "https://com"      , "result": "https://com"},
-				{"job_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1"},
-				{"job_config": "file://a/b/c"     , "result": "file://a/b/c"},
-				{"job_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"},
+				{"task_config": "https://127.0.0.1", "result": "https://127.0.0.1"},
+				{"task_config": "https://com"      , "result": "https://com"},
+				{"task_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1"},
+				{"task_config": "file://a/b/c"     , "result": "file://a/b/c"},
+				{"task_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"},
 
-				{"job_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
-				{"job_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
-				{"job_config": "https://bsky.app/profile/user.com" , "result": "https://bsky.app/profile/user.com"}
+				{"task_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
+				{"task_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
+				{"task_config": "https://bsky.app/profile/user.com" , "result": "https://bsky.app/profile/user.com"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["tor2web2tor"]},
 			"tests": [
-				{"job_config": "https://example.onion.com"  , "result": "https://example.onion"},
-				{"job_config": "https://example.onion.co.uk", "result": "https://example.onion"}
+				{"task_config": "https://example.onion.com"  , "result": "https://example.onion"},
+				{"task_config": "https://example.onion.co.uk", "result": "https://example.onion"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unbreezewiki"]},
-			"tests": [{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://tardis.fandom.com/wiki/Genocide"}]
+			"tests": [{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://tardis.fandom.com/wiki/Genocide"}]
 		},
 		{
 			"params_diff": {"flags": ["breezewiki"]},
 			"tests": [
-				{"job_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://breezewiki.com/tardis/wiki/Genocide"},
-				{"job_config": "https://tardis.fandom.com/wiki/Genocide"    , "result": "https://breezewiki.com/tardis/wiki/Genocide"}
+				{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://breezewiki.com/tardis/wiki/Genocide"},
+				{"task_config": "https://tardis.fandom.com/wiki/Genocide"    , "result": "https://breezewiki.com/tardis/wiki/Genocide"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unmobile"]},
 			"tests": [
-				{"job_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
-				{"job_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
+				{"task_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["embed-compatibility"]},
 			"tests": [
-				{"job_config": "https://bsky.app", "result": "https://fxbsky.app/"},
-				{"job_config": "https://fxbsky.app", "result": "https://fxbsky.app/"}
+				{"task_config": "https://bsky.app", "result": "https://fxbsky.app/"},
+				{"task_config": "https://fxbsky.app", "result": "https://fxbsky.app/"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["invidious"]},
 			"tests": [
-				{"job_config": "https://youtube.com/watch?v=12345", "result": "https://yewtu.be/watch?v=12345"},
-				{"job_config": "https://yewtu.be/watch?v=12345"   , "result": "https://yewtu.be/watch?v=12345"}
+				{"task_config": "https://youtube.com/watch?v=12345", "result": "https://yewtu.be/watch?v=12345"},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "result": "https://yewtu.be/watch?v=12345"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["uninvidious"]},
 			"tests": [
-				{"job_config": "https://youtube.com/watch?v=12345", "result": "https://youtube.com/watch?v=12345"},
-				{"job_config": "https://yewtu.be/watch?v=12345"   , "result": "https://youtube.com/watch?v=12345"}
+				{"task_config": "https://youtube.com/watch?v=12345", "result": "https://youtube.com/watch?v=12345"},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "result": "https://youtube.com/watch?v=12345"}
 			]
 		},
 		{
@@ -81,7 +81,7 @@
 			"jobs_context": {"vars": {"SOURCE_REG_DOMAIN": "allmylinks.com"}},
 			"tests": [
 				{
-					"job_config": {
+					"task_config": {
 						"url": "https://allmylinks.com/link/out?invalid",
 						"context": {
 							"vars": {
@@ -98,7 +98,7 @@
 			"jobs_context": {"vars": {"SOURCE_REG_DOMAIN": "x.com"}},
 			"tests": [
 				{
-					"job_config": {
+					"task_config": {
 						"url": "https://t.co/invalid",
 						"context": {
 							"vars": {
@@ -114,7 +114,7 @@
 			"jobs_context": {"vars": {"SOURCE_HOST": "furaffinity.net", "SOURCE_REG_DOMAIN": "furaffinity.net"}},
 			"tests": [
 				{
-					"job_config": {
+					"task_config": {
 						"url": "https://twitter.com/not-actually-important",
 						"context": {
 							"vars": {

@@ -1,4 +1,4 @@
-//! Scratch space a [`Job`] can read and write from and two during execution.
+//! Scratch space a [`Task`] can read and write from and two during execution.
 
 use std::collections::{HashSet, HashMap};
 

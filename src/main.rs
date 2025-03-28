@@ -76,9 +76,9 @@ pub struct Args {
     /// Generate a ParamsDiff from CLI arguments.
     #[command(flatten)]
     pub params_diff_args: ParamsDiffArgParser,
-    /// The context to share between all Jobs.
+    /// The context to share between all Tasks.
     #[arg(             long)]
-    pub jobs_context: Option<String>,
+    pub job_context: Option<String>,
     #[arg(             long, verbatim_doc_comment)]
     pub tests: Option<Vec<PathBuf>>,
     #[arg(             long, verbatim_doc_comment)]
@@ -94,7 +94,7 @@ pub enum CliError {
     #[error(transparent)] GetConfigError(#[from] GetConfigError),
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
-    #[error(transparent)] CantParseJobsContext(serde_json::Error),
+    #[error(transparent)] CantParseJobContext(serde_json::Error),
     #[error(transparent)] CantLoadTests(io::Error),
     #[error(transparent)] CantParseTests(serde_json::Error)
 }
@@ -155,27 +155,27 @@ fn main() -> Result<ExitCode, CliError> {
     let mut threads = args.threads;
     if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoJobError>, MakeJobError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoTaskError>, MakeTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
-    let jobs_config = JobsConfig {
+    let job_config = JobConfig {
         #[cfg(feature = "cache")]
         cache: args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into(),
         config: Cow::Owned(config)
     };
-    let jobs_config_ref = &jobs_config;
-    let jobs_context = if let Some(jobs_context_string) = args.jobs_context {
-        serde_json::from_str(&jobs_context_string).map_err(CliError::CantParseJobsContext)?
+    let job_config_ref = &job_config;
+    let job_context = if let Some(job_context_string) = args.job_context {
+        serde_json::from_str(&job_context_string).map_err(CliError::CantParseJobContext)?
     } else {
         Default::default()
     };
-    let jobs_context_ref = &jobs_context;
+    let job_context_ref = &job_context;
 
     std::thread::scope(|s| {
 
-        // Job getter thread.
-        
-        std::thread::Builder::new().name("Job Getter".to_string()).spawn_scoped(s, move || {
-            let job_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
+        // Task getter thread.
+
+        std::thread::Builder::new().name("Task Getter".to_string()).spawn_scoped(s, move || {
+            let task_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
                 let ret = args.urls.into_iter().map(Ok);
                 if !io::stdin().is_terminal() {
                     Box::new(ret.chain(io::stdin().lines()))
@@ -184,8 +184,8 @@ fn main() -> Result<ExitCode, CliError> {
                 }
             };
 
-            for (in_sender, job_config_string) in in_senders.iter().cycle().zip(job_config_strings_source) {
-                in_sender.send(job_config_string).expect("The in reciever to still exist.");
+            for (in_sender, task_config_string) in in_senders.iter().cycle().zip(task_config_strings_source) {
+                in_sender.send(task_config_string).expect("The in reciever to still exist.");
             }
         }).expect("Making threads to work fine.");
 
@@ -193,13 +193,13 @@ fn main() -> Result<ExitCode, CliError> {
 
         in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
-                while let Ok(maybe_job_config_string) = ir.recv() {
-                    let ret = match maybe_job_config_string {
-                        Ok(job_config_string) => match JobConfig::from_str(&job_config_string) {
-                            Ok(job_config) => Ok(jobs_config_ref.new_job(job_config, jobs_context_ref).r#do()),
-                            Err(e) => Err(MakeJobError::MakeJobConfigError(e))
+                while let Ok(maybe_task_config_string) = ir.recv() {
+                    let ret = match maybe_task_config_string {
+                        Ok(task_config_string) => match TaskConfig::from_str(&task_config_string) {
+                            Ok(task_config) => Ok(job_config_ref.new_task(task_config, job_context_ref).r#do()),
+                            Err(e) => Err(MakeTaskError::MakeTaskConfigError(e))
                         },
-                        Err(e) => Err(MakeJobError::MakeJobConfigError(MakeJobConfigError::IoError(e)))
+                        Err(e) => Err(MakeTaskError::MakeTaskConfigError(MakeTaskConfigError::IoError(e)))
                     };
 
                     os.send(ret).expect("The out receiver to still exist.");
@@ -252,12 +252,12 @@ fn main() -> Result<ExitCode, CliError> {
                         },
                         Ok(Ok(Err(e))) => {
                             println!();
-                            eprintln!("DoJobError\t{e:?}");
+                            eprintln!("DoTaskError\t{e:?}");
                             *some_err_ref_lock = true;
                         }
                         Ok(Err(e)) => {
                             println!();
-                            eprintln!("MakeJobError\t{e:?}");
+                            eprintln!("MakeTaskError\t{e:?}");
                             *some_err_ref_lock = true;
                         }
                         Err(_) => break

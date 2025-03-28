@@ -97,7 +97,7 @@ impl CommandConfig {
     /// Builds the [`Command`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn build(&self, job_state: &JobStateView) -> Result<Command, CommandError> {
+    pub fn build(&self, job_state: &TaskStateView) -> Result<Command, CommandError> {
         let mut ret = Command::new(&self.program);
         for arg in self.args.iter() {
             ret.arg(OsString::from(get_string!(arg, job_state, CommandError)));
@@ -126,7 +126,7 @@ impl CommandConfig {
     /// If the call to [`Command::status`] returns an error, that error is returned.
     ///
     /// If the call to [`ExitStatus::code`] returns [`None`], returns the error [`CommandError::SignalTermination`].
-    pub fn exit_code(&self, job_state: &JobStateView) -> Result<i32, CommandError> {
+    pub fn exit_code(&self, job_state: &TaskStateView) -> Result<i32, CommandError> {
         self.build(job_state)?.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
@@ -144,7 +144,7 @@ impl CommandConfig {
     ///
     /// If the call to [`std::str::from_utf8`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever panic.")]
-    pub fn output(&self, job_state: &JobStateView) -> Result<String, CommandError> {
+    pub fn output(&self, job_state: &TaskStateView) -> Result<String, CommandError> {
         // https://stackoverflow.com/a/49597789/10720231
         let mut command = self.build(job_state)?;
         command.stdout(Stdio::piped());
@@ -167,7 +167,7 @@ impl CommandConfig {
     ///
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
-    pub fn get_url(&self, job_state: &JobStateView) -> Result<Url, CommandError> {
+    pub fn get_url(&self, job_state: &TaskStateView) -> Result<Url, CommandError> {
         Ok(Url::parse(self.output(job_state)?.trim_end_matches(['\r', '\n']))?)
     }
 }

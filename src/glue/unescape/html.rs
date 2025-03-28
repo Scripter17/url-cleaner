@@ -47,37 +47,18 @@ pub fn unescape_html_text(s: &str) -> Result<String, HtmlTextError> {
 #[derive(Debug, Error)]
 #[error("Unknown character reference.")]
 pub enum CharRefError {
-    /// Ambiguous ampersand.
-    #[error("Ambiguous ampersand.")]
-    AmbiguousAmpersand,
-    /// Invalid dec.
-    #[error("Invalid dec.")]
-    InvalidDec,
-    /// Invalid hex.
-    #[error("Invalid hex.")]
-    InvalidHex,
-    /// Char code overflow.
-    #[error("Char code overflow.")]
-    CharCodeOverflow,
-    /// Invalid char code.
-    #[error("Invalid char code.")]
-    InvalidCharCode,
-    /// Disallowed char code.
-    #[error("Disallowed char code.")]
-    DisallowedCharCode,
     /// Unknown char name.
     #[error("Unknown char name.")]
     UnknownCharName,
-    /// Other.
-    #[error("Other.")]
-    Other
+    #[error(transparent)]
+    NumCharRefError(#[from] NumCharRefError)
 }
 
 /// Convert character references to strings.
 ///
 /// Unfortunately, there are OVER TWO THOUSAND named character references, and some are multiple [`char`]s.
 fn character_reference_to_str(char_ref: &str) -> Result<Cow<'static, str>, CharRefError> {
-    if char_ref.starts_with("#") {return Ok(Cow::Owned(parse_number_character_ref(char_ref)?));}
+    if char_ref.starts_with("#") {return Ok(Cow::Owned(parse_number_character_ref(char_ref)?.into()));}
     Ok(Cow::Borrowed(match char_ref {
         "AElig"                           => "\u{000C6}",
         "AMP"                             => "\u{00026}",
@@ -2208,9 +2189,31 @@ fn character_reference_to_str(char_ref: &str) -> Result<Cow<'static, str>, CharR
     }))
 }
 
+#[derive(Debug, Error)]
+pub enum NumCharRefError {
+    /// Invalid dec.
+    #[error("Invalid dec.")]
+    InvalidDec,
+    /// Invalid hex.
+    #[error("Invalid hex.")]
+    InvalidHex,
+    /// Char code overflow.
+    #[error("Char code overflow.")]
+    CharCodeOverflow,
+    /// Not a num char ref.
+    #[error("Not a num char ref.")]
+    NotANumCharRef,
+    /// Invalid char code.
+    #[error("Invalid char code.")]
+    InvalidCharCode(u32),
+    /// Disallowed char code.
+    #[error("Disallowed char code.")]
+    DisallowedCharCode(char)
+}
+
 /// The last state of the state machine in [`parse_number_character_ref`].
 #[derive(Debug, Clone, Copy)]
-enum NumberCharacterReferenceLastState {
+enum HTMLNCRLastState {
     /// Just started.
     None,
     /// Last saw the `#`.
@@ -2229,30 +2232,26 @@ enum NumberCharacterReferenceLastState {
 /// # Errors
 /// Returns an error on invalid input.
 #[allow(clippy::unwrap_used, reason = "Shouldn't ever happen.")]
-fn parse_number_character_ref(char_ref: &str) -> Result<String, CharRefError> {
-    let mut ret = String::new();
-
+fn parse_number_character_ref(char_ref: &str) -> Result<char, NumCharRefError> {
     let mut scratchspace: u32 = 0;
 
-    let mut last_state = NumberCharacterReferenceLastState::None;
+    let mut last_state = HTMLNCRLastState::None;
 
     for c in char_ref.chars() {
         match (last_state, c) {
-            (NumberCharacterReferenceLastState::None                                              , '#'                              ) => {last_state = NumberCharacterReferenceLastState::Hash;},
-            (NumberCharacterReferenceLastState::Hash | NumberCharacterReferenceLastState::DecDigit, '0'..='9'                        ) => {last_state = NumberCharacterReferenceLastState::DecDigit; scratchspace = scratchspace.checked_mul(10).ok_or(CharRefError::CharCodeOverflow)?.checked_add(c.to_digit(10).unwrap()).ok_or(CharRefError::CharCodeOverflow)?;},
-            (NumberCharacterReferenceLastState::Hash                                              , 'x' | 'X'                        ) => {last_state = NumberCharacterReferenceLastState::X;},
-            (NumberCharacterReferenceLastState::Hash | NumberCharacterReferenceLastState::DecDigit, _                                ) => Err(CharRefError::InvalidDec)?,
-            (NumberCharacterReferenceLastState::X    | NumberCharacterReferenceLastState::HexDigit, '0'..='9' | 'a'..='f' | 'A'..='F') => {last_state = NumberCharacterReferenceLastState::HexDigit; scratchspace = scratchspace.checked_mul(16).ok_or(CharRefError::CharCodeOverflow)?.checked_add(c.to_digit(16).unwrap()).ok_or(CharRefError::CharCodeOverflow)?;},
-            (NumberCharacterReferenceLastState::X    | NumberCharacterReferenceLastState::HexDigit, _                                ) => Err(CharRefError::InvalidHex)?,
-            _ => Err(CharRefError::Other)?
+            (HTMLNCRLastState::None                             , '#'                              ) => {last_state = HTMLNCRLastState::Hash;},
+            (HTMLNCRLastState::None                             , _                                ) => Err(NumCharRefError::NotANumCharRef)?,
+            (HTMLNCRLastState::Hash | HTMLNCRLastState::DecDigit, '0'..='9'                        ) => {scratchspace = scratchspace.checked_mul(10).and_then(|x| x.checked_add(c.to_digit(10).unwrap())).ok_or(NumCharRefError::CharCodeOverflow)?},
+            (HTMLNCRLastState::Hash                             , 'x' | 'X'                        ) => {last_state = HTMLNCRLastState::X;},
+            (HTMLNCRLastState::Hash | HTMLNCRLastState::DecDigit, _                                ) => Err(NumCharRefError::InvalidDec)?,
+            (HTMLNCRLastState::X    | HTMLNCRLastState::HexDigit, '0'..='9' | 'a'..='f' | 'A'..='F') => {scratchspace = scratchspace.checked_mul(16).and_then(|x| x.checked_add(c.to_digit(16).unwrap())).ok_or(NumCharRefError::CharCodeOverflow)?},
+            (HTMLNCRLastState::X    | HTMLNCRLastState::HexDigit, _                                ) => Err(NumCharRefError::InvalidHex)?
         }
     }
 
-    let c = char::from_u32(scratchspace).ok_or(CharRefError::InvalidCharCode)?;
+    let ret = char::from_u32(scratchspace).ok_or(NumCharRefError::InvalidCharCode(scratchspace))?;
 
-    if c <= '\u{000d}' || (c.is_control() && !c.is_whitespace()) {Err(CharRefError::DisallowedCharCode)?;}
-
-    ret.push(c);
+    if ret.is_control() || ret.is_whitespace() {Err(NumCharRefError::DisallowedCharCode(ret))?;}
 
     Ok(ret)
 }

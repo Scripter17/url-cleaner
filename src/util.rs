@@ -108,7 +108,7 @@ pub struct InvalidRange;
 pub(crate) fn set_segment_range<T>(x: &mut Vec<T>, start: isize, end: Option<isize>, to: Option<T>) -> Result<(), InvalidRange> {
     let fixed_start = neg_index(start, x.len()).ok_or(InvalidRange)?;
     let range = neg_range(start, end, x.len()).ok_or(InvalidRange)?;
-    x.drain(range).collect::<Vec<_>>();
+    x.drain(range).for_each(drop);
     if let Some(to) = to {
         x.insert(fixed_start, to);
     }

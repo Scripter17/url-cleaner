@@ -30,20 +30,10 @@ always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
 #[cfg(feature = "glob")] always_suitable!(glob::Pattern, glob::MatchOptions);
 
-/// Suitability helper function to check that a context var is documented.
-pub(crate) fn context_var_is_documented       (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.job_context.vars   .contains_key(name), "Undocumented JobContext var: {name}")}}
-/// Suitability helper function to check that a jobs context var is documented.
-pub(crate) fn jobs_context_var_is_documented  (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.jobs_context.vars  .contains_key(name), "Undocumented JobsContext var: {name}")}}
-/// Suitability helper function to check that a flag is documented.
-pub(crate) fn flag_is_documented              (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.flags              .contains_key(name), "Undocumented Flag: {name}")}}
-/// Suitability helper function to check that a var is documented.
-pub(crate) fn var_is_documented               (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.vars               .contains_key(name), "Undocumented Var: {name}")}}
 /// Suitability helper function to check that a set is documented.
 pub(crate) fn set_is_documented               (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.sets               .contains_key(name), "Undocumented Set: {name}")}}
 /// Suitability helper function to check that a map is documented.
 pub(crate) fn map_is_documented               (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.maps               .contains_key(name), "Undocumented Map: {name}")}}
-/// Suitability helper function to check that a env var is documented.
-pub(crate) fn env_var_is_documented           (name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.environment_vars   .contains_key(name), "Undocumented Env var: {name}")}}
 /// Suitability helper function to check that a named partitioning is documented.
 pub(crate) fn named_partitioning_is_documented(name: &StringSource, config: &Config) {if let StringSource::String(name) = name {assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}")}}
 

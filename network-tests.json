@@ -2,16 +2,16 @@
   "sets": [
     {
       "tests": [
-				{"job_config": "https://tinyurl.com/wp-tinyurl"        , "result": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"job_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"job_config": "https://smarturl.it/irl_s05e04?IQid=eg", "result": "https://irlpodcast.org/season5/episode4/"},
-				{"job_config": "https://gprivate.com/6bi5b"            , "result": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
+				{"task_config": "https://tinyurl.com/wp-tinyurl"        , "result": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"task_config": "https://tinyurl.com/preview/wp-tinyurl", "result": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"task_config": "https://smarturl.it/irl_s05e04?IQid=eg", "result": "https://irlpodcast.org/season5/episode4/"},
+				{"task_config": "https://gprivate.com/6bi5b"            , "result": "https://google.com/search?q=Why+do+I+have+to+enter+a+link+to+post+a+request+for+research%3F"},
 				{
 					"comment": "It was the only somewhat normal one I could find, okay?",
-					"job_config": "http://bfy.tw/9ZSk",
+					"task_config": "http://bfy.tw/9ZSk",
 					"result": "https://google.com/search?q=How+does+the+US+government+work"
 				},
-				{"job_config": "https://fireship.page.link/slack", "result": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"}
+				{"task_config": "https://fireship.page.link/slack", "result": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"}
       ]
     }
   ]

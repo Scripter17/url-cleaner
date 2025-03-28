@@ -1,4 +1,4 @@
-//! The context of a [`JobsSource`].
+//! The context of a [`Job`].
 
 use std::collections::HashMap;
 
@@ -9,10 +9,10 @@ use serde_with::*;
 use crate::types::*;
 use crate::util::*;
 
-/// The context for a set of [`Job`]s.
+/// The context for a set of [`Task`]s.
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct JobsContext {
+pub struct JobContext {
     /// The vars.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]
     #[serde(default, skip_serializing_if = "is_default")]

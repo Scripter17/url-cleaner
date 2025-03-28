@@ -119,7 +119,7 @@ impl StringSourceJsonValue {
     /// See each variant of [`Self`] for when each variant returns an error.
     ///
     /// But TL;DR: If any call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &JobStateView) -> Result<Value, StringSourceError> {
+    pub fn make(&self, job_state: &TaskStateView) -> Result<Value, StringSourceError> {
         debug!(StringSourceJsonValue::make, self, job_state);
 
         Ok(match self {

@@ -88,7 +88,7 @@ pub enum StringMatcher {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&str, &JobStateView) -> Result<bool, StringMatcherError>>)
+    Custom(FnWrapper<fn(&str, &TaskStateView) -> Result<bool, StringMatcherError>>)
 }
 
 #[cfg(feature = "regex")]
@@ -144,24 +144,24 @@ impl StringMatcher {
     /// Returns [`true`] if `haystack` satisifes `self`.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn satisfied_by(&self, haystack: &str, job_state: &JobStateView) -> Result<bool, StringMatcherError> {
+    pub fn satisfied_by(&self, haystack: &str, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
         debug!(StringMatcher::satisfied_by, self);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
             Self::Error => Err(StringMatcherError::ExplicitError)?,
             Self::Debug(matcher) => {
-                let is_satisfied=matcher.satisfied_by(haystack, job_state);
-                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nJob state: {job_state:?}\nSatisfied?: {is_satisfied:?}");
+                let is_satisfied=matcher.satisfied_by(haystack, task_state);
+                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
 
             // Logic.
 
-            Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, job_state)? {then} else {r#else}.satisfied_by(haystack, job_state)?,
+            Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, task_state)? {then} else {r#else}.satisfied_by(haystack, task_state)?,
             Self::All(matchers) => {
                 for matcher in matchers {
-                    if !matcher.satisfied_by(haystack, job_state)? {
+                    if !matcher.satisfied_by(haystack, task_state)? {
                         return Ok(false);
                     }
                 }
@@ -169,23 +169,23 @@ impl StringMatcher {
             },
             Self::Any(matchers) => {
                 for matcher in matchers {
-                    if matcher.satisfied_by(haystack, job_state)? {
+                    if matcher.satisfied_by(haystack, task_state)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Not(matcher) => !matcher.satisfied_by(haystack, job_state)?,
+            Self::Not(matcher) => !matcher.satisfied_by(haystack, task_state)?,
 
             // Error handling.
 
-            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, job_state).unwrap_or(true),
-            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, job_state).unwrap_or(false),
-            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, job_state).or_else(|try_error| r#else.satisfied_by(haystack, job_state).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
+            Self::TreatErrorAsPass(matcher) => matcher.satisfied_by(haystack, task_state).unwrap_or(true),
+            Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, task_state).unwrap_or(false),
+            Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, task_state).or_else(|try_error| r#else.satisfied_by(haystack, task_state).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(matchers) => {
                 let mut result = Ok(false); // The initial value doesn't mean anything.
                 for matcher in matchers {
-                    result = matcher.satisfied_by(haystack, job_state);
+                    result = matcher.satisfied_by(haystack, task_state);
                     if result.is_ok() {return result;}
                 }
                 result?
@@ -194,10 +194,10 @@ impl StringMatcher {
             // Other.
 
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
-            Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_str!(value, job_state, StringMatcherError))?,
+            Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_str!(value, task_state, StringMatcherError))?,
             Self::ContainsAny {values, r#where} => {
                 for value in values {
-                    if r#where.satisfied_by(haystack, get_str!(value, job_state, StringModificationError))? {
+                    if r#where.satisfied_by(haystack, get_str!(value, task_state, StringModificationError))? {
                         return Ok(true)
                     }
                 }
@@ -205,14 +205,14 @@ impl StringMatcher {
             },
             // Cannot wait for [`Iterator::try_any`](https://github.com/rust-lang/rfcs/pull/3233)
             Self::ContainsAnyInList {r#where, list} => {
-                for x in job_state.params.lists.get(get_str!(list, job_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
+                for x in task_state.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
                     if r#where.satisfied_by(haystack, x)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, job_state)?; temp}, job_state)?,
+            Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, task_state)?; temp}, task_state)?,
             #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack),
             #[cfg(feature = "glob" )] Self::Glob(glob) => glob.matches(haystack),
             Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars).is_empty(),
@@ -233,47 +233,47 @@ impl StringMatcher {
                 false
             },
             Self::IsAscii => haystack.is_ascii(),
-            Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, job_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, job_state)?,
+            Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, task_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, task_state)?,
             Self::AnySegmentMatches {split, matcher} => {
-                for segment in haystack.split(get_str!(split, job_state, StringMatcherError)) {
-                    if matcher.satisfied_by(segment, job_state)? {
+                for segment in haystack.split(get_str!(split, task_state, StringMatcherError)) {
+                    if matcher.satisfied_by(segment, task_state)? {
                         return Ok(true);
                     }
                 };
                 return Ok(false);
             },
-            Self::Equals(source) => haystack == get_str!(source, job_state, StringMatcherError),
-            Self::InSet(name) => job_state.params.sets.get(get_str!(name, job_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
+            Self::Equals(source) => haystack == get_str!(source, task_state, StringMatcherError),
+            Self::InSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
             Self::LengthIs(x) => haystack.len() == *x,
             Self::SegmentsEndWith { split, value } => {
-                let split = get_str!(split, job_state, StringMatcherError);
-                // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value, job_state, StringMatcherError).split(split)).all(|(x, y)| x==y)
-                haystack.strip_suffix(get_str!(value, job_state, StringMatcherError))
+                let split = get_str!(split, task_state, StringMatcherError);
+                // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value, task_state, StringMatcherError).split(split)).all(|(x, y)| x==y)
+                haystack.strip_suffix(get_str!(value, task_state, StringMatcherError))
                     .is_some_and(|x| x.split(split).last()==Some(""))
             },
             Self::SegmentsStartWith { split, value } => {
-                let split = get_str!(split, job_state, StringMatcherError);
-                haystack.strip_prefix(get_str!(value, job_state, StringMatcherError))
+                let split = get_str!(split, task_state, StringMatcherError);
+                haystack.strip_prefix(get_str!(value, task_state, StringMatcherError))
                     .is_some_and(|x| x.strip_prefix(split).is_some())
             },
             Self::Common(common_call) => {
-                job_state.commons.string_matchers.get(get_str!(common_call.name, job_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.satisfied_by(
+                task_state.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.satisfied_by(
                     haystack,
-                    &JobStateView {
-                        url: job_state.url,
-                        context: job_state.context,
-                        params: job_state.params,
-                        scratchpad: job_state.scratchpad,
+                    &TaskStateView {
+                        url: task_state.url,
+                        context: task_state.context,
+                        params: task_state.params,
+                        scratchpad: task_state.scratchpad,
                         #[cfg(feature = "cache")]
-                        cache: job_state.cache,
-                        commons: job_state.commons,
-                        common_args: Some(&common_call.args.build(job_state)?),
-                        jobs_context: job_state.jobs_context
+                        cache: task_state.cache,
+                        commons: task_state.commons,
+                        common_args: Some(&common_call.args.build(task_state)?),
+                        job_context: task_state.job_context
                     }
                 )?
             },
             #[cfg(feature = "custom")]
-            Self::Custom(function) => function(haystack, job_state)?,
+            Self::Custom(function) => function(haystack, task_state)?,
         })
     }
 }

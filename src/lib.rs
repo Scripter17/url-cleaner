@@ -7,4 +7,4 @@ pub mod types;
 pub mod testing;
 pub(crate) mod util;
 
-pub use types::{Config, JobsSource, JobConfig};
+pub use types::{Config, Job, TaskConfig};

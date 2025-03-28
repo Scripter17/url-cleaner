@@ -64,13 +64,13 @@
 		"named_partitionings": {
 			"hwwwwdpafqdnp_categories": "Categories of similar websites with shared cleaning methods."
 		},
-		"jobs_context": {
+		"job_context": {
 			"vars": {
 				"SOURCE_HOST"      : "The `Host` of the \"source\" of the jobs. Usually the webpage it came from.",
 				"SOURCE_REG_DOMAIN": "The `RegDomain` of the \"source\" of the jobs, Usually the webpage it came from."
 			}
 		},
-		"job_context": {
+		"task_context": {
 			"vars": {
 				"redirect_shortcut": "For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.",
 				"site_name": "For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.",
@@ -104,7 +104,7 @@
 				"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew",
 				"amzn.to", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co", "blizz.ly",
 				"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co",
-				"cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "deezer.page.link", "depop.app.link", "dis.gd", "dlvr.it",
+				"cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "dis.gd", "dlvr.it",
 				"econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app",
 				"go.forbes.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.undp.org", "goo.gl", "goo.su", "gum.co", "hmstr.fr",
 				"hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe",
@@ -117,10 +117,10 @@
 				"sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "t.co", "t.ly", "theatln.tc", "thecut.io",
 				"thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com",
 				"unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "vm.tiktok.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me",
-				"wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "sta.sh", "t2m.io", "pl.go-ga.me"
 			],
 			"redirect-reg-domains": [
-				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link"
+				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link", "onelink.me"
 			],
 			"remove-www-subdomain-reg-domain-blacklist": ["shorturl.at", "proozy.com"],
 			"unmobile-reg-domain-blacklist": ["tumblr.com", "deviantart.com"],
@@ -220,7 +220,7 @@
 		},
 		"http_client_config": {
 			"default_headers": {
-				"user-agent": "curl/8.2.1",
+				"user-agent": "Firefox",
 				"sec-gpc": "1",
 				"dnt": "1"
 			},
@@ -239,8 +239,8 @@
 						"key": {"Part": "Whole"},
 						"value": {"ExtractBetween": {
 							"value": {"HttpRequest": {}},
-							"start": {"CommonVar": "start"},
-							"end": {"CommonVar": "end"}
+							"start": {"Var": {"type": "Common", "name": "start"}},
+							"end"  : {"Var": {"type": "Common", "name": "end"}}
 						}}
 					}}
 				}}
@@ -248,17 +248,28 @@
 
 			"extract-from-page": {"If": {
 				"condition": {"Not": {"FlagIsSet": "no-network"}},
-				"mapper": {"Common": {"name": "extract-from-page-no-if", "args": {"vars": {"start": {"CommonVar": "start"}, "end": {"CommonVar": "end"}}}}}
+				"mapper": {"Common": {
+					"name": "extract-from-page-no-if",
+					"args": {
+						"vars": {
+							"start": {"Var": {"type": "Common", "name": "start"}},
+							"end": {"Var": {"type": "Common", "name": "end"}}
+						}
+					}
+				}}
 			}},
 
 			"redirect-shortcut": {"If": {
 				"condition": {"All": [
-					{"Not": {"StringIs": {"left": {"ContextVar": "redirect_shortcut"}, "right": null}}},
-					{"StringIs": {"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"}, "right": {"CommonVar": "expected_reg_domain"}}},
-					{"Not": {"ScratchpadFlagIsSet": "redirect_shortcut_used"}}
+					{"Not": {"StringIs": {"left": {"Var": {"type": "TaskContext", "name": "redirect_shortcut"}}, "right": null}}},
+					{"StringIs": {
+						"left" : {"Var": {"type": "JobContext", "name": "SOURCE_REG_DOMAIN"}},
+						"right": {"Var": {"type": "Common", "name": "expected_reg_domain"}}
+					}},
+					{"Not": {"FlagIsSet": {"type": "Scratchpad", "name": "redirect_shortcut_used"}}}
 				]},
 				"mapper": {"All": [
-					{"SetPart": {"part": "Whole", "value": {"ContextVar": "redirect_shortcut"}}},
+					{"SetPart": {"part": "Whole", "value": {"Var": {"type": "TaskContext", "name": "redirect_shortcut"}}}},
 					{"SetScratchpadFlag": {"name": "redirect_shortcut_used", "value": true}}
 				]}
 			}},
@@ -347,7 +358,7 @@
 			]},
 
 			"url-from-query-param-or-query": {"FirstNotError": [
-				{"GetUrlFromQueryParam": {"CommonVar": "param"}},
+				{"GetUrlFromQueryParam": {"Var": {"type": "Common", "name": "param"}}},
 				{"CopyPart": {"from": "Query", "to": "Whole"}},
 				{"SetPart": {
 					"part": "Whole",
@@ -364,14 +375,14 @@
 			"condition": {"All": [
 				{"PartIs": {"part": "Whole", "value": "javascript:void(0);"}},
 				{"StringIs": {
-					"left": {"JobsContextVar": "SOURCE_REG_DOMAIN"},
+					"left": {"Var": {"type": "JobContext", "name": "SOURCE_REG_DOMAIN"}},
 					"right": "furaffinity.net"
 				}},
-				{"StringIs": {"left": {"Modified": {"value": {"ContextVar": "site_name"}, "modification": "Lowercase"}}, "right": "website"}}
+				{"StringIs": {"left": {"Modified": {"value": {"Var": {"type": "TaskContext", "name": "site_name"}}, "modification": "Lowercase"}}, "right": "website"}}
 			]},
 			"mapper": {"SetPart": {
 				"part": "Whole",
-				"value": {"Join": {"sources": ["https://", {"ContextVar": "link_text"}]}}
+				"value": {"Join": {"sources": ["https://", {"Var": {"type": "TaskContext", "name": "link_text"}}]}}
 			}}
 		},
 		{"SharedCondition": {
@@ -481,8 +492,7 @@
 													"vars": {
 														"start": "href=\"",
 														"end": "\""
-													},
-													"http_client_config_diff": {"danger_accept_invalid_certs": true}
+													}
 												}
 											}},
 											"gprivate.com": {"Common": {
@@ -491,8 +501,7 @@
 													"vars": {
 														"start": "window.location = \"",
 														"end": "\""
-													},
-													"http_client_config_diff": {"danger_accept_invalid_certs": true}
+													}
 												}
 											}},
 											"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
@@ -863,17 +872,7 @@
 													]}
 												}}
 											}},
-											"page.link": {"If": {
-												"condition": {"Not": {"FlagIsSet": "no-network"}},
-												"mapper": {"All": [
-													{"Common": "universal"},
-													{"ExpandRedirect": {
-														"http_client_config_diff": {
-															"add_default_headers": {"User-Agent": "Firefox"}
-														}
-													}}
-												]}
-											}}
+											"onelink.me": "RemoveQuery"
 										}
 									}
 								},
@@ -899,7 +898,7 @@
 																{"IfSourceIsNone": {
 																	"value": {"NoneTo": {
 																		"value": {"Var": "bypass.vip-api-key"},
-																		"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
+																		"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
 																	}},
 																	"then": "https://api.bypass.vip/bypass?url=",
 																	"else": "https://api.bypass.vip/premium/bypass?url="
@@ -910,7 +909,7 @@
 														"headers": {
 															"x-api-key": {"NoneTo": {
 																"value": {"Var": "bypass.vip-api-key"},
-																"if_none": {"EnvVar": "URL_CLEANER_BYPASS_VIP_API_KEY"}
+																"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
 															}}
 														}
 													}},
@@ -1105,7 +1104,7 @@
 						"value": {"ErrorToNone": {"ParamsNamedPartitioning": {
 							"name": "hwwwwdpafqdnp_categories",
 							"element": {"Modified": {
-								"value": {"JobsContextVar": "SOURCE_HOST"},
+								"value": {"Var": {"type": "JobContext", "name": "SOURCE_HOST"}},
 								"modification": {"StripMaybePrefix": "www."}
 							}}
 						}}},
@@ -1114,21 +1113,21 @@
 							"bluesky": {"If": {
 								"condition": {"All": [
 									{"PartContains": {"part": "Path", "where": "Start", "value": "/profile/did:plc:"}},
-									{"Not": {"StringIs": {"left": {"ContextVar": "bsky_handle"}, "right": null}}}
+									{"Not": {"StringIs": {"left": {"Var": {"type": "TaskContext", "name": "bsky_handle"}}, "right": null}}}
 								]},
-								"mapper": {"SetPart": {"part": {"PathSegment": 1}, "value": {"ContextVar": "bsky_handle"}}}
+								"mapper": {"SetPart": {"part": {"PathSegment": 1}, "value": {"Var": {"type": "TaskContext", "name": "bsky_handle"}}}}
 							}},
 							"furaffinity": {"If": {
 								"condition": {"TreatErrorAsFail": {"StringMatches": {
-									"value": {"ContextVar": "link_text"},
+									"value": {"Var": {"type": "TaskContext", "name": "link_text"}},
 									"matcher": {"AnyCharMatches": {"IsOneOf": [":", "/", "@", "?", "#"]}}
 								}}},
 								"mapper": {"SetPart": {
 									"part": "Whole",
 									"value": {"Modified": {
-										"value": {"ContextVar": "link_text"},
+										"value": {"Var": {"type": "TaskContext", "name": "link_text"}},
 										"modification": {"StringMap": {
-											"value": {"Modified": {"value": {"ContextVar": "site_name"}, "modification": "Lowercase"}},
+											"value": {"Modified": {"value": {"Var": {"type": "TaskContext", "name": "site_name"}}, "modification": "Lowercase"}},
 											"map": {
 												"youtube"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com/)?([^/]+)$"                     , "replace": "https://youtube.com/$1"            }},
 												"twitter"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
@@ -1148,7 +1147,7 @@
 												"weasyl"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com/)?~?([^/]+)$"                    , "replace": "https://weasyl.com/~$1"            }},
 												"tumblr"       : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?([^.]+\\.)?tumblr\\.com/?)?([^/]*)$"          , "replace": "https://$1$2.tumblr.com"           }},
 												"transfur"     : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com/)?(?:users/)?([^/]+)$"         , "replace": "https://transfur.com/users/$1"     }},
-												"pictaro"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pictaro\\.tv/)?([^/]+)$"                      , "replace": "https://pictaro.tv/$1"             }},
+												"picarto"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?picarto\\.tv/)?([^/]+)$"                      , "replace": "https://picarto.tv/$1"             }},
 												"furry network": {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com/)?([^/]+)$"                , "replace": "https://furrynetwork.com/$1"       }},
 												"itaku"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/)?(?:profile/)?([^/]+)$"           , "replace": "https://itaku.ee/profile/$1"       }},
 												"pixiv"        : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/)?(?:[a-z-]/)?(?:users/)?([^/]+)$", "replace": "https://pixiv.net/en/users/$1"     }},
@@ -1346,6 +1345,7 @@
 							"spotify.com": {"RemoveQueryParams": ["si"]},
 							"stackoverflow.com": {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 							"steampowered.com": {"RemoveQueryParams": ["snr"]},
+							"subscribestar.adult": {"RemoveQueryParams": ["redirect_notice"]},
 							"support.google.com": {"AllowQueryParams": ["q"]},
 							"teespring.com": "RemoveQuery",
 							"theguardian.com": {"RemoveQueryParams": ["CMP"]},

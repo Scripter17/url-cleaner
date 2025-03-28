@@ -25,15 +25,15 @@ impl Tests {
     }
 }
 
-/// Rules for how to construct a [`JobsSource`] from a [`Config`] and the [`Test`]s to run on it.
+/// Rules for how to construct a [`Job`] from a [`Config`] and the [`Test`]s to run on it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TestSet {
     /// The [`ParamsDiff`] to apply to the [`Config`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
-    /// The [`JobsContext`] to give to the [`JobsSource`].
+    /// The [`JobContext`] to give to the [`Job`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub jobs_context: JobsContext,
+    pub job_context: JobContext,
     /// The [`Test`]s to run.
     pub tests: Vec<Test>
 }
@@ -41,9 +41,9 @@ pub struct TestSet {
 impl TestSet {
     /// Do the tests, panicking if any fail.
     /// # Panics
-    /// If a value from [`JobsSource::iter`] is an error, panics.
+    /// If a value from [`Job::iter`] is an error, panics.
     ///
-    /// If a call to [`Job::do`] returns an error, panics.
+    /// If a call to [`Task::do`] returns an error, panics.
     /// 
     /// If any test fails, panics.
     pub fn r#do(self, config: &Config) {
@@ -55,24 +55,24 @@ impl TestSet {
             params_diff.apply(&mut config.to_mut().params);
         }
 
-        let (job_configs, results) = self.tests.clone().into_iter().map(|Test {job_config, result}| (job_config, result)).collect::<(Vec<_>, Vec<_>)>();
+        let (task_configs, results) = self.tests.clone().into_iter().map(|Test {task_config, result}| (task_config, result)).collect::<(Vec<_>, Vec<_>)>();
 
-        let mut jobs = JobsSource {
-            jobs_config: JobsConfig {
+        let mut jobs = Job {
+            config: JobConfig {
                 config,
                 #[cfg(feature = "cache")]
                 cache: Default::default()
             },
-            context: Cow::Borrowed(&self.jobs_context),
-            job_configs_source: Box::new(job_configs.into_iter().map(Ok))
+            context: Cow::Borrowed(&self.job_context),
+            task_configs_source: Box::new(task_configs.into_iter().map(Ok))
         };
 
         for (i, (job, result)) in jobs.iter().zip(results).enumerate() {
             assert_eq!(
                 job.expect("The job to be makeable.").r#do().expect("The job to succeed."),
                 result,
-                "Test failed\nparams_diff: {params_diff_json}\njobs_context: {}\ntest: {}",
-                serde_json::to_string(&self.jobs_context).expect("Serialization to never fail"),
+                "Test failed\nparams_diff: {params_diff_json}\njob_context: {}\ntest: {}",
+                serde_json::to_string(&self.job_context).expect("Serialization to never fail"),
                 serde_json::to_string(self.tests.get(i).expect("`i` to never be out of bounds.")).expect("Serialization to never fail")
             );
         }
@@ -82,8 +82,8 @@ impl TestSet {
 /// An individual test.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Test {
-    /// The [`JobConfig`].
-    pub job_config: JobConfig,
+    /// The [`TaskConfig`].
+    pub task_config: TaskConfig,
     /// The expected result.
     pub result: BetterUrl
 }

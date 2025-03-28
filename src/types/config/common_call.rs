@@ -9,7 +9,6 @@ use thiserror::Error;
 
 use crate::types::*;
 use crate::util::*;
-use crate::glue::*;
 
 /// Instructions on how to call a [`Commons`] thing.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
@@ -45,13 +44,7 @@ pub struct CommonCallArgsSource {
     pub flags: HashSet<String>,
     /// The vars to set.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, StringSource>,
-    /// The [`HttpClientConfigDiff`] to apply.
-    ///
-    /// Yes this is a questionable design choice. It's just the least questionable of the choices I knew I could make.
-    #[cfg(feature = "http")]
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub http_client_config_diff: Option<HttpClientConfigDiff>
+    pub vars: HashMap<String, StringSource>
 }
 
 /// The enum of errors [`CommonCallArgsSource::build`] can return.
@@ -72,12 +65,10 @@ impl CommonCallArgsSource {
     /// Builds the [`CommonCallArgs`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn build<'a>(&'a self, job_state: &JobStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
+    pub fn build<'a>(&'a self, job_state: &TaskStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
         Ok(CommonCallArgs {
             flags: self.flags.iter().map(|x| Cow::Borrowed(&**x)).collect(),
-            vars: self.vars.iter().map(|(k, v)| Ok((Cow::Borrowed(&**k), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
-            #[cfg(feature = "http")]
-            http_client_config_diff: self.http_client_config_diff.as_ref().map(Cow::Borrowed)
+            vars: self.vars.iter().map(|(k, v)| Ok((Cow::Borrowed(&**k), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, StringSourceError>>()?
         })
     }
 }
@@ -88,8 +79,5 @@ pub struct CommonCallArgs<'a> {
     /// The flags that are set.
     pub flags: HashSet<Cow<'a, str>>,
     /// The vars that are set.
-    pub vars: HashMap<Cow<'a, str>, String>,
-    /// The [`HttpClientConfigDiff`] to apply.
-    #[cfg(feature = "http")]
-    pub http_client_config_diff: Option<Cow<'a, HttpClientConfigDiff>>
+    pub vars: HashMap<Cow<'a, str>, String>
 }

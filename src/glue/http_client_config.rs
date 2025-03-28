@@ -1,5 +1,7 @@
 //! Rules for how to make a [`reqwest::blocking::Client`].
 
+use std::collections::HashSet;
+
 use serde::{Serialize, Deserialize};
 #[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
@@ -39,13 +41,13 @@ pub struct HttpClientConfig {
     /// Defaults to [`false`] and frankly there's no legitimate reason for the header to exist or for you to turn it on.
     #[serde(default, skip_serializing_if = "is_default")]
     pub referer: bool,
-    /// The value passed to [`reqwest::blocking::ClientBuilder::danger_accept_invalid_certs`].
+    /// Extra PEM encoded TLS certificates to trust.
     ///
-    /// Has a handful of legitimate use cases but opens you up to man in the middle attacks so NEVER enable this for ANYTHING using API keys.
+    /// See [`reqwest::blocking::ClientBuilder::add_root_certificate`] and [`reqwest::tls::Certificate::from_pem`] for details.
     ///
-    /// Defaults to [`false`].
+    /// Defaults to an empty list.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub danger_accept_invalid_certs: bool
+    pub extra_certificates: HashSet<String>
 }
 
 /// The policy on how to handle [HTTP redirects](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections).
@@ -91,10 +93,12 @@ impl HttpClientConfig {
         let mut temp = reqwest::blocking::Client::builder().default_headers(self.default_headers.clone())
             .redirect(self.redirect_policy.clone().into())
             .https_only(self.https_only)
-            .referer(self.referer)
-            .danger_accept_invalid_certs(self.danger_accept_invalid_certs);
+            .referer(self.referer);
         for proxy in &self.proxies {
             temp = temp.proxy(proxy.clone().make()?);
+        }
+        for cert in &self.extra_certificates {
+            temp = temp.add_root_certificate(reqwest::tls::Certificate::from_pem(cert.as_bytes())?);
         }
         if self.no_proxy {temp = temp.no_proxy();}
         temp.build()
@@ -125,9 +129,12 @@ pub struct HttpClientConfigDiff {
     /// If [`Some`], overwrites [`HttpClientConfig::referer`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub referer: Option<bool>,
-    /// If [`Some`], overwrites [`HttpClientConfig::danger_accept_invalid_certs`].
+    /// Adds to [`HttpClientConfig::extra_certificates`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub danger_accept_invalid_certs: Option<bool>
+    pub add_extra_certificates: HashSet<String>,
+    /// Removes from [`HttpClientConfig::extra_certificates`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub remove_extra_certificates: HashSet<String>
 }
 
 impl HttpClientConfigDiff {
@@ -140,6 +147,7 @@ impl HttpClientConfigDiff {
         to.proxies.extend(self.add_proxies.clone());
         if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
         if let Some(referer) = self.referer {to.no_proxy = referer;}
-        if let Some(danger_accept_invalid_certs) = self.danger_accept_invalid_certs {to.danger_accept_invalid_certs = danger_accept_invalid_certs;}
+        to.extra_certificates.extend(self.add_extra_certificates.clone());
+        to.extra_certificates.retain(|extra_certificate| !self.remove_extra_certificates.contains(extra_certificate));
     }
 }

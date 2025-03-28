@@ -19,10 +19,18 @@ use crate::util::*;
 #[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringModification {
+    /// Doesn't do any modification.
     None,
 
 
 
+    /// Print debug info about the contained [`Self`] and its call to [`Self::get`].
+    ///
+    /// The exact info printed is unspecified and subject to change at any time for any reason.
+    /// # Suitability
+    /// Always unsuiable to be in the default config.
+    /// # Errors
+    /// If the call to [`Self::get`] returns an error, that error is returned.
     #[suitable(never)]
     Debug(Box<Self>),
 
@@ -169,7 +177,7 @@ pub enum StringModification {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&mut String, &JobStateView) -> Result<(), StringModificationError>>)
+    Custom(FnWrapper<fn(&mut String, &TaskStateView) -> Result<(), StringModificationError>>)
 }
 
 /// The [`AsciiSet`] that emulates [`encodeURIComponent`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
@@ -314,82 +322,82 @@ impl StringModification {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn apply(&self, to: &mut String, job_state: &JobStateView) -> Result<(), StringModificationError> {
+    pub fn apply(&self, to: &mut String, task_state: &TaskStateView) -> Result<(), StringModificationError> {
         debug!(StringModification::apply, self);
         match self {
             Self::None => {},
             Self::Error => Err(StringModificationError::ExplicitError)?,
             Self::Debug(modification) => {
                 let to_before_mapper=to.clone();
-                let modification_result=modification.apply(to, job_state);
-                eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\nJob state: {job_state:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
+                let modification_result=modification.apply(to, task_state);
+                eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\ntask_state: {task_state:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
                 modification_result?;
             },
-            Self::IgnoreError(modification) => {let _=modification.apply(to, job_state);},
-            Self::TryElse{r#try, r#else} => r#try.apply(to, job_state).or_else(|try_error| r#else.apply(to, job_state).map_err(|else_error| StringModificationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
+            Self::IgnoreError(modification) => {let _=modification.apply(to, task_state);},
+            Self::TryElse{r#try, r#else} => r#try.apply(to, task_state).or_else(|try_error| r#else.apply(to, task_state).map_err(|else_error| StringModificationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::All(modifications) => {
                 let mut temp_to=to.clone();
                 for modification in modifications {
-                    modification.apply(&mut temp_to, job_state)?;
+                    modification.apply(&mut temp_to, task_state)?;
                 }
                 *to=temp_to;
             }
             Self::AllNoRevert(modifications) => {
                 for modification in modifications {
-                    modification.apply(to, job_state)?;
+                    modification.apply(to, task_state)?;
                 }
             },
             Self::AllIgnoreError(modifications) => {
                 for modification in modifications {
-                    let _=modification.apply(to, job_state);
+                    let _=modification.apply(to, task_state);
                 }
             },
             Self::FirstNotError(modifications) => {
                 let mut error=Ok(());
                 for modification in modifications {
-                    error=modification.apply(to, job_state);
+                    error=modification.apply(to, task_state);
                     if error.is_ok() {break}
                 }
                 error?
             },
-            Self::If {condition, then, r#else} => if condition.satisfied_by(job_state)? {
-                then.apply(to, job_state)?
+            Self::If {condition, then, r#else} => if condition.satisfied_by(task_state)? {
+                then.apply(to, task_state)?
             } else if let Some(r#else) = r#else {
-                r#else.apply(to, job_state)?
+                r#else.apply(to, task_state)?
             },
-            Self::IfMatches {matcher, then, r#else} => if matcher.satisfied_by(to, job_state)? {
-                then.apply(to, job_state)?;
+            Self::IfMatches {matcher, then, r#else} => if matcher.satisfied_by(to, task_state)? {
+                then.apply(to, task_state)?;
             } else if let Some(r#else) = r#else {
-                r#else.apply(to, job_state)?
+                r#else.apply(to, task_state)?
             },
             Self::SetSegment {split, index, value} => {
-                let split = get_cow!(split, job_state, StringModificationError);
+                let split = get_cow!(split, task_state, StringModificationError);
                 let mut segments = to.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
                 let fixed_index = neg_index(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                match value.get(job_state)? {
+                match value.get(task_state)? {
                     Some(value) => *segments.get_mut(fixed_index).expect("StringModification::SetSegment to be implemented correctly") = value,
                     None => {segments.remove(fixed_index);}
                 }
                 *to = segments.join(&*split);
             },
             Self::InsertSegment {split, index, value} => {
-                let split = get_cow!(split, job_state, StringModificationError);
+                let split = get_cow!(split, task_state, StringModificationError);
                 let mut segments = to.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
                 let fixed_index = neg_range_boundary(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                if let Some(value) = value.get(job_state)? {
+                if let Some(value) = value.get(task_state)? {
                     segments.insert(fixed_index, value);
                 }
                 *to = segments.join(&*split);
             },
-            Self::Set(value)                         => get_string!(value, job_state, StringModificationError).clone_into(to),
-            Self::Append(value)                      => to.push_str(get_str!(value, job_state, StringModificationError)),
-            Self::Prepend(value)                     => {let mut ret=get_string!(value, job_state, StringModificationError); ret.push_str(to); *to=ret;},
-            Self::Replace{find, replace}             => *to=to.replace (get_str!(find, job_state, StringModificationError), get_str!(replace, job_state, StringModificationError)),
-            Self::Replacen{find, replace, count}     => *to=to.replacen(get_str!(find, job_state, StringModificationError), get_str!(replace, job_state, StringModificationError), *count),
+            Self::Set(value)                         => get_string!(value, task_state, StringModificationError).clone_into(to),
+            Self::Append(value)                      => to.push_str(get_str!(value, task_state, StringModificationError)),
+            Self::Prepend(value)                     => {let mut ret=get_string!(value, task_state, StringModificationError); ret.push_str(to); *to=ret;},
+            Self::Replace{find, replace}             => *to=to.replace (get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError)),
+            Self::Replacen{find, replace, count}     => *to=to.replacen(get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError), *count),
             Self::ReplaceRange{start, end, replace}  => {
                 let range=neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?;
                 if to.get(range).is_some() {
-                    to.replace_range(range, get_str!(replace, job_state, StringModificationError));
+                    to.replace_range(range, get_str!(replace, task_state, StringModificationError));
                 } else {
                     Err(StringModificationError::InvalidSlice)?;
                 }
@@ -397,37 +405,37 @@ impl StringModification {
             Self::Lowercase => *to=to.to_lowercase(),
             Self::Uppercase => *to=to.to_uppercase(),
             Self::StripPrefix(prefix) => {
-                let prefix = get_str!(prefix, job_state, StringModificationError);
+                let prefix = get_str!(prefix, task_state, StringModificationError);
                 if to.starts_with(prefix) {to.drain(..prefix.len());} else {Err(StringModificationError::PrefixNotFound)?;};
             },
             #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
             Self::StripSuffix(suffix)                => {
-                let suffix = get_str!(suffix, job_state, StringModificationError);
+                let suffix = get_str!(suffix, task_state, StringModificationError);
                 if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;};
             },
             Self::StripMaybePrefix(prefix)           => {
-                let prefix = get_str!(prefix, job_state, StringModificationError);
+                let prefix = get_str!(prefix, task_state, StringModificationError);
                 if to.starts_with(prefix) {to.drain(..prefix.len());};
             },
             #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
             Self::StripMaybeSuffix(suffix)           => {
-                let suffix = get_str!(suffix, job_state, StringModificationError);
+                let suffix = get_str!(suffix, task_state, StringModificationError);
                 if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len());};
             },
-            Self::Insert{r#where, value} => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, get_str!(value, job_state, StringModificationError));} else {Err(StringModificationError::InvalidIndex)?;},
+            Self::Insert{r#where, value} => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, get_str!(value, task_state, StringModificationError));} else {Err(StringModificationError::InvalidIndex)?;},
             Self::RemoveChar(index)      => if to.is_char_boundary(neg_index(*index  , to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*index  , to.len()).ok_or(StringModificationError::InvalidIndex)?                                                     );} else {Err(StringModificationError::InvalidIndex)?;},
             Self::KeepRange{start, end}  => *to = to.get(neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
             #[cfg(feature = "regex")]
             Self::RegexCaptures {regex, replace} => {
-                let replace = get_str!(replace, job_state, StringModificationError);
+                let replace = get_str!(replace, task_state, StringModificationError);
                 let mut temp = "".to_string();
                 regex.get()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
                 *to = temp;
             },
             #[cfg(feature = "regex")]
             Self::JoinAllRegexCaptures {regex, replace, join} => {
-                let replace = get_str!(replace, job_state, StringModificationError);
-                let join = get_str!(join, job_state, StringModificationError);
+                let replace = get_str!(replace, task_state, StringModificationError);
+                let join = get_str!(join, task_state, StringModificationError);
                 let mut temp = "".to_string();
                 if join.is_empty() {
                     for captures in regex.get()?.captures_iter(to) {
@@ -443,20 +451,20 @@ impl StringModification {
                 *to = temp;
             },
             #[cfg(feature = "regex")] Self::RegexFind       (regex            ) => *to = regex.get()?.find       (to                                                           ).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string(),
-            #[cfg(feature = "regex")] Self::RegexReplace    {regex,    replace} => *to = regex.get()?.replace    (to,     get_str!(replace, job_state, StringModificationError)).into_owned(),
-            #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to = regex.get()?.replace_all(to,     get_str!(replace, job_state, StringModificationError)).into_owned(),
-            #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to = regex.get()?.replacen   (to, *n, get_str!(replace, job_state, StringModificationError)).into_owned(),
+            #[cfg(feature = "regex")] Self::RegexReplace    {regex,    replace} => *to = regex.get()?.replace    (to,     get_str!(replace, task_state, StringModificationError)).into_owned(),
+            #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to = regex.get()?.replace_all(to,     get_str!(replace, task_state, StringModificationError)).into_owned(),
+            #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to = regex.get()?.replacen   (to, *n, get_str!(replace, task_state, StringModificationError)).into_owned(),
             Self::UrlEncode(alphabet) => *to=utf8_percent_encode(to, alphabet.get()).to_string(),
             Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.build().encode(to.as_bytes()),
             #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.build().decode(to.as_bytes())?)?,
-            Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, job_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
+            Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
 
 
             Self::RemoveQueryParamsMatching(matcher) => *to = to.split('&').filter_map(|kev|
                 matcher.satisfied_by(
                     kev.split('=').next().unwrap_or("Why can't I #[allow] an .expect() here?"),
-                    job_state
+                    task_state
                 )
                 .map(|x| (!x).then_some(kev))
                 .transpose()
@@ -464,7 +472,7 @@ impl StringModification {
             Self::AllowQueryParamsMatching(matcher) => *to = to.split('&').filter_map(|kev|
                 matcher.satisfied_by(
                     kev.split('=').next().unwrap_or("Why can't I #[allow] an .expect() here?"),
-                    job_state
+                    task_state
                 )
                 .map(|x| x.then_some(kev))
                 .transpose()
@@ -474,42 +482,42 @@ impl StringModification {
 
             Self::ExtractBetween {start, end} => {
                 *to = to
-                    .split_once(get_str!(start, job_state, StringModificationError))
+                    .split_once(get_str!(start, task_state, StringModificationError))
                     .ok_or(StringModificationError::ExtractBetweenStartNotFound)?
                     .1
-                    .split_once(get_str!(end, job_state, StringModificationError))
+                    .split_once(get_str!(end, task_state, StringModificationError))
                     .ok_or(StringModificationError::ExtractBetweenEndNotFound)?
                     .0
                     .to_string();
             },
             Self::Common(common_call) => {
-                job_state.commons.string_modifications.get(get_str!(common_call.name, job_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
+                task_state.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
-                    &JobStateView {
-                        url: job_state.url,
-                        context: job_state.context,
-                        params: job_state.params,
-                        scratchpad: job_state.scratchpad,
+                    &TaskStateView {
+                        url: task_state.url,
+                        context: task_state.context,
+                        params: task_state.params,
+                        scratchpad: task_state.scratchpad,
                         #[cfg(feature = "cache")]
-                        cache: job_state.cache,
-                        commons: job_state.commons,
-                        common_args: Some(&common_call.args.build(job_state)?),
-                        jobs_context: job_state.jobs_context
+                        cache: task_state.cache,
+                        commons: task_state.commons,
+                        common_args: Some(&common_call.args.build(task_state)?),
+                        job_context: task_state.job_context
                     }
                 )?
             },
             Self::Unescape(mode) => *to = mode.unescape(to)?,
 
-            Self::StringMap {value, map} => if let Some(x) = map.get(value.get(job_state)?) {x.apply(to, job_state)?;},
+            Self::StringMap {value, map} => if let Some(x) = map.get(value.get(task_state)?) {x.apply(to, task_state)?;},
 
-            Self::KeepNthSegment {split, index} => *to = neg_nth(to.split(get_str!(split, job_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string(),
+            Self::KeepNthSegment {split, index} => *to = neg_nth(to.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string(),
             Self::KeepSegmentRange {split, start, end} => {
-                let split = get_str!(split, job_state, StringModificationError);
+                let split = get_str!(split, task_state, StringModificationError);
                 *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split);
             },
 
             #[cfg(feature = "custom")]
-            Self::Custom(function) => function(to, job_state)?
+            Self::Custom(function) => function(to, task_state)?
         };
         Ok(())
     }

@@ -117,13 +117,13 @@ impl Config {
         })
     }
 
-    /// Applies [`Self::rules`] to the provided [`JobState`].
+    /// Applies [`Self::rules`] to the provided [`TaskState`].
     ///
     /// If an error is returned, `job_state` may be left in a partially modified state.
     /// # Errors
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
-    pub fn apply(&self, job_state: &mut JobState) -> Result<(), ApplyConfigError> {
+    pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyConfigError> {
         self.rules.apply(job_state).map_err(Into::into)
     }
 

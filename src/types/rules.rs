@@ -1,4 +1,4 @@
-//! Logic for when and how [`JobState`]s should be modified.
+//! Logic for when and how [`TaskState`]s should be modified.
 
 use std::ops::{Deref, DerefMut};
 
@@ -15,7 +15,7 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// When and how to modify a [`JobState`].
+/// When and how to modify a [`TaskState`].
 ///
 /// I'm sorry for the dogshit diagnostics on typos. I tried setting a bounty for serde to fix it but they didn't let me.
 ///
@@ -129,7 +129,7 @@ pub enum Rule {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&mut JobState) -> Result<(), RuleError>>),
+    Custom(FnWrapper<fn(&mut TaskState) -> Result<(), RuleError>>),
     /// If [`Self::Normal::condition`] passes, apply [`Self::Normal::mapper`].
     ///
     /// If [`Self::Normal::condition`] fails and [`Self::Normal::else_mapper`] is [`Some`], apply [`Self::Normal::else_mapper`].
@@ -182,53 +182,53 @@ pub enum RuleError {
 impl Rule {
     /// See each variant of [`Self`] for behvaior.
     ///
-    /// If an error is returned, `job_state` may be left in a partially modified state.
+    /// If an error is returned, `task_state` may be left in a partially modified state.
     /// # Errors
     /// See each variant of [`Self`] for errors.
-    pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        debug!(Rule::apply, self, job_state);
+    pub fn apply(&self, task_state: &mut TaskState) -> Result<(), RuleError> {
+        debug!(Rule::apply, self, task_state);
         Ok(match self {
-            Self::Normal{condition, mapper, else_mapper} => if condition.satisfied_by(&job_state.to_view())? {
-                mapper.apply(job_state)?;
+            Self::Normal{condition, mapper, else_mapper} => if condition.satisfied_by(&task_state.to_view())? {
+                mapper.apply(task_state)?;
             } else if let Some(else_mapper) = else_mapper {
-                else_mapper.apply(job_state)?
+                else_mapper.apply(task_state)?
             },
-            Self::PartMap        {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
-            Self::PartRuleMap    {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
-            Self::PartRulesMap   {part , map} => if let Some(x) = map.get(part .get( job_state.url      ) ) {x.apply(job_state)?;},
-            Self::StringMap      {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
-            Self::StringRuleMap  {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
-            Self::StringRulesMap {value, map} => if let Some(x) = map.get(value.get(&job_state.to_view())?) {x.apply(job_state)?;},
+            Self::PartMap        {part , map} => if let Some(x) = map.get(part .get( task_state.url      ) ) {x.apply(task_state)?;},
+            Self::PartRuleMap    {part , map} => if let Some(x) = map.get(part .get( task_state.url      ) ) {x.apply(task_state)?;},
+            Self::PartRulesMap   {part , map} => if let Some(x) = map.get(part .get( task_state.url      ) ) {x.apply(task_state)?;},
+            Self::StringMap      {value, map} => if let Some(x) = map.get(value.get(&task_state.to_view())?) {x.apply(task_state)?;},
+            Self::StringRuleMap  {value, map} => if let Some(x) = map.get(value.get(&task_state.to_view())?) {x.apply(task_state)?;},
+            Self::StringRulesMap {value, map} => if let Some(x) = map.get(value.get(&task_state.to_view())?) {x.apply(task_state)?;},
             Self::Repeat{rules, limit} => {
                 let mut previous_url;
                 let mut previous_scratchpad;
                 for _ in 0..*limit {
-                    previous_url = job_state.url.clone();
-                    previous_scratchpad = job_state.scratchpad.clone();
-                    rules.apply(job_state)?;
-                    if job_state.url == &previous_url && job_state.scratchpad == &previous_scratchpad {break;}
+                    previous_url = task_state.url.clone();
+                    previous_scratchpad = task_state.scratchpad.clone();
+                    rules.apply(task_state)?;
+                    if task_state.url == &previous_url && task_state.scratchpad == &previous_scratchpad {break;}
                 }
             },
-            Self::SharedCondition{condition, rules} => if condition.satisfied_by(&job_state.to_view())? {
-                rules.apply(job_state)?
+            Self::SharedCondition{condition, rules} => if condition.satisfied_by(&task_state.to_view())? {
+                rules.apply(task_state)?
             },
-            Self::Rules(rules) => rules.apply(job_state)?,
-            Self::Mapper(mapper) => mapper.apply(job_state)?,
+            Self::Rules(rules) => rules.apply(task_state)?,
+            Self::Mapper(mapper) => mapper.apply(task_state)?,
             Self::Common(common_call) => {
-                job_state.commons.rules.get(get_str!(common_call.name, job_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut JobState {
-                    common_args: Some(&common_call.args.build(&job_state.to_view())?),
-                    url: job_state.url,
-                    context: job_state.context,
-                    params: job_state.params,
-                    scratchpad: job_state.scratchpad,
+                task_state.commons.rules.get(get_str!(common_call.name, task_state, RuleError)).ok_or(RuleError::CommonRuleNotFound)?.apply(&mut TaskState {
+                    common_args: Some(&common_call.args.build(&task_state.to_view())?),
+                    url: task_state.url,
+                    context: task_state.context,
+                    params: task_state.params,
+                    scratchpad: task_state.scratchpad,
                     #[cfg(feature = "cache")]
-                    cache: job_state.cache,
-                    commons: job_state.commons,
-                    jobs_context: job_state.jobs_context
+                    cache: task_state.cache,
+                    commons: task_state.commons,
+                    job_context: task_state.job_context
                 })?
             },
             #[cfg(feature = "custom")]
-            Self::Custom(function) => function(job_state)?
+            Self::Custom(function) => function(task_state)?
         })
     }
 }
@@ -257,13 +257,13 @@ impl DerefMut for Rules {
 impl Rules {
     /// Applies each contained [`Rule`] in order.
     ///
-    /// If an error is returned, `job_state` may be left in a partially modified state.
+    /// If an error is returned, `task_state` may be left in a partially modified state.
     /// # Errors
     /// If any call to [`Rule::apply`] returns an error, that error is returned.
-    pub fn apply(&self, job_state: &mut JobState) -> Result<(), RuleError> {
-        debug!(Rules::apply, self, job_state);
+    pub fn apply(&self, task_state: &mut TaskState) -> Result<(), RuleError> {
+        debug!(Rules::apply, self, task_state);
         for rule in &self.0 {
-            rule.apply(job_state)?;
+            rule.apply(task_state)?;
         }
         Ok(())
     }
