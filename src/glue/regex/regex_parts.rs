@@ -15,6 +15,8 @@ use crate::util::*;
 #[serde(remote = "Self")]
 pub struct RegexParts {
     /// The regex pattern to use.
+    ///
+    /// For performance, validity is only checked at [`Self::build`] time.
     pub pattern: String,
     /// Config to pass into [`RegexBuilder`].
     #[serde(flatten)]
@@ -28,15 +30,15 @@ impl RegexParts {
     pub fn build(&self) -> Result<Regex, regex::Error> {
         debug!(RegexParts::build, self);
         RegexBuilder::new(&self.pattern)
-            .case_insensitive(self.config.case_insensitive)
-            .crlf(self.config.crlf)
+            .case_insensitive    (self.config.case_insensitive    )
+            .crlf                (self.config.crlf                )
             .dot_matches_new_line(self.config.dot_matches_new_line)
-            .ignore_whitespace(self.config.ignore_whitespace)
-            .line_terminator(self.config.line_terminator)
-            .multi_line(self.config.multi_line)
-            .octal(self.config.octal)
-            .swap_greed(self.config.swap_greed)
-            .unicode(self.config.unicode)
+            .ignore_whitespace   (self.config.ignore_whitespace   )
+            .line_terminator     (self.config.line_terminator     )
+            .multi_line          (self.config.multi_line          )
+            .octal               (self.config.octal               )
+            .swap_greed          (self.config.swap_greed          )
+            .unicode             (self.config.unicode             )
             .build()
     }
 }

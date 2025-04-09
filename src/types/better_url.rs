@@ -16,6 +16,8 @@ pub use host_details::*;
 use crate::types::*;
 
 /// A wrapper around a [`Url`] with extra metadata.
+///
+/// Currently the only included metadata is a [`HostDetails`], which currently only caches [PSL](https://publicsuffix.org/) information for more efficient [`UrlPart::RegDomain`], [`UrlPart::DomainSuffix`], etc..
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(from = "Url", into = "Url")]
 pub struct BetterUrl {
@@ -50,15 +52,20 @@ pub struct SetUsernameError;
 #[error("Failed to set the scheme.")]
 pub struct SetSchemeError;
 
+/// The error [`BetterUrl::set_host`] returns when it fails.
+#[derive(Debug, Error)]
+#[error(transparent)]
+pub struct SetHostError(#[from] pub ParseError);
+
 /// The enum of errors [`BetterUrl::set_domain`] can return.
 #[derive(Debug, Error)]
 pub enum SetDomainError {
     /// Returned when the resulting value isn't parseable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError),
-    /// Returned when trying to set the host of a URL that must have a host to [`None`].
+    /// Returned when the call to [`BetterUrl::set_host`] returns an error.
     #[error(transparent)]
-    ParseError(#[from] ParseError)
+    SetHostError(#[from] SetHostError)
 }
 
 /// The enum of errors [`BetterUrl::set_subdomain`] can return.
@@ -125,6 +132,17 @@ pub enum SetDomainSuffixError {
     SetDomainHostError(#[from] SetDomainHostError)
 }
 
+/// The enum of errors [`BetterUrl::set_fqdn_period`] can return.
+#[derive(Debug, Error)]
+pub enum SetFqdnPeriodError {
+    /// Returned when the URL doesn't have a host.
+    #[error("The URL didn't have a host.")]
+    NoHost,
+    /// Returned when the URL's host isn't a domain.
+    #[error("The URL's host wasn't a domain.")]
+    HostIsNotADomain
+}
+
 /// The enum of errors [`BetterUrl::set_domain_host`] can return.
 #[derive(Debug, Error)]
 pub enum SetDomainHostError {
@@ -160,18 +178,18 @@ impl BetterUrl {
     /// # use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
-    /// assert_eq!(url.host_details(), Some(&HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
+    /// assert_eq!(url.host_details(), Some(HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
     /// 
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
-    /// assert_eq!(url.host_details(), Some(&HostDetails::Ipv4(Ipv4Details {})));
+    /// assert_eq!(url.host_details(), Some(HostDetails::Ipv4(Ipv4Details {})));
     /// 
     /// let url = BetterUrl::parse("https://[::1]").unwrap();
     ///
-    /// assert_eq!(url.host_details(), Some(&HostDetails::Ipv6(Ipv6Details {})));
+    /// assert_eq!(url.host_details(), Some(HostDetails::Ipv6(Ipv6Details {})));
     /// ```
-    pub fn host_details(&self) -> Option<&HostDetails> {
-        self.host_details.as_ref()
+    pub fn host_details(&self) -> Option<HostDetails> {
+        self.host_details
     }
 
     /// If [`Self::host_details`] returns [`HostDetails::Domain`], return it.
@@ -179,21 +197,21 @@ impl BetterUrl {
     /// # use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
-    /// assert_eq!(url.domain_details(), Some(&DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}));
+    /// assert_eq!(url.domain_details(), Some(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}));
     /// assert_eq!(url.ipv4_details  (), None);
     /// assert_eq!(url.ipv6_details  (), None);
     /// ```
-    pub fn domain_details(&self) -> Option<&DomainDetails> {self.host_details()?.domain_details()}
+    pub fn domain_details(&self) -> Option<DomainDetails> {self.host_details()?.domain_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
     /// ```
     /// # use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
     /// assert_eq!(url.domain_details(), None);
-    /// assert_eq!(url.ipv4_details  (), Some(&Ipv4Details {}));
+    /// assert_eq!(url.ipv4_details  (), Some(Ipv4Details {}));
     /// assert_eq!(url.ipv6_details  (), None);
     /// ```
-    pub fn ipv4_details  (&self) -> Option<&Ipv4Details> {self.host_details()?.ipv4_details()}
+    pub fn ipv4_details  (&self) -> Option<Ipv4Details> {self.host_details()?.ipv4_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
     /// ```
     /// # use url_cleaner::types::*;
@@ -201,9 +219,9 @@ impl BetterUrl {
     ///
     /// assert_eq!(url.domain_details(), None);
     /// assert_eq!(url.ipv4_details  (), None);
-    /// assert_eq!(url.ipv6_details  (), Some(&Ipv6Details {}));
+    /// assert_eq!(url.ipv6_details  (), Some(Ipv6Details {}));
     /// ```
-    pub fn ipv6_details  (&self) -> Option<&Ipv6Details> {self.host_details()?.ipv6_details()}
+    pub fn ipv6_details  (&self) -> Option<Ipv6Details> {self.host_details()?.ipv6_details()}
 
     /// [`Url::domain`] but without the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
     /// # Examples
@@ -277,6 +295,18 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain_suffix(), Some("co.uk"));
     /// ```
     pub fn domain_suffix(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_suffix_bounds()?)}
+    /// If [`Self`] is a [fully qualified domain anme](https://en.wikipedia.org/wiki/Fully_qualified_domain_name), returns the FQDN period.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().fqdn_period(), None     );
+    /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().fqdn_period(), None     );
+    /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().fqdn_period(), None     );
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk" ).unwrap().fqdn_period(), None     );
+    /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().fqdn_period(), Some("."));
+    /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().fqdn_period(), Some("."));
+    /// ```
+    pub fn fqdn_period(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.fqdn_period?..)}
 
     /// Gets an object that can iterate over the segments of [`Self`]'s path.
     /// # Errors
@@ -320,7 +350,7 @@ impl BetterUrl {
     /// Sets the [`UrlPart::Host`].
     /// # Errors
     /// If the call to [`Url::set_host`] returns an error, the error is returned..
-    pub fn set_host         (&mut self, host    : Option<&str>) -> Result<(), ParseError>       {self.url.set_host(host)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
+    pub fn set_host         (&mut self, host    : Option<&str>) -> Result<(), SetHostError>     {self.url.set_host(host)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
     /// Sets the [`UrlPart::Host`].
     /// # Errors
     /// If the call to [`Url::set_ip_host`] returns an error, returns the error [`SetIpHostError`].
@@ -400,7 +430,7 @@ impl BetterUrl {
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
-    /// If [`Self`] doesn't have a [`UrlPart::RegDomain`], returns the error [`SetSubdomainError::MissingRegDomain`]/
+    /// If [`Self`] doesn't have a [`UrlPart::RegDomain`], returns the error [`SetSubdomainError::MissingRegDomain`].
     pub fn set_subdomain(&mut self, to: Option<&str>) -> Result<(), SetSubdomainError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -424,7 +454,7 @@ impl BetterUrl {
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
-    /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetNotDomainSuffixError::MissingDomainSuffix`]/
+    /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetNotDomainSuffixError::MissingDomainSuffix`].
     pub fn set_not_domain_suffix(&mut self, to: Option<&str>) -> Result<(), SetNotDomainSuffixError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -448,7 +478,7 @@ impl BetterUrl {
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
-    /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetDomainMiddleError::MissingDomainSuffix`]/
+    /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetDomainMiddleError::MissingDomainSuffix`].
     pub fn set_domain_middle(&mut self, to: Option<&str>) -> Result<(), SetDomainMiddleError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -516,6 +546,43 @@ impl BetterUrl {
             },
             _ => Err(SetDomainSuffixError::HostIsNotADomain)?
         })
+    }
+
+    /// Sets the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
+    /// # Errors
+    /// If `self` doesn't have a host, returns the error [`SetFqdnPeriodError::NoHost`].
+    ///
+    /// If the host isn't a domain, returns the error [`SetFqdnPeriodError::HostIsNotADomain`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// url.set_fqdn(false).unwrap();
+    /// assert_eq!(url.host_str(), Some("example.com"));
+    ///
+    /// url.set_fqdn(true).unwrap();
+    /// assert_eq!(url.host_str(), Some("example.com."));
+    ///
+    /// url.set_fqdn(true).unwrap();
+    /// assert_eq!(url.host_str(), Some("example.com."));
+    ///
+    /// url.set_fqdn(false).unwrap();
+    /// assert_eq!(url.host_str(), Some("example.com"));
+    /// ```
+    #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub fn set_fqdn(&mut self, to: bool) -> Result<(), SetFqdnPeriodError> {
+        match (self.host_details(), to) {
+            (Some(HostDetails::Domain(DomainDetails {fqdn_period: None   , ..})), false) => {},
+            (Some(HostDetails::Domain(DomainDetails {fqdn_period: None   , ..})), true ) => {self.set_host(Some(&format!("{}.", self.host_str().expect("The URL having a DomainDetails means it has a host.")))).expect("Adding a FQDN period to keep the host valid.")},
+            #[expect(clippy::unnecessary_to_owned, reason = "It is necessary.")]
+            (Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..})), false) => {self.set_host(Some(&self.host_str().expect("The URL having a DomainDetails means it has a host.").strip_suffix('.').expect("The URL's DomainDetails::fqdn_period being Some means the host ends with a period.").to_string())).expect("Removing a FQDN period to keep the host valid.")},
+            (Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..})), true ) => {},
+            (Some(_), _) => Err(SetFqdnPeriodError::HostIsNotADomain)?,
+            (None, _) => Err(SetFqdnPeriodError::NoHost)?
+        }
+
+        Ok(())
     }
 }
 

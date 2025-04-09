@@ -51,60 +51,24 @@ impl<'a> TaskState<'a> {
 
 /// Helper macro to make docs briefer.
 #[macro_export]
-#[cfg(feature = "cache")]
 macro_rules! task_state {
-    ($task_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)? $(job_context = $job_context:expr;)?) => {
-        let url = "https://example.com";
-        $(let url = $url;)?
-        let mut scratchpad = Default::default();
-        let context: $crate::types::TaskContext = Default::default();
-        $(let context = $context;)?
-        let job_context: $crate::types::JobContext = Default::default();
-        $(let job_context = $job_context;)?
-        let params: $crate::types::Params = Default::default();
-        $(let params = $params;)?
-        let commons: $crate::types::Commons = Default::default();
-        $(let commons = $commons;)?
-        let cache = Default::default();
-        let mut url = BetterUrl::parse(url).unwrap();
+    ($task_state:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)? $(, job_context = $job_context:expr)?) => {
+        let url                                     = "https://example.com"; $(let url         = $url        ;)?
+        let context    : $crate::types::TaskContext = Default::default();    $(let context     = $context    ;)?
+        let job_context: $crate::types::JobContext  = Default::default();    $(let job_context = $job_context;)?
+        let params     : $crate::types::Params      = Default::default();    $(let params      = $params     ;)?
+        let commons    : $crate::types::Commons     = Default::default();    $(let commons     = $commons    ;)?
+
         let mut $task_state = url_cleaner::types::TaskState {
-            url        : &mut url,
-            scratchpad : &mut scratchpad,
+            url        : &mut BetterUrl::parse(url).unwrap(),
+            scratchpad : &mut Default::default(),
             common_args: None,
             context    : &context,
             job_context: &job_context,
             params     : &params,
             commons    : &commons,
-            cache      : &cache
-        };
-    };
-}
-
-/// Helper macro to make docs briefer.
-#[macro_export]
-#[cfg(not(feature = "cache"))]
-macro_rules! task_state {
-    ($task_state:ident; $(url = $url:expr;)? $(context = $context:expr;)? $(params = $params:expr;)? $(commons = $commons:expr;)? $(job_context = $job_context:expr;)?) => {
-        let url = "https://example.com";
-        $(let url = $url;)?
-        let mut scratchpad = Default::default();
-        let context: $crate::types::TaskContext = Default::default();
-        $(let context = $context;)?
-        let job_context: $crate::types::JobContext = Default::default();
-        $(let job_context = $job_context;)?
-        let params: $crate::types::Params = Default::default();
-        $(let params = $params;)?
-        let commons: $crate::types::Commons = Default::default();
-        $(let commons = $commons;)?
-        let mut url = BetterUrl::parse(url).unwrap();
-        let mut $task_state = url_cleaner::types::TaskState {
-            url: &mut url,
-            scratchpad: &mut scratchpad,
-            common_args: None,
-            context: &context,
-            job_context: &job_context,
-            params: &params,
-            commons: &commons
+            #[cfg(feature = "cache")]
+            cache      : &Default::default()
         };
     };
 }
@@ -153,4 +117,28 @@ impl<'a> TaskStateView<'a> {
     pub(crate) const fn to_view(&'a self) -> &'a TaskStateView<'a> {
         self
     }
+}
+
+/// Helper macro to make docs briefer.
+#[macro_export]
+macro_rules! task_state_view {
+    ($task_state_view:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)? $(, job_context = $job_context:expr)?) => {
+        let url                                     = "https://example.com"; $(let url         = $url        ;)?
+        let context    : $crate::types::TaskContext = Default::default();    $(let context     = $context    ;)?
+        let job_context: $crate::types::JobContext  = Default::default();    $(let job_context = $job_context;)?
+        let params     : $crate::types::Params      = Default::default();    $(let params      = $params     ;)?
+        let commons    : $crate::types::Commons     = Default::default();    $(let commons     = $commons    ;)?
+
+        let mut $task_state_view = url_cleaner::types::TaskStateView {
+            url        : &BetterUrl::parse(url).unwrap(),
+            scratchpad : &Default::default(),
+            common_args: None,
+            context    : &context,
+            job_context: &job_context,
+            params     : &params,
+            commons    : &commons,
+            #[cfg(feature = "cache")]
+            cache      : &Default::default()
+        };
+    };
 }

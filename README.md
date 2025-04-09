@@ -56,16 +56,10 @@ The default config is intended to always obey the following rules:
 
 - "Meaningful semantic changes"<sup>[definition?]</sup> from the input URL and output URL should only ever occur as a result of a flag being enabled.
     - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
-- URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error.
-    - URLs that aren't semantically valid also shouldn't ever throw an error but that is generally less important.
-    - URLs that are semantically invalid may become semantically valid if there is an obvious way to do so. See the `unmangle` flag for details.
-- Outside of long (>10)/infinite redirects, it should always be idempotent.
-- Outside of redirect sites changing behavior, network connectivity issues, or other similarly difficult things to guarantee determinism for, it should always be deterministic.
+- URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error or become semantically invalid.
+- It should always be both deterministic and idempotent.
+  - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
 - The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
-    The `command` feature is enabled by default for convenience but, for situations where untrusted/user-provided configs have a chance to be run, should be disabled.
-- It is acceptable for websites to be able to tell a URL has been cleaned, and even for it to know it was URL Cleaner specifically.
-    - Blending in with other URL cleaning solutions is not considered a priority.
-    - For URL Cleaner Site, this extends to websites knowing they're being tampered with.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 

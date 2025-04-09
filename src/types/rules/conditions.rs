@@ -5,6 +5,7 @@ use std::collections::HashSet;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
+#[allow(unused_imports, reason = "Used when the commands feature is enabled.")]
 use crate::glue::*;
 use crate::types::*;
 use crate::util::*;
@@ -18,10 +19,10 @@ pub enum Condition {
     Always,
     /// Always fails.
     Never,
-    /// Always returns the error [`ConditionError::ExplicitError`].
+    /// Always returns the error [`ConditionError::ExplicitError`] with the included message.
     /// # Errors
     /// Always returns the error [`ConditionError::ExplicitError`].
-    Error,
+    Error(String),
     /// Prints debug info about the contained [`Self`], then returns its return value.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
@@ -89,12 +90,21 @@ pub enum Condition {
     /// If the call to [`Self::satisfied_by`] returns an error, passes.
     ///
     /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsPass(Box<Self>),
-
+    TreatErrorAsPass {
+        #[serde(flatten)]
+        condition: Box<Self>,
+        #[serde(default, skip_serializing_if = "is_default")]
+        filter: ConditionErrorFilter
+    },
     /// If the call to [`Self::satisfied_by`] returns an error, fails.
     ///
     /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsFail(Box<Self>),
+    TreatErrorAsFail {
+        #[serde(flatten)]
+        condition: Box<Self>,
+        #[serde(default, skip_serializing_if = "is_default")]
+        filter: ConditionErrorFilter
+    },
     /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
     /// If [`Self::TryElse::else`]'s call to [`Self::satisifed_by`] returns an error, that error is returned.
@@ -102,12 +112,13 @@ pub enum Condition {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
         /// The [`Self`] to try if [`Self::TryElse::try']'s call to [`Self::satisfied_by`] returns an error.
-        r#else: Box<Self>
+        r#else: Box<Self>,
+        /// The set of errors [`Self::TryElse::try`] can return that will trigger [`Self::TryElse::else`].
+        ///
+        /// If [`None`], all errors will trigger [`Self::TryElse::else`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        filter: ConditionErrorFilter
     },
-    /// Return the value of the first [`Self`] that doesn't return an error.
-    /// # Errors
-    /// All calls to [`Self::satisfied_by`] return an error, the last error is returned.
-    FirstNotError(Vec<Self>),
 
 
 
@@ -246,10 +257,10 @@ pub enum Condition {
     Custom(FnWrapper<fn(&TaskStateView) -> Result<bool, ConditionError>>)
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, url_cleaner_macros::ErrorFilter)]
 pub enum ConditionError {
-    #[error("Condition::Error was used.")]
-    ExplicitError,
+    #[error("Explicit error: {0}")]
+    ExplicitError(String),
     #[error("The provided URL does not have the requested part.")]
     PartIsNone,
     #[cfg(feature = "commands")]
@@ -296,7 +307,7 @@ impl Condition {
 
             Self::Always => true,
             Self::Never => false,
-            Self::Error => Err(ConditionError::ExplicitError)?,
+            Self::Error(msg) => Err(ConditionError::ExplicitError(msg.clone()))?,
             Self::Debug(condition) => {
                 let is_satisfied=condition.satisfied_by(task_state);
                 eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
@@ -328,16 +339,18 @@ impl Condition {
 
             // Error handling.
 
-            Self::TreatErrorAsPass(condition) => condition.satisfied_by(task_state).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.satisfied_by(task_state).unwrap_or(false),
-            Self::TryElse{ r#try, r#else } => r#try.satisfied_by(task_state).or_else(|try_error| r#else.satisfied_by(task_state).map_err(|else_error| ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
-            Self::FirstNotError(conditions) => {
-                let mut result = Ok(false); // Initial value doesn't mean anything.
-                for condition in conditions {
-                    result = condition.satisfied_by(task_state);
-                    if result.is_ok() {return result}
+            Self::TreatErrorAsPass {condition, filter} => match condition.satisfied_by(task_state) {Ok(x) => x, Err(e) => if filter.matches(&e) {true } else {Err(e)?}},
+            Self::TreatErrorAsFail {condition, filter} => match condition.satisfied_by(task_state) {Ok(x) => x, Err(e) => if filter.matches(&e) {false} else {Err(e)?}},
+            Self::TryElse{ r#try, filter, r#else } => match r#try.satisfied_by(task_state) {
+                Ok(x) => x,
+                Err(try_error) => if filter.matches(&try_error) {
+                    match r#else.satisfied_by(task_state) {
+                        Ok(x) => x,
+                        Err(else_error) => Err(ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
+                    }
+                } else {
+                    Err(try_error)?
                 }
-                result?
             },
 
             // Domain conditions.
@@ -353,7 +366,7 @@ impl Condition {
             Self::HostIsOneOf(hosts) => task_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
 
             Self::UrlHasHost   => task_state.url.host().is_some(),
-            Self::HostIsFqdn   => matches!(task_state.url.host_details(), Some(HostDetails::Domain(d @ DomainDetails {..})) if d.is_fqdn()),
+            Self::HostIsFqdn   => matches!(task_state.url.host_details(), Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..}))),
             Self::HostIsDomain => matches!(task_state.url.host_details(), Some(HostDetails::Domain(_))),
             Self::HostIsIp     => matches!(task_state.url.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_))),
             Self::HostIsIpv4   => matches!(task_state.url.host_details(), Some(HostDetails::Ipv4(_))),

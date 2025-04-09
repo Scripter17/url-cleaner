@@ -102,8 +102,22 @@ macro_rules! get_cow {
     }
 }
 
+/// Helper macro to impl [`From`] for unit types like [`SetPortError`].
+macro_rules! from_units {
+    ($sum:ty, $($unit:tt),*) => {
+        $(impl From<$unit> for UrlPartSetError {
+            #[doc = concat!("[`Self::", stringify!($unit), "`]")]
+            fn from(value: $unit) -> Self {
+                // Ensures the type is actually a unit.
+                match value {$unit => Self::$unit}
+            }
+        })*
+    }
+}
+
 pub(crate) use debug;
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
 pub(crate) use get_string;
 pub(crate) use get_cow;
+pub(crate) use from_units;

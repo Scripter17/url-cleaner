@@ -14,11 +14,10 @@ use crate::util::*;
 pub enum StringMatcher {
     Always,
     Never,
-    Error,
+    Error(String),
     #[suitable(never)]
     Debug(Box<Self>),
 
-    // Logic
     If {
         r#if: Box<Self>,
         then: Box<Self>,
@@ -28,7 +27,6 @@ pub enum StringMatcher {
     All(Vec<Self>),
     Any(Vec<Self>),
 
-    // Error handling.
     TreatErrorAsPass(Box<Self>),
     TreatErrorAsFail(Box<Self>),
     TryElse {
@@ -37,7 +35,6 @@ pub enum StringMatcher {
     },
     FirstNotError(Vec<Self>),
 
-    // Other.
     Contains {
         value: StringSource,
         #[serde(default)]
@@ -51,7 +48,7 @@ pub enum StringMatcher {
         r#where: StringLocation,
         list: StringSource
     },
-    Equals(StringSource),
+    Is(StringSource),
     IsOneOf(HashSet<String>),
     InSet(#[suitable(assert = "set_is_documented")] StringSource),
     #[cfg(feature = "regex")]
@@ -107,8 +104,8 @@ impl From<GlobWrapper> for StringMatcher {
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringMatcherError {
-    #[error("StringMatcher::Error was used.")]
-    ExplicitError,
+    #[error("Explicit error: {0}")]
+    ExplicitError(String),
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
     #[error(transparent)]
@@ -149,7 +146,7 @@ impl StringMatcher {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
-            Self::Error => Err(StringMatcherError::ExplicitError)?,
+            Self::Error(msg) => Err(StringMatcherError::ExplicitError(msg.clone()))?,
             Self::Debug(matcher) => {
                 let is_satisfied=matcher.satisfied_by(haystack, task_state);
                 eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
@@ -242,7 +239,7 @@ impl StringMatcher {
                 };
                 return Ok(false);
             },
-            Self::Equals(source) => haystack == get_str!(source, task_state, StringMatcherError),
+            Self::Is(source) => haystack == get_str!(source, task_state, StringMatcherError),
             Self::InSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
             Self::LengthIs(x) => haystack.len() == *x,
             Self::SegmentsEndWith { split, value } => {

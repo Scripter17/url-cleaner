@@ -8,6 +8,7 @@ use reqwest::{Method, header::{HeaderName, HeaderValue}};
 use thiserror::Error;
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use reqwest::cookie::Cookie;
+use serde_with::{serde_as, DisplayFromStr};
 
 use crate::types::*;
 use crate::glue::*;
@@ -16,6 +17,7 @@ use crate::util::*;
 /// Rules for making an HTTP request.
 ///
 /// Currently only capable of making blocking requests.
+#[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 pub struct RequestConfig {
     /// The URL to send the request to.
@@ -26,7 +28,8 @@ pub struct RequestConfig {
     /// The method to use.
     ///
     /// Defaults to [`Method::GET`].
-    #[serde(default, skip_serializing_if = "is_default", with = "serde_method")]
+    #[serde_as(as = "DisplayFromStr")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub method: Method,
     /// The headers to send in addition to the default headers from the [`HttpClientConfig`] and [`Self::client_config_diff`].
     ///

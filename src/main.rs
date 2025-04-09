@@ -87,7 +87,10 @@ pub struct Args {
     pub threads: usize,
     #[cfg(feature = "debug")]
     #[arg(long)]
-    pub debug_just_print_times: bool
+    pub debug_just_print_times: bool,
+    /// Debug option to get more accurate time measurements.
+    #[arg(long)]
+    pub debug_no_printing: bool
 }
 #[derive(Debug, Error)]
 pub enum CliError {
@@ -216,53 +219,57 @@ fn main() -> Result<ExitCode, CliError> {
             let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
             let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
 
-            if json {
-                let mut first_job = true;
+            if !args.debug_no_printing {
+                if json {
+                    let mut first_job = true;
 
-                print!("{{\"Ok\":{{\"urls\":[");
-                for or in out_recievers.iter().cycle() {
-                    match or.recv() {
-                        Ok(Ok(Ok(url))) => {
-                            if !first_job {print!(",");}
-                            print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
-                            *some_ok_ref_lock = true;
-                        },
-                        Ok(Ok(Err(e))) => {
-                            if !first_job {print!(",");}
-                            print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                            *some_err_ref_lock = true;
-                        },
-                        Ok(Err(e)) => {
-                            if !first_job {print!(",");}
-                            print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                            *some_err_ref_lock = true;
-                        },
-                        Err(_) => break
+                    print!("{{\"Ok\":{{\"urls\":[");
+                    for or in out_recievers.iter().cycle() {
+                        match or.recv() {
+                            Ok(Ok(Ok(url))) => {
+                                if !first_job {print!(",");}
+                                print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
+                                *some_ok_ref_lock = true;
+                            },
+                            Ok(Ok(Err(e))) => {
+                                if !first_job {print!(",");}
+                                print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                                *some_err_ref_lock = true;
+                            },
+                            Ok(Err(e)) => {
+                                if !first_job {print!(",");}
+                                print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                                *some_err_ref_lock = true;
+                            },
+                            Err(_) => break
+                        }
+                        first_job = false;
                     }
-                    first_job = false;
-                }
 
-                print!("]}}}}");
+                    print!("]}}}}");
+                } else {
+                    for or in out_recievers.iter().cycle() {
+                        match or.recv() {
+                            Ok(Ok(Ok(url))) => {
+                                println!("{}", url.as_str());
+                                *some_ok_ref_lock = true;
+                            },
+                            Ok(Ok(Err(e))) => {
+                                println!();
+                                eprintln!("DoTaskError\t{e:?}");
+                                *some_err_ref_lock = true;
+                            }
+                            Ok(Err(e)) => {
+                                println!();
+                                eprintln!("MakeTaskError\t{e:?}");
+                                *some_err_ref_lock = true;
+                            }
+                            Err(_) => break
+                        }
+                    }
+                }
             } else {
-                for or in out_recievers.iter().cycle() {
-                    match or.recv() {
-                        Ok(Ok(Ok(url))) => {
-                            println!("{}", url.as_str());
-                            *some_ok_ref_lock = true;
-                        },
-                        Ok(Ok(Err(e))) => {
-                            println!();
-                            eprintln!("DoTaskError\t{e:?}");
-                            *some_err_ref_lock = true;
-                        }
-                        Ok(Err(e)) => {
-                            println!();
-                            eprintln!("MakeTaskError\t{e:?}");
-                            *some_err_ref_lock = true;
-                        }
-                        Err(_) => break
-                    }
-                }
+                out_recievers.iter().cycle().find(|x| x.recv().is_err());
             }
         }).expect("Making threads to work fine.");
     });

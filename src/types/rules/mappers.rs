@@ -21,7 +21,7 @@ use crate::util::*;
 pub enum Mapper {
 
     None,
-    Error,
+    Error(String),
     #[suitable(never)]
     Debug(Box<Self>),
 
@@ -137,8 +137,8 @@ const fn get_10_u8() -> u8 {10}
 
 #[derive(Debug, Error)]
 pub enum MapperError {
-    #[error("Mapper::Error was used.")]
-    ExplicitError,
+    #[error("Explicit error: {0}")]
+    ExplicitError(String),
     #[error("The provided URL does not contain the requested query parameter.")]
     CannotFindQueryParam,
     #[error(transparent)]
@@ -217,7 +217,7 @@ impl Mapper {
             // Testing.
 
             Self::None => {},
-            Self::Error => Err(MapperError::ExplicitError)?,
+            Self::Error(msg) => Err(MapperError::ExplicitError(msg.clone()))?,
             Self::Debug(mapper) => {
                 let old_url = task_state.url.clone();
                 let old_scratchpad = task_state.scratchpad.clone();
@@ -332,7 +332,7 @@ impl Mapper {
 
             // Other parts.
 
-            Self::SetHost(new_host) => task_state.url.set_host(Some(new_host))?,
+            Self::SetHost(new_host) => UrlPart::Host.set(task_state.url, Some(&**new_host))?,
             Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, MapperError))?.into(),
 
             // Generic part handling.

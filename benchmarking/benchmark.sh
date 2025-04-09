@@ -65,7 +65,7 @@ if [ $compile -eq 1 ]; then
   if [ $? -ne 0 ]; then exit 3; fi
 fi
 
-COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
+COMMAND="../target/release/url-cleaner --config ../default-config.json --debug-no-printing $@"
 
 if [ $hyperfine -eq 1 ]; then
   touch stdin

@@ -90,7 +90,6 @@ impl Base64Alphabet {
 ///
 /// Defaults to [`Self::Indifferent`].
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-#[suitable(always)]
 pub enum Base64DecodePaddingMode {
     /// Don't care whether or not the canonical padding is present.
     ///

@@ -20,10 +20,10 @@ use crate::glue::HttpClientConfig;
 pub struct ProxyConfig {
     /// The [`Url`] to proxy requests to.
     pub url: Url,
-    #[serde(default, skip_serializing_if = "is_default")]
     /// The protocol(s) to redirect.
     ///
     /// Defaults to [`ProxyMode::All`].
+    #[serde(default, skip_serializing_if = "is_default")]
     pub mode: ProxyMode,
     /// The authentication to use.
     ///

@@ -36,7 +36,7 @@ pub enum StringModification {
 
 
 
-    Error,
+    Error(String),
     IgnoreError(Box<Self>),
     TryElse {
         r#try: Box<Self>,
@@ -226,7 +226,6 @@ impl FromStr for StringModification {
             "UrlDecode"                => StringModification::UrlDecode,
             "UrlEncode"                => StringModification::UrlEncode(Default::default()),
             "None"                     => StringModification::None,
-            "Error"                    => StringModification::Error,
             "Lowercase"                => StringModification::Lowercase,
             "Uppercase"                => StringModification::Uppercase,
             _                          => Err(NonDefaultableVariant)?
@@ -237,8 +236,8 @@ impl FromStr for StringModification {
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringModificationError {
-    #[error("StringModification::Error was used.")]
-    ExplicitError,
+    #[error("Explicit error: {0}")]
+    ExplicitError(String),
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
     #[error(transparent)]
@@ -326,7 +325,7 @@ impl StringModification {
         debug!(StringModification::apply, self);
         match self {
             Self::None => {},
-            Self::Error => Err(StringModificationError::ExplicitError)?,
+            Self::Error(msg) => Err(StringModificationError::ExplicitError(msg.clone()))?,
             Self::Debug(modification) => {
                 let to_before_mapper=to.clone();
                 let modification_result=modification.apply(to, task_state);

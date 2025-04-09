@@ -34,17 +34,6 @@ pub(crate) const fn neg_range_boundary(index: isize, len: usize) -> Option<usize
     }
 }
 
-/// Returns [`true`] if [`Ord::clamp`] returns `x`.
-fn is_inside_range<T: Ord + Copy>(x: T, min: T, max: T) -> bool {
-    x.clamp(min, max) == x
-}
-
-/// [`neg_range_boundary`] but shifts its result while keeping it in bounds.
-#[expect(clippy::arithmetic_side_effects, reason = "Shouldn't ever occur.")]
-pub(crate) fn neg_shifted_range_boundary(index: isize, len: usize, shift: isize) -> Option<usize> {
-    neg_range_boundary(index, len)?.checked_add_signed(shift).filter(|x| is_inside_range(*x, 0, len))
-}
-
 /// Gets the [`neg_index`] item of `iter`.
 pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
     if i<0 {
@@ -99,21 +88,42 @@ pub(crate) fn exorub(i: Option<usize>) -> Bound<usize> {
     }
 }
 
-/// Returned by [`set_segment_range`] when trying to construct an invalid range.
-#[derive(Debug, Error)]
-#[error("Tried to construct an invalid range.")]
-pub struct InvalidRange;
-
-/// Removes the range from `x` then, if `to` is [`Some`], insert it at where the range used to be.
-pub(crate) fn set_segment_range<T>(x: &mut Vec<T>, start: isize, end: Option<isize>, to: Option<T>) -> Result<(), InvalidRange> {
-    let fixed_start = neg_index(start, x.len()).ok_or(InvalidRange)?;
-    let range = neg_range(start, end, x.len()).ok_or(InvalidRange)?;
-    x.drain(range).for_each(drop);
-    if let Some(to) = to {
-        x.insert(fixed_start, to);
-    }
-    Ok(())
+/// Where to put a value relative to a segment.
+#[derive(Debug, Clone)]
+pub(crate) enum SegRel {
+    /// Insert it before the segment.
+    Before,
+    /// Set the segment to the value.
+    At,
+    /// Insert it after the segment.
+    After
 }
+
+#[derive(Debug, Error)]
+#[error("Segment not found.")]
+pub(crate) struct SegmentNotFound;
+
+/// Set a segment or insert a new one before or after it.
+pub(crate) fn set_rel_segment<'a, I: IntoIterator<Item = &'a str>>(i: I, n: isize, rel: SegRel, to: Option<&'a str>) -> Result<Vec<&'a str>, SegmentNotFound> {
+    let mut segments = i.into_iter().collect::<Vec<_>>();
+
+    #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
+    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+    match (neg_index(n, segments.len()), to, rel) {
+        (Some(fixed_n), Some(to), SegRel::Before) => segments.insert(fixed_n, to),
+        (Some(fixed_n), Some(to), SegRel::At    ) => segments[fixed_n]=to,
+        (Some(fixed_n), Some(to), SegRel::After ) => segments.insert(fixed_n + 1, to),
+
+        (Some(fixed_n), None    , SegRel::At) => {let _ = segments.remove(fixed_n);}
+        (Some(_      ), None    , _         ) => {},
+
+        (None         , Some(_ ), _) => Err(SegmentNotFound)?,
+        (None         , None    , _) => {}
+    }
+
+    Ok(segments)
+}
+
 
 #[cfg(test)]
 mod tests {

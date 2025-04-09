@@ -100,6 +100,10 @@ pub enum UrlPart {
 
 
     /// The nth domain segment of the [`Self::Domain`].
+    /// # Footguns
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    ///
+    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -130,6 +134,10 @@ pub enum UrlPart {
     /// The position in [`Self::Domain`] between the nth domain segment and the previous one.
     ///
     /// Allows inserting domain segments between others.
+    /// # Footguns
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    ///
+    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -138,8 +146,6 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::BeforeDomainSegment(0).get(&url), None);
     ///
     /// UrlPart::BeforeDomainSegment(0).set(&mut url, None).unwrap();
-    /// assert_eq!(url.host_str(), Some("example.com"));
-    /// UrlPart::BeforeDomainSegment(0).set(&mut url, Some("")).unwrap_err();
     /// assert_eq!(url.host_str(), Some("example.com"));
     /// UrlPart::BeforeDomainSegment(0).set(&mut url, Some("www")).unwrap();
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -158,6 +164,10 @@ pub enum UrlPart {
     /// The position in [`Self::Domain`] between the nth domain segment and the next one.
     ///
     /// Allows inserting domain segments between others.
+    /// # Footguns
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    ///
+    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -166,8 +176,6 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::AfterDomainSegment(0).get(&url), None);
     ///
     /// UrlPart::AfterDomainSegment(0).set(&mut url, None).unwrap();
-    /// assert_eq!(url.host_str(), Some("example.com"));
-    /// UrlPart::AfterDomainSegment(0).set(&mut url, Some("")).unwrap_err();
     /// assert_eq!(url.host_str(), Some("example.com"));
     /// UrlPart::AfterDomainSegment(0).set(&mut url, Some("www")).unwrap();
     /// assert_eq!(url.host_str(), Some("example.www.com"));
@@ -189,6 +197,10 @@ pub enum UrlPart {
     /// The position in [`Self::Domain`] after the last domain segment.
     ///
     /// Allows appending domain segments.
+    /// # Footguns
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    ///
+    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -197,8 +209,6 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::NextDomainSegment.get(&url), None);
     ///
     /// UrlPart::NextDomainSegment.set(&mut url, None).unwrap();
-    /// assert_eq!(url.host_str(), Some("example.com"));
-    /// UrlPart::NextDomainSegment.set(&mut url, Some("")).unwrap_err();
     /// assert_eq!(url.host_str(), Some("example.com"));
     /// UrlPart::NextDomainSegment.set(&mut url, Some("com")).unwrap();
     /// assert_eq!(url.host_str(), Some("example.com.com"));
@@ -210,6 +220,164 @@ pub enum UrlPart {
     /// assert_eq!(url.host_str(), Some("example.com.com."));
     /// ```
     NextDomainSegment,
+
+
+
+    /// The nth segment of the [`Self::Subdomain`].
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
+    ///
+    /// assert_eq!(UrlPart::SubdomainSegment( 0).get(&url), Some("abc".into()));
+    /// assert_eq!(UrlPart::SubdomainSegment( 1).get(&url), Some("def".into()));
+    /// assert_eq!(UrlPart::SubdomainSegment( 2).get(&url), None              );
+    /// assert_eq!(UrlPart::SubdomainSegment(-1).get(&url), Some("def".into()));
+    /// assert_eq!(UrlPart::SubdomainSegment(-2).get(&url), Some("abc".into()));
+    /// assert_eq!(UrlPart::SubdomainSegment(-3).get(&url), None              );
+    ///
+    /// UrlPart::SubdomainSegment(0).set(&mut url, Some("123")).unwrap();
+    /// assert_eq!(url.host_str(), Some("123.def.example.co.uk"));
+    ///
+    /// UrlPart::SubdomainSegment(1).set(&mut url, Some("456")).unwrap();
+    /// assert_eq!(url.host_str(), Some("123.456.example.co.uk"));
+    ///
+    /// UrlPart::SubdomainSegment(2).set(&mut url, Some("789")).unwrap_err();
+    /// assert_eq!(url.host_str(), Some("123.456.example.co.uk"));
+    ///
+    ///
+    /// UrlPart::SubdomainSegment(-1).set(&mut url, Some("abc")).unwrap();
+    /// assert_eq!(url.host_str(), Some("123.abc.example.co.uk"));
+    ///
+    /// UrlPart::SubdomainSegment(-2).set(&mut url, Some("def")).unwrap();
+    /// assert_eq!(url.host_str(), Some("def.abc.example.co.uk"));
+    ///
+    /// UrlPart::SubdomainSegment(-3).set(&mut url, Some("ghi")).unwrap_err();
+    /// assert_eq!(url.host_str(), Some("def.abc.example.co.uk"));
+    ///
+    ///
+    /// UrlPart::SubdomainSegment(-1).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("def.example.co.uk"));
+    ///
+    /// UrlPart::SubdomainSegment(0).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("example.co.uk"));
+    /// ```
+    SubdomainSegment(isize),
+    /// The position in [`Self::Subdomain`] between the nth segment and the previous one.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
+    ///
+    /// assert_eq!(UrlPart::BeforeSubdomainSegment( 0).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeSubdomainSegment( 1).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeSubdomainSegment( 2).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeSubdomainSegment(-1).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeSubdomainSegment(-2).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeSubdomainSegment(-3).get(&url), None);
+    ///
+    /// UrlPart::BeforeSubdomainSegment(0).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::BeforeSubdomainSegment(1).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::BeforeSubdomainSegment(2).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    ///
+    /// UrlPart::BeforeSubdomainSegment(0).set(&mut url, Some("ghi")).unwrap();
+    /// assert_eq!(url.host_str(), Some("ghi.abc.def.example.co.uk"));
+    /// UrlPart::BeforeSubdomainSegment(3).set(&mut url, Some("ghi")).unwrap_err();
+    /// assert_eq!(url.host_str(), Some("ghi.abc.def.example.co.uk"));
+    /// ```
+    BeforeSubdomainSegment(isize),
+    /// The position in [`Self::Subdomain`] between the nth segment and the next one.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
+    ///
+    /// assert_eq!(UrlPart::AfterSubdomainSegment( 0).get(&url), None);
+    /// assert_eq!(UrlPart::AfterSubdomainSegment( 1).get(&url), None);
+    /// assert_eq!(UrlPart::AfterSubdomainSegment( 2).get(&url), None);
+    /// assert_eq!(UrlPart::AfterSubdomainSegment(-1).get(&url), None);
+    /// assert_eq!(UrlPart::AfterSubdomainSegment(-2).get(&url), None);
+    /// assert_eq!(UrlPart::AfterSubdomainSegment(-3).get(&url), None);
+    ///
+    /// UrlPart::AfterSubdomainSegment(0).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::AfterSubdomainSegment(1).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::AfterSubdomainSegment(2).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    ///
+    /// UrlPart::AfterSubdomainSegment(0).set(&mut url, Some("ghi")).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.ghi.def.example.co.uk"));
+    /// UrlPart::AfterSubdomainSegment(3).set(&mut url, Some("ghi")).unwrap_err();
+    /// assert_eq!(url.host_str(), Some("abc.ghi.def.example.co.uk"));
+    /// ```
+    AfterSubdomainSegment(isize),
+    /// The position in [`Self::Subdomain`] after the last segment.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
+    /// ```
+    NextSubdomainSegment,
+    /// The nth segment of the [`Self::DomainSuffix`].
+    DomainSuffixSegment(isize),
+    /// The position in [`Self::DomainSuffix`] between the nth segment and the previous one.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
+    ///
+    /// assert_eq!(UrlPart::BeforeDomainSuffixSegment( 0).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeDomainSuffixSegment( 1).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeDomainSuffixSegment( 2).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeDomainSuffixSegment(-1).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeDomainSuffixSegment(-2).get(&url), None);
+    /// assert_eq!(UrlPart::BeforeDomainSuffixSegment(-3).get(&url), None);
+    ///
+    /// UrlPart::BeforeDomainSuffixSegment(0).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::BeforeDomainSuffixSegment(1).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::BeforeDomainSuffixSegment(2).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    ///
+    /// UrlPart::BeforeDomainSuffixSegment(0).set(&mut url, Some("ghi")).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.ghi.co.uk"));
+    /// UrlPart::BeforeDomainSuffixSegment(3).set(&mut url, Some("ghi")).unwrap_err();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.ghi.co.uk"));
+    /// ```
+    BeforeDomainSuffixSegment(isize),
+    /// The position in [`Self::DomainSuffix`] between the nth segment and the next one.
+    /// # Examples
+    /// ```
+    /// # use url_cleaner::types::*;
+    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
+    ///
+    /// assert_eq!(UrlPart::AfterDomainSuffixSegment( 0).get(&url), None);
+    /// assert_eq!(UrlPart::AfterDomainSuffixSegment( 1).get(&url), None);
+    /// assert_eq!(UrlPart::AfterDomainSuffixSegment( 2).get(&url), None);
+    /// assert_eq!(UrlPart::AfterDomainSuffixSegment(-1).get(&url), None);
+    /// assert_eq!(UrlPart::AfterDomainSuffixSegment(-2).get(&url), None);
+    /// assert_eq!(UrlPart::AfterDomainSuffixSegment(-3).get(&url), None);
+    ///
+    /// UrlPart::AfterDomainSuffixSegment(0).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::AfterDomainSuffixSegment(1).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    /// UrlPart::AfterDomainSuffixSegment(2).set(&mut url, None).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.uk"));
+    ///
+    /// UrlPart::AfterDomainSuffixSegment(0).set(&mut url, Some("ghi")).unwrap();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.ghi.uk"));
+    /// UrlPart::AfterDomainSuffixSegment(3).set(&mut url, Some("ghi")).unwrap_err();
+    /// assert_eq!(url.host_str(), Some("abc.def.example.co.ghi.uk"));
+    /// ```
+    AfterDomainSuffixSegment(isize),
+    /// The position in [`Self::DomainSuffix`] after the last segment.
+    NextDomainSuffixSegment,
 
 
 
@@ -262,6 +430,8 @@ pub enum UrlPart {
     /// The registerable domain of the [`Self::Domain`].
     ///
     /// Specifically, the [`Self::DomainMiddle`] plus [`Self::DomainSuffix`].
+    ///
+    /// Does not include [`Self::FqdnPeriod`], even though the [PSL algorithm specifies it should](https://github.com/publicsuffix/list/wiki/Format#note-3).
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -330,6 +500,8 @@ pub enum UrlPart {
     /// The suffix of the domain, as defined by Mozilla's [Public Suffix List](https://publicsuffix.org/).
     ///
     /// Basically a standard that treats `.co.uk` the same as `.com`.
+    ///
+    /// Does not include [`Self::FqdnPeriod`], even though the [PSL algorithm specifies it should](https://github.com/publicsuffix/list/wiki/Format#note-3).
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -447,54 +619,6 @@ pub enum UrlPart {
     /// assert_eq!(url.path(), "/B/C");
     /// ```
     PathSegment(isize),
-    /// A range of [`Self::PathSegment`]s.
-    ///
-    /// Please note that a path like `/a/b/c/` has the path segments `["a", "b", "c", ""]`.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
-    ///
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(0)}.get(&url), Some("".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(1)}.get(&url), Some("a".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(2)}.get(&url), Some("a/b".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(3)}.get(&url), Some("a/b/c".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(4)}.get(&url), None);
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: None   }.get(&url), Some("a/b/c".into()));
-    ///
-    /// UrlPart::PathSegments {start: 0, end: Some(2)}.set(&mut url, Some("A")).unwrap();
-    /// assert_eq!(url.path(), "/A/c");
-    ///
-    /// UrlPart::PathSegments {start: 0, end: Some(2)}.set(&mut url, Some("yes/this/works/and/is/weird")).unwrap();
-    /// assert_eq!(url.path(), "/yes/this/works/and/is/weird");
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(2)}.get(&url), Some("yes/this".into()));
-    /// UrlPart::PathSegments {start: 0, end: Some(2)}.set(&mut url, None).unwrap();
-    /// assert_eq!(url.path(), "/works/and/is/weird");
-    ///
-    /// let mut url = BetterUrl::parse("https://example.com/a/b/c/").unwrap();
-    ///
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(0)}.get(&url), Some("".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(1)}.get(&url), Some("a".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(2)}.get(&url), Some("a/b".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(3)}.get(&url), Some("a/b/c".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(4)}.get(&url), Some("a/b/c/".into()));
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: Some(5)}.get(&url), None);
-    /// assert_eq!(UrlPart::PathSegments {start: 0, end: None   }.get(&url), Some("a/b/c/".into()));
-    /// ```
-    PathSegments {
-        /// The path segment to start the range at.
-        ///
-        /// Defaults to `0`.
-        #[serde(default, skip_serializing_if = "is_default")]
-        start: isize,
-        /// The path segment to end the range just before.
-        ///
-        /// If [`None`], gets all path segments after [`Self::PathSegments::start`].
-        ///
-        /// Defaults to [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        end: Option<isize>
-    },
     /// The path segment between the nth and the previous one.
     ///
     /// Please note that a path like `/a/b/c/` has the path segments `["a", "b", "c", ""]`.
@@ -504,8 +628,6 @@ pub enum UrlPart {
     /// If set to [`None`], does nothing.
     ///
     /// If set to [`Some`], inserts a new path segment between the nth and the previous one.
-    ///
-    /// If [`Self::BeforePathSegment::0`] is 1 above the last path segment, this currently still works. Whether or not this is a good design is unclear to me.
     /// # Examples
     /// ```
     /// # use url_cleaner::types::*;
@@ -519,13 +641,14 @@ pub enum UrlPart {
     /// UrlPart::BeforePathSegment(0).set(&mut url, Some("d")).unwrap();
     /// assert_eq!(url.path(), "/d/a/b/c");
     ///
-    /// UrlPart::BeforePathSegment(4).set(&mut url, Some("e")).unwrap();
-    /// assert_eq!(url.path(), "/d/a/b/c/e");
+    /// UrlPart::BeforePathSegment(4).set(&mut url, Some("e")).unwrap_err();
     /// ```
     BeforePathSegment(isize),
     /// The path segment between the nth and the next one.
     ///
     /// Please note that a path like `/a/b/c/` has the path segments `["a", "b", "c", ""]`.
+    ///
+    /// If you want to insert a new path segment at the end but replace the trailing empty segment, use [`Self::NextPathSegment`].
     /// # Getting
     /// Always [`None`].
     /// # Setting
@@ -554,6 +677,8 @@ pub enum UrlPart {
     /// Please note that a path like `/a/b/c/` has the path segments `["a", "b", "c", ""]`.
     ///
     /// Despite this, setting the [`Self::NextPathSegment`] *overwrites* the last segment instead of appending it.
+    ///
+    /// If you truly must append a path segment after an empty trailing path segment, use [`Self::AfterPathSegment`] with a value of `-1`.
     /// # Getting
     /// Always [`None`].
     /// # Setting
@@ -868,10 +993,21 @@ impl UrlPart {
 
 
 
-            Self::DomainSegment(n) => Cow::Borrowed(neg_nth(url.domain()?.split('.'), *n)?),
+            Self::DomainSegment(n)       => Cow::Borrowed(neg_nth(url.domain()?.split('.'), *n)?),
             Self::BeforeDomainSegment(_) => None?,
             Self::AfterDomainSegment(_)  => None?,
             Self::NextDomainSegment      => None?,
+
+
+
+            Self::SubdomainSegment(n)          => Cow::Borrowed(neg_nth(url.subdomain()?.split('.'), *n)?),
+            Self::BeforeSubdomainSegment(_)    => None?,
+            Self::AfterSubdomainSegment(_)     => None?,
+            Self::NextSubdomainSegment         => None?,
+            Self::DomainSuffixSegment(n)       => Cow::Borrowed(neg_nth(url.domain_suffix()?.split('.'), *n)?),
+            Self::BeforeDomainSuffixSegment(_) => None?,
+            Self::AfterDomainSuffixSegment(_)  => None?,
+            Self::NextDomainSuffixSegment      => None?,
 
 
 
@@ -881,7 +1017,7 @@ impl UrlPart {
             Self::NotDomainSuffix => Cow::Borrowed(url.not_domain_suffix()?),
             Self::DomainMiddle    => Cow::Borrowed(url.domain_middle    ()?),
             Self::DomainSuffix    => Cow::Borrowed(url.domain_suffix    ()?),
-            Self::FqdnPeriod      => Cow::Borrowed(url.host_str()?.get(url.domain_details()?.fqdn_period?..)?),
+            Self::FqdnPeriod      => Cow::Borrowed(url.fqdn_period      ()?),
 
 
 
@@ -889,15 +1025,11 @@ impl UrlPart {
 
 
 
-            Self::Path => Cow::Borrowed(url.path()),
-            Self::PathSegment(n)   => Cow::Borrowed(neg_nth(url.path_segments().ok()?, *n)?),
-            Self::PathSegments {start, end} => {
-                // TODO: Change to always borrow.
-                Cow::Owned(neg_vec_keep(Self::Path.get(url)?.strip_prefix('/')?.split('/'), *start, *end)?.join("/"))
-            },
-            Self::BeforePathSegment(_)    => None?,
-            Self::AfterPathSegment(_)     => None?,
-            Self::NextPathSegment         => None?,
+            Self::Path                 => Cow::Borrowed(url.path()),
+            Self::PathSegment(n)       => Cow::Borrowed(neg_nth(url.path_segments().ok()?, *n)?),
+            Self::BeforePathSegment(_) => None?,
+            Self::AfterPathSegment(_)  => None?,
+            Self::NextPathSegment      => None?,
 
 
 
@@ -906,7 +1038,7 @@ impl UrlPart {
 
 
 
-            Self::Fragment                => Cow::Borrowed(url.fragment()?),
+            Self::Fragment => Cow::Borrowed(url.fragment()?),
         })
     }
 
@@ -925,8 +1057,11 @@ impl UrlPart {
 
 
             (Self::Whole   , Some(to)) => *url=BetterUrl::parse(to)?,
+            (Self::Whole   , None    ) => Err(UrlPartSetError::WholeCannotBeNone)?,
             (Self::Scheme  , Some(to)) => url.set_scheme  (to)?,
+            (Self::Scheme  , None    ) => Err(UrlPartSetError::SchemeCannotBeNone)?,
             (Self::Username, Some(to)) => url.set_username(to)?,
+            (Self::Username, None    ) => Err(UrlPartSetError::UsernameCannotBeNone)?,
             (Self::Password, _       ) => url.set_password(to)?,
 
 
@@ -935,62 +1070,31 @@ impl UrlPart {
             (Self::HostWithoutWWWDotPrefixAndFqdnPeriod, _) => url.set_host(to.map(|to| to.strip_prefix("www.").unwrap_or(to)).map(|x| x.strip_suffix(".").unwrap_or(x)))?,
 
 
-            (Self::DomainSegment(n), _) => {
-                let mut segments = url.domain().ok_or(UrlPartSetError::HostIsNotADomain)?.split('.').collect::<Vec<_>>();
-                let fixed_n=neg_index(*n, segments.len()).ok_or(UrlPartSetError::SegmentNotFound)?;
-                #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
-                match to {
-                    Some(to) => if to.is_empty() {
-                        Err(UrlPartSetError::DomainSegmentCannotBeEmpty)?
-                    } else {
-                        segments[fixed_n]=to
-                    },
-                    None => {let _ = segments.remove(fixed_n);}
-                }
-                Self::Domain.set(url, Some(&segments.join(".")))?;
-            },
-            (Self::BeforeDomainSegment(n), _) => if let Some(to) = to {
-                if to.is_empty() {Err(UrlPartSetError::DomainSegmentCannotBeEmpty)?;}
-                let mut segments = url.domain().ok_or(UrlPartSetError::HostIsNotADomain)?.split('.').collect::<Vec<_>>();
-                let fixed_n=neg_index(*n, segments.len()).ok_or(UrlPartSetError::SegmentBoundaryNotFound)?;
-                segments.insert(fixed_n, to);
-                Self::Domain.set(url, Some(&segments.join(".")))?;
-            },
-            (Self::AfterDomainSegment(n), _) => if let Some(to) = to {
-                if to.is_empty() {Err(UrlPartSetError::DomainSegmentCannotBeEmpty)?;}
-                let mut segments = url.domain().ok_or(UrlPartSetError::HostIsNotADomain)?.split('.').collect::<Vec<_>>();
-                #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-                let fixed_n=neg_index(*n, segments.len()).ok_or(UrlPartSetError::SegmentBoundaryNotFound)? + 1;
-                segments.insert(fixed_n, to);
-                Self::Domain.set(url, Some(&segments.join(".")))?;
-            },
-            (Self::NextDomainSegment, _) => if let Some(to) = to {
-                if to.is_empty() {Err(UrlPartSetError::DomainSegmentCannotBeEmpty)?;}
-                Self::Domain.set(url, Some(&url.domain().ok_or(UrlPartSetError::HostIsNotADomain)?.split('.').chain([to]).collect::<Vec<_>>().join(".")))?;
-                // Self::Domain.set(url, Some(&match url.host_str().zip(url.domain_details()) {
-                //     Some((host, DomainDetails {fqdn_period: Some(_), ..})) => format!("{host}{to}."),
-                //     Some((host, DomainDetails {fqdn_period: None   , ..})) => format!("{host}.{to}"),
-                //     _ => Err(UrlPartSetError::HostIsNotADomain)?
-                // }))?;
-            },
-            (Self::FqdnPeriod, _) => match (url.domain_details(), to) {
-                (Some(DomainDetails {fqdn_period: None   , ..}), None     ) => {},
-                (Some(DomainDetails {fqdn_period: None   , ..}), Some(".")) => {url.set_host(url.host_str().map(|host| format!("{host}.")).as_deref())?},
-                (Some(DomainDetails {fqdn_period: Some(_), ..}), None     ) => {url.set_host(url.host_str().and_then(|host| host.strip_suffix(".").map(|host| host.to_string())).as_deref())?},
-                (Some(DomainDetails {fqdn_period: Some(_), ..}), Some(".")) => {},
-                (Some(_)                                       , Some(_  )) => Err(UrlPartSetError::FqdnPeriodMustBeNoneOrPeriod)?,
-                (None                                          , Some(_  )) => Err(UrlPartSetError::HostIsNotADomain)?,
-                (None                                          , None     ) => {}
-            },
+
+            (Self::BeforeDomainSegment      (n), _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::Before, to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::DomainSegment            (n), _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::At    , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::AfterDomainSegment       (n), _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::NextDomainSegment           , _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), -1, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::BeforeSubdomainSegment   (n), _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::Before, to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::SubdomainSegment         (n), _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::At    , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::AfterSubdomainSegment    (n), _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::NextSubdomainSegment     ,    _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), -1, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::BeforeDomainSuffixSegment(n), _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::Before, to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::DomainSuffixSegment      (n), _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::At    , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::AfterDomainSuffixSegment (n), _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::NextDomainSuffixSegment     , _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), -1, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
 
 
 
-            (Self::Domain         , _) => url.set_domain           (to)?,
-            (Self::Subdomain      , _) => url.set_subdomain        (to)?,
-            (Self::RegDomain      , _) => url.set_reg_domain       (to)?,
-            (Self::NotDomainSuffix, _) => url.set_not_domain_suffix(to)?,
-            (Self::DomainMiddle   , _) => url.set_domain_middle    (to)?,
-            (Self::DomainSuffix   , _) => url.set_domain_suffix    (to)?,
+            (Self::Domain         , _        ) => url.set_domain           (to)?,
+            (Self::Subdomain      , _        ) => url.set_subdomain        (to)?,
+            (Self::RegDomain      , _        ) => url.set_reg_domain       (to)?,
+            (Self::NotDomainSuffix, _        ) => url.set_not_domain_suffix(to)?,
+            (Self::DomainMiddle   , _        ) => url.set_domain_middle    (to)?,
+            (Self::DomainSuffix   , _        ) => url.set_domain_suffix    (to)?,
+            (Self::FqdnPeriod     , Some(".")) => url.set_fqdn(true)?,
+            (Self::FqdnPeriod     , None     ) => url.set_fqdn(false)?,
+            (Self::FqdnPeriod     , Some(_)  ) => Err(UrlPartSetError::FqdnPeriodMustBeNoneOrPeriod)?,
 
 
 
@@ -999,36 +1103,11 @@ impl UrlPart {
 
 
             (Self::Path, Some(to)) => url.set_path(to),
-            (Self::PathSegment(-1), None) => {url.path_segments_mut()?.pop();},
-            (Self::PathSegment(n), _) => {
-                let mut segments = url.path_segments()?.collect::<Vec<_>>();
-                #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
-                match (neg_index(*n, segments.len()), to) {
-                    (Some(fixed_n), Some(to)) => segments[fixed_n]=to,
-                    (Some(fixed_n), None    ) => {let _ = segments.remove(fixed_n);}
-                    (None         , Some(_ )) => Err(UrlPartSetError::SegmentNotFound)?,
-                    (None         , None    ) => {}
-                };
-                url.set_path(&segments.join("/"));
-            },
-            (Self::PathSegments{start, end}, _) => {
-                let mut segments = url.path_segments()?.collect::<Vec<_>>();
-                set_segment_range(&mut segments, *start, *end, to).or(Err(UrlPartSetError::SegmentRangeNotFound))?;
-                url.set_path(&format!("/{}", segments.join("/")));
-            },
-            (Self::BeforePathSegment(n), _) => if let Some(to) = to {
-                let mut segments = url.path_segments()?.collect::<Vec<_>>();
-                let fixed_n = neg_range_boundary(*n, segments.len()).ok_or(UrlPartSetError::SegmentBoundaryNotFound)?;
-                segments.insert(fixed_n, to);
-                url.set_path(&segments.join("/"));
-            },
-            (Self::AfterPathSegment(n), _) => if let Some(to) = to {
-                let mut segments = url.path_segments()?.collect::<Vec<_>>();
-                let fixed_n = neg_shifted_range_boundary(*n, segments.len(), 1).ok_or(UrlPartSetError::SegmentBoundaryNotFound)?;
-                segments.insert(fixed_n, to);
-                url.set_path(&segments.join("/"));
-            },
-            (Self::NextPathSegment, _) => if let Some(to) = to {url.path_segments_mut()?.pop_if_empty().push(to);},
+            (Self::Path, None    ) => Err(UrlPartSetError::PathCannotBeNone)?,
+            (Self::BeforePathSegment(n), _) => Self::Path.set(url, Some(&*set_rel_segment(url.path_segments()?, *n, SegRel::Before, to)?.join("/")).filter(|x| !x.is_empty()))?,
+            (Self::PathSegment      (n), _) => Self::Path.set(url, Some(&*set_rel_segment(url.path_segments()?, *n, SegRel::At    , to)?.join("/")).filter(|x| !x.is_empty()))?,
+            (Self::AfterPathSegment (n), _) => Self::Path.set(url, Some(&*set_rel_segment(url.path_segments()?, *n, SegRel::After , to)?.join("/")).filter(|x| !x.is_empty()))?,
+            (Self::NextPathSegment     , _) => if let Some(to) = to {url.path_segments_mut()?.pop_if_empty().push(to);},
 
 
 
@@ -1038,10 +1117,6 @@ impl UrlPart {
 
 
             (Self::Fragment, _) => url.set_fragment(to),
-
-
-
-            (_, None) => Err(UrlPartSetError::PartCannotBeNone)?
         }
         Ok(())
     }
@@ -1050,67 +1125,86 @@ impl UrlPart {
 /// The enum of errors [`UrlPart::set`] can return.
 #[derive(Debug, Error)]
 pub enum UrlPartSetError {
-    /// Returned when a requested segment isn't found.
-    #[error("The requested segment was not found.")]
-    SegmentNotFound,
-    /// Returned when a requested segment range isn't found.
-    #[error("The requested segment range was not found.")]
-    SegmentRangeNotFound,
-    /// Returned when the requested part is [`None`].
-    #[error("The requested part was None.")]
-    PartIsNone,
-    /// Returned when the requested segment boundary isn't found.
-    #[error("The requested segment boundary was not found.")]
-    SegmentBoundaryNotFound,
+    /// Returned when a [`url::ParseError`] is encountered.
+    #[error(transparent)] UrlParseError(#[from] url::ParseError),
+    /// Returned when attempting to set [`UrlPart::Whole`] to [`None`].
+    #[error("Attempted to set a whole URL to None.")]
+    WholeCannotBeNone,
+
+    // Pre-host stuff.
+
+    /// Returned when a [`SetSchemeError`] is encountered.
+    #[error("")]
+    SetSchemeError,
+    #[error("Attempted to set a URL's scheme to None.")]
+    SchemeCannotBeNone,
+    /// Returned when a [`SetUsernameError`] is encountered.
+    #[error("")]
+    SetUsernameError,
+    #[error("Attempted to set a URL's username to None.")]
+    UsernameCannotBeNone,
+    /// Returned when a [`SetPasswordError`] is encountered.
+    #[error("")]
+    SetPasswordError,
+
+    // Host stuff.
+
     /// Returned when the URL doesn't have a host.
     #[error("The URL did not have a host.")]
     UrlDoesNotHaveAHost,
-    /// Returned when attempting to set a part that cannot be [`None`] to [`None`].
-    #[error("Attempted to set a part that cannot be None to None.")]
-    PartCannotBeNone,
-    /// Returned when trying to set a port to a value that isn't a number between 0 and 65535 (inclusive).
-    #[error("The provided port is not a number between 0 and 65535 (inclusive).")]
-    InvalidPort,
-    /// Returned when the URL's host is not a domain.
-    #[error("The URL's host is not a domain.")]
-    HostIsNotADomain,
-    /// Returned when attempting to set a URL's domain to an invalid domain.
-    #[error("Attempted to set a URL's domain to an invalid domain. Perhaps trying to set the host instead would help?")]
-    InvalidDomain,
-    /// Returned when attempting to set a domain segment to an empty string.
-    #[error("A domain segment cannot be empty.")]
-    DomainSegmentCannotBeEmpty,
+    #[error(transparent)]
+    SetHostError(#[from] SetHostError),
+    /// Returned when a [`SetIpHostError`] is encountered.
+    #[error("")]
+    SetIpHostError,
+    /// Returned when a [`SetSubdomainError)`] is encountered.
+    #[error(transparent)] SetSubdomainError      (#[from] SetSubdomainError),
+    /// Returned when a [`SetDdomainError)`] is encountered.
+    #[error(transparent)] SetDomainError         (#[from] SetDomainError),
+    /// Returned when a [`SetNotDomainSuffixError)`] is encountered.
+    #[error(transparent)] SetNotDomainSuffixError(#[from] SetNotDomainSuffixError),
+    /// Returned when a [`SetDomainMiddleError)`] is encountered.
+    #[error(transparent)] SetDomainMiddleError   (#[from] SetDomainMiddleError),
+    /// Returned when a [`SetRegDomainError)`] is encountered.
+    #[error(transparent)] SetRegDomainError      (#[from] SetRegDomainError),
+    /// Returned when a [`SetDomainSuffixError)`] is encountered.
+    #[error(transparent)] SetDomainSuffixError   (#[from] SetDomainSuffixError),
+    /// Returned when a [`SetDomainHostError`] is encountered.
+    #[error(transparent)] SetDomainHostError     (#[from] SetDomainHostError),
+    /// Returned when a [`SetFqdnPeriodError`] is encountered.
+    #[error(transparent)] SetFqdnPeriodError     (#[from] SetFqdnPeriodError),
     /// Returned when attempting to set a domain's [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period to a value other than [`None`] and `.`.
     #[error("Attempted to set a domain's FQDN period to a value other than None and \".\".")]
     FqdnPeriodMustBeNoneOrPeriod,
-    /// Returned when a [`url::ParseError)`] is encountered.
-    #[error(transparent)] UrlParseError             (#[from] url::ParseError),
+
+
+
+    #[error("Attempted to set a domain segment of a URL with no domain.")]
+    NoDomain,
+    #[error("Attempted to set a subdomain segment of a URL with no subdomain.")]
+    NoSubdomain,
+    #[error("Attempted to set a domain suffix segment of a URL with no domain suffix.")]
+    NoDomainSuffix,
+
+    // Post-host stuff.
+
+    /// Returned when trying to set a port to a value that isn't a number between 0 and 65535 (inclusive).
+    #[error("The provided port is not a number between 0 and 65535 (inclusive).")]
+    InvalidPort,
+    #[error("Attempting to set the URL's port failed.")]
+    SetPortError,
+    #[error("Attempted to set the URL's path to None.")]
+    PathCannotBeNone,
+    #[error("Attempted to manipulate a URL's path segments when it doesn't have any.")]
+    UrlDoesNotHavePathSegments,
     /// Returned when a [`SetQueryParamError)`] is encountered.
-    #[error(transparent)] SetQueryParamError        (#[from] SetQueryParamError),
-    /// Returned when a [`SetIpHostError)`] is encountered.
-    #[error(transparent)] SetIpHostError            (#[from] SetIpHostError),
-    /// Returned when a [`SetSchemeError)`] is encountered.
-    #[error(transparent)] SetSchemeError            (#[from] SetSchemeError),
-    /// Returned when a [`SetUsernameError)`] is encountered.
-    #[error(transparent)] SetUsernameError          (#[from] SetUsernameError),
-    /// Returned when a [`SetPasswordError)`] is encountered.
-    #[error(transparent)] SetPasswordError          (#[from] SetPasswordError),
-    /// Returned when a [`SetSubdomainError)`] is encountered.
-    #[error(transparent)] SetSubdomainError         (#[from] SetSubdomainError),
-    /// Returned when a [`SetDdomainError)`] is encountered.
-    #[error(transparent)] SetDomainError            (#[from] SetDomainError),
-    /// Returned when a [`SetNotDomainSuffixError)`] is encountered.
-    #[error(transparent)] SetNotDomainSuffixError   (#[from] SetNotDomainSuffixError),
-    /// Returned when a [`SetDomainMiddleError)`] is encountered.
-    #[error(transparent)] SetDomainMiddleError      (#[from] SetDomainMiddleError),
-    /// Returned when a [`SetRegDomainError)`] is encountered.
-    #[error(transparent)] SetRegDomainError         (#[from] SetRegDomainError),
-    /// Returned when a [`SetDomainSuffixError)`] is encountered.
-    #[error(transparent)] SetDomainSuffixError      (#[from] SetDomainSuffixError),
-    /// Returned when a [`UrlDoesNotHavePathSegments)`] is encountered.
-    #[error(transparent)] UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
-    /// Returned when a [`SetPortError)`] is encountered.
-    #[error(transparent)] SetPortError              (#[from] SetPortError),
-    /// Returned when a [`SetDomainHostError`] is encountered.
-    #[error(transparent)] SetDomainHostError        (#[from] SetDomainHostError)
+    #[error(transparent)] SetQueryParamError(#[from] SetQueryParamError),
+
+    // General stuff.
+
+    /// Returned when a requested segment isn't found.
+    #[error("The requested segment was not found.")]
+    SegmentNotFound,
 }
+
+from_units!{UrlPartSetError, SegmentNotFound, SetPortError, SetIpHostError, SetPasswordError, SetUsernameError, SetSchemeError, UrlDoesNotHavePathSegments}

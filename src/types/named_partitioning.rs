@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::collections::HashSet;
 
 use serde::{Serialize, Deserialize, ser::{Serializer, SerializeMap}, de::{Visitor, MapAccess, Deserializer, Error}};
+use thiserror::Error;
 
 use crate::types::*;
 use crate::util::*;
@@ -27,6 +28,57 @@ pub struct NamedPartitioning {
     partition_names: Vec<Arc<str>>
 }
 
+#[derive(Debug, Error)]
+pub enum MakeNamedPartitioningError {
+    #[error("Tried to specify mutliple partitions with the same name or the same partition twice.")]
+    DuplicateName {
+        name: String
+    },
+    #[error("Tried to put a value in multiple partitions at once.")]
+    DuplicateValue {
+        name: String,
+        value: String
+    }
+}
+
+impl NamedPartitioning {
+    /// Collects an iterator of `(String, Vec<String>)` into a [`NamedPartitioning`].
+    /// # Errors
+    /// If multiple values have the same name (the first value in the tuple), returns the error [`MakeNamedPartitioningError::DuplicateName`].
+    ///
+    /// If multiple values contain the same value (the elements in the [`Vec`] in the second value of the tuple), returns the error [`MakedNamedPartitioningError::DuplicateValue`].
+    pub fn try_from_iter<I: IntoIterator<Item = (String, Vec<String>)>>(iter: I) -> Result<Self, MakeNamedPartitioningError> {
+        let mut ret = NamedPartitioning {
+            map: HashMap::new(),
+            partition_names: Vec::new()
+        };
+
+        for (k, vs) in iter {
+            let partition_name: Arc<str> = Arc::from(&*k);
+            if ret.partition_names.iter().any(|x| **x == *partition_name) {Err(MakeNamedPartitioningError::DuplicateName {name: partition_name.to_string()})?;}
+            for v in vs {
+                match ret.map.entry(v) {
+                    Entry::Vacant(e) => {e.insert(partition_name.clone());},
+                    Entry::Occupied(e) => {let (value, name) = e.remove_entry(); Err(MakeNamedPartitioningError::DuplicateValue {name: name.to_string(), value})?}
+                }
+            }
+            ret.partition_names.push(partition_name)
+        }
+
+        Ok(ret)
+    }
+
+    /// If `element`] is in `self`, return the partition it belongs to.
+    pub fn get_partition<'a>(&'a self, element: &str) -> Option<&'a str> {
+        self.map.get(element).map(|x| &**x)
+    }
+
+    /// The list of partition names.
+    pub fn partition_names(&self) -> &[Arc<str>] {
+        &self.partition_names
+    }
+}
+
 /// Serde helper for deserializing [`NamedPartitioning`].
 struct NamedPartitioningVisitor;
 
@@ -34,24 +86,7 @@ impl<'de> Visitor<'de> for NamedPartitioningVisitor {
     type Value = NamedPartitioning;
 
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        let mut ret = NamedPartitioning {
-            map: HashMap::new(),
-            partition_names: Vec::new()
-        };
-
-        while let Some((k, vs)) = map.next_entry::<String, Vec<String>>()? {
-            let partition_name: Arc<str> = Arc::from(&*k);
-            if ret.partition_names.iter().any(|x| **x == *partition_name) {Err(A::Error::custom(format!("Duplicate partition name: {partition_name}")))?;}
-            for v in vs {
-                match ret.map.entry(v) {
-                    Entry::Vacant(e) => {e.insert(partition_name.clone());},
-                    Entry::Occupied(e) => Err(A::Error::custom(format!("Attempted to assign element {:?} to partitions {:?} and {:?}", e.key(), e.get(), partition_name)))?
-                }
-            }
-            ret.partition_names.push(partition_name)
-        }
-
-        Ok(ret)
+        NamedPartitioning::try_from_iter(std::iter::from_fn(|| map.next_entry::<String, Vec<String>>().transpose()).collect::<Result<Vec<_>, _>>()?).map_err(A::Error::custom)
     }
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -80,17 +115,5 @@ impl Serialize for NamedPartitioning {
         }
 
         serializer.end()
-    }
-}
-
-impl NamedPartitioning {
-    /// If `element`] is in `self`, return the partition it belongs to.
-    pub fn get_partition<'a>(&'a self, element: &str) -> Option<&'a str> {
-        self.map.get(element).map(|x| &**x)
-    }
-
-    /// The list of partition names.
-    pub fn partition_names(&self) -> &[Arc<str>] {
-        &self.partition_names
     }
 }

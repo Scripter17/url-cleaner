@@ -9,11 +9,10 @@ use crate::util::*;
 pub enum StringLocation {
     Always,
     Never,
-    Error,
+    Error(String),
     #[suitable(never)]
     Debug(Box<Self>),
 
-    // Logic.
     If {
         r#if: Box<Self>,
         then: Box<Self>,
@@ -23,7 +22,6 @@ pub enum StringLocation {
     Any(Vec<Self>),
     Not(Box<Self>),
 
-    // Error handling.
     TreatErrorAsPass(Box<Self>),
     TreatErrorAsFail(Box<Self>),
     TryElse {
@@ -32,7 +30,6 @@ pub enum StringLocation {
     },
     FirstNotError(Vec<Self>),
 
-    // Other.
     Anywhere,
     Start,
     End,
@@ -67,8 +64,8 @@ impl Default for StringLocation {
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringLocationError {
-    #[error("StringLocation::Error was used.")]
-    ExplicitError,
+    #[error("Explicit error: {0}")]
+    ExplicitError(String),
     #[error("The requested slice was either not on a UTF-8 boundary or was out of bounds.")]
     InvalidSlice,
     #[error("The requested index was either not on a UTF-8 boundary or was out of bounds.")]
@@ -91,7 +88,7 @@ impl StringLocation {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
-            Self::Error => Err(StringLocationError::ExplicitError)?,
+            Self::Error(msg) => Err(StringLocationError::ExplicitError(msg.clone()))?,
             Self::Debug(location) => {
                 let is_satisfied=location.satisfied_by(haystack, needle);
                 eprintln!("=== StringLocation::Debug ===\nLocation: {location:?}\nHaystack: {haystack:?}\nNeedle: {needle:?}\nSatisfied?: {is_satisfied:?}");

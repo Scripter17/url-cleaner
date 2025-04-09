@@ -94,18 +94,19 @@ impl From<RegexParts> for RegexWrapper {
 impl FromStr for RegexWrapper {
     type Err = std::convert::Infallible;
 
-    /// Doesn't do any parsing of flags like how javascript does `/regex/i`.
+    /// Creates a new [`RegexParts`] and uses that.
     ///
-    /// Simply uses the input as the pattern and defaults the [`RegexConfig`].
+    /// The regex is only compiled later.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(RegexParts::from(s).into())
     }
 }
 
 impl From<&str> for RegexWrapper {
-    /// Doesn't do any parsing of flags like how javascript does `/regex/i`.
+
+    /// Creates a new [`RegexParts`] and uses that.
     ///
-    /// Simply uses the input as the pattern and defaults the [`RegexConfig`].
+    /// The regex is only compiled later.
     fn from(s: &str) -> Self {
         RegexParts::from(s).into()
     }

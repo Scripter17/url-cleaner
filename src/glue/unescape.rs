@@ -6,10 +6,8 @@ use thiserror::Error;
 use crate::types::*;
 use crate::util::*;
 
-mod javascript;
-pub use javascript::*;
-mod html;
-pub use html::*;
+pub mod js;
+pub mod html;
 
 /// The unescape mode to use.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
@@ -29,12 +27,12 @@ pub enum UnescapeMode {
 /// The enum of errors [`UnescapeMode::unescape`] can return.
 #[derive(Debug, Error)]
 pub enum UnescapeError {
-    /// Returned when a [`JSSLPError`] is encountered.
+    /// Returned when a [`js::StringLiteralPrefixError`] is encountered.
     #[error(transparent)]
-    JSSLPError(#[from] JSSLPError),
-    /// Returned when a [`HtmlTextError`] is encountered.
+    StringLiteralPrefixError(#[from] js::StringLiteralPrefixError),
+    /// Returned when a [`html::HtmlTextError`] is encountered.
     #[error(transparent)]
-    HtmlTextError(#[from] HtmlTextError)
+    HtmlTextError(#[from] html::HtmlTextError)
 }
 
 impl UnescapeMode {
@@ -43,8 +41,8 @@ impl UnescapeMode {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn unescape(&self, s: &str) -> Result<String, UnescapeError> {
         Ok(match self {
-            Self::JavascriptStringLiteralPrefix => unescape_javascript_string_literal_prefix(s)?,
-            Self::HtmlText => unescape_html_text(s)?
+            Self::JavascriptStringLiteralPrefix => js::string_literal_prefix(s)?,
+            Self::HtmlText => html::text(s)?
         })
     }
 }

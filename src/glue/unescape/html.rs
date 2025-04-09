@@ -23,11 +23,11 @@ pub enum HtmlTextError {
 /// # Examples
 /// ```
 /// # use url_cleaner::glue::*;
-/// assert_eq!(unescape_html_text("a&amp;b" ).unwrap(), "a&b");
-/// assert_eq!(unescape_html_text("a&#x41;b").unwrap(), "aAb");
-/// assert_eq!(unescape_html_text("a&#65;b" ).unwrap(), "aAb");
+/// assert_eq!(unescape::html::text("a&amp;b" ).unwrap(), "a&b");
+/// assert_eq!(unescape::html::text("a&#65;b" ).unwrap(), "aAb");
+/// assert_eq!(unescape::html::text("a&#x41;b").unwrap(), "aAb");
 /// ```
-pub fn unescape_html_text(s: &str) -> Result<String, HtmlTextError> {
+pub fn text(s: &str) -> Result<String, HtmlTextError> {
     let mut ret = String::new();
 
     let mut first = true;
@@ -35,7 +35,7 @@ pub fn unescape_html_text(s: &str) -> Result<String, HtmlTextError> {
     for segment in s.split('&') {
         match (first, segment.split_once(';')) {
             (true , _                     ) => {ret.push_str(segment); first=false;}
-            (false, Some((char_ref, rest))) => {ret.push_str(&character_reference_to_str(char_ref)?); ret.push_str(rest);},
+            (false, Some((char_ref, rest))) => {ret.push_str(&parse_char_ref(char_ref)?); ret.push_str(rest);},
             (false, None                  ) => Err(HtmlTextError::SyntaxError)?
         }
     }
@@ -50,6 +50,7 @@ pub enum CharRefError {
     /// Unknown char name.
     #[error("Unknown char name.")]
     UnknownCharName,
+    /// Returned when a [`NumCharRefError`] is encountered.
     #[error(transparent)]
     NumCharRefError(#[from] NumCharRefError)
 }
@@ -57,8 +58,21 @@ pub enum CharRefError {
 /// Convert character references to strings.
 ///
 /// Unfortunately, there are OVER TWO THOUSAND named character references, and some are multiple [`char`]s.
-fn character_reference_to_str(char_ref: &str) -> Result<Cow<'static, str>, CharRefError> {
-    if char_ref.starts_with("#") {return Ok(Cow::Owned(parse_number_character_ref(char_ref)?.into()));}
+/// # Errors
+/// If `char_ref` starts with `#` and the call to [`html_parse_num_char_ref`] returns an error, that error is returned.
+///
+/// Otherwise, if the character name isn't defined as a valid character reference, returns the error [`CharRefError::UnknownCharName`].
+/// # Examples
+/// ```
+/// # use url_cleaner::glue::*;
+/// assert_eq!(unescape::html::parse_char_ref("amp" ).unwrap(), "&");
+/// assert_eq!(unescape::html::parse_char_ref("#65" ).unwrap(), "A");
+/// assert_eq!(unescape::html::parse_char_ref("#x41").unwrap(), "A");
+/// 
+/// unescape::html::parse_char_ref("unknown").unwrap_err();
+/// ```
+pub fn parse_char_ref(char_ref: &str) -> Result<Cow<'static, str>, CharRefError> {
+    if char_ref.starts_with("#") {return Ok(Cow::Owned(parse_num_char_ref(char_ref)?.into()));}
     Ok(Cow::Borrowed(match char_ref {
         "AElig"                           => "\u{000C6}",
         "AMP"                             => "\u{00026}",
@@ -2189,6 +2203,7 @@ fn character_reference_to_str(char_ref: &str) -> Result<Cow<'static, str>, CharR
     }))
 }
 
+/// The enum of errors [`parse_num_char_ref`] can return.
 #[derive(Debug, Error)]
 pub enum NumCharRefError {
     /// Invalid dec.
@@ -2211,7 +2226,7 @@ pub enum NumCharRefError {
     DisallowedCharCode(char)
 }
 
-/// The last state of the state machine in [`parse_number_character_ref`].
+/// The last state of the state machine in [`parse_num_char_ref`].
 #[derive(Debug, Clone, Copy)]
 enum HTMLNCRLastState {
     /// Just started.
@@ -2230,9 +2245,28 @@ enum HTMLNCRLastState {
 ///
 /// `^#(\d+|[xX][\da-fA-F]+)$`
 /// # Errors
-/// Returns an error on invalid input.
+/// If `char_ref` doesn't start with `#`, returns the error [`NumCharRefError::NotANumCharRef`].
+///
+/// If the character after the `#` is not a decimal digit, `x`, or `X`, returns the error [`NumCharRefError::InvalidDec`].
+///
+/// If the ref starts with `#x` or `#X` and an invalid hexadecimal digit is found after it, returns the error [`NumCharRefError::InvalidHex`].
+///
+/// If the character code is greater than [`u32::MAX`], returns the error [`NumCharRefError::CharCodeOverflow`].
+///
+/// If the decoded character code isn't a valid [`char`] (as determined by [`char::from_u32`]), returns the error [`NumCharRefError::InvalidCharCode`] with the number.
+///
+/// If the character is [`char::is_control`] or [`char::is_whitespace`], returns the error [`NumCharRefError::DisallowedCharCode`] with the character.
+/// # Examples
+/// ```
+/// # use url_cleaner::glue::*;
+/// assert_eq!(unescape::html::parse_num_char_ref("#65" ).unwrap(), 'A');
+/// assert_eq!(unescape::html::parse_num_char_ref("#x41").unwrap(), 'A');
+/// 
+/// unescape::html::parse_num_char_ref("#10").unwrap_err();
+/// ```
 #[allow(clippy::unwrap_used, reason = "Shouldn't ever happen.")]
-fn parse_number_character_ref(char_ref: &str) -> Result<char, NumCharRefError> {
+#[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
+pub fn parse_num_char_ref(char_ref: &str) -> Result<char, NumCharRefError> {
     let mut scratchspace: u32 = 0;
 
     let mut last_state = HTMLNCRLastState::None;
@@ -2241,10 +2275,10 @@ fn parse_number_character_ref(char_ref: &str) -> Result<char, NumCharRefError> {
         match (last_state, c) {
             (HTMLNCRLastState::None                             , '#'                              ) => {last_state = HTMLNCRLastState::Hash;},
             (HTMLNCRLastState::None                             , _                                ) => Err(NumCharRefError::NotANumCharRef)?,
-            (HTMLNCRLastState::Hash | HTMLNCRLastState::DecDigit, '0'..='9'                        ) => {scratchspace = scratchspace.checked_mul(10).and_then(|x| x.checked_add(c.to_digit(10).unwrap())).ok_or(NumCharRefError::CharCodeOverflow)?},
+            (HTMLNCRLastState::Hash | HTMLNCRLastState::DecDigit, '0'..='9'                        ) => {last_state = HTMLNCRLastState::DecDigit; scratchspace = scratchspace.checked_mul(10).and_then(|x| x.checked_add(c.to_digit(10).unwrap())).ok_or(NumCharRefError::CharCodeOverflow)?},
             (HTMLNCRLastState::Hash                             , 'x' | 'X'                        ) => {last_state = HTMLNCRLastState::X;},
             (HTMLNCRLastState::Hash | HTMLNCRLastState::DecDigit, _                                ) => Err(NumCharRefError::InvalidDec)?,
-            (HTMLNCRLastState::X    | HTMLNCRLastState::HexDigit, '0'..='9' | 'a'..='f' | 'A'..='F') => {scratchspace = scratchspace.checked_mul(16).and_then(|x| x.checked_add(c.to_digit(16).unwrap())).ok_or(NumCharRefError::CharCodeOverflow)?},
+            (HTMLNCRLastState::X    | HTMLNCRLastState::HexDigit, '0'..='9' | 'a'..='f' | 'A'..='F') => {last_state = HTMLNCRLastState::HexDigit; scratchspace = scratchspace.checked_mul(16).and_then(|x| x.checked_add(c.to_digit(16).unwrap())).ok_or(NumCharRefError::CharCodeOverflow)?},
             (HTMLNCRLastState::X    | HTMLNCRLastState::HexDigit, _                                ) => Err(NumCharRefError::InvalidHex)?
         }
     }
