@@ -85,7 +85,8 @@ pub enum StringMatcher {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&str, &TaskStateView) -> Result<bool, StringMatcherError>>)
+    #[serde(skip)]
+    Custom(fn(&str, &TaskStateView) -> Result<bool, StringMatcherError>)
 }
 
 #[cfg(feature = "regex")]

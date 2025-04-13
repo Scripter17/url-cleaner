@@ -26,7 +26,8 @@ pub enum UrlPart {
     /// The whole URL.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Whole.get(&url), Some("https://example.com/".into()));
     /// 
@@ -41,7 +42,8 @@ pub enum UrlPart {
     /// The scheme.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Scheme.get(&url), Some("https".into()));
     /// UrlPart::Scheme.set(&mut url, Some("http")).unwrap();
@@ -52,7 +54,8 @@ pub enum UrlPart {
     /// The username.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Username.get(&url), Some("".into()));
     /// 
@@ -64,7 +67,8 @@ pub enum UrlPart {
     /// The username.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Password.get(&url), None);
     /// 
@@ -83,7 +87,8 @@ pub enum UrlPart {
     /// [`Self::Host`] but with the `www.` at the start, if it's there, removed.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.www.example.com").unwrap();
     /// assert_eq!(UrlPart::HostWithoutWWWDotPrefixAndFqdnPeriod.get(&url), Some("www.example.com".into()));
     ///
@@ -106,7 +111,8 @@ pub enum UrlPart {
     /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::DomainSegment(0).get(&url), Some("example".into()));
@@ -140,7 +146,8 @@ pub enum UrlPart {
     /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforeDomainSegment(0).get(&url), None);
@@ -170,7 +177,8 @@ pub enum UrlPart {
     /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterDomainSegment(0).get(&url), None);
@@ -203,7 +211,8 @@ pub enum UrlPart {
     /// Thouroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::NextDomainSegment.get(&url), None);
@@ -226,7 +235,8 @@ pub enum UrlPart {
     /// The nth segment of the [`Self::Subdomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::SubdomainSegment( 0).get(&url), Some("abc".into()));
@@ -266,7 +276,8 @@ pub enum UrlPart {
     /// The position in [`Self::Subdomain`] between the nth segment and the previous one.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforeSubdomainSegment( 0).get(&url), None);
@@ -292,7 +303,8 @@ pub enum UrlPart {
     /// The position in [`Self::Subdomain`] between the nth segment and the next one.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterSubdomainSegment( 0).get(&url), None);
@@ -316,18 +328,14 @@ pub enum UrlPart {
     /// ```
     AfterSubdomainSegment(isize),
     /// The position in [`Self::Subdomain`] after the last segment.
-    /// # Examples
-    /// ```
-    /// # use url_cleaner::types::*;
-    /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
-    /// ```
     NextSubdomainSegment,
     /// The nth segment of the [`Self::DomainSuffix`].
     DomainSuffixSegment(isize),
     /// The position in [`Self::DomainSuffix`] between the nth segment and the previous one.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforeDomainSuffixSegment( 0).get(&url), None);
@@ -353,7 +361,8 @@ pub enum UrlPart {
     /// The position in [`Self::DomainSuffix`] between the nth segment and the next one.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterDomainSuffixSegment( 0).get(&url), None);
@@ -384,7 +393,8 @@ pub enum UrlPart {
     /// The host if it's a domain, *not* including the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period, if it's present.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -408,7 +418,8 @@ pub enum UrlPart {
     /// Specifically, all domain segments prior to [`Self::RegDomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -434,7 +445,8 @@ pub enum UrlPart {
     /// Does not include [`Self::FqdnPeriod`], even though the [PSL algorithm specifies it should](https://github.com/publicsuffix/list/wiki/Format#note-3).
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -456,7 +468,8 @@ pub enum UrlPart {
     /// [`Self::Domain`] without [`Self::DomainSuffix`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -478,7 +491,8 @@ pub enum UrlPart {
     /// The domain segment right before [`Self::DomainSuffix`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -504,7 +518,8 @@ pub enum UrlPart {
     /// Does not include [`Self::FqdnPeriod`], even though the [PSL algorithm specifies it should](https://github.com/publicsuffix/list/wiki/Format#note-3).
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -528,7 +543,8 @@ pub enum UrlPart {
     /// If trying to set [`Self::FqdnPeriod`] to any value other than [`None`] and [`Some`]`(".")`, returns the error [`UrlPartSetError::FqdnPeriodMustBeNoneOrPeriod`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("example.com"));
@@ -553,7 +569,8 @@ pub enum UrlPart {
     /// The port.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::Port.get(&url), None);
@@ -579,7 +596,8 @@ pub enum UrlPart {
     /// For other (most) URLs, this first ensures the value starts with `/` (`abc` -> `/abc`, `/def` -> `/def`) then sets the URL's path to that value.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::Path.get(&url), Some("/a/b/c".into()));
@@ -600,7 +618,8 @@ pub enum UrlPart {
     /// If the URL is a [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base) URL, this always returns the error [`UrlPartSetError::UrlDoesNotHavePathSegments`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::PathSegment(0).get(&url), Some("a".into()));
@@ -630,7 +649,8 @@ pub enum UrlPart {
     /// If set to [`Some`], inserts a new path segment between the nth and the previous one.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforePathSegment(0).get(&url), None);
@@ -657,7 +677,8 @@ pub enum UrlPart {
     /// If set to [`Some`], inserts a new path segment between the nth and the next one.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterPathSegment(0).get(&url), None);
@@ -690,7 +711,8 @@ pub enum UrlPart {
     /// 2. Append the new path segment.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::NextPathSegment.get(&url), None);
@@ -720,7 +742,8 @@ pub enum UrlPart {
     /// The query. Does not include the `?`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::Query.get(&url), None);
@@ -746,7 +769,8 @@ pub enum UrlPart {
     /// Setting a query parameter with a [`QueryParamSelector::index`] of exactly one more than the current count of query parameters with the matching [`QueryParamSelector::name`] will append a new query paramter.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).get(&url), None);
@@ -772,7 +796,8 @@ pub enum UrlPart {
     /// The fragment. Does not include the `#`.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::Fragment.get(&url), None);
@@ -830,7 +855,8 @@ impl QueryParamSelector {
     /// Get the selected query parameter.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4").unwrap();
     ///
     /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get(&url), Some("2".into()));
@@ -846,7 +872,8 @@ impl QueryParamSelector {
     /// Get the selected query parameter and its absolute index in the list of query parameters.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4").unwrap();
     ///
     /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get_with_index(&url), Some((0, "2".into())));
@@ -862,7 +889,8 @@ impl QueryParamSelector {
     /// Get the selected query parameter from an [`Iterator`] of query parameters.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let query_pairs = [("a", "2"), ("b", "3"), ("a", "4")];
     ///
     /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get_from_iter(query_pairs), Some("2".into()));
@@ -877,7 +905,8 @@ impl QueryParamSelector {
 
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let query_pairs = [("a", "2"), ("b", "3"), ("a", "4")];
     ///
     /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get_from_iter_with_index(query_pairs), Some((0, "2".into())));
@@ -897,7 +926,8 @@ impl QueryParamSelector {
     /// If [`Self::index`] is  above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
+    /// 
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// QueryParamSelector {name: "a".into(), index: 0}.set(&mut url, Some("2")).unwrap();
@@ -1133,18 +1163,20 @@ pub enum UrlPartSetError {
 
     // Pre-host stuff.
 
-    /// Returned when a [`SetSchemeError`] is encountered.
-    #[error("")]
-    SetSchemeError,
+    /// Returned when attempting to set a URL's scheme to [`None`].
     #[error("Attempted to set a URL's scheme to None.")]
     SchemeCannotBeNone,
-    /// Returned when a [`SetUsernameError`] is encountered.
-    #[error("")]
-    SetUsernameError,
+    /// Returned when attempting to set a URL's scheme to an invalid value.
+    #[error("Attempted to set a URL's scheme to an invalid value.")]
+    SetSchemeError,
+    /// Returned when attempting to set a URL's username to [`None`].
     #[error("Attempted to set a URL's username to None.")]
     UsernameCannotBeNone,
-    /// Returned when a [`SetPasswordError`] is encountered.
-    #[error("")]
+    /// Returned when attempting to set a URL's username to an invalid value.
+    #[error("Attempted to set a URL's username to an invalid value.")]
+    SetUsernameError,
+    /// Returned when attempting to set a URL's password to an invalid value.
+    #[error("Attempted to set a URL's password to an invalid value.")]
     SetPasswordError,
 
     // Host stuff.
@@ -1152,10 +1184,12 @@ pub enum UrlPartSetError {
     /// Returned when the URL doesn't have a host.
     #[error("The URL did not have a host.")]
     UrlDoesNotHaveAHost,
+
+    /// Returned when a [`SetHostError`] is encountered.
     #[error(transparent)]
     SetHostError(#[from] SetHostError),
-    /// Returned when a [`SetIpHostError`] is encountered.
-    #[error("")]
+    /// Returned when attempting to set the host of a URL with no host to an IP.
+    #[error("Attempted to set the host of a URL with no host to an IP.")]
     SetIpHostError,
     /// Returned when a [`SetSubdomainError)`] is encountered.
     #[error(transparent)] SetSubdomainError      (#[from] SetSubdomainError),
@@ -1179,22 +1213,28 @@ pub enum UrlPartSetError {
 
 
 
+    /// Returned when attempting to set a [`UrlPart::DomainSegment`] of a URL with no [`UrlPart::Domain`].
     #[error("Attempted to set a domain segment of a URL with no domain.")]
     NoDomain,
+    /// Returned when attempting to set a [`UrlPart::SubdomainSegment`] of a URL with no [`UrlPart::Subdomain`].
     #[error("Attempted to set a subdomain segment of a URL with no subdomain.")]
     NoSubdomain,
+    /// Returned when attempting to set a [`UrlPart::DomainSuffixSegment`] of a URL with no [`UrlPart::DomainSuffix`].
     #[error("Attempted to set a domain suffix segment of a URL with no domain suffix.")]
     NoDomainSuffix,
 
     // Post-host stuff.
 
-    /// Returned when trying to set a port to a value that isn't a number between 0 and 65535 (inclusive).
-    #[error("The provided port is not a number between 0 and 65535 (inclusive).")]
+    /// Returned when attempting to set a port to a value that isn't a number between 0 and 65535 (inclusive).
+    #[error("Attempted to set a port to a value that isn't a number between 0 and 65535 (inclusive).")]
     InvalidPort,
+    /// Returned when attempting to set a URL's port fails.
     #[error("Attempting to set the URL's port failed.")]
     SetPortError,
+    /// Returned when attempting to set a URL's path tp [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
+    /// Returned when attempting to get/set a URL's path segments when it doesn't have any.
     #[error("Attempted to manipulate a URL's path segments when it doesn't have any.")]
     UrlDoesNotHavePathSegments,
     /// Returned when a [`SetQueryParamError)`] is encountered.

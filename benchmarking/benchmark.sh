@@ -31,11 +31,11 @@ out="benchmarks-$(date +%s).tar.gz"
 for arg in "$@"; do
   shift
   case "$arg" in
-    --no-compile)      compile=0    ;;
-    --no-hyperfine)    hyperfine=0  ;;
-    --callgrind)       callgrind=1  ;;
-    --massif)          massif=1     ;;
-    --ignore-failure)   ignore_failure=--ignore-failure ;;
+    --no-compile)      compile=0   ;;
+    --no-hyperfine)    hyperfine=0 ;;
+    --callgrind)       callgrind=1 ;;
+    --massif)          massif=1    ;;
+    --ignore-failure)  ignore_failure=--ignore-failure ;;
     --all)             hyperfine=1; callgrind=1; massif=1 ;;
     --urls)            mode=urls    ; just_set_mode=1 ;;
     --nums)            mode=nums    ; just_set_mode=1 ;;

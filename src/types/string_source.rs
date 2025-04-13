@@ -23,7 +23,7 @@ pub enum StringSource {
     /// Always returns [`None`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     /// 
     /// assert_eq!(StringSource::None.get(&task_state).unwrap(), None);
@@ -35,7 +35,7 @@ pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     /// 
     /// StringSource::Error("Message".into()).get(&task_state).unwrap_err();
@@ -46,7 +46,7 @@ pub enum StringSource {
     /// Otherwise leaves the return value unchanged.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::ErrorToNone(Box::new(StringSource::Error("Message".into()))).get(&task_state).unwrap(), None);
@@ -57,7 +57,7 @@ pub enum StringSource {
     /// Otherwise leaves the return value unchanged.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::ErrorToEmptyString(Box::new(StringSource::Error("Message".into()))).get(&task_state).unwrap(), Some("".into()));
@@ -68,7 +68,7 @@ pub enum StringSource {
     /// If both [`Self::TryElse::try`] and [`Self::TryElse::else`]'s calls to [`Self::get`] return an error, [`Self::TryElse::else`]'s error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::TryElse {r#try: Box::new(StringSource::Error("Message".into())), r#else: Box::new(StringSource::None)}.get(&task_state).unwrap(), None);
@@ -97,7 +97,7 @@ pub enum StringSource {
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::NoneToEmptyString(Box::new(StringSource::None)).get(&task_state).unwrap(), Some("".into()));
@@ -108,7 +108,7 @@ pub enum StringSource {
     /// If either call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::NoneTo {
@@ -135,7 +135,7 @@ pub enum StringSource {
     /// If any call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::Join {
@@ -159,7 +159,7 @@ pub enum StringSource {
     /// If [`Self::IfFlag::flag`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state, params = Params {flags: ["abc".into()].into(), ..Default::default()});
     ///
     /// assert_eq!(StringSource::IfFlag {
@@ -193,7 +193,7 @@ pub enum StringSource {
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::IfStringMatches {
@@ -226,7 +226,7 @@ pub enum StringSource {
     /// If any call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::IfStringIsNone {
@@ -254,7 +254,7 @@ pub enum StringSource {
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// let map = Map {
@@ -288,7 +288,7 @@ pub enum StringSource {
     /// Return a referecnce to the contained [`String`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::String("abc".into()).get(&task_state).unwrap(), Some("abc".into()));
@@ -297,7 +297,7 @@ pub enum StringSource {
     /// Returns the value of the specified [`UrlPart`] of the [`TaskStateView::url`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
     ///
     /// assert_eq!(StringSource::Part(UrlPart::Host).get(&task_state).unwrap(), Some("example.com".into()));
@@ -308,7 +308,7 @@ pub enum StringSource {
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::ExtractPart {
@@ -329,7 +329,7 @@ pub enum StringSource {
     /// If the call to [`VarRef::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state, params = Params {
     ///     vars: [("abc".into(), "def".into())].into(),
     ///     ..Default::default()
@@ -348,7 +348,7 @@ pub enum StringSource {
     /// If [`Self::ParamsMap::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::MapNotFound`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state, params = Params {
     ///     maps: [("map_name".into(), Map {
     ///         map    : [("abc".into(), "def".into())].into(),
@@ -387,7 +387,7 @@ pub enum StringSource {
     /// If [`Self::NamedPartitionings::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::NamedPartitioningNotFound`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state, params = Params {
     ///     named_partitionings: [
     ///         (
@@ -422,7 +422,7 @@ pub enum StringSource {
     /// If the call to [`StringModification::apply`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::Modified {
@@ -483,7 +483,7 @@ pub enum StringSource {
     /// If [`Self::ExtractBetween::end`] isn't found in [`Self::ExtractBetween::value`], returns the error [`StringSourceError::ExtractBetweenEndNotFound`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::ExtractBetween {
@@ -509,9 +509,9 @@ pub enum StringSource {
     /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use std::str::FromStr;
-    /// # use url_cleaner::types::*;
-    /// # use url_cleaner::glue::*;
+    /// use std::str::FromStr;
+    /// use url_cleaner::types::*;
+    /// use url_cleaner::glue::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::RegexFind {
@@ -535,7 +535,7 @@ pub enum StringSource {
     /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state, commons = Commons {
     ///     string_sources: [
     ///         ("abc".into(), "def".into()),
@@ -571,21 +571,22 @@ pub enum StringSource {
     /// If the call to the contained function returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use std::borrow::Cow;
-    /// # use url_cleaner::types::*;
-    /// # use url_cleaner::glue::*;
+    /// use std::borrow::Cow;
+    /// use url_cleaner::types::*;
+    /// use url_cleaner::glue::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// fn some_complex_operation<'a>(task_state: &'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
     ///     Ok(Some("a".into()))
     /// }
     /// 
-    /// assert_eq!(StringSource::Custom(FnWrapper(some_complex_operation)).get(&task_state).unwrap(), Some("a".into()));
+    /// assert_eq!(StringSource::Custom(some_complex_operation).get(&task_state).unwrap(), Some("a".into()));
     /// ```
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<for<'a> fn(&'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>>)
+    #[serde(skip)]
+    Custom(for<'a> fn(&'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>)
 }
 
 impl FromStr for StringSource {

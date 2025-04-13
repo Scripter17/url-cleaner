@@ -1,4 +1,4 @@
-//! Unescapers for HTML.
+//! Unescapes HTML text.
 
 use std::borrow::Cow;
 
@@ -6,7 +6,7 @@ use thiserror::Error;
 
 /// The enum of errors that can happen when unescaping HTML text.
 #[derive(Debug, Error)]
-pub enum HtmlTextError {
+pub enum UnescapeTextError {
     /// Returned when a syntax error is encountered.
     #[error("Syntax error.")]
     SyntaxError,
@@ -17,17 +17,17 @@ pub enum HtmlTextError {
 
 /// Unescapes HTML text. Probably very bad and buggy, but SHOULD give correct outputs for in-spec inputs.
 /// # Errors
-/// If an unknown character reference is found, returns the error [`HtmlTextError::CharRefError`].
+/// If an unknown character reference is found, returns the error [`UnescapeTextError::CharRefError`].
 ///
-/// If a `&` is found without a `;` afterwards, returns the error [`HtmlTextError::SyntaxError`].
+/// If a `&` is found without a `;` afterwards, returns the error [`UnescapeTextError::SyntaxError`].
 /// # Examples
 /// ```
 /// # use url_cleaner::glue::*;
-/// assert_eq!(unescape::html::text("a&amp;b" ).unwrap(), "a&b");
-/// assert_eq!(unescape::html::text("a&#65;b" ).unwrap(), "aAb");
-/// assert_eq!(unescape::html::text("a&#x41;b").unwrap(), "aAb");
+/// assert_eq!(parse::html::unescape_text("a&amp;b" ).unwrap(), "a&b");
+/// assert_eq!(parse::html::unescape_text("a&#65;b" ).unwrap(), "aAb");
+/// assert_eq!(parse::html::unescape_text("a&#x41;b").unwrap(), "aAb");
 /// ```
-pub fn text(s: &str) -> Result<String, HtmlTextError> {
+pub fn unescape_text(s: &str) -> Result<String, UnescapeTextError> {
     let mut ret = String::new();
 
     let mut first = true;
@@ -36,7 +36,7 @@ pub fn text(s: &str) -> Result<String, HtmlTextError> {
         match (first, segment.split_once(';')) {
             (true , _                     ) => {ret.push_str(segment); first=false;}
             (false, Some((char_ref, rest))) => {ret.push_str(&parse_char_ref(char_ref)?); ret.push_str(rest);},
-            (false, None                  ) => Err(HtmlTextError::SyntaxError)?
+            (false, None                  ) => Err(UnescapeTextError::SyntaxError)?
         }
     }
 
@@ -65,11 +65,11 @@ pub enum CharRefError {
 /// # Examples
 /// ```
 /// # use url_cleaner::glue::*;
-/// assert_eq!(unescape::html::parse_char_ref("amp" ).unwrap(), "&");
-/// assert_eq!(unescape::html::parse_char_ref("#65" ).unwrap(), "A");
-/// assert_eq!(unescape::html::parse_char_ref("#x41").unwrap(), "A");
+/// assert_eq!(parse::html::parse_char_ref("amp" ).unwrap(), "&");
+/// assert_eq!(parse::html::parse_char_ref("#65" ).unwrap(), "A");
+/// assert_eq!(parse::html::parse_char_ref("#x41").unwrap(), "A");
 /// 
-/// unescape::html::parse_char_ref("unknown").unwrap_err();
+/// parse::html::parse_char_ref("unknown").unwrap_err();
 /// ```
 pub fn parse_char_ref(char_ref: &str) -> Result<Cow<'static, str>, CharRefError> {
     if char_ref.starts_with("#") {return Ok(Cow::Owned(parse_num_char_ref(char_ref)?.into()));}
@@ -2259,10 +2259,10 @@ enum HTMLNCRLastState {
 /// # Examples
 /// ```
 /// # use url_cleaner::glue::*;
-/// assert_eq!(unescape::html::parse_num_char_ref("#65" ).unwrap(), 'A');
-/// assert_eq!(unescape::html::parse_num_char_ref("#x41").unwrap(), 'A');
+/// assert_eq!(parse::html::parse_num_char_ref("#65" ).unwrap(), 'A');
+/// assert_eq!(parse::html::parse_num_char_ref("#x41").unwrap(), 'A');
 /// 
-/// unescape::html::parse_num_char_ref("#10").unwrap_err();
+/// parse::html::parse_num_char_ref("#10").unwrap_err();
 /// ```
 #[allow(clippy::unwrap_used, reason = "Shouldn't ever happen.")]
 #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]

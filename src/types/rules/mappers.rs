@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, SetPreventDuplicates};
+use serde_with::{serde_as, SetPreventDuplicates, DurationSecondsWithFrac};
 use thiserror::Error;
 use url::Url;
 #[cfg(feature = "http")]
@@ -16,187 +16,615 @@ use crate::glue::*;
 use crate::types::*;
 use crate::util::*;
 
+/// Mappers are how [`TaskState`]s get manipulated to clean URLs.
+///
+/// Please note that, in general, when a [`Mapper`] contains multiple [`Mapper`]s and one returns an error, the [`TaskState`] can be left in a partially modified state.
+///
+/// For example, a [`Mapper::All`] containing 3 [`Mapper`]s and the second one returns an error, the effects of the first [`Mapper`] is still applied.
+///
+/// In practice this should rarely be an issue, but when it is, use [`Mapper::ReverOnError`].
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Mapper {
-
+    /// Does nothing.
     None,
+    /// Always returns the error [`MapperError::ExplicitError`] with the included message.
+    /// # Errors
+    /// Always returns the error [`MapperError::ExplicitError`].
     Error(String),
+    /// Prints debug info about the contained [`Self`] and the current [`TaskStateView`], then returns its return value.
+    /// # Errors
+    /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
 
+    /// If the call to [`Self::If::if`] passes, apply [`Self::If::mapper`].
+    ///
+    /// If the call to [`Self::If::if`] fails and [`Self::If::else_mapper`] is [`Some`], apply [`Self::If::else_mapper`].
+    /// # Errors
+    /// If the call to [`Condition::satisifed_by`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     If {
+        /// The [`Condition`] to decide between [`Self::If::mapper`] and [`Self::If::else_mapper`].
         condition: Condition,
+        /// The [`Self`] to apply if [`Self::If::if`] passes.
         mapper: Box<Self>,
-        #[serde(default)]
+        /// The [`Self`] to apply if [`Self::If::if`] fails.
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
         else_mapper: Option<Box<Self>>
     },
+    /// Find the first [`ConditionChainLink`] whose [`ConditionChainLink::condition`] passes and apply its [`ConditionChainLink::mapper`].
+    ///
+    /// If no [`Condition`] passes, does nothing.
+    /// # Errors
+    /// If any call to [`Condition::satisfied_by`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     ConditionChain(Vec<ConditionChainLink>),
+    /// Applies the contained [`Self`]s in order.
+    /// # Errors
+    /// If any call to [`Self::apply`] returns an error, that error is returned.
     All(Vec<Self>),
-    AllIgnoreError(Vec<Self>),
+    /// Gets the value specified by [`Self::PartMap::part`], indexes [`Self::PartMap::map`], and applies the returned [`Self`]
+    ///
+    /// If the call to [`Map::get`] returns [`None`], does nothing..
+    /// # Errors
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     PartMap {
+        /// The [`UrlPart`] to index [`Self::PartMap::map`] with.
         part: UrlPart,
+        /// The [`Map`] to index with [`Self::PartMap::part`].
         #[serde(flatten)]
         map: Map<Self>
     },
+    /// Gets the string specified by [`Self::StringMap::value`], indexes [`Self::StringMap::map`], and applies the returned [`Self`].
+    ///
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     StringMap {
+        /// The [`StringSource`] to index [`Self::StringMap::map`] with.
         value: StringSource,
+        /// The [`Map`] to index with [`Self::StringMap::value`].
         #[serde(flatten)]
         map: Map<Self>
     },
 
+    /// If the contained [`Self`] returns an error, ignore it.
+    ///
+    /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
     IgnoreError(Box<Self>),
+    /// If the contained [`Self`] returns an error, revert the [`TaskState`] to its previous state then return the error.
+    /// # Errors
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    RevertOnError(Box<Self>),
+    /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
+    /// # Errors
+    /// If both calls to [`Self::apply`] return errors, both errors are returned.
     TryElse {
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
+        /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
         r#else: Box<Self>
     },
+    /// Applies the contained [`Self`]s in order, stopping as soon as a call to [`Self::apply`] doesn't return an error.
+    /// # Errors
+    /// If all calls to [`Self::apply`] return errors, the last error is returned. In the future this should be changed to return all errors.
     FirstNotError(Vec<Self>),
-    RevertOnError(Box<Self>),
 
+    /// Remove the entire [`UrlPart::Query`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2");
+    ///
+    /// Mapper::RemoveQuery.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/");
+    /// ```
     RemoveQuery,
-    RemoveQueryParam         (StringSource),
-    RemoveQueryParams        (#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
-    AllowQueryParams         (#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    /// Removes all query parameters with the specified name.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    ///
+    /// Mapper::RemoveQueryParam("a".into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/?b=3&c=5");
+    /// ```
+    RemoveQueryParam(StringSource),
+    /// Removes all query params with names in the specified [`HashSet`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    ///
+    /// Mapper::RemoveQueryParams(["a".to_string(), "c".to_string()].into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/?b=3");
+    /// ```
+    RemoveQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    /// Keeps only query params with names in the specified [`HashSet`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    ///
+    /// Mapper::AllowQueryParams(["a".to_string(), "c".to_string()].into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/?a=2&a=4&c=5");
+    /// ```
+    AllowQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    /// Removes all query params with names matching the specified [`StringMatcher`].
+    /// # Errors
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    ///
+    /// Mapper::RemoveQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/?b=3&c=5");
+    /// ```
     RemoveQueryParamsMatching(StringMatcher),
-    AllowQueryParamsMatching (StringMatcher),
-    GetUrlFromQueryParam     (StringSource),
-    GetPathFromQueryParam    (StringSource),
+    /// Keeps only query params with names matching the specified [`StringMatcher`].
+    /// # Errors
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    ///
+    /// Mapper::AllowQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/?a=2&a=4");
+    /// ```
+    AllowQueryParamsMatching(StringMatcher),
+    /// Sets [`UrlPart::Whole`] to the value of the first query parameter with a name determed by the [`TaskState`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    ///
+    /// If no matching query parameter is found, returns the error [`MapperError::CannotFindQueryParam`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com?redirect=https://example.com/2");
+    ///
+    /// Mapper::GetUrlFromQueryParam("redirect".into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/2");
+    ///
+    /// Mapper::GetUrlFromQueryParam("redirect".into()).apply(&mut task_state).unwrap_err();
+    /// ```
+    GetUrlFromQueryParam(StringSource),
 
 
-    SetHost(String),
+
+    /// Sets the [`UrlPart::Host`] to the specified value.
+    /// # Errors
+    /// If the call to [`BetterUrl::set_host`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::SetHost(Some("example2.com".into())).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example2.com/")
+    /// ```
+    SetHost(Option<String>),
+    /// "Join"s a URL like how relative links on websites work.
+    ///
+    /// See [`Url::join`] for details.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Url::join`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com/a/b/c");
+    ///
+    /// Mapper::Join("..".into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/a/");
+    ///
+    /// 
+    /// url_cleaner::task_state!(task_state, url = "https://example.com/a/b/c/");
+    ///
+    /// Mapper::Join("..".into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/a/b/");
+    /// ```
     Join(StringSource),
 
+
+
+    /// Sets the specified [`UrlPart`] to the specified value.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::SetPart {part: UrlPart::Path, value: "abc".into()}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/abc");
+    /// ```
     SetPart {
+        /// The part to set the value of.
         part: UrlPart,
+        /// The value to set the part to.
         value: StringSource
     },
+    /// If the specified [`UrlPart`] is [`Some`], applies [`Self::ModifyPart::modification`].
+    ///
+    /// If the part is [`None`], does nothing.
+    /// # Errors
+    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
+    ///
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::ModifyPart {part: UrlPart::Path, modification: StringModification::Set("abc".into())}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/abc");
+    ///
+    /// Mapper::ModifyPart {part: UrlPart::Query, modification: StringModification::Set("abc".into())}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/abc");
+    /// ```
     ModifyPart {
+        /// The part to modify.
         part: UrlPart,
+        /// The modification to apply to the part.
         modification: StringModification
     },
+    /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], leaving [`Self::CopyPart::from`] unchanged.
+    /// # Errors
+    /// If the call to [`UrlPart::Set`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state, url = "https://example.com/abc#def");
+    ///
+    /// Mapper::CopyPart {from: UrlPart::Fragment, to: UrlPart::Path}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/def#def");
+    /// ```
     CopyPart {
+        /// The part whose value to copy.
         from: UrlPart,
+        /// The part whose value to set.
         to: UrlPart
     },
+    /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], then sets [`Self::CopyPart::from`] to [`None`].
+    /// # Errors
+    /// If either call to [`UrlPart::Set`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state, url = "https://example.com/abc#def");
+    ///
+    /// Mapper::MovePart {from: UrlPart::Fragment, to: UrlPart::Path}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example.com/def");
+    /// ```
     MovePart {
+        /// The part whose value to move.
         from: UrlPart,
+        /// The part whose value to set.
         to: UrlPart
     },
 
-    // Miscellaneous.
+    /// Sends an HTTP GET request to the current [`TaskState::url`], and sets it either to the value of the response's `Location` header (if the response is a redirect) or the final URL after redirects.
+    ///
+    /// If the `cache` feature flag is enabled, caches the operation with the category `redirect`, the key set to the input URL, and the value set to the returned URL.
+    /// # Errors
     #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::read`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache", doc = "")]
+    #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::read`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].")]
+    #[cfg_attr(feature = "cache", doc = "")]
+    #[cfg_attr(feature = "cache", doc = "If the call to [`BetterUrl::parse`] returns an error, that error is returned.")]
+    #[cfg_attr(feature = "cache", doc = "")]
+    /// If the call to [`TaskStateView::http_client`] returns an error, that error is returned.
+    ///
+    /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
+    ///
+    /// If the response is a redirect and doesn't contain a `Location` header, returns the error [`MapperError::LocationHeaderNotFound`].
+    ///
+    /// If the `Location` header's call to [`std::str::from_utf8`] returns an error, that error is returned.
+    ///
+    /// If the `Location` header's call to [`BetterUrl::parse`] returns an error, that error is returned.
+    #[cfg_attr(feature = "cache", doc = "")]
     #[cfg_attr(feature = "cache", doc = "If the call to [`Cache::write`] returns an error, that error is returned.")]
     #[cfg(feature = "http")]
     ExpandRedirect {
-        #[serde(default, with = "serde_headermap")]
+        /// The extra headers to send.
+        ///
+        /// Defaults to an empty [`HeaderMap`].
+        #[serde(default, skip_serializing_if = "is_default", with = "serde_headermap")]
         headers: HeaderMap,
-        #[serde(default)]
+        /// The [`HttpClientConfigDiff`] to apply.
+        ///
+        /// Defaults to [`None`].
+        ///
+        /// Boxed because it's massive.
+        #[serde(default, skip_serializing_if = "is_default")]
         http_client_config_diff: Option<Box<HttpClientConfigDiff>>
     },
+    /// Sets the specified [`Scratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// assert_eq!(task_state.scratchpad.flags.contains("abc"), false);
+    /// Mapper::SetScratchpadFlag {name: "abc".into(), value: true}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.flags.contains("abc"), true);
+    /// ```
     SetScratchpadFlag {
+        /// The name of the flag to set.
         name: StringSource,
+        /// The value to set the flag to.
         value: bool
     },
+    /// Sets the specified [`Scratchpad::vars`] to [`Self::SetScratchpadVar::value`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// Mapper::SetScratchpadVar {name: "abc".into(), value: "def".into()}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("def"));
+    /// Mapper::SetScratchpadVar {name: "abc".into(), value: StringSource::None}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
+    /// ```
     SetScratchpadVar {
+        /// The name of the var to set.
         name: StringSource,
+        /// The value to set the var to.
         value: StringSource
     },
-    DeleteScratchpadVar(StringSource),
+    /// If the specified [`Scratchpad::vars`] is [`Some`], applies [`Self::ModifyScratchpadVar::modification`].
+    ///
+    /// If the part is [`None`], does nothing.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    ///
+    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// Mapper::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set("123".into())}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
+    /// Mapper::SetScratchpadVar {name: "abc".into(), value: "def".into()}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("def"));
+    /// Mapper::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set("123".into())}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("123"));
+    /// Mapper::SetScratchpadVar {name: "abc".into(), value: StringSource::None}.apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
+    /// ```
     ModifyScratchpadVar {
+        /// The name of the var to modify.
         name: StringSource,
+        /// The modification to apply.
         modification: StringModification
     },
+    /// Applies the contained [`Rule`].
+    /// # Errors
+    /// If the call to [`Rule::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::Rule(Box::new(Rule::Mapper(Mapper::SetHost(Some("example2.com".into()))))).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example2.com/");
+    /// ```
     Rule(Box<Rule>),
+    /// Applies the contained [`Rules`].
+    /// # Errors
+    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::Rules(Rules(vec![Rule::Mapper(Mapper::SetHost(Some("example2.com".into())))])).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url, "https://example2.com/");
+    /// ```
     Rules(Rules),
+    /// If an entry with the specified category and a key of the current [`TaskState::url`] exists in the cache, sets the [`TaskState::url`] to the entry's value.
+    ///
+    /// If no matching entry exists, applies [`Self::CacheUrl::mapper`] and makes a new entry with the specified category, the previous [`TaskState::url`] as the key, and the new [`TaskState::url`] as the value.
+    ///
+    /// If an error is returned, no new cache entry is written.
+    /// # Errors
+    /// If the call to [`Cache::read`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Cache::read`] returns [`None`], retursn the error [`MapperError::CachedUrlIsNone`].
+    ///
+    /// If the call to [`BetterUrl::parse`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Mapper::apply`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Cache::apply`] returns an error, that error is returned.
     #[cfg(feature = "cache")]
     CacheUrl {
+        /// The category for the cache entry.
         category: StringSource,
+        /// The mapper to apply and cache.
         mapper: Box<Self>
     },
+    /// Applies [`Self::Retry::mapper`] and, if it returns an error, waits [`Self::Retry::duration`] and applies it again.
+    ///
+    /// Attempts to apply it at most [`Self::Retry::limit`] times.
+    /// # Errors
+    /// If call calls to [`Self::apply`] return an error, the final error is returned.
     Retry {
+        /// The [`Self`] to apply.
         mapper: Box<Self>,
+        /// The time to wait between retries.
+        #[serde_as(as = "DurationSecondsWithFrac<f64>")]
         delay: Duration,
+        /// The max amount of times to try.
+        ///
+        /// Defaults to `10`.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
+    /// Applies a [`Self`] from [`TaskState::params`]'s [`Params::commons`]'s [`Commons::mappers`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource:;get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    ///
+    /// If the [`Commons::mappers`] doesn't contain a [`Self`] with the specified name, returns the error [`MapperError::CommonMapperNotFound`].
+    ///
+    /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state, commons = Commons {
+    ///     mappers: [("abc".into(), Mapper::None)].into(),
+    ///     ..Default::default()
+    /// });
+    ///
+    /// Mapper::Common(CommonCall {name: "abc".into(), args: Default::default()}).apply(&mut task_state).unwrap();
+    /// ```
     Common(CommonCall),
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&mut TaskState) -> Result<(), MapperError>>)
+    #[serde(skip)]
+    Custom(fn(&mut TaskState) -> Result<(), MapperError>)
 }
 
+/// An individual "link" in a [`Mapper::ConditionChain`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct ConditionChainLink {
+    /// The [`Condition`].
     pub condition: Condition,
+    /// The [`Mapper`] to apply if [`Self::condition`] passes.
     pub mapper: Mapper
 }
 
 /// Serde helper function.
 const fn get_10_u8() -> u8 {10}
 
+/// The enum of errors [`Mapper::apply`] can return.
 #[derive(Debug, Error)]
 pub enum MapperError {
+    /// Returned when a [`Mapper::ExplicitError`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
-    #[error("The provided URL does not contain the requested query parameter.")]
+    #[error("A `Mapper::TryElse` had both `try` and `else` return an error.")]
+    TryElseError {
+        /// The error returned by [`Mapper::TryElse::try`]. 
+        try_error: Box<Self>,
+        /// The error returned by [`Mapper::TryElse::else`]. 
+        else_error: Box<Self>
+    },
+
+    /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
+    #[error("A StringSource returned None where it had to return Some.")]
+    StringSourceIsNone,
+
+    /// Returned when a [`SetHostError`] is encountered.
+    #[error(transparent)]
+    SetHostError(#[from] SetHostError),
+    /// Returned when attempting to get a URL from a query parameter that doesn't exist.
+    #[error("Attempted to get a URL from a query parameter that didn't exist.")]
     CannotFindQueryParam,
+    /// Returned when a [`Mapper`] with the specified name ins't found in the [`Commons::mappers`].
+    #[error("A Mapper with the specified name wasn't found in the Commons::mappers.")]
+    CommonMapperNotFound,
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`Utf8Error`] is encountered.
+    #[error(transparent)]
+    Utf8Error(#[from] Utf8Error),
+    /// Returned when a [`UrlPartSetError`] is encountered.
+    #[error(transparent)]
+    UrlPartSetError(#[from] UrlPartSetError),
+    /// Returned when a [`StringMatcherError`] is encountered.
+    #[error(transparent)]
+    StringMatcherError(#[from] StringMatcherError),
+    /// Returned when a [`StringSourceError`] is encountered.
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError),
+    /// Returned when a [`StringModificationError`] is encountered.
+    #[error(transparent)]
+    StringModificationError(#[from] StringModificationError),
+    /// Returned when a [`ConditionError`] is encountered.
+    #[error(transparent)]
+    ConditionError(#[from] ConditionError),
+    /// Returned when a [`GetConfigError`] is encountered.
+    #[error(transparent)]
+    GetConfigError(#[from] GetConfigError),
+    /// Returned when a [`RuleError`] is encountered.
+    #[error(transparent)]
+    RuleError(Box<RuleError>),
+
+    /// Returned when a [`reqwest::Error`] is encounted.
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
-    #[error(transparent)]
-    Utf8Error(#[from] Utf8Error),
-    #[error(transparent)]
-    UrlPartSetError(#[from] UrlPartSetError),
-    #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone,
-    #[error(transparent)]
-    StringMatcherError(#[from] StringMatcherError),
-    #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-    #[error(transparent)]
-    StringModificationError(#[from] StringModificationError),
-    #[error(transparent)]
-    ConditionError(#[from] ConditionError),
-    #[error(transparent)]
-    GetConfigError(#[from] GetConfigError),
-    #[error(transparent)]
-    RuleError(Box<RuleError>),
+    /// Returned when a redirect's `Location` header isn't found.
     #[cfg(feature = "http")]
-    #[error("The requested header was not found.")]
-    HeaderNotFound,
+    #[error("The redirect's Location header wasn't found")]
+    LocationHeaderNotFound,
+
+    /// Returned when a [`reqwest::header::ToStrError`] is encounted.
     #[cfg(feature = "http")]
     #[error(transparent)]
     ToStrError(#[from] reqwest::header::ToStrError),
-    #[error("A `Mapper::TryElse` had both `try` and `else` return an error.")]
-    TryElseError {
-        try_error: Box<Self>,
-        else_error: Box<Self>
-    },
-    #[error("A TaskState string var was none.")]
-    ScratchpadVarIsNone,
+
+    /// Returned when attempting to get a URL from the cache but its value is [`None`].
+    #[cfg(feature = "cache")]
+    #[error("Attempted to get a URL from the cache but its value was None.")]
+    CachedUrlIsNone,
+    /// Returned when a [`ReadFromCacheError`] is encounted.
     #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
+    /// Returned when a [`WriteToCacheError`] is encounted.
     #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
-    #[cfg(feature = "cache")]
-    #[error("The cached URL was None.")]
-    CachedUrlIsNone,
-    #[error("The common Mapper was not found.")]
-    CommonMapperNotFound,
-    #[error("The mapper was not found.")]
-    MapperNotFound,
+
+    /// Returned when a [`CommonCallArgsError`] is encounted.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
+    /// An arbitrary [`std::error::Error`] returned by [`Mapper::Custom`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error + Send>),
-    #[error("The requested part of the URL was None.")]
-    UrlPartIsNone
+    Custom(Box<dyn std::error::Error + Send>)
 }
 
 impl From<RuleError> for MapperError {
@@ -242,11 +670,6 @@ impl Mapper {
             Self::All(mappers) => {
                 for mapper in mappers {
                     mapper.apply(task_state)?;
-                }
-            },
-            Self::AllIgnoreError(mappers) => {
-                for mapper in mappers {
-                    let _ = mapper.apply(task_state);
                 }
             },
             Self::PartMap  {part , map} => if let Some(mapper) = map.get(part .get( task_state.url      ) ) {mapper.apply(task_state)?},
@@ -320,19 +743,10 @@ impl Mapper {
                     None => Err(MapperError::CannotFindQueryParam)?
                 }
             },
-            Self::GetPathFromQueryParam(name) => {
-                let task_state_view = task_state.to_view();
-                let name = name.get(&task_state_view)?.ok_or(MapperError::StringSourceIsNone)?;
-
-                match task_state.url.query_pairs().find(|(param_name, _)| *param_name==name) {
-                    Some((_, new_path)) => {#[expect(clippy::unnecessary_to_owned, reason = "False positive.")] task_state.url.set_path(&new_path.into_owned());},
-                    None => Err(MapperError::CannotFindQueryParam)?
-                }
-            },
 
             // Other parts.
 
-            Self::SetHost(new_host) => UrlPart::Host.set(task_state.url, Some(&**new_host))?,
+            Self::SetHost(new_host) => task_state.url.set_host(new_host.as_deref())?,
             Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, MapperError))?.into(),
 
             // Generic part handling.
@@ -358,21 +772,21 @@ impl Mapper {
                 #[cfg(feature = "cache")]
                 if task_state.params.read_cache {
                     if let Some(new_url) = task_state.cache.read("redirect", task_state.url.as_str())? {
-                        *task_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?.into();
+                        *task_state.url = BetterUrl::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
                 }
                 let response = task_state.to_view().http_client(http_client_config_diff.as_deref())?.get(task_state.url.as_str()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
-                    Url::parse(std::str::from_utf8(response.headers().get("location").ok_or(MapperError::HeaderNotFound)?.as_bytes())?)?
+                    BetterUrl::parse(std::str::from_utf8(response.headers().get("location").ok_or(MapperError::LocationHeaderNotFound)?.as_bytes())?)?
                 } else {
-                    response.url().clone()
+                    response.url().clone().into()
                 };
                 #[cfg(feature = "cache")]
                 if task_state.params.write_cache {
                     task_state.cache.write("redirect", task_state.url.as_str(), Some(new_url.as_str()))?;
                 }
-                *task_state.url=new_url.into();
+                *task_state.url=new_url;
             },
 
             Self::SetScratchpadFlag {name, value} => {
@@ -382,16 +796,16 @@ impl Mapper {
                     false => task_state.scratchpad.flags.remove(&name)
                 };
             },
-            Self::SetScratchpadVar {name, value} => {let _ = task_state.scratchpad.vars.insert(get_string!(name, task_state, MapperError).to_owned(), get_string!(value, task_state, MapperError).to_owned());},
-            Self::DeleteScratchpadVar(name) => {
-                let name = get_string!(name, task_state, MapperError).to_owned();
-                let _ = task_state.scratchpad.vars.remove(&name);
+            Self::SetScratchpadVar {name, value} => match value.get(&task_state.to_view())?.map(Cow::into_owned) {
+                Some(value) => {let _ = task_state.scratchpad.vars.insert( get_string!(name, task_state, MapperError), value);}
+                None        => {let _ = task_state.scratchpad.vars.remove(&get_string!(name, task_state, MapperError));}
             },
             Self::ModifyScratchpadVar {name, modification} => {
                 let name = get_string!(name, task_state, MapperError).to_owned();
-                let mut temp = task_state.scratchpad.vars.get_mut(&name).ok_or(MapperError::ScratchpadVarIsNone)?.to_owned();
-                modification.apply(&mut temp, &task_state.to_view())?;
-                let _ = task_state.scratchpad.vars.insert(name, temp);
+                if let Some(mut value) = task_state.scratchpad.vars.get(&name).map(ToOwned::to_owned) {
+                    modification.apply(&mut value, &task_state.to_view())?;
+                    let _ = task_state.scratchpad.vars.insert(name, value);
+                }
             },
             Self::Rule(rule) => {rule.apply(task_state)?;},
             Self::Rules(rules) => {rules.apply(task_state)?;},
@@ -400,7 +814,7 @@ impl Mapper {
                 let category = get_string!(category, task_state, MapperError);
                 if task_state.params.read_cache {
                     if let Some(new_url) = task_state.cache.read(&category, task_state.url.as_str())? {
-                        *task_state.url = Url::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?.into();
+                        *task_state.url = BetterUrl::parse(&new_url.ok_or(MapperError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
                 }

@@ -117,7 +117,7 @@
 				"shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "sta.sh", "t.co", "t.ly",
 				"t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org",
 				"tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "vm.tiktok.com", "w.wiki",
-				"wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "square.link", "rog.gg"
+				"wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "square.link", "rog.gg", "lnkd.in"
 			],
 			"redirect-reg-domains": [
 				"goo.gl", "o93x.net", "pusle.ly", "visitlink.me", "page.link", "onelink.me"
@@ -325,16 +325,10 @@
 							]},
 							"mapper": {"SetPart": {"part": "Subdomain", "value": null}}
 						},
-						{
-							"condition": "HostIsFqdn",
-							"mapper": {"SetPart": {
-								"part": "Host",
-								"value": {"Modified": {
-									"value": {"Part": "Host"},
-									"modification": {"StripSuffix": "."}
-								}}
-							}}
-						},
+						{"Mapper": {"SetPart": {
+							"part": "FqdnPeriod",
+							"value": null
+						}}},
 						{
 							"condition": {"All": [
 								{"PartIs": {"part": "Query", "value": ""}},
@@ -409,14 +403,13 @@
 								{"Contains": {"value": "google"}}
 							]}
 						}},
-						{"PartMatches": {
+						{"TreatErrorAsFail": {"PartMatches": {
 							"part": "RegDomain",
 							"matcher": {"Any": [
 								{"IsOneOf": ["smartadserver.com", "lnk.to"]},
 								{"InSet": "redirect-reg-domains"}
-							]},
-							"if_null": "Fail"
-						}}
+							]}
+						}}}
 					]},
 					"mapper": {"Rule": {
 						"Repeat": {
@@ -639,7 +632,7 @@
 															"modification": {"All": [
 																{"StripMaybePrefix": "http://"},
 																{"StripMaybePrefix": "https://"},
-																{"Insert": {"where": 0, "value": "https://"}}
+																{"Insert": {"index": 0, "value": "https://"}}
 															]}
 														}}
 													}},
@@ -659,7 +652,7 @@
 																		"end": ")"
 																	}}
 																}},
-																"modification": {"Unescape": "JavascriptStringLiteralPrefix"}
+																"modification": "GetJsStringLiteralPrefix"
 															}}
 														}}
 													]}
@@ -683,7 +676,7 @@
 																	"end": ")"
 																}}
 															}},
-															"modification": {"Unescape": "JavascriptStringLiteralPrefix"}
+															"modification": "GetJsStringLiteralPrefix"
 														}}
 													}}
 												]}
@@ -964,11 +957,10 @@
 												"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
 												"matcher": {"InSet": "redirect-hwwwwdpafqdnps"}
 											}},
-											{"PartMatches": {
+											{"TreatErrorAsFail": {"PartMatches": {
 												"part": "RegDomain",
-												"matcher": {"InSet": "redirect-reg-domains"},
-												"if_null": "Fail"
-											}},
+												"matcher": {"InSet": "redirect-reg-domains"}
+											}}},
 											{"PartMap": {
 												"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
 												"map": {
@@ -984,7 +976,7 @@
 													]},
 													"sketchfab.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "s"}},
 													"qudsnen.co": {"Not": {"PartIs": {"part": {"QueryParam": "p"}, "value": null}}},
-													"facebook.com": {"PartContains": {"part": "Path", "where": "Start", "value": "/share/r/"}},
+													"facebook.com": {"PartContains": {"part": "Path", "where": "Start", "value": "/share/"}},
 													"reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}},
 													"old.reddit.com": {"PartContains": {"part": "Path", "value": "/s/"}},
 													"teepublic.com": {"PartIs": {"part": {"PathSegment": 0}, "value": "lic"}}
@@ -1015,12 +1007,12 @@
 					"SharedCondition": {
 						"condition": {"All": [
 							{"FlagIsSet": "unmobile"},
-							{"Not": {
+							{"TreatErrorAsFail": {"Not": {
 								"PartMatches": {
 									"part": "RegDomain",
 									"matcher": {"InSet": "unmobile-reg-domain-blacklist"}
 								}
-							}}
+							}}}
 						]},
 						"rules": [
 							{
@@ -1199,7 +1191,7 @@
 								"modification": {"RemoveQueryParamsMatching": {"IsOneOf": ["ref", "source"]}}
 							}},
 							"bsky.social": {"If": {
-								"condition": {"Not": {"PartIsOneOf": {"part": "Subdomain", "values": ["www"], "if_null": true}}},
+								"condition": {"Not": {"Any": [{"SubdomainIs": "www"}, {"SubdomainIs": null}]}},
 								"mapper": {"All": [
 									{"SetPart": {"part": "Path", "value": {"Join": {"sources": ["/profile/", {"Part": "Domain"}]}}}},
 									{"SetHost": "bsky.app"}
@@ -1230,7 +1222,7 @@
 									"condition": {"PartIs": {"part": {"PathSegment": 0}, "value": "reel"}},
 									"mapper": "RemoveQuery"
 								}},
-								{"RemoveQueryParams": ["fs", "s", "mibextid", "rf"]}
+								{"RemoveQueryParams": ["fs", "s", "mibextid", "rf", "share_url", "rdid"]}
 							]},
 							"fandom.com": {"All": [
 								{"PartMap": {
@@ -1262,7 +1254,7 @@
 								{"If": {
 									"condition": {"All": [
 										{"FlagIsSet": "furaffinity-sfw"},
-										{"PartIsOneOf": {"part": "Subdomain", "values": ["www"], "if_null": true}}
+										{"Any": [{"SubdomainIs": "www"}, {"SubdomainIs": null}]}
 									]},
 									"mapper": {"SetPart": {"part": "Subdomain", "value": "sfw"}}}
 								},
@@ -1374,13 +1366,13 @@
 							]},
 							"tiktok.com": {"RemoveQueryParamsMatching": {"Any": [
 								{"IsOneOf": ["checksum", "source", "u_code", "timestamp", "user_id", "enable_checksum"]},
-								{"ContainsAny": {"values": ["_", "sec_", "ug", "is_from", "sender", "share", "social_share"], "where": "Start"}}
+								{"ContainsAny": {"values": ["_", "sec_", "ug", "is_from", "sender", "share", "social_"], "where": "Start"}}
 							]}},
 							"tumblr.com": {"Rules": [
 								{
 									"condition": {"QueryHasParam": "redirect_to"},
 									"mapper": {"All": [
-										{"GetPathFromQueryParam": "redirect_to"},
+										{"CopyPart": {"from": {"QueryParam": "redirect_to"}, "to": "Path"}},
 										"RemoveQuery"
 									]}
 								},

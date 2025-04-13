@@ -18,11 +18,8 @@
 #[cfg(feature = "cache"   )] pub use caching::*;
 #[cfg(feature = "base64"  )] pub mod base64;
 #[cfg(feature = "base64"  )] pub use base64::*;
-#[cfg(feature = "custom"  )] pub mod fn_wrapper;
-#[cfg(feature = "custom"  )] pub use fn_wrapper::*;
 
-pub mod unescape;
-pub use unescape::*;
+pub mod parse;
 
 /// Glue to allow [`reqwest::header::HeaderValue`] to be used with serde.
 #[cfg(feature = "http")]

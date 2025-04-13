@@ -129,7 +129,8 @@ pub enum Rule {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&mut TaskState) -> Result<(), RuleError>>),
+    #[serde(skip)]
+    Custom(fn(&mut TaskState) -> Result<(), RuleError>),
     /// If [`Self::Normal::condition`] passes, apply [`Self::Normal::mapper`].
     ///
     /// If [`Self::Normal::condition`] fails and [`Self::Normal::else_mapper`] is [`Some`], apply [`Self::Normal::else_mapper`].

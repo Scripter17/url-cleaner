@@ -1,4 +1,4 @@
-//! Unescaping for javascript.
+//! Parsing javascript string literals.
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -78,14 +78,14 @@ pub enum StringLiteralPrefixError {
 /// # Examples
 /// ```
 /// # use url_cleaner::glue::*;
-/// assert_eq!(unescape::js::string_literal_prefix("\"abc\\n\\u000Adef\"other stuff"                                ).unwrap(), "abc\n\ndef"          );
-/// assert_eq!(unescape::js::string_literal_prefix("\"1\\u{a}2\\u{0a}3\\u{00a}4\\u{000a}5\\u{0000a}6\\u000a7\\\n8\"").unwrap(), "1\n2\n3\n4\n5\n6\n78");
-/// assert_eq!(unescape::js::string_literal_prefix("\"'\\\"\"outside"                                               ).unwrap(), "'\""                 );
-/// assert_eq!(unescape::js::string_literal_prefix("'\"\\''outside"                                                 ).unwrap(), "\"'"                 );
-/// assert_eq!(unescape::js::string_literal_prefix("'a\\na'"                                                        ).unwrap(), "a\na"                );
-/// assert_eq!(unescape::js::string_literal_prefix("'a\\\na'"                                                       ).unwrap(), "aa"                  );
+/// assert_eq!(parse::js::string_literal_prefix("\"abc\\n\\u000Adef\"other stuff"                                ).unwrap(), "abc\n\ndef"          );
+/// assert_eq!(parse::js::string_literal_prefix("\"1\\u{a}2\\u{0a}3\\u{00a}4\\u{000a}5\\u{0000a}6\\u000a7\\\n8\"").unwrap(), "1\n2\n3\n4\n5\n6\n78");
+/// assert_eq!(parse::js::string_literal_prefix("\"'\\\"\"outside"                                               ).unwrap(), "'\""                 );
+/// assert_eq!(parse::js::string_literal_prefix("'\"\\''outside"                                                 ).unwrap(), "\"'"                 );
+/// assert_eq!(parse::js::string_literal_prefix("'a\\na'"                                                        ).unwrap(), "a\na"                );
+/// assert_eq!(parse::js::string_literal_prefix("'a\\\na'"                                                       ).unwrap(), "aa"                  );
 /// 
-/// unescape::js::string_literal_prefix("\"\\u{00000a}\"").unwrap_err();
+/// parse::js::string_literal_prefix("\"\\u{00000a}\"").unwrap_err();
 /// ```
 #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
 #[allow(clippy::unwrap_used, reason = "Who cares?")]
@@ -143,3 +143,4 @@ pub fn string_literal_prefix(s: &str) -> Result<String, StringLiteralPrefixError
 
     Ok(ret)
 }
+

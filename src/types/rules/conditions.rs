@@ -5,8 +5,6 @@ use std::collections::HashSet;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
-#[allow(unused_imports, reason = "Used when the commands feature is enabled.")]
-use crate::glue::*;
 use crate::types::*;
 use crate::util::*;
 
@@ -23,14 +21,14 @@ pub enum Condition {
     /// # Errors
     /// Always returns the error [`ConditionError::ExplicitError`].
     Error(String),
-    /// Prints debug info about the contained [`Self`], then returns its return value.
+    /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
     /// If the call to [`Self::If::if`] passes, return the value of [`Self::If::then`].
     ///
-    /// If the call to [`Self::If::if`] fails, return the value of [`Self::if::else`].
+    /// If the call to [`Self::If::if`] fails, return the value of [`Self::If::else`].
     /// # Errors
     /// If any call to [`Self::satisifed_by`] returns an error, that error is returned.
     If {
@@ -76,6 +74,8 @@ pub enum Condition {
     ///
     /// If the call to [`Map::get`] returns [`None`], fails.
     /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     StringMap {
         /// The [`StringSource`] to index [`Self::StringMap::map`] with.
@@ -91,8 +91,12 @@ pub enum Condition {
     ///
     /// Otherwise returns the value of the contained [`Self`].
     TreatErrorAsPass {
+        /// The [`Self`] to treat errors as passes for.
         #[serde(flatten)]
         condition: Box<Self>,
+        /// The filter of which errors to treat as passes.
+        ///
+        /// Defaults to all errors.
         #[serde(default, skip_serializing_if = "is_default")]
         filter: ConditionErrorFilter
     },
@@ -100,18 +104,22 @@ pub enum Condition {
     ///
     /// Otherwise returns the value of the contained [`Self`].
     TreatErrorAsFail {
+        /// The [`Self`] to treat errors as fails for.
         #[serde(flatten)]
         condition: Box<Self>,
+        /// The filter of which errors to treat as fails.
+        ///
+        /// Defaults to all errors.
         #[serde(default, skip_serializing_if = "is_default")]
         filter: ConditionErrorFilter
     },
     /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
-    /// If [`Self::TryElse::else`]'s call to [`Self::satisifed_by`] returns an error, that error is returned.
+    /// If both calls to [`Self::satisifed_by`] return errors, both errors are returned.
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
-        /// The [`Self`] to try if [`Self::TryElse::try']'s call to [`Self::satisfied_by`] returns an error.
+        /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
         r#else: Box<Self>,
         /// The set of errors [`Self::TryElse::try`] can return that will trigger [`Self::TryElse::else`].
         ///
@@ -169,15 +177,11 @@ pub enum Condition {
         /// The [`StringSource`] to compare [`Self::PartIs::value`] with.
         value: StringSource
     },
-    /// Passes if the specified part equals the specified string.
-    ///
-    /// If the call to [`UrlPart::get`] returns [`None`], return the value of [`Self::PartContains::if_part_null`].
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], return the value of [`Self::PartContains::if_value_null`].
+    /// Passes if [`Self::PartContains::part`] contains [`Self::PartContains::value`] at [`Self::PartContains::where`].
     /// # Errors
-    /// If the call to [`UrlPart::get`] returns [`None`] and [`Self::PartContains::if_part_null`] is [`IfError::Error`], returns the error [`ConditionError::PartIsNone`].
+    /// If the call to [`UrlPart::get`] returns [`None`], returns the error [`ConditionError::PartIsNone`].
     ///
-    /// If the call to [`StringSource::get`] returns [`None`] and [`Self::PartContains::if_value_null`] is [`IfError::Error`], returns the error [`ConditionError::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`ConditionError::StringSourceIsNone`].
     ///
     /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     PartContains {
@@ -189,109 +193,155 @@ pub enum Condition {
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default)]
-        r#where: StringLocation,
-        /// What to do if the call to [`UrlPart:;get`] returns [`None`].
-        ///
-        /// Defaults to [`IfError::Error`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_part_null: IfError,
-        /// What to do if the call to [`StringSource:;get`] returns [`None`].
-        ///
-        /// Defaults to [`IfError::Error`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_value_null: IfError
+        r#where: StringLocation
     },
+    /// Passes if [`Self::PartMatches::part`] satisfies [`Self::PartMatches::matcher`].
+    /// # Errors
+    /// If the call to [`UrlPart::get`] returns [`None`], returns the error [`ConditionError::PartIsNone`].
+    ///
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     PartMatches {
+        /// The part to match the value of.
         part: UrlPart,
-        matcher: StringMatcher,
-        #[serde(default, skip_serializing_if = "is_default")]
-        if_null: IfError
+        /// The matcher to test [`Self::PartMatches::part`] with.
+        matcher: StringMatcher
     },
+    /// Passes if [`Self::PartIsOneOf::part`] is in [`Self::PartIsOneOf::values`].
+    /// # Errors
+    /// If the call to [`Self::UrlPart::get`] returns [`None`], returns the error [`ConditionError::PartIsNone`].
     PartIsOneOf {
+        /// The part to check the value of.
         part: UrlPart,
-        values: HashSet<String>,
-        #[serde(default)]
-        if_null: bool
+        /// The set of values to check if [`Self::PartIsOneOf::part`] is one of.
+        values: HashSet<String>
     },
 
 
 
+    /// Passes if the specified flag is set.
+    /// # Errors
+    /// If the call to [`FlagRef::get`] returns an error, that error is returned.
     FlagIsSet(FlagRef),
+    /// Passes if [`Self::VarIs::var`] is [`Self::VarIs::value`].
+    /// # Errors
+    /// If the call to [`VarRef::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     VarIs {
+        /// The var to check the value of.
         #[serde(flatten)]
-        name: VarRef,
+        var: VarRef,
+        /// The value to check if [`Self::VarIs::var`] is.
         value: StringSource
     },
 
 
 
+    /// Passes if [`Self::StringIs::left`] is [`Self::StringIs::right`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
     StringIs {
+        /// The left hand side of the equality check.
         left: StringSource,
+        /// The right hand side of the equality check.
         right: StringSource
     },
+    /// Passes if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::value`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`ConditionError::StringSourceIsNone`].
+    ///
+    /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     StringContains {
+        /// The value to search for [`Self::StringContains::substring`].
         value: StringSource,
+        /// The value to search for inside [`Self::StringContains::value`].
         substring: StringSource,
-        #[serde(default)]
+        /// Where in [`Self::StringContains::value`] to search for [`Self::StringContains::substring`].
+        ///
+        /// Defaults to [`StringLocation::Anywhere`].
+        #[serde(default, skip_serializing_if = "is_default")]
         r#where: StringLocation
     },
+    /// Passes if [`Self::StringMatches::value`] satisfies [`Self::StringMatches::matcher`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`ConditionError::StringSourceIsNone`].
+    ///
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     StringMatches {
+        /// The value to check the value of.
         value: StringSource,
+        /// The matcher ot check if [`Self::StringMatches::value`] satisfies.
         matcher: StringMatcher
     },
 
 
 
-    #[cfg(feature = "commands")]
-    CommandExists(CommandConfig),
-    #[cfg(feature = "commands")]
-    CommandExitStatus {
-        command: CommandConfig,
-        #[serde(default)]
-        expected: i32
-    },
+    /// Get a [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] and pass if it's satisfied.
+    /// # Errors
+    /// If [`CommonCall::name`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
+    ///
+    /// If [`Params::common`]'s [`Commons::conditions`] doesn't contain a [`Self`] with the specified name, returns the error [`ConditionError::CommonConditionNotFound`].
+    ///
+    /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
     Common(CommonCall),
+    /// Calls the specified function and returns its value.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&TaskStateView) -> Result<bool, ConditionError>>)
+    #[serde(skip)]
+    Custom(fn(&TaskStateView) -> Result<bool, ConditionError>)
 }
 
+/// The enum of errors [`Condition::satisfied_by`] can return.
 #[derive(Debug, Error, url_cleaner_macros::ErrorFilter)]
 pub enum ConditionError {
+    /// Returned when a [`Condition::ExplicitError`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
-    #[error("The provided URL does not have the requested part.")]
+    /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
+    #[error("A part of the URL is None where it had to be Some.")]
     PartIsNone,
-    #[cfg(feature = "commands")]
-    #[error(transparent)]
-    CommandError(#[from] CommandError),
-    #[error("The specified StringSource returned None.")]
+    /// Returned when a [`StringSource`] returned [`None`] where it has to return [`Some`].
+    #[error("A StringSource returned None where it had to return Some.")]
     StringSourceIsNone,
+    /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] StringMatcherError),
+    /// Returned when a [`StringLocationError`] is encountered.
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
+    /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
-    #[error("A `Condition::TryElse` had both `try` and `else` return an error.")]
+    /// Returned when both [`Condition`]s in a [`Condition::TryElse`] return errors.
+    #[error("Both Conditions in a Condition::TryElse returned errors.")]
     TryElseError {
+        /// The error returned by [`Condition::TryElse::try`]. 
         try_error: Box<Self>,
+        /// The error returned by [`Condition::TryElse::else`]. 
         else_error: Box<Self>
     },
+    /// Returned when a [`UrlDoesNotHavePathSegments`] is returned.
     #[error(transparent)]
     UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
-    #[error("Not in a common context.")]
-    NotInACommonContext,
-    #[error("The common Condition was not found.")]
+    /// Returned when a [`Condition`] with the specified name ins't found in the [`Commons::conditions`].
+    #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
     CommonConditionNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered/
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
+    /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error + Send>),
+    /// Returned when a [`GetFlagError`] is encountered.
     #[error(transparent)]
     GetFlagError(#[from] GetFlagError),
+    /// Returned when a [`GetVarError`] is encountered.
     #[error(transparent)]
     GetVarError(#[from] GetVarError)
 }
@@ -380,23 +430,14 @@ impl Condition {
             // General parts.
 
             Self::PartIs{part, value} => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
-            Self::PartContains{part, value, r#where, if_part_null, if_value_null} => match part.get(task_state.url) {
-                None    => if_part_null.apply(Err(ConditionError::PartIsNone))?,
-                Some(part) => match value.get(task_state)? {
-                    None        => if_value_null.apply(Err(ConditionError::StringSourceIsNone))?,
-                    Some(value) => r#where.satisfied_by(&part, &value)?,
-                }
-            },
-            Self::PartMatches {part, matcher, if_null} => match part.get(task_state.url) {
-                None    => if_null.apply(Err(ConditionError::PartIsNone))?,
-                Some(x) => matcher.satisfied_by(&x, task_state)?,
-            },
-            Self::PartIsOneOf {part, values, if_null} => part.get(task_state.url).map(|x| values.contains(&*x)).unwrap_or(*if_null),
+            Self::PartContains{part, value, r#where} => r#where.satisfied_by(& part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartMatches {part, matcher       } => matcher.satisfied_by(& part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, task_state)?,
+            Self::PartIsOneOf {part, values        } => values .contains    (&*part.get(task_state.url).ok_or(ConditionError::PartIsNone)?),
 
             // Miscellaneous.
 
-            Self::FlagIsSet(flag)     => flag.get(task_state)?,
-            Self::VarIs {name, value} => name.get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
+            Self::FlagIsSet(flag)    => flag.get(task_state)?,
+            Self::VarIs {var, value} => var .get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
 
             // String source.
 
@@ -404,10 +445,7 @@ impl Condition {
             Self::StringContains {value, substring, r#where} => r#where.satisfied_by(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
             Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, task_state, ConditionError), task_state)?,
 
-            // Commands.
-
-            #[cfg(feature = "commands")] Self::CommandExists (command) => command.exists(),
-            #[cfg(feature = "commands")] Self::CommandExitStatus {command, expected} => {&command.exit_code(task_state)?==expected},
+            // Misc.
 
             Self::Common(common_call) => {
                 task_state.commons.conditions.get(get_str!(common_call.name, task_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.satisfied_by(&TaskStateView {

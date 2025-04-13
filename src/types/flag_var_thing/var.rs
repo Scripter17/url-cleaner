@@ -79,7 +79,7 @@ impl VarType {
 /// Used mainly to allow deserializing `{"type": "Params", "name": "..."}` as `"..."`.
 /// # Examples
 /// ```
-/// # use url_cleaner::types::*;
+/// use url_cleaner::types::*;
 /// assert_eq!(serde_json::from_str::<VarRef>("\"name\"").unwrap(), VarRef {r#type: Default::default(), name: "name".into()});
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -150,4 +150,3 @@ impl Suitability for VarRef {
         }
     }
 }
-

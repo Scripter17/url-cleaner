@@ -58,7 +58,7 @@ impl FlagType {
 /// Used mainly to allow deserializing `{"type": "Params", "name": "..."}` as `"..."`.
 /// # Examples
 /// ```
-/// # use url_cleaner::types::*;
+/// use url_cleaner::types::*;
 /// assert_eq!(serde_json::from_str::<FlagRef>("\"name\"").unwrap(), FlagRef {r#type: Default::default(), name: "name".into()});
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,8 +1,6 @@
 use proc_macro::TokenStream;
 use quote::*;
 use syn::*;
-use syn::parse::*;
-use syn::ext::IdentExt;
 
 pub(crate) fn error_filter_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -44,6 +42,7 @@ pub(crate) fn error_filter_derive(input: TokenStream) -> TokenStream {
                 pub struct #filter_name(pub Option<HashSet<#error_names>>);
 
                 impl #filter_name {
+                    /// Returns [`true`] if `error` matches the filter.
                     pub fn matches(&self, error: &#name) -> bool {
                         self.0.as_ref().is_none_or(|names| names.contains(&#error_names::from_error(error)))
                     }

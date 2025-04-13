@@ -200,7 +200,7 @@ impl ParamsDiff {
 /// Allows generating [`ParamsDiff`]s from [`clap::Args`].
 /// # Examples
 /// ```
-/// # use url_cleaner::types::*;
+/// use url_cleaner::types::*;
 ///
 /// #[derive(clap::Args)]
 /// pub struct Args {

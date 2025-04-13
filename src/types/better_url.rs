@@ -165,7 +165,7 @@ impl BetterUrl {
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     /// ```
     pub fn parse(value: &str) -> Result<Self, <Self as FromStr>::Err> {
@@ -175,7 +175,7 @@ impl BetterUrl {
     /// Get the contained [`HostDetails`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(url.host_details(), Some(HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
@@ -194,7 +194,7 @@ impl BetterUrl {
 
     /// If [`Self::host_details`] returns [`HostDetails::Domain`], return it.
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(url.domain_details(), Some(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}));
@@ -204,7 +204,7 @@ impl BetterUrl {
     pub fn domain_details(&self) -> Option<DomainDetails> {self.host_details()?.domain_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
     /// assert_eq!(url.domain_details(), None);
@@ -214,7 +214,7 @@ impl BetterUrl {
     pub fn ipv4_details  (&self) -> Option<Ipv4Details> {self.host_details()?.ipv4_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let url = BetterUrl::parse("https://[::1]").unwrap();
     ///
     /// assert_eq!(url.domain_details(), None);
@@ -226,7 +226,7 @@ impl BetterUrl {
     /// [`Url::domain`] but without the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain(), Some("example.com"      ));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain(), Some("example.co.uk"    ));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain(), Some("www.example.com"  ));
@@ -238,7 +238,7 @@ impl BetterUrl {
     /// If [`Self`] has a [`UrlPart::Subdomain`], return it.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().subdomain(), None);
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().subdomain(), None);
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().subdomain(), Some("www"));
@@ -250,7 +250,7 @@ impl BetterUrl {
     /// If [`Self`] has a [`UrlPart::NotDomainSuffix`], return it.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().not_domain_suffix(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().not_domain_suffix(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().not_domain_suffix(), Some("www.example"));
@@ -262,7 +262,7 @@ impl BetterUrl {
     /// If [`Self`] has a [`UrlPart::DomainMiddle`], return it.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain_middle(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain_middle(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain_middle(), Some("example"));
@@ -274,7 +274,7 @@ impl BetterUrl {
     /// If [`Self`] has a [`UrlPart::RegDomain`], return it.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().reg_domain(), Some("example.com"  ));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().reg_domain(), Some("example.co.uk"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().reg_domain(), Some("example.com"  ));
@@ -286,7 +286,7 @@ impl BetterUrl {
     /// If [`Self`] has a [`UrlPart::DomainSuffix`], return it.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain_suffix(), Some("com"  ));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain_suffix(), Some("co.uk"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain_suffix(), Some("com"  ));
@@ -298,7 +298,7 @@ impl BetterUrl {
     /// If [`Self`] is a [fully qualified domain anme](https://en.wikipedia.org/wiki/Fully_qualified_domain_name), returns the FQDN period.
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().fqdn_period(), None     );
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().fqdn_period(), None     );
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().fqdn_period(), None     );
@@ -313,7 +313,7 @@ impl BetterUrl {
     /// If the call to [`Url::path_segments`] returns [`None`], returns the error [`UrlDoesNotHavePathSegments`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().path_segments().unwrap().collect::<Vec<_>>(), [""]);
     /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c" ).unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c"]);
     /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c/").unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c", ""]);
@@ -324,7 +324,7 @@ impl BetterUrl {
     /// If the call to [`Url::path_segments_mut`] returns an error, returns the error [`UrlDoesNotHavePathSegments`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c/").unwrap();
     ///
     /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/a/b/c");
@@ -396,7 +396,7 @@ impl BetterUrl {
     /// If `to` isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// url.set_domain(Some("example2.com")).unwrap();
@@ -555,7 +555,7 @@ impl BetterUrl {
     /// If the host isn't a domain, returns the error [`SetFqdnPeriodError::HostIsNotADomain`].
     /// # Examples
     /// ```
-    /// # use url_cleaner::types::*;
+    /// use url_cleaner::types::*;
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// url.set_fqdn(false).unwrap();
@@ -650,6 +650,12 @@ impl std::hash::Hash for BetterUrl {
 impl PartialEq<Url> for BetterUrl {
     fn eq(&self, other: &Url) -> bool {
         (&**self) == other
+    }
+}
+
+impl PartialEq<str> for BetterUrl {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
     }
 }
 

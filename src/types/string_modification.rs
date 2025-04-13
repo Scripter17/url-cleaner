@@ -36,63 +36,198 @@ pub enum StringModification {
 
 
 
+    /// Always returns the error [`StringModificationError::ExplicitError`] with the included message.
+    /// # Errors
+    /// Always returns the error [`StringModificationError::ExplicitError`].
     Error(String),
+    /// If the contained [`Self`] returns an error, ignore it.
+    ///
+    /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
     IgnoreError(Box<Self>),
+    /// If the contained [`Self`] returns an error, revert the [`String`] to its previous value then return the error.
+    /// # Errors
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    RevertOnError(Box<Self>),
+    /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
+    /// # Errors
+    /// If both calls to [`Self::apply`] return errors, both errors are returned.
     TryElse {
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
+        /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
         r#else: Box<Self>
     },
+    /// Applies the contained [`Self`]s in order.
+    /// # Errors
+    /// If any call to [`Self::apply`] returns an error, that error is returned.
     All(Vec<Self>),
-    AllNoRevert(Vec<Self>),
-    AllIgnoreError(Vec<Self>),
+    /// Applies the contained [`Self`]s in order, stopping as soon as a call to [`Self::apply`] doesn't return an error.
+    /// # Errors
+    /// If all calls to [`Self::apply`] return errors, the last error is returned. In the future this should be changed to return all errors.
     FirstNotError(Vec<Self>),
 
 
 
+    /// If the call to [`Self::If::if`] passes, apply [`Self::If::then`].
+    ///
+    /// If the call to [`Self::If::if`] fails and [`Self::If::else`] is [`Some`], apply [`Self::If::else`].
+    /// # Errors
+    /// If the call to [`Condition::satisifed_by`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     If {
+        /// The [`Condition`] to decide between [`Self::If::mapper`] and [`Self::If::else_mapper`].
         condition: Box<Condition>,
+        /// The [`Self`] to apply if [`Self::If::if`] passes.
         then: Box<Self>,
+        /// The [`Self`] to apply if [`Self::If::if`] fails.
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
         r#else: Option<Box<Self>>
     },
+    /// If the [`String`] satisfies [`Self::IfMatches::matcher`], apply [`Self::If::then`].
+    ///
+    /// If the [`String`] does not satisfy [`Self::IfMatches::matcher`] and [`Self::IfMatches::else`] is [`Some`], apply [`Self::IfMatches::else`].
+    /// # Errors
+    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     IfMatches {
+        /// The [`StringMatcher`] to check if the [`String`] satisfies.
         matcher: Box<StringMatcher>,
+        /// The [`Self`] to apply if [`Self::IfMatches::matcher`] is satisfied.
         then: Box<Self>,
-        #[serde(default)]
+        /// The [`Self`] to apply if [`Self::IfMatches::matcher`] isn't satisfied.
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
         r#else: Option<Box<Self>>
     },
 
 
 
+    /// Sets the [`String`] to the specified value.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     Set(StringSource),
+    /// Appends the specified value.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     Append(StringSource),
+    /// Prepends the specified value.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
     Prepend(StringSource),
+    /// Replace all instances of [`Self::Replace::find`] with [`Self::Replace::replace`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
     Replace {
+        /// The value to replace with [`Self::Replace::replace`].
         find: StringSource,
+        /// The value to replace instances of [`Self::Replace::find`] with.
         replace: StringSource
     },
+    /// Replace the specified range with [`Self::ReplaceRange::replace`].
+    /// # Errors
+    /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringModificationError::InvalidSlice`].
+    ///
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     ReplaceRange {
+        /// The start of the range to replace.
         start: isize,
+        /// The end of the range to replace.
         end: Option<isize>,
+        /// The value to replace the range with.
         replace: StringSource
     },
+    /// Sets the string to lowercase.
+    ///
+    /// See [`String::to_lowercase`] for details.
     Lowercase,
+    /// Sets the string to uppercase.
+    ///
+    /// See [`String::to_uppercase`] for details.
     Uppercase,
+    /// Removes the specified prefix.
+    ///
+    /// If you want to not return an error when the string doesn't start with the prefix, see [`Self::StripMaybePrefix`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the string doesn't start with the specified prefix, returns the error [`StringModificationError::PrefixNotFound`].
     StripPrefix(StringSource),
+    /// Removes the specified suffix.
+    ///
+    /// If you want to not return an error when the string doesn't start with the suffix, see [`Self::StripMaybeSuffix`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the string doesn't start with the specified suffix, returns the error [`StringModificationError::SuffixNotFound`].
     StripSuffix(StringSource),
+    /// If the string starts with the specified value, remove it.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     StripMaybePrefix(StringSource),
+    /// If the string ends with the specified value, remove it.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     StripMaybeSuffix(StringSource),
+    /// Replcae up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
+    ///
+    /// See [`str::replacen`] for details.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     Replacen {
+        /// The value to replace with [`Self::Replacen::replace`].
         find: StringSource,
+        /// The value to replace instances of [`Self::Replacen::find`] with.
         replace: StringSource,
+        /// The maximum amount of instances to replace.
         count: usize
     },
+    /// Insert [`Self::Insert::value`] at [`Self::Insert::index`].
+    ///
+    /// See [`String::insert_str`] for details.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the call to [`String::insert_str`] would panic, returns the error [`StringModificationError::InvalidIndex`].
     Insert {
-        r#where: isize,
-        value: StringSource
+        /// The value to insert at [`Self::Insert::index`].
+        value: StringSource,
+        /// The index to insert [`Self::Insert::value`] at.
+        index: isize
     },
+    /// Removes the [`char`] at the specified index.
+    ///
+    /// See [`String::remove`] for details.
+    /// # Errors
+    /// If the call to [`String::remove`] would panic, returns the error [`StringModificationError::InvalidIndex`].
     RemoveChar(isize),
+    /// Removes everything outside the specified range.
+    /// # Errors
+    /// If the range is out of bounds, returns the error [`StringModificationError::InvalidSlice`].
+    /// 
+    /// If the call to [`str::get`] returns [`None`], returns the error [`StringModificationError::InvalidSlice`].
     KeepRange {
+        /// The start of the range to keep.
         start: isize,
+        /// The end of the range to keep.
         end: Option<isize>
     },
 
@@ -136,7 +271,12 @@ pub enum StringModification {
     Base64Encode(#[serde(default)] Base64Config),
     #[cfg(feature = "base64")]
     Base64Decode(#[serde(default)] Base64Config),
-    Unescape(UnescapeMode),
+
+
+
+    GetJsStringLiteralPrefix,
+    UnescapeHtmlText,
+    GetHtmlAttribute(StringSource),
 
 
 
@@ -177,7 +317,8 @@ pub enum StringModification {
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
-    Custom(FnWrapper<fn(&mut String, &TaskStateView) -> Result<(), StringModificationError>>)
+    #[serde(skip)]
+    Custom(fn(&mut String, &TaskStateView) -> Result<(), StringModificationError>)
 }
 
 /// The [`AsciiSet`] that emulates [`encodeURIComponent`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
@@ -228,71 +369,112 @@ impl FromStr for StringModification {
             "None"                     => StringModification::None,
             "Lowercase"                => StringModification::Lowercase,
             "Uppercase"                => StringModification::Uppercase,
+            "GetJsStringLiteralPrefix" => StringModification::GetJsStringLiteralPrefix,
+            "UnescapeHtmlText"         => StringModification::UnescapeHtmlText,
             _                          => Err(NonDefaultableVariant)?
         })
     }
 }
 
-#[allow(clippy::enum_variant_names, reason = "I disagree.")]
+/// The enum of errors [`StringModification::apply`] can return.
 #[derive(Debug, Error)]
 pub enum StringModificationError {
+    /// Returned when a [`StringModification::ExplicitError`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
+    /// Returned when a [`std::str::Utf8Error`] is encountered.
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
+    /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a JSON value isn't found.
     #[error("The requested JSON value was not found.")]
     JsonValueNotFound,
+    /// Returned when a JSON value isn't a string.
     #[error("The requested JSON value was not a string.")]
     JsonValueIsNotAString,
-    #[error("The requested slice was either not on a UTF-8 boundary or out of bounds.")]
+    /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]
     InvalidSlice,
+    /// Returned when an index is either not on a UTF-8 boundary or out of bounds.
     #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
     InvalidIndex,
-    #[error("The requested segment was not found.")]
+    /// Returned when a segment isn't found.
+    #[error("The requested segment wasn't found.")]
     SegmentNotFound,
-    #[error("The requested segments were not found.")]
+    /// Returned when a segment range isn't found
+    #[error("The requested segment range wasn't found.")]
     SegmentRangeNotFound,
-    #[error("The string being modified did not start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
+    /// Returned wehn the string being modified doesn't start with the specified prefix.
+    #[error("The string being modified didn't start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
     PrefixNotFound,
-    #[error("The string being modified did not end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
+    /// Returned when the string being modified doesn't end with the specified suffix.
+    #[error("The string being modified didn't end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
     SuffixNotFound,
-    #[error("The requested regex pattern was not found in the provided string.")]
+    /// Returned when a [`Regex`] doesn't find any matches in the string.
+    #[error("The regex didn't find any matches in the string.")]
+    #[cfg(feature = "regex")]
     RegexMatchNotFound,
+    /// Returned when a [`::regex::Error`] is encountered.
     #[cfg(feature = "regex")]
     #[error(transparent)]
     RegexError(#[from] ::regex::Error),
-    #[error("A `StringModification::TryElse` had both `try` and `else` return an error.")]
+    /// Returned when both [`StringModification`]s in a [`StringModification::TryElse`] return errors.
+    #[error("Both StringModifications in a StringModification::TryElse returned errors.")]
     TryElseError {
+        /// The error returned by [`StringModification::TryElse::try`]. 
         try_error: Box<Self>,
+        /// The error returned by [`StringModification::TryElse::else`]. 
         else_error: Box<Self>
     },
+    /// Returned when a [`::base64::DecodeError`] is encountered.
     #[error(transparent)]
     #[cfg(feature = "base64")]
     Base64DecodeError(#[from] ::base64::DecodeError),
+    /// Returned when a [`std::string::FromUtf8Error`] is encountered.
     #[error(transparent)]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
+    /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    #[error("The specified StringSource returned None where it had to be Some.")]
+    /// Returned when a [`StringSource`] returns [`None`] where it has to return [`Some`].
+    #[error("A StringSource returned None where it had to return Some.")]
     StringSourceIsNone,
-    #[error("The provided string was not in the specified map.")]
-    StringNotInMap,
+    /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] Box<StringMatcherError>),
-    #[error("The `start` of an `ExtractBetween` was not found in the provided string.")]
+    /// Returned when the [`StringModification::ExtractBetween::start`] isn't found in the string.
+    #[error("The StringModification::ExtractBetween::start isn't found in the string.")]
     ExtractBetweenStartNotFound,
-    #[error("The `end` of an `ExtractBetween` was not found in the provided string.")]
+    /// Returned when the [`StringModification::ExtractBetween::end`] isn't found in the string after the [`StringModification::ExtractBetween::start`].
+    #[error("The StringModification::ExtractBetween::end isn't found in the string after the StringModification::ExtractBetween::start.")]
     ExtractBetweenEndNotFound,
-    #[error(transparent)]
-    UnescapeError(#[from] UnescapeError),
-    #[error("The common StringModification was not found.")]
+    /// Returned when a [`StringModification`] with the specified name ins't found in the [`Commons::string_modifications`].
+    #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
     CommonStringModificationNotFound,
+    /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] Box<ConditionError>),
+    /// Returned when a [`parse::js::StringLiteralPrefixErro`] is encountered.
+    #[error(transparent)]
+    JsStringLiteralPrefixError(#[from] parse::js::StringLiteralPrefixError),
+    /// Returned when a [`parse::html::UnescapeTextError`] is encountered.
+    #[error(transparent)]
+    HtmlUnescapeTextError(#[from] parse::html::UnescapeTextError),
+    /// Returned when a [`parse::html::GAVError`] is encountered.
+    #[error(transparent)]
+    HtmlGetAttributeValueError(#[from] parse::html::GAVError),
+    /// Returned when the requested HTML attribute isn't found.
+    #[error("The requested HTML attribute wasn't found.")]
+    HtmlAttributeNotFound,
+    /// Returned when the requested HTML attribute doesn't have a value.
+    #[error("The requested HTML attribute doesn't have a value.")]
+    HtmlAttributeHasNoValue,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
+    /// An arbitrary [`std::error::Error`] returned by [`StringModification::Custom`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error + Send>)
@@ -333,24 +515,19 @@ impl StringModification {
                 modification_result?;
             },
             Self::IgnoreError(modification) => {let _=modification.apply(to, task_state);},
+            Self::RevertOnError(modification) => {
+                let old_to = to.clone();
+                if let Err(e) = modification.apply(to, task_state) {
+                    *to = old_to;
+                    Err(e)?
+                }
+            }
             Self::TryElse{r#try, r#else} => r#try.apply(to, task_state).or_else(|try_error| r#else.apply(to, task_state).map_err(|else_error| StringModificationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::All(modifications) => {
-                let mut temp_to=to.clone();
-                for modification in modifications {
-                    modification.apply(&mut temp_to, task_state)?;
-                }
-                *to=temp_to;
-            }
-            Self::AllNoRevert(modifications) => {
                 for modification in modifications {
                     modification.apply(to, task_state)?;
                 }
-            },
-            Self::AllIgnoreError(modifications) => {
-                for modification in modifications {
-                    let _=modification.apply(to, task_state);
-                }
-            },
+            }
             Self::FirstNotError(modifications) => {
                 let mut error=Ok(());
                 for modification in modifications {
@@ -421,8 +598,8 @@ impl StringModification {
                 let suffix = get_str!(suffix, task_state, StringModificationError);
                 if to.ends_with  (suffix) {to.truncate(to.len()-suffix.len());};
             },
-            Self::Insert{r#where, value} => if to.is_char_boundary(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*r#where, to.len()).ok_or(StringModificationError::InvalidIndex)?, get_str!(value, task_state, StringModificationError));} else {Err(StringModificationError::InvalidIndex)?;},
-            Self::RemoveChar(index)      => if to.is_char_boundary(neg_index(*index  , to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*index  , to.len()).ok_or(StringModificationError::InvalidIndex)?                                                     );} else {Err(StringModificationError::InvalidIndex)?;},
+            Self::Insert{index, value} => if to.is_char_boundary(neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.insert_str(neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?, get_str!(value, task_state, StringModificationError));} else {Err(StringModificationError::InvalidIndex)?;},
+            Self::RemoveChar(index)    => if to.is_char_boundary(neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?) {to.remove    (neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?                                                      );} else {Err(StringModificationError::InvalidIndex)?;},
             Self::KeepRange{start, end}  => *to = to.get(neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
             #[cfg(feature = "regex")]
             Self::RegexCaptures {regex, replace} => {
@@ -505,7 +682,10 @@ impl StringModification {
                     }
                 )?
             },
-            Self::Unescape(mode) => *to = mode.unescape(to)?,
+
+            Self::GetJsStringLiteralPrefix => *to = parse::js::string_literal_prefix(to)?,
+            Self::UnescapeHtmlText => *to = parse::html::unescape_text(to)?,
+            Self::GetHtmlAttribute(name) => *to = parse::html::get_attribute_value(to, get_str!(name, task_state, StringModificationError))?.ok_or(StringModificationError::HtmlAttributeNotFound)?.ok_or(StringModificationError::HtmlAttributeHasNoValue)?,
 
             Self::StringMap {value, map} => if let Some(x) = map.get(value.get(task_state)?) {x.apply(to, task_state)?;},
 
