@@ -7,7 +7,6 @@ use url::Url;
 use reqwest::header::HeaderValue;
 use reqwest::Proxy;
 
-use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
@@ -78,7 +77,7 @@ pub enum ProxyMode {
     All
 }
 
-/// The autnentication to use for a proxy.
+/// The authentication to use for a proxy.
 ///
 /// Uses the [`Proxy-Authentication`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Proxy-Authorization) HTTP header.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
@@ -118,7 +117,7 @@ impl TryFrom<ProxyConfig> for reqwest::Proxy {
 impl ProxyConfig {
     /// Makes a [`reqwest::Proxy`].
     /// # Errors
-    /// If the call to [`Proxy::http`], [`Proxy::https`], or [`Proxy:;all`] return an error, that error is returned.
+    /// If the call to [`Proxy::http`], [`Proxy::https`], or [`Proxy::all`] return an error, that error is returned.
     pub fn make(self) -> reqwest::Result<Proxy> {
         self.try_into()
     }

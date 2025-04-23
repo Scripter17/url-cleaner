@@ -45,7 +45,7 @@ pub struct RequestConfig {
     pub body: Option<RequestBody>,
     /// What to part of the response to return.
     ///
-    /// Defaults to [`ResponseHandler::body`].
+    /// Defaults to [`ResponseHandler::Body`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub response_handler: ResponseHandler,
     /// Overrides for the [`HttpClientConfig`] this uses to make the [`reqwest::blocking::Client`].
@@ -58,13 +58,13 @@ fn get_string_source_part_whole() -> StringSource {StringSource::Part(UrlPart::W
 /// Serde helper function for [`RequestConfig::url`].
 fn is_string_source_part_whole(value: &StringSource) -> bool {value == &get_string_source_part_whole()}
 
-/// The enum of erros [`RequestConfig::make`] can return.
+/// The enum of errors [`RequestConfig::make`] can return.
 #[derive(Debug, Error)]
 pub enum MakeHttpRequestError {
     /// Returned when a [`reqwest::Error`] is encountered.
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
-    /// Returned when a [`ReqwestBodyError`] is encountered.
+    /// Returned when a [`RequestBodyError`] is encountered.
     #[error(transparent)]
     RequestBodyError(#[from] RequestBodyError),
     /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to return [`Some`].
@@ -125,9 +125,9 @@ impl RequestConfig {
     ///
     /// If [`Self::url`]'s call to [`StringSource::get`] returns an error, that error is returned.
     ///
-    /// If [`Self::url`]'s call to [`StringSource::get`] returns [`None`], returns the error [`RequestConfigError::StringSourceIsNone`].
+    /// If [`Self::url`]'s call to [`StringSource::get`] returns [`None`], returns the error [`MakeHttpRequestError::StringSourceIsNone`].
     /// 
-    /// If any of [`Self::headers`]'s calls to [`StringSource::get`] returun an error, that error is returned.
+    /// If any of [`Self::headers`]'s calls to [`StringSource::get`] return an error, that error is returned.
     ///
     /// If any of [`Self::headers`]'s calls to [`HeaderName::try_from`] returns an error, that error is returned.
     ///
@@ -205,7 +205,7 @@ impl From<StringSourceError> for RequestBodyError {
 }
 
 impl RequestBody {
-    /// Inserts the specified body into a [`reqwest::blocking::ReqwestBuilder`].
+    /// Inserts the specified body into a [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn apply(&self, request: reqwest::blocking::RequestBuilder, job_state: &TaskStateView) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
@@ -225,7 +225,7 @@ impl RequestBody {
     }
 }
 
-/// What part of a response an [`HttpRequestConfig`] should return.
+/// What part of a response a [`RequestConfig`] should return.
 ///
 /// Defaults to [`Self::Body`].
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Suitability)]

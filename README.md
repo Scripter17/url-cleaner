@@ -1,35 +1,34 @@
 # URL Cleaner
 
-Websites often put unique identifiers into URLs so that when you send a link to a friend and they open it, the website knows it was you who sent it to them.  
-As most people do not understand and therefore cannot consent to this, it is polite to remove the maltext before sending URLs to people.  
-URL Cleaner is an extremely versatile tool designed to make this process as comprehensive, easy, and fast as possible.
+<!--cmd cat src/lib.rs | sed -E 's/^\/\/! ?//; t; d'-->
+Explicit non-consent to URL spytext.
 
-## Privacy
+Often when a website/app gives you a URL to share to a friend, that URL contains a unique identifier that, when your friend clicks on it, tells the website you sent them that URL.
+I call this "spytext", as it's text that allows spyware to do spyware things suhc as telling the united states federal government you associate with wrongthinkers.
 
-There are some things you need to be careful about both with URL cleaning in general and URL Cleaner specifically.
+Because of the ongoing human rights catastrophes intentionally enabled by spytext, it is basic decency to remove it before you send a URL, and basic opsec to remove it when you recieve a URL.
 
-### Redirect sites
+URL Cleaner is designed to make this as comprehensive, fast, and easy as possible, with the priorities mostly in that order.
+# PLEASE note that URL Cleaner is not something you should blindly trust!
+URL Cleaner and its default config are under heavy development, and many websites may break, be partially unhandled, or give incorrect results.
 
-The main privacy concern when using URL Cleaner for day-to-day activities is the fact URL Cleaner, when the `no-network` flag isn't set, expands redirects/shortlinks.  
-For example, passing a bit.ly link to URL Cleaner will effectively click on that URL will send an HTTP request to bit.ly.  
-While the default config removes as much tracking stuff as possible before sending the request, some redirect sites may merge the sender and the destination information into the same part of the URL.  
-For example, if Alice and Bob share the same social media post with you, the social media may give Alice the URL `https://example.com/share/1234` but give Bob the URL `https://example.com/share/5678`.  
-In this case, it's impossible (or extremely difficult to find a way) to expand either link without telling the social media who you got the URL from.
+While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned value if it's detected as a redirect,
+this expansion may lead to websites deanonymizing your/your URL Cleaner Site instances IP address. It may also allow malicious enails/comments/DMs to find your IP by buying expired but still handled redirect sites.
 
-In general it's impossible to prove if a redirect website doesn't merge sender and destination information, so one should always assume it is.  
-If you consider this a problem, please use the `no-network` flag.  
-Some redirect websites will still be handled but that's only because they can be done entirely offline.
+While URL Cleaner supports using proxies, disabling network access entirely, and doesn't consider hiding the fact you're cleaning URLs in scope,
+you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
 
-### You look like you use URL Cleaner
+Additionally, some redirect websites also put the destination in the URL (`https://example-redirect-site.com/redirect/1234?final_url=https://example.com/`).
+For these, the default config uses the `final_url` query parameter to skip the network request.
+It's possible for either the website or the person sending you the link to intentionally mismatch the redirect ID and the `final_url` to send people who use URL Cleaner to different places than people who don't.
+This attack is very hard for things like email spam filters to detect as it's largely unique to people who clean URLs, which is a very small minority of people who'd report things to spam filter makers.
+If a website is suceptable to this or similar attacks, then URL Cleaner is considered at fault and a bug report to fix it would be appreciated.
 
-The lesser main privacy concern is that the default config makes no attempt to hide from websites that you (or the person sending you a link) uses URL Cleaner.  
-For example, amazon product listings are shortened from a paragraph of crap to just `https://amazon.com/dp/PRODUCT-ID`.  
-In the past (and possibly the future), extreme cases of this were gated behind a `minimize` flag that would try to only remove tracking stuff.  
-It was made the default because I consider the benefit from blending into other URL cleaning programs extremely slim.
+Another deanonymization vector involves [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) cleaning websites directly in the browser.
+While this makes it trivial for the website to know you're using URL Cleaner Site, a much bigger issue is that redirects are cached, so if you've seen a redirect before, the website can detect that from both timing and possibly owning the redirect site.
 
-### Misc.
-
-- For redirect URLs that can be expanded both by clicking on them and by getting the destination from the URL itself (`website.com/go?url=https://...`), it's possible for malicious sources to change the URL so that clicking it and extracting the destination from it give different results. There are currently no plans to address this but the issue is known.
+While URL Cleaner's default config is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
+<!--/cmd-->
 
 ## C dependencies
 
@@ -100,6 +99,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `invidious-host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
 - `twitter-embed-host`: The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`.
 - `bluesky-embed-host`: The domain to use for bluesky when the `embed-compatibility` flag is set. Defaults to `fxbsky.com`.
+- `pixiv-embed-host`: The domain to use for pixiv when the `embed-compatibility` flag is set. Defaults to `phixiv.com`.
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
 
 #### Environment Vars
@@ -115,7 +115,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `redirect-reg-domains`: The `redirect-hwwwwdpafqdnpes` set but using the `RegDomain` of the URL.
 - `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
 - `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
-- `remove-www-subdomain-reg-domain-blacklist`: `RegDomain`s where a `www` `Subdomain` is important and thus won't have it removed.
+- `remove-www-subdomain-reg-domain-blacklist`: The RegDomains to not remove a `www` subdomain from.
 - `unmobile-reg-domain-blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
 - `utps-reg-domain-whitelist`: RegDomains to never remove universal tracking parameters from.
@@ -132,21 +132,22 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 - `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
 
-#### Jobs Context
+#### Job Context
 
 ##### Vars
 
 - `SOURCE_HOST`: The `Host` of the "source" of the jobs. Usually the webpage it came from.
 - `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the jobs, Usually the webpage it came from.
 
-#### Job Context
+#### Task Context
 
 ##### Vars
 
-- `redirect_shortcut`: For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.
-- `site_name`: For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.
-- `link_text`: The text of the link the job came from.
 - `bsky_handle`: The handle of an `@user.bsky.social`, used to replace the `/did:plc:12345678` in the URL with the actual handle.
+- `faci_site_name`: For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.
+- `link_text`: The text of the link the job came from.
+- `redirect_shortcut`: For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.
+- `twitter_handle`: The handle of the twitter user for a `/i/web/status/` and `/i/user/` twitter URLs.
 <!--/cmd-->
 
 #### But how fast is it?
@@ -155,35 +156,35 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-03-09.
+Last updated 2025-04-23.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  7.383,
-    "1"    :  7.478,
-    "10"   :  7.485,
-    "100"  :  7.840,
-    "1000" : 10.115,
-    "10000": 32.909
+    "0"    :  7.122,
+    "1"    :  7.300,
+    "10"   :  7.747,
+    "100"  :  7.716,
+    "1000" :  9.767,
+    "10000": 32.542
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  7.380,
-    "1"    :  7.451,
-    "10"   :  7.549,
-    "100"  :  7.872,
-    "1000" : 11.211,
-    "10000": 45.314
+    "0"    :  7.069,
+    "1"    :  7.307,
+    "10"   :  7.306,
+    "100"  :  7.645,
+    "1000" : 11.444,
+    "10000": 45.100
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  7.378,
-    "1"    :  7.391,
-    "10"   :  7.614,
-    "100"  :  8.530,
-    "1000" : 12.563,
-    "10000": 60.176
+    "0"    :  7.650,
+    "1"    :  7.477,
+    "10"   :  7.398,
+    "100"  :  7.940,
+    "1000" : 13.796,
+    "10000": 69.848
   }
 }
 ```

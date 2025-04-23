@@ -1,4 +1,4 @@
-//! A system to stop me from accidentally comitting debug stuff to the default config.
+//! A system to stop me from accidentally committing debug stuff to the default config.
 
 use std::fmt::Debug;
 use std::collections::{HashSet, HashMap};

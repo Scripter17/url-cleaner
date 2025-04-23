@@ -1,10 +1,8 @@
-
+//! URL Cleaner - Explicit non-consent to URL spytext.
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
-use std::borrow::Cow;
 use std::process::ExitCode;
-use std::str::FromStr;
 
 use clap::{Parser, CommandFactory};
 use thiserror::Error;
@@ -16,7 +14,7 @@ use types::*;
 mod testing;
 mod util;
 
-/// URL Cleaner v0.9.0
+/// URL Cleaner - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
 ///
@@ -44,11 +42,12 @@ mod util;
 #[cfg_attr(not(feature = "custom"        ), doc = "custom"        )]
 #[cfg_attr(not(feature = "debug"         ), doc = "debug"         )]
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
+#[command(version = env!("VERSION_INFO"))]
 pub struct Args {
     /// The URLs to clean before STDIN.
     ///
-    /// Can contain job context by using {"url":"https://example.com","context":{...}}
-    pub urls: Vec<String>,
+    /// Can contain a task context by using {"url":"https://example.com","context":{...}}
+    pub urls: Vec<LazyTaskConfig>,
     /// The config file to use.
     ///
     /// Omit to use the built in default config.
@@ -79,12 +78,18 @@ pub struct Args {
     /// The context to share between all Tasks.
     #[arg(             long)]
     pub job_context: Option<String>,
+    /// Test files to run.
     #[arg(             long, verbatim_doc_comment)]
     pub tests: Option<Vec<PathBuf>>,
+    /// Asserts the "suitability" of the loaded config.
     #[arg(             long, verbatim_doc_comment)]
     pub test_suitability: bool,
+    /// The number of worker threads to use.
+    ///
+    /// 0 uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     pub threads: usize,
+    /// (For debug build) Only print timing information.
     #[cfg(feature = "debug")]
     #[arg(long)]
     pub debug_just_print_times: bool,
@@ -92,15 +97,25 @@ pub struct Args {
     #[arg(long)]
     pub debug_no_printing: bool
 }
+
+/// The enum of errors [`main`] can return.
 #[derive(Debug, Error)]
 pub enum CliError {
+    /// Returned when a [`GetConfigError`] is encountered.
     #[error(transparent)] GetConfigError(#[from] GetConfigError),
+    /// Returned when unable to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
+    /// Returned when unable to parse a [`ParamsDiff`] file.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
+    /// Returned when unable to parse the [`Args::job_context`] parameter.
     #[error(transparent)] CantParseJobContext(serde_json::Error),
+    /// Returned when unable to load a [`Tests`] file.
     #[error(transparent)] CantLoadTests(io::Error),
+    /// Returned when unable to parse a [`Tests`] file.
     #[error(transparent)] CantParseTests(serde_json::Error)
 }
+
+/// Helper function to convert [`str`]s into JSON strings.
 fn str_to_json_str(s: &str) -> String {
     serde_json::to_string(s).expect("Serializing a string to never fail.")
 }
@@ -137,6 +152,14 @@ fn main() -> Result<ExitCode, CliError> {
         params_diff.apply(&mut config.params);
     }
 
+    let job_context = if let Some(job_context_string) = args.job_context {
+        serde_json::from_str(&job_context_string).map_err(CliError::CantParseJobContext)?
+    } else {
+        Default::default()
+    };
+
+    let cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
+
     let json = args.json;
 
     let tests            = args.tests;
@@ -157,38 +180,33 @@ fn main() -> Result<ExitCode, CliError> {
 
     let mut threads = args.threads;
     if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
-    let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoTaskError>, MakeTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
-
-    let job_config = JobConfig {
-        #[cfg(feature = "cache")]
-        cache: args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into(),
-        config: Cow::Owned(config)
-    };
-    let job_config_ref = &job_config;
-    let job_context = if let Some(job_context_string) = args.job_context {
-        serde_json::from_str(&job_context_string).map_err(CliError::CantParseJobContext)?
-    } else {
-        Default::default()
-    };
+    let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let config_ref = &config;
     let job_context_ref = &job_context;
-
+    let cache_ref = &cache;
     std::thread::scope(|s| {
 
         // Task getter thread.
 
         std::thread::Builder::new().name("Task Getter".to_string()).spawn_scoped(s, move || {
-            let task_config_strings_source: Box<dyn Iterator<Item = Result<String, io::Error>>> = {
-                let ret = args.urls.into_iter().map(Ok);
-                if !io::stdin().is_terminal() {
-                    Box::new(ret.chain(io::stdin().lines()))
-                } else {
-                    Box::new(ret)
+            let job = Job {
+                config : config_ref,
+                context: job_context_ref,
+                #[cfg(feature = "cache")]
+                cache: cache_ref,
+                lazy_task_configs: {
+                    let ret = args.urls.into_iter().map(Ok);
+                    if !io::stdin().is_terminal() {
+                        Box::new(ret.chain(io::stdin().lines().map(|x| Ok(x?.into()))))
+                    } else {
+                        Box::new(ret)
+                    }
                 }
             };
 
-            for (in_sender, task_config_string) in in_senders.iter().cycle().zip(task_config_strings_source) {
-                in_sender.send(task_config_string).expect("The in reciever to still exist.");
+            for (in_sender, task_config_string) in in_senders.iter().cycle().zip(job) {
+                in_sender.send(task_config_string).expect("The in receiver to still exist.");
             }
         }).expect("Making threads to work fine.");
 
@@ -196,13 +214,13 @@ fn main() -> Result<ExitCode, CliError> {
 
         in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
-                while let Ok(maybe_task_config_string) = ir.recv() {
-                    let ret = match maybe_task_config_string {
-                        Ok(task_config_string) => match TaskConfig::from_str(&task_config_string) {
-                            Ok(task_config) => Ok(job_config_ref.new_task(task_config, job_context_ref).r#do()),
-                            Err(e) => Err(MakeTaskError::MakeTaskConfigError(e))
+                while let Ok(maybe_task_source) = ir.recv() {
+                    let ret = match maybe_task_source {
+                        Ok(task_source) => match task_source.make() {
+                            Ok(task) => task.r#do(),
+                            Err(e) => Err(e.into())
                         },
-                        Err(e) => Err(MakeTaskError::MakeTaskConfigError(MakeTaskConfigError::IoError(e)))
+                        Err(e) => Err(DoTaskError::MakeTaskError(e.into()))
                     };
 
                     os.send(ret).expect("The out receiver to still exist.");
@@ -226,19 +244,14 @@ fn main() -> Result<ExitCode, CliError> {
                     print!("{{\"Ok\":{{\"urls\":[");
                     for or in out_recievers.iter().cycle() {
                         match or.recv() {
-                            Ok(Ok(Ok(url))) => {
+                            Ok(Ok(url)) => {
                                 if !first_job {print!(",");}
-                                print!("{{\"Ok\":{{\"Ok\":{}}}}}", str_to_json_str(url.as_str()));
+                                print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));
                                 *some_ok_ref_lock = true;
-                            },
-                            Ok(Ok(Err(e))) => {
-                                if !first_job {print!(",");}
-                                print!("{{\"Ok\":{{\"Err\":{{\"message\":{},\"variant\":{}}}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
-                                *some_err_ref_lock = true;
                             },
                             Ok(Err(e)) => {
                                 if !first_job {print!(",");}
-                                print!("{{\"Err\":{{\"message\":{},\"variant\":{}}}}}", str_to_json_str(&e.to_string()), str_to_json_str(&format!("{e:?}")));
+                                print!("{{\"Err\":{}}}", str_to_json_str(&format!("{e:?}")));
                                 *some_err_ref_lock = true;
                             },
                             Err(_) => break
@@ -250,18 +263,13 @@ fn main() -> Result<ExitCode, CliError> {
                 } else {
                     for or in out_recievers.iter().cycle() {
                         match or.recv() {
-                            Ok(Ok(Ok(url))) => {
+                            Ok(Ok(url)) => {
                                 println!("{}", url.as_str());
                                 *some_ok_ref_lock = true;
                             },
-                            Ok(Ok(Err(e))) => {
-                                println!();
-                                eprintln!("DoTaskError\t{e:?}");
-                                *some_err_ref_lock = true;
-                            }
                             Ok(Err(e)) => {
                                 println!();
-                                eprintln!("MakeTaskError\t{e:?}");
+                                eprintln!("{e:?}");
                                 *some_err_ref_lock = true;
                             }
                             Err(_) => break

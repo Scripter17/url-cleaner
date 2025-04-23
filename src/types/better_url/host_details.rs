@@ -10,9 +10,9 @@ use url::Url;
 #[expect(unused_imports, reason = "Doc links.")]
 use crate::types::*;
 
-mod domain;
+pub mod domain;
 pub use domain::*;
-mod ip;
+pub mod ip;
 pub use ip::*;
 
 #[expect(unused_imports, reason = "Doc links.")]
@@ -98,7 +98,7 @@ impl TryFrom<HostDetails> for Ipv6Details {
 impl HostDetails {
     /// Gets the details of a host [`str`].
     /// # Errors
-    /// If the call to [`url::Host::parse`] reutrns an error, that error is returned.
+    /// If the call to [`url::Host::parse`] returns an error, that error is returned.
     pub fn from_host_str(host: &str) -> Result<Self, url::ParseError> {
         url::Host::parse(host).map(|host| Self::from_host(&host))
     }

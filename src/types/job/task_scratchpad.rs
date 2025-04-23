@@ -1,4 +1,4 @@
-//! Scratch space a [`Task`] can read and write from and two during execution.
+//! Scratch space a [`Task`] can read and write from and to during execution.
 
 use std::collections::{HashSet, HashMap};
 
@@ -12,7 +12,7 @@ use crate::util::*;
 /// A scratchpad to allow storing state between [`Rule`]s and stuff.
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct JobScratchpad {
+pub struct TaskScratchpad {
     /// The flags.
     #[serde_as(as = "SetPreventDuplicates<_>")]
     #[serde(default, skip_serializing_if = "is_default")]

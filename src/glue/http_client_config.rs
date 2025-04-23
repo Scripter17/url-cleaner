@@ -6,6 +6,7 @@ use serde::{Serialize, Deserialize};
 #[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
 
+#[expect(unused_imports, reason = "Used in docs.")]
 use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
@@ -18,12 +19,12 @@ pub struct HttpClientConfig {
     pub default_headers: HeaderMap,
     /// The redirect policy.
     ///
-    /// Somewhat nuacned so check [`RedirectPolicy`]'s docs.
+    /// Somewhat nuanced so check [`RedirectPolicy`]'s docs.
     #[serde(default, skip_serializing_if = "is_default")]
     pub redirect_policy: RedirectPolicy,
     /// The value passed to [`reqwest::blocking::ClientBuilder::https_only`].
     ///
-    /// Defaults to [`fasle`].
+    /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub https_only: bool,
     /// Proxies to use.

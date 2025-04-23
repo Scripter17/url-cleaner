@@ -110,8 +110,8 @@ pub(crate) fn suitablility_derive(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         #[allow(unused_variables)]
-        impl #impl_generics Suitability for #name #ty_generics #where_clause where #(#types: Debug + Suitability),* {
-            fn assert_suitability(&self, config: &Config) {
+        impl #impl_generics Suitability for #name #ty_generics #where_clause where #(#types: ::std::fmt::Debug + Suitability),* {
+            fn assert_suitability(&self, config: &crate::types::Config) {
                 #logic
             }
         }

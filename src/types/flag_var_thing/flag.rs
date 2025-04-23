@@ -20,17 +20,21 @@ pub enum FlagType {
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     Common,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
+    /// Get it from [`TaskStateView::scratchpad`]'s [`TaskScratchpad::vars`]
     Scratchpad
 }
 
+/// The enum of erros [`FlagType::get`] and [`FlagRef::get`] can return.
 #[derive(Debug, Error)]
 pub enum GetFlagError {
+    /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
+    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    #[error("Not in a common context.")]
+    /// Returned when trying to use [`FlagType::Common`] outside of a common context.
+    #[error("Tried to use FlagType::Common outside of a common context.")]
     NotInCommonContext
 }
 
@@ -53,7 +57,7 @@ impl FlagType {
     }
 }
 
-/// A "referene" to a flag.
+/// A "reference" to a flag.
 ///
 /// Used mainly to allow deserializing `{"type": "Params", "name": "..."}` as `"..."`.
 /// # Examples
@@ -88,9 +92,9 @@ impl FlagRef {
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`GetFlagFlagor::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`GetFlagError::StringSourceIsNone`].
     ///
-    /// If the call to [`FlagFlage::get`] returns an error, that error is returned.
+    /// If the call to [`FlagType::get`] returns an error, that error is returned.
     pub fn get(&self, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
         self.r#type.get(task_state, get_str!(self.name, task_state, GetFlagError))
     }

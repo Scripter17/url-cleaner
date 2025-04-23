@@ -30,7 +30,7 @@ pub enum Condition {
     ///
     /// If the call to [`Self::If::if`] fails, return the value of [`Self::If::else`].
     /// # Errors
-    /// If any call to [`Self::satisifed_by`] returns an error, that error is returned.
+    /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
     If {
         /// The [`Self`] to decide between [`Self::If::then`] and [`Self::If::else`].
         r#if: Box<Self>,
@@ -39,7 +39,7 @@ pub enum Condition {
         /// The [`Self`] to use if [`Self::If::if`] fails.
         r#else: Box<Self>
     },
-    /// If the call to [`Self::satisifed_by`] passes or fails, invert it into failing or passing.
+    /// If the call to [`Self::satisfied_by`] passes or fails, invert it into failing or passing.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     Not(Box<Self>),
@@ -91,10 +91,10 @@ pub enum Condition {
     ///
     /// Otherwise returns the value of the contained [`Self`].
     TreatErrorAsPass {
-        /// The [`Self`] to treat errors as passes for.
+        /// The [`Self`] to try to test.
         #[serde(flatten)]
         condition: Box<Self>,
-        /// The filter of which errors to treat as passes.
+        /// The filter of which errors to catch.
         ///
         /// Defaults to all errors.
         #[serde(default, skip_serializing_if = "is_default")]
@@ -104,10 +104,10 @@ pub enum Condition {
     ///
     /// Otherwise returns the value of the contained [`Self`].
     TreatErrorAsFail {
-        /// The [`Self`] to treat errors as fails for.
+        /// The [`Self`] to try to test.
         #[serde(flatten)]
         condition: Box<Self>,
-        /// The filter of which errors to treat as fails.
+        /// The filter of which errors to catch.
         ///
         /// Defaults to all errors.
         #[serde(default, skip_serializing_if = "is_default")]
@@ -115,15 +115,15 @@ pub enum Condition {
     },
     /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
-    /// If both calls to [`Self::satisifed_by`] return errors, both errors are returned.
+    /// If both calls to [`Self::satisfied_by`] return errors, both errors are returned.
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
         /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
         r#else: Box<Self>,
-        /// The set of errors [`Self::TryElse::try`] can return that will trigger [`Self::TryElse::else`].
+        /// The filter of which errors to catch.
         ///
-        /// If [`None`], all errors will trigger [`Self::TryElse::else`].
+        /// Defaults to all errors.
         #[serde(default, skip_serializing_if = "is_default")]
         filter: ConditionErrorFilter
     },
@@ -144,8 +144,8 @@ pub enum Condition {
     NotDomainSuffixIs(Option<String>),
     /// Passes if the value of [`UrlPart::DomainSuffix`] is equal to the specified string.
     DomainSuffixIs(Option<String>),
-    /// Passes if the value of [`UrlPart::DomainSuffix`] is contained in the specified [`HashSet`].
-    HostIsOneOf(HashSet<String>),
+    /// Passes if the value of [`UrlPart::DomainSuffix`] is contained in the specified [`Set`].
+    HostIsOneOf(Set<String>),
     /// Passes if the value of [`UrlPart::Host`] is [`Some`].
     UrlHasHost,
     /// Passes if the URL is a [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name).
@@ -207,13 +207,11 @@ pub enum Condition {
         matcher: StringMatcher
     },
     /// Passes if [`Self::PartIsOneOf::part`] is in [`Self::PartIsOneOf::values`].
-    /// # Errors
-    /// If the call to [`Self::UrlPart::get`] returns [`None`], returns the error [`ConditionError::PartIsNone`].
     PartIsOneOf {
         /// The part to check the value of.
         part: UrlPart,
         /// The set of values to check if [`Self::PartIsOneOf::part`] is one of.
-        values: HashSet<String>
+        values: Set<String>
     },
 
 
@@ -274,7 +272,7 @@ pub enum Condition {
     StringMatches {
         /// The value to check the value of.
         value: StringSource,
-        /// The matcher ot check if [`Self::StringMatches::value`] satisfies.
+        /// The matcher to check if [`Self::StringMatches::value`] satisfies.
         matcher: StringMatcher
     },
 
@@ -282,9 +280,9 @@ pub enum Condition {
 
     /// Get a [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] and pass if it's satisfied.
     /// # Errors
-    /// If [`CommonCall::name`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
+    /// If [`CommonCall::name`]'s call to [`StringSource::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
     ///
-    /// If [`Params::common`]'s [`Commons::conditions`] doesn't contain a [`Self`] with the specified name, returns the error [`ConditionError::CommonConditionNotFound`].
+    /// If [`TaskStateView::commons`]'s [`Commons::conditions`] doesn't contain a [`Self`] with the specified name, returns the error [`ConditionError::CommonConditionNotFound`].
     ///
     /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
     Common(CommonCall),
@@ -297,9 +295,9 @@ pub enum Condition {
 }
 
 /// The enum of errors [`Condition::satisfied_by`] can return.
-#[derive(Debug, Error, url_cleaner_macros::ErrorFilter)]
+#[derive(Debug, Error, ErrorFilter)]
 pub enum ConditionError {
-    /// Returned when a [`Condition::ExplicitError`] is used.
+    /// Returned when a [`Condition::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
     /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
@@ -328,7 +326,7 @@ pub enum ConditionError {
     /// Returned when a [`UrlDoesNotHavePathSegments`] is returned.
     #[error(transparent)]
     UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
-    /// Returned when a [`Condition`] with the specified name ins't found in the [`Commons::conditions`].
+    /// Returned when a [`Condition`] with the specified name isn't found in the [`Commons::conditions`].
     #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
     CommonConditionNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered/
@@ -413,7 +411,7 @@ impl Condition {
             Self::NotDomainSuffixIs(x) => UrlPart::NotDomainSuffix.get(task_state.url).as_deref() == x.as_deref(),
             Self::DomainSuffixIs   (x) => UrlPart::DomainSuffix   .get(task_state.url).as_deref() == x.as_deref(),
 
-            Self::HostIsOneOf(hosts) => task_state.url.host_str().is_some_and(|url_host| hosts.contains(url_host)),
+            Self::HostIsOneOf(hosts) => hosts.contains(task_state.url.host_str()),
 
             Self::UrlHasHost   => task_state.url.host().is_some(),
             Self::HostIsFqdn   => matches!(task_state.url.host_details(), Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..}))),
@@ -430,9 +428,9 @@ impl Condition {
             // General parts.
 
             Self::PartIs{part, value} => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
-            Self::PartContains{part, value, r#where} => r#where.satisfied_by(& part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, get_str!(value, task_state, ConditionError))?,
-            Self::PartMatches {part, matcher       } => matcher.satisfied_by(& part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, task_state)?,
-            Self::PartIsOneOf {part, values        } => values .contains    (&*part.get(task_state.url).ok_or(ConditionError::PartIsNone)?),
+            Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartMatches {part, matcher       } => matcher.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, task_state)?,
+            Self::PartIsOneOf {part, values        } => values .contains    ( part.get(task_state.url).as_deref()),
 
             // Miscellaneous.
 

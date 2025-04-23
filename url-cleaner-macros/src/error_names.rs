@@ -7,14 +7,14 @@ pub(crate) fn error_filter_derive(input: TokenStream) -> TokenStream {
 
     let name = &input.ident;
     let original_name = name.to_string().strip_suffix("Error").unwrap().to_string();
-    let error_names = format_ident!("{name}Names");
+    let error_names = format_ident!("{name}Name");
     let filter_name = format_ident!("{name}Filter");
 
     match input.data {
         Data::Enum(data) => {
             let variants = data.variants.into_iter().map(|x| x.ident).collect::<Vec<_>>();
             quote!{
-                #[doc = concat!("The names of errors in [`", stringify!(name), "`]. Used for filtering errors.")]
+                #[doc = concat!("The names of errors in [`", stringify!(#name), "`]. Used for filtering errors.")]
                 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
                 pub enum #error_names {
                     #(

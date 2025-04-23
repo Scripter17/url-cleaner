@@ -9,3 +9,4 @@ sync.sh
 *.sqlite
 !empty-cache.sqlite
 *.minified*
+/reddit*

@@ -2,7 +2,6 @@
 
 use std::str::FromStr;
 use std::collections::{HashSet, HashMap};
-use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -40,11 +39,20 @@ string_or_struct_magic!(CommonCall);
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CommonCallArgsSource {
     /// The flags to set.
+    ///
+    /// Defaults to an empty [`HashSet`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub flags: HashSet<String>,
     /// The vars to set.
+    ///
+    /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, StringSource>
+    pub vars: HashMap<String, StringSource>,
+    /// The [`StringModification`]s to use.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub string_modifications: HashMap<String, StringModification>
 }
 
 /// The enum of errors [`CommonCallArgsSource::build`] can return.
@@ -65,19 +73,22 @@ impl CommonCallArgsSource {
     /// Builds the [`CommonCallArgs`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn build<'a>(&'a self, job_state: &TaskStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
+    pub fn build<'a>(&'a self, task_state: &TaskStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
         Ok(CommonCallArgs {
-            flags: self.flags.iter().map(|x| Cow::Borrowed(&**x)).collect(),
-            vars: self.vars.iter().map(|(k, v)| Ok((Cow::Borrowed(&**k), get_string!(v, job_state, StringSourceError)))).collect::<Result<HashMap<_, _>, StringSourceError>>()?
+            flags: &self.flags,
+            vars: self.vars.iter().filter_map(|(k, v)| match v.get(task_state) {Ok(Some(x)) => Some(Ok((&**k, x.into_owned()))), Ok(None) => None, Err(e) => Some(Err(e))}).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
+            string_modifications: &self.string_modifications
         })
     }
 }
 
 /// The args a [`Commons`] thing is called with.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommonCallArgs<'a> {
     /// The flags that are set.
-    pub flags: HashSet<Cow<'a, str>>,
+    pub flags: &'a HashSet<String>,
     /// The vars that are set.
-    pub vars: HashMap<Cow<'a, str>, String>
+    pub vars: HashMap<&'a str, String>,
+    /// The [`StringModification`]s to use.
+    pub string_modifications: &'a HashMap<String, StringModification>
 }

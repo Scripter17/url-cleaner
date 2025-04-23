@@ -34,6 +34,11 @@ pub(crate) const fn neg_range_boundary(index: isize, len: usize) -> Option<usize
     }
 }
 
+/// [`neg_range_boundary`] but shifts its result while keeping it in bounds.
+pub(crate) fn neg_shifted_range_boundary(index: isize, len: usize, shift: isize) -> Option<usize> {
+    neg_range_boundary(index, len)?.checked_add_signed(shift).filter(|x| *x <= len)
+}
+
 /// Gets the [`neg_index`] item of `iter`.
 pub(crate) fn neg_nth<I: IntoIterator>(iter: I, i: isize) -> Option<I::Item> {
     if i<0 {

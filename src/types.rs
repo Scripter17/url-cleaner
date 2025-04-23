@@ -1,4 +1,4 @@
-//! Foundtional types containing the bulk of a [`Config`]'s logic.
+//! Foundational types containing the bulk of a [`Config`]'s logic.
 
 pub mod better_url;
 pub use better_url::*;
@@ -22,9 +22,9 @@ pub mod job;
 pub use job::*;
 pub mod named_partitioning;
 pub use named_partitioning::*;
+pub mod set;
+pub use set::*;
 pub mod map;
 pub use map::*;
-pub mod error_behavior;
-pub use error_behavior::*;
 pub mod flag_var_thing;
 pub use flag_var_thing::*;

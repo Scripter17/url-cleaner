@@ -1,75 +1,114 @@
-//! Convenient wrapper to turn an iterator of [`JobConfig`]s into an iterator of [`Task`]s.
+//! A transformer from [`LazyTaskConfig`]s to [`LazyTask`]s.
 
-#![allow(dead_code, reason = "Public API partially not used by the CLI.")]
-
-use std::borrow::Cow;
+use std::io;
+use std::error::Error;
 
 use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
 
-/// Behavior shared by all [`Task`]s from a [`Job`] and possibly mutliple [`Job`]s.
-#[derive(Debug, Clone)]
-pub struct JobConfig<'a> {
+/// A transformer from [`LazyTaskConfig`]s to [`LazyTask`]s.
+///
+/// The laziness allows dividing the [`LazyTask`]s into worker threads with minimal (if any) bottlenecking.
+/// # Examples
+/// ```
+/// use url_cleaner::types::*;
+///
+/// let job = Job {
+///     context: &Default::default(),
+///     config: &Config {
+///         rules: Rules(vec![
+///             Rule::Normal {
+///                 condition: Condition::HostIs(Some("example.com".into())),
+///                 mapper: Mapper::SetPart {part: UrlPart::Path, value: "/".into()},
+///                 else_mapper: None
+///             }
+///         ]),
+///         ..Default::default()
+///     },
+#[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
+///     lazy_task_configs: Box::new([Ok("https://example.com/1".into()), Ok("https://example.com/2".into())].into_iter())
+/// };
+///
+/// let expectations = ["https://example.com/", "https://example.com/"];
+/// 
+/// for (task, expectation) in job.into_iter().zip(expectations) {
+///     assert_eq!(task.unwrap().make().unwrap().r#do().unwrap().as_str(), expectation);
+/// }
+/// ```
+pub struct Job<'a> {
+    /// The context shared by this [`Job`].
+    pub context: &'a JobContext,
     /// The [`Config`] to use.
-    pub config: Cow<'a, Config>,
+    pub config: &'a Config,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
-    pub cache: Cache,
-}
-
-impl<'a> JobConfig<'a> {
-    /// Createsa new [`Task`] using the provided [`JobConfig`] and [`JobContext`].
-    #[allow(dead_code, reason = "Public API.")]
-    pub fn new_task(&'a self, task_config: TaskConfig, job_context: &'a JobContext) -> Task<'a> {
-        Task {
-            url: task_config.url,
-            config: &self.config,
-            context: task_config.context,
-            job_context,
-            #[cfg(feature = "cache")]
-            cache: &self.cache
-        }
-    }
-}
-
-/// Source for [`Task`]s.
-pub struct Job<'a> {
-    /// Configuration shared between [`Self`]s.
-    pub config: JobConfig<'a>,
-    /// The context shared by this [`Job`].
-    pub context: Cow<'a, JobContext>,
-    /// Source of [`JobConfig`]s.
-    pub task_configs_source: Box<dyn Iterator<Item = Result<TaskConfig, MakeTaskConfigError>>>
+    pub cache: &'a Cache,
+    /// Source of [`LazyTaskConfig`]s.
+    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig, GetLazyTaskConfigError>>>
 }
 
 impl ::core::fmt::Debug for Job<'_> {
     #[inline]
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         let mut x = f.debug_struct("Job");
-        x.field("config", &self.config);
         x.field("context", &self.context);
-        x.field("task_configs_source", &"...");
+        x.field("config" , &self.config);
+        #[cfg(feature = "cache")]
+        x.field("cache"  , &self.cache);
+        x.field("lazy_task_configs", &"...");
         x.finish()
     }
 }
 
-impl<'a> Job<'a> {
-    /// Makes an iterator of [`Job`]s.
-    pub fn iter(&'a mut self) -> impl Iterator<Item = Result<Task<'a>, MakeTaskError>> {
-        (&mut self.task_configs_source)
-            .map(|task_config_result| match task_config_result {
-                Ok(task_config) => Ok(self.config.new_task(task_config, &self.context)),
-                Err(e) => Err(e.into())
-            })
+impl<'a> IntoIterator for Job<'a> {
+    type IntoIter = JobIter<'a>;
+    type Item = <Self::IntoIter as Iterator>::Item;
+
+    fn into_iter(self) -> Self::IntoIter {
+        JobIter(self)
     }
+}
+
+/// An [`Iterator`] over [`Job`]s.
+///
+/// Yields [`LazyTask`]s.
+#[derive(Debug)]
+pub struct JobIter<'a>(Job<'a>);
+
+impl<'a> Iterator for JobIter<'a> {
+    type Item = Result<LazyTask<'a>, MakeLazyTaskError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(match self.0.lazy_task_configs.next()? {
+            Ok(lazy_task_config) => Ok(LazyTask {
+                lazy_task_config,
+                job_context: self.0.context,
+                config: self.0.config,
+                #[cfg(feature = "cache")]
+                cache: self.0.cache
+            }),
+            Err(e) => Err(e.into())
+        })
+    }
+}
+
+/// The enum of errors your code can pass to [`Job`]s to indicate why getting a [`LazyTaskConfig`] failed.
+#[derive(Debug, Error)]
+pub enum GetLazyTaskConfigError {
+    /// Returned when an [`io::Error`] is encountered.
+    #[error(transparent)]
+    IoError(#[from] io::Error),
+    /// Any other error that your [`TaskConfig`] source can return.
+    #[error(transparent)]
+    Other(#[from] Box<dyn Error + Send>)
 }
 
 /// The enum of errors that can happen when trying to make a [`Task`].
 #[derive(Debug, Error)]
-pub enum MakeTaskError {
-    /// Returned when a [`MakeTaskConfigError`] is encountered.
+pub enum MakeLazyTaskError {
+    /// Returned when a [`GetLazyTaskConfigError`] is encountered.
     #[error(transparent)]
-    MakeTaskConfigError(#[from] MakeTaskConfigError)
+    GetLazyTaskConfigError(#[from] GetLazyTaskConfigError)
 }

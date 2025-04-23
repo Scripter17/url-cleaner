@@ -1,4 +1,4 @@
-//! Dynamically get strings from various part of a [`TaskState`].
+//! Dynamically get strings from either literals or various parts of a [`TaskStateView`].
 
 use std::str::FromStr;
 use std::convert::Infallible;
@@ -6,15 +6,19 @@ use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
+#[cfg(feature = "regex")]
+#[expect(unused_imports, reason = "Used in docs.")]
+use ::regex::Regex;
 
 use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-/// # Implementation details
-/// - Every contained [`Self`] is only ever called at most once per invocation.
+/// Dynamically get strings from either literals or various parts of a [`TaskStateView`].
+/// # Deserialization
+/// Deserializing from a string produces a [`Self::String`] with that string.
 ///
-/// - All [`StringSource`]s are expected to be deterministic outside of errors. This property is relied on for [`Self::Cache`].
+/// Deserializing from a null/[`None`] produces a [`Self::None`].
 /// # Terminology
 /// "The value of {x}" and "{x}'s call to [`Self::get`]" are used interchangeably.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
@@ -139,14 +143,14 @@ pub enum StringSource {
     /// url_cleaner::task_state_view!(task_state);
     ///
     /// assert_eq!(StringSource::Join {
-    ///     sources: vec!["abc".into(), "def".into()],
+    ///     values: vec!["abc".into(), "def".into()],
     ///     join: "/".into()
     /// }.get(&task_state).unwrap(), Some("abc/def".into()));
     /// ```
     Join {
         /// The values to join the values of with [`Self::Join::join`].
-        sources: Vec<Self>,
-        /// The string to join the values of [`Self::Join::sources`].
+        values: Vec<Self>,
+        /// The string to join the values of [`Self::Join::values`].
         ///
         /// Defaults to the empty string.
         #[serde(default, skip_serializing_if = "is_default")]
@@ -188,7 +192,7 @@ pub enum StringSource {
     /// # Errors
     /// If any call to [`Self::get`] returns an error, that error is returned.
     ///
-    /// If [`Self::IfStringMatches`]'s callt to [`Self::get`] returns [`None`], returns the errorr [`StringSourceError::StringSourceIsNone`].
+    /// If [`Self::IfStringMatches`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
     ///
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     /// # Examples
@@ -220,7 +224,7 @@ pub enum StringSource {
         /// The value to return if [`Self::IfStringMatches::matcher`] fails.
         r#else: Box<Self>
     },
-    /// If the value of [`Self::IfStringIsNone::value`] is [`None`], returns the value of [`Self::IfValueIsNone::then`].
+    /// If the value of [`Self::IfStringIsNone::value`] is [`None`], returns the value of [`Self::IfStringIsNone::then`].
     /// If it's [`Some`], returns the value of [`Self::IfStringIsNone::else`].
     /// # Errors
     /// If any call to [`Self::get`] returns an error, that error is returned.
@@ -249,7 +253,7 @@ pub enum StringSource {
         /// The value to return if [`Self::IfStringIsNone::value`] returns [`Some`].
         r#else: Box<Self>
     },
-    /// Gets the value of [`Self::Map::value`] then uses it to index [`Self::Map::map`].
+    /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, get it.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
@@ -285,7 +289,7 @@ pub enum StringSource {
         #[serde(flatten)]
         map: Map<Self>,
     },
-    /// Return a referecnce to the contained [`String`].
+    /// Return a reference to the contained [`String`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -341,11 +345,11 @@ pub enum StringSource {
     /// })).get(&task_state).unwrap(), Some("def".into()));
     /// ```
     Var(Box<VarRef>),
-    /// Gets the [`Map`] specified by [`Self::ParamsMap::map`] from [`Params::maps`] then indexes it with [`Self::ParamsMap::key`].
+    /// Gets the [`Map`] specified by [`Self::ParamsMap::name`] from [`Params::maps`] then indexes it with [`Self::ParamsMap::key`].
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
     /// 
-    /// If [`Self::ParamsMap::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::MapNotFound`].
+    /// If [`Self::ParamsMap::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::ParamsMapNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -374,7 +378,7 @@ pub enum StringSource {
     /// }.get(&task_state).unwrap(), Some("was none".into()));
     /// ```
     ParamsMap {
-        /// The name of the [`ParamsMap::name`] to index.
+        /// The name of the [`Params::maps`] to index.
         #[suitable(assert = "map_is_documented")]
         name: Box<Self>,
         /// The value to index the [`Map`] with.
@@ -384,7 +388,7 @@ pub enum StringSource {
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
     ///
-    /// If [`Self::NamedPartitionings::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::NamedPartitioningNotFound`].
+    /// If [`Self::ParamsNamedPartitioning::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::ParamsNamedPartitioningNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -407,7 +411,7 @@ pub enum StringSource {
     /// }.get(&task_state).unwrap(), Some("abc".into()));
     /// ```
     ParamsNamedPartitioning {
-        /// The name of the [`Params::named_partitioning`] to index.
+        /// The name of the [`Params::named_partitionings`] to index.
         #[suitable(assert = "named_partitioning_is_documented")]
         name: Box<Self>,
         /// The element whose partition to get the name of.
@@ -526,13 +530,15 @@ pub enum StringSource {
         /// The [`Regex`] to use to find the substring.
         regex: RegexWrapper
     },
-    /// Calls a [`Self`] from [`Params::commons`]'s [`Commons::string_sources`].
+    /// Calls a [`Self`] from [`Config::commons`]'s [`Commons::string_sources`].
     /// # Errors
     /// If [`CommonCall::name`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
     ///
-    /// If [`Params::common`]'s [`Commons::string_sources`] doesn't contain a [`Self`] with the specified name, returns the error [`StringSourceError::CommonStringSourceNotFound`].
+    /// If no [`Self`] with the specified name is found, returns the error [`StringSourceError::CommonStringSourceNotFound`].
     ///
     /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::get`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -658,68 +664,90 @@ impl<'de> Deserialize<'de> for StringSource {
         deserializer.deserialize_any(V)
     }
 }
+
+/// The enum of errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringSourceError {
+    /// Returned when a [`StringSource::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
+    /// Returned when a [`StringModificationError`] is encounterd.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     #[cfg(feature = "http")]
+    /// Returned when a [`reqwest::Error`] is encountered.
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
     #[cfg(feature = "http")]
+    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[error(transparent)]
     HeaderToStrError(#[from] reqwest::header::ToStrError),
+    /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
+    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
+    /// Returned when a [`HttpResponseError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
     HttpResponseError(#[from] HttpResponseError),
+    /// Returned when a [`ResponseHandlerError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReponseHandlerError(#[from] ResponseHandlerError),
     #[cfg(feature = "commands")]
+    /// Returned when a [`CommandError`] is encountered.
     #[error(transparent)]
-    CommandError(Box<CommandError>),
-    #[error("The provided string was not in the specified map.")]
+    CommandError(#[from] Box<CommandError>),
+    /// Returned when a [`StringSource::Map::map`] doesn't have the requested value.
+    #[error("The StringSource::Map::map didn't have the requested value.")]
     StringNotInMap,
     #[cfg(feature = "cache")]
+    /// Returned when a [`ReadFromCacheError`] is encountered.
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
     #[cfg(feature = "cache")]
+    /// Returned when a [`WriteToCacheError`] is encountered.
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
+    /// Returned when a [`Box<StringMatcherError>`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] Box<StringMatcherError>),
-    #[error("The requested map was not found.")]
-    MapNotFound,
-    #[error("The requested NamedPartitioning was not found.")]
-    NamedPartitioningNotFound,
-    #[error("Not in a common context.")]
-    NotInACommonContext,
-    #[error("The `start` of an `ExtractBetween` was not found in the string.")]
+    /// Returned when the requested [`Params::maps`] isn't found.
+    #[error("The requested Params map was not found.")]
+    ParamsMapNotFound,
+    /// Returned when the requested [`Params::named_partitionings`] isn't found
+    #[error("The requested Params NamedPartitioning was not found.")]
+    ParamsNamedPartitioningNotFound,
+    /// Returned when the [`StringSource::ExtractBetween::start`] isn't found in the string.
+    #[error("The StringSource::ExtractBetween::start wasn't found in the string.")]
     ExtractBetweenStartNotFound,
-    #[error("The `end` of an `ExtractBetween` was not found in the string.")]
+    /// Returned when the [`StringSource::ExtractBetween::end`] isn't found in the string.
+    #[error("The StringSource::ExtractBetween::end wasn't found in the string.")]
     ExtractBetweenEndNotFound,
-    #[error("The common StringSource was not found.")]
+    /// Returned when the requested [`Commons::string_sources`] isn't found.
+    #[error("The requested common StringSource was not found.")]
     CommonStringSourceNotFound,
+    /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
-    #[error(transparent)]
+    /// Returned when a[`::regex::Error`]  is encountered.
     #[cfg(feature = "regex")]
-    RegexError(#[from] ::regex::Error),
     #[error(transparent)]
-    #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error + Send>),
+    RegexError(#[from] ::regex::Error),
+    /// Returned when a [`GetFlagError`] is encountered.
     #[error(transparent)]
     GetFlagError(#[from] GetFlagError),
+    /// Returned when a [`GetVarError`] is encountered.
     #[error(transparent)]
-    GetVarError(#[from] GetVarError)
+    GetVarError(#[from] GetVarError),
+    /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
+    #[cfg(feature = "custom")]
+    #[error(transparent)]
+    Custom(Box<dyn std::error::Error + Send>)
 }
-
 
 #[cfg(feature = "commands")]
 impl From<CommandError> for StringSourceError {
@@ -759,7 +787,7 @@ impl StringSource {
 
             // I love that [`Result`] and [`Option`] implement [`FromIterator`].
             // It's so silly but it works SO well.
-            Self::Join {sources, join} => sources.iter().map(|value| value.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            Self::Join {values, join} => values.iter().map(|value| value.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             Self::IfFlag {flag, then, r#else} => if flag.get(task_state)? {then} else {r#else}.get(task_state)?,
             Self::IfStringMatches {value, matcher, then, r#else} => {
                 if matcher.satisfied_by(get_str!(value, task_state, StringSourceError), task_state)? {
@@ -782,9 +810,9 @@ impl StringSource {
             Self::Part(part) => part.get(task_state.url),
             Self::ExtractPart{value, part} => value.get(task_state)?.map(|url_str| BetterUrl::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::ParamsMapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
             Self::ParamsNamedPartitioning {name, element} => task_state.params.named_partitionings
-                .get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
+                .get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::ParamsNamedPartitioningNotFound)?
                 .get_partition(get_str!(element, task_state, StringSourceError)).map(Cow::Borrowed),
             Self::Modified {value, modification} => {
                 match value.as_ref().get(task_state)? {

@@ -26,24 +26,29 @@ pub enum VarType {
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     Common,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
+    /// Get it from [`TaskStateView::scratchpad`]'s [`TaskScratchpad::vars`]
     Scratchpad,
     /// Get it from [`std::env::var`].
     ///
-    /// Even though [`std::env:;var`] returns an [`Err`] when the environment variable isn't present, this instead returns [`None`].
+    /// Even though [`std::env::var`] returns an [`Err`] when the environment variable isn't present, this instead returns [`None`].
     /// # Errors
     /// If the environment variable exists but isn't valid UTF-8, returns the error [`GetVarError::EnvVarIsNotUtf8`]
     Env
 }
 
+/// The enum of erros [`VarType::get`] and [`VarRef::get`] can return.
 #[derive(Debug, Error)]
 pub enum GetVarError {
+    /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
+    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    #[error("Not in a common context.")]
+    /// Returned when trying to use [`VarType::Common`] outside of a common context.
+    #[error("Tried to use VarType::Common outside of a common context.")]
     NotInCommonContext,
+    /// Returned when the value of an environment variable isn't valid UTF-8.
     #[error("The value of the environment variable wasn't valid UTF-8")]
     EnvVarIsNotUtf8
 }
@@ -74,7 +79,7 @@ impl VarType {
     }
 }
 
-/// A "referene" to a variable.
+/// A "reference" to a variable.
 ///
 /// Used mainly to allow deserializing `{"type": "Params", "name": "..."}` as `"..."`.
 /// # Examples
@@ -85,7 +90,7 @@ impl VarType {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(remote = "Self")]
 pub struct VarRef {
-    /// The type of the varaible to get.
+    /// The type of the variable to get.
     ///
     /// Defaults to [`VarType::Params`].
     #[serde(default, skip_serializing_if = "is_default")]

@@ -15,19 +15,21 @@ use crate::glue::*;
 use crate::testing::*;
 use crate::util::*;
 
-mod params;
+pub mod params;
 pub use params::*;
-mod docs;
+pub mod docs;
 pub use docs::*;
-mod common_call;
+pub mod common_call;
 pub use common_call::*;
-mod commons;
+pub mod commons;
 pub use commons::*;
 
 /// The config that determines all behavior of how URLs are cleaned.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 pub struct Config {
     /// The documentation.
+    ///
+    /// Defaults to an empty [`ConfigDocs`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub docs: ConfigDocs,
     /// The location of the cache.
@@ -36,15 +38,20 @@ pub struct Config {
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_path: CachePath,
-    /// The config for the config.
+    /// Fine tuning shared between all [`Task`]s of a [`Job`] and maybe multiple [`Job`]s.
     ///
-    /// Allows fine tuning the exact behavior of [`Self::rules`] to allow for multiple similar use cases.
+    /// Defaults to an empty [`Params`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params,
-    /// Common things that are basically functions.
+    /// Basically functions.
+    ///
+    /// Defaults to an empty [`Commons`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
-    /// The [`Rule`]s.
+    /// The [`Rules`] to apply.
+    ///
+    /// Defaults to an empty [`Rules`].
+    #[serde(default, skip_serializing_if = "is_default")]
     pub rules: Rules
 }
 

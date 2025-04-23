@@ -49,7 +49,7 @@ impl DomainDetails {
 
     /// Gets the details of a domain without checking it's actually a domain first.
     ///
-    /// If you are at all possibly not workign with a domain (like an IP host), please use [`Self::from_domain_str`] instead.
+    /// If you are at all possibly not working with a domain (like an IP host), please use [`Self::from_domain_str`] instead.
     #[allow(clippy::arithmetic_side_effects, reason = "Shouldn't be possible.")]
     pub fn from_domain_str_unchecked(domain: &str) -> Self {
         Self {
@@ -61,7 +61,7 @@ impl DomainDetails {
 
     /// The location of the period between [`UrlPart::Subdomain`] and [`UrlPart::DomainMiddle`].
     pub fn subdomain_period        (&self) -> Option<usize> {self.middle_start.and_then(|x| x.checked_sub(1))}
-    /// THe location of the period between [`UrlPart::DomainMiddle`] and [`UrlPart::DomainSuffix`].
+    /// The location of the period between [`UrlPart::DomainMiddle`] and [`UrlPart::DomainSuffix`].
     pub fn domain_suffix_period    (&self) -> Option<usize> {self.suffix_start.and_then(|x| x.checked_sub(1))}
 
     /// The bounds of [`UrlPart::Domain`].
@@ -78,7 +78,7 @@ impl DomainDetails {
     ///
     /// Notably does not include [`Self::fqdn_period`]
     pub fn reg_domain_bounds       (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.middle_start.map(|x|                                         (Bound::Included(x) , exorub(self.fqdn_period)))}
-    /// The bounds of [`Urlpart::DomainSuffix`].
+    /// The bounds of [`UrlPart::DomainSuffix`].
     ///
     /// Notably does not include [`Self::fqdn_period`]
     pub fn domain_suffix_bounds    (&self) -> Option<(Bound<usize>, Bound<usize>)> {self.suffix_start.map(|x|                                         (Bound::Included(x) , exorub(self.fqdn_period)))}

@@ -42,6 +42,8 @@ If a website knows you use URL Cleaner and knows when you send a request to the 
 
 This can allow correlation attacks between pseudoidentities because the default config and cache don't support partitioning the cache in that way.
 
+If a cached mapper returns an error, the mapper is re-run every subsequent time the URL is encountered. This allows `https://t.co/invalid-link` to always get an HTTP request.
+
 ## Next steps
 
 - Support partitioning the cache. Probably enabled with a flag.

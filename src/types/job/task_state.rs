@@ -11,8 +11,8 @@ use crate::glue::*;
 pub struct TaskState<'a> {
     /// The [`BetterUrl`] being modified.
     pub url: &'a mut BetterUrl,
-    /// The [`JobScratchpad`] being used.
-    pub scratchpad: &'a mut JobScratchpad,
+    /// The [`TaskScratchpad`] being used.
+    pub scratchpad: &'a mut TaskScratchpad,
     /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
     pub common_args: Option<&'a CommonCallArgs<'a>>,
     /// The [`TaskContext`] of the [`Task`] this came form.
@@ -29,11 +29,11 @@ pub struct TaskState<'a> {
 }
 
 impl<'a> TaskState<'a> {
-    /// Converts `self` tp a [`TaskStateView`], which just makes the references immutable.
+    /// Converts `self` to a [`TaskStateView`], which just makes the references immutable.
     ///
     /// `&task_state.to_view()` should always effectively compile down to a [`std::mem::transmute`].
     ///
-    /// Though you shouldn't do that since I don't have any way to tell Rust to always make that sound.
+    /// Once safe transmutes are stabilized, I'll implement [`std::ops::Deref`] like that.
     pub fn to_view(&'a self) -> TaskStateView<'a> {
         TaskStateView {
             url        : self.url,
@@ -78,8 +78,8 @@ macro_rules! task_state {
 pub struct TaskStateView<'a> {
     /// The [`BetterUrl`] being modified.
     pub url: &'a BetterUrl,
-    /// The [`JobScratchpad`] being used.
-    pub scratchpad: &'a JobScratchpad,
+    /// The [`TaskScratchpad`] being used.
+    pub scratchpad: &'a TaskScratchpad,
     /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
     pub common_args: Option<&'a CommonCallArgs<'a>>,
     /// The [`TaskContext`] of the [`Task`] this came form.
@@ -98,9 +98,9 @@ pub struct TaskStateView<'a> {
 impl<'a> TaskStateView<'a> {
     /// Makes an [`reqwest::blocking::Client`] using the relevant [`HttpClientConfig`] and [`HttpClientConfigDiff`]s.
     /// # Errors
-    /// If the call to [`HttpClientConfig::make`] returns ane error, that error is returned.
+    /// If the call to [`HttpClientConfig::make`] returns an error, that error is returned.
     /// 
-    /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns ane error, that error is returned.
+    /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns an error, that error is returned.
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
         debug!(Params::http_client, self, http_client_config_diff);

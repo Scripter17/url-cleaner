@@ -6,10 +6,9 @@ use std::sync::OnceLock;
 use serde::{Serialize, Deserialize};
 use regex::Regex;
 
-use crate::types::*;
 use crate::util::*;
 
-mod regex_parts;
+pub mod regex_parts;
 pub use regex_parts::*;
 
 /// A lazily compiled [`Regex`].
@@ -59,7 +58,7 @@ impl RegexWrapper {
 
     /// Gets the compiled [`Regex`] or, if it hasn't been compiled, compiles it.
     ///
-    /// Currently, if a call to [`Self::get_regex`] returns an error, the next call will attempt to compile the [`Regex`] *again*.
+    /// Currently, if a call to [`Self::get`] returns an error, the next call will attempt to compile the [`Regex`] *again*.
     ///
     /// Given this should be pretty rare and the cost of storing the error is pretty high, I choose to consider a reasonable tradeoff.
     /// # Errors

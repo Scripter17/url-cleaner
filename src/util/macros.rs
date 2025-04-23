@@ -2,6 +2,9 @@
 
 #[cfg(feature = "debug")]
 use std::sync::{Mutex, OnceLock};
+
+pub(crate) use url_cleaner_macros::ErrorFilter;
+
 #[cfg(feature = "debug")]
 pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
 

@@ -5,9 +5,9 @@ use std::ops::{Deref, DerefMut};
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-mod conditions;
+pub mod conditions;
 pub use conditions::*;
-mod mappers;
+pub mod mappers;
 pub use mappers::*;
 
 use crate::types::*;
@@ -66,7 +66,7 @@ pub enum Rule {
     /// 
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     StringMap {
-        /// The stringto get.
+        /// The string to get.
         value: StringSource,
         /// The map to branch with.
         #[serde(flatten)]
@@ -80,7 +80,7 @@ pub enum Rule {
     /// 
     /// If the call to [`Self::apply`] returns an error, that error is returned.
     StringRuleMap {
-        /// The stringto get.
+        /// The stringed get.
         value: StringSource,
         /// The map to branch with.
         #[serde(flatten)]
@@ -94,7 +94,7 @@ pub enum Rule {
     /// 
     /// If the call to [`Rules::apply`] returns an error, that error is returned.
     StringRulesMap {
-        /// The stringto get.
+        /// The stringed get.
         value: StringSource,
         /// The map to branch with.
         #[serde(flatten)]
@@ -159,7 +159,7 @@ pub enum RuleError {
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] ConditionError),
-    /// Returned whan a [`MapperError`] is encountered.
+    /// Returned when a [`MapperError`] is encountered.
     #[error(transparent)]
     MapperError(#[from] MapperError),
     /// Returned when a [`StringSourceError`] is encountered.
@@ -181,7 +181,7 @@ pub enum RuleError {
 }
 
 impl Rule {
-    /// See each variant of [`Self`] for behvaior.
+    /// See each variant of [`Self`] for behavior.
     ///
     /// If an error is returned, `task_state` may be left in a partially modified state.
     /// # Errors

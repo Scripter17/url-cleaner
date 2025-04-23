@@ -1,16 +1,20 @@
 //! Framework for bulk processing.
 
-mod job;
+pub mod job;
 pub use job::*;
-mod job_context;
+pub mod job_context;
 pub use job_context::*;
-mod task_config;
+pub mod lazy_task_config;
+pub use lazy_task_config::*;
+pub mod task_config;
 pub use task_config::*;
-mod task;
+pub mod lazy_task;
+pub use lazy_task::*;
+pub mod task;
 pub use task::*;
-mod task_context;
+pub mod task_context;
 pub use task_context::*;
-mod task_state;
+pub mod task_state;
 pub use task_state::*;
-mod task_scratchpad;
+pub mod task_scratchpad;
 pub use task_scratchpad::*;

@@ -1,4 +1,4 @@
-//! Parsing various things that bady behaved websites throw at you.
+//! Parsing various things that badly behaved websites throw at you.
 
 pub mod js;
 pub mod html;

@@ -59,7 +59,7 @@ pub enum CharRefError {
 ///
 /// Unfortunately, there are OVER TWO THOUSAND named character references, and some are multiple [`char`]s.
 /// # Errors
-/// If `char_ref` starts with `#` and the call to [`html_parse_num_char_ref`] returns an error, that error is returned.
+/// If `char_ref` starts with `#` and the call to [`parse_num_char_ref`] returns an error, that error is returned.
 ///
 /// Otherwise, if the character name isn't defined as a valid character reference, returns the error [`CharRefError::UnknownCharName`].
 /// # Examples

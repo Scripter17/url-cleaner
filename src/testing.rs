@@ -41,7 +41,7 @@ pub struct TestSet {
 impl TestSet {
     /// Do the tests, panicking if any fail.
     /// # Panics
-    /// If a value from [`Job::iter`] is an error, panics.
+    /// If a value from [`JobIter`] is an error, panics.
     ///
     /// If a call to [`Task::do`] returns an error, panics.
     /// 
@@ -49,33 +49,35 @@ impl TestSet {
     pub fn r#do(self, config: &Config) {
         let mut config = Cow::Borrowed(config);
 
-        let params_diff_json = serde_json::to_string(&self.params_diff).expect("Serialization to never fail");
-        
+        println!(
+            "Running test set:\nparams_diff: {}\njob_context: {}",
+            serde_json::to_string(&self.params_diff).expect("Serialization to never fail"),
+            serde_json::to_string(&self.job_context).expect("Serialization to never fail")
+        );
+
         if let Some(params_diff) = self.params_diff {
             params_diff.apply(&mut config.to_mut().params);
         }
 
-        let (task_configs, results) = self.tests.clone().into_iter().map(|Test {task_config, result}| (task_config, result)).collect::<(Vec<_>, Vec<_>)>();
+        let (task_configs, expectations) = self.tests.clone().into_iter().map(|Test {task_config, expectation}| (task_config, expectation)).collect::<(Vec<_>, Vec<_>)>();
 
-        let mut jobs = Job {
-            config: JobConfig {
-                config,
-                #[cfg(feature = "cache")]
-                cache: Default::default()
-            },
-            context: Cow::Borrowed(&self.job_context),
-            task_configs_source: Box::new(task_configs.into_iter().map(Ok))
+        let job = Job {
+            context: &self.job_context,
+            config: &config,
+            #[cfg(feature = "cache")]
+            cache: &Default::default(),
+            lazy_task_configs: Box::new(task_configs.into_iter().map(|task_config| Ok(task_config.into())))
         };
 
-        for (i, (job, result)) in jobs.iter().zip(results).enumerate() {
+        for (test, task_source, expectation) in self.tests.into_iter().zip(job).zip(expectations).map(|((x, y), z)| (x, y, z)) {
+            println!("Running test: {}", serde_json::to_string(&test).expect("Serialization to never fail"));
             assert_eq!(
-                job.expect("The job to be makeable.").r#do().expect("The job to succeed."),
-                result,
-                "Test failed\nparams_diff: {params_diff_json}\njob_context: {}\ntest: {}",
-                serde_json::to_string(&self.job_context).expect("Serialization to never fail"),
-                serde_json::to_string(self.tests.get(i).expect("`i` to never be out of bounds.")).expect("Serialization to never fail")
+                task_source.expect("Making TaskSource failed.").make().expect("Making Task failed.").r#do().expect("Task failed."),
+                expectation
             );
         }
+
+        println!();
     }
 }
 
@@ -85,5 +87,5 @@ pub struct Test {
     /// The [`TaskConfig`].
     pub task_config: TaskConfig,
     /// The expected result.
-    pub result: BetterUrl
+    pub expectation: BetterUrl
 }

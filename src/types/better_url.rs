@@ -9,7 +9,7 @@ use url::{Url, UrlQuery, PathSegmentsMut, ParseError};
 use form_urlencoded::Serializer;
 use thiserror::Error;
 
-mod host_details;
+pub mod host_details;
 pub use host_details::*;
 
 #[expect(unused_imports, reason = "Used in docs.")]
@@ -60,7 +60,7 @@ pub struct SetHostError(#[from] pub ParseError);
 /// The enum of errors [`BetterUrl::set_domain`] can return.
 #[derive(Debug, Error)]
 pub enum SetDomainError {
-    /// Returned when the resulting value isn't parseable as a domain.
+    /// Returned when the resulting value isn't parsable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError),
     /// Returned when the call to [`BetterUrl::set_host`] returns an error.
@@ -77,7 +77,7 @@ pub enum SetSubdomainError {
     /// Returned when trying to set the [`UrlPart::Subdomain`] on a domain without a [`UrlPart::RegDomain`].
     #[error("Tried to set the subdomain on a domain without a reg domain.")]
     MissingRegDomain,
-    /// Returned when the resulting value isn't parseable as a domain.
+    /// Returned when the resulting value isn't parsable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError)
 }
@@ -91,7 +91,7 @@ pub enum SetNotDomainSuffixError {
     /// Returned when trying to set the [`UrlPart::NotDomainSuffix`] on a domain without a [`UrlPart::DomainSuffix`].
     #[error("Tried to set the not domain suffix on a domain without a domain suffix.")]
     MissingDomainSuffix,
-    /// Returned when the resulting value isn't parseable as a domain.
+    /// Returned when the resulting value isn't parsable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError)
 }
@@ -105,7 +105,7 @@ pub enum SetDomainMiddleError {
     /// Returned when trying to set the [`UrlPart::DomainMiddle`] on a domain without a [`UrlPart::DomainSuffix`].
     #[error("Tried to set the domain middle on a domain without a domain suffix.")]
     MissingDomainSuffix,
-    /// Returned when the resulting value isn't parseable as a domain.
+    /// Returned when the resulting value isn't parsable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError)
 }
@@ -116,7 +116,7 @@ pub enum SetRegDomainError {
     /// Returned when the [`BetterUrl`]'s host isn't a domain.
     #[error("The host was not a domain.")]
     HostIsNotADomain,
-    /// Returned when the resulting value isn't parseable as a domain.
+    /// Returned when the resulting value isn't parsable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError)
 }
@@ -127,12 +127,12 @@ pub enum SetDomainSuffixError {
     /// Returned when the [`BetterUrl`]'s host isn't a domain.
     #[error("The host was not a domain.")]
     HostIsNotADomain,
-    /// Returned when the resulting value isn't parseable as a domain.
+    /// Returned when the resulting value isn't parsable as a domain.
     #[error(transparent)]
     SetDomainHostError(#[from] SetDomainHostError)
 }
 
-/// The enum of errors [`BetterUrl::set_fqdn_period`] can return.
+/// The enum of errors [`BetterUrl::set_fqdn`] can return.
 #[derive(Debug, Error)]
 pub enum SetFqdnPeriodError {
     /// Returned when the URL doesn't have a host.
@@ -672,5 +672,11 @@ impl TryFrom<&str> for BetterUrl {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::from_str(value)
+    }
+}
+
+impl std::fmt::Display for BetterUrl {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.url.fmt(formatter)
     }
 }

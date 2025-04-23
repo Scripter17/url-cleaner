@@ -36,7 +36,7 @@ pub struct CommandConfig {
     /// The environment variables to run the program with.
     #[serde(default, skip_serializing_if = "is_default")]
     pub envs: HashMap<String, StringSource>,
-    /// The STDIN to give the programl.
+    /// The STDIN to give the program.
     #[serde(default, skip_serializing_if = "is_default")]
     pub stdin: Option<StringSource>
 }
@@ -136,7 +136,7 @@ impl CommandConfig {
     ///
     /// If the call to [`Command::spawn`] returns an error, that error is returned.
     ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the errorr [`CommandError::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`CommandError::StringSourceIsNone`].
     ///
     /// If the call to [`ChildStdin::write_all`] returns an error, that error is returned.
     ///

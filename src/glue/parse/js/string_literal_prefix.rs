@@ -12,7 +12,7 @@ pub enum StringLiteralPrefixLastState {
     ///
     /// When an escape sequence finishes, returns to this state.
     Inside,
-    /// THe `\` of an escape sequence.
+    /// The `\` of an escape sequence.
     Start,
     /// The first digit of an octal escape sequence.
     Octal1,
@@ -22,7 +22,7 @@ pub enum StringLiteralPrefixLastState {
     AsciiHexx,
     /// The first digit in an ascii escape sequence.
     AsciiHex1,
-    /// THe `u` in `\uHHHH`/`\u{HHHHH}`.
+    /// The `u` in `\uHHHH`/`\u{HHHHH}`.
     UnicodeU,
     /// The first digit in `\uHHHH`.
     Unicode41,
@@ -72,9 +72,9 @@ pub enum StringLiteralPrefixError {
 ///
 /// TODO: Handle template strings.
 /// # Errors
-/// If a syntax error happens, returns the error [`StringLiteralPrefixLastState::SyntaxError`].
+/// If a syntax error happens, returns the error [`StringLiteralPrefixError::SyntaxError`].
 ///
-/// If an invalid codepoint is encountered, returns the error [`StringLiteralPrefixLastState::InvalidCodepoint`].
+/// If an invalid codepoint is encountered, returns the error [`StringLiteralPrefixError::InvalidCodepoint`].
 /// # Examples
 /// ```
 /// # use url_cleaner::glue::*;

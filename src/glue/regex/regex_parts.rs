@@ -193,7 +193,7 @@ impl RegexConfig {
         self.unicode              = flags.contains('u');
     }
 
-    /// Sets the flags whose characters are in `flags` and leavs the others unchanged.
+    /// Sets the flags whose characters are in `flags` and leaves the others unchanged.
     ///
     /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
     /// # Examples

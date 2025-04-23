@@ -1,6 +1,6 @@
 //! Caching to allow for only expanding redirects the first time you encounter them.
 
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::str::FromStr;
 use std::cell::OnceCell;
 use std::path::Path;
@@ -8,8 +8,9 @@ use std::path::Path;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
+#[expect(unused_imports, reason = "Used in docs.")]
+use diesel::query_builder::SqlQuery;
 
-use crate::types::*;
 use crate::util::*;
 
 diesel::table! {
@@ -26,7 +27,7 @@ diesel::table! {
     }
 }
 
-/// The Sqlite command to initialize the cache databese.
+/// The Sqlite command to initialize the cache database.
 pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
     id INTEGER NOT NULL PRIMARY KEY,
     category TEXT NOT NULL,
@@ -48,7 +49,7 @@ pub struct CacheEntry {
     pub value: Option<String>
 }
 
-/// A new entry for the cache databse.
+/// A new entry for the cache database.
 #[derive(Debug, PartialEq, Eq, Serialize, Insertable)]
 #[diesel(table_name = cache)]
 pub struct NewCacheEntry<'a> {
@@ -60,13 +61,13 @@ pub struct NewCacheEntry<'a> {
     pub value: Option<&'a str>
 }
 
-/// An [`Arc`]ed and [`Mutex`]ed [`InnerCache`].
-#[derive(Debug, Clone, Default)]
-pub struct Cache(pub Arc<Mutex<InnerCache>>);
+/// A [`Mutex`]ed [`InnerCache`].
+#[derive(Debug, Default)]
+pub struct Cache(pub Mutex<InnerCache>);
 
 impl From<InnerCache> for Cache {
     fn from(value: InnerCache) -> Self {
-        Self(Arc::new(Mutex::new(value)))
+        Self(Mutex::new(value))
     }
 }
 
@@ -81,7 +82,7 @@ impl From<CachePath> for Cache {
 pub struct InnerCache {
     /// The path of the database.
     path: CachePath,
-    /// The connection to the databsae.
+    /// The connection to the database.
     connection: OnceCell<SqliteConnection>
 }
 
@@ -300,7 +301,7 @@ impl InnerCache {
             .map(|cache_entry| cache_entry.value.to_owned()))
     }
 
-    /// Writes to the databse, overwriting the entry the equivalent call to [`Self::read`] would return.
+    /// Writes to the database, overwriting the entry the equivalent call to [`Self::read`] would return.
     /// # Errors
     /// If the call to [`Self::connect`] returns an error, that error is returned.
     ///

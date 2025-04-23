@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_with::*;
 
+#[expect(unused_imports, reason = "Used in docs.")]
 use crate::types::*;
 use crate::util::*;
 

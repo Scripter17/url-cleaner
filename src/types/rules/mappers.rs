@@ -18,19 +18,37 @@ use crate::util::*;
 
 /// Mappers are how [`TaskState`]s get manipulated to clean URLs.
 ///
-/// Please note that, in general, when a [`Mapper`] contains multiple [`Mapper`]s and one returns an error, the [`TaskState`] can be left in a partially modified state.
+/// Please note that, in general, when a [`Mapper`] returns an [`Err`], the [`TaskState`] may still be modified.
 ///
 /// For example, a [`Mapper::All`] containing 3 [`Mapper`]s and the second one returns an error, the effects of the first [`Mapper`] is still applied.
 ///
-/// In practice this should rarely be an issue, but when it is, use [`Mapper::ReverOnError`].
+/// In practice this should rarely be an issue, but when it is, use [`Mapper::RevertOnError`].
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Mapper {
     /// Does nothing.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::None.apply(&mut task_state).unwrap();
+    ///
+    /// assert_eq!(task_state.url, "https://example.com/");
+    /// ```
     None,
     /// Always returns the error [`MapperError::ExplicitError`] with the included message.
     /// # Errors
     /// Always returns the error [`MapperError::ExplicitError`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::Error("...".into()).apply(&mut task_state).unwrap_err();
+    ///
+    /// assert_eq!(task_state.url, "https://example.com/");
+    /// ```
     Error(String),
     /// Prints debug info about the contained [`Self`] and the current [`TaskStateView`], then returns its return value.
     /// # Errors
@@ -38,41 +56,93 @@ pub enum Mapper {
     #[suitable(never)]
     Debug(Box<Self>),
 
-    /// If the call to [`Self::If::if`] passes, apply [`Self::If::mapper`].
+    /// If the call to [`Self::If::condition`] passes, apply [`Self::If::mapper`].
     ///
-    /// If the call to [`Self::If::if`] fails and [`Self::If::else_mapper`] is [`Some`], apply [`Self::If::else_mapper`].
+    /// If the call to [`Self::If::condition`] fails and [`Self::If::else_mapper`] is [`Some`], apply [`Self::If::else_mapper`].
     /// # Errors
-    /// If the call to [`Condition::satisifed_by`] returns an error, that error is returned.
+    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Mapper::If {
+    ///     condition  : Condition::Always,
+    ///     mapper     : Box::new(Mapper::None),
+    ///     else_mapper: Some(Box::new(Mapper::Error("...".into())))
+    /// }.apply(&mut task_state).unwrap();
+    ///
+    /// Mapper::If {
+    ///     condition  : Condition::Never,
+    ///     mapper     : Box::new(Mapper::None),
+    ///     else_mapper: Some(Box::new(Mapper::Error("...".into())))
+    /// }.apply(&mut task_state).unwrap_err();
+    ///
+    /// Mapper::If {
+    ///     condition  : Condition::Always,
+    ///     mapper     : Box::new(Mapper::None),
+    ///     else_mapper: None
+    /// }.apply(&mut task_state).unwrap();
+    ///
+    /// Mapper::If {
+    ///     condition  : Condition::Never,
+    ///     mapper     : Box::new(Mapper::None),
+    ///     else_mapper: None
+    /// }.apply(&mut task_state).unwrap();
+    /// ```
     If {
         /// The [`Condition`] to decide between [`Self::If::mapper`] and [`Self::If::else_mapper`].
         condition: Condition,
-        /// The [`Self`] to apply if [`Self::If::if`] passes.
+        /// The [`Self`] to apply if [`Self::If::condition`] passes.
         mapper: Box<Self>,
-        /// The [`Self`] to apply if [`Self::If::if`] fails.
+        /// The [`Self`] to apply if [`Self::If::condition`] fails.
         ///
         /// Defaults to [`None`].
         #[serde(default, skip_serializing_if = "is_default")]
         else_mapper: Option<Box<Self>>
     },
-    /// Find the first [`ConditionChainLink`] whose [`ConditionChainLink::condition`] passes and apply its [`ConditionChainLink::mapper`].
-    ///
-    /// If no [`Condition`] passes, does nothing.
-    /// # Errors
-    /// If any call to [`Condition::satisfied_by`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
-    ConditionChain(Vec<ConditionChainLink>),
     /// Applies the contained [`Self`]s in order.
+    ///
+    /// Please note that if one of the contained [`Self`]s returns an error, previous calls to [`Self::apply`] aren't reverted.
     /// # Errors
     /// If any call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// Mapper::All(vec![
+    ///     Mapper::SetHost(Some("example2.com".to_string())),
+    ///     Mapper::Error("...".into()),
+    ///     Mapper::SetHost(Some("example3.com".to_string())),
+    /// ]).apply(&mut task_state).unwrap_err();
+    ///
+    /// assert_eq!(task_state.url, "https://example2.com/");
+    /// ```
     All(Vec<Self>),
     /// Gets the value specified by [`Self::PartMap::part`], indexes [`Self::PartMap::map`], and applies the returned [`Self`]
     ///
     /// If the call to [`Map::get`] returns [`None`], does nothing..
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// Mapper::PartMap {
+    ///     part: UrlPart::Host,
+    ///     map: Map {
+    ///         map: [
+    ///             ("example.com".into(), Mapper::Error("...".into()))
+    ///         ].into(),
+    ///         if_null: None,
+    ///         r#else: None
+    ///     }
+    /// }.apply(&mut task_state).unwrap_err();
+    /// ```
     PartMap {
         /// The [`UrlPart`] to index [`Self::PartMap::map`] with.
         part: UrlPart,
@@ -87,6 +157,22 @@ pub enum Mapper {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// Mapper::StringMap {
+    ///     value: StringSource::String("a".into()),
+    ///     map: Map {
+    ///         map: [
+    ///             ("a".into(), Mapper::Error("...".into()))
+    ///         ].into(),
+    ///         if_null: None,
+    ///         r#else: None
+    ///     }
+    /// }.apply(&mut task_state).unwrap_err();
+    /// ```
     StringMap {
         /// The [`StringSource`] to index [`Self::StringMap::map`] with.
         value: StringSource,
@@ -95,22 +181,65 @@ pub enum Mapper {
         map: Map<Self>
     },
 
-    /// If the contained [`Self`] returns an error, ignore it.
+    /// If the contained [`Self`] returns an error that matches [`Self::IgnoreError::filter`], ignore it.
     ///
     /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
-    IgnoreError(Box<Self>),
-    /// If the contained [`Self`] returns an error, revert the [`TaskState`] to its previous state then return the error.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// Mapper::IgnoreError {
+    ///     mapper: Box::new(Mapper::Error("...".into())),
+    ///     filter: Default::default()
+    /// }.apply(&mut task_state).unwrap();
+    ///
+    /// Mapper::IgnoreError {
+    ///     mapper: Box::new(Mapper::Error("...".into())),
+    ///     filter: MapperErrorFilter(Some([MapperErrorName::ExplicitError].into()))
+    /// }.apply(&mut task_state).unwrap();
+    ///
+    /// Mapper::IgnoreError {
+    ///     mapper: Box::new(Mapper::Error("...".into())),
+    ///     filter: MapperErrorFilter(Some([MapperErrorName::StringSourceIsNone].into()))
+    /// }.apply(&mut task_state).unwrap_err();
+    /// ```
+    IgnoreError {
+        /// The [`Self`] to try to apply.
+        #[serde(flatten)]
+        mapper: Box<Self>,
+        /// The filter of which errors to catch.
+        ///
+        /// Defaults to all errors.
+        #[serde(default, skip_serializing_if = "is_default")]
+        filter: MapperErrorFilter
+    },
+    /// If the contained [`Self`] returns an error that matches [`Self::RevertOnError::filter`], revert the [`TaskState`] to its previous state.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned.
-    RevertOnError(Box<Self>),
-    /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
+    RevertOnError {
+        /// The [`Self`] to try to apply.
+        #[serde(flatten)]
+        mapper: Box<Self>,
+        /// The filters of which error to catch.
+        ///
+        /// Defaults to all errors.
+        #[serde(default, skip_serializing_if = "is_default")]
+        filter: MapperErrorFilter
+    },
+    /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error that matches [`Self::TryElse::filter`], apply [`Self::TryElse::else`].
     /// # Errors
     /// If both calls to [`Self::apply`] return errors, both errors are returned.
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
         /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
-        r#else: Box<Self>
+        r#else: Box<Self>,
+        /// The filter of which errors to catch.
+        ///
+        /// Defaults to all errors.
+        #[serde(default, skip_serializing_if = "is_default")]
+        filter: MapperErrorFilter
     },
     /// Applies the contained [`Self`]s in order, stopping as soon as a call to [`Self::apply`] doesn't return an error.
     /// # Errors
@@ -183,7 +312,7 @@ pub enum Mapper {
     /// assert_eq!(task_state.url, "https://example.com/?a=2&a=4");
     /// ```
     AllowQueryParamsMatching(StringMatcher),
-    /// Sets [`UrlPart::Whole`] to the value of the first query parameter with a name determed by the [`TaskState`].
+    /// Sets [`UrlPart::Whole`] to the value of the first query parameter with a name determined by the [`TaskState`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -287,7 +416,7 @@ pub enum Mapper {
     },
     /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], leaving [`Self::CopyPart::from`] unchanged.
     /// # Errors
-    /// If the call to [`UrlPart::Set`] returns an error, that error is returned.
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -305,7 +434,7 @@ pub enum Mapper {
     },
     /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], then sets [`Self::CopyPart::from`] to [`None`].
     /// # Errors
-    /// If either call to [`UrlPart::Set`] returns an error, that error is returned.
+    /// If either call to [`UrlPart::set`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -358,7 +487,7 @@ pub enum Mapper {
         #[serde(default, skip_serializing_if = "is_default")]
         http_client_config_diff: Option<Box<HttpClientConfigDiff>>
     },
-    /// Sets the specified [`Scratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
+    /// Sets the specified [`TaskScratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -379,7 +508,7 @@ pub enum Mapper {
         /// The value to set the flag to.
         value: bool
     },
-    /// Sets the specified [`Scratchpad::vars`] to [`Self::SetScratchpadVar::value`].
+    /// Sets the specified [`TaskScratchpad::vars`] to [`Self::SetScratchpadVar::value`].
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
     /// # Examples
@@ -399,7 +528,7 @@ pub enum Mapper {
         /// The value to set the var to.
         value: StringSource
     },
-    /// If the specified [`Scratchpad::vars`] is [`Some`], applies [`Self::ModifyScratchpadVar::modification`].
+    /// If the specified [`TaskScratchpad::vars`] is [`Some`], applies [`Self::ModifyScratchpadVar::modification`].
     ///
     /// If the part is [`None`], does nothing.
     /// # Errors
@@ -463,13 +592,13 @@ pub enum Mapper {
     /// # Errors
     /// If the call to [`Cache::read`] returns an error, that error is returned.
     ///
-    /// If the call to [`Cache::read`] returns [`None`], retursn the error [`MapperError::CachedUrlIsNone`].
+    /// If the call to [`Cache::read`] returns [`None`], returns the error [`MapperError::CachedUrlIsNone`].
     ///
     /// If the call to [`BetterUrl::parse`] returns an error, that error is returned.
     ///
     /// If the call to [`Mapper::apply`] returns an error, that error is returned.
     ///
-    /// If the call to [`Cache::apply`] returns an error, that error is returned.
+    /// If the call to [`Cache::write`] returns an error, that error is returned.
     #[cfg(feature = "cache")]
     CacheUrl {
         /// The category for the cache entry.
@@ -477,7 +606,7 @@ pub enum Mapper {
         /// The mapper to apply and cache.
         mapper: Box<Self>
     },
-    /// Applies [`Self::Retry::mapper`] and, if it returns an error, waits [`Self::Retry::duration`] and applies it again.
+    /// Applies [`Self::Retry::mapper`] and, if it returns an error, waits [`Self::Retry::wait`] and applies it again.
     ///
     /// Attempts to apply it at most [`Self::Retry::limit`] times.
     /// # Errors
@@ -487,18 +616,18 @@ pub enum Mapper {
         mapper: Box<Self>,
         /// The time to wait between retries.
         #[serde_as(as = "DurationSecondsWithFrac<f64>")]
-        delay: Duration,
+        wait: Duration,
         /// The max amount of times to try.
         ///
         /// Defaults to `10`.
         #[serde(default = "get_10_u8")]
         limit: u8
     },
-    /// Applies a [`Self`] from [`TaskState::params`]'s [`Params::commons`]'s [`Commons::mappers`].
+    /// Applies a [`Self`] from [`TaskState::commons`]'s [`Commons::mappers`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`StringSource:;get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MapperError::StringSourceIsNone`].
     ///
     /// If the [`Commons::mappers`] doesn't contain a [`Self`] with the specified name, returns the error [`MapperError::CommonMapperNotFound`].
     ///
@@ -524,25 +653,17 @@ pub enum Mapper {
     Custom(fn(&mut TaskState) -> Result<(), MapperError>)
 }
 
-/// An individual "link" in a [`Mapper::ConditionChain`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub struct ConditionChainLink {
-    /// The [`Condition`].
-    pub condition: Condition,
-    /// The [`Mapper`] to apply if [`Self::condition`] passes.
-    pub mapper: Mapper
-}
-
 /// Serde helper function.
 const fn get_10_u8() -> u8 {10}
 
 /// The enum of errors [`Mapper::apply`] can return.
-#[derive(Debug, Error)]
+#[derive(Debug, Error, ErrorFilter)]
 pub enum MapperError {
-    /// Returned when a [`Mapper::ExplicitError`] is used.
+    /// Returned when a [`Mapper::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
-    #[error("A `Mapper::TryElse` had both `try` and `else` return an error.")]
+    /// Returned when both [`Mapper`]s in a [`Mapper::TryElse`] return errors.
+    #[error("Both Mappers in a Mapper::TryElse returned errors.")]
     TryElseError {
         /// The error returned by [`Mapper::TryElse::try`]. 
         try_error: Box<Self>,
@@ -560,7 +681,7 @@ pub enum MapperError {
     /// Returned when attempting to get a URL from a query parameter that doesn't exist.
     #[error("Attempted to get a URL from a query parameter that didn't exist.")]
     CannotFindQueryParam,
-    /// Returned when a [`Mapper`] with the specified name ins't found in the [`Commons::mappers`].
+    /// Returned when a [`Mapper`] with the specified name isn't found in the [`Commons::mappers`].
     #[error("A Mapper with the specified name wasn't found in the Commons::mappers.")]
     CommonMapperNotFound,
     /// Returned when a [`url::ParseError`] is encountered.
@@ -591,7 +712,7 @@ pub enum MapperError {
     #[error(transparent)]
     RuleError(Box<RuleError>),
 
-    /// Returned when a [`reqwest::Error`] is encounted.
+    /// Returned when a [`reqwest::Error`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
@@ -600,7 +721,7 @@ pub enum MapperError {
     #[error("The redirect's Location header wasn't found")]
     LocationHeaderNotFound,
 
-    /// Returned when a [`reqwest::header::ToStrError`] is encounted.
+    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
     ToStrError(#[from] reqwest::header::ToStrError),
@@ -609,16 +730,16 @@ pub enum MapperError {
     #[cfg(feature = "cache")]
     #[error("Attempted to get a URL from the cache but its value was None.")]
     CachedUrlIsNone,
-    /// Returned when a [`ReadFromCacheError`] is encounted.
+    /// Returned when a [`ReadFromCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
-    /// Returned when a [`WriteToCacheError`] is encounted.
+    /// Returned when a [`WriteToCacheError`] is encountered.
     #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
 
-    /// Returned when a [`CommonCallArgsError`] is encounted.
+    /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
     /// An arbitrary [`std::error::Error`] returned by [`Mapper::Custom`].
@@ -661,12 +782,6 @@ impl Mapper {
             } else if let Some(else_mapper) = else_mapper {
                 else_mapper.apply(task_state)?;
             },
-            Self::ConditionChain(chain) => for link in chain {
-                if link.condition.satisfied_by(&task_state.to_view())? {
-                    link.mapper.apply(task_state)?;
-                    break;
-                }
-            },
             Self::All(mappers) => {
                 for mapper in mappers {
                     mapper.apply(task_state)?;
@@ -677,8 +792,18 @@ impl Mapper {
 
             // Error handling.
 
-            Self::IgnoreError(mapper) => {let _=mapper.apply(task_state);},
-            Self::TryElse{r#try, r#else} => r#try.apply(task_state).or_else(|try_error| r#else.apply(task_state).map_err(|else_error2| MapperError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error2)}))?,
+            Self::IgnoreError {mapper, filter} => if let Err(e) = mapper.apply(task_state) {if !filter.matches(&e) {Err(e)?}},
+            Self::TryElse{ r#try, filter, r#else } => match r#try.apply(task_state) {
+                Ok(x) => x,
+                Err(try_error) => if filter.matches(&try_error) {
+                    match r#else.apply(task_state) {
+                        Ok(x) => x,
+                        Err(else_error) => Err(MapperError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
+                    }
+                } else {
+                    Err(try_error)?
+                }
+            },
             Self::FirstNotError(mappers) => {
                 let mut result = Ok(());
                 for mapper in mappers {
@@ -687,13 +812,15 @@ impl Mapper {
                 }
                 result?
             },
-            Self::RevertOnError(mapper) => {
+            Self::RevertOnError {mapper, filter} => {
                 let old_url = task_state.url.clone();
                 let old_scratchpad = task_state.scratchpad.clone();
-                if let e @ Err(_) = mapper.apply(task_state) {
-                    *task_state.url = old_url;
-                    *task_state.scratchpad = old_scratchpad;
-                    e?;
+                if let Err(e) = mapper.apply(task_state) {
+                    if filter.matches(&e) {
+                        *task_state.url = old_url;
+                        *task_state.scratchpad = old_scratchpad;
+                    }
+                    Err(e)?;
                 }
             },
 
@@ -824,13 +951,13 @@ impl Mapper {
                     task_state.cache.write(&category, &old_url, Some(task_state.url.as_str()))?;
                 }
             },
-            Self::Retry {mapper, delay, limit} => {
+            Self::Retry {mapper, wait, limit} => {
                 for i in 0..*limit {
                     match mapper.apply(task_state) {
                         Ok(()) => return Ok(()),
                         #[allow(clippy::arithmetic_side_effects, reason = "`i` is never 255 and therefore never overflows.")]
                         e @ Err(_) if i+1==*limit => e?,
-                        Err(_) => {std::thread::sleep(*delay);}
+                        Err(_) => {std::thread::sleep(*wait);}
                     }
                 }
             },

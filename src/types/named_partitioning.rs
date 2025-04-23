@@ -8,16 +8,31 @@ use std::collections::HashSet;
 use serde::{Serialize, Deserialize, ser::{Serializer, SerializeMap}, de::{Visitor, MapAccess, Deserializer, Error}};
 use thiserror::Error;
 
-use crate::types::*;
 use crate::util::*;
 
-/// A [`NamedPartitioning`] effectively allows you to query multiple [`HashSet`]s at once and finding which one an element belongs to.
+/// A [`NamedPartitioning`] effectively allows you to query multiple disjoint [`HashSet`]s at once and finding which one an element belongs to.
 ///
 /// Semantically, this is done by joining the sets into one and partitioning them into regions. Technically this is just a fancy [`HashMap`] with basic optimizations.
 ///
-/// Unfortunately (or fortunately depending on yuor use case) this does have the limitation that a value cannot be in multiple partitions at once.
-///
 /// For the math end of this idea, see [this Wikipedia article](https://en.wikipedia.org/wiki/Partition_of_a_set).
+/// ```
+/// use serde_json::from_str;
+/// use url_cleaner::types::*;
+///
+/// let digits = serde_json::from_str::<NamedPartitioning>(r#"{"even": ["0", "2", "4", "6", "8"], "odd": ["1", "3", "5", "7", "9"]}"#).unwrap();
+///
+/// assert_eq!(digits.get_partition("0"), Some("even"));
+/// assert_eq!(digits.get_partition("1"), Some("odd" ));
+/// assert_eq!(digits.get_partition("2"), Some("even"));
+/// assert_eq!(digits.get_partition("3"), Some("odd" ));
+/// assert_eq!(digits.get_partition("4"), Some("even"));
+/// assert_eq!(digits.get_partition("5"), Some("odd" ));
+/// assert_eq!(digits.get_partition("6"), Some("even"));
+/// assert_eq!(digits.get_partition("7"), Some("odd" ));
+/// assert_eq!(digits.get_partition("8"), Some("even"));
+/// assert_eq!(digits.get_partition("9"), Some("odd" ));
+/// assert_eq!(digits.get_partition("a"), None);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Suitability)]
 pub struct NamedPartitioning {
     /// The map from values to their partitions.
@@ -28,15 +43,21 @@ pub struct NamedPartitioning {
     partition_names: Vec<Arc<str>>
 }
 
+/// The enum of errors that can happen when making a [`NamedPartitioning`].
 #[derive(Debug, Error)]
 pub enum MakeNamedPartitioningError {
-    #[error("Tried to specify mutliple partitions with the same name or the same partition twice.")]
+    /// Returned when attempting to specify multiple partitions with the same name or the same partition twice.
+    #[error("Attempted to specify multiple partitions with the same name or the same partition twice.")]
     DuplicateName {
+        /// The name of the duplicate partition.
         name: String
     },
-    #[error("Tried to put a value in multiple partitions at once.")]
+    /// Returned when attempting to assign a value to multiple partitions at once.
+    #[error("Attempted to assign {value} to multiple partitions at once.")]
     DuplicateValue {
+        /// The name of the second partition.
         name: String,
+        /// The value.
         value: String
     }
 }
@@ -46,7 +67,7 @@ impl NamedPartitioning {
     /// # Errors
     /// If multiple values have the same name (the first value in the tuple), returns the error [`MakeNamedPartitioningError::DuplicateName`].
     ///
-    /// If multiple values contain the same value (the elements in the [`Vec`] in the second value of the tuple), returns the error [`MakedNamedPartitioningError::DuplicateValue`].
+    /// If multiple values contain the same value (the elements in the [`Vec`] in the second value of the tuple), returns the error [`MakeNamedPartitioningError::DuplicateValue`].
     pub fn try_from_iter<I: IntoIterator<Item = (String, Vec<String>)>>(iter: I) -> Result<Self, MakeNamedPartitioningError> {
         let mut ret = NamedPartitioning {
             map: HashMap::new(),

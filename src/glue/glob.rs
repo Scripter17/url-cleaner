@@ -10,7 +10,6 @@ use serde::{
     de::{Error as _, Deserializer}
 };
 
-use crate::types::*;
 use crate::util::*;
 
 /// Wrapper around [`glob::Pattern`] and [`glob::MatchOptions`] to keep it them in one place.

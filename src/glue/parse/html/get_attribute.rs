@@ -8,11 +8,11 @@ use super::*;
 #[derive(Debug, Error, Clone, Copy)]
 pub enum GAVSyntaxErrorKind {
     /// The [input-doesnt-start-with-html-element](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
-    #[error("Input doesnt start with html element.")]
+    #[error("Input doesn't start with an HTML element.")]
     InputDoesntStartWithHtmlElement,
     /// The [unexpected-question-mark-instead-of-tagname](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
-    #[error("Unexpected question mark instead of tagname.")]
-    UnexpectedQuestionMarkInsteadOfTagname,
+    #[error("Unexpected question mark instead of tag name.")]
+    UnexpectedQuestionMarkInsteadOfTagName,
     /// The [invalid-start-of-tag-name](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
     #[error("Invalid start of tag name.")]
     InvalidStartOfTagName,
@@ -22,9 +22,9 @@ pub enum GAVSyntaxErrorKind {
     /// The [unexpected-solidus-in-tag](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
     #[error("Unexpected solidus in tag.")]
     UnexpectedSolidusInTag,
-    /// The [unexpexted-equals-sign-before-attribute-name](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
-    #[error("Unexpexted equals sign before attribute name.")]
-    UnexpextedEqualsSignBeforeAttributeName,
+    /// The [unexpected-equals-sign-before-attribute-name](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
+    #[error("Unexpected equals sign before attribute name.")]
+    UnexpectedEqualsSignBeforeAttributeName,
     /// The [unexpected-character-in-attribute-name](https://html.spec.whatwg.org/multipage/parsing.html#parse-errors) error.
     #[error("Unexpected character in attribute name.")]
     UnexpectedCharacterInAttributeName,
@@ -36,7 +36,7 @@ pub enum GAVSyntaxErrorKind {
     MissingWhitespaceBetweenAttributes
 }
 
-/// The enum of errors [`get_attribute_raw_value`] can return.
+/// The enum of errors [`get_attribute_value`] can return.
 #[derive(Debug, Error)]
 pub enum GAVError {
     /// A syntax error.
@@ -57,7 +57,7 @@ pub enum GAVError {
     UnfinishedTag
 }
 
-/// The states the DFA in [`get_attribute_raw_value`] can be in.
+/// The states the DFA in [`get_attribute_value`] can be in.
 #[derive(Debug, Clone, Copy)]
 pub enum GAVLastBite {
     /// The [Data](https://html.spec.whatwg.org/multipage/parsing.html#data-state) state.
@@ -118,52 +118,48 @@ type EK = GAVSyntaxErrorKind;
 ///
 /// If the call to [`unescape_text`] returns an error, that error is returned.
 ///
-/// If the input doesn't start with a complete HTML start tag, returns the error [`GAV::UnfinishedTag`].
+/// If the input doesn't start with a complete HTML start tag, returns the error [`GAVError::UnfinishedTag`].
 /// # Examples
 /// ```
 /// use url_cleaner::glue::*;
 ///
-/// assert_eq!(parse::html::get_attribute_value("<a href='aaa'>"       , "href").unwrap(), Some(Some("aaa" .to_string())), "1");
-/// assert_eq!(parse::html::get_attribute_value("<a href='a&quot;a'>"  , "href").unwrap(), Some(Some("a\"a".to_string())), "2");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"aaa\">"     , "href").unwrap(), Some(Some("aaa" .to_string())), "3");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"a&quot;a\">", "href").unwrap(), Some(Some("a\"a".to_string())), "4");
-/// assert_eq!(parse::html::get_attribute_value("<a href=aaa>"         , "href").unwrap(), Some(Some("aaa" .to_string())), "5");
-/// assert_eq!(parse::html::get_attribute_value("<a href=a&quot;a>"    , "href").unwrap(), Some(Some("a\"a".to_string())), "6");
+/// assert_eq!(parse::html::get_attribute_value("<a href='aaa'>"       , "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href='a&quot;a'>"  , "href").unwrap(), Some(Some("a\"a".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"aaa\">"     , "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"a&quot;a\">", "href").unwrap(), Some(Some("a\"a".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=aaa>"         , "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=a&quot;a>"    , "href").unwrap(), Some(Some("a\"a".to_string())));
 ///
-/// assert_eq!(parse::html::get_attribute_value("<a href='aaa'        >", "href").unwrap(), Some(Some("aaa" .to_string())), "7");
-/// assert_eq!(parse::html::get_attribute_value("<a href='a&quot;a'   >", "href").unwrap(), Some(Some("a\"a".to_string())), "8");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"aaa\"      >", "href").unwrap(), Some(Some("aaa" .to_string())), "9");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"a&quot;a\" >", "href").unwrap(), Some(Some("a\"a".to_string())), "0");
-/// assert_eq!(parse::html::get_attribute_value("<a href=aaa          >", "href").unwrap(), Some(Some("aaa" .to_string())), "10");
-/// assert_eq!(parse::html::get_attribute_value("<a href=a&quot;a     >", "href").unwrap(), Some(Some("a\"a".to_string())), "11");
+/// assert_eq!(parse::html::get_attribute_value("<a href='aaa'        >", "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href='a&quot;a'   >", "href").unwrap(), Some(Some("a\"a".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"aaa\"      >", "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"a&quot;a\" >", "href").unwrap(), Some(Some("a\"a".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=aaa          >", "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=a&quot;a     >", "href").unwrap(), Some(Some("a\"a".to_string())));
 ///
-/// assert_eq!(parse::html::get_attribute_value("<a href=b href='aaa'        >", "href").unwrap(), Some(Some("aaa" .to_string())), "12");
-/// assert_eq!(parse::html::get_attribute_value("<a href=b href='a&quot;a'   >", "href").unwrap(), Some(Some("a\"a".to_string())), "13");
-/// assert_eq!(parse::html::get_attribute_value("<a href=b href=\"aaa\"      >", "href").unwrap(), Some(Some("aaa" .to_string())), "14");
-/// assert_eq!(parse::html::get_attribute_value("<a href=b href=\"a&quot;a\" >", "href").unwrap(), Some(Some("a\"a".to_string())), "15");
-/// assert_eq!(parse::html::get_attribute_value("<a href=b href=aaa          >", "href").unwrap(), Some(Some("aaa" .to_string())), "16");
-/// assert_eq!(parse::html::get_attribute_value("<a href=b href=a&quot;a     >", "href").unwrap(), Some(Some("a\"a".to_string())), "17");
+/// assert_eq!(parse::html::get_attribute_value("<a href=b href='aaa'        >", "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=b href='a&quot;a'   >", "href").unwrap(), Some(Some("a\"a".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=b href=\"aaa\"      >", "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=b href=\"a&quot;a\" >", "href").unwrap(), Some(Some("a\"a".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=b href=aaa          >", "href").unwrap(), Some(Some("aaa" .to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=b href=a&quot;a     >", "href").unwrap(), Some(Some("a\"a".to_string())));
 ///
-/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "18");
-/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "19");
-/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "20");
-/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "21");
-/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "22");
-/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "23");
+/// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "1");
+/// 
+/// assert_eq!(parse::html::get_attribute_value("<a href>"                           , "href").unwrap(), Some(None));
 ///
-/// assert_eq!(parse::html::get_attribute_value("<a href>", "href").unwrap(), Some(None), "24");
-/// assert_eq!(parse::html::get_attribute_value("<a href>", "href").unwrap(), Some(None), "25");
-/// assert_eq!(parse::html::get_attribute_value("<a href>", "href").unwrap(), Some(None), "26");
-/// assert_eq!(parse::html::get_attribute_value("<a href>", "href").unwrap(), Some(None), "27");
-/// assert_eq!(parse::html::get_attribute_value("<a href>", "href").unwrap(), Some(None), "28");
-/// assert_eq!(parse::html::get_attribute_value("<a href>", "href").unwrap(), Some(None), "29");
+/// assert_eq!(parse::html::get_attribute_value("<a href href=\"1\">"                , "href").unwrap(), Some(Some("1".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href href=\"1\" href>"           , "href").unwrap(), Some(None));
+/// assert_eq!(parse::html::get_attribute_value("<a href href=\"1\" href href=\"2\">", "href").unwrap(), Some(Some("2".to_string())));
+/// 
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\" href>"                , "href").unwrap(), Some(None));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\" href href=\"2\">"     , "href").unwrap(), Some(Some("2".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\" href href=\"2\" href>", "href").unwrap(), Some(None));
 ///
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"...\" href>", "href").unwrap(), Some(None), "30");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"...\" href>", "href").unwrap(), Some(None), "31");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"...\" href>", "href").unwrap(), Some(None), "32");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"...\" href>", "href").unwrap(), Some(None), "33");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"...\" href>", "href").unwrap(), Some(None), "34");
-/// assert_eq!(parse::html::get_attribute_value("<a href=\"...\" href>", "href").unwrap(), Some(None), "35");
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\">stuff"              , "href").unwrap(), Some(Some("1".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\"><a href=\"2\">"     , "href").unwrap(), Some(Some("1".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\">stuff<a href=\"2\">", "href").unwrap(), Some(Some("1".to_string())));
+/// assert_eq!(parse::html::get_attribute_value("<a href=\"1\">href=\"2\""         , "href").unwrap(), Some(Some("1".to_string())));
 /// ```
 pub fn get_attribute_value<'a>(input: &'a str, name: &'a str) -> Result<Option<Option<String>>, GAVError> {
     let mut state = GAVState {
@@ -204,7 +200,7 @@ fn munch(state: &mut GAVState, i: usize, c: char) -> Result<(), GAVSyntaxErrorKi
 
 
         (LB::TagOpen, 'a'..='z' | 'A'..='Z') => {state.last_bite = LB::TagName;},
-        (LB::TagOpen, '?'                  ) => Err(EK::UnexpectedQuestionMarkInsteadOfTagname)?,
+        (LB::TagOpen, '?'                  ) => Err(EK::UnexpectedQuestionMarkInsteadOfTagName)?,
         (LB::TagOpen, _                    ) => Err(EK::InvalidStartOfTagName)?,
 
 
@@ -221,22 +217,21 @@ fn munch(state: &mut GAVState, i: usize, c: char) -> Result<(), GAVSyntaxErrorKi
 
         (LB::BeforeAttributeName, '\t' | '\r' | '\n' | ' ') => {},
         (LB::BeforeAttributeName, '/' | '>'               ) => {state.last_bite = LB::AfterAttributeName; munch(state, i, c)?;},
-        (LB::BeforeAttributeName, '='                     ) => Err(EK::UnexpextedEqualsSignBeforeAttributeName)?,
+        (LB::BeforeAttributeName, '='                     ) => Err(EK::UnexpectedEqualsSignBeforeAttributeName)?,
         (LB::BeforeAttributeName, _                       ) => {state.last_bite = LB::AttributeName; state.attr_name_start = i; munch(state, i, c)?;},
 
 
-        (LB::AttributeName, '\t' | '\r' | '\n' | ' ' | '/') => {state.last_bite = LB::AfterAttributeName  ; state.attr_name_end = i; munch(state, i, c)?;},
-        (LB::AttributeName, '>'                           ) => {state.last_bite = LB::AfterAttributeName  ; state.attr_name_end = i; if &state.input[state.attr_name_start..state.attr_name_end] == state.name {state.ret = Some(None);} else {state.ret = None;} munch(state, i, c)?;},
-        (LB::AttributeName, '='                           ) => {state.last_bite = LB::BeforeAttributeValue; state.attr_name_end = i;},
-        (LB::AttributeName, '\0' | '"' | '\'' | '<'       ) => Err(EK::UnexpectedCharacterInAttributeName)?,
-        (LB::AttributeName, _                             ) => {},
+        (LB::AttributeName, '\t' | '\r' | '\n' | ' ' | '/' | '>' ) => {state.last_bite = LB::AfterAttributeName  ; state.attr_name_end = i; if &state.input[state.attr_name_start..state.attr_name_end] == state.name {state.ret = Some(None);} else {state.ret = None;} munch(state, i, c)?;},
+        (LB::AttributeName, '='                                  ) => {state.last_bite = LB::BeforeAttributeValue; state.attr_name_end = i;},
+        (LB::AttributeName, '\0' | '"' | '\'' | '<'              ) => Err(EK::UnexpectedCharacterInAttributeName)?,
+        (LB::AttributeName, _                                    ) => {},
 
 
         (LB::AfterAttributeName, '\t' | '\r' | '\n' | ' ') => {},
         (LB::AfterAttributeName, '/'                     ) => {state.last_bite = LB::SelfClosingStartTag ;},
         (LB::AfterAttributeName, '='                     ) => {state.last_bite = LB::BeforeAttributeValue;},
         (LB::AfterAttributeName, '>'                     ) => {state.last_bite = LB::Done; if &state.input[state.attr_name_start..i] == state.name {state.ret = Some(None);}},
-        (LB::AfterAttributeName, _                       ) => {state.last_bite = LB::AttributeName       ; munch(state, i, c)?;},
+        (LB::AfterAttributeName, _                       ) => {state.last_bite = LB::AttributeName; state.attr_name_start = i; munch(state, i, c)?;},
 
 
         (LB::BeforeAttributeValue, '\t' | '\r' | '\n' | ' ') => {},

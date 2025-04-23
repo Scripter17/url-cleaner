@@ -5,39 +5,88 @@ use std::collections::HashSet;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
+#[expect(unused_imports, reason = "Used in docs.")]
 use crate::types::*;
 use crate::util::*;
 
+/// Check if a [`char`] is in a certain set of [`char`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum CharMatcher {
+    /// Always passes.
     Always,
+    /// Always fails.
     Never,
-    Error,
+    /// Always returns the error [`CharMatcherError::ExplicitError`] with the included message.
+    /// # Errors
+    /// Always returns the error [`CharMatcherError::ExplicitError`].
+    Error(String),
+    /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
+    /// # Errors
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
 
+    /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
+    /// # Errors
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
     If {
+        /// The [`Self`] to decide between [`Self::If::then`] and [`Self::If::else`].
         r#if: Box<Self>,
+        /// The [`Self`] to use if [`Self::If::if`] passes.
         then: Box<Self>,
+        /// The [`Self`] to use if [`Self::If::if`] fails.
         r#else: Box<Self>
     },
-    All(Vec<Self>),
-    Any(Vec<Self>),
+    /// If the call to [`Self::satisfied_by`] passes or fails, invert it into failing or passing.
+    /// # Errors
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     Not(Box<Self>),
+    /// If all contained [`Self`]s pass, passes.
+    ///
+    /// If any contained [`Self`] fails, fails.
+    /// # Errors
+    /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
+    All(Vec<Self>),
+    /// If any contained [`Self`] passes, passes.
+    ///
+    /// If all contained [`Self`]s fail, fails.
+    /// # Errors
+    /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
+    Any(Vec<Self>),
 
+    /// If the call to [`Self::satisfied_by`] returns an error, passes.
+    ///
+    /// Otherwise returns the value of the contained [`Self`].
     TreatErrorAsPass(Box<Self>),
+    /// If the call to [`Self::satisfied_by`] returns an error, fails.
+    ///
+    /// Otherwise returns the value of the contained [`Self`].
     TreatErrorAsFail(Box<Self>),
+    /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
+    /// # Errors
+    /// If both calls to [`Self::satisfied_by`] return errors, both errors are returned.
     TryElse {
+        /// The [`Self`] to try first.
         r#try: Box<Self>,
+        /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
         r#else: Box<Self>
     },
-    Equals(char),
+    /// Checks the contained [`Self`]s in order, stopping as soon as a call to [`Self::satisfied_by`] doesn't return an error.
+    /// # Errors
+    /// If all calls to [`Self::satisfied_by`] return errors, the last error is returned. In the future this should be changed to return all errors.
+    FirstNotError(Vec<Self>),
+
+    /// Passes if the [`char`] is the specified [`char`].
+    Is(char),
+    /// Passes if the [`char`] is between [`Self::Between::min`] and [`Self::Between::max`] (inclusive).
     Between {
+        /// The lower bound of [`char`]s to pass for.
         min: char,
+        /// The upper bound of [`char`]s to pass for.
         max: char
     },
+    /// Passes if the [`char`] is in the specified [`HashSet`].
     IsOneOf(HashSet<char>),
-    FirstNotError(Vec<Self>),
     /// [`char::is_alphabetic`].
     IsAlphabetic,
     /// [`char::is_alphanumeric`].
@@ -83,17 +132,24 @@ pub enum CharMatcher {
     /// [`char::is_whitespace`].
     IsWhitespace
 }
+
+/// The enum of errors [`CharMatcher::satisfied_by`] can return.
 #[derive(Debug, Error)]
 pub enum CharMatcherError {
-    #[error("Invalid radix: {0}. Radix must be between 0 and 36 inclusive. See [`char::is_digit`] for details.")]
+    /// Returned when attempting to use [`CharMatcher::IsDigitRadix`] with an invalid radix (above 36).
+    #[error("Attempted to use CharMatcher::IsDigitRadix with an invalid radix ({0}).")]
     InvalidRadix(u32),
-    #[error("CharMatcher::Error was used.")]
-    ExplicitError,
-    #[error("A `CharMatcher::TryElse` had both `try` and `else` return an error.")]
+    /// Returned when a [`StringMatcher::Error`] is used.
+    #[error("Explicit error: {0}")]
+    ExplicitError(String),
+    /// Returned when both [`CharMatcher`]s in a [`CharMatcher::TryElse`] return errors.
+    #[error("Both CharMatchers in a CharMatcher::TryElse returned errors.")]
     TryElseError {
+        /// The error returned by [`CharMatcher::TryElse::try`]. 
         try_error: Box<Self>,
+        /// The error returned by [`CharMatcher::TryElse::else`]. 
         else_error: Box<Self>
-    },
+    }
 }
 
 impl CharMatcher {
@@ -104,7 +160,7 @@ impl CharMatcher {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
-            Self::Error => Err(CharMatcherError::ExplicitError)?,
+            Self::Error(s) => Err(CharMatcherError::ExplicitError(s.clone()))?,
             Self::Debug(matcher) => {
                 let is_satisfied=matcher.satisfied_by(c);
                 eprintln!("=== CharMatcher::Debug ===\nMatcher: {matcher:?}\nC: {c:?}\nSatisfied?: {is_satisfied:?}");
@@ -147,7 +203,7 @@ impl CharMatcher {
             },
 
 
-            Self::Equals(r#char)      => c == *r#char,
+            Self::Is(r#char)          => c == *r#char,
             Self::Between {min, max}  => *min <= c && c <= *max,
             Self::IsOneOf(chars)      => chars.contains(&c),
 

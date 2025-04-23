@@ -16,21 +16,33 @@ use crate::types::*;
 use crate::glue::*;
 use crate::util::*;
 
-#[derive(Debug, Clone,Serialize, Deserialize, PartialEq, Eq, Suitability)]
+/// Modify a [`String`].
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringModification {
     /// Doesn't do any modification.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::None.apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "abc");
+    /// ```
     None,
 
 
 
-    /// Print debug info about the contained [`Self`] and its call to [`Self::get`].
+    /// Print debug info about the contained [`Self`] and its call to [`Self::apply`].
     ///
     /// The exact info printed is unspecified and subject to change at any time for any reason.
     /// # Suitability
     /// Always unsuiable to be in the default config.
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     #[suitable(never)]
     Debug(Box<Self>),
 
@@ -39,18 +51,66 @@ pub enum StringModification {
     /// Always returns the error [`StringModificationError::ExplicitError`] with the included message.
     /// # Errors
     /// Always returns the error [`StringModificationError::ExplicitError`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::Error("...".into()).apply(&mut to, &task_state_view).unwrap_err();
+    ///
+    /// assert_eq!(to, "abc");
+    /// ```
     Error(String),
     /// If the contained [`Self`] returns an error, ignore it.
     ///
     /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::IgnoreError(Box::new(StringModification::Error("...".into()))).apply(&mut to, &task_state_view).unwrap();
+    /// ```
     IgnoreError(Box<Self>),
     /// If the contained [`Self`] returns an error, revert the [`String`] to its previous value then return the error.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::RevertOnError(Box::new(StringModification::All(vec![
+    ///     StringModification::Set("def".into()),
+    ///     StringModification::Error("...".into())
+    /// ]))).apply(&mut to, &task_state_view).unwrap_err();
+    ///
+    /// assert_eq!(to, "abc");
+    /// ```
     RevertOnError(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
+    ///
+    /// Does not revert on error. For that, see [`Self::RevertOnError`].
     /// # Errors
     /// If both calls to [`Self::apply`] return errors, both errors are returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::TryElse {
+    ///     r#try : Box::new(StringModification::Error("...".into())),
+    ///     r#else: Box::new(StringModification::Set("def".into()))
+    /// }.apply(&mut to, &task_state_view);
+    /// ```
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
@@ -58,29 +118,83 @@ pub enum StringModification {
         r#else: Box<Self>
     },
     /// Applies the contained [`Self`]s in order.
+    ///
+    /// Does not revert on error. For that, see [`Self::RevertOnError`].
     /// # Errors
     /// If any call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::All(vec![
+    ///     StringModification::Append("def".into()),
+    ///     StringModification::Error("...".into())
+    /// ]).apply(&mut to, &task_state_view).unwrap_err();
+    ///
+    /// assert_eq!(to, "abcdef");
+    /// ```
     All(Vec<Self>),
     /// Applies the contained [`Self`]s in order, stopping as soon as a call to [`Self::apply`] doesn't return an error.
+    ///
+    /// Does not revert on error. For that, see [`Self::RevertOnError`].
     /// # Errors
     /// If all calls to [`Self::apply`] return errors, the last error is returned. In the future this should be changed to return all errors.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::FirstNotError(vec![
+    ///     StringModification::Append("def".into()),
+    ///     StringModification::Error("...".into())
+    /// ]).apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "abcdef");
+    /// ```
     FirstNotError(Vec<Self>),
 
 
 
-    /// If the call to [`Self::If::if`] passes, apply [`Self::If::then`].
+    /// If the call to [`Self::If::condition`] passes, apply [`Self::If::then`].
     ///
-    /// If the call to [`Self::If::if`] fails and [`Self::If::else`] is [`Some`], apply [`Self::If::else`].
+    /// If the call to [`Self::If::condition`] fails and [`Self::If::else`] is [`Some`], apply [`Self::If::else`].
     /// # Errors
-    /// If the call to [`Condition::satisifed_by`] returns an error, that error is returned.
+    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// 
+    /// let mut to = "abc".to_string();
+    /// StringModification::If {
+    ///     condition: Box::new(Condition::Always),
+    ///     then     : Box::new(StringModification::Set("def".into())),
+    ///     r#else   : Some(Box::new(StringModification::None))
+    /// }.apply(&mut to, &task_state_view).unwrap();
+    /// assert_eq!(to, "def");
+    ///
+    /// let mut to = "abc".to_string();
+    /// StringModification::If {
+    ///     condition: Box::new(Condition::Never),
+    ///     then     : Box::new(StringModification::Set("def".into())),
+    ///     r#else   : Some(Box::new(StringModification::None))
+    /// }.apply(&mut to, &task_state_view).unwrap();
+    /// assert_eq!(to, "abc");
+    /// ```
     If {
-        /// The [`Condition`] to decide between [`Self::If::mapper`] and [`Self::If::else_mapper`].
+        /// The [`Condition`] to decide between [`Self::If::then`] and [`Self::If::else`].
         condition: Box<Condition>,
-        /// The [`Self`] to apply if [`Self::If::if`] passes.
+        /// The [`Self`] to apply if [`Self::If::condition`] passes.
         then: Box<Self>,
-        /// The [`Self`] to apply if [`Self::If::if`] fails.
+        /// The [`Self`] to apply if [`Self::If::condition`] fails.
         ///
         /// Defaults to [`None`].
         #[serde(default, skip_serializing_if = "is_default")]
@@ -145,11 +259,11 @@ pub enum StringModification {
     },
     /// Sets the string to lowercase.
     ///
-    /// See [`String::to_lowercase`] for details.
+    /// See [`str::to_lowercase`] for details.
     Lowercase,
     /// Sets the string to uppercase.
     ///
-    /// See [`String::to_uppercase`] for details.
+    /// See [`str::to_uppercase`] for details.
     Uppercase,
     /// Removes the specified prefix.
     ///
@@ -183,7 +297,7 @@ pub enum StringModification {
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     StripMaybeSuffix(StringSource),
-    /// Replcae up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
+    /// Replace up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
     ///
     /// See [`str::replacen`] for details.
     /// # Errors
@@ -233,87 +347,392 @@ pub enum StringModification {
 
 
 
+    /// Calls [`::regex::Regex::captures`] and returns the result of [`::regex::Captures::expand`]ing with [`Self::RegexCaptures::replace`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the call to [`Regex::captures`] returns [`None`], returns the error [`StringModificationError::RegexMatchNotFound`];
     #[cfg(feature = "regex")]
     RegexCaptures {
+        /// The [`RegexWrapper`] to capture with.
         regex: RegexWrapper,
+        /// The format string to pass to [`::regex::Captures::expand`].
         replace: StringSource
     },
+    /// [`::regex::Captures::expand`] each [`::regex::Regex::captures_iter`] with [`Self::JoinAllRegexCaptures::replace`] and join them with [`Self::JoinAllRegexCaptures::join`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
     #[cfg(feature = "regex")]
     JoinAllRegexCaptures {
+        /// The [`RegexWrapper`] to capture with.
         regex: RegexWrapper,
+        /// The format string to pass to [`::regex::Captures::expand`].
         replace: StringSource,
+        /// The [`StringSource`] to join the expanded captures with.
         join: StringSource
     },
+    /// Calls [`Regex::find`] and returns its value.
+    /// # Errors
+    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Regex::find`] returns [`None`], returns the errorr [`StringModificationError::RegexMatchNotFound`].
     #[cfg(feature = "regex")]
     RegexFind(RegexWrapper),
+    /// [`Regex::replace`]s the first match of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
+    /// # Errors
+    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     #[cfg(feature = "regex")]
     RegexReplace {
+        /// The [`RegexWrapper`] to search with.
         regex: RegexWrapper,
+        /// The format string to expand the capture with.
         replace: StringSource
     },
+    /// [`Regex::replace`]s the all matches of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
+    /// # Errors
+    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     #[cfg(feature = "regex")]
     RegexReplaceAll {
+        /// The [`RegexWrapper`] to search with.
         regex: RegexWrapper,
+        /// The format string to expand the captures with.
         replace: StringSource
     },
+    /// [`Regex::replacen`]s the first [`Self::RegexReplacen::n`] of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
+    /// # Errors
+    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
     #[cfg(feature = "regex")]
     RegexReplacen {
+        /// The [`RegexWrapper`] to search with.
         regex: RegexWrapper,
+        /// The number of captures to find and replace.
         n: usize,
+        /// The format string to expand the captures with.
         replace: StringSource
     },
 
 
 
-    UrlEncode(UrlEncodeAlphabet),
+    /// Percent encodes the string.
+    ///
+    /// Please note that this can be deserialized from `"UrlDecode"`, in which case the contained [`UrlEncodeAlphabet`] is defaulted.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""UrlEncode""#).unwrap(), StringModification::UrlEncode(Default::default()));
+    /// ```
+    UrlEncode(#[serde(default, skip_serializing_if = "is_default")] UrlEncodeAlphabet),
+    /// Percent decodes the string.
+    /// # Errors
+    /// If the call to [`percent_encoding::PercentDecode::decode_utf8`] returns an error, that error is returned.
+    ///
+    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
     UrlDecode,
+    /// Base64 encodes the string.
+    ///
+    /// Please note that this can be deserialized from `"Base64Encode"`, in which case the contained [`Base64Config`] is defaulted.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Encode""#).unwrap(), StringModification::Base64Encode(Default::default()));
+    /// ```
     #[cfg(feature = "base64")]
-    Base64Encode(#[serde(default)] Base64Config),
+    Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+    /// Base64 decodes the string.
+    ///
+    /// Please note that this can be deserialized from `"Base64Decode"`, in which case the contained [`Base64Config`] is defaulted.
+    /// # Errors
+    /// If the call to [`::base64::engine::GeneralPurpose::decode`] returns an error, that error is returned.
+    ///
+    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Decode""#).unwrap(), StringModification::Base64Decode(Default::default()));
+    /// ```
     #[cfg(feature = "base64")]
-    Base64Decode(#[serde(default)] Base64Config),
+    Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
 
 
 
+    /// Parses the javascript string literal at the start of the string and returns its value.
+    /// # Errors
+    /// If the call to [`parse::js::string_literal_prefix()`] returns an error, that error is returned.
     GetJsStringLiteralPrefix,
+    /// Processes HTML character references/escape codes like `&map;` into `&`.
+    /// # Errors
+    /// If the call to [`parse::html::unescape_text`] returns an error, that error is returned.
     UnescapeHtmlText,
+    /// Parses the HTML element at the start of the string and returns the value of the last attribute with the specified name.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`parse::html::get_attribute_value`] returns an error, that error is returned.
     GetHtmlAttribute(StringSource),
 
 
 
+    /// Parses the string as JSON and uses [`serde_json::Value::pointer`] with the specified pointer.
+    /// # Errors
+    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the call to [`serde_json::Value::pointer_mut`] returns [`None`], returns the error [`StringModificationError::JsonValueNotFound`].
+    ///
+    /// If the call to [`serde_json::Value::pointer_mut`] doesn't return a [`serde_json::Value::String`], returns the error [`StringModificationError::JsonValueIsNotAString`].
     JsonPointer(StringSource),
+    /// Split the string on `&`, split each segment on `=`, and remove all segments whose first subsegment matches the specified [`StringMatcher`].
+    ///
+    /// Used for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
+    /// # Errors
+    /// If any call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     RemoveQueryParamsMatching(Box<StringMatcher>),
+    /// Split the string on `&`, split each segment on `=`, and keep only segments whose first subsegment matches the specified [`StringMatcher`].
+    ///
+    /// Used for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
+    /// # Errors
+    /// If any call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     AllowQueryParamsMatching(Box<StringMatcher>),
+    /// Finds the specified substring and removes everything before it.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    /// 
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::StripBefore("b".into()).apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "bc");
+    /// ```
+    StripBefore(StringSource),
+    /// Finds the specified substring and removes everything after it.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    /// 
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::StripAfter("b".into()).apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "ab");
+    /// ```
+    StripAfter(StringSource),
+    /// Finds the specified substring and keeps only everything before it.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    /// 
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::KeepBefore("b".into()).apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "a");
+    /// ```
+    KeepBefore(StringSource),
+    /// Finds the specified substring and keeps only everything after it.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    /// 
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    /// let mut to = "abc".to_string();
+    ///
+    /// StringModification::KeepAfter("b".into()).apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "c");
+    /// ```
+    KeepAfter(StringSource),
+    /// Effectively [`Self::KeepAfter`] with [`Self::ExtractBetween::start`] and [`Self::KeepBefore`] with [`Self::ExtractBetween::end`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the value of [`Self::ExtractBetween::start`] isn't found in the string, returns the error [`StringModificationError::ExtractBetweenStartNotFound`].
+    ///
+    /// If the value of [`Self::ExtractBetween::end`] isn't found in the string after [`Self::ExtractBetween::start`], returns the error [`StringModificationError::ExtractBetweenEndNotFound`].
     ExtractBetween {
+        /// The value to [`Self::KeepAfter`].
         start: StringSource,
+        /// The value to [`Self::KeepBefore`].
         end: StringSource
     },
+    /// Split the string with [`Self::KeepNthSegment::split`] and keep only the [`Self::KeepNthSegment::index`] segment.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
     KeepNthSegment {
+        /// The value to split the string on.
         split: StringSource,
+        /// The index of the segment to keep.
         index: isize
     },
+    /// Split the string with [`Self::KeepSegmentRange`] and keep only the segments between [`Self::KeepSegmentRange::start`] (inclusive) and [`Self::KeepSegmentRange::end`] (exclusive).
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error that error is returned.
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the range isn't found, returns the error [`StringModificationError::SegmentRangeNotFound`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state_view!(task_state_view);
+    ///
+    /// let mut to = "a/b/c/d/e".to_string();
+    ///
+    /// StringModification::KeepSegmentRange {
+    ///     split: "/".into(),
+    ///     start: 1,
+    ///     end: Some(4)
+    /// }.apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "b/c/d");
+    ///
+    ///
+    /// StringModification::KeepSegmentRange {
+    ///     split: "/".into(),
+    ///     start: 0,
+    ///     end: Some(-1)
+    /// }.apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, "b/c");
+    /// ```
     KeepSegmentRange {
+        /// The value to split the string with.
         split: StringSource,
+        /// The index of the first segment to keep.
+        ///
+        /// Defaults to `0`.
         #[serde(default, skip_serializing_if = "is_default")]
         start: isize,
+        /// The index of the last segment to keep.
+        ///
+        /// Set to [`None`] to keep all segments after [`Self::KeepSegmentRange::start`].
+        ///
+        /// Defaults to [`None`].
         #[serde(default, skip_serializing_if = "is_default")]
         end: Option<isize>
     },
+    /// Split the string with [`Self::SetSegment::split`] and set the [`Self::SetSegment::index`] segment to [`Self::SetSegment::value`].
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If [`Self::SetSegment::split`]'s call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
     SetSegment {
+        /// The value to split the string with.
         split: StringSource,
+        /// The index of the segment to set.
         index: isize,
+        /// The value to set the segment to.
         value: StringSource
     },
+    /// Split the string with [`Self::InsertSegment::split`] and inserts [`Self::InsertSegment::value`] before the [`Self::InsertSegment::index`] segment.
+    ///
+    /// If [`Self::InsertSegment::index`] is equal to the amount of segments, appends the new segment at the end.
+    /// # Errors
+    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If [`Self::SetSegment::split`]'s call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If the segment boundary isn't found, returns the error [`StringModificationError::SegmentNotFound`].
     InsertSegment {
+        /// The value to split the string with.
         split: StringSource,
+        /// The location to insert the value at.
         index: isize,
+        /// The value to insert.
         value: StringSource
     },
-    StringMap {
+    /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, applies it.
+    ///
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is retutrned.
+    Map {
+        /// The value to index [`Self::Map::map`] with.
         value: Box<StringSource>,
+        /// The [`Map`] to index with [`Self::Map::value`].
         #[serde(flatten)]
         map: Map<Self>,
     },
+    /// Gets a [`Self`] from [`Config::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// # Errors
+    /// If [`CommonCall::name`]'s call to [`StringSource::get`] returns an error, returns the error [`StringModificationError::StringSourceIsNone`].
+    ///
+    /// If no [`Self`] with the specified name is found, returns the error [`StringModificationError::CommonStringModificationNotFound`].
+    ///
+    /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
     Common(CommonCall),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_modifications`] and applies it.
+    /// # Errors
+    /// If no [`Self`] with the specified name is found, returns the error [`StringModificationError::CommonCallArgStringModificationNotFound`].
+    ///
+    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringModificationError::NotInCommonContext`].
+    ///
+    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    CommonCallArg(StringSource),
+    /// Calls the contained function.
+    /// # Errors
+    /// If the call to the contained function returns an error, that error is returned.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
@@ -323,26 +742,33 @@ pub enum StringModification {
 
 /// The [`AsciiSet`] that emulates [`encodeURIComponent`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
 pub const JS_ENCODE_URI_COMPONENT_ASCII_SET: AsciiSet = percent_encoding::NON_ALPHANUMERIC
-    .remove(b'-').remove(b'_').remove(b'.')
-    .remove(b'!').remove(b'~').remove(b'*')
+    .remove(b'-' ).remove(b'_').remove(b'.')
+    .remove(b'!' ).remove(b'~').remove(b'*')
     .remove(b'\'').remove(b'(').remove(b')');
 
-/// THe [`AsciiSet`] that emulates [`encodeURI`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI).
+/// The [`AsciiSet`] that emulates [`encodeURI`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI).
 pub const JS_ENCODE_URI_ASCII_SET: AsciiSet = JS_ENCODE_URI_COMPONENT_ASCII_SET
     .remove(b';').remove(b'/').remove(b'?')
     .remove(b':').remove(b'@').remove(b'&')
     .remove(b'=').remove(b'+').remove(b'$')
     .remove(b',').remove(b'#');
 
+/// An enum of named [`AsciiSet`]s for use in [`StringModification::UrlEncode`].
+///
+/// Defaults to [`UrlEncodeAlphabet::JsEncodeUriComponent`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum UrlEncodeAlphabet {
+    /// Use [`JS_ENCODE_URI_COMPONENT_ASCII_SET`].
     #[default]
     JsEncodeUriComponent,
+    /// Use [`JS_ENCODE_URI_ASCII_SET`].
     JsEncodeUri,
+    /// Use [`NON_ALPHANUMERIC`].
     NonAlphanumeric
 }
 
 impl UrlEncodeAlphabet {
+    /// Get the corresponding [`AsciiSet`].
     pub fn get(&self) -> &'static AsciiSet {
         match self {
             Self::JsEncodeUriComponent => &JS_ENCODE_URI_COMPONENT_ASCII_SET,
@@ -354,12 +780,14 @@ impl UrlEncodeAlphabet {
 
 string_or_struct_magic!(StringModification);
 
+/// The error returned when trying to deserialize a [`StringModification`] variant with fields that aren't all defaultable.
 #[derive(Debug, Error)]
-#[error("Tried deserializing a StringModification variant with non-defaultable fields from a string.")]
+#[error("Tried deserializing a StringModification variant with fields that aren't all defaultable.")]
 pub struct NonDefaultableVariant;
 
 impl FromStr for StringModification {
     type Err = NonDefaultableVariant;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
             #[cfg(feature = "base64")] "Base64Decode" => StringModification::Base64Decode(Default::default()),
@@ -379,7 +807,7 @@ impl FromStr for StringModification {
 /// The enum of errors [`StringModification::apply`] can return.
 #[derive(Debug, Error)]
 pub enum StringModificationError {
-    /// Returned when a [`StringModification::ExplicitError`] is used.
+    /// Returned when a [`StringModification::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
     /// Returned when a [`std::str::Utf8Error`] is encountered.
@@ -406,15 +834,15 @@ pub enum StringModificationError {
     /// Returned when a segment range isn't found
     #[error("The requested segment range wasn't found.")]
     SegmentRangeNotFound,
-    /// Returned wehn the string being modified doesn't start with the specified prefix.
+    /// Returned when the string being modified doesn't start with the specified prefix.
     #[error("The string being modified didn't start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
     PrefixNotFound,
     /// Returned when the string being modified doesn't end with the specified suffix.
     #[error("The string being modified didn't end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
     SuffixNotFound,
     /// Returned when a [`Regex`] doesn't find any matches in the string.
-    #[error("The regex didn't find any matches in the string.")]
     #[cfg(feature = "regex")]
+    #[error("The regex didn't find any matches in the string.")]
     RegexMatchNotFound,
     /// Returned when a [`::regex::Error`] is encountered.
     #[cfg(feature = "regex")]
@@ -429,8 +857,8 @@ pub enum StringModificationError {
         else_error: Box<Self>
     },
     /// Returned when a [`::base64::DecodeError`] is encountered.
-    #[error(transparent)]
     #[cfg(feature = "base64")]
+    #[error(transparent)]
     Base64DecodeError(#[from] ::base64::DecodeError),
     /// Returned when a [`std::string::FromUtf8Error`] is encountered.
     #[error(transparent)]
@@ -450,13 +878,13 @@ pub enum StringModificationError {
     /// Returned when the [`StringModification::ExtractBetween::end`] isn't found in the string after the [`StringModification::ExtractBetween::start`].
     #[error("The StringModification::ExtractBetween::end isn't found in the string after the StringModification::ExtractBetween::start.")]
     ExtractBetweenEndNotFound,
-    /// Returned when a [`StringModification`] with the specified name ins't found in the [`Commons::string_modifications`].
+    /// Returned when a [`StringModification`] with the specified name isn't found in the [`Commons::string_modifications`].
     #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
     CommonStringModificationNotFound,
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] Box<ConditionError>),
-    /// Returned when a [`parse::js::StringLiteralPrefixErro`] is encountered.
+    /// Returned when a [`parse::js::StringLiteralPrefixError`] is encountered.
     #[error(transparent)]
     JsStringLiteralPrefixError(#[from] parse::js::StringLiteralPrefixError),
     /// Returned when a [`parse::html::UnescapeTextError`] is encountered.
@@ -471,12 +899,21 @@ pub enum StringModificationError {
     /// Returned when the requested HTML attribute doesn't have a value.
     #[error("The requested HTML attribute doesn't have a value.")]
     HtmlAttributeHasNoValue,
+    /// Returned when a substring isn't found in the string.
+    #[error("The substring wasn't found in the string.")]
+    SubstringNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
-    /// An arbitrary [`std::error::Error`] returned by [`StringModification::Custom`].
-    #[error(transparent)]
+    /// Returned when trying to use [`StringModification::CommonCallArg`] outside of a common context.
+    #[error("Tried to use StringModification::CommonCallArg outside of a common context.")]
+    NotInCommonContext,
+    /// Returned when the [`StringModification`] requested from a [`StringModification::CommonCallArg`] isn't found.
+    #[error("The StringModification requested from a StringModification::CommonCallArg wasn't found.")]
+    CommonCallArgStringModificationNotFound,
+    /// An arbitrary [`std::error::Error`] for use with [`StringModification::Custom`].
     #[cfg(feature = "custom")]
+    #[error(transparent)]
     Custom(Box<dyn std::error::Error + Send>)
 }
 
@@ -612,13 +1049,14 @@ impl StringModification {
             Self::JoinAllRegexCaptures {regex, replace, join} => {
                 let replace = get_str!(replace, task_state, StringModificationError);
                 let join = get_str!(join, task_state, StringModificationError);
+                let regex = regex.get()?;
                 let mut temp = "".to_string();
                 if join.is_empty() {
-                    for captures in regex.get()?.captures_iter(to) {
+                    for captures in regex.captures_iter(to) {
                         captures.expand(replace, &mut temp);
                     }
                 } else {
-                    let mut iter = regex.get()?.captures_iter(to).peekable();
+                    let mut iter = regex.captures_iter(to).peekable();
                     while let Some(captures) = iter.next() {
                         captures.expand(replace, &mut temp);
                         if iter.peek().is_some() {temp.push_str(join);}
@@ -626,7 +1064,7 @@ impl StringModification {
                 }
                 *to = temp;
             },
-            #[cfg(feature = "regex")] Self::RegexFind       (regex            ) => *to = regex.get()?.find       (to                                                           ).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string(),
+            #[cfg(feature = "regex")] Self::RegexFind       (regex            ) => *to = regex.get()?.find       (to                                                            ).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string(),
             #[cfg(feature = "regex")] Self::RegexReplace    {regex,    replace} => *to = regex.get()?.replace    (to,     get_str!(replace, task_state, StringModificationError)).into_owned(),
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to = regex.get()?.replace_all(to,     get_str!(replace, task_state, StringModificationError)).into_owned(),
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to = regex.get()?.replacen   (to, *n, get_str!(replace, task_state, StringModificationError)).into_owned(),
@@ -634,12 +1072,15 @@ impl StringModification {
             Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
             #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.build().encode(to.as_bytes()),
             #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.build().decode(to.as_bytes())?)?,
-            Self::JsonPointer(pointer) => *to = serde_json::from_str::<serde_json::Value>(to)?.pointer(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.as_str().ok_or(StringModificationError::JsonValueIsNotAString)?.to_string(),
+            Self::JsonPointer(pointer) => match serde_json::from_str::<serde_json::Value>(to)?.pointer_mut(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
+                serde_json::Value::String(s) => *to = s,
+                _ => Err(StringModificationError::JsonValueIsNotAString)?
+            },
 
 
             Self::RemoveQueryParamsMatching(matcher) => *to = to.split('&').filter_map(|kev|
                 matcher.satisfied_by(
-                    kev.split('=').next().unwrap_or("Why can't I #[allow] an .expect() here?"),
+                    kev.split('=').next().expect("Why can't I #[allow] an .expect() here?"),
                     task_state
                 )
                 .map(|x| (!x).then_some(kev))
@@ -647,7 +1088,7 @@ impl StringModification {
             ).collect::<Result<Vec<_>, _>>()?.join("&"),
             Self::AllowQueryParamsMatching(matcher) => *to = to.split('&').filter_map(|kev|
                 matcher.satisfied_by(
-                    kev.split('=').next().unwrap_or("Why can't I #[allow] an .expect() here?"),
+                    kev.split('=').next().expect("Why can't I #[allow] an .expect() here?"),
                     task_state
                 )
                 .map(|x| x.then_some(kev))
@@ -656,6 +1097,12 @@ impl StringModification {
 
 
 
+            Self::StripBefore(s) => {to.drain(..to.find(get_str!(s, task_state, StringModificationError)).ok_or(StringModificationError::SubstringNotFound)?  );},
+            Self::KeepBefore (s) => {to.drain(  to.find(get_str!(s, task_state, StringModificationError)).ok_or(StringModificationError::SubstringNotFound)?..);},
+            #[allow(clippy::arithmetic_side_effects, reason = "If to contains s, then to is at least (the index of s)+(the length of s) long.")]
+            Self::StripAfter (s) => {let s = get_str!(s, task_state, StringModificationError); to.drain(  (to.find(s).ok_or(StringModificationError::SubstringNotFound)?+s.len())..);},
+            #[allow(clippy::arithmetic_side_effects, reason = "If to contains s, then to is at least (the index of s)+(the length of s) long.")]
+            Self::KeepAfter  (s) => {let s = get_str!(s, task_state, StringModificationError); to.drain(..(to.find(s).ok_or(StringModificationError::SubstringNotFound)?+s.len())  );},
             Self::ExtractBetween {start, end} => {
                 *to = to
                     .split_once(get_str!(start, task_state, StringModificationError))
@@ -682,12 +1129,13 @@ impl StringModification {
                     }
                 )?
             },
+            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
 
             Self::GetJsStringLiteralPrefix => *to = parse::js::string_literal_prefix(to)?,
             Self::UnescapeHtmlText => *to = parse::html::unescape_text(to)?,
             Self::GetHtmlAttribute(name) => *to = parse::html::get_attribute_value(to, get_str!(name, task_state, StringModificationError))?.ok_or(StringModificationError::HtmlAttributeNotFound)?.ok_or(StringModificationError::HtmlAttributeHasNoValue)?,
 
-            Self::StringMap {value, map} => if let Some(x) = map.get(value.get(task_state)?) {x.apply(to, task_state)?;},
+            Self::Map {value, map} => if let Some(x) = map.get(value.get(task_state)?) {x.apply(to, task_state)?;},
 
             Self::KeepNthSegment {split, index} => *to = neg_nth(to.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string(),
             Self::KeepSegmentRange {split, start, end} => {

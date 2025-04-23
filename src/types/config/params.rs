@@ -12,7 +12,7 @@ use crate::util::*;
 
 /// Flags, variables, etc. that adjust the exact behavior of a config.
 ///
-/// Bundles all the state that determines how the [`Config`] works in one conenient area.
+/// Bundles all the state that determines how the [`Config`] works in one convenient area.
 #[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub struct Params {
@@ -213,44 +213,44 @@ impl ParamsDiff {
 #[derive(Debug, Clone, PartialEq, Eq, clap::Args)]
 pub struct ParamsDiffArgParser {
     /// Set a params flag.
-    #[arg(short      , long, value_names = ["NAME"])]
+    #[arg(short, long, value_names = ["NAME"])]
     pub flag  : Vec<String>,
     /// Unset a params flag.
-    #[arg(short = 'F', long, value_names = ["NAME"])]
+    #[arg(       long, value_names = ["NAME"])]
     pub unflag: Vec<String>,
     /// Set a params var.
-    #[arg(short      , long, num_args(2), value_names = ["NAME", "VALUE"])]
+    #[arg(short, long, num_args(2), value_names = ["NAME", "VALUE"])]
     pub var: Vec<Vec<String>>,
     /// Unset a params var.
-    #[arg(short = 'V', long, value_names = ["NAME"])]
+    #[arg(       long, value_names = ["NAME"])]
     pub unvar : Vec<String>,
     /// Insert a value into a params set.
-    #[arg(             long, num_args(1..), value_names = ["NAME", "VALUE1"])]
+    #[arg(       long, num_args(1..), value_names = ["NAME", "VALUE1"])]
     pub insert_into_set: Vec<Vec<String>>,
     /// Remove a value from a params set.
-    #[arg(             long, num_args(1..), value_names = ["NAME", "VALUE1"])]
+    #[arg(       long, num_args(1..), value_names = ["NAME", "VALUE1"])]
     pub remove_from_set: Vec<Vec<String>>,
     /// Insert a value into a params map.
-    #[arg(             long, num_args(2..), value_names = ["NAME", "KEY1", "VALUE1"])]
+    #[arg(       long, num_args(2..), value_names = ["NAME", "KEY1", "VALUE1"])]
     pub insert_into_map: Vec<Vec<String>>,
     /// Remove a value from a params map.
-    #[arg(             long, num_args(1..), value_names = ["NAME", "KEY1"])]
+    #[arg(       long, num_args(1..), value_names = ["NAME", "KEY1"])]
     pub remove_from_map: Vec<Vec<String>>,
     /// Whether or not to read from the cache. If no value is provided, assumes `true`.
     #[cfg(feature = "cache")]
-    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    #[arg(       long, num_args(0..=1), default_missing_value("true"))]
     pub read_cache : Option<bool>,
     /// Whether or not to write to the cache. If no value is provided, assumes `true`.
     #[cfg(feature = "cache")]
-    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    #[arg(       long, num_args(0..=1), default_missing_value("true"))]
     pub write_cache: Option<bool>,
     /// The proxy to use.
     #[cfg(feature = "http")]
-    #[arg(             long)]
+    #[arg(       long)]
     pub proxy: Option<ProxyConfig>,
     /// Whether or not to ignore all proxies. If no value is provided, assumes `true`.
     #[cfg(feature = "http")]
-    #[arg(             long, num_args(0..=1), default_missing_value("true"))]
+    #[arg(       long, num_args(0..=1), default_missing_value("true"))]
     pub no_proxy: Option<bool>
 }
 
@@ -314,17 +314,17 @@ impl TryFrom<ParamsDiffArgParser> for ParamsDiff {
 impl ParamsDiffArgParser {
     /// Builds the [`ParamsDiff`].
     /// # Errors
-    /// If an invokation of [`Self::var`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::VarNoNameSpecified`].
+    /// If an invocation of [`Self::var`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::VarNoNameSpecified`].
     /// 
-    /// If an invokation of [`Self::var`] doesn't have a value specified, returns the error [`ParamsDiffArgParserValueWrong::VarNoValueSpecified`].
+    /// If an invocation of [`Self::var`] doesn't have a value specified, returns the error [`ParamsDiffArgParserValueWrong::VarNoValueSpecified`].
     ///
-    /// If an invokation of [`Self::var`] has more than 2 values, returns the error [`ParamsDiffArgParserValueWrong::VarTooManyArguments`].
+    /// If an invocation of [`Self::var`] has more than 2 values, returns the error [`ParamsDiffArgParserValueWrong::VarTooManyArguments`].
     ///
-    /// If an invocation of [`Self::insert_into_set`] doesn't have a name spacified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoSetsNoName`].
+    /// If an invocation of [`Self::insert_into_set`] doesn't have a name pacified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoSetsNoName`].
     ///
-    /// If an invokation of [`Self::remove_from_set`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::RemoveFromSetsNoName`].
+    /// If an invocation of [`Self::remove_from_set`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::RemoveFromSetsNoName`].
     ///
-    /// If an invokation of [`Self::insert_into_map`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoMapNoName`].
+    /// If an invocation of [`Self::insert_into_map`] doesn't have a name specified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoMapNoName`].
     ///
     /// If an invocation of [`Self::insert_into_map`] has a key with no value specified, returns the error [`ParamsDiffArgParserValueWrong::InsertIntoMapKeyWithoutValue`].
     ///
@@ -354,7 +354,7 @@ impl ParamsDiffArgParser {
                 for invocation in self.insert_into_map {
                     if invocation.len() % 2 == 1 {
                         let mut x = invocation.into_iter();
-                        ret.entry(x.next().ok_or(ParamsDiffArgParserValueWrong::InsertIntoMapNoName)?).or_default().insert_into_map = std::iter::from_fn(|| x.next().zip(x.next())).collect();
+                        ret.entry(x.next().ok_or(ParamsDiffArgParserValueWrong::InsertIntoMapNoName)?).or_default().insert= std::iter::from_fn(|| x.next().zip(x.next())).collect();
                     } else {
                         Err(ParamsDiffArgParserValueWrong::InsertIntoMapKeyWithoutValue)?
                     }
@@ -364,7 +364,7 @@ impl ParamsDiffArgParser {
                     if !invocation.is_empty() {
                         let mut x = invocation.into_iter();
                         let name = x.next().ok_or(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)?;
-                        ret.entry(name).or_default().remove_from_map = x.collect();
+                        ret.entry(name).or_default().remove = x.collect();
                     } else {
                         Err(ParamsDiffArgParserValueWrong::RemoveFromMapNoMapSpecified)?
                     }

@@ -14,7 +14,7 @@ use crate::util::*;
 ///
 /// For most parts, setting a URL's part to a value then getting that same part returns the same value.
 ///
-/// Exceptions include setting part segments to values containing the split, `After`/`Before`/`Next` vairants always returning [`None`], and probably some other things. I'll fix this doc later.
+/// Exceptions include setting part segments to values containing the split, `After`/`Before`/`Next` variants always returning [`None`], and probably some other things. I'll fix this doc later.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum UrlPart {
     /// Print debug information about the contained [`Self`].
@@ -106,9 +106,9 @@ pub enum UrlPart {
 
     /// The nth domain segment of the [`Self::Domain`].
     /// # Footguns
-    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in weird and unpredictable behavior.
     ///
-    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
+    /// Thoroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -141,9 +141,9 @@ pub enum UrlPart {
     ///
     /// Allows inserting domain segments between others.
     /// # Footguns
-    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in weird and unpredictable behavior.
     ///
-    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
+    /// Thoroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -172,9 +172,9 @@ pub enum UrlPart {
     ///
     /// Allows inserting domain segments between others.
     /// # Footguns
-    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in weird and unpredictable behavior.
     ///
-    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
+    /// Thoroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -206,9 +206,9 @@ pub enum UrlPart {
     ///
     /// Allows appending domain segments.
     /// # Footguns
-    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in werid and unpredictable behavior.
+    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in weird and unpredictable behavior.
     ///
-    /// Thouroughly preventing empty domain segments is a pain so I decided not to.
+    /// Thoroughly preventing empty domain segments is a pain so I decided not to.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -766,7 +766,7 @@ pub enum UrlPart {
     Query,
     /// The selected query parameter.
     ///
-    /// Setting a query parameter with a [`QueryParamSelector::index`] of exactly one more than the current count of query parameters with the matching [`QueryParamSelector::name`] will append a new query paramter.
+    /// Setting a query parameter with a [`QueryParamSelector::index`] of exactly one more than the current count of query parameters with the matching [`QueryParamSelector::name`] will append a new query parameter.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -1231,7 +1231,7 @@ pub enum UrlPartSetError {
     /// Returned when attempting to set a URL's port fails.
     #[error("Attempting to set the URL's port failed.")]
     SetPortError,
-    /// Returned when attempting to set a URL's path tp [`None`].
+    /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
     /// Returned when attempting to get/set a URL's path segments when it doesn't have any.
