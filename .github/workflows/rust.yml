@@ -13,28 +13,28 @@ jobs:
     - name: Build.
       run: cargo build
 
-  build no default features:
+  build_no_default_features:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Build no default features.
       run: cargo build --no-default-features
 
-  test default config:
+  test_default_config:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Run the non-network default config tests.
       run: cargo run -- --tests tests.json
 
-  test default features:
+  test_default_features:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Run cargo test on default features.
       run: cargo test
 
-  test subsets:
+  test_subsets:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
