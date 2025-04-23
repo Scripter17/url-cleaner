@@ -287,6 +287,8 @@ pub enum Condition {
     /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
     Common(CommonCall),
     /// Calls the specified function and returns its value.
+    /// # Errors
+    /// If the call to the contained function returns an error, that error is returned.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]

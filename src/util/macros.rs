@@ -1,7 +1,7 @@
 //! Macros.
 
 #[cfg(feature = "debug")]
-use std::sync::{Mutex, OnceLock};
+use std::sync::Mutex;
 
 pub(crate) use url_cleaner_macros::ErrorFilter;
 
@@ -12,7 +12,7 @@ pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
 pub(crate) static DEBUG_TIME: Mutex<Option<std::time::Instant>> = Mutex::new(None);
 
 #[cfg(feature = "debug")]
-pub(crate) static DEBUG_JUST_PRINT_TIMES: OnceLock<bool> = OnceLock::new();
+pub(crate) static DEBUG_JUST_PRINT_TIMES: Mutex<bool> = Mutex::new(false);
 #[cfg(feature = "debug")]
 pub(crate) struct Deindenter;
 #[cfg(feature = "debug")]
@@ -29,13 +29,13 @@ macro_rules! debug {
         #[cfg(feature = "debug")]
         #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
         let _deindenter = {
-            let mut time = crate::util::DEBUG_TIME.lock().expect("The DEBUG_TIME mutex to never be poisoned.");
+            let mut time = crate::util::DEBUG_TIME.lock().expect("The DEBUG_TIME Mutex to never be poisoned.");
             match *time {
                 Some(x) => eprint!("{:>8?}", x.elapsed()),
                 None => eprint!("        ")
             }
             let mut indent = crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.");
-            if !*crate::util::DEBUG_JUST_PRINT_TIMES.get().expect("The DEBUG_JUST_PRINT_TIMES OnceLock to be set.") {
+            if !*crate::util::DEBUG_JUST_PRINT_TIMES.lock().expect("The DEBUG_JUST_PRINT_TIMES Mutex to never be poisoned.") {
                 eprint!("\t{}{}", "|   ".repeat(*indent), stringify!($func));
                 $(eprint!($comment);)?
                 $(eprint!(concat!("; ", stringify!($name), ": {:?}"), $name);)*

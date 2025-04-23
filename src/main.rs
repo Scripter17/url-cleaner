@@ -127,7 +127,7 @@ fn main() -> Result<ExitCode, CliError> {
     let args = Args::parse();
 
     #[cfg(feature = "debug")]
-    util::DEBUG_JUST_PRINT_TIMES.set(args.debug_just_print_times).expect("No poisoning.");
+    {*util::DEBUG_JUST_PRINT_TIMES.lock().expect("No poisoning.") = args.debug_just_print_times;}
 
     #[cfg(feature = "default-config")]
     let mut config = Config::load_or_get_default_no_cache(args.config.as_deref())?;

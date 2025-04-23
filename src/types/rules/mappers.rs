@@ -646,6 +646,9 @@ pub enum Mapper {
     /// Mapper::Common(CommonCall {name: "abc".into(), args: Default::default()}).apply(&mut task_state).unwrap();
     /// ```
     Common(CommonCall),
+    /// Calls the specified function and returns its value.
+    /// # Errors
+    /// If the call to the contained function returns an error, that error is returned.
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]

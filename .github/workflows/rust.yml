@@ -1,10 +1,6 @@
 name: Rust
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,26 +10,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Build
-      run: sudo apt install libsqlite3-dev && rustup update stable && cargo build --verbose
+    - name: Build.
+      run: cargo build
 
-  build_NDF:
+  build no default features:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Build no default features
-      run: sudo apt install libsqlite3-dev && rustup update stable && cargo build --verbose --no-default-features
+    - name: Build no default features.
+      run: cargo build --no-default-features
 
-  test:
+  test default config:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run tests
-      run: sudo apt install libsqlite3-dev && rustup update stable && cargo test --verbose -- --skip ExpandRedirect
+      run: cargo run -- --tests tests.json
 
-  test_NDF:
+  test default features:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run tests no default features
-      run: sudo apt install libsqlite3-dev && rustup update stable && cargo test --verbose --no-default-features -- --skip default_config
+    - name: Run cargo test on default features.
+      run: cargo test
+
+  test subsets:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: Test feature subsets of size 3 and below.
+      run: cargo hack test --feature-powerset --depth 3
