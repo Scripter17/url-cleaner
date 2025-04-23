@@ -158,6 +158,7 @@ fn main() -> Result<ExitCode, CliError> {
         Default::default()
     };
 
+    #[cfg(feature = "cache")]
     let cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
 
     let json = args.json;
@@ -184,6 +185,7 @@ fn main() -> Result<ExitCode, CliError> {
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
     let config_ref = &config;
     let job_context_ref = &job_context;
+    #[cfg(feature = "cache")]
     let cache_ref = &cache;
     std::thread::scope(|s| {
 
