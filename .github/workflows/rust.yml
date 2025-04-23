@@ -36,6 +36,8 @@ jobs:
 
   test_subsets:
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Awarnings
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
