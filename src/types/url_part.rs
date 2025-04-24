@@ -998,7 +998,7 @@ pub enum SetQueryParamError {
 impl UrlPart {
     /// Gets the value.
     pub fn get<'a>(&self, url: &'a BetterUrl) -> Option<Cow<'a, str>> {
-        debug!(UrlPart::get, self, url);
+        debug!(self, UrlPart::get, self, url);
         Some(match self {
             Self::Debug(part) => {
                 let ret = part.get(url);
@@ -1076,7 +1076,7 @@ impl UrlPart {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), UrlPartSetError> {
-        debug!(UrlPart::set, self, url, to);
+        debug!(self, UrlPart::set, self, url, to);
         match (self, to) {
             (Self::Debug(part), _) => {
                 let old = part.get(url).to_owned();
@@ -1101,18 +1101,18 @@ impl UrlPart {
 
 
 
-            (Self::BeforeDomainSegment      (n), _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::Before, to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::DomainSegment            (n), _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::At    , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::AfterDomainSegment       (n), _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::NextDomainSegment           , _) => Self::Domain      .set(url, Some(&*set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), -1, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::BeforeSubdomainSegment   (n), _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::Before, to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::SubdomainSegment         (n), _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::At    , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::AfterSubdomainSegment    (n), _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::NextSubdomainSegment     ,    _) => Self::Subdomain   .set(url, Some(&*set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), -1, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::BeforeDomainSuffixSegment(n), _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::Before, to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::DomainSuffixSegment      (n), _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::At    , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::AfterDomainSuffixSegment (n), _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
-            (Self::NextDomainSuffixSegment     , _) => Self::DomainSuffix.set(url, Some(&*set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), -1, SegRel::After , to)?.join(".")).filter(|x| !x.is_empty()))?,
+            (Self::BeforeDomainSegment      (n), _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::Before, to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::DomainSegment            (n), _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::At    , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::AfterDomainSegment       (n), _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::NextDomainSegment           , _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), -1, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::BeforeSubdomainSegment   (n), _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::Before, to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::SubdomainSegment         (n), _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::At    , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::AfterSubdomainSegment    (n), _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::NextSubdomainSegment     ,    _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), -1, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::BeforeDomainSuffixSegment(n), _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::Before, to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::DomainSuffixSegment      (n), _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::At    , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::AfterDomainSuffixSegment (n), _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
+            (Self::NextDomainSuffixSegment     , _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), -1, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
 
 
 
@@ -1134,9 +1134,9 @@ impl UrlPart {
 
             (Self::Path, Some(to)) => url.set_path(to),
             (Self::Path, None    ) => Err(UrlPartSetError::PathCannotBeNone)?,
-            (Self::BeforePathSegment(n), _) => Self::Path.set(url, Some(&*set_rel_segment(url.path_segments()?, *n, SegRel::Before, to)?.join("/")).filter(|x| !x.is_empty()))?,
-            (Self::PathSegment      (n), _) => Self::Path.set(url, Some(&*set_rel_segment(url.path_segments()?, *n, SegRel::At    , to)?.join("/")).filter(|x| !x.is_empty()))?,
-            (Self::AfterPathSegment (n), _) => Self::Path.set(url, Some(&*set_rel_segment(url.path_segments()?, *n, SegRel::After , to)?.join("/")).filter(|x| !x.is_empty()))?,
+            (Self::BeforePathSegment(n), _) => url.set_path(&set_rel_segment(url.path_segments()?, *n, SegRel::Before, to)?.join("/")),
+            (Self::PathSegment      (n), _) => url.set_path(&set_rel_segment(url.path_segments()?, *n, SegRel::At    , to)?.join("/")),
+            (Self::AfterPathSegment (n), _) => url.set_path(&set_rel_segment(url.path_segments()?, *n, SegRel::After , to)?.join("/")),
             (Self::NextPathSegment     , _) => if let Some(to) = to {url.path_segments_mut()?.pop_if_empty().push(to);},
 
 

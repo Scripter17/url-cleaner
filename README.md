@@ -12,11 +12,8 @@ URL Cleaner is designed to make this as comprehensive, fast, and easy as possibl
 # PLEASE note that URL Cleaner is not something you should blindly trust!
 URL Cleaner and its default config are under heavy development, and many websites may break, be partially unhandled, or give incorrect results.
 
-While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned value if it's detected as a redirect,
-this expansion may lead to websites deanonymizing your/your URL Cleaner Site instances IP address. It may also allow malicious enails/comments/DMs to find your IP by buying expired but still handled redirect sites.
-
-While URL Cleaner supports using proxies, disabling network access entirely, and doesn't consider hiding the fact you're cleaning URLs in scope,
-you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
+While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned URL if it's also detected as a redirect,
+this expansion may lead to websites deanonymizing your/your URL Cleaner Site instance's IP address. It may also allow malicious emails/comments/DMs to find your IP by buying expired but still handled redirect sites.
 
 Additionally, some redirect websites also put the destination in the URL (`https://example-redirect-site.com/redirect/1234?final_url=https://example.com/`).
 For these, the default config uses the `final_url` query parameter to skip the network request.
@@ -26,6 +23,9 @@ If a website is suceptable to this or similar attacks, then URL Cleaner is consi
 
 Another deanonymization vector involves [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) cleaning websites directly in the browser.
 While this makes it trivial for the website to know you're using URL Cleaner Site, a much bigger issue is that redirects are cached, so if you've seen a redirect before, the website can detect that from both timing and possibly owning the redirect site.
+
+While URL Cleaner supports using proxies and the default config supports disabling network access entirely and doesn't consider hiding the fact you're cleaning URLs in scope,
+you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
 
 While URL Cleaner's default config is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
 <!--/cmd-->
@@ -67,40 +67,40 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 <!--cmd scripts/gen-docs.py-->
 #### Flags
 
-- `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki-host` variable.
-- `unbreezewiki`: Replace Breezewiki hosts with fandom.com.
-- `nitter`: Replace twitter/known Nitter hosts with the `nitter-host` variable.
-- `unnitter`: Replace Nitter hosts with x.com.
-- `invidious`: Replace youtube/known Invidious hosts with the `invidious-host` variabel.
-- `uninvidious`: Replace Invidious hosts with youtube.com
-- `embed-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-host` and `bsky.app` to the variable `bsky-embed-host`.
-- `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
 - `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
+- `embed-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-host` and `bsky.app` to the variable `bsky-embed-host`.
+- `keep-lang`: Keeps language query parameters.
 - `no-https-upgrade`: Disable upgrading `http` URLs to `https`.
 - `no-network`: Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.
+- `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
-- `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
+- `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki-host` variable.
+- `unbreezewiki`: Replace Breezewiki hosts with fandom.com.
+- `invidious`: Replace youtube/known Invidious hosts with the `invidious-host` variabel.
+- `uninvidious`: Replace Invidious hosts with youtube.com
+- `nitter`: Replace twitter/known Nitter hosts with the `nitter-host` variable.
+- `unnitter`: Replace Nitter hosts with x.com.
+- `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
+- `furaffinity-sfw`: Turn `furaffinity.net` into `sfw.furaffinity.net`
+- `furaffinity-unsfw`: Turn `sfw.furaffinity.net` into `furaffinity.net`
+- `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
+- `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
+- `youtube-keep-sub-confirmation`: Don't remove the `sub_confirmation` query param from youtube.com URLs.
+- `youtube-unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
 - `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
 - `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube-unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube-keep-sub-confirmation`: Don't remove the `sub_confirmation` query param from youtube.com URLs.
-- `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
-- `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
-- `keep-lang`: Keeps language query parameters.
-- `furaffinity-sfw`: Turn `furaffinity.net` into `sfw.furaffinity.net`
-- `furaffinity-unsfw`: Turn `sfw.furaffinity.net` into `furaffinity.net`
 
 #### Vars
 
-- `breezewiki-host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
-- `nitter-host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
-- `invidious-host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
-- `twitter-embed-host`: The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`.
 - `bluesky-embed-host`: The domain to use for bluesky when the `embed-compatibility` flag is set. Defaults to `fxbsky.com`.
-- `pixiv-embed-host`: The domain to use for pixiv when the `embed-compatibility` flag is set. Defaults to `phixiv.com`.
+- `breezewiki-host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
 - `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
+- `invidious-host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
+- `nitter-host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
+- `pixiv-embed-host`: The domain to use for pixiv when the `embed-compatibility` flag is set. Defaults to `phixiv.com`.
+- `twitter-embed-host`: The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`.
 
 #### Environment Vars
 
@@ -154,46 +154,46 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some Hyperfine and Valgrind benchmarking so I can reliably check for regressions.
 
-On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.11.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
+On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.14.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-04-23.
+Last updated 2025-04-24.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  7.122,
-    "1"    :  7.300,
-    "10"   :  7.747,
-    "100"  :  7.716,
-    "1000" :  9.767,
-    "10000": 32.542
+    "0"    :  7.207,
+    "1"    :  7.293,
+    "10"   :  7.353,
+    "100"  :  7.593,
+    "1000" :  9.601,
+    "10000": 31.370
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  7.069,
-    "1"    :  7.307,
-    "10"   :  7.306,
-    "100"  :  7.645,
-    "1000" : 11.444,
-    "10000": 45.100
+    "0"    :  7.135,
+    "1"    :  7.276,
+    "10"   :  7.291,
+    "100"  :  7.624,
+    "1000" : 10.715,
+    "10000": 42.306
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  7.650,
-    "1"    :  7.477,
-    "10"   :  7.398,
-    "100"  :  7.940,
-    "1000" : 13.796,
-    "10000": 69.848
+    "0"    :  7.167,
+    "1"    :  7.261,
+    "10"   :  7.546,
+    "100"  :  7.871,
+    "1000" : 13.171,
+    "10000": 63.891
   }
 }
 ```
 
 For reasons not yet known to me, everything from an Intel i5-8500 (6) @ 4.100GHz to an AMD Ryzen 9 7950X3D (32) @ 5.759GHz seems to max out at between 140 and 110ms per 100k (not a typo) of the amazon URL despite the second CPU being significantly more powerful.
 
-In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is significantly (but not severely) worse.  
-Often the first few cleanings will take a few hundred milliseconds each because the page is still loading.  
-However, because of the overhead of using HTTP (even if it's just to localhost) subsequent cleanings, for me, are basically always at least 10ms.
+In practice, when using [URL Cleaner Site and its userscript](https://github.com/Scripter17/url-cleaner-site), performance is significantly (but not severely) worse.
+Often the first few cleanings will take a few hundred milliseconds each because the page is still loading.
+Subsequent cleanings should be considerably faster but still worse than the above given the extra overhead of HTTP and optionally TLS.
 
 #### Credits
 
@@ -207,11 +207,6 @@ The people and projects I have stolen various parts of the default config from.
 ## MSRV
 
 The Minimum Supported Rust Version is the latest stable release. URL Cleaner may or may not work on older versions, but there's no guarantee.
-
-## Untrusted input
-
-Although URL Cleaner has various feature flags that can be disabled at compile time to make handling untrusted input safer, no guarantees are made. Especially if the config file being used is untrusted.  
-That said, if you notice any rules that use but don't actually need HTTP requests or other data-leaky features, please let me know.
 
 ## CLI
 

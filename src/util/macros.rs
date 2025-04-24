@@ -1,52 +1,6 @@
 //! Macros.
 
-#[cfg(feature = "debug")]
-use std::sync::Mutex;
-
 pub(crate) use url_cleaner_macros::ErrorFilter;
-
-#[cfg(feature = "debug")]
-pub(crate) static DEBUG_INDENT: Mutex<usize> = Mutex::new(0);
-
-#[cfg(feature = "debug")]
-pub(crate) static DEBUG_TIME: Mutex<Option<std::time::Instant>> = Mutex::new(None);
-
-#[cfg(feature = "debug")]
-pub(crate) static DEBUG_JUST_PRINT_TIMES: Mutex<bool> = Mutex::new(false);
-#[cfg(feature = "debug")]
-pub(crate) struct Deindenter;
-#[cfg(feature = "debug")]
-impl std::ops::Drop for Deindenter {
-    #[allow(clippy::arithmetic_side_effects, reason = "DEBUG_INDENT gets decremented exactly once per increment and always after.")]
-    fn drop(&mut self) {
-        *crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.")-=1;
-    }
-}
-
-/// When the debug feature is enabled, print debug info.
-macro_rules! debug {
-    ($func:pat, $($comment:literal,)? $($name:ident),*) => {
-        #[cfg(feature = "debug")]
-        #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
-        let _deindenter = {
-            let mut time = crate::util::DEBUG_TIME.lock().expect("The DEBUG_TIME Mutex to never be poisoned.");
-            match *time {
-                Some(x) => eprint!("{:>8?}", x.elapsed()),
-                None => eprint!("        ")
-            }
-            let mut indent = crate::util::DEBUG_INDENT.lock().expect("The DEBUG_INDENT mutex to never be poisoned.");
-            if !*crate::util::DEBUG_JUST_PRINT_TIMES.lock().expect("The DEBUG_JUST_PRINT_TIMES Mutex to never be poisoned.") {
-                eprint!("\t{}{}", "|   ".repeat(*indent), stringify!($func));
-                $(eprint!($comment);)?
-                $(eprint!(concat!("; ", stringify!($name), ": {:?}"), $name);)*
-            }
-            eprintln!();
-            *indent+=1;
-            *time = Some(std::time::Instant::now());
-            crate::util::Deindenter
-        };
-    }
-}
 
 /// Helper macro to make serde use [`FromStr`] to deserialize strings.
 ///
@@ -118,7 +72,6 @@ macro_rules! from_units {
     }
 }
 
-pub(crate) use debug;
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
 pub(crate) use get_string;

@@ -187,7 +187,7 @@ impl Rule {
     /// # Errors
     /// See each variant of [`Self`] for errors.
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), RuleError> {
-        debug!(Rule::apply, self, task_state);
+        debug!(self, Rule::apply, self, task_state);
         Ok(match self {
             Self::Normal{condition, mapper, else_mapper} => if condition.satisfied_by(&task_state.to_view())? {
                 mapper.apply(task_state)?;
@@ -262,7 +262,7 @@ impl Rules {
     /// # Errors
     /// If any call to [`Rule::apply`] returns an error, that error is returned.
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), RuleError> {
-        debug!(Rules::apply, self, task_state);
+        debug!(self, Rules::apply, self, task_state);
         for rule in &self.0 {
             rule.apply(task_state)?;
         }

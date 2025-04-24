@@ -9,11 +9,8 @@
 //! # PLEASE note that URL Cleaner is not something you should blindly trust!
 //! URL Cleaner and its default config are under heavy development, and many websites may break, be partially unhandled, or give incorrect results.
 //!
-//! While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned value if it's detected as a redirect,
-//! this expansion may lead to websites deanonymizing your/your URL Cleaner Site instances IP address. It may also allow malicious enails/comments/DMs to find your IP by buying expired but still handled redirect sites.
-//!
-//! While URL Cleaner supports using proxies, disabling network access entirely, and doesn't consider hiding the fact you're cleaning URLs in scope,
-//! you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
+//! While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned URL if it's also detected as a redirect,
+//! this expansion may lead to websites deanonymizing your/your URL Cleaner Site instance's IP address. It may also allow malicious emails/comments/DMs to find your IP by buying expired but still handled redirect sites.
 //!
 //! Additionally, some redirect websites also put the destination in the URL (`https://example-redirect-site.com/redirect/1234?final_url=https://example.com/`).
 //! For these, the default config uses the `final_url` query parameter to skip the network request.
@@ -23,6 +20,9 @@
 //!
 //! Another deanonymization vector involves [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) cleaning websites directly in the browser.
 //! While this makes it trivial for the website to know you're using URL Cleaner Site, a much bigger issue is that redirects are cached, so if you've seen a redirect before, the website can detect that from both timing and possibly owning the redirect site.
+//!
+//! While URL Cleaner supports using proxies and the default config supports disabling network access entirely and doesn't consider hiding the fact you're cleaning URLs in scope,
+//! you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
 //!
 //! While URL Cleaner's default config is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
 

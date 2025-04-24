@@ -89,10 +89,6 @@ pub struct Args {
     /// 0 uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     pub threads: usize,
-    /// (For debug build) Only print timing information.
-    #[cfg(feature = "debug")]
-    #[arg(long)]
-    pub debug_just_print_times: bool,
     /// Debug option to get more accurate time measurements.
     #[arg(long)]
     pub debug_no_printing: bool
@@ -115,19 +111,11 @@ pub enum CliError {
     #[error(transparent)] CantParseTests(serde_json::Error)
 }
 
-/// Helper function to convert [`str`]s into JSON strings.
-fn str_to_json_str(s: &str) -> String {
-    serde_json::to_string(s).expect("Serializing a string to never fail.")
-}
-
 fn main() -> Result<ExitCode, CliError> {
     let some_ok  = std::sync::Mutex::new(false);
     let some_err = std::sync::Mutex::new(false);
 
     let args = Args::parse();
-
-    #[cfg(feature = "debug")]
-    {*util::DEBUG_JUST_PRINT_TIMES.lock().expect("No poisoning.") = args.debug_just_print_times;}
 
     #[cfg(feature = "default-config")]
     let mut config = Config::load_or_get_default_no_cache(args.config.as_deref())?;
@@ -248,12 +236,12 @@ fn main() -> Result<ExitCode, CliError> {
                         match or.recv() {
                             Ok(Ok(url)) => {
                                 if !first_job {print!(",");}
-                                print!("{{\"Ok\":{}}}", str_to_json_str(url.as_str()));
+                                print!("{{\"Ok\":{}}}", serde_json::to_string(url.as_str()).expect("Serializing a string to never fail."));
                                 *some_ok_ref_lock = true;
                             },
                             Ok(Err(e)) => {
                                 if !first_job {print!(",");}
-                                print!("{{\"Err\":{}}}", str_to_json_str(&format!("{e:?}")));
+                                print!("{{\"Err\":{}}}", serde_json::to_string(&format!("{e:?}")).expect("Serializing a string to never fail."));
                                 *some_err_ref_lock = true;
                             },
                             Err(_) => break

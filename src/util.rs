@@ -8,6 +8,16 @@ mod macros;
 pub(crate) use macros::*;
 mod suitability;
 pub(crate) use suitability::*;
+#[cfg(feature = "debug")]
+mod debug;
+#[cfg(feature = "debug")]
+pub(crate) use debug::*;
+
+/// Dud debug macro.
+#[cfg(not(feature = "debug"))]
+macro_rules! debug {($($_:tt)*) => {}}
+#[cfg(not(feature = "debug"))]
+pub(crate) use debug;
 
 /// Serde helper function that returns true if `x` is `T`'s [`Default::default`] value.
 pub(crate) fn is_default<T: Default + PartialEq>(x: &T) -> bool {x == &T::default()}

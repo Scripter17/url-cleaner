@@ -941,7 +941,7 @@ impl StringModification {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn apply(&self, to: &mut String, task_state: &TaskStateView) -> Result<(), StringModificationError> {
-        debug!(StringModification::apply, self);
+        debug!(self, StringModification::apply, self);
         match self {
             Self::None => {},
             Self::Error(msg) => Err(StringModificationError::ExplicitError(msg.clone()))?,

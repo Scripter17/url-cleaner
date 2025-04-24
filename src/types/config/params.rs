@@ -151,11 +151,6 @@ impl ParamsDiff {
     ///
     /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
     pub fn apply(self, to: &mut Params) {
-        #[cfg(feature = "debug")]
-        let old_to = to.clone();
-        #[cfg(feature = "debug")]
-        let self_backup = self.clone();
-
         to.flags.extend(self.flags);
         for flag in self.unflags {to.flags.remove(&flag);}
 
@@ -193,7 +188,6 @@ impl ParamsDiff {
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
 
         #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
-        debug!(ParamsDiff::apply, self_backup, old_to, to);
     }
 }
 

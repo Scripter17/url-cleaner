@@ -291,22 +291,19 @@
 					"rules": [
 						{
 							"condition": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "utps-reg-domain-whitelist"}}}},
-							"mapper": {
-								"RemoveQueryParamsMatching": {"Any": [
+							"mapper": {"All": [
+								{"RemoveQueryParamsMatching": {"Any": [
 									{"InSet": "utps"},
 									{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-								]}
-							}
-						},
-						{
-							"condition": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "utps-reg-domain-whitelist"}}}},
-							"mapper": {"ModifyPart": {
-								"part": "Fragment",
-								"modification": {"RemoveQueryParamsMatching": {"Any": [
-									{"InSet": "utps"},
-									{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
-								]}
-							}}}
+								]}},
+								{"ModifyPart": {
+									"part": "Fragment",
+									"modification": {"RemoveQueryParamsMatching": {"Any": [
+										{"InSet": "utps"},
+										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+									]}
+								}}}
+							]}
 						},
 						{
 							"condition": {"All": [
@@ -327,23 +324,23 @@
 						{"Mapper": {"SetPart": {
 							"part": "FqdnPeriod",
 							"value": null
-						}}},
-						{
-							"condition": {"All": [
-								{"PartIs": {"part": "Query", "value": ""}},
-								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-query-reg-domain-blacklist"}}}}
-							]},
-							"mapper": {"SetPart": {"part": "Query", "value": null}}
-						},
-						{
-							"condition": {"All": [
-								{"PartIs": {"part": "Fragment", "value": ""}},
-								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-fragment-reg-domain-blacklist"}}}}
-							]},
-							"mapper": {"SetPart": {"part": "Fragment", "value": null}}
-						}
+						}}}
 					]
 				}},
+				{
+					"condition": {"All": [
+						{"PartIs": {"part": "Query", "value": ""}},
+						{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-query-reg-domain-blacklist"}}}}
+					]},
+					"mapper": "RemoveQuery"
+				},
+				{
+					"condition": {"All": [
+						{"PartIs": {"part": "Fragment", "value": ""}},
+						{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-fragment-reg-domain-blacklist"}}}}
+					]},
+					"mapper": {"SetPart": {"part": "Fragment", "value": null}}
+				},
 				{
 					"condition": {"Not": {"FlagIsSet": "keep-lang"}},
 					"mapper": {"RemoveQueryParam": {"ParamsMap": {"name": "hwwwwdpafqdnp_lang_query_params", "key": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}}}

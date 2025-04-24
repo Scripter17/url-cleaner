@@ -321,7 +321,7 @@ impl StringMatcher {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn satisfied_by(&self, haystack: &str, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
-        debug!(StringMatcher::satisfied_by, self);
+        debug!(self, StringMatcher::satisfied_by, self);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

@@ -120,7 +120,7 @@ impl StringSourceJsonValue {
     ///
     /// But TL;DR: If any call to [`StringSource::get`] returns an error, that error is returned.
     pub fn make(&self, job_state: &TaskStateView) -> Result<Value, StringSourceError> {
-        debug!(StringSourceJsonValue::make, self, job_state);
+        debug!(self, StringSourceJsonValue::make, self, job_state);
 
         Ok(match self {
             Self::Null      => Value::Null,

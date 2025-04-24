@@ -103,7 +103,7 @@ impl<'a> TaskStateView<'a> {
     /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns an error, that error is returned.
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        debug!(Params::http_client, self, http_client_config_diff);
+        debug!(self, Params::http_client, self, http_client_config_diff);
 
         let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
 

@@ -261,7 +261,7 @@ impl InnerCache {
     /// If the call to [`SqlQuery::execute`] to initialize the database returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Doesn't panic, but should be replaced with OnceCell::get_or_try_init once that's stable.")]
     pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
-        debug!(InnerCache::connect, self);
+        debug!(self, InnerCache::connect, self);
         if self.connection.get().is_none() {
             let mut needs_init = self.path == CachePath::Memory;
             if let CachePath::Path(path) = &self.path {
@@ -290,7 +290,7 @@ impl InnerCache {
     ///
     /// If the call to [`RunQueryDsl::load`] returns an error, that error is returned.
     pub fn read(&mut self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
-        debug!(InnerCache::read, self, category, key);
+        debug!(self, InnerCache::read, self, category, key);
         Ok(cache::dsl::cache
             .filter(cache::dsl::category.eq(category))
             .filter(cache::dsl::key.eq(key))
@@ -307,7 +307,7 @@ impl InnerCache {
     ///
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn write(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
-        debug!(InnerCache::write, self, category, key, value);
+        debug!(self, InnerCache::write, self, category, key, value);
         diesel::replace_into(cache::table)
             .values(&NewCacheEntry {category, key, value})
             .returning(CacheEntry::as_returning())

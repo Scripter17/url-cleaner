@@ -764,7 +764,7 @@ impl Mapper {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), MapperError> {
-        debug!(Mapper::apply, self, task_state);
+        debug!(self, Mapper::apply, self, task_state);
         match self {
             // Testing.
 

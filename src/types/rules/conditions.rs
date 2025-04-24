@@ -351,7 +351,7 @@ impl Condition {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn satisfied_by(&self, task_state: &TaskStateView) -> Result<bool, ConditionError> {
-        debug!(Condition::satisfied_by, self, task_state);
+        debug!(self, Condition::satisfied_by, self, task_state);
         Ok(match self {
             // Debug/constants.
 

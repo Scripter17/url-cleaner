@@ -404,7 +404,7 @@ impl StringLocation {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn satisfied_by(&self, haystack: &str, needle: &str) -> Result<bool, StringLocationError> {
-        debug!(StringLocation::satisfied_by, self, haystack, needle);
+        debug!(self, StringLocation::satisfied_by, self, haystack, needle);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
