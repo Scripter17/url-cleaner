@@ -48,11 +48,11 @@ pub struct Config {
     /// Defaults to an empty [`Commons`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub commons: Commons,
-    /// The [`Rules`] to apply.
+    /// The [`Action`]s to apply.
     ///
-    /// Defaults to an empty [`Rules`].
+    /// Defaults to an empty [`Vec`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub rules: Rules
+    pub actions: Vec<Action>
 }
 
 impl Config {
@@ -124,14 +124,17 @@ impl Config {
         })
     }
 
-    /// Applies [`Self::rules`] to the provided [`TaskState`].
+    /// Applies [`Self::actions`] to the provided [`TaskState`].
     ///
     /// If an error is returned, `job_state` may be left in a partially modified state.
     /// # Errors
-    /// If the call to [`Rules::apply`] returns an error, that error is returned.
+    /// If any call to [`Actions::apply`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
     pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyConfigError> {
-        self.rules.apply(job_state).map_err(Into::into)
+        for action in &self.actions {
+            action.apply(job_state)?;
+        }
+        Ok(())
     }
 
     /// Runs the provided [`Tests`], panicking if any of them fail.
@@ -159,9 +162,9 @@ impl Config {
 /// The enum of errors [`Config::apply`] can return.
 #[derive(Debug, Error)]
 pub enum ApplyConfigError {
-    /// Returned when a [`RuleError`] is encountered.
+    /// Returned when a [`ActionError`] is encountered.
     #[error(transparent)]
-    RuleError(#[from] RuleError)
+    ActionError(#[from] ActionError)
 }
 
 /// The JSON text of the default config.

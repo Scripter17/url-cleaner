@@ -202,33 +202,6 @@ pub enum UrlPart {
     /// assert_eq!(url.host_str(), Some("example.com."));
     /// ```
     AfterDomainSegment(isize),
-    /// The position in [`Self::Domain`] after the last domain segment.
-    ///
-    /// Allows appending domain segments.
-    /// # Footguns
-    /// While you are able and, per the URL spec, I think allowed, to add empty segments (`Some("")`), this results in weird and unpredictable behavior.
-    ///
-    /// Thoroughly preventing empty domain segments is a pain so I decided not to.
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// 
-    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
-    ///
-    /// assert_eq!(UrlPart::NextDomainSegment.get(&url), None);
-    ///
-    /// UrlPart::NextDomainSegment.set(&mut url, None).unwrap();
-    /// assert_eq!(url.host_str(), Some("example.com"));
-    /// UrlPart::NextDomainSegment.set(&mut url, Some("com")).unwrap();
-    /// assert_eq!(url.host_str(), Some("example.com.com"));
-    ///
-    /// // Fully qualified domain names give the same results.
-    /// let mut url = BetterUrl::parse("https://example.com.").unwrap();
-    ///
-    /// UrlPart::NextDomainSegment.set(&mut url, Some("com")).unwrap();
-    /// assert_eq!(url.host_str(), Some("example.com.com."));
-    /// ```
-    NextDomainSegment,
 
 
 
@@ -327,8 +300,6 @@ pub enum UrlPart {
     /// assert_eq!(url.host_str(), Some("abc.ghi.def.example.co.uk"));
     /// ```
     AfterSubdomainSegment(isize),
-    /// The position in [`Self::Subdomain`] after the last segment.
-    NextSubdomainSegment,
     /// The nth segment of the [`Self::DomainSuffix`].
     DomainSuffixSegment(isize),
     /// The position in [`Self::DomainSuffix`] between the nth segment and the previous one.
@@ -385,8 +356,6 @@ pub enum UrlPart {
     /// assert_eq!(url.host_str(), Some("abc.def.example.co.ghi.uk"));
     /// ```
     AfterDomainSuffixSegment(isize),
-    /// The position in [`Self::DomainSuffix`] after the last segment.
-    NextDomainSuffixSegment,
 
 
 
@@ -1023,21 +992,24 @@ impl UrlPart {
 
 
 
-            Self::DomainSegment(n)       => Cow::Borrowed(neg_nth(url.domain()?.split('.'), *n)?),
+            Self::DomainSegment(n @ 0..) => Cow::Borrowed(url.domain()?.split('.').nth((*n) as usize)?),
+            #[allow(clippy::arithmetic_side_effects, reason = "n is always below zero.")]
+            Self::DomainSegment(n @ ..0) => Cow::Borrowed(url.domain()?.split('.').nth_back((n + 1).unsigned_abs())?),
             Self::BeforeDomainSegment(_) => None?,
             Self::AfterDomainSegment(_)  => None?,
-            Self::NextDomainSegment      => None?,
 
 
 
-            Self::SubdomainSegment(n)          => Cow::Borrowed(neg_nth(url.subdomain()?.split('.'), *n)?),
+            Self::SubdomainSegment(n @ 0..)    => Cow::Borrowed(url.subdomain()?.split('.').nth((*n) as usize)?),
+            #[allow(clippy::arithmetic_side_effects, reason = "n is always below zero.")]
+            Self::SubdomainSegment(n @ ..0)    => Cow::Borrowed(url.subdomain()?.split('.').nth_back((n + 1).unsigned_abs())?),
             Self::BeforeSubdomainSegment(_)    => None?,
             Self::AfterSubdomainSegment(_)     => None?,
-            Self::NextSubdomainSegment         => None?,
-            Self::DomainSuffixSegment(n)       => Cow::Borrowed(neg_nth(url.domain_suffix()?.split('.'), *n)?),
+            Self::DomainSuffixSegment(n @ 0..) => Cow::Borrowed(url.domain_suffix()?.split('.').nth((*n) as usize)?),
+            #[allow(clippy::arithmetic_side_effects, reason = "n is always below zero.")]
+            Self::DomainSuffixSegment(n @ ..0) => Cow::Borrowed(url.domain_suffix()?.split('.').nth_back((n + 1).unsigned_abs())?),
             Self::BeforeDomainSuffixSegment(_) => None?,
             Self::AfterDomainSuffixSegment(_)  => None?,
-            Self::NextDomainSuffixSegment      => None?,
 
 
 
@@ -1056,7 +1028,9 @@ impl UrlPart {
 
 
             Self::Path                 => Cow::Borrowed(url.path()),
-            Self::PathSegment(n)       => Cow::Borrowed(neg_nth(url.path_segments().ok()?, *n)?),
+            Self::PathSegment(n @ 0..) => Cow::Borrowed(url.path_segments().ok()?.nth((*n) as usize)?),
+            #[allow(clippy::arithmetic_side_effects, reason = "n is always below zero.")]
+            Self::PathSegment(n @ ..0) => Cow::Borrowed(url.path_segments().ok()?.nth_back((n + 1).unsigned_abs())?),
             Self::BeforePathSegment(_) => None?,
             Self::AfterPathSegment(_)  => None?,
             Self::NextPathSegment      => None?,
@@ -1104,15 +1078,12 @@ impl UrlPart {
             (Self::BeforeDomainSegment      (n), _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::Before, to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::DomainSegment            (n), _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::At    , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::AfterDomainSegment       (n), _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), *n, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
-            (Self::NextDomainSegment           , _) => url.set_domain       (Some(set_rel_segment(url.domain       ().ok_or(UrlPartSetError::NoDomain      )?.split('.'), -1, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::BeforeSubdomainSegment   (n), _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::Before, to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::SubdomainSegment         (n), _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::At    , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::AfterSubdomainSegment    (n), _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), *n, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
-            (Self::NextSubdomainSegment     ,    _) => url.set_subdomain    (Some(set_rel_segment(url.subdomain    ().ok_or(UrlPartSetError::NoSubdomain   )?.split('.'), -1, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::BeforeDomainSuffixSegment(n), _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::Before, to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::DomainSuffixSegment      (n), _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::At    , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
             (Self::AfterDomainSuffixSegment (n), _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), *n, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
-            (Self::NextDomainSuffixSegment     , _) => url.set_domain_suffix(Some(set_rel_segment(url.domain_suffix().ok_or(UrlPartSetError::NoDomainSuffix)?.split('.'), -1, SegRel::After , to)?).filter(|x| !x.is_empty()).map(|x| x.join(".")).as_deref())?,
 
 
 

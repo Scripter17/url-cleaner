@@ -873,15 +873,15 @@ impl StringSource {
             },
             Self::Common(common_call) => {
                 task_state.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
-                    url: task_state.url,
-                    context: task_state.context,
-                    params: task_state.params,
-                    scratchpad: task_state.scratchpad,
-                    #[cfg(feature = "cache")]
-                    cache: task_state.cache,
-                    commons: task_state.commons,
                     common_args: Some(&common_call.args.build(task_state)?),
-                    job_context: task_state.job_context
+                    url        : task_state.url,
+                    scratchpad : task_state.scratchpad,
+                    context    : task_state.context,
+                    job_context: task_state.job_context,
+                    params     : task_state.params,
+                    commons    : task_state.commons,
+                    #[cfg(feature = "cache")]
+                    cache      : task_state.cache
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
             #[cfg(feature = "custom")]

@@ -52,7 +52,7 @@ impl<'a> TaskState<'a> {
 /// Helper macro to make docs briefer.
 #[macro_export]
 macro_rules! task_state {
-    ($task_state:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)? $(, job_context = $job_context:expr)?) => {
+    ($task_state:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, job_context = $job_context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)?) => {
         let url                                     = "https://example.com"; $(let url         = $url        ;)?
         let context    : $crate::types::TaskContext = Default::default();    $(let context     = $context    ;)?
         let job_context: $crate::types::JobContext  = Default::default();    $(let job_context = $job_context;)?
@@ -122,7 +122,7 @@ impl<'a> TaskStateView<'a> {
 /// Helper macro to make docs briefer.
 #[macro_export]
 macro_rules! task_state_view {
-    ($task_state_view:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)? $(, job_context = $job_context:expr)?) => {
+    ($task_state_view:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, job_context = $job_context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)?) => {
         let url                                     = "https://example.com"; $(let url         = $url        ;)?
         let context    : $crate::types::TaskContext = Default::default();    $(let context     = $context    ;)?
         let job_context: $crate::types::JobContext  = Default::default();    $(let job_context = $job_context;)?

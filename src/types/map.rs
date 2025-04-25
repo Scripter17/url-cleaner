@@ -12,7 +12,7 @@ use crate::util::*;
 ///
 /// Also has [`Self::else`] to specify a return value when a key isn't otherwise found.
 #[serde_as]
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct Map<T> {
     /// The map from [`Some`] to `T`.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]
@@ -33,6 +33,16 @@ impl<T> Map<T> {
     /// If either of the above return [`None`], returns the value of [`Self::else`].
     pub fn get<U: AsRef<str>>(&self, value: Option<U>) -> Option<&T> {
         value.map(|x| self.map.get(x.as_ref())).unwrap_or(self.if_null.as_deref()).or(self.r#else.as_deref())
+    }
+}
+
+impl<T> Default for Map<T> {
+    fn default() -> Self {
+        Self {
+            map: Default::default(),
+            if_null: Default::default(),
+            r#else: Default::default()
+        }
     }
 }
 

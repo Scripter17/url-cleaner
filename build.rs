@@ -6,13 +6,13 @@ use std::process::Command;
 fn main() {
     println!("cargo::rerun-if-changed=default-config.json");
 
-    let tag  = String::from_utf8( Command::new("git").args(["tag"      , "-l", "HEAD"]).output().expect("Spawning commands to work").stdout).expect("Git to give valid UTF-8 output").trim().to_string();
-    let hash = String::from_utf8( Command::new("git").args(["rev-parse",       "HEAD"]).output().expect("Spawning commands to work").stdout).expect("Git to give valid UTF-8 output").trim().to_string();
-    let more =                   !Command::new("git").args(["diff"                   ]).output().expect("Spawning commands to work").stdout.is_empty();
+    let tag  = String::from_utf8( Command::new("git").args(["tag"      , "--contains", "HEAD"]).output().expect("Spawning commands to work").stdout).expect("Git to give valid UTF-8 output").trim().to_string();
+    let hash = String::from_utf8( Command::new("git").args(["rev-parse",               "HEAD"]).output().expect("Spawning commands to work").stdout).expect("Git to give valid UTF-8 output").trim().to_string();
+    let more =                   !Command::new("git").args(["diff"                           ]).output().expect("Spawning commands to work").stdout.is_empty();
     let version_info = match (&*tag, hash, more) {
-        ("" , hash, false) =>           hash.to_string(),
-        (_  , hash, true ) => format!("{hash} and more"),
-        (tag, _   , false) =>           tag.to_string()
+        ("", hash, false) => hash,
+        (_ , hash, true ) => format!("{hash} and more"),
+        (_ , _   , false) => tag
     };
     println!("cargo::rustc-env=VERSION_INFO={version_info}");
 

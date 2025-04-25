@@ -18,20 +18,14 @@ use crate::glue::*;
 /// let job = Job {
 ///     context: &Default::default(),
 ///     config: &Config {
-///         rules: Rules(vec![
-///             Rule::Normal {
-///                 condition: Condition::HostIs(Some("example.com".into())),
-///                 mapper: Mapper::SetPart {part: UrlPart::Path, value: "/".into()},
-///                 else_mapper: None
-///             }
-///         ]),
+///         actions: vec![Action::RemoveQueryParams(["utm_source".into()].into())],
 ///         ..Default::default()
 ///     },
 #[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
-///     lazy_task_configs: Box::new([Ok("https://example.com/1".into()), Ok("https://example.com/2".into())].into_iter())
+///     lazy_task_configs: Box::new([Ok("https://example.com?utm_source=url_cleaner".into())].into_iter())
 /// };
 ///
-/// let expectations = ["https://example.com/", "https://example.com/"];
+/// let expectations = ["https://example.com/"];
 /// 
 /// for (task, expectation) in job.into_iter().zip(expectations) {
 ///     assert_eq!(task.unwrap().make().unwrap().r#do().unwrap().as_str(), expectation);

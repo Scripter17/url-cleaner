@@ -10,15 +10,12 @@ use crate::util::*;
 /// Common snippets of various tools that can be invoked like functions.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct Commons {
-    /// Common [`Rule`]s.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub rules: HashMap<String, Rule>,
     /// Common [`Condition`]s.
     #[serde(default, skip_serializing_if = "is_default")]
     pub conditions: HashMap<String, Condition>,
-    /// Common [`Mapper`]s.
+    /// Common [`Action`]s.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub mappers: HashMap<String, Mapper>,
+    pub actions: HashMap<String, Action>,
     /// Common [`StringSource`]s.
     #[serde(default, skip_serializing_if = "is_default")]
     pub string_sources: HashMap<String, StringSource>,

@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
 use std::process::ExitCode;
+use std::num::NonZero;
 
 use clap::{Parser, CommandFactory};
 use thiserror::Error;
@@ -86,9 +87,9 @@ pub struct Args {
     pub test_suitability: bool,
     /// The number of worker threads to use.
     ///
-    /// 0 uses the CPU's thread count.
-    #[arg(long, default_value_t = 0)]
-    pub threads: usize,
+    /// Omit to use the current CPU's thread count.
+    #[arg(long)]
+    pub threads: Option<NonZero<usize>>,
     /// Debug option to get more accurate time measurements.
     #[arg(long)]
     pub debug_no_printing: bool
@@ -167,8 +168,7 @@ fn main() -> Result<ExitCode, CliError> {
 
     if no_cleaning {std::process::exit(0);}
 
-    let mut threads = args.threads;
-    if threads == 0 {threads = std::thread::available_parallelism().expect("To be able to get the available parallelism.").into();}
+    let threads = args.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")).get();
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
     let config_ref = &config;
@@ -232,6 +232,7 @@ fn main() -> Result<ExitCode, CliError> {
                     let mut first_job = true;
 
                     print!("{{\"Ok\":{{\"urls\":[");
+
                     for or in out_recievers.iter().cycle() {
                         match or.recv() {
                             Ok(Ok(url)) => {

@@ -36,7 +36,7 @@ if [ $AUTO_DOMAINS -eq 1 ]; then
 fi
 
 if [ $GET_DATA -eq 1 ]; then
-  for domain in $DOMAINS[@]; do
+  for domain in "${DOMAINS[@]}"; do
     after=
     for page in $(seq $PAGES); do
       echo "Getting page $page for $domain" > /dev/stderr
