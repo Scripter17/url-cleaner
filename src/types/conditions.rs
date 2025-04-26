@@ -229,7 +229,7 @@ pub enum Condition {
         /// The [`StringSource`] to compare [`Self::PartIs::value`] with.
         value: StringSource
     },
-    /// Passes if [`Self::PartContains::part`] contains [`Self::PartContains::value`] at [`Self::PartContains::where`].
+    /// Passes if [`Self::PartContains::part`] contains [`Self::PartContains::value`] at [`Self::PartContains::at`].
     /// # Errors
     /// If the call to [`UrlPart::get`] returns [`None`], returns the error [`ConditionError::PartIsNone`].
     ///
@@ -245,7 +245,7 @@ pub enum Condition {
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default)]
-        r#where: StringLocation
+        at: StringLocation
     },
     /// Passes if [`Self::PartMatches::part`] satisfies [`Self::PartMatches::matcher`].
     /// # Errors
@@ -312,7 +312,7 @@ pub enum Condition {
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default, skip_serializing_if = "is_default")]
-        r#where: StringLocation
+        at: StringLocation
     },
     /// Passes if [`Self::StringMatches::value`] satisfies [`Self::StringMatches::matcher`].
     /// # Errors
@@ -488,10 +488,10 @@ impl Condition {
 
             // General parts.
 
-            Self::PartIs{part, value} => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
-            Self::PartContains{part, value, r#where} => r#where.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, get_str!(value, task_state, ConditionError))?,
-            Self::PartMatches {part, matcher       } => matcher.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, task_state)?,
-            Self::PartIsOneOf {part, values        } => values .contains    ( part.get(task_state.url).as_deref()),
+            Self::PartIs       {part, value    } => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
+            Self::PartContains {part, value, at} => at.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartMatches  {part, matcher  } => matcher.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, task_state)?,
+            Self::PartIsOneOf  {part, values   } => values .contains    ( part.get(task_state.url).as_deref()),
 
             // Miscellaneous.
 
@@ -501,7 +501,7 @@ impl Condition {
             // String source.
 
             Self::StringIs {left, right} => left.get(task_state)? == right.get(task_state)?,
-            Self::StringContains {value, substring, r#where} => r#where.satisfied_by(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
+            Self::StringContains {value, substring, at} => at.satisfied_by(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
             Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, task_state, ConditionError), task_state)?,
 
             // Misc.

@@ -43,9 +43,9 @@ pub enum StringLocation {
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
-    /// If [`Self::IfContains::where`]'s call to [`Self::satisfied_by`] passes, return the value of [`Self::IfContains::then`].
+    /// If [`Self::IfContains::at`]'s call to [`Self::satisfied_by`] passes, return the value of [`Self::IfContains::then`].
     ///
-    /// If [`Self::IfContains::where`]'s call to [`Self::satisfied_by`] fails, return the value of [`Self::IfContains::else`].
+    /// If [`Self::IfContains::at`]'s call to [`Self::satisfied_by`] fails, return the value of [`Self::IfContains::else`].
     /// # Errors
     /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
     /// # Examples
@@ -53,23 +53,23 @@ pub enum StringLocation {
     /// use url_cleaner::types::*;
     ///
     /// assert!(StringLocation::IfContains {
-    ///     r#where: Box::new(StringLocation::Always),
+    ///     at: Box::new(StringLocation::Always),
     ///     then   : Box::new(StringLocation::Always),
     ///     r#else : Box::new(StringLocation::Never)
     /// }.satisfied_by("a", "a").unwrap());
     ///
     /// assert!(!StringLocation::IfContains {
-    ///     r#where: Box::new(StringLocation::Never),
+    ///     at: Box::new(StringLocation::Never),
     ///     then   : Box::new(StringLocation::Always),
     ///     r#else : Box::new(StringLocation::Never)
     /// }.satisfied_by("a", "a").unwrap());
     /// ```
     IfContains {
         /// The [`Self`] to decide between [`Self::IfContains::then`] and [`Self::IfContains::else`].
-        r#where: Box<Self>,
-        /// The [`Self`] to use if [`Self::IfContains::where`] passes.
+        at: Box<Self>,
+        /// The [`Self`] to use if [`Self::IfContains::at`] passes.
         then: Box<Self>,
-        /// The [`Self`] to use if [`Self::IfContains::where`] fails.
+        /// The [`Self`] to use if [`Self::IfContains::at`] fails.
         r#else: Box<Self>
     },
     /// If the call to [`Self::satisfied_by`] passes or fails, invert it into failing or passing.
@@ -300,7 +300,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::Equals.satisfied_by("#abc#", "abc").unwrap());
     /// ```
     Equals,
-    /// Passes if the haystack contains the needle in the specified range at [`Self::Range::where`].
+    /// Passes if the haystack contains the needle in the specified range at [`Self::InRange::at`].
     /// # Errors
     /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidSlice`].
     ///
@@ -309,13 +309,13 @@ pub enum StringLocation {
     /// ```
     /// use url_cleaner::types::*;
     ///
-    /// assert!(StringLocation::Range {
+    /// assert!(StringLocation::InRange {
     ///     start: 0,
-    ///     end: Some(3),
-    ///     r#where: Box::new(StringLocation::Equals)
+    ///     end  : Some(3),
+    ///     at   : Box::new(StringLocation::Equals)
     /// }.satisfied_by("abc##", "abc").unwrap());
     /// ```
-    Range {
+    InRange {
         /// The start of the range to search in.
         start: isize,
         /// The end of the range to search in, exclusive.
@@ -323,45 +323,45 @@ pub enum StringLocation {
         /// Set to [`None`] to keep it unbounded.
         end: Option<isize>,
         /// The [`Self`] to search for the needle in the range.
-        r#where: Box<Self>
+        at: Box<Self>
     },
-    /// Passes if any segment of the haystack, split by [`Self::AnySegment::split`], contains the needle at [`Self::AnySegment::where`].
+    /// Passes if any segment of the haystack, split by [`Self::AnySegment::split`], contains the needle at [`Self::AnySegment::at`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
     ///
     /// assert!(StringLocation::AnySegment {
     ///     split: "/".to_string(),
-    ///     r#where: Box::new(StringLocation::Equals)
+    ///     at   : Box::new(StringLocation::Equals)
     /// }.satisfied_by("123/abc/456", "abc").unwrap());
     /// ```
     AnySegment {
         /// The string to split the haystack with.
         split: String,
         /// The [`Self`] to search for the needle in each segment.
-        r#where: Box<Self>
+        at: Box<Self>
     },
-    /// Passes if the [`Self::NthSegment::n`]th segment of the haystack, split by [`Self::NthSegment::split`], contains the needle at [`Self::NthSegment::where`].
+    /// Passes if the [`Self::NthSegment::n`]th segment of the haystack, split by [`Self::NthSegment::split`], contains the needle at [`Self::NthSegment::at`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
     ///
     /// assert!(!StringLocation::NthSegment {
     ///     split: "/".to_string(),
-    ///     n: 0,
-    ///     r#where: Box::new(StringLocation::Equals)
+    ///     n    : 0,
+    ///     at   : Box::new(StringLocation::Equals)
     /// }.satisfied_by("123/abc/456", "abc").unwrap());
     ///
     /// assert!(StringLocation::NthSegment {
     ///     split: "/".to_string(),
-    ///     n: 1,
-    ///     r#where: Box::new(StringLocation::Equals)
+    ///     n    : 1,
+    ///     at   : Box::new(StringLocation::Equals)
     /// }.satisfied_by("123/abc/456", "abc").unwrap());
     ///
     /// assert!(!StringLocation::NthSegment {
     ///     split: "/".to_string(),
-    ///     n: 2,
-    ///     r#where: Box::new(StringLocation::Equals)
+    ///     n    : 2,
+    ///     at   : Box::new(StringLocation::Equals)
     /// }.satisfied_by("123/abc/456", "abc").unwrap());
     /// ```
     NthSegment {
@@ -370,7 +370,7 @@ pub enum StringLocation {
         /// The index of the segment to search in.
         n: isize,
         /// The [`Self`] to search for the needle in the [`Self::NthSegment::n`]th segment.
-        r#where: Box<Self>
+        at: Box<Self>
     }
 }
 
@@ -417,7 +417,7 @@ impl StringLocation {
 
             // Logic.
 
-            Self::IfContains {r#where, then, r#else} => if r#where.satisfied_by(haystack, needle)? {then} else {r#else}.satisfied_by(haystack, needle)?,
+            Self::IfContains {at, then, r#else} => if at.satisfied_by(haystack, needle)? {then} else {r#else}.satisfied_by(haystack, needle)?,
             Self::All(locations) => {
                 for location in locations {
                     if !location.satisfied_by(haystack, needle)? {
@@ -465,21 +465,21 @@ impl StringLocation {
             Self::After     (start     ) => haystack.get(   neg_shifted_range_boundary(*start,       haystack.len(), 1).ok_or(StringLocationError::InvalidIndex)?..).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
             Self::Before    (       end) => haystack.get(.. neg_index                 (        *end, haystack.len()   ).ok_or(StringLocationError::InvalidIndex)?  ).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
 
-            Self::Range {start, end, r#where} => r#where.satisfied_by(
+            Self::InRange {start, end, at} => at.satisfied_by(
                 haystack.get(neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?).ok_or(StringLocationError::InvalidSlice)?,
                 needle
             )?,
 
             Self::Equals               => haystack==needle,
-            Self::AnySegment {split, r#where} => {
+            Self::AnySegment {split, at} => {
                 for segment in haystack.split(split) {
-                    if r#where.satisfied_by(segment, needle)? {
+                    if at.satisfied_by(segment, needle)? {
                         return Ok(true)
                     }
                 }
                 return Ok(false)
             },
-            Self::NthSegment {split, n, r#where} => r#where.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?
+            Self::NthSegment {split, n, at} => at.satisfied_by(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?
         })
     }
 }

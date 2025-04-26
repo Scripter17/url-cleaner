@@ -184,7 +184,7 @@ pub enum Action {
     /// # Errors
     /// If any call to [`Action::apply`] returns an error, that error is returned.
     Repeat {
-        /// The [`Rules`] to repeat.
+        /// The [`Self`]s to repeat.
         actions: Vec<Action>,
         /// The maximum amount of times to repeat.
         ///
@@ -269,6 +269,8 @@ pub enum Action {
     /// ```
     RemoveQuery,
     /// Removes all query parameters with the specified name.
+    ///
+    /// Currently doesn't do percent decoding.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// # Examples
@@ -281,6 +283,8 @@ pub enum Action {
     /// ```
     RemoveQueryParam(StringSource),
     /// Removes all query params with names in the specified [`HashSet`].
+    ///
+    /// Currently doesn't do percent decoding.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -291,6 +295,8 @@ pub enum Action {
     /// ```
     RemoveQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
     /// Keeps only query params with names in the specified [`HashSet`].
+    ///
+    /// Currently doesn't do percent decoding.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -301,6 +307,8 @@ pub enum Action {
     /// ```
     AllowQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
     /// Removes all query params with names matching the specified [`StringMatcher`].
+    ///
+    /// Currently doesn't do percent decoding.
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     /// # Examples
@@ -313,6 +321,8 @@ pub enum Action {
     /// ```
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only query params with names matching the specified [`StringMatcher`].
+    ///
+    /// Currently doesn't do percent decoding.
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     /// # Examples
@@ -801,39 +811,56 @@ impl Action {
             // Query.
 
             Self::RemoveQuery => task_state.url.set_query(None),
-            Self::RemoveQueryParam(name) => if let Some(query_len) = task_state.url.query().map(|x| x.len()) {
-                let task_state_view = task_state.to_view();
-                let name = get_cow!(name, task_state_view, ActionError);
-                let new_query = form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(task_state.url.query_pairs().filter(|(x, _)| *x != name)).finish();
-                task_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
-            },
-            Self::RemoveQueryParams(names) => if let Some(query_len) = task_state.url.query().map(|x| x.len()) {
-                let new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(task_state.url.query_pairs().filter(|(name, _)| !names.contains(name.as_ref()))).finish();
-                task_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
-            },
-            Self::AllowQueryParams(names) => if let Some(query_len) = task_state.url.query().map(|x| x.len()) {
-                let new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len)).extend_pairs(task_state.url.query_pairs().filter(|(name, _)|  names.contains(name.as_ref()))).finish();
-                task_state.url.set_query((!new_query.is_empty()).then_some(&new_query));
-            },
-            Self::RemoveQueryParamsMatching(matcher) => if let Some(query_len) = task_state.url.query().map(|x| x.len()) {
-                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len));
-                for (name, value) in task_state.url.query_pairs() {
-                    if !matcher.satisfied_by(&name, &task_state.to_view())? {
-                        new_query.append_pair(&name, &value);
+            Self::RemoveQueryParam(name   ) => if let Some(query) = task_state.url.query() {
+                let mut new = String::new();
+                let name = get_string!(name, task_state, ActionError);
+                for param in query.split('&') {
+                    if param.split('=').next().expect("The first segment to always exist.") != name {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
                     }
                 }
-                let x = new_query.finish();
-                task_state.url.set_query((!x.is_empty()).then_some(&x));
+                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
             },
-            Self::AllowQueryParamsMatching(matcher) => if let Some(query_len) = task_state.url.query().map(|x| x.len()) {
-                let mut new_query=form_urlencoded::Serializer::new(String::with_capacity(query_len));
-                for (name, value) in task_state.url.query_pairs() {
-                    if matcher.satisfied_by(&name, &task_state.to_view())? {
-                        new_query.append_pair(&name, &value);
+            Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
+                let mut new = String::new();
+                for param in query.split('&') {
+                    if !names.contains(param.split('=').next().expect("The first segment to always exist.")) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
                     }
                 }
-                let x = new_query.finish();
-                task_state.url.set_query((!x.is_empty()).then_some(&x));
+                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+            },
+            Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
+                let mut new = String::new();
+                for param in query.split('&') {
+                    if names.contains(param.split('=').next().expect("The first segment to always exist.")) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+            },
+            Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
+                let mut new = String::new();
+                for param in query.split('&') {
+                    if !matcher.satisfied_by(param.split('=').next().expect("The first segment to always exist."), &task_state.to_view())? {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+            },
+            Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
+                let mut new = String::new();
+                for param in query.split('&') {
+                    if matcher.satisfied_by(param.split('=').next().expect("The first segment to always exist."), &task_state.to_view())? {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
             },
             Self::GetUrlFromQueryParam(name) => {
                 let task_state_view = task_state.to_view();

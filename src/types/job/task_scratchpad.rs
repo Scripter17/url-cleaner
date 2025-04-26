@@ -9,7 +9,7 @@ use serde_with::*;
 use crate::types::*;
 use crate::util::*;
 
-/// A scratchpad to allow storing state between [`Rule`]s and stuff.
+/// A scratchpad to allow storing state between [`Action`].
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskScratchpad {

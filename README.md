@@ -156,35 +156,35 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.14.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-04-24.
+Last updated 2025-04-26.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  7.207,
-    "1"    :  7.293,
-    "10"   :  7.353,
-    "100"  :  7.593,
-    "1000" :  9.601,
-    "10000": 31.370
+    "0"    :  6.134,
+    "1"    :  6.177,
+    "10"   :  6.356,
+    "100"  :  6.580,
+    "1000" :  9.107,
+    "10000": 31.404
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  7.135,
-    "1"    :  7.276,
-    "10"   :  7.291,
-    "100"  :  7.624,
-    "1000" : 10.715,
-    "10000": 42.306
+    "0"    :  6.152,
+    "1"    :  6.235,
+    "10"   :  6.383,
+    "100"  :  6.693,
+    "1000" : 10.263,
+    "10000": 42.639
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  7.167,
-    "1"    :  7.261,
-    "10"   :  7.546,
-    "100"  :  7.871,
-    "1000" : 13.171,
-    "10000": 63.891
+    "0"    :  6.128,
+    "1"    :  6.248,
+    "10"   :  6.388,
+    "100"  :  6.867,
+    "1000" : 11.759,
+    "10000": 56.349
   }
 }
 ```

@@ -124,11 +124,11 @@ impl Config {
         })
     }
 
-    /// Applies [`Self::actions`] to the provided [`TaskState`].
+    /// Applies each [`Action`] in [`Self::actions`] in order to the provided [`TaskState`].
     ///
     /// If an error is returned, `job_state` may be left in a partially modified state.
     /// # Errors
-    /// If any call to [`Actions::apply`] returns an error, that error is returned.
+    /// If any call to [`Action::apply`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
     pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyConfigError> {
         for action in &self.actions {

@@ -55,7 +55,7 @@ pub struct HttpClientConfig {
 ///
 /// Defaults to [`Self::Limited`] with a value of `10`, as that's what reqwest does.
 ///
-/// For the default config (and all real use) it's recommended to use [`Self::None`] in a [`Rule::Repeat`].
+/// For the default config (and all real use) it's recommended to use [`Self::None`] in a [`Action::Repeat`].
 ///
 /// That has the added benefit of not sending a request to the final URL.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]

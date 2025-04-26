@@ -89,10 +89,7 @@ pub struct Args {
     ///
     /// Omit to use the current CPU's thread count.
     #[arg(long)]
-    pub threads: Option<NonZero<usize>>,
-    /// Debug option to get more accurate time measurements.
-    #[arg(long)]
-    pub debug_no_printing: bool
+    pub threads: Option<NonZero<usize>>
 }
 
 /// The enum of errors [`main`] can return.
@@ -227,48 +224,44 @@ fn main() -> Result<ExitCode, CliError> {
             let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
             let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
 
-            if !args.debug_no_printing {
-                if json {
-                    let mut first_job = true;
+            if json {
+                let mut first_job = true;
 
-                    print!("{{\"Ok\":{{\"urls\":[");
+                print!("{{\"Ok\":{{\"urls\":[");
 
-                    for or in out_recievers.iter().cycle() {
-                        match or.recv() {
-                            Ok(Ok(url)) => {
-                                if !first_job {print!(",");}
-                                print!("{{\"Ok\":{}}}", serde_json::to_string(url.as_str()).expect("Serializing a string to never fail."));
-                                *some_ok_ref_lock = true;
-                            },
-                            Ok(Err(e)) => {
-                                if !first_job {print!(",");}
-                                print!("{{\"Err\":{}}}", serde_json::to_string(&format!("{e:?}")).expect("Serializing a string to never fail."));
-                                *some_err_ref_lock = true;
-                            },
-                            Err(_) => break
-                        }
-                        first_job = false;
+                for or in out_recievers.iter().cycle() {
+                    match or.recv() {
+                        Ok(Ok(url)) => {
+                            if !first_job {print!(",");}
+                            print!("{{\"Ok\":{}}}", serde_json::to_string(url.as_str()).expect("Serializing a string to never fail."));
+                            *some_ok_ref_lock = true;
+                        },
+                        Ok(Err(e)) => {
+                            if !first_job {print!(",");}
+                            print!("{{\"Err\":{}}}", serde_json::to_string(&format!("{e:?}")).expect("Serializing a string to never fail."));
+                            *some_err_ref_lock = true;
+                        },
+                        Err(_) => break
                     }
+                    first_job = false;
+                }
 
-                    print!("]}}}}");
-                } else {
-                    for or in out_recievers.iter().cycle() {
-                        match or.recv() {
-                            Ok(Ok(url)) => {
-                                println!("{}", url.as_str());
-                                *some_ok_ref_lock = true;
-                            },
-                            Ok(Err(e)) => {
-                                println!();
-                                eprintln!("{e:?}");
-                                *some_err_ref_lock = true;
-                            }
-                            Err(_) => break
+                print!("]}}}}");
+            } else {
+                for or in out_recievers.iter().cycle() {
+                    match or.recv() {
+                        Ok(Ok(url)) => {
+                            println!("{}", url.as_str());
+                            *some_ok_ref_lock = true;
+                        },
+                        Ok(Err(e)) => {
+                            println!();
+                            eprintln!("{e:?}");
+                            *some_err_ref_lock = true;
                         }
+                        Err(_) => break
                     }
                 }
-            } else {
-                out_recievers.iter().cycle().find(|x| x.recv().is_err());
             }
         }).expect("Making threads to work fine.");
     });

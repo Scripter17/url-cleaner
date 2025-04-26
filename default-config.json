@@ -123,7 +123,7 @@
 				"spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co",
 				"tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf",
 				"uniceflink.org", "visitlink.me", "vm.tiktok.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com",
-				"x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "abcnews.link"
 			],
 			"redirect-reg-domains": [
 				"adj.st", "goo.gl", "o93x.net", "onelink.me", "page.link", "pusle.ly", "visitlink.me"
@@ -295,13 +295,13 @@
 							"then": {"All": [
 								{"RemoveQueryParamsMatching": {"Any": [
 									{"InSet": "utps"},
-									{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+									{"ContainsAnyInList": {"at": "Start", "list": "utp-prefixes"}}
 								]}},
 								{"ModifyPart": {
 									"part": "Fragment",
 									"modification": {"RemoveQueryParamsMatching": {"Any": [
 										{"InSet": "utps"},
-										{"ContainsAnyInList": {"where": "Start", "list": "utp-prefixes"}}
+										{"ContainsAnyInList": {"at": "Start", "list": "utp-prefixes"}}
 									]}
 								}}}
 							]}
@@ -632,7 +632,7 @@
 										}},
 										"ro.blox.com": {"GetUrlFromQueryParam": "af_web_dp"},
 										"shareasale-analytics.com": {"If": {
-											"if": {"PartContains": {"part": "Path", "value": ".cfm", "where": "End"}},
+											"if": {"PartContains": {"part": "Path", "value": ".cfm", "at": "End"}},
 											"then": {"FirstNotError": [
 												{"SetPart": {
 													"part": "Whole",
@@ -666,7 +666,7 @@
 											]}
 										}},
 										"shareasale.com": {"If": {
-											"if": {"PartContains": {"part": "Path", "value": ".cfm", "where": "End"}},
+											"if": {"PartContains": {"part": "Path", "value": ".cfm", "at": "End"}},
 											"then": {"FirstNotError": [
 												{"SetPart": {
 													"part": "Whole",
@@ -1159,22 +1159,22 @@
 						"comment-2": "There's a PartMap under this one for DomainSuffix. Try it there.",
 						"part": "RegDomain",
 						"map": {
-							"acer.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "internal_"}}},
+							"acer.com": {"RemoveQueryParamsMatching": {"Contains": {"at": "Start", "value": "internal_"}}},
 							"addons.mozilla.org": {"RemoveQueryParams": ["platform", "appver"]},
 							"alibaba.com": {"RemoveQueryParams": ["spm", "selectedCarrierCode", "fsb", "tracelog", "wx_navbar_tramsparent"]},
 							"amtrak.com": {"RemoveQueryParams": ["atv", "cmp"]},
 							"apexgamingpcs.com": {"RemoveQueryParams": ["linkId", "affluencerId"]},
 							"atom.bio": {"RemoveQueryParams": ["menu_origin"]},
-							"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"where": "Start", "value": "at_"}}},
+							"bbc.com": {"RemoveQueryParamsMatching": {"Contains": {"at": "Start", "value": "at_"}}},
 							"be.net": {"SetHost": "behance.net"},
 							"beacons.ai": {"RemoveQueryParamsMatching": {"Any": [
-								{"Contains": {"value": "refer", "where": "Start"}},
+								{"Contains": {"value": "refer", "at": "Start"}},
 								{"IsOneOf": ["pageViewSource", "show_back_button"]}
 							]}},
 							"bell.ca": {"All": [
 								{"RemoveQueryParams": ["INT"]},
 								{"If": {
-									"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "where": "Start", "value": "INT="}}},
+									"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "at": "Start", "value": "INT="}}},
 									"then": {"SetPart": {"part": "Fragment", "value": null}}
 								}}
 							]},
@@ -1196,7 +1196,7 @@
 							"cnn.com": {"All": [
 								{"RemoveQueryParams": ["bt_ee", "bt_ts"]},
 								{"If": {
-									"if": {"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "where": "Start"}},
+									"if": {"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "at": "Start"}},
 									"then": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
 								}}
 							]},
@@ -1268,12 +1268,12 @@
 								"else": {"RemoveQueryParams": ["ref_"]}
 							}},
 							"history.com": {"If": {
-								"if": {"TreatErrorAsFail": {"PartMatches": {"part": "Fragment", "matcher": {"Contains": {"value": "link_time", "where": "Start"}}}}},
+								"if": {"TreatErrorAsFail": {"PartMatches": {"part": "Fragment", "matcher": {"Contains": {"value": "link_time", "at": "Start"}}}}},
 								"then": {"SetPart": {"part": "Fragment", "value": null}}
 							}},
 							"hp.com": {"RemoveQueryParamsMatching": {"Any": [
 								{"IsOneOf": ["jumpid", "_its", "adcampaigngroup", "campaignID"]},
-								{"Contains": {"value": "sv_", "where": "Start"}}
+								{"Contains": {"value": "sv_", "at": "Start"}}
 							]}},
 							"hulu.com": {"RemoveQueryParams": ["from"]},
 							"inkbunny.net": {"If": {
@@ -1294,7 +1294,7 @@
 							"lenovo.com": {"RemoveQueryParams": ["IPromoID", "orgRef"]},
 							"linktr.ee": {"RemoveQueryParamsMatching": {"Any": [
 								{"IsOneOf": ["ltsid"]},
-								{"Contains": {"value": "lt_utm", "where": "Start"}}
+								{"Contains": {"value": "lt_utm", "at": "Start"}}
 							]}},
 							"loblaws.ca": {"RemoveQueryParams": ["navid", "icid", "icta"]},
 							"marshmallow-qa.com": {"RemoveQueryParams": ["t"]},
@@ -1360,7 +1360,7 @@
 							"support.google.com": {"AllowQueryParams": ["q"]},
 							"teepublic.com": {"All": [
 								{"If": {
-									"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "value": "D1V", "where": "End"}}},
+									"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "value": "D1V", "at": "End"}}},
 									"then": {"SetPart": {"part": "Fragment", "value": null}}
 								}},
 								{"RemoveQueryParams": ["countrycode"]}
@@ -1378,7 +1378,7 @@
 							]},
 							"tiktok.com": {"RemoveQueryParamsMatching": {"Any": [
 								{"IsOneOf": ["checksum", "source", "u_code", "timestamp", "user_id", "enable_checksum"]},
-								{"ContainsAny": {"values": ["_", "sec_", "ug", "is_from", "sender", "share", "social_"], "where": "Start"}}
+								{"ContainsAny": {"values": ["_", "sec_", "ug", "is_from", "sender", "share", "social_"], "at": "Start"}}
 							]}},
 							"tumblr.com": {"All": [
 								{"If": {
@@ -1418,19 +1418,19 @@
 							"washingtonpost.com": {"All": [
 								{"RemoveQueryParams": ["itid", "nid", "arcId", "account_location", "tid", "oscode", "s_l", "acqEntType", "p", "s_ct"]},
 								{"If": {
-									"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "value": "link", "where": "Start"}}},
+									"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "value": "link", "at": "Start"}}},
 									"then": {"SetPart": {"part": "Fragment", "value": null}}
 								}}
 							]},
 							"xiaohongshu.com": {"RemoveQueryParamsMatching": {"ContainsAny": {
 								"values": ["xsec", "xhs", "app", "share"],
-								"where": "Start"
+								"at": "Start"
 							}}},
 							"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
 							"youtu.be": {"All": [
 								{"SetHost" : "youtube.com"},
 								{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
-								{"SetPart" : {"part": "Path", "value": "watch"}},
+								{"SetPart" : {"part": "Path", "value": "/watch"}},
 								{"RemoveQueryParams": ["si", "feature", "pp"]}
 							]},
 							"youtube.com": {"All": [
@@ -1452,7 +1452,7 @@
 								{"If": {
 									"if": {"All": [
 										{"FlagIsSet": "youtube-unplaylist"},
-										{"PartIs": {"part": {"PathSegment": 0}, "value": "watch"}}
+										{"PathStartsWith": "/watch"}
 									]},
 									"then": {"RemoveQueryParams": ["list"]}
 								}},
@@ -1495,7 +1495,7 @@
 									"if": {"PathStartsWith": "/profile/"},
 									"then": {"All": [
 										{"If": {
-											"if": {"PartContains": {"part": {"PathSegment": 1}, "where": "End", "value": ".bsky"}},
+											"if": {"PartContains": {"part": {"PathSegment": 1}, "at": "End", "value": ".bsky"}},
 											"then": {"ModifyPart": {"part": {"PathSegment": 1}, "modification": {"Append": ".social"}}}
 										}},
 										{"If": {
@@ -1575,8 +1575,8 @@
 									]},
 									"else": {"RemoveQueryParamsMatching": {"Any": [
 										{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref"]},
-										{"Contains": {"value": "pd_", "where": "Start"}},
-										{"Contains": {"value": "pf_", "where": "Start"}}
+										{"Contains": {"value": "pd_", "at": "Start"}},
+										{"Contains": {"value": "pf_", "at": "Start"}}
 									]}}
 								}},
 								{
@@ -1591,7 +1591,7 @@
 									}
 								},
 								{"If": {
-									"if": {"PartContains": {"part": {"PathSegment": -1}, "where": "Start", "value": "ref="}},
+									"if": {"PartContains": {"part": {"PathSegment": -1}, "at": "Start", "value": "ref="}},
 									"then": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
 								}},
 								{"If": {

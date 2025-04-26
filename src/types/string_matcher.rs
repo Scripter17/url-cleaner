@@ -81,7 +81,7 @@ pub enum StringMatcher {
     /// If all calls to [`Self::satisfied_by`] return errors, the last error is returned. In the future this should be changed to return all errors.
     FirstNotError(Vec<Self>),
 
-    /// Passes if the string contains [`Self::Contains::value`] at [`Self::Contains::where`].
+    /// Passes if the string contains [`Self::Contains::value`] at [`Self::Contains::at`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -89,13 +89,13 @@ pub enum StringMatcher {
     ///
     /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     Contains {
-        /// The value to look for at [`Self::Contains::where`].
+        /// The value to look for at [`Self::Contains::at`].
         value: StringSource,
         /// Where to look for [`Self::Contains::value`].
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default, skip_serializing_if = "is_default")]
-        r#where: StringLocation
+        at: StringLocation
     },
     /// Effectively [`Self::Contains`] for each value in [`Self::ContainsAny::values`].
     /// # Errors
@@ -105,13 +105,13 @@ pub enum StringMatcher {
     ///
     /// If any call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
     ContainsAny {
-        /// The value to look for at [`Self::Contains::where`].
+        /// The value to look for at [`Self::Contains::at`].
         values: Vec<StringSource>,
         /// Where to look for [`Self::Contains::value`].
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default, skip_serializing_if = "is_default")]
-        r#where: StringLocation
+        at: StringLocation
     },
     /// Effectively [`Self::ContainsAny`] for each value in the [`Params::lists`]s specified by [`Self::ContainsAnyInList::list`].
     /// # Errors
@@ -129,7 +129,7 @@ pub enum StringMatcher {
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default, skip_serializing_if = "is_default")]
-        r#where: StringLocation
+        at: StringLocation
     },
     /// Passes if the string is equal to the value of the specified [`StringSource`].
     ///
@@ -370,19 +370,19 @@ impl StringMatcher {
             // Other.
 
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
-            Self::Contains {r#where, value} => r#where.satisfied_by(haystack, get_str!(value, task_state, StringMatcherError))?,
-            Self::ContainsAny {values, r#where} => {
+            Self::Contains {at, value} => at.satisfied_by(haystack, get_str!(value, task_state, StringMatcherError))?,
+            Self::ContainsAny {values, at} => {
                 for value in values {
-                    if r#where.satisfied_by(haystack, get_str!(value, task_state, StringModificationError))? {
+                    if at.satisfied_by(haystack, get_str!(value, task_state, StringModificationError))? {
                         return Ok(true)
                     }
                 }
                 false
             },
             // Cannot wait for [`Iterator::try_any`](https://github.com/rust-lang/rfcs/pull/3233)
-            Self::ContainsAnyInList {r#where, list} => {
+            Self::ContainsAnyInList {at, list} => {
                 for x in task_state.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
-                    if r#where.satisfied_by(haystack, x)? {
+                    if at.satisfied_by(haystack, x)? {
                         return Ok(true);
                     }
                 }
