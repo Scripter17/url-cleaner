@@ -24,11 +24,11 @@ done
 
 if [ $AUTO_DOMAINS -eq 1 ]; then
   echo "Getting domains"
-  DOMAINS=$(
+  readarray -t DOMAINS < <(
     cat default-config.json |\
       jq '
         (.. | try select(contains({part: "Domain"}) or contains({part: "Host"})).map | try keys[]),
-        (.params.named_partitionings.hwwwwdp_categories[][])
+        (.params.named_partitionings.hwwwwdpafqdnp_categories[][])
       ' -r |\
       sort -u |\
       grep -Pv '\.(onion|i2p)$'

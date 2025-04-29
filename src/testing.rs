@@ -18,17 +18,17 @@ impl Tests {
     /// Do the tests. Panicking if any fail.
     /// # Panics
     /// If any call to [`TestSet::do`] panics, "returns" that panic.
-    pub fn r#do(self, config: &Config) {
+    pub fn r#do(self, cleaner: &Cleaner) {
         for set in self.sets {
-            set.r#do(config)
+            set.r#do(cleaner)
         }
     }
 }
 
-/// Rules for how to construct a [`Job`] from a [`Config`] and the [`Test`]s to run on it.
+/// Rules for how to construct a [`Job`] from a [`Cleaner`] and the [`Test`]s to run on it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TestSet {
-    /// The [`ParamsDiff`] to apply to the [`Config`].
+    /// The [`ParamsDiff`] to apply to the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
     /// The [`JobContext`] to give to the [`Job`].
@@ -46,8 +46,8 @@ impl TestSet {
     /// If a call to [`Task::do`] returns an error, panics.
     /// 
     /// If any test fails, panics.
-    pub fn r#do(self, config: &Config) {
-        let mut config = Cow::Borrowed(config);
+    pub fn r#do(self, cleaner: &Cleaner) {
+        let mut cleaner = Cow::Borrowed(cleaner);
 
         println!(
             "Running test set:\nparams_diff: {}\njob_context: {}",
@@ -56,14 +56,14 @@ impl TestSet {
         );
 
         if let Some(params_diff) = self.params_diff {
-            params_diff.apply(&mut config.to_mut().params);
+            params_diff.apply(&mut cleaner.to_mut().params);
         }
 
         let (task_configs, expectations) = self.tests.clone().into_iter().map(|Test {task_config, expectation}| (task_config, expectation)).collect::<(Vec<_>, Vec<_>)>();
 
         let job = Job {
             context: &self.job_context,
-            config: &config,
+            cleaner: &cleaner,
             #[cfg(feature = "cache")]
             cache: &Default::default(),
             lazy_task_configs: Box::new(task_configs.into_iter().map(|task_config| Ok(task_config.into())))

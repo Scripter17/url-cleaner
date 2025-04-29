@@ -78,7 +78,7 @@ pub struct FlagRef {
 }
 
 impl Suitability for FlagRef {
-    fn assert_suitability(&self, config: &Config) {
+    fn assert_suitability(&self, config: &Cleaner) {
         match (&self.r#type, &self.name) {
             (FlagType::Params, StringSource::String(name)) => assert!(config.docs.flags.contains_key(name), "Undocumented Flag: {name}"),
             (FlagType::Common | FlagType::Scratchpad, StringSource::String(_)) => {},

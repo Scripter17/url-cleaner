@@ -270,7 +270,7 @@ pub enum Action {
     RemoveQuery,
     /// Removes all query parameters with the specified name.
     ///
-    /// Currently doesn't do percent decoding.
+    /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     /// # Examples
@@ -279,36 +279,44 @@ pub enum Action {
     /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
     ///
     /// Action::RemoveQueryParam("a".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/?b=3&c=5");
+    /// assert_eq!(task_state.url.query(), Some("b=3&c=5"));
+    /// Action::RemoveQueryParam("b".into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), Some("c=5"));
+    /// Action::RemoveQueryParam("c".into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), None);
     /// ```
     RemoveQueryParam(StringSource),
     /// Removes all query params with names in the specified [`HashSet`].
     ///
-    /// Currently doesn't do percent decoding.
+    /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
     /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
     ///
-    /// Action::RemoveQueryParams(["a".to_string(), "c".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/?b=3");
+    /// Action::RemoveQueryParams(["a".to_string(), "b".to_string()].into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), Some("c=5"));
+    /// Action::RemoveQueryParams(["c".to_string()].into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), None);
     /// ```
     RemoveQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
     /// Keeps only query params with names in the specified [`HashSet`].
     ///
-    /// Currently doesn't do percent decoding.
+    /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
     /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
     ///
-    /// Action::AllowQueryParams(["a".to_string(), "c".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/?a=2&a=4&c=5");
+    /// Action::AllowQueryParams(["a".to_string(), "b".to_string()].into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), Some("a=2&b=3&a=4"));
+    /// Action::AllowQueryParams(["c".to_string()].into()).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), None);
     /// ```
     AllowQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
     /// Removes all query params with names matching the specified [`StringMatcher`].
     ///
-    /// Currently doesn't do percent decoding.
+    /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     /// # Examples
@@ -317,12 +325,16 @@ pub enum Action {
     /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
     ///
     /// Action::RemoveQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/?b=3&c=5");
+    /// assert_eq!(task_state.url.query(), Some("b=3&c=5"));
+    /// Action::RemoveQueryParamsMatching(StringMatcher::Is("b".into())).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), Some("c=5"));
+    /// Action::RemoveQueryParamsMatching(StringMatcher::Is("c".into())).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), None);
     /// ```
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only query params with names matching the specified [`StringMatcher`].
     ///
-    /// Currently doesn't do percent decoding.
+    /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Errors
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     /// # Examples
@@ -331,7 +343,9 @@ pub enum Action {
     /// url_cleaner::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
     ///
     /// Action::AllowQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/?a=2&a=4");
+    /// assert_eq!(task_state.url.query(), Some("a=2&a=4"));
+    /// Action::AllowQueryParamsMatching(StringMatcher::Is("b".into())).apply(&mut task_state).unwrap();
+    /// assert_eq!(task_state.url.query(), None);
     /// ```
     AllowQueryParamsMatching(StringMatcher),
     /// Sets [`UrlPart::Whole`] to the value of the first query parameter with a name determined by the [`TaskState`].
@@ -340,7 +354,7 @@ pub enum Action {
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`ActionError::StringSourceIsNone`].
     ///
-    /// If no matching query parameter is found, returns the error [`ActionError::CannotFindQueryParam`].
+    /// If no matching query parameter is found, returns the error [`ActionError::QueryParamNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -660,9 +674,15 @@ pub enum ActionError {
     /// Returned when a [`SetHostError`] is encountered.
     #[error(transparent)]
     SetHostError(#[from] SetHostError),
-    /// Returned when attempting to get a URL from a query parameter that doesn't exist.
-    #[error("Attempted to get a URL from a query parameter that didn't exist.")]
-    CannotFindQueryParam,
+    /// Returned when attempting to get the value of a query param from a URL with no query.
+    #[error("Attempted to get the value of a query param from a URL with no query.")]
+    NoQuery,
+    /// Returned when attempting to get the value of a query param that wasn't found.
+    #[error("Attempted to get the value of a query param that wasn't found.")]
+    QueryParamNotFound,
+    /// Returned when attempting to get the value of a query param that didn't have a value.
+    #[error("Attempted to get the value of a query param that didn't have a value.")]
+    QueryParamNoValue,
     /// Returned when a [`Action`] with the specified name isn't found in the [`Commons::actions`].
     #[error("A Action with the specified name wasn't found in the Commons::actions.")]
     CommonActionNotFound,
@@ -687,9 +707,6 @@ pub enum ActionError {
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] ConditionError),
-    /// Returned when a [`GetConfigError`] is encountered.
-    #[error(transparent)]
-    GetConfigError(#[from] GetConfigError),
 
     /// Returned when a [`reqwest::Error`] is encountered.
     #[cfg(feature = "http")]
@@ -733,6 +750,7 @@ impl Action {
     /// If an error is returned, `task_state` may be left in a partially modified state.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
+    #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ActionError> {
         debug!(self, Action::apply, self, task_state);
         match self {
@@ -811,64 +829,66 @@ impl Action {
             // Query.
 
             Self::RemoveQuery => task_state.url.set_query(None),
-            Self::RemoveQueryParam(name   ) => if let Some(query) = task_state.url.query() {
+            Self::RemoveQueryParam(name) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 let name = get_string!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if param.split('=').next().expect("The first segment to always exist.") != name {
+                    if peh(param.split('=').next().expect("The first segment to always exist.")) != name {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 for param in query.split('&') {
-                    if !names.contains(param.split('=').next().expect("The first segment to always exist.")) {
+                    if !names.contains(&*peh(param.split('=').next().expect("The first segment to always exist."))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 for param in query.split('&') {
-                    if names.contains(param.split('=').next().expect("The first segment to always exist.")) {
+                    if names.contains(&*peh(param.split('=').next().expect("The first segment to always exist."))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 for param in query.split('&') {
-                    if !matcher.satisfied_by(param.split('=').next().expect("The first segment to always exist."), &task_state.to_view())? {
+                    if !matcher.satisfied_by(&peh(param.split('=').next().expect("The first segment to always exist.")), &task_state.to_view())? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 for param in query.split('&') {
-                    if matcher.satisfied_by(param.split('=').next().expect("The first segment to always exist."), &task_state.to_view())? {
+                    if matcher.satisfied_by(&peh(param.split('=').next().expect("The first segment to always exist.")), &task_state.to_view())? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|new| !new.is_empty()));
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::GetUrlFromQueryParam(name) => {
                 let task_state_view = task_state.to_view();
                 let name = name.get(&task_state_view)?.ok_or(ActionError::StringSourceIsNone)?;
 
-                match task_state.url.query_pairs().find(|(param_name, _)| *param_name==name) {
-                    Some((_, new_url)) => {*task_state.url=Url::parse(&new_url)?.into()},
-                    None => Err(ActionError::CannotFindQueryParam)?
+                match task_state.url.get_query_param(&name, 0) {
+                    Some(Some(Some(new_url))) => {*task_state.url = Url::parse(&new_url)?.into();},
+                    Some(Some(None))          => Err(ActionError::NoQuery)?,
+                    Some(None)                => Err(ActionError::QueryParamNoValue)?,
+                    None                      => Err(ActionError::QueryParamNotFound)?
                 }
             },
 

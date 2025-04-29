@@ -1,11 +1,11 @@
-//! Foundational types containing the bulk of a [`Config`]'s logic.
+//! Foundational types containing the bulk of a [`Cleaner`]'s logic.
 
 pub mod better_url;
 pub use better_url::*;
 pub mod url_part;
 pub use url_part::*;
-pub mod config;
-pub use config::*;
+pub mod cleaner;
+pub use cleaner::*;
 pub mod conditions;
 pub use conditions::*;
 pub mod actions;

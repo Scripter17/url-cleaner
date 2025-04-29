@@ -69,13 +69,13 @@ if [ $compile -eq 1 ]; then
   if [ $? -ne 0 ]; then exit 3; fi
 fi
 
-COMMAND="../target/release/url-cleaner --config ../default-config.json $@"
+COMMAND="../target/release/url-cleaner --cleaner ../default-cleaner.json $@"
 
 if [ $hyperfine -eq 1 ]; then
   touch stdin
   hyperfine \
-    -L num $(echo "${NUMS[@]}" | sed "s/ /,/g") \
-    -L url $(echo "${URLS[@]}" | sed "s/ /,/g") \
+    -L num $(IFS=, ; echo "${NUMS[*]}") \
+    -L url $(IFS=, ; echo "${URLS[*]}") \
     --prepare "bash -c \"yes '{url}' | head -n {num} > stdin\"" \
     --max-runs 100 \
     --warmup 20 \

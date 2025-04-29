@@ -230,7 +230,7 @@ pub enum StringMatcher {
         /// The value to get the subsegments from.
         value: Box<StringSource>
     },
-    /// Gets a [`Self`] from [`Config::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     /// If [`CommonCall::name`]'s call to [`StringSource::get`] returns an error, returns the error [`StringMatcherError::StringSourceIsNone`].
     ///

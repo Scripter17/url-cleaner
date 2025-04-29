@@ -1,9 +1,9 @@
 {
 	"cache_path": "cache.sqlite",
 	"docs": {
-		"title": "The default config.",
+		"title": "The default cleaner.",
 		"description": [
-			"The default config; Meant for general purpose every day URL Cleaning."
+			"The default cleaner; Meant for general purpose every day URL Cleaning."
 		],
 		"flags": {
 			"bypass.vip"                : "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.",
@@ -53,9 +53,10 @@
 			"redirect-reg-domains"                      : "The `redirect-hwwwwdpafqdnpes` set but using the `RegDomain` of the URL.",
 			"remove-empty-fragment-reg-domain-blacklist": "The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.",
 			"remove-empty-query-reg-domain-blacklist"   : "The RegDomains to not remove an empty query from.",
+			"remove-fqdn-period-reg-domain-blacklist"   : "The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.",
 			"remove-www-subdomain-reg-domain-blacklist" : "The RegDomains to not remove a `www` subdomain from.",
 			"unmobile-reg-domain-blacklist"             : "Effectively unsets the `unmobile` flag for the specified `RegDomain`s.",
-			"utps"                                      : "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common action in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.",
+			"utps"                                      : "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp-prefixes` set are also removed.",
 			"utps-reg-domain-whitelist"                 : "RegDomains to never remove universal tracking parameters from."
 		},
 		"lists": {
@@ -106,28 +107,31 @@
 			"email-link-format-1-hosts": ["action.openmedia.org"],
 			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
 			"redirect-hwwwwdpafqdnps": [
-				"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "adobe.ly", "aje.io", "aje.io", "amzn.asia", "amzn.ew",
-				"amzn.to", "api.link.agorapulse.com", "api.linkr.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com", "bityl.co",
-				"blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it",
-				"clckhl.co", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "diplo.de", "dis.gd",
+				"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.io", "amzn.asia",
+				"amzn.ew", "amzn.to", "api.link.agorapulse.com", "api.linkr.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com",
+				"bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge",
+				"chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "diplo.de", "dis.gd",
 				"dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app",
 				"go.forbes.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.undp.org", "goo.gl", "goo.su", "goodsmile.link", "gum.co",
-				"hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe",
-				"kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr", "l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com", "linkr.it",
-				"lnkd.in", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "mol.im", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr",
-				"nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com",
-				"on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "open-api.tiktok.com", "operagx.gg",
-				"orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li",
-				"pulse.ly", "py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "redd.it", "reut.rs", "rog.gg", "rzr.to", "s.goodsmile.link",
+				"hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st",
+				"kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr", "l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com",
+				"linkr.it", "lnkd.in", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "mol.im", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.opn.tl",
+				"n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com",
+				"on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "open-api.tiktok.com", "operagx.gg", "orlo.uk",
+				"ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly",
+				"py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "rebrand.ly", "redd.it", "reut.rs", "rog.gg", "rzr.to", "s.goodsmile.link",
 				"s.team", "s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly",
 				"spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co",
 				"tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf",
 				"uniceflink.org", "visitlink.me", "vm.tiktok.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com",
-				"x.gd", "xbx.ly", "xhslink.com", "yrp.ca", "abcnews.link"
+				"x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-reg-domains": [
 				"adj.st", "goo.gl", "o93x.net", "onelink.me", "page.link", "pusle.ly", "visitlink.me"
 			],
+			"remove-empty-fragment-reg-domain-blacklist": [],
+			"remove-empty-query-reg-domain-blacklist": [],
+			"remove-fqdn-period-reg-domain-blacklist": [],
 			"remove-www-subdomain-reg-domain-blacklist": ["shorturl.at", "proozy.com", "teepublic.com"],
 			"unmobile-reg-domain-blacklist": ["tumblr.com", "deviantart.com"],
 			"utps": [
@@ -288,6 +292,10 @@
 					"then": {"SetPart": {"part": "Scheme", "value": "https"}}
 				}},
 				{"If": {
+					"if": {"Not": {"FlagIsSet": "keep-lang"}},
+					"then": {"RemoveQueryParam": {"ParamsMap": {"name": "hwwwwdpafqdnp_lang_query_params", "key": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}}}
+				}},
+				{"If": {
 					"if": {"Not": {"PartIs": {"part": "RegDomain", "value": null}}},
 					"then": {"All": [
 						{"If": {
@@ -322,29 +330,28 @@
 							]},
 							"then": {"SetPart": {"part": "Subdomain", "value": null}}
 						}},
-						{"SetPart": {
-							"part": "FqdnPeriod",
-							"value": null
+						{"If": {
+							"if": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-fqdn-period-reg-domain-blacklist"}}}},
+							"then": {"SetPart": {
+								"part": "FqdnPeriod",
+								"value": null
+							}}
+						}},
+						{"If": {
+							"if": {"All": [
+								{"PartIs": {"part": "Query", "value": ""}},
+								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-query-reg-domain-blacklist"}}}}
+							]},
+							"then": "RemoveQuery"
+						}},
+						{"If": {
+							"if": {"All": [
+								{"PartIs": {"part": "Fragment", "value": ""}},
+								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-fragment-reg-domain-blacklist"}}}}
+							]},
+							"then": {"SetPart": {"part": "Fragment", "value": null}}
 						}}
 					]}
-				}},
-				{"If": {
-					"if": {"All": [
-						{"PartIs": {"part": "Query", "value": ""}},
-						{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-query-reg-domain-blacklist"}}}}
-					]},
-					"then": "RemoveQuery"
-				}},
-				{"If": {
-					"if": {"All": [
-						{"PartIs": {"part": "Fragment", "value": ""}},
-						{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-fragment-reg-domain-blacklist"}}}}
-					]},
-					"then": {"SetPart": {"part": "Fragment", "value": null}}
-				}},
-				{"If": {
-					"if": {"Not": {"FlagIsSet": "keep-lang"}},
-					"then": {"RemoveQueryParam": {"ParamsMap": {"name": "hwwwwdpafqdnp_lang_query_params", "key": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}}}
 				}}
 			]},
 
@@ -355,7 +362,7 @@
 					"part": "Whole",
 					"value": {"Modified": {
 						"value": {"Part": "Query"},
-						"modification": "UrlDecode"
+						"modification": "PercentDecode"
 					}}
 				}}
 			]}
@@ -480,8 +487,8 @@
 												"value": {"Modified": {
 													"value": {"Part": "Path"},
 													"modification": {"All": [
-														{"KeepSegmentRange": {"split": "/", "start": 2}},
-														"UrlDecode"
+														{"KeepSegmentRange": {"split": "/", "start": 2, "end": -3}},
+														"PercentDecode"
 													]}
 												}}
 											}}
@@ -535,10 +542,7 @@
 										}},
 										"href.li": {"SetPart": {
 											"part": "Whole",
-											"value": {"Modified": {
-												"value": {"Part": "Query"},
-												"modification": "UrlDecode"
-											}}
+											"value": {"Part": {"PositionRange": {"start": "BeforeQuery", "end": "AfterFragment"}}}
 										}},
 										"instagr.am": {"SetHost": "instagram.com"},
 										"l.instagram.com": {"GetUrlFromQueryParam": "u"},
@@ -805,7 +809,7 @@
 												"part": "Whole",
 												"value": {"Modified": {
 													"value": {"Part": {"QueryParam": "p"}},
-													"modification": "UrlDecode"
+													"modification": "PercentDecode"
 												}}
 											}}
 										}},
@@ -894,7 +898,7 @@
 																"then": "https://api.bypass.vip/bypass?url=",
 																"else": "https://api.bypass.vip/premium/bypass?url="
 															}},
-															{"Modified": {"value": {"Part": "Whole"}, "modification": "UrlEncode"}}
+															{"Modified": {"value": {"Part": "Whole"}, "modification": "PercentEncode"}}
 														]
 													}},
 													"headers": {
@@ -1067,10 +1071,13 @@
 							]},
 							"then": {"SetHost": "youtube.com"}
 						}},
-						"lmgtfy": {"All": [
-							{"SetHost": "google.com"},
-							{"SetPart": {"part": "Path", "value": "/search"}}
-						]},
+						"lmgtfy": {"IgnoreError": {"SetPart": {
+							"part": "Whole",
+							"value": {"Join": {"values": [
+								"https://google.com/search?q=",
+								{"Part": {"RawQueryParam": "q"}}
+							]}}
+						}}},
 						"nitter": {"If": {
 							"if": {"All": [
 								{"Any": [

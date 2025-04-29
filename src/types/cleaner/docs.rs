@@ -9,16 +9,16 @@ use serde_with::*;
 use crate::types::*;
 use crate::util::*;
 
-/// Documentation stored inside of the [`Config`].
+/// Documentation stored inside of the [`Cleaner`].
 ///
 /// Used for suitability tests to make sure I don't forget to document anything and also to generate the docs section of the README.
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub struct ConfigDocs {
-    /// The title of the [`Config`].
+pub struct CleanerDocs {
+    /// The title of the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub title: Option<String>,
-    /// The description of the [`Config`].
+    /// The description of the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub description: Option<Vec<String>>,
     /// The documentation of the flags in [`Params::flags`].

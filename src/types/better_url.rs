@@ -3,6 +3,7 @@
 use std::net::IpAddr;
 use std::str::{FromStr, Split};
 use std::ops::Deref;
+use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use url::{Url, UrlQuery, PathSegmentsMut, ParseError};
@@ -14,6 +15,7 @@ pub use host_details::*;
 
 #[expect(unused_imports, reason = "Used in docs.")]
 use crate::types::*;
+use crate::util::*;
 
 /// A wrapper around a [`Url`] with extra metadata.
 ///
@@ -152,6 +154,14 @@ pub enum SetDomainHostError {
     /// Returned when a [`ParseError`] is encountered.
     #[error(transparent)]
     ParseError(#[from] ParseError)
+}
+
+/// The enum of errors [`BetterUrl::set_query_param`] can return.
+#[derive(Debug, Error)]
+pub enum SetQueryParamError {
+    /// Returned when a query parameter with the specified index can't be set/created.
+    #[error("A query parameter with the specified index could not be set/created.")]
+    QueryParamIndexNotFound
 }
 
 /// The error returned by [`BetterUrl::path_segments`] and [`BetterUrl::path_segments_mut`] return when the [`BetterUrl`]'s path doesn't have segments.
@@ -367,8 +377,184 @@ impl BetterUrl {
     pub fn query_pairs_mut  (&mut self                        ) -> Serializer<'_, UrlQuery<'_>> {self.url.query_pairs_mut()}
     /// [`Url::set_fragment`].
     pub fn set_fragment     (&mut self, fragment: Option<&str>)                                 {self.url.set_fragment(fragment)}
+    /// An iterator over query parameters without percent decoding anything.
+    pub fn raw_query_pairs(&self) -> Option<impl Iterator<Item = (&str, Option<&str>)>> {Some(self.query()?.split('&').map(|kev| kev.split_once('=').map_or((kev, None), |(k, v)| (k, Some(v)))))}
+    /// Return [`true`] if [`Self::get_query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
+    ///
+    /// Please note that this returns [`true`] even if the query param has no value.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let url = BetterUrl::parse("https://example.com?a=1&a=2&a&a=4").unwrap();
+    ///
+    /// assert!( url.has_query_param("a", 0));
+    /// assert!( url.has_query_param("a", 1));
+    /// assert!( url.has_query_param("a", 2));
+    /// assert!( url.has_query_param("a", 3));
+    /// assert!(!url.has_query_param("a", 4));
+    /// ```
+    pub fn has_query_param(&self, name: &str, index: usize) -> bool {
+        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(x, _)| peh(x) == name).nth(index).is_some())
+    }
 
+    /// Get the selected query parameter.
+    ///
+    /// First [`Option`] is if there's a query.
+    ///
+    /// Second [`Option`] is if there's a query paraeter with the specified name.
+    ///
+    /// Third [`Option`] is if it has a value.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// 
+    /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4&c").unwrap();
+    ///
+    /// assert_eq!(url.get_query_param("a", 0), Some(Some(Some("2".into()))));
+    /// assert_eq!(url.get_query_param("a", 1), Some(Some(Some("4".into()))));
+    /// assert_eq!(url.get_query_param("a", 2), Some(None));
+    /// assert_eq!(url.get_query_param("b", 0), Some(Some(Some("3".into()))));
+    /// assert_eq!(url.get_query_param("b", 1), Some(None));
+    /// assert_eq!(url.get_query_param("c", 0), Some(Some(None)));
+    /// assert_eq!(url.get_query_param("c", 1), Some(None));
+    /// 
+    /// 
+    /// let url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// assert_eq!(url.get_query_param("a", 0), None);
+    /// assert_eq!(url.get_query_param("a", 1), None);
+    ///
+    /// 
+    /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
+    ///
+    /// assert_eq!(url.get_query_param("a", 0), Some(Some(Some("1".into()))));
+    /// assert_eq!(url.get_query_param("a", 1), Some(Some(Some("2".into()))));
+    /// assert_eq!(url.get_query_param("a", 2), Some(Some(Some("3".into()))));
+    /// assert_eq!(url.get_query_param("b", 0), Some(Some(Some("A".into()))));
+    /// assert_eq!(url.get_query_param("b", 1), Some(Some(Some("B".into()))));
+    /// assert_eq!(url.get_query_param("b", 2), Some(Some(Some("C".into()))));
+    /// ```
+    pub fn get_query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<Cow<'a, str>>>> {
+        self.get_raw_query_param(name, index).map(|v| v.map(|v| v.map(|v| peh(v))))
+    }
+    /// Get the selected query paremeter without percent decoding the vlue.
+    ///
+    /// The names, however, are percent encoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
+    ///
+    /// assert_eq!(url.get_raw_query_param("a", 0), Some(Some(Some("1"))));
+    /// assert_eq!(url.get_raw_query_param("a", 1), Some(Some(Some("2"))));
+    /// assert_eq!(url.get_raw_query_param("a", 2), Some(Some(Some("3"))));
+    /// assert_eq!(url.get_raw_query_param("b", 0), Some(Some(Some("%41"))));
+    /// assert_eq!(url.get_raw_query_param("b", 1), Some(Some(Some("%42"))));
+    /// assert_eq!(url.get_raw_query_param("b", 2), Some(Some(Some("%43"))));
+    /// ```
+    pub fn get_raw_query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<&'a str>>> {
+        self.raw_query_pairs().map(|pairs| pairs.filter(|(x, _)| peh(x) == name).nth(index).map(|(_, v)| v))
+    }
 
+    /// Set the selected query parameter.
+    ///
+    /// If there are N query parameters named `name` and `index` is N, appends a new query parameter to the end.
+    ///
+    /// For performance reasons, resulting empty queries are replaced with [`None`].
+    /// # Errors
+    /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// 
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// url.set_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), None);
+    /// url.set_query_param("a", 0, Some(Some("2"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=2"));
+    /// url.set_query_param("a", 0, Some(Some("3"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=3"));
+    /// url.set_query_param("a", 1, Some(Some("4"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=3&a=4"));
+    /// url.set_query_param("a", 3, Some(Some("5"))).unwrap_err();
+    /// assert_eq!(url.query(), Some("a=3&a=4"));
+    /// url.set_query_param("a", 0, Some(None)).unwrap();
+    /// assert_eq!(url.query(), Some("a&a=4"));
+    /// url.set_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), Some("a=4"));
+    /// url.set_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), None);
+    ///
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com?").unwrap();
+    ///
+    /// assert_eq!(url.query(), Some(""));
+    /// url.set_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), None);
+    /// ```
+    pub fn set_query_param(&mut self, name: &str, index: usize, to: Option<Option<&str>>) -> Result<(), SetQueryParamError> {
+        let to = to.map(|to| to.map(|to| form_urlencoded::byte_serialize(to.as_bytes()).collect::<String>()));
+        self.set_raw_query_param(&form_urlencoded::byte_serialize(name.as_bytes()).collect::<String>(), index, to.as_ref().map(|to| to.as_deref()))
+    }
+    /// Sets the selected query parameter, without ensuring either the name or the value are valid.
+    ///
+    /// Useful in combination with [`Self::get_raw_query_param`] for transplanting values without decoding then reencoding them.
+    ///
+    /// PLEASE note that if `name` and/or `value` contain special characters like `=`, `&`, or `#` this will give incoherent results! ONLY use this for directly transplanting from and to query params.
+    /// # Errors
+    /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
+    pub fn set_raw_query_param(&mut self, name: &str, index: usize, to: Option<Option<&str>>) -> Result<(), SetQueryParamError> {
+        debug!(self, QueryParamSelector::set, name, index, to);
+
+        let mut pairs = match (self.raw_query_pairs(), to) {
+            (Some(x), _      ) => x.collect::<Vec<_>>(),
+            (None   , None   ) => return Ok(()),
+            (None   , Some(_)) => Vec::new()
+        };
+
+        let mut found_matches = 0;
+        let mut matched_index = None;
+
+        // Find the index of the selected query parameter and store it in `matched_index`.
+        for (i, (x, _)) in pairs.iter_mut().enumerate() {
+            if peh(x) == name {
+                if found_matches == index {
+                    matched_index = Some(i);
+                    break;
+                }
+                #[allow(clippy::arithmetic_side_effects, reason = "Requires usize::MAX query pairs, which is obviously more than can exist.")]
+                {found_matches += 1;}
+            }
+        }
+
+        // Set/remove/append the value.
+        match (matched_index, to) {
+            #[expect(clippy::indexing_slicing, reason = "`i` is always less than `pairs.len()`. If `pairs.len()` is `0`, `matched_index` is `None`.")]
+            (Some(i), Some(to)) => pairs[i].1 = to,
+            (Some(i), None    ) => {pairs.remove(i);},
+            (None   , Some(to)) => if index == found_matches {
+                pairs.push((name, to));
+            } else {
+                Err(SetQueryParamError::QueryParamIndexNotFound)?
+            },
+            (None, None) => {}
+        }
+
+        // Turn the pairs into a query.
+        let mut new = String::new();
+        for (k, v) in pairs {
+            if !new.is_empty() {new.push('&');}
+            new.push_str(k);
+            if let Some(v) = v {new.push('='); new.push_str(v);}
+        }
+
+        self.set_query(Some(&*new).filter(|x| !x.is_empty()));
+
+        Ok(())
+    }
 
     /// Sets the [`UrlPart::Host`] to a domain.
     ///
@@ -419,8 +605,7 @@ impl BetterUrl {
     pub fn set_domain(&mut self, to: Option<&str>) -> Result<(), SetDomainError> {
         Ok(match (self.host_details(), to) {
             (Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..})), Some(to)) => self.set_domain_host(&format!("{to}."))?,
-            (_, Some(to)) => self.set_domain_host(to)?,
-            (_, None) => self.set_host(to)?
+            _ => self.set_host(to)?
         })
     }
 

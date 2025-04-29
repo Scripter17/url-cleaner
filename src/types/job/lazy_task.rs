@@ -14,8 +14,8 @@ pub struct LazyTask<'a> {
     pub lazy_task_config: LazyTaskConfig,
     /// The [`JobContext`].
     pub job_context: &'a JobContext,
-    /// The [`Config`].
-    pub config: &'a Config,
+    /// The [`Cleaner`].
+    pub cleaner: &'a Cleaner,
     /// The [`Cache`].
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
@@ -44,7 +44,7 @@ impl<'a> TryFrom<LazyTask<'a>> for Task<'a> {
             url,
             context,
             job_context: value.job_context,
-            config: value.config,
+            cleaner: value.cleaner,
             #[cfg(feature = "cache")]
             cache: value.cache
         })
@@ -65,7 +65,7 @@ impl<'a> From<Task<'a>> for LazyTask<'a> {
         Self {
             lazy_task_config: LazyTaskConfig::Made(TaskConfig {url: value.url, context: value.context}),
             job_context: value.job_context,
-            config: value.config,
+            cleaner: value.cleaner,
             #[cfg(feature = "cache")]
             cache: value.cache
         }

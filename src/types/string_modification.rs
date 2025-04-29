@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use percent_encoding::{percent_decode_str, utf8_percent_encode, NON_ALPHANUMERIC, AsciiSet};
+use ::percent_encoding::{percent_decode_str, utf8_percent_encode};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 #[cfg(feature = "regex")]
 use ::regex::Regex;
@@ -433,20 +433,24 @@ pub enum StringModification {
 
     /// Percent encodes the string.
     ///
-    /// Please note that this can be deserialized from `"UrlDecode"`, in which case the contained [`UrlEncodeAlphabet`] is defaulted.
+    /// Please note that this can be deserialized from `"PercentDecode"`, in which case the contained [`PercentEncodeAlphabet`] is defaulted.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
     ///
-    /// assert_eq!(serde_json::from_str::<StringModification>(r#""UrlEncode""#).unwrap(), StringModification::UrlEncode(Default::default()));
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""PercentEncode""#).unwrap(), StringModification::PercentEncode(Default::default()));
     /// ```
-    UrlEncode(#[serde(default, skip_serializing_if = "is_default")] UrlEncodeAlphabet),
+    PercentEncode(#[serde(default, skip_serializing_if = "is_default")] PercentEncodeAlphabet),
     /// Percent decodes the string.
-    /// # Errors
-    /// If the call to [`percent_encoding::PercentDecode::decode_utf8`] returns an error, that error is returned.
     ///
-    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
-    UrlDecode,
+    /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
+    /// # Errors
+    /// If the call to [`::percent_encoding::PercentDecode::decode_utf8`] returns an error, that error is returned.
+    PercentDecode,
+    /// [`Self::PercentDecode`] but replaces non-UTF-8 percent encoded byte equences with U+FFFD (�), the replacement character.
+    ///
+    /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
+    LossyPercentDecode,
     /// Base64 encodes the string.
     ///
     /// Please note that this can be deserialized from `"Base64Encode"`, in which case the contained [`Base64Config`] is defaulted.
@@ -477,23 +481,54 @@ pub enum StringModification {
 
 
     /// Parses the javascript string literal at the start of the string and returns its value.
+    ///
+    /// Useful in combination with [`Self::KeepAfter`].
     /// # Errors
     /// If the call to [`parse::js::string_literal_prefix()`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// let mut to = r#"let destination = "https:\/\/example.com";"#.to_string();
+    ///
+    /// StringModification::All(vec![
+    ///     StringModification::KeepAfter("let destination = ".into()),
+    ///     StringModification::GetJsStringLiteralPrefix
+    /// ]).apply(&mut to, &task_state).unwrap();;
+    ///
+    /// assert_eq!(to, "https://example.com");
+    /// ```
     GetJsStringLiteralPrefix,
-    /// Processes HTML character references/escape codes like `&map;` into `&`.
+    /// Processes HTML character references/escape codes like `&map;` into `&` and `&41;` into `A`.
     /// # Errors
     /// If the call to [`parse::html::unescape_text`] returns an error, that error is returned.
     UnescapeHtmlText,
-    /// Parses the HTML element at the start of the string and returns the value of the last attribute with the specified name.
+    /// Parses the HTML element at the start of the string and returns the [`Self::UnescapeHtmlText`]ed value of the last attribute with the specified name.
+    ///
+    /// Useful in combination with [`Self::StripBefore`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`parse::html::get_attribute_value`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// let mut to = r#"Redirecting you to <a id="destination" href="https://example.com?a=2&amp;b=3">example.com</a>..."#.to_string();
+    ///
+    /// StringModification::All(vec![
+    ///     StringModification::StripBefore(r#"<a id="destination""#.into()),
+    ///     StringModification::GetHtmlAttribute("href".into())
+    /// ]).apply(&mut to, &task_state).unwrap();
+    ///
+    /// assert_eq!(to, "https://example.com?a=2&b=3");
+    /// ```
     GetHtmlAttribute(StringSource),
-
-
-
     /// Parses the string as JSON and uses [`serde_json::Value::pointer`] with the specified pointer.
+    ///
+    /// When extracting values from javascript, it's often faster to find the start of the desired string and use [`Self::GetJsStringLiteralPrefix`].
     /// # Errors
     /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
     ///
@@ -503,21 +538,30 @@ pub enum StringModification {
     ///
     /// If the call to [`serde_json::Value::pointer_mut`] returns [`None`], returns the error [`StringModificationError::JsonValueNotFound`].
     ///
-    /// If the call to [`serde_json::Value::pointer_mut`] doesn't return a [`serde_json::Value::String`], returns the error [`StringModificationError::JsonValueIsNotAString`].
+    /// If the call to [`serde_json::Value::pointer_mut`] doesn't return a [`serde_json::Value::String`], returns the error [`StringModificationError::JsonPointeeIsNotAString`].
     JsonPointer(StringSource),
+
+
+
     /// Split the string on `&`, split each segment on `=`, and remove all segments whose first subsegment matches the specified [`StringMatcher`].
     ///
-    /// Used for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
+    /// Useful for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
+    ///
+    /// Currently does not do percent decoding, so `%61=2` isn't normalized to `a=2`.
     /// # Errors
     /// If any call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     RemoveQueryParamsMatching(Box<StringMatcher>),
     /// Split the string on `&`, split each segment on `=`, and keep only segments whose first subsegment matches the specified [`StringMatcher`].
     ///
-    /// Used for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
+    /// Useful for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
+    ///
+    /// Currently does not do percent decoding, so `%61=2` isn't normalized to `a=2`.
     /// # Errors
     /// If any call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
     AllowQueryParamsMatching(Box<StringMatcher>),
-    /// Finds the specified substring and removes everything before it.
+    /// Finds the first instance of the specified substring and removes everything before it.
+    ///
+    /// Useful in combination with [`Self::GetJsStringLiteralPrefix`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -536,7 +580,7 @@ pub enum StringModification {
     /// assert_eq!(to, "bc");
     /// ```
     StripBefore(StringSource),
-    /// Finds the specified substring and removes everything after it.
+    /// Finds the first instance of the specified substring and removes everything after it.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -555,7 +599,7 @@ pub enum StringModification {
     /// assert_eq!(to, "ab");
     /// ```
     StripAfter(StringSource),
-    /// Finds the specified substring and keeps only everything before it.
+    /// Finds the first instance of the specified substring and keeps only everything before it.
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -574,7 +618,9 @@ pub enum StringModification {
     /// assert_eq!(to, "a");
     /// ```
     KeepBefore(StringSource),
-    /// Finds the specified substring and keeps only everything after it.
+    /// Finds the first instance of the specified substring and keeps only everything after it.
+    ///
+    /// Useful in combination with [`Self::GetHtmlAttribute`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -712,7 +758,7 @@ pub enum StringModification {
         #[serde(flatten)]
         map: Map<Self>,
     },
-    /// Gets a [`Self`] from [`Config::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     /// If [`CommonCall::name`]'s call to [`StringSource::get`] returns an error, returns the error [`StringModificationError::StringSourceIsNone`].
     ///
@@ -740,50 +786,12 @@ pub enum StringModification {
     Custom(fn(&mut String, &TaskStateView) -> Result<(), StringModificationError>)
 }
 
-/// The [`AsciiSet`] that emulates [`encodeURIComponent`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent).
-pub const JS_ENCODE_URI_COMPONENT_ASCII_SET: AsciiSet = percent_encoding::NON_ALPHANUMERIC
-    .remove(b'-' ).remove(b'_').remove(b'.')
-    .remove(b'!' ).remove(b'~').remove(b'*')
-    .remove(b'\'').remove(b'(').remove(b')');
-
-/// The [`AsciiSet`] that emulates [`encodeURI`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI).
-pub const JS_ENCODE_URI_ASCII_SET: AsciiSet = JS_ENCODE_URI_COMPONENT_ASCII_SET
-    .remove(b';').remove(b'/').remove(b'?')
-    .remove(b':').remove(b'@').remove(b'&')
-    .remove(b'=').remove(b'+').remove(b'$')
-    .remove(b',').remove(b'#');
-
-/// An enum of named [`AsciiSet`]s for use in [`StringModification::UrlEncode`].
-///
-/// Defaults to [`UrlEncodeAlphabet::JsEncodeUriComponent`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub enum UrlEncodeAlphabet {
-    /// Use [`JS_ENCODE_URI_COMPONENT_ASCII_SET`].
-    #[default]
-    JsEncodeUriComponent,
-    /// Use [`JS_ENCODE_URI_ASCII_SET`].
-    JsEncodeUri,
-    /// Use [`NON_ALPHANUMERIC`].
-    NonAlphanumeric
-}
-
-impl UrlEncodeAlphabet {
-    /// Get the corresponding [`AsciiSet`].
-    pub fn get(&self) -> &'static AsciiSet {
-        match self {
-            Self::JsEncodeUriComponent => &JS_ENCODE_URI_COMPONENT_ASCII_SET,
-            Self::JsEncodeUri          => &JS_ENCODE_URI_ASCII_SET,
-            Self::NonAlphanumeric      => NON_ALPHANUMERIC
-        }
-    }
-}
-
 string_or_struct_magic!(StringModification);
 
 /// The error returned when trying to deserialize a [`StringModification`] variant with fields that aren't all defaultable.
 #[derive(Debug, Error)]
-#[error("Tried deserializing a StringModification variant with fields that aren't all defaultable.")]
-pub struct NonDefaultableVariant;
+#[error("Tried deserializing undefaultable or unknown variant {0}.")]
+pub struct NonDefaultableVariant(String);
 
 impl FromStr for StringModification {
     type Err = NonDefaultableVariant;
@@ -792,14 +800,15 @@ impl FromStr for StringModification {
         Ok(match s {
             #[cfg(feature = "base64")] "Base64Decode" => StringModification::Base64Decode(Default::default()),
             #[cfg(feature = "base64")] "Base64Encode" => StringModification::Base64Encode(Default::default()),
-            "UrlDecode"                => StringModification::UrlDecode,
-            "UrlEncode"                => StringModification::UrlEncode(Default::default()),
+            "PercentEncode"            => StringModification::PercentEncode(Default::default()),
+            "PercentDecode"            => StringModification::PercentDecode,
+            "LossyPercentDecode"       => StringModification::LossyPercentDecode,
             "None"                     => StringModification::None,
             "Lowercase"                => StringModification::Lowercase,
             "Uppercase"                => StringModification::Uppercase,
             "GetJsStringLiteralPrefix" => StringModification::GetJsStringLiteralPrefix,
             "UnescapeHtmlText"         => StringModification::UnescapeHtmlText,
-            _                          => Err(NonDefaultableVariant)?
+            _                          => Err(NonDefaultableVariant(s.into()))?
         })
     }
 }
@@ -819,9 +828,9 @@ pub enum StringModificationError {
     /// Returned when a JSON value isn't found.
     #[error("The requested JSON value was not found.")]
     JsonValueNotFound,
-    /// Returned when a JSON value isn't a string.
-    #[error("The requested JSON value was not a string.")]
-    JsonValueIsNotAString,
+    /// Returned when a JSON pointee isn't a string.
+    #[error("The requested JSON pointee was not a string.")]
+    JsonPointeeIsNotAString,
     /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
     #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]
     InvalidSlice,
@@ -1068,13 +1077,14 @@ impl StringModification {
             #[cfg(feature = "regex")] Self::RegexReplace    {regex,    replace} => *to = regex.get()?.replace    (to,     get_str!(replace, task_state, StringModificationError)).into_owned(),
             #[cfg(feature = "regex")] Self::RegexReplaceAll {regex,    replace} => *to = regex.get()?.replace_all(to,     get_str!(replace, task_state, StringModificationError)).into_owned(),
             #[cfg(feature = "regex")] Self::RegexReplacen   {regex, n, replace} => *to = regex.get()?.replacen   (to, *n, get_str!(replace, task_state, StringModificationError)).into_owned(),
-            Self::UrlEncode(alphabet) => *to=utf8_percent_encode(to, alphabet.get()).to_string(),
-            Self::UrlDecode => *to=percent_decode_str(to).decode_utf8()?.into_owned(),
+            Self::PercentEncode(alphabet) => *to = utf8_percent_encode(to, alphabet.get()).to_string(),
+            Self::PercentDecode           => *to = percent_decode_str (to).decode_utf8()?.into_owned(),
+            Self::LossyPercentDecode      => *to = percent_decode_str (to).decode_utf8_lossy().into_owned(),
             #[cfg(feature = "base64")] Self::Base64Encode(config) => *to = config.build().encode(to.as_bytes()),
             #[cfg(feature = "base64")] Self::Base64Decode(config) => *to = String::from_utf8(config.build().decode(to.as_bytes())?)?,
             Self::JsonPointer(pointer) => match serde_json::from_str::<serde_json::Value>(to)?.pointer_mut(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
                 serde_json::Value::String(s) => *to = s,
-                _ => Err(StringModificationError::JsonValueIsNotAString)?
+                _ => Err(StringModificationError::JsonPointeeIsNotAString)?
             },
 
 

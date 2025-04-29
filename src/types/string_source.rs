@@ -478,6 +478,106 @@ pub enum StringSource {
         /// The value to cache.
         value: Box<Self>
     },
+    /// Finds the first instance of the specified substring and removes everything before it.
+    ///
+    /// Useful in combination with [`StringModification::GetJsStringLiteralPrefix`].
+    ///
+    /// Equivalent to [`StringModification::StripBefore`] but doesn't require allocating borrowed strings.
+    /// # Examples
+    /// ```
+    /// use std::borrow::Cow;
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    ///
+    /// assert!(matches!(
+    ///     StringSource::StripBefore {
+    ///         value: "abc".into(),
+    ///         find: "b".into()
+    ///     }.get(&task_state_view).unwrap(),
+    ///     Some(Cow::Borrowed("bc"))
+    /// ));
+    /// ```
+    StripBefore {
+        /// The value to get a substring of.
+        value: Box<Self>,
+        /// The value to strip everything beefore the first instance of.
+        find: Box<Self>
+    },
+    /// Finds the first instance of the specified substring and removes everything after it.
+    ///
+    /// Equivalent to [`StringModification::StripAfter`] but doesn't require allocating borrowed strings.
+    /// # Examples
+    /// ```
+    /// use std::borrow::Cow;
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    ///
+    /// assert!(matches!(
+    ///     StringSource::StripAfter {
+    ///         value: "abc".into(),
+    ///         find: "b".into()
+    ///     }.get(&task_state_view).unwrap(),
+    ///     Some(Cow::Borrowed("ab"))
+    /// ));
+    /// ```
+    StripAfter {
+        /// The value to get a substring of.
+        value: Box<Self>,
+        /// The value to strip everything before the first instance of.
+        find: Box<Self>
+    },
+    /// Finds the first instance of the specified substring and keeps only everything before it.
+    ///
+    /// Equivalent to [`StringModification::KeepBefore`] but doesn't require allocating borrowed strings.
+    /// # Examples
+    /// ```
+    /// use std::borrow::Cow;
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    ///
+    /// assert!(matches!(
+    ///     StringSource::KeepBefore {
+    ///         value: "abc".into(),
+    ///         find: "b".into()
+    ///     }.get(&task_state_view).unwrap(),
+    ///     Some(Cow::Borrowed("a"))
+    /// ));
+    /// ```
+    KeepBefore {
+        /// The value to get a substring of.
+        value: Box<Self>,
+        /// The value to keep everything beefore the first instance of.
+        find: Box<Self>
+    },
+    /// Finds the first instance of the specified substring and keeps only everything after it.
+    ///
+    /// Useful in combination with [`StringModification::GetHtmlAttribute`].
+    ///
+    /// Equivalent to [`StringModification::KeepAfter`] but doesn't require allocating borrowed strings.
+    /// # Examples
+    /// ```
+    /// use std::borrow::Cow;
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state_view);
+    ///
+    /// assert!(matches!(
+    ///     StringSource::KeepAfter {
+    ///         value: "abc".into(),
+    ///         find: "b".into()
+    ///     }.get(&task_state_view).unwrap(),
+    ///     Some(Cow::Borrowed("c"))
+    /// ));
+    /// ```
+    KeepAfter {
+        /// The value to get a substring of.
+        value: Box<Self>,
+        /// The value to keep everything before the first instance of.
+        find: Box<Self>
+    },
     /// Gets the value of [`Self::ExtractBetween::value`] and gets the substring after the first instance of [`Self::ExtractBetween::start`] and the first subsequent instance of [`Self::ExtractBetween::end`].
     /// # Errors
     /// If any call to [`Self::get`] returns an error, that error is returned.
@@ -530,7 +630,7 @@ pub enum StringSource {
         /// The [`Regex`] to use to find the substring.
         regex: RegexWrapper
     },
-    /// Calls a [`Self`] from [`Config::commons`]'s [`Commons::string_sources`].
+    /// Calls a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_sources`].
     /// # Errors
     /// If [`CommonCall::name`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
     ///
@@ -743,6 +843,9 @@ pub enum StringSourceError {
     /// Returned when a [`GetVarError`] is encountered.
     #[error(transparent)]
     GetVarError(#[from] GetVarError),
+    /// Returned when a substring isn't found in the string.
+    #[error("The substring wasn't found in the string.")]
+    SubstringNotFound,
     /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
     #[cfg(feature = "custom")]
     #[error(transparent)]
@@ -837,6 +940,26 @@ impl StringSource {
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(task_state)?)),
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(task_state)?)),
+
+            Self::StripBefore{value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+                Cow::Borrowed(    value) => Cow::Borrowed(&value[  value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?..]),
+                Cow::Owned   (mut value) => {        value.drain(..value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?  ); Cow::Owned(value)}
+            }),
+            Self::KeepBefore {value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+                Cow::Borrowed(    value) => Cow::Borrowed(&value[..value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?  ]),
+                Cow::Owned   (mut value) => {        value.drain(  value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?..); Cow::Owned(value)}
+            }),
+            #[allow(clippy::arithmetic_side_effects, reason = "If value contains find, then value is at least (the index of value)+(the length of find) long.")]
+            Self::StripAfter {value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+                Cow::Borrowed(    value) => {let find = get_str!(find, task_state, StringSourceError); Cow::Borrowed(&value[..value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()  ])},
+                Cow::Owned   (mut value) => {let find = get_str!(find, task_state, StringSourceError);          value.drain(  value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()..); Cow::Owned(value)}
+            }),
+            #[allow(clippy::arithmetic_side_effects, reason = "If value contains find, then value is at least (the index of value)+(the length of find) long.")]
+            Self::KeepAfter  {value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
+                Cow::Borrowed(    value) => {let find = get_str!(find, task_state, StringSourceError); Cow::Borrowed(&value[  value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()..])},
+                Cow::Owned   (mut value) => {let find = get_str!(find, task_state, StringSourceError);          value.drain(..value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()  ); Cow::Owned(value)}
+            }),
+
             Self::ExtractBetween {value, start, end} => {
                 Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
                     Cow::Borrowed(x) => Cow::Borrowed(x

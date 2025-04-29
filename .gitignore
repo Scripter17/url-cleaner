@@ -4,7 +4,6 @@
 *.zip
 *.tar
 *.gz
-tests.sh
 sync.sh
 *.sqlite
 !empty-cache.sqlite

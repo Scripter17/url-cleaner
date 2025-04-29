@@ -17,8 +17,10 @@ use crate::glue::*;
 ///
 /// let job = Job {
 ///     context: &Default::default(),
-///     config: &Config {
-///         actions: vec![Action::RemoveQueryParams(["utm_source".into()].into())],
+///     cleaner: &Cleaner {
+///         actions: vec![
+///             Action::RemoveQueryParams(["utm_source".into()].into())
+///         ],
 ///         ..Default::default()
 ///     },
 #[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
@@ -34,8 +36,8 @@ use crate::glue::*;
 pub struct Job<'a> {
     /// The context shared by this [`Job`].
     pub context: &'a JobContext,
-    /// The [`Config`] to use.
-    pub config: &'a Config,
+    /// The [`Cleaner`] to use.
+    pub cleaner: &'a Cleaner,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache,
@@ -48,7 +50,7 @@ impl ::core::fmt::Debug for Job<'_> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         let mut x = f.debug_struct("Job");
         x.field("context", &self.context);
-        x.field("config" , &self.config);
+        x.field("cleaner" , &self.cleaner);
         #[cfg(feature = "cache")]
         x.field("cache"  , &self.cache);
         x.field("lazy_task_configs", &"...");
@@ -79,7 +81,7 @@ impl<'a> Iterator for JobIter<'a> {
             Ok(lazy_task_config) => Ok(LazyTask {
                 lazy_task_config,
                 job_context: self.0.context,
-                config: self.0.config,
+                cleaner: self.0.cleaner,
                 #[cfg(feature = "cache")]
                 cache: self.0.cache
             }),

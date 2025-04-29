@@ -9,25 +9,28 @@ I call this "spytext", as it's text that allows spyware to do spyware things suh
 Because of the ongoing human rights catastrophes intentionally enabled by spytext, it is basic decency to remove it before you send a URL, and basic opsec to remove it when you recieve a URL.
 
 URL Cleaner is designed to make this as comprehensive, fast, and easy as possible, with the priorities mostly in that order.
+
 # PLEASE note that URL Cleaner is not something you should blindly trust!
-URL Cleaner and its default config are under heavy development, and many websites may break, be partially unhandled, or give incorrect results.
 
-While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned URL if it's also detected as a redirect,
-this expansion may lead to websites deanonymizing your/your URL Cleaner Site instance's IP address. It may also allow malicious emails/comments/DMs to find your IP by buying expired but still handled redirect sites.
+URL Cleaner and its default cleaner are under very active development so many websites may break, be partially unhandled, or give otherwise incorrect results.
+Even if URL Cleaner gives correct results, there are still details you should keep in mind.
 
-Additionally, some redirect websites also put the destination in the URL (`https://example-redirect-site.com/redirect/1234?final_url=https://example.com/`).
-For these, the default config uses the `final_url` query parameter to skip the network request.
-It's possible for either the website or the person sending you the link to intentionally mismatch the redirect ID and the `final_url` to send people who use URL Cleaner to different places than people who don't.
-This attack is very hard for things like email spam filters to detect as it's largely unique to people who clean URLs, which is a very small minority of people who'd report things to spam filter makers.
-If a website is suceptable to this or similar attacks, then URL Cleaner is considered at fault and a bug report to fix it would be appreciated.
+1. Unless you set the `no-network` flag, the default cleaner will expand supported redirect websites like `bit.ly` and `t.co`.
+   In addition to the obvious issues inherent to redirect sites, if one of the supported redirect sites expires, a malicious actor can buy the domain and send you a URL that gets detected as a redirect to find your IP address.
 
-Another deanonymization vector involves [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) cleaning websites directly in the browser.
-While this makes it trivial for the website to know you're using URL Cleaner Site, a much bigger issue is that redirects are cached, so if you've seen a redirect before, the website can detect that from both timing and possibly owning the redirect site.
+2. Some redirect websites have URLs that contain a redirect ID and the redirect destination. For example, `https://example-redirect-site.com/redirect/1234?destination=https://example.com`.
+   For these websites, the default cleaner will use the value of the `destination` query parameter to avoid sending a network request.
+   While this should always be fine for redirect URLs made by the website, it's possible for malicious intermediaries to replace `destination=https://example.com` with `destination=https://evil-website.com`.
+   It's possible that `example-redirect-site.com` would ignore that redirect 1234 doesn't go to `https://evil-website.com` and still send normal users to `https://example.com`.
+   If this mismatch happens, it's possible for that malivius intermediary to detect whether or not you're using URL Cleaner if your version of the default cleaner gets the wrong answer.
+   If a website is vulnerable to this and the default cleaner gets the wrong answer, the default cleaner is considered at fault and must be updates. If you ever see this happen, PLEASE tell me.
 
-While URL Cleaner supports using proxies and the default config supports disabling network access entirely and doesn't consider hiding the fact you're cleaning URLs in scope,
-you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
+3. One of the main intended ways to use URL Cleaner is [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site), a basic HTTP server + userscript combo to automatically clean every link on every website you visit.
+   While it's extremely easy for websites to tell you're using URL Cleaner Site, the info leak is both small and impossible to fix, so I won't try to fix it.
+   What is an issue is that expanded redirects are cached so network requests only have to be sent once. This means that if you see a `https://bit.ly/1234` link for the first time, URL Cleaner Site sends a request for it and caches the result.
+   Then, any time you see it again, URL Cleaner Site simply references the cache for the destination. While this should always give the correct result, it means that a website can tell whether or not you've seen the link before based on how fast the cleaning happens.
 
-While URL Cleaner's default config is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
+While URL Cleaner's default cleaner is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
 <!--/cmd-->
 
 ## C dependencies
@@ -43,17 +46,17 @@ If you can't compile it I'll try to help you out. And if you can make it work on
 
 ## Basic usage
 
-By default, compiling URL Cleaner includes the [`default-config.json`](default-config.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
+By default, compiling URL Cleaner includes the [`default-cleaner.json`](default-cleaner.json) file in the binary. Because of this, URL Cleaner can be used simply with `url-cleaner "https://example.com/of?a=dirty#url"`.
 
 Additionally, URL Cleaner can take jobs from STDIN lines. `cat urls.txt | url-cleaner` works by printing each result on the same line as its input.
 
 See [Parsing output](#parsing-output) for details on the output format, and yes JSON output is supported.
 
-### The default config
+### The default cleaner
 
-The default config is intended to always obey the following rules:
+The default cleaner is intended to always obey the following rules:
 
-- "Meaningful semantic changes"<sup>[definition?]</sup> from the input URL and output URL should only ever occur as a result of a flag being enabled.
+- Cleaning the URL shouldn't cause any "meaningful semantic changes"<sup>[definition?]</sup> when opening the result.
     - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
 - URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error or become semantically invalid.
 - It should always be both deterministic and idempotent.
@@ -111,13 +114,14 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `bypass.vip-hwwwwdpafqdnps`: The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.
 - `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
 - `https-upgrade-host-blacklist`: Hosts to never upgrade from `http` to `https`.
-- `redirect-hwwwwdpafqdnps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` mapper applied.
+- `redirect-hwwwwdpafqdnps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` action applied.
 - `redirect-reg-domains`: The `redirect-hwwwwdpafqdnpes` set but using the `RegDomain` of the URL.
 - `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
 - `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
+- `remove-fqdn-period-reg-domain-blacklist`: The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
 - `remove-www-subdomain-reg-domain-blacklist`: The RegDomains to not remove a `www` subdomain from.
 - `unmobile-reg-domain-blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
-- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that the `utps` common mapper in the default config also removes any parameter starting with any string in the `utp-prefixes` list and thus parameters starting with those can be omitted from this set.
+- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp-prefixes` set are also removed.
 - `utps-reg-domain-whitelist`: RegDomains to never remove universal tracking parameters from.
 
 #### Lists
@@ -197,7 +201,7 @@ Subsequent cleanings should be considerably faster but still worse than the abov
 
 #### Credits
 
-The people and projects I have stolen various parts of the default config from.
+The people and projects I have stolen various parts of the default cleaner from.
 
 - [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
 - [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)
@@ -242,9 +246,9 @@ Currently, the exit code is determined by the following rules:
 URL Cleaner should only ever panic under the following circumstances:
 
 - Parsing the CLI arguments failed.
-- Loading/parsing the config failed.
-- Printing the config failed. (Shouldn't be possible.)
-- Testing the config failed.
+- Loading/parsing the cleaner failed.
+- Printing the cleaner failed. (Shouldn't be possible.)
+- Testing the cleaner failed.
 - Reading from/writing to STDIN/STDOUT/STDERR has a catastrophic error.
 - Running out of memory resulting in a standard library function/method panicking. This should be extremely rare.
 - (Only possible when the `debug` feature is enabled) The mutex controlling debug printing indenting is poisoned and a lock is attempted.

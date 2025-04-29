@@ -10,36 +10,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Build.
-      run: cargo build
+    - name: build
+      run: ./test.sh --only-build
 
-  build_no_default_features:
+  build_ndf:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Build no default features.
-      run: cargo build --no-default-features
+    - name: build_ndf
+      run: ./test.sh --only-build-ndf
 
-  test_default_config:
+  cargo_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run the non-network default config tests.
-      run: cargo run -- --tests tests.json
+    - name: cargo_test
+      run: ./test.sh --only-cargo-test
 
-  test_default_features:
+  order_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Run cargo test on default features.
-      run: cargo test
+    - name: order_test
+      run: ./test.sh --only-order-test
 
-  test_subsets:
+  offline_tests:
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -Awarnings
+    steps:
+    - uses: actions/checkout@v3
+    - name: offline_tests
+      run: ./test.sh --only-offline-tests
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: clippy
+      run: ./test.sh --only-clippy
+
+  powerset_2:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-    - name: Test feature subsets of size 2 and below.
-      run: cargo hack test --feature-powerset --depth 2 --clean-per-run
+    - name: powerset
+      run: ./test.sh --only-powerset-2

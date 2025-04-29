@@ -12,7 +12,7 @@ use crate::util::*;
 
 /// Flags, variables, etc. that adjust the exact behavior of a config.
 ///
-/// Bundles all the state that determines how the [`Config`] works in one convenient area.
+/// Bundles all the state that determines how the [`Cleaner`] works in one convenient area.
 #[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 pub struct Params {

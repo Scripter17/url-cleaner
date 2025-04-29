@@ -6,29 +6,32 @@
 //! Because of the ongoing human rights catastrophes intentionally enabled by spytext, it is basic decency to remove it before you send a URL, and basic opsec to remove it when you recieve a URL.
 //!
 //! URL Cleaner is designed to make this as comprehensive, fast, and easy as possible, with the priorities mostly in that order.
+//!
 //! # PLEASE note that URL Cleaner is not something you should blindly trust!
-//! URL Cleaner and its default config are under heavy development, and many websites may break, be partially unhandled, or give incorrect results.
 //!
-//! While the default config tries its best to minimize info leaks when expanding redirects by both cleaning the URLs before sending the request and only sending a request to the returned URL if it's also detected as a redirect,
-//! this expansion may lead to websites deanonymizing your/your URL Cleaner Site instance's IP address. It may also allow malicious emails/comments/DMs to find your IP by buying expired but still handled redirect sites.
+//! URL Cleaner and its default cleaner are under very active development so many websites may break, be partially unhandled, or give otherwise incorrect results.
+//! Even if URL Cleaner gives correct results, there are still details you should keep in mind.
 //!
-//! Additionally, some redirect websites also put the destination in the URL (`https://example-redirect-site.com/redirect/1234?final_url=https://example.com/`).
-//! For these, the default config uses the `final_url` query parameter to skip the network request.
-//! It's possible for either the website or the person sending you the link to intentionally mismatch the redirect ID and the `final_url` to send people who use URL Cleaner to different places than people who don't.
-//! This attack is very hard for things like email spam filters to detect as it's largely unique to people who clean URLs, which is a very small minority of people who'd report things to spam filter makers.
-//! If a website is suceptable to this or similar attacks, then URL Cleaner is considered at fault and a bug report to fix it would be appreciated.
+//! 1. Unless you set the `no-network` flag, the default cleaner will expand supported redirect websites like `bit.ly` and `t.co`.
+//!    In addition to the obvious issues inherent to redirect sites, if one of the supported redirect sites expires, a malicious actor can buy the domain and send you a URL that gets detected as a redirect to find your IP address.
 //!
-//! Another deanonymization vector involves [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site) cleaning websites directly in the browser.
-//! While this makes it trivial for the website to know you're using URL Cleaner Site, a much bigger issue is that redirects are cached, so if you've seen a redirect before, the website can detect that from both timing and possibly owning the redirect site.
+//! 2. Some redirect websites have URLs that contain a redirect ID and the redirect destination. For example, `https://example-redirect-site.com/redirect/1234?destination=https://example.com`.
+//!    For these websites, the default cleaner will use the value of the `destination` query parameter to avoid sending a network request.
+//!    While this should always be fine for redirect URLs made by the website, it's possible for malicious intermediaries to replace `destination=https://example.com` with `destination=https://evil-website.com`.
+//!    It's possible that `example-redirect-site.com` would ignore that redirect 1234 doesn't go to `https://evil-website.com` and still send normal users to `https://example.com`.
+//!    If this mismatch happens, it's possible for that malivius intermediary to detect whether or not you're using URL Cleaner if your version of the default cleaner gets the wrong answer.
+//!    If a website is vulnerable to this and the default cleaner gets the wrong answer, the default cleaner is considered at fault and must be updates. If you ever see this happen, PLEASE tell me.
 //!
-//! While URL Cleaner supports using proxies and the default config supports disabling network access entirely and doesn't consider hiding the fact you're cleaning URLs in scope,
-//! you should be aware that there are going to be edge cases clever attackers can use to betray your confidence in URL Cleaner.
+//! 3. One of the main intended ways to use URL Cleaner is [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site), a basic HTTP server + userscript combo to automatically clean every link on every website you visit.
+//!    While it's extremely easy for websites to tell you're using URL Cleaner Site, the info leak is both small and impossible to fix, so I won't try to fix it.
+//!    What is an issue is that expanded redirects are cached so network requests only have to be sent once. This means that if you see a `https://bit.ly/1234` link for the first time, URL Cleaner Site sends a request for it and caches the result.
+//!    Then, any time you see it again, URL Cleaner Site simply references the cache for the destination. While this should always give the correct result, it means that a website can tell whether or not you've seen the link before based on how fast the cleaning happens.
 //!
-//! While URL Cleaner's default config is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
+//! While URL Cleaner's default cleaner is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
 
 pub mod glue;
 pub mod types;
 pub mod testing;
 pub(crate) mod util;
 
-pub use types::{Config, Job, TaskConfig};
+pub use types::{Cleaner, Job, LazyTaskConfig};

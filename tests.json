@@ -31,7 +31,14 @@
 
 				{"task_config": "https://bsky.app/profile/user"     , "expectation": "https://bsky.app/profile/user.bsky.social"},
 				{"task_config": "https://bsky.app/profile/user.bsky", "expectation": "https://bsky.app/profile/user.bsky.social"},
-				{"task_config": "https://bsky.app/profile/user.com" , "expectation": "https://bsky.app/profile/user.com"}
+				{"task_config": "https://bsky.app/profile/user.com" , "expectation": "https://bsky.app/profile/user.com"},
+
+				{
+					"task_config": "https://click.notification.elsevier.com/CL0/https:%2F%2Ffacebook.com%2FTheLancetMedicalJournal/1/0100017b6336ece0-e16eeb62-7506-49ae-9b9f-96c2e2caccc1-000000/XNF87Ruy8xfaatSlPiHGJWGJetPIroNvIDdfy0xkyW4=211",
+					"expectation": "https://facebook.com/TheLancetMedicalJournal"
+				},
+
+				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": "https://example.com/?abc=123&def=456#1"}
 			]
 		},
 		{

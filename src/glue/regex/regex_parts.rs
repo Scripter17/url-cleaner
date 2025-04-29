@@ -68,7 +68,7 @@ impl From<String> for RegexParts {
 }
 
 impl Suitability for RegexParts {
-    fn assert_suitability(&self, config: &Config) {
+    fn assert_suitability(&self, config: &Cleaner) {
         self.build().unwrap_or_else(|_| panic!("Regex to be buildable: {self:?}"));
         self.config.assert_suitability(config);
     }

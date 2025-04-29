@@ -482,7 +482,7 @@ impl Condition {
 
             // Specific parts.
 
-            Self::QueryHasParam(name) => task_state.url.query_pairs().any(|(ref name2, _)| name2==name),
+            Self::QueryHasParam(name) => task_state.url.has_query_param(name, 0),
             Self::PathStartsWith(value) => task_state.url.path().starts_with(value),
             Self::PathIs(value) => task_state.url.path() == value,
 

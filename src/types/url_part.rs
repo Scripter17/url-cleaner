@@ -3,11 +3,11 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use url::Url;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
+use crate::glue::*;
 use crate::util::*;
 
 /// A common API for getting and setting various parts of [`BetterUrl`]s.
@@ -560,7 +560,7 @@ pub enum UrlPart {
     ///
     /// For other (most) URLs, this returns the path as expected with the leading `/`.
     /// # Setting
-    /// If the URL is a [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base) URL, this probably does something. The [`Url::set_path`] docs don't say.
+    /// If the URL is a [cannot-be-a-base](https://docs.rs/url/latest/url/struct.Url.html#method.cannot_be_a_base) URL, a leading `/` is turned into `%2F`.
     ///
     /// For other (most) URLs, this first ensures the value starts with `/` (`abc` -> `/abc`, `/def` -> `/def`) then sets the URL's path to that value.
     /// # Examples
@@ -759,6 +759,10 @@ pub enum UrlPart {
     /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 1}).get(&url), None);
     /// ```
     QueryParam(QueryParamSelector),
+    /// [`Self::QueryParam`] without doing any percent decoding.
+    ///
+    /// Useful for directly transplanting query parameters.
+    RawQueryParam(QueryParamSelector),
 
 
 
@@ -777,7 +781,15 @@ pub enum UrlPart {
     /// UrlPart::Fragment.set(&mut url, None).unwrap();
     /// assert_eq!(UrlPart::Fragment.get(&url), None);
     /// ```
-    Fragment
+    Fragment,
+
+    /// Uses [`url::Position`] to handle multiple adjacent parts at the same time.
+    PositionRange {
+        /// The start of the range to get/set.
+        start: UrlPosition,
+        /// The end of the range to get/set.
+        end: UrlPosition
+    }
 }
 
 /// Allows getting and setting specific instances of a query parameter.
@@ -818,150 +830,6 @@ impl From<String> for QueryParamSelector {
             index: Default::default()
         }
     }
-}
-
-impl QueryParamSelector {
-    /// Get the selected query parameter.
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// 
-    /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4").unwrap();
-    ///
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get(&url), Some("2".into()));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 1}.get(&url), Some("4".into()));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 2}.get(&url), None);
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 0}.get(&url), Some("3".into()));
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 1}.get(&url), None);
-    /// ```
-    pub fn get<'a>(&self, url: &'a Url) -> Option<Cow<'a, str>> {
-        self.get_from_iter(url.query_pairs())
-    }
-
-    /// Get the selected query parameter and its absolute index in the list of query parameters.
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// 
-    /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4").unwrap();
-    ///
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get_with_index(&url), Some((0, "2".into())));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 1}.get_with_index(&url), Some((2, "4".into())));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 2}.get_with_index(&url), None);
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 0}.get_with_index(&url), Some((1, "3".into())));
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 1}.get_with_index(&url), None);
-    /// ```
-    pub fn get_with_index<'a>(&self, url: &'a Url) -> Option<(usize, Cow<'a, str>)> {
-        self.get_from_iter_with_index(url.query_pairs())
-    }
-
-    /// Get the selected query parameter from an [`Iterator`] of query parameters.
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// 
-    /// let query_pairs = [("a", "2"), ("b", "3"), ("a", "4")];
-    ///
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get_from_iter(query_pairs), Some("2".into()));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 1}.get_from_iter(query_pairs), Some("4".into()));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 2}.get_from_iter(query_pairs), None);
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 0}.get_from_iter(query_pairs), Some("3".into()));
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 1}.get_from_iter(query_pairs), None);
-    /// ```
-    pub fn get_from_iter<I: IntoIterator<Item = (K, V)>, K: AsRef<str>, V>(&self, pairs: I) -> Option<V> {
-        Some(pairs.into_iter().filter(|(name, _)| name.as_ref()==self.name).enumerate().find(|(i, _)| *i==self.index)?.1.1)
-    }
-
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// 
-    /// let query_pairs = [("a", "2"), ("b", "3"), ("a", "4")];
-    ///
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 0}.get_from_iter_with_index(query_pairs), Some((0, "2".into())));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 1}.get_from_iter_with_index(query_pairs), Some((2, "4".into())));
-    /// assert_eq!(QueryParamSelector {name: "a".into(), index: 2}.get_from_iter_with_index(query_pairs), None);
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 0}.get_from_iter_with_index(query_pairs), Some((1, "3".into())));
-    /// assert_eq!(QueryParamSelector {name: "b".into(), index: 1}.get_from_iter_with_index(query_pairs), None);
-    /// ```
-    pub fn get_from_iter_with_index<I: IntoIterator<Item = (K, V)>, K: AsRef<str>, V>(&self, pairs: I) -> Option<(usize, V)> {
-        pairs.into_iter().enumerate().filter(|(_, (name, _))| name.as_ref()==self.name).enumerate().find_map(|(ni, (ai, (_, v)))| (ni==self.index).then_some((ai, v)))
-    }
-
-    /// Set the selected query parameter.
-    ///
-    /// Note that if [`Self::index`] is equal to the number of matched query params, this appends a new query parameter.
-    /// # Errors
-    /// If [`Self::index`] is  above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// 
-    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
-    ///
-    /// QueryParamSelector {name: "a".into(), index: 0}.set(&mut url, Some("2")).unwrap();
-    /// assert_eq!(url.query(), Some("a=2"));
-    /// QueryParamSelector {name: "a".into(), index: 0}.set(&mut url, Some("3")).unwrap();
-    /// assert_eq!(url.query(), Some("a=3"));
-    /// QueryParamSelector {name: "a".into(), index: 1}.set(&mut url, Some("4")).unwrap();
-    /// assert_eq!(url.query(), Some("a=3&a=4"));
-    /// QueryParamSelector {name: "a".into(), index: 3}.set(&mut url, Some("5")).unwrap_err();
-    /// assert_eq!(url.query(), Some("a=3&a=4"));
-    /// QueryParamSelector {name: "a".into(), index: 0}.set(&mut url, None).unwrap();
-    /// assert_eq!(url.query(), Some("a=4"));
-    /// QueryParamSelector {name: "a".into(), index: 0}.set(&mut url, None).unwrap();
-    /// assert_eq!(url.query(), None);
-    /// ```
-    pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), SetQueryParamError> {
-        let mut pairs = url.query_pairs().collect::<Vec<_>>();
-
-        let mut found_matches = 0;
-        let mut matched_index = None;
-
-        // Find the index of the selected query parameter and store it in `matched_index`.
-        for (i, (name, _)) in pairs.iter_mut().enumerate() {
-            if *name == self.name {
-                if found_matches == self.index {
-                    matched_index = Some(i);
-                    break;
-                }
-                #[allow(clippy::arithmetic_side_effects, reason = "Requires usize::MAX query pairs, which is obviously more than can exist.")]
-                {found_matches += 1;}
-            }
-        }
-
-        // Set/remove/append the value.
-        match (matched_index, to) {
-            #[expect(clippy::indexing_slicing, reason = "`i` is always less than `pairs.len()`. If `pairs.len()` is `0`, `matched_index` is `None`.")]
-            (Some(i), Some(to)) => pairs[i].1 = to.into(),
-            (Some(i), None    ) => {pairs.remove(i);},
-            (None   , Some(to)) => if self.index == found_matches {
-                pairs.push((self.name.clone().into(), to.into()));
-            } else {
-                Err(SetQueryParamError::QueryParamIndexNotFound)?
-            },
-            (None, None) => {}
-        }
-
-        // Turn the pairs into a query.
-        let serialized_query = if pairs.is_empty() {
-            None
-        } else {
-            Some(form_urlencoded::Serializer::new(String::with_capacity(url.query().unwrap_or_default().len())).extend_pairs(pairs).finish())
-        };
-
-        url.set_query(serialized_query.as_deref());
-
-        Ok(())
-    }
-}
-
-/// The enum of errors [`QueryParamSelector::set`] can return.
-#[derive(Debug, Error)]
-pub enum SetQueryParamError {
-    /// Returned when a query parameter with the specified index can't be set/created.
-    #[error("A query parameter with the specified index could not be set/created.")]
-    QueryParamIndexNotFound
 }
 
 impl UrlPart {
@@ -1038,11 +906,16 @@ impl UrlPart {
 
 
             Self::Query => Cow::Borrowed(url.query()?),
-            Self::QueryParam(selector) => selector.get(url)?,
+            Self::QueryParam   (QueryParamSelector {name, index}) => url.get_query_param(name, *index)???,
+            Self::RawQueryParam(QueryParamSelector {name, index}) => Cow::Borrowed(url.get_raw_query_param(name, *index)???),
 
 
 
             Self::Fragment => Cow::Borrowed(url.fragment()?),
+
+
+
+            Self::PositionRange {start, end} => Cow::Borrowed(&url[start.0..end.0])
         })
     }
 
@@ -1113,11 +986,16 @@ impl UrlPart {
 
 
             (Self::Query, _) => url.set_query(to),
-            (Self::QueryParam(selector), _) => selector.set(url, to)?,
+            (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.set_query_param(name, *index, to.map(Some))?,
+            (Self::RawQueryParam(QueryParamSelector {name, index}), _) => url.set_raw_query_param(name, *index, to.map(Some))?,
 
 
 
             (Self::Fragment, _) => url.set_fragment(to),
+
+
+
+            (Self::PositionRange {start, end}, _) => *url = BetterUrl::parse(&format!("{}{}{}", &url[..start.0], to.unwrap_or_default(), &url[end.0..]))?
         }
         Ok(())
     }

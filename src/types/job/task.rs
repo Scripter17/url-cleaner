@@ -14,8 +14,8 @@ pub struct Task<'a> {
     pub context: TaskContext,
     /// The [`JobContext`] to use.
     pub job_context: &'a JobContext,
-    /// The [`Config`] to use.
-    pub config: &'a Config,
+    /// The [`Cleaner`] to use.
+    pub cleaner: &'a Cleaner,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache
@@ -24,17 +24,17 @@ pub struct Task<'a> {
 impl Task<'_> {
     /// Do the job, returning the resulting [`BetterUrl`].
     /// # Errors
-    /// If the call to [`Config::apply`] returns an error, that error is returned.
+    /// If the call to [`Cleaner::apply`] returns an error, that error is returned.
     pub fn r#do(mut self) -> Result<BetterUrl, DoTaskError> {
-        self.config.apply(&mut TaskState {
+        self.cleaner.apply(&mut TaskState {
             url: &mut self.url,
-            params: &self.config.params,
+            params: &self.cleaner.params,
             scratchpad: &mut Default::default(),
             context: &self.context,
             job_context: self.job_context,
             #[cfg(feature = "cache")]
             cache: self.cache,
-            commons: &self.config.commons,
+            commons: &self.cleaner.commons,
             common_args: None
         })?;
         Ok(self.url)
@@ -46,6 +46,6 @@ impl Task<'_> {
 pub enum DoTaskError {
     /// Returned when an [`MakeTaskError`] is encountered.
     #[error(transparent)] MakeTaskError(#[from] MakeTaskError),
-    /// Returned when an [`ApplyConfigError`] is encountered.
-    #[error(transparent)] ApplyConfigError(#[from] ApplyConfigError)
+    /// Returned when an [`ApplyCleanerError`] is encountered.
+    #[error(transparent)] ApplyCleanerError(#[from] ApplyCleanerError)
 }

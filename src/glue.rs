@@ -19,7 +19,12 @@
 #[cfg(feature = "base64"  )] pub mod base64;
 #[cfg(feature = "base64"  )] pub use base64::*;
 
+// Intentionally not glob re-exported.
 pub mod parse;
+pub mod percent_encoding;
+pub use percent_encoding::*;
+pub mod url_position;
+pub use url_position::*;
 
 /// Glue to allow [`reqwest::header::HeaderValue`] to be used with serde.
 #[cfg(feature = "http")]
@@ -30,7 +35,7 @@ pub(crate) mod serde_headervalue {
     /// Deserializes a [`HeaderValue`].
     /// # Errors
     /// If the value isn't a string or isn't a valid [`HeaderValue`], returns an error.
-    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderValue, D::Error> {
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderValue, D::Error> {
         let temp: String = Deserialize::deserialize(d)?;
         temp.try_into().map_err(D::Error::custom)
     }
@@ -38,7 +43,7 @@ pub(crate) mod serde_headervalue {
     /// Serializes a [`HeaderValue`].
     /// # Errors
     /// If the call to [`HeaderValue::to_str`] returns an error, that error is returned.
-    pub fn serialize<S: Serializer>(x: &HeaderValue, s: S) -> Result<S::Ok, S::Error> {
+    pub(crate) fn serialize<S: Serializer>(x: &HeaderValue, s: S) -> Result<S::Ok, S::Error> {
         s.serialize_str(x.to_str().map_err(S::Error::custom)?)
     }
 }
@@ -54,7 +59,7 @@ pub(crate) mod serde_headermap {
     /// Deserializes a [`HeaderMap`].
     /// # Errors
     /// If the value isn't a map or isn't a valid [`HeaderMap`], returns an error
-    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderMap, D::Error> {
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderMap, D::Error> {
         let temp: HashMap<String, String> = Deserialize::deserialize(d)?;
         (&temp).try_into().map_err(D::Error::custom)
     }
@@ -62,7 +67,7 @@ pub(crate) mod serde_headermap {
     /// Serializes a [`HeaderMap`].
     /// # Errors
     /// Never returns an error.
-    pub fn serialize<S: Serializer>(x: &HeaderMap, s: S) -> Result<S::Ok, S::Error> {
+    pub(crate) fn serialize<S: Serializer>(x: &HeaderMap, s: S) -> Result<S::Ok, S::Error> {
         s.collect_map(x.into_iter().map(|(k, v)| v.to_str().map(|v| (k.as_str().to_string(), v.to_string()))).collect::<Result<HashMap<_, _>, _>>().map_err(S::Error::custom)?)
     }
 }

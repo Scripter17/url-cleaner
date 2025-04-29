@@ -144,7 +144,7 @@ impl From<&str> for VarRef {
 string_or_struct_magic!(VarRef);
 
 impl Suitability for VarRef {
-    fn assert_suitability(&self, config: &Config) {
+    fn assert_suitability(&self, config: &Cleaner) {
         match (&self.r#type, &self.name) {
             (VarType::Params     , StringSource::String(name)) => assert!(config.docs.vars             .contains_key(name), "Undocumented Var: {name}"),
             (VarType::JobContext , StringSource::String(name)) => assert!(config.docs.job_context.vars .contains_key(name), "Undocumented JobContext var: {name}"),

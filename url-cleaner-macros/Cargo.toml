@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner-macros"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Macros for URL Cleaner"
 repository = "https://github.com/Scripter17/url-cleaner"

@@ -22,26 +22,26 @@ mod util;
 /// Source code available at https://github.com/Scripter17/url-cleaner
 ///
 /// Enabled features:
-#[cfg_attr(feature = "default-config"     , doc = "default-config")]
-#[cfg_attr(feature = "regex"              , doc = "regex"         )]
-#[cfg_attr(feature = "glob"               , doc = "glob"          )]
-#[cfg_attr(feature = "http"               , doc = "http"          )]
-#[cfg_attr(feature = "cache"              , doc = "cache"         )]
-#[cfg_attr(feature = "base64"             , doc = "base64"        )]
-#[cfg_attr(feature = "commands"           , doc = "commands"      )]
-#[cfg_attr(feature = "custom"             , doc = "custom"        )]
-#[cfg_attr(feature = "debug"              , doc = "debug"         )]
+#[cfg_attr(feature = "default-cleaner", doc = "default-cleaner")]
+#[cfg_attr(feature = "regex"          , doc = "regex"          )]
+#[cfg_attr(feature = "glob"           , doc = "glob"           )]
+#[cfg_attr(feature = "http"           , doc = "http"           )]
+#[cfg_attr(feature = "cache"          , doc = "cache"          )]
+#[cfg_attr(feature = "base64"         , doc = "base64"         )]
+#[cfg_attr(feature = "commands"       , doc = "commands"       )]
+#[cfg_attr(feature = "custom"         , doc = "custom"         )]
+#[cfg_attr(feature = "debug"          , doc = "debug"          )]
 ///
 /// Disabled features:
-#[cfg_attr(not(feature = "default-config"), doc = "default-config")]
-#[cfg_attr(not(feature = "regex"         ), doc = "regex"         )]
-#[cfg_attr(not(feature = "glob"          ), doc = "glob"          )]
-#[cfg_attr(not(feature = "http"          ), doc = "http"          )]
-#[cfg_attr(not(feature = "cache"         ), doc = "cache"         )]
-#[cfg_attr(not(feature = "base64"        ), doc = "base64"        )]
-#[cfg_attr(not(feature = "commands"      ), doc = "commands"      )]
-#[cfg_attr(not(feature = "custom"        ), doc = "custom"        )]
-#[cfg_attr(not(feature = "debug"         ), doc = "debug"         )]
+#[cfg_attr(not(feature = "default-cleaner"), doc = "default-cleaner")]
+#[cfg_attr(not(feature = "regex"          ), doc = "regex"          )]
+#[cfg_attr(not(feature = "glob"           ), doc = "glob"           )]
+#[cfg_attr(not(feature = "http"           ), doc = "http"           )]
+#[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
+#[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
+#[cfg_attr(not(feature = "commands"       ), doc = "commands"       )]
+#[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
+#[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
 #[command(version = env!("VERSION_INFO"))]
 pub struct Args {
@@ -51,26 +51,26 @@ pub struct Args {
     pub urls: Vec<LazyTaskConfig>,
     /// The config file to use.
     ///
-    /// Omit to use the built in default config.
-    #[cfg(feature = "default-config")]
+    /// Omit to use the built in default cleaner.
+    #[cfg(feature = "default-cleaner")]
     #[arg(short      , long)]
-    pub config: Option<PathBuf>,
-    /// The config file to use.
+    pub cleaner: Option<PathBuf>,
+    /// The cleaner file to use.
     ///
-    /// Required as the `default-config` feature is disabled.
-    #[cfg(not(feature = "default-config"))]
+    /// Required as the `default-cleaner` feature is disabled.
+    #[cfg(not(feature = "default-cleaner"))]
     #[arg(short      , long)]
-    pub config: PathBuf,
+    pub cleaner: PathBuf,
     /// The cache to use.
     ///
-    /// Defaults to the value specified by the config.
+    /// Defaults to the value specified by the cleaner.
     #[cfg(feature = "cache")]
     #[arg(             long)]
     pub cache_path: Option<CachePath>,
     /// JSON output.
     #[arg(short      , long)]
     pub json: bool,
-    /// The ParamsDiff files to apply to the config's Params.
+    /// The ParamsDiff files to apply to the cleaner's Params.
     #[arg(             long)]
     pub params_diff: Vec<PathBuf>,
     /// Generate a ParamsDiff from CLI arguments.
@@ -82,7 +82,7 @@ pub struct Args {
     /// Test files to run.
     #[arg(             long, verbatim_doc_comment)]
     pub tests: Option<Vec<PathBuf>>,
-    /// Asserts the "suitability" of the loaded config.
+    /// Asserts the "suitability" of the loaded cleaner.
     #[arg(             long, verbatim_doc_comment)]
     pub test_suitability: bool,
     /// The number of worker threads to use.
@@ -95,8 +95,8 @@ pub struct Args {
 /// The enum of errors [`main`] can return.
 #[derive(Debug, Error)]
 pub enum CliError {
-    /// Returned when a [`GetConfigError`] is encountered.
-    #[error(transparent)] GetConfigError(#[from] GetConfigError),
+    /// Returned when a [`GetCleanerError`] is encountered.
+    #[error(transparent)] GetCleanerError(#[from] GetCleanerError),
     /// Returned when unable to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
@@ -115,10 +115,10 @@ fn main() -> Result<ExitCode, CliError> {
 
     let args = Args::parse();
 
-    #[cfg(feature = "default-config")]
-    let mut config = Config::load_or_get_default_no_cache(args.config.as_deref())?;
-    #[cfg(not(feature = "default-config"))]
-    let mut config = Config::load_from_file(&args.config)?;
+    #[cfg(feature = "default-cleaner")]
+    let mut cleaner = Cleaner::load_or_get_default_no_cache(args.cleaner.as_deref())?;
+    #[cfg(not(feature = "default-cleaner"))]
+    let mut cleaner = Cleaner::load_from_file(&args.cleaner)?;
 
     let mut params_diffs: Vec<ParamsDiff> = args.params_diff
         .into_iter()
@@ -135,7 +135,7 @@ fn main() -> Result<ExitCode, CliError> {
     }
 
     for params_diff in params_diffs {
-        params_diff.apply(&mut config.params);
+        params_diff.apply(&mut cleaner.params);
     }
 
     let job_context = if let Some(job_context_string) = args.job_context {
@@ -145,7 +145,7 @@ fn main() -> Result<ExitCode, CliError> {
     };
 
     #[cfg(feature = "cache")]
-    let cache = args.cache_path.as_ref().unwrap_or(&config.cache_path).clone().into();
+    let cache = args.cache_path.as_ref().unwrap_or(&cleaner.cache_path).clone().into();
 
     let json = args.json;
 
@@ -154,11 +154,11 @@ fn main() -> Result<ExitCode, CliError> {
 
     let no_cleaning = test_suitability || tests.is_some();
 
-    if test_suitability {config.assert_suitability();}
+    if test_suitability {cleaner.assert_suitability();}
 
     if let Some(tests) = tests {
         for test_path in tests {
-            config.run_tests(serde_json::from_str::<testing::Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
+            cleaner.run_tests(serde_json::from_str::<testing::Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
         }
         println!("\nAll tests passed!");
     }
@@ -168,20 +168,17 @@ fn main() -> Result<ExitCode, CliError> {
     let threads = args.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")).get();
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
-    let config_ref = &config;
-    let job_context_ref = &job_context;
-    #[cfg(feature = "cache")]
-    let cache_ref = &cache;
+    
     std::thread::scope(|s| {
 
         // Task getter thread.
 
-        std::thread::Builder::new().name("Task Getter".to_string()).spawn_scoped(s, move || {
+        std::thread::Builder::new().name("Task Getter".to_string()).spawn_scoped(s, || {
             let job = Job {
-                config : config_ref,
-                context: job_context_ref,
+                cleaner: &cleaner,
+                context: &job_context,
                 #[cfg(feature = "cache")]
-                cache: cache_ref,
+                cache  : &cache,
                 lazy_task_configs: {
                     let ret = args.urls.into_iter().map(Ok);
                     if !io::stdin().is_terminal() {
@@ -192,7 +189,7 @@ fn main() -> Result<ExitCode, CliError> {
                 }
             };
 
-            for (in_sender, task_config_string) in in_senders.iter().cycle().zip(job) {
+            for (in_sender, task_config_string) in in_senders.into_iter().cycle().zip(job) {
                 in_sender.send(task_config_string).expect("The in receiver to still exist.");
             }
         }).expect("Making threads to work fine.");

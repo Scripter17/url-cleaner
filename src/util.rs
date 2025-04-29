@@ -1,6 +1,7 @@
 //! General utility functions.
 
 use std::ops::Bound;
+use std::borrow::Cow;
 
 use thiserror::Error;
 
@@ -139,6 +140,10 @@ pub(crate) fn set_rel_segment<'a, I: IntoIterator<Item = &'a str>>(i: I, n: isiz
     Ok(segments)
 }
 
+/// Percent encoding helper.
+pub(crate) fn peh(s: &str) -> Cow<'_, str> {
+    percent_encoding::percent_decode_str(s).decode_utf8_lossy()
+}
 
 #[cfg(test)]
 mod tests {

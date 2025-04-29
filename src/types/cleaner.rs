@@ -4,7 +4,7 @@ use std::fs::read_to_string;
 use std::path::Path;
 use std::borrow::Cow;
 use std::io;
-#[cfg(feature = "default-config")]
+#[cfg(feature = "default-cleaner")]
 use std::sync::OnceLock;
 
 use serde::{Serialize, Deserialize};
@@ -26,12 +26,12 @@ pub use commons::*;
 
 /// The config that determines all behavior of how URLs are cleaned.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
-pub struct Config {
+pub struct Cleaner {
     /// The documentation.
     ///
-    /// Defaults to an empty [`ConfigDocs`].
+    /// Defaults to an empty [`CleanerDocs`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub docs: ConfigDocs,
+    pub docs: CleanerDocs,
     /// The location of the cache.
     ///
     /// Defaults to being stored in memory and destroyed on program exit.
@@ -55,42 +55,42 @@ pub struct Config {
     pub actions: Vec<Action>
 }
 
-impl Config {
+impl Cleaner {
     /// Load [`Self`] from a JSON file.
     /// # Errors
     /// If the call to [`std::fs::read_to_string`] returns an error, that error is returned.
     ///
     /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
-    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetConfigError> {
+    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetCleanerError> {
         serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
     }
 
     /// Gets the default [`Self`] compiled into the binary itself.
     ///
-    /// Caching is done by putting the [`Self`] in [`DEFAULT_CONFIG`] and only returning references to it.
+    /// Caching is done by putting the [`Self`] in [`DEFAULT_CLEANER`] and only returning references to it.
     ///
     /// If you know you're only going to get the default config once, [`Self::get_default_no_cache`] is better because you can apply [`ParamsDiff`]s to it without [`Clone::clone`]ing.
     /// # Errors
     /// If the call to [`Self::get_default_no_cache`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
-    #[cfg(feature = "default-config")]
-    pub fn get_default() -> Result<&'static Self, GetConfigError> {
-        if let Some(config) = DEFAULT_CONFIG.get() {
+    #[cfg(feature = "default-cleaner")]
+    pub fn get_default() -> Result<&'static Self, GetCleanerError> {
+        if let Some(config) = DEFAULT_CLEANER.get() {
             Ok(config)
         } else {
             let config = Self::get_default_no_cache()?;
-            Ok(DEFAULT_CONFIG.get_or_init(|| config))
+            Ok(DEFAULT_CLEANER.get_or_init(|| config))
         }
     }
 
-    /// Deserializes [`DEFAULT_CONFIG_STR`] and returns it without caching in [`DEFAULT_CONFIG`]
+    /// Deserializes [`DEFAULT_CLEANER_STR`] and returns it without caching in [`DEFAULT_CLEANER`]
     ///
     /// If you're getting the default config often and rarely using [`ParamsDiff`]s, [`Self::get_default`] may be better due to it only deserializing the config once.
     /// # Errors
     /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
-    #[cfg(feature = "default-config")]
-    pub fn get_default_no_cache() -> Result<Self, GetConfigError> {
-        serde_json::from_str(DEFAULT_CONFIG_STR).map_err(Into::into)
+    #[cfg(feature = "default-cleaner")]
+    pub fn get_default_no_cache() -> Result<Self, GetCleanerError> {
+        serde_json::from_str(DEFAULT_CLEANER_STR).map_err(Into::into)
     }
 
     /// If `path` is [`Some`], returns the result of [`Self::load_from_file`] in a [`Cow::Owned`].
@@ -101,8 +101,8 @@ impl Config {
     ///
     /// If the call to [`Self::get_default`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
-    #[cfg(feature = "default-config")]
-    pub fn load_or_get_default<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Self>, GetConfigError> {
+    #[cfg(feature = "default-cleaner")]
+    pub fn load_or_get_default<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Self>, GetCleanerError> {
         Ok(match path {
             Some(path) => Cow::Owned(Self::load_from_file(path)?),
             None => Cow::Borrowed(Self::get_default()?)
@@ -116,8 +116,8 @@ impl Config {
     /// If the call to [`Self::load_from_file`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::get_default`] returns an error, that error is returned.
-    #[cfg(feature = "default-config")]
-    pub fn load_or_get_default_no_cache<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetConfigError> {
+    #[cfg(feature = "default-cleaner")]
+    pub fn load_or_get_default_no_cache<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetCleanerError> {
         Ok(match path {
             Some(path) => Self::load_from_file(path)?,
             None => Self::get_default_no_cache()?
@@ -130,7 +130,7 @@ impl Config {
     /// # Errors
     /// If any call to [`Action::apply`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
-    pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyConfigError> {
+    pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
         for action in &self.actions {
             action.apply(job_state)?;
         }
@@ -149,44 +149,44 @@ impl Config {
     /// Exact behavior is unspecified and changes are not considered breaking.
     /// # Panics
     /// If `self` is deemed unsuitable to be URL Cleaner's default config, panics.
-    #[cfg_attr(feature = "default-config", doc = "# Examples")]
-    #[cfg_attr(feature = "default-config", doc = "```")]
-    #[cfg_attr(feature = "default-config", doc = "# use url_cleaner::types::*;")]
-    #[cfg_attr(feature = "default-config", doc = "Config::get_default().unwrap().assert_suitability();")]
-    #[cfg_attr(feature = "default-config", doc = "```")]
+    #[cfg_attr(feature = "default-cleaner", doc = "# Examples")]
+    #[cfg_attr(feature = "default-cleaner", doc = "```")]
+    #[cfg_attr(feature = "default-cleaner", doc = "# use url_cleaner::types::*;")]
+    #[cfg_attr(feature = "default-cleaner", doc = "Cleaner::get_default().unwrap().assert_suitability();")]
+    #[cfg_attr(feature = "default-cleaner", doc = "```")]
     pub fn assert_suitability(&self) {
         Suitability::assert_suitability(self, self)
     }
 }
 
-/// The enum of errors [`Config::apply`] can return.
+/// The enum of errors [`Cleaner::apply`] can return.
 #[derive(Debug, Error)]
-pub enum ApplyConfigError {
+pub enum ApplyCleanerError {
     /// Returned when a [`ActionError`] is encountered.
     #[error(transparent)]
     ActionError(#[from] ActionError)
 }
 
 /// The JSON text of the default config.
-#[cfg(all(feature = "default-config", not(test)))]
-pub const DEFAULT_CONFIG_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-config.json.minified"));
+#[cfg(all(feature = "default-cleaner", not(test)))]
+pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-cleaner.json.minified"));
 /// The JSON text of the default config.
-#[cfg(all(feature = "default-config", test))]
-pub const DEFAULT_CONFIG_STR: &str = include_str!("../../default-config.json");
+#[cfg(all(feature = "default-cleaner", test))]
+pub const DEFAULT_CLEANER_STR: &str = include_str!("../../default-cleaner.json");
 /// The cached deserialization of the default config.
-#[cfg(feature = "default-config")]
+#[cfg(feature = "default-cleaner")]
 #[allow(dead_code, reason = "Public API.")]
-pub static DEFAULT_CONFIG: OnceLock<Config> = OnceLock::new();
+pub static DEFAULT_CLEANER: OnceLock<Cleaner> = OnceLock::new();
 
-/// The enum of errors that can happen when loading a [`Config`].
+/// The enum of errors that can happen when loading a [`Cleaner`].
 #[derive(Debug, Error)]
-pub enum GetConfigError {
-    /// Returned when loading a [`Config`] fails.
+pub enum GetCleanerError {
+    /// Returned when loading a [`Cleaner`] fails.
     #[error(transparent)]
-    CantLoadConfig(#[from] io::Error),
-    /// Returned when deserializing a [`Config`] fails.
+    CantLoadCleaner(#[from] io::Error),
+    /// Returned when deserializing a [`Cleaner`] fails.
     #[error(transparent)]
-    CantParseConfig(#[from] serde_json::Error),
+    CantParseCleaner(#[from] serde_json::Error),
 }
 
 #[cfg(test)]
@@ -194,22 +194,22 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg(feature = "default-config")]
+    #[cfg(feature = "default-cleaner")]
     fn default_config_is_json() {
-        serde_json::from_str::<serde_json::Value>(DEFAULT_CONFIG_STR).unwrap();
+        serde_json::from_str::<serde_json::Value>(DEFAULT_CLEANER_STR).unwrap();
     }
 
     #[test]
-    #[cfg(feature = "default-config")]
+    #[cfg(feature = "default-cleaner")]
     fn default_config_is_valid() {
-        Config::get_default().unwrap();
+        Cleaner::get_default().unwrap();
     }
 
     #[test]
-    #[cfg(feature = "default-config")]
+    #[cfg(feature = "default-cleaner")]
     fn serde_roundtrip_equality() {
-        let default_config = Config::get_default().unwrap();
+        let default_config = Cleaner::get_default().unwrap();
 
-        assert_eq!(&serde_json::from_str::<Config>(&serde_json::to_string(default_config).unwrap()).unwrap(), default_config);
+        assert_eq!(&serde_json::from_str::<Cleaner>(&serde_json::to_string(default_config).unwrap()).unwrap(), default_config);
     }
 }
