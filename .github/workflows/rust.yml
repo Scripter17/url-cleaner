@@ -11,42 +11,42 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: build
-      run: ./test.sh --only-build
+      run: ./tests.sh --only-build
 
   build_ndf:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: build_ndf
-      run: ./test.sh --only-build-ndf
+      run: ./tests.sh --only-build-ndf
 
   cargo_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: cargo_test
-      run: ./test.sh --only-cargo-test
+      run: ./tests.sh --only-cargo-test
 
   order_test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: order_test
-      run: ./test.sh --only-order-test
+      run: ./tests.sh --only-order-test
 
   offline_tests:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: offline_tests
-      run: ./test.sh --only-offline-tests
+      run: ./tests.sh --only-offline-tests
 
   clippy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: clippy
-      run: ./test.sh --only-clippy
+      run: ./tests.sh --only-clippy
 
   powerset_2:
     runs-on: ubuntu-latest
@@ -54,4 +54,4 @@ jobs:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
     - name: powerset
-      run: ./test.sh --only-powerset-2
+      run: ./tests.sh --only-powerset-2
