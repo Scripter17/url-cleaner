@@ -44,7 +44,7 @@ impl TestSet {
     /// If a value from [`JobIter`] is an error, panics.
     ///
     /// If a call to [`Task::do`] returns an error, panics.
-    /// 
+    ///
     /// If any test fails, panics.
     pub fn r#do(self, cleaner: &Cleaner) {
         let mut cleaner = Cow::Borrowed(cleaner);
@@ -71,10 +71,8 @@ impl TestSet {
 
         for (test, task_source, expectation) in self.tests.into_iter().zip(job).zip(expectations).map(|((x, y), z)| (x, y, z)) {
             println!("Running test: {}", serde_json::to_string(&test).expect("Serialization to never fail"));
-            assert_eq!(
-                task_source.expect("Making TaskSource failed.").make().expect("Making Task failed.").r#do().expect("Task failed."),
-                expectation
-            );
+            crate::task_state_view!(task_state, url = task_source.expect("Making TaskSource failed.").make().expect("Making Task failed.").r#do().expect("Task failed."));
+            assert!(expectation.satisfied_by(&task_state).expect("The expectation to not error."));
         }
 
         println!();
@@ -87,5 +85,5 @@ pub struct Test {
     /// The [`TaskConfig`].
     pub task_config: TaskConfig,
     /// The expected result.
-    pub expectation: BetterUrl
+    pub expectation: Condition
 }

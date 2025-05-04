@@ -25,8 +25,8 @@ pub enum VarType {
     /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
-    Common,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`TaskScratchpad::vars`]
+    CommonArg,
+    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
     Scratchpad,
     /// Get it from [`std::env::var`].
     ///
@@ -45,8 +45,8 @@ pub enum GetVarError {
     /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when trying to use [`VarType::Common`] outside of a common context.
-    #[error("Tried to use VarType::Common outside of a common context.")]
+    /// Returned when trying to use [`VarType::CommonArg`] outside of a common context.
+    #[error("Tried to use VarType::CommonArg outside of a common context.")]
     NotInCommonContext,
     /// Returned when the value of an environment variable isn't valid UTF-8.
     #[error("The value of the environment variable wasn't valid UTF-8")]
@@ -68,7 +68,7 @@ impl VarType {
             Self::Params      => task_state.params     .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::JobContext  => task_state.job_context.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::TaskContext => task_state.context    .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
-            Self::Common      => task_state.common_args.ok_or(GetVarError::NotInCommonContext)?.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
+            Self::CommonArg   => task_state.common_args.ok_or(GetVarError::NotInCommonContext)?.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::Scratchpad  => task_state.scratchpad .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::Env         => match env::var(name) {
                 Ok(value) => Some(Cow::Owned(value)),
@@ -150,7 +150,7 @@ impl Suitability for VarRef {
             (VarType::JobContext , StringSource::String(name)) => assert!(config.docs.job_context.vars .contains_key(name), "Undocumented JobContext var: {name}"),
             (VarType::TaskContext, StringSource::String(name)) => assert!(config.docs.task_context.vars.contains_key(name), "Undocumented TaskContext var: {name}"),
             (VarType::Env        , StringSource::String(name)) => assert!(config.docs.environment_vars .contains_key(name), "Undocumented Env var: {name}"),
-            (VarType::Common | VarType::Scratchpad, StringSource::String(_)) => {},
+            (VarType::CommonArg | VarType::Scratchpad, StringSource::String(_)) => {},
             _ => panic!("Unsuitable VarRef: {self:?}")
         }
     }

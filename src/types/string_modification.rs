@@ -172,7 +172,7 @@ pub enum StringModification {
     /// use url_cleaner::types::*;
     ///
     /// url_cleaner::task_state_view!(task_state_view);
-    /// 
+    ///
     /// let mut to = "abc".to_string();
     /// StringModification::If {
     ///     condition: Box::new(Condition::Always),
@@ -336,7 +336,7 @@ pub enum StringModification {
     /// Removes everything outside the specified range.
     /// # Errors
     /// If the range is out of bounds, returns the error [`StringModificationError::InvalidSlice`].
-    /// 
+    ///
     /// If the call to [`str::get`] returns [`None`], returns the error [`StringModificationError::InvalidSlice`].
     KeepRange {
         /// The start of the range to keep.
@@ -566,7 +566,7 @@ pub enum StringModification {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    /// 
+    ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
     /// ```
@@ -585,7 +585,7 @@ pub enum StringModification {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    /// 
+    ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
     /// ```
@@ -604,7 +604,7 @@ pub enum StringModification {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    /// 
+    ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
     /// ```
@@ -625,7 +625,7 @@ pub enum StringModification {
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    /// 
+    ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
     /// ```

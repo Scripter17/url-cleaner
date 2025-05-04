@@ -34,7 +34,7 @@ pub struct RequestConfig {
     /// The headers to send in addition to the default headers from the [`HttpClientConfig`] and [`Self::client_config_diff`].
     ///
     /// If a call to [`StringSource::get`] returns [`None`], the header it came from isn't sent. This can be useful for API keys.
-    /// 
+    ///
     /// Defaults to an empty set.
     #[serde(default, skip_serializing_if = "is_default")]
     pub headers: HashMap<String, StringSource>,
@@ -126,7 +126,7 @@ impl RequestConfig {
     /// If [`Self::url`]'s call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If [`Self::url`]'s call to [`StringSource::get`] returns [`None`], returns the error [`MakeHttpRequestError::StringSourceIsNone`].
-    /// 
+    ///
     /// If any of [`Self::headers`]'s calls to [`StringSource::get`] return an error, that error is returned.
     ///
     /// If any of [`Self::headers`]'s calls to [`HeaderName::try_from`] returns an error, that error is returned.

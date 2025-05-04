@@ -110,21 +110,21 @@
 				"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.io", "amzn.asia",
 				"amzn.ew", "amzn.to", "api.link.agorapulse.com", "api.linkr.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com",
 				"bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge",
-				"chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "diplo.de", "dis.gd",
-				"dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.bsky.app",
-				"go.forbes.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.undp.org", "goo.gl", "goo.su", "goodsmile.link", "gum.co",
-				"hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st",
-				"kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr", "l.leparisien.fr", "lin.ee", "line.ee", "link.animaapp.com",
-				"linkr.it", "lnkd.in", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "mol.im", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.opn.tl",
-				"n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com",
-				"on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "open-api.tiktok.com", "operagx.gg", "orlo.uk",
-				"ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly",
-				"py.pl", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co", "rebrand.ly", "redd.it", "reut.rs", "rog.gg", "rzr.to", "s.goodsmile.link",
-				"s.team", "s76.co", "share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly",
-				"spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co",
-				"tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf",
-				"uniceflink.org", "visitlink.me", "vm.tiktok.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com",
-				"x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				"chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "diplo.de",
+				"dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo",
+				"go.bsky.app", "go.forbes.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me",
+				"goo.gl", "goo.su", "goodsmile.link", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "is.gd", "iwe.one",
+				"j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr", "l.leparisien.fr",
+				"lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "lnkd.in", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "mol.im", "mply.io",
+				"msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm",
+				"nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc",
+				"onl.tw", "open-api.tiktok.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me",
+				"play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co",
+				"rdcu.be", "rebrand.ly", "redd.it", "reut.rs", "rog.gg", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev",
+				"shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "square.link",
+				"sta.sh", "t.co", "t.ly", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co",
+				"tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me",
+				"vm.tiktok.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
 			],
 			"redirect-reg-domains": [
 				"adj.st", "goo.gl", "o93x.net", "onelink.me", "page.link", "pusle.ly", "visitlink.me"
@@ -253,10 +253,7 @@
 							"key": {"Part": "Whole"},
 							"value": {"Modified": {
 								"value": {"HttpRequest": {}},
-								"modification": {"All": [
-									{"CommonCallArg": "extractor"},
-									{"CommonCallArg": "parser"}
-								]}
+								"modification": {"CommonCallArg": "extractor"}
 							}}
 						}}
 					}}
@@ -268,7 +265,7 @@
 					{"Not": {"StringIs": {"left": {"Var": {"type": "TaskContext", "name": "redirect_shortcut"}}, "right": null}}},
 					{"StringIs": {
 						"left" : {"Var": {"type": "JobContext", "name": "SOURCE_REG_DOMAIN"}},
-						"right": {"Var": {"type": "Common", "name": "expected_reg_domain"}}
+						"right": {"Var": {"type": "CommonArg", "name": "expected_reg_domain"}}
 					}},
 					{"Not": {"FlagIsSet": {"type": "Scratchpad", "name": "redirect_shortcut_used"}}}
 				]},
@@ -356,7 +353,7 @@
 			]},
 
 			"url-from-query-param-or-query": {"FirstNotError": [
-				{"GetUrlFromQueryParam": {"Var": {"type": "Common", "name": "param"}}},
+				{"GetUrlFromQueryParam": {"Var": {"type": "CommonArg", "name": "param"}}},
 				{"CopyPart": {"from": "Query", "to": "Whole"}},
 				{"SetPart": {
 					"part": "Whole",
@@ -425,8 +422,10 @@
 											"name": "extract-from-page",
 											"args": {
 												"string_modifications": {
-													"extractor": {"StripBefore": "<a id=\"download\""},
-													"parser": {"GetHtmlAttribute": "href"}
+													"extractor": {"All": [
+														{"StripBefore": "<a id=\"download\""},
+														{"GetHtmlAttribute": "href"}
+													]}
 												}
 											}
 										}},
@@ -464,8 +463,10 @@
 											"name": "extract-from-page",
 											"args": {
 												"string_modifications": {
-													"extractor": {"StripBefore": "<a href="},
-													"parser": {"GetHtmlAttribute": "href"}
+													"extractor": {"All": [
+														{"StripBefore": "<a href="},
+														{"GetHtmlAttribute": "href"}
+													]}
 												}
 											}
 										}},
@@ -535,8 +536,10 @@
 											"name": "extract-from-page",
 											"args": {
 												"string_modifications": {
-													"extractor": {"KeepAfter": "window.location = "},
-													"parser": "GetJsStringLiteralPrefix"
+													"extractor": {"All": [
+														{"KeepAfter": "window.location = "},
+														"GetJsStringLiteralPrefix"
+													]}
 												}
 											}
 										}},
@@ -611,10 +614,15 @@
 												"args": {"vars": {"param": "url"}}
 											}}
 										}},
-										"preview.tinyurl.com": {"All": [
-											{"SetPart": {"part": "Subdomain", "value": null}},
-											{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "preview"}}
-										]},
+										"preview.tinyurl.com": {"SetPart": {
+											"part": "Whole",
+											"value": {"Join": {
+												"values": [
+													"https://tinyurl.com/preview",
+													{"Part": "Path"}
+												]
+											}}
+										}},
 										"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
 										"rd.goodreads.com": {"If": {
 											"if": {"PathIs": "/gp/r.html"},
@@ -651,20 +659,16 @@
 												}},
 												{"All": [
 													{"AllowQueryParams": ["d", "b", "u", "m"]},
-													{"Common": "universal"},
-													{"CacheUrl": {
-														"category": "redirect",
-														"key": {"Part": "Whole"},
-														"action": {"SetPart": {
-															"part": "Whole",
-															"value": {"Modified": {
-																"value": {"HttpRequest": {}},
-																"modification": {"All": [
+													{"Common": {
+														"name": "extract-from-page",
+														"args": {
+															"string_modifications": {
+																"extractor": {"All": [
 																	{"KeepAfter": "replace("},
 																	"GetJsStringLiteralPrefix"
 																]}
-															}}
-														}} 
+															}
+														}
 													}}
 												]}
 											]}
@@ -686,20 +690,16 @@
 												{"All": [
 													{"SetHost": "shareasale-analytics.com"},
 													{"AllowQueryParams": ["d", "b", "u", "m"]},
-													{"Common": "universal"},
-													{"CacheUrl": {
-														"category": "redirect",
-														"key": {"Part": "Whole"},
-														"action": {"SetPart": {
-															"part": "Whole",
-															"value": {"Modified": {
-																"value": {"HttpRequest": {}},
-																"modification": {"All": [
+													{"Common": {
+														"name": "extract-from-page",
+														"args": {
+															"string_modifications": {
+																"extractor": {"All": [
 																	{"KeepAfter": "replace("},
 																	"GetJsStringLiteralPrefix"
 																]}
-															}}
-														}} 
+															}
+														}
 													}}
 												]}
 											]}
@@ -713,8 +713,10 @@
 											"name": "extract-from-page",
 											"args": {
 												"string_modifications": {
-													"extractor": {"KeepAfter": "\"originalUrl\":"},
-													"parser": "GetJsStringLiteralPrefix"
+													"extractor": {"All": [
+														{"KeepAfter": "\"originalUrl\":"},
+														"GetJsStringLiteralPrefix"
+													]}
 												}
 											}
 										}},
@@ -748,6 +750,10 @@
 											}}
 										}},
 										"substack.com": {"All": [
+											{"If": {
+												"if": {"PathStartsWith": "/p/"},
+												"then": {"RemoveQueryParams": ["token"]}
+											}},
 											{"If": {
 												"if": {"PathIs": "/app-link/post"},
 												"then": {"AllowQueryParams": ["publication_id", "post_id", "submitLike", "action"]}
@@ -793,8 +799,10 @@
 												"name": "extract-from-page",
 												"args": {
 													"string_modifications": {
-														"extractor": {"KeepAfter": "let url = "},
-														"parser": "GetJsStringLiteralPrefix"
+														"extractor": {"All": [
+															{"KeepAfter": "let url = "},
+															"GetJsStringLiteralPrefix"
+														]}
 													}
 												}
 											}}
@@ -845,15 +853,17 @@
 											"if": {"PartIs": {"part": {"QueryParam": "action"}, "value": "redirect"}},
 											"then": {"GetUrlFromQueryParam": "url"}
 										}},
-										"lnk.to": {"IgnoreError": {"Common": {
+										"lnk.to": {"Common": {
 											"name": "extract-from-page",
 											"args": {
 												"string_modifications": {
-													"extractor": {"KeepAfter": "\"originalUrl\":"},
-													"parser": "GetJsStringLiteralPrefix"
+													"extractor": {"All": [
+														{"KeepAfter": "\"originalUrl\":"},
+														"GetJsStringLiteralPrefix"
+													]}
 												}
 											}
-										}}},
+										}},
 										"onelink.me": "RemoveQuery",
 										"pulse.ly": {"All": [
 											{"SetHost": "api.link.agorapulse.com"},
@@ -1071,13 +1081,16 @@
 							]},
 							"then": {"SetHost": "youtube.com"}
 						}},
-						"lmgtfy": {"IgnoreError": {"SetPart": {
-							"part": "Whole",
-							"value": {"Join": {"values": [
-								"https://google.com/search?q=",
-								{"Part": {"RawQueryParam": "q"}}
-							]}}
-						}}},
+						"lmgtfy": {"If": {
+							"if": {"HasQueryParam": "q"},
+							"then": {"SetPart": {
+								"part": "Whole",
+								"value": {"Join": {"values": [
+									"https://google.com/search?q=",
+									{"Part": {"RawQueryParam": "q"}}
+								]}}
+							}}
+						}},
 						"nitter": {"If": {
 							"if": {"All": [
 								{"Any": [
@@ -1199,6 +1212,13 @@
 							}},
 							"cbc.ca": {"RemoveQueryParams": ["__vfz"]},
 							"cbsnews.com": {"RemoveQueryParams": ["ftag", "linkId"]},
+							"change.org": {"All": [
+								{"If": {
+									"if": {"PartContains": {"part": "Path", "value": "/exp/"}},
+									"then": {"ModifyPart": {"part": "Path", "modification": {"KeepBefore": "/exp/"}}}
+								}},
+								{"RemoveQueryParamsMatching": {"Contains": {"value": "recruit", "where": "Start"}}}
+							]},
 							"cnbc.com": {"RemoveQueryParams": ["par"]},
 							"cnn.com": {"All": [
 								{"RemoveQueryParams": ["bt_ee", "bt_ts"]},
@@ -1259,7 +1279,7 @@
 								{"If": {
 									"if": {"All": [
 										{"FlagIsSet": "furaffinity-unsfw"},
-										{"PartIs": {"part": "Subdomain", "value": "sfw"}}
+										{"SubdomainIs": "sfw"}
 									]},
 									"then": {"SetPart": {"part": "Subdomain", "value": null}}
 								}}
@@ -1269,6 +1289,7 @@
 								"then": {"RemoveQueryParams": ["tags"]}
 							}},
 							"go.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
+							"gofundme.com": {"RemoveQueryParams": ["attribution_id", "ts", "v"]},
 							"goodreads.com": {"If": {
 								"if": {"PathStartsWith": "/book/show/"},
 								"then": "RemoveQuery",
@@ -1307,6 +1328,7 @@
 							"marshmallow-qa.com": {"RemoveQueryParams": ["t"]},
 							"marvel.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
 							"minds.com": {"RemoveQueryParams": ["referrer"]},
+							"nature.com": {"RemoveQueryParams": ["sharing_token"]},
 							"overpass-turbo.eu": {"If": {
 								"if": {"All": [
 									{"Not": {"FlagIsSet": "no-network"}},
@@ -1389,7 +1411,7 @@
 							]}},
 							"tumblr.com": {"All": [
 								{"If": {
-									"if": {"QueryHasParam": "redirect_to"},
+									"if": {"HasQueryParam": "redirect_to"},
 									"then": {"All": [
 										{"CopyPart": {"from": {"QueryParam": "redirect_to"}, "to": "Path"}},
 										"RemoveQuery"
@@ -1410,7 +1432,7 @@
 								{"If": {
 									"if": {"All": [
 										{"FlagIsSet": "tumblr-unsubdomain-blog"},
-										{"Not": {"TreatErrorAsFail": {"PartIsOneOf": {"part": "Subdomain", "values": ["at", "www"]}}}}
+										{"Not": {"PartIsOneOf": {"part": "Subdomain", "values": ["at", "www", null]}}}
 									]},
 									"then": {"All": [
 										{"If": {
@@ -1441,7 +1463,7 @@
 								{"RemoveQueryParams": ["si", "feature", "pp"]}
 							]},
 							"youtube.com": {"All": [
-								{"RemoveQueryParams": ["si", "feature", "pp", "app"]},
+								{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel"]},
 								{"If": {
 									"if": {"PartMap": {
 										"part": {"PathSegment": 0},
@@ -1522,6 +1544,18 @@
 							"danbooru.donmai.us": {"If": {
 								"if": {"PathStartsWith": "/posts"},
 								"then": {"RemoveQueryParams": ["q"]}
+							}},
+							"l.mlive.com": {"Common": {
+								"name": "extract-from-page",
+								"args": {
+									"string_modifications": {
+										"extractor": {"All": [
+											{"StripBefore": "<meta http-equiv=\"refresh\""},
+											{"GetHtmlAttribute": "content"},
+											{"KeepAfter": "url="}
+										]}
+									}
+								}
 							}},
 							"overview.mail.yahoo.com": "RemoveQuery",
 							"play.google.com": {"RemoveQueryParams": ["referrer"]},
@@ -1604,7 +1638,7 @@
 								{"If": {
 									"if": {"PathStartsWith": "/gp/offer-listing/"},
 									"then": {"All": [
-										{"ModifyPart": {"part": "Path", "modification": {"Replace": {"find": "gp/offer-listing", "replace": "dp"}}}},
+										{"ModifyPart": {"part": "Path", "modification": {"Replacen": {"find": "gp/offer-listing", "replace": "dp", "count": 1}}}},
 										{"SetPart": {"part": "Query", "value": "aod=1"}}
 									]}
 								}}

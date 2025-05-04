@@ -31,17 +31,20 @@ impl<T> Map<T> {
     /// If [`None`], returns the value of [`Self::if_null`].
     ///
     /// If either of the above return [`None`], returns the value of [`Self::else`].
-    pub fn get<U: AsRef<str>>(&self, value: Option<U>) -> Option<&T> {
-        value.map(|x| self.map.get(x.as_ref())).unwrap_or(self.if_null.as_deref()).or(self.r#else.as_deref())
+    pub fn get<U: AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
+        match key {
+            Some(key) => self.map.get(key.as_ref()),
+            None => self.if_null.as_deref()
+        }.or(self.r#else.as_deref())
     }
 }
 
 impl<T> Default for Map<T> {
     fn default() -> Self {
         Self {
-            map: Default::default(),
+            map    : Default::default(),
             if_null: Default::default(),
-            r#else: Default::default()
+            r#else : Default::default()
         }
     }
 }

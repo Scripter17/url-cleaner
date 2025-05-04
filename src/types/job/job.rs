@@ -28,7 +28,7 @@ use crate::glue::*;
 /// };
 ///
 /// let expectations = ["https://example.com/"];
-/// 
+///
 /// for (task, expectation) in job.into_iter().zip(expectations) {
 ///     assert_eq!(task.unwrap().make().unwrap().r#do().unwrap().as_str(), expectation);
 /// }

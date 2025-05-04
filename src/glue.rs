@@ -2,8 +2,6 @@
 
 #[cfg(feature = "regex"   )] pub mod regex;
 #[cfg(feature = "regex"   )] pub use regex::*;
-#[cfg(feature = "glob"    )] pub mod glob;
-#[cfg(feature = "glob"    )] pub use glob::*;
 #[cfg(feature = "commands")] pub mod command;
 #[cfg(feature = "commands")] pub use command::*;
 #[cfg(feature = "http"    )] pub mod http_client_config;

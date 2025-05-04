@@ -27,10 +27,10 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Whole.get(&url), Some("https://example.com/".into()));
-    /// 
+    ///
     /// UrlPart::Whole.set(&mut url, Some("https://example2.com")).unwrap();
     /// assert_eq!(UrlPart::Whole.get(&url), Some("https://example2.com/".into()));
     /// assert_eq!(url.as_str(), "https://example2.com/");
@@ -43,7 +43,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Scheme.get(&url), Some("https".into()));
     /// UrlPart::Scheme.set(&mut url, Some("http")).unwrap();
@@ -55,10 +55,10 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Username.get(&url), Some("".into()));
-    /// 
+    ///
     /// UrlPart::Username.set(&mut url, Some("admin")).unwrap();
     /// assert_eq!(UrlPart::Username.get(&url), Some("admin".into()));
     /// assert_eq!(url.as_str(), "https://admin@example.com/");
@@ -68,10 +68,10 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     /// assert_eq!(UrlPart::Password.get(&url), None);
-    /// 
+    ///
     /// UrlPart::Password.set(&mut url, Some("password")).unwrap();
     /// assert_eq!(UrlPart::Password.get(&url), Some("password".into()));
     /// assert_eq!(url.as_str(), "https://:password@example.com/");
@@ -88,7 +88,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.www.example.com").unwrap();
     /// assert_eq!(UrlPart::HostWithoutWWWDotPrefixAndFqdnPeriod.get(&url), Some("www.example.com".into()));
     ///
@@ -112,7 +112,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::DomainSegment(0).get(&url), Some("example".into()));
@@ -147,7 +147,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforeDomainSegment(0).get(&url), None);
@@ -178,7 +178,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterDomainSegment(0).get(&url), None);
@@ -209,7 +209,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::SubdomainSegment( 0).get(&url), Some("abc".into()));
@@ -250,7 +250,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforeSubdomainSegment( 0).get(&url), None);
@@ -277,7 +277,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterSubdomainSegment( 0).get(&url), None);
@@ -306,7 +306,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforeDomainSuffixSegment( 0).get(&url), None);
@@ -333,7 +333,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterDomainSuffixSegment( 0).get(&url), None);
@@ -363,7 +363,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -371,7 +371,7 @@ pub enum UrlPart {
     /// UrlPart::Domain.set(&mut url, Some("example2.com")).unwrap();
     /// assert_eq!(url.host_str(), Some("example2.com"));
     /// assert_eq!(UrlPart::Domain.get(&url), Some("example2.com".into()));
-    /// 
+    ///
     /// // Fully qualified domain names give the same results.
     /// let mut url = BetterUrl::parse("https://www.example.com.").unwrap();
     ///
@@ -388,7 +388,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -396,7 +396,7 @@ pub enum UrlPart {
     /// UrlPart::Subdomain.set(&mut url, Some("somethingelse")).unwrap();
     /// assert_eq!(url.host_str(), Some("somethingelse.example.com"));
     /// assert_eq!(UrlPart::Subdomain.get(&url), Some("somethingelse".into()));
-    /// 
+    ///
     /// // Fully qualified domain names give the same results.
     /// let mut url = BetterUrl::parse("https://www.example.com.").unwrap();
     ///
@@ -415,7 +415,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -423,7 +423,7 @@ pub enum UrlPart {
     /// UrlPart::RegDomain.set(&mut url, Some("example2.com")).unwrap();
     /// assert_eq!(url.host_str(), Some("www.example2.com"));
     /// assert_eq!(UrlPart::RegDomain.get(&url), Some("example2.com".into()));
-    /// 
+    ///
     /// // Fully qualified domain names give the same results.
     /// let mut url = BetterUrl::parse("https://www.example.com.").unwrap();
     ///
@@ -438,7 +438,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -446,7 +446,7 @@ pub enum UrlPart {
     /// UrlPart::NotDomainSuffix.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.host_str(), Some("example2.com"));
     /// assert_eq!(UrlPart::NotDomainSuffix.get(&url), Some("example2".into()));
-    /// 
+    ///
     /// // Fully qualified domain names give the same results.
     /// let mut url = BetterUrl::parse("https://www.example.com.").unwrap();
     ///
@@ -461,7 +461,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -469,7 +469,7 @@ pub enum UrlPart {
     /// UrlPart::DomainMiddle.set(&mut url, Some("example2")).unwrap();
     /// assert_eq!(url.host_str(), Some("www.example2.com"));
     /// assert_eq!(UrlPart::DomainMiddle.get(&url), Some("example2".into()));
-    /// 
+    ///
     /// // Fully qualified domain names give the same results.
     /// let mut url = BetterUrl::parse("https://www.example.com.").unwrap();
     ///
@@ -488,7 +488,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://www.example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("www.example.com"));
@@ -496,7 +496,7 @@ pub enum UrlPart {
     /// UrlPart::DomainSuffix.set(&mut url, Some("co.uk")).unwrap();
     /// assert_eq!(url.host_str(), Some("www.example.co.uk"));
     /// assert_eq!(UrlPart::DomainSuffix.get(&url), Some("co.uk".into()));
-    /// 
+    ///
     /// // Fully qualified domain names give the same results.
     /// let mut url = BetterUrl::parse("https://www.example.com.").unwrap();
     ///
@@ -513,7 +513,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(url.host_str(), Some("example.com"));
@@ -539,7 +539,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::Port.get(&url), None);
@@ -566,7 +566,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::Path.get(&url), Some("/a/b/c".into()));
@@ -588,7 +588,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::PathSegment(0).get(&url), Some("a".into()));
@@ -619,7 +619,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::BeforePathSegment(0).get(&url), None);
@@ -647,7 +647,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::AfterPathSegment(0).get(&url), None);
@@ -681,7 +681,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
     /// assert_eq!(UrlPart::NextPathSegment.get(&url), None);
@@ -712,7 +712,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::Query.get(&url), None);
@@ -739,7 +739,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::QueryParam(QueryParamSelector {name: "a".into(), index: 0}).get(&url), None);
@@ -770,7 +770,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(UrlPart::Fragment.get(&url), None);
@@ -783,7 +783,26 @@ pub enum UrlPart {
     /// ```
     Fragment,
 
-    /// Uses [`url::Position`] to handle multiple adjacent parts at the same time.
+    /// Uses [`url::Position`]s to handle multiple adjacent parts at the same time.
+    ///
+    /// Getting uses the range `start..end` and setting joins the range `..start`, the value to set (or the empty string if [`None`]), and `end..`.
+    /// # Errors
+    /// If the call to [`BetterUrl::parse`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    /// use url_cleaner::glue::UrlPosition;
+    ///
+    /// // Note that the `#1` at the end is the fragment, so just getting the query gives the wrong answer.
+    /// let mut url = BetterUrl::parse("https://href.li/?https://example.com/?abc=123&def=456#1").unwrap();
+    /// assert_eq!(
+    ///     UrlPart::PositionRange {start: UrlPosition::BeforeQuery, end: UrlPosition::AfterFragment}.get(&url),
+    ///     Some("https://example.com/?abc=123&def=456#1".into())
+    /// );
+    ///
+    /// UrlPart::PositionRange {start: UrlPosition::AfterPath, end: UrlPosition::AfterFragment}.set(&mut url, None).unwrap();
+    /// assert_eq!(url, "https://href.li/");
+    /// ```
     PositionRange {
         /// The start of the range to get/set.
         start: UrlPosition,
@@ -1029,10 +1048,6 @@ pub enum UrlPartSetError {
     SetPasswordError,
 
     // Host stuff.
-
-    /// Returned when the URL doesn't have a host.
-    #[error("The URL did not have a host.")]
-    UrlDoesNotHaveAHost,
 
     /// Returned when a [`SetHostError`] is encountered.
     #[error(transparent)]

@@ -396,7 +396,7 @@ pub enum Action {
     /// Action::Join("..".into()).apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.url, "https://example.com/a/");
     ///
-    /// 
+    ///
     /// url_cleaner::task_state!(task_state, url = "https://example.com/a/b/c/");
     ///
     /// Action::Join("..".into()).apply(&mut task_state).unwrap();
@@ -523,7 +523,7 @@ pub enum Action {
         #[serde(default, skip_serializing_if = "is_default")]
         http_client_config_diff: Option<Box<HttpClientConfigDiff>>
     },
-    /// Sets the specified [`TaskScratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
+    /// Sets the specified [`Scratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
@@ -544,7 +544,7 @@ pub enum Action {
         /// The value to set the flag to.
         value: bool
     },
-    /// Sets the specified [`TaskScratchpad::vars`] to [`Self::SetScratchpadVar::value`].
+    /// Sets the specified [`Scratchpad::vars`] to [`Self::SetScratchpadVar::value`].
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
     /// # Examples
@@ -564,7 +564,7 @@ pub enum Action {
         /// The value to set the var to.
         value: StringSource
     },
-    /// If the specified [`TaskScratchpad::vars`] is [`Some`], applies [`Self::ModifyScratchpadVar::modification`].
+    /// If the specified [`Scratchpad::vars`] is [`Some`], applies [`Self::ModifyScratchpadVar::modification`].
     ///
     /// If the part is [`None`], does nothing.
     /// # Errors
@@ -636,12 +636,24 @@ pub enum Action {
     ///     ..Default::default()
     /// });
     ///
-    /// Action::Common(CommonCall {name: "abc".into(), args: Default::default()}).apply(&mut task_state).unwrap();
+    /// Action::Common(CommonCall {name: Box::new("abc".into()), args: Default::default()}).apply(&mut task_state).unwrap();
     /// ```
     Common(CommonCall),
     /// Calls the specified function and returns its value.
     /// # Errors
     /// If the call to the contained function returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state!(task_state);
+    ///
+    /// fn some_complex_operation(task_state: &mut TaskState) -> Result<(), ActionError> {
+    ///     Ok(())
+    /// }
+    ///
+    /// Action::Custom(some_complex_operation).apply(&mut task_state).unwrap();
+    /// ```
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
@@ -886,9 +898,9 @@ impl Action {
 
                 match task_state.url.get_query_param(&name, 0) {
                     Some(Some(Some(new_url))) => {*task_state.url = Url::parse(&new_url)?.into();},
-                    Some(Some(None))          => Err(ActionError::NoQuery)?,
-                    Some(None)                => Err(ActionError::QueryParamNoValue)?,
-                    None                      => Err(ActionError::QueryParamNotFound)?
+                    Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
+                    Some(None)                => Err(ActionError::QueryParamNotFound)?,
+                    None                      => Err(ActionError::NoQuery)?
                 }
             },
 

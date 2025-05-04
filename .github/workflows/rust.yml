@@ -27,7 +27,7 @@ jobs:
     - name: cargo_test
       run: ./tests.sh --only-cargo-test
 
-  order_test:
+  test_order:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -48,7 +48,7 @@ jobs:
     - name: clippy
       run: ./tests.sh --only-clippy
 
-  powerset_2:
+  powerset:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

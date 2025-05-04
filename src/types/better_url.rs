@@ -189,11 +189,11 @@ impl BetterUrl {
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(url.host_details(), Some(HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
-    /// 
+    ///
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
     /// assert_eq!(url.host_details(), Some(HostDetails::Ipv4(Ipv4Details {})));
-    /// 
+    ///
     /// let url = BetterUrl::parse("https://[::1]").unwrap();
     ///
     /// assert_eq!(url.host_details(), Some(HostDetails::Ipv6(Ipv6Details {})));
@@ -378,7 +378,7 @@ impl BetterUrl {
     /// [`Url::set_fragment`].
     pub fn set_fragment     (&mut self, fragment: Option<&str>)                                 {self.url.set_fragment(fragment)}
     /// An iterator over query parameters without percent decoding anything.
-    pub fn raw_query_pairs(&self) -> Option<impl Iterator<Item = (&str, Option<&str>)>> {Some(self.query()?.split('&').map(|kev| kev.split_once('=').map_or((kev, None), |(k, v)| (k, Some(v)))))}
+    pub fn raw_query_pairs  (&self) -> Option<impl Iterator<Item = (&str, Option<&str>)>>       {Some(self.query()?.split('&').map(|kev| kev.split_once('=').map_or((kev, None), |(k, v)| (k, Some(v)))))}
     /// Return [`true`] if [`Self::get_query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
     ///
     /// Please note that this returns [`true`] even if the query param has no value.
@@ -408,7 +408,7 @@ impl BetterUrl {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4&c").unwrap();
     ///
     /// assert_eq!(url.get_query_param("a", 0), Some(Some(Some("2".into()))));
@@ -418,14 +418,14 @@ impl BetterUrl {
     /// assert_eq!(url.get_query_param("b", 1), Some(None));
     /// assert_eq!(url.get_query_param("c", 0), Some(Some(None)));
     /// assert_eq!(url.get_query_param("c", 1), Some(None));
-    /// 
-    /// 
+    ///
+    ///
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert_eq!(url.get_query_param("a", 0), None);
     /// assert_eq!(url.get_query_param("a", 1), None);
     ///
-    /// 
+    ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
     ///
     /// assert_eq!(url.get_query_param("a", 0), Some(Some(Some("1".into()))));
@@ -440,7 +440,7 @@ impl BetterUrl {
     }
     /// Get the selected query paremeter without percent decoding the vlue.
     ///
-    /// The names, however, are percent encoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
+    /// The names, however, are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -468,7 +468,7 @@ impl BetterUrl {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// 
+    ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// url.set_query_param("a", 0, None).unwrap();
@@ -488,7 +488,20 @@ impl BetterUrl {
     /// url.set_query_param("a", 0, None).unwrap();
     /// assert_eq!(url.query(), None);
     ///
+    /// // Inserting adjacent query params
+    /// url.set_query_param("a", 0, Some(Some("2&b=3"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=2%26b%3D3"));
     ///
+    /// // Setting the fragment
+    /// url.set_query_param("a", 0, Some(Some("2#123"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=2%23123"));
+    /// assert_eq!(url.fragment(), None);
+    /// url.set_query_param("a", 0, Some(Some("3"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=3"));
+    /// assert_eq!(url.fragment(), None);
+    ///
+    ///
+    /// // Empty query optimization.
     /// let mut url = BetterUrl::parse("https://example.com?").unwrap();
     ///
     /// assert_eq!(url.query(), Some(""));
@@ -501,11 +514,60 @@ impl BetterUrl {
     }
     /// Sets the selected query parameter, without ensuring either the name or the value are valid.
     ///
+    /// If there are N query parameters named `name` and `index` is N, appends a new query parameter to the end.
+    ///
+    /// For performance reasons, resulting empty queries are replaced with [`None`].
+    ///
     /// Useful in combination with [`Self::get_raw_query_param`] for transplanting values without decoding then reencoding them.
     ///
-    /// PLEASE note that if `name` and/or `value` contain special characters like `=`, `&`, or `#` this will give incoherent results! ONLY use this for directly transplanting from and to query params.
+    /// PLEASE note that if `name` and/or `value` contain special characters like `=`, `&`, etc. this will give incoherent results! ONLY use this for directly transplanting from and to query params.
     /// # Errors
     /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// // Normal use
+    /// url.set_raw_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), None);
+    /// url.set_raw_query_param("a", 0, Some(Some("2"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=2"));
+    /// url.set_raw_query_param("a", 0, Some(Some("3"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=3"));
+    /// url.set_raw_query_param("a", 1, Some(Some("4"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=3&a=4"));
+    /// url.set_raw_query_param("a", 3, Some(Some("5"))).unwrap_err();
+    /// assert_eq!(url.query(), Some("a=3&a=4"));
+    /// url.set_raw_query_param("a", 0, Some(None)).unwrap();
+    /// assert_eq!(url.query(), Some("a&a=4"));
+    /// url.set_raw_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), Some("a=4"));
+    /// url.set_raw_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), None);
+    ///
+    /// // Inserting adjacent query params
+    /// url.set_raw_query_param("a", 0, Some(Some("2&b=3"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=2&b=3"));
+    ///
+    /// // Setting the fragment
+    /// // Exact behavior, while currently identical to [`Self::set_query_param`], is unspecified.
+    /// url.set_raw_query_param("a", 0, Some(Some("2#123"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=2%23123&b=3"));
+    /// assert_eq!(url.fragment(), None);
+    /// url.set_raw_query_param("a", 0, Some(Some("3"))).unwrap();
+    /// assert_eq!(url.query(), Some("a=3&b=3"));
+    /// assert_eq!(url.fragment(), None);
+    ///
+    ///
+    /// // Empty query optimization.
+    /// let mut url = BetterUrl::parse("https://example.com?").unwrap();
+    ///
+    /// assert_eq!(url.query(), Some(""));
+    /// url.set_raw_query_param("a", 0, None).unwrap();
+    /// assert_eq!(url.query(), None);
+    /// ```
     pub fn set_raw_query_param(&mut self, name: &str, index: usize, to: Option<Option<&str>>) -> Result<(), SetQueryParamError> {
         debug!(self, QueryParamSelector::set, name, index, to);
 
@@ -519,7 +581,7 @@ impl BetterUrl {
         let mut matched_index = None;
 
         // Find the index of the selected query parameter and store it in `matched_index`.
-        for (i, (x, _)) in pairs.iter_mut().enumerate() {
+        for (i, (x, _)) in pairs.iter().enumerate() {
             if peh(x) == name {
                 if found_matches == index {
                     matched_index = Some(i);
@@ -563,6 +625,20 @@ impl BetterUrl {
     /// If the call to [`HostDetails::from_host_str`] returns an error, that error is returned.
     ///
     /// If the call to [`HostDetails::from_host_str`] doesn't return a [`HostDetails::Domain`], returns the error [`SetDomainHostError::ProvidedHostIsNotADomain`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
+    /// ```
     pub fn set_domain_host(&mut self, domain: &str) -> Result<(), SetDomainHostError> {
         if let Ok(host_details @ HostDetails::Domain(_)) = HostDetails::from_host_str(domain) {
             self.url.set_host(Some(domain))?;
@@ -583,24 +659,16 @@ impl BetterUrl {
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
-    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
-    /// url.set_domain(Some("example2.com")).unwrap();
-    /// assert_eq!(url.domain(), Some("example2.com"));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com" ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com" ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com" ));
     ///
-    /// // Note the period at the end, marking it a fully qualified domain name.
-    /// let mut url = BetterUrl::parse("https://example.com.").unwrap();
-    ///
-    /// // Note the absence of the period at the end.
-    /// assert_eq!(url.domain(), Some("example.com"));
-    /// // Note the presence of the period at the end.
-    /// assert_eq!(url.host_str(), Some("example.com."));
-    /// // Note the passed value not having a period at the end.
-    /// url.set_domain(Some("example2.com")).unwrap();
-    /// // Note the absence of the period at the end.
-    /// assert_eq!(url.domain(), Some("example2.com"));
-    /// // Note the continued presence of the period at the end.
-    /// assert_eq!(url.host_str(), Some("example2.com."));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com."));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com."));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com."));
     /// ```
     pub fn set_domain(&mut self, to: Option<&str>) -> Result<(), SetDomainError> {
         Ok(match (self.host_details(), to) {
@@ -616,6 +684,28 @@ impl BetterUrl {
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
     /// If [`Self`] doesn't have a [`UrlPart::RegDomain`], returns the error [`SetSubdomainError::MissingRegDomain`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    /// ```
     pub fn set_subdomain(&mut self, to: Option<&str>) -> Result<(), SetSubdomainError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -640,6 +730,38 @@ impl BetterUrl {
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
     /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetNotDomainSuffixError::MissingDomainSuffix`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk" ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk."));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_not_domain_suffix(Some("www.example")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    /// ```
     pub fn set_not_domain_suffix(&mut self, to: Option<&str>) -> Result<(), SetNotDomainSuffixError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -664,6 +786,28 @@ impl BetterUrl {
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
     /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetDomainMiddleError::MissingDomainSuffix`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(             "com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some(    "example2.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(         "www.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some("www.example2.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(             "co.uk" ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some(    "example2.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(         "www.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some("www.example2.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(             "com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some(    "example2.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(         "www.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some("www.example2.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(             "co.uk."));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some(    "example2.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(         "www.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some("www.example2.co.uk."));
+    /// ```
     pub fn set_domain_middle(&mut self, to: Option<&str>) -> Result<(), SetDomainMiddleError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -694,6 +838,54 @@ impl BetterUrl {
     /// Please note that if `self`'s domain has a [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period, that period is preserved.
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetRegDomainError::HostIsNotADomain`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(None                 ).unwrap_err();
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(            "com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk" ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_reg_domain(None                 ).unwrap(); assert_eq!(url.host_str(), Some(            "www"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(        "www.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(        "www.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_reg_domain(None                 ).unwrap_err();
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(            "com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk" ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_reg_domain(None                 ).unwrap(); assert_eq!(url.host_str(), Some(            "www"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(        "www.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(        "www.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_reg_domain(None                 ).unwrap(); assert_eq!(url.host_str(), Some(               "."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(            "com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk."));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_reg_domain(None                 ).unwrap(); assert_eq!(url.host_str(), Some(             "www." ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(        "www.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(        "www.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_reg_domain(None                 ).unwrap(); assert_eq!(url.host_str(), Some(               "."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(            "com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(            "co.uk."));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_reg_domain(None                 ).unwrap(); assert_eq!(url.host_str(), Some(            "www."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(        "www.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_reg_domain(Some("example.com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_reg_domain(Some(        "co.uk")).unwrap(); assert_eq!(url.host_str(), Some(        "www.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_reg_domain(Some("example.co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    /// ```
     pub fn set_reg_domain(&mut self, to: Option<&str>) -> Result<(), SetRegDomainError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -716,6 +908,38 @@ impl BetterUrl {
     /// Please note that if `self`'s domain has a [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period, that period is preserved.
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetDomainSuffixError::HostIsNotADomain`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some(    "example"       ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some("www.example"       ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some(    "example"       ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk" ).unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk" ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some("www.example"       ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk" ).unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk" ));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some(    "example."      ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.com."  ).unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some("www.example."      ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.com."  ).unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    ///
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some(    "example."      ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com."  ));
+    /// let mut url = BetterUrl::parse(    "https://example.co.uk.").unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some(    "example.co.uk."));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some("www.example."      ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some("www.example.com."  ));
+    /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_suffix(Some("co.uk")).unwrap(); assert_eq!(url.host_str(), Some("www.example.co.uk."));
+    /// ```
     pub fn set_domain_suffix(&mut self, to: Option<&str>) -> Result<(), SetDomainSuffixError> {
         Ok(match self.host_details() {
             #[allow(clippy::useless_format, reason = "Visual consistency.")]
@@ -787,6 +1011,12 @@ impl PartialEq<BetterUrl> for BetterUrl {
 
 impl Eq for BetterUrl {}
 
+impl std::hash::Hash for BetterUrl {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.url, state)
+    }
+}
+
 impl PartialOrd for BetterUrl {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
@@ -811,39 +1041,6 @@ impl std::convert::AsRef<str> for BetterUrl {
     }
 }
 
-impl From<BetterUrl> for Url {
-    fn from(value: BetterUrl) -> Self {
-        value.url
-    }
-}
-
-impl From<Url> for BetterUrl {
-    fn from(value: Url) -> Self {
-        Self {
-            host_details: value.host().map(|host| HostDetails::from_host(&host)),
-            url: value
-        }
-    }
-}
-
-impl std::hash::Hash for BetterUrl {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        std::hash::Hash::hash(&self.url, state)
-    }
-}
-
-impl PartialEq<Url> for BetterUrl {
-    fn eq(&self, other: &Url) -> bool {
-        (&**self) == other
-    }
-}
-
-impl PartialEq<str> for BetterUrl {
-    fn eq(&self, other: &str) -> bool {
-        self.as_str() == other
-    }
-}
-
 impl FromStr for BetterUrl {
     type Err = <Url as FromStr>::Err;
 
@@ -859,6 +1056,36 @@ impl TryFrom<&str> for BetterUrl {
         Self::from_str(value)
     }
 }
+
+impl From<Url> for BetterUrl {
+    fn from(value: Url) -> Self {
+        Self {
+            host_details: value.host().map(|host| HostDetails::from_host(&host)),
+            url: value
+        }
+    }
+}
+
+impl From<BetterUrl> for Url {
+    fn from(value: BetterUrl) -> Self {
+        value.url
+    }
+}
+
+impl From<BetterUrl> for String {
+    fn from(value: BetterUrl) -> Self {
+        value.url.into()
+    }
+}
+
+impl PartialEq<Url      > for BetterUrl {fn eq(&self, other: &Url      ) -> bool {(&**self)     ==    other }}
+impl PartialEq<String   > for BetterUrl {fn eq(&self, other: &String   ) -> bool {self          == &**other }}
+impl PartialEq<str      > for BetterUrl {fn eq(&self, other: &str      ) -> bool {self.as_str() ==    other }}
+impl PartialEq<&str     > for BetterUrl {fn eq(&self, other: &&str     ) -> bool {self          ==   *other }}
+impl PartialEq<BetterUrl> for Url       {fn eq(&self, other: &BetterUrl) -> bool {other         ==    self  }}
+impl PartialEq<BetterUrl> for str       {fn eq(&self, other: &BetterUrl) -> bool {other         ==    self  }}
+impl PartialEq<BetterUrl> for &str      {fn eq(&self, other: &BetterUrl) -> bool {*self         ==    other }}
+impl PartialEq<BetterUrl> for String    {fn eq(&self, other: &BetterUrl) -> bool {other         ==    self  }}
 
 impl std::fmt::Display for BetterUrl {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

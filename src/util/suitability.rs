@@ -28,7 +28,6 @@ macro_rules! always_suitable {
 
 always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, url::Url, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration);
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
-#[cfg(feature = "glob")] always_suitable!(glob::Pattern, glob::MatchOptions);
 
 /// Suitability helper function to check that a set is documented.
 pub(crate) fn set_is_documented               (name: &StringSource, config: &Cleaner) {if let StringSource::String(name) = name {assert!(config.docs.sets               .contains_key(name), "Undocumented Set: {name}")}}

@@ -2,96 +2,96 @@
 	"sets": [
 		{
 			"tests": [
-				{"task_config": "https://x.com?t=a&s=b"                                                                    , "expectation": "https://x.com/"},
-				{"task_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "expectation": "https://example.com/"},
-				{"task_config": "http://example.com"                                                                       , "expectation": "https://example.com/"},
+				{"task_config": "https://x.com?t=a&s=b"                                                                    , "expectation": {"UrlIs": "https://x.com/"}},
+				{"task_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "http://example.com"                                                                       , "expectation": {"UrlIs": "https://example.com/"}},
 				{
 					"task_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
-					"expectation": "https://amazon.ca/dp/B0C6DX66TN"
+					"expectation": {"UrlIs": "https://amazon.ca/dp/B0C6DX66TN"}
 				},
 				{
 					"task_config": "https://amazon.com/gp/offer-listing/123",
-					"expectation": "https://amazon.com/dp/123?aod=1"
+					"expectation": {"UrlIs": "https://amazon.com/dp/123?aod=1"}
 				},
 
-				{"task_config": "https://bsky.app"        , "expectation": "https://bsky.app/"},
-				{"task_config": "https://fxbsky.app"      , "expectation": "https://bsky.app/"},
-				{"task_config": "https://user.bsky.social", "expectation": "https://bsky.app/profile/user.bsky.social"},
+				{"task_config": "https://bsky.app"        , "expectation": {"UrlIs": "https://bsky.app/"}},
+				{"task_config": "https://fxbsky.app"      , "expectation": {"UrlIs": "https://bsky.app/"}},
+				{"task_config": "https://user.bsky.social", "expectation": {"UrlIs": "https://bsky.app/profile/user.bsky.social"}},
 				{
 					"task_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
-					"expectation": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"
+					"expectation": {"UrlIs": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"}
 				},
-				{"task_config": "https://instagram.com/username?hl=en", "expectation": "https://instagram.com/username"},
+				{"task_config": "https://instagram.com/username?hl=en", "expectation": {"UrlIs": "https://instagram.com/username"}},
 
-				{"task_config": "https://127.0.0.1", "expectation": "https://127.0.0.1"},
-				{"task_config": "https://com"      , "expectation": "https://com"},
-				{"task_config": "ftp://127.0.0.1"  , "expectation": "ftp://127.0.0.1"},
-				{"task_config": "file://a/b/c"     , "expectation": "file://a/b/c"},
-				{"task_config": "mailto:a@a.com"   , "expectation": "mailto:a@a.com"},
+				{"task_config": "https://127.0.0.1", "expectation": {"UrlIs": "https://127.0.0.1/"}},
+				{"task_config": "https://com"      , "expectation": {"UrlIs": "https://com/"}},
+				{"task_config": "ftp://127.0.0.1"  , "expectation": {"UrlIs": "ftp://127.0.0.1/"}},
+				{"task_config": "file://a/b/c"     , "expectation": {"UrlIs": "file://a/b/c"}},
+				{"task_config": "mailto:a@a.com"   , "expectation": {"UrlIs": "mailto:a@a.com"}},
 
-				{"task_config": "https://bsky.app/profile/user"     , "expectation": "https://bsky.app/profile/user.bsky.social"},
-				{"task_config": "https://bsky.app/profile/user.bsky", "expectation": "https://bsky.app/profile/user.bsky.social"},
-				{"task_config": "https://bsky.app/profile/user.com" , "expectation": "https://bsky.app/profile/user.com"},
+				{"task_config": "https://bsky.app/profile/user"     , "expectation": {"UrlIs": "https://bsky.app/profile/user.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/user.bsky", "expectation": {"UrlIs": "https://bsky.app/profile/user.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/user.com" , "expectation": {"UrlIs": "https://bsky.app/profile/user.com"}},
 
 				{
 					"task_config": "https://click.notification.elsevier.com/CL0/https:%2F%2Ffacebook.com%2FTheLancetMedicalJournal/1/0100017b6336ece0-e16eeb62-7506-49ae-9b9f-96c2e2caccc1-000000/XNF87Ruy8xfaatSlPiHGJWGJetPIroNvIDdfy0xkyW4=211",
-					"expectation": "https://facebook.com/TheLancetMedicalJournal"
+					"expectation": {"UrlIs": "https://facebook.com/TheLancetMedicalJournal"}
 				},
 
-				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": "https://example.com/?abc=123&def=456#1"}
+				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": {"UrlIs": "https://example.com/?abc=123&def=456#1"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["tor2web2tor"]},
 			"tests": [
-				{"task_config": "https://example.onion.com"  , "expectation": "https://example.onion"},
-				{"task_config": "https://example.onion.co.uk", "expectation": "https://example.onion"}
+				{"task_config": "https://example.onion.com"  , "expectation": {"UrlIs": "https://example.onion/"}},
+				{"task_config": "https://example.onion.co.uk", "expectation": {"UrlIs": "https://example.onion/"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unbreezewiki"]},
-			"tests": [{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "expectation": "https://tardis.fandom.com/wiki/Genocide"}]
+			"tests": [{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "expectation": {"UrlIs": "https://tardis.fandom.com/wiki/Genocide"}}]
 		},
 		{
 			"params_diff": {"flags": ["breezewiki"]},
 			"tests": [
-				{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "expectation": "https://breezewiki.com/tardis/wiki/Genocide"},
-				{"task_config": "https://tardis.fandom.com/wiki/Genocide"    , "expectation": "https://breezewiki.com/tardis/wiki/Genocide"}
+				{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "expectation": {"UrlIs": "https://breezewiki.com/tardis/wiki/Genocide"}},
+				{"task_config": "https://tardis.fandom.com/wiki/Genocide"    , "expectation": {"UrlIs": "https://breezewiki.com/tardis/wiki/Genocide"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unmobile"]},
 			"tests": [
-				{"task_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "expectation": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
-				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "expectation": "https://en.wikipedia.org/wiki/Gaza_genocide"}
+				{"task_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "expectation": {"UrlIs": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"}},
+				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "expectation": {"UrlIs": "https://en.wikipedia.org/wiki/Gaza_genocide"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["embed-compatibility"]},
 			"tests": [
-				{"task_config": "https://bsky.app", "expectation": "https://fxbsky.app/"},
-				{"task_config": "https://fxbsky.app", "expectation": "https://fxbsky.app/"}
+				{"task_config": "https://bsky.app", "expectation": {"UrlIs": "https://fxbsky.app/"}},
+				{"task_config": "https://fxbsky.app", "expectation": {"UrlIs": "https://fxbsky.app/"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["invidious"]},
 			"tests": [
-				{"task_config": "https://youtube.com/watch?v=12345", "expectation": "https://yewtu.be/watch?v=12345"},
-				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": "https://yewtu.be/watch?v=12345"}
+				{"task_config": "https://youtube.com/watch?v=12345", "expectation": {"UrlIs": "https://yewtu.be/watch?v=12345"}},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": {"UrlIs": "https://yewtu.be/watch?v=12345"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["uninvidious"]},
 			"tests": [
-				{"task_config": "https://youtube.com/watch?v=12345", "expectation": "https://youtube.com/watch?v=12345"},
-				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": "https://youtube.com/watch?v=12345"}
+				{"task_config": "https://youtube.com/watch?v=12345", "expectation": {"UrlIs": "https://youtube.com/watch?v=12345"}},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": {"UrlIs": "https://youtube.com/watch?v=12345"}}
 			]
 		},
 		{
 			"params_diff": {"flags": ["tumblr-unsubdomain-blog"]},
 			"tests": [
-				{"task_config": "https://tumblr.com/username", "expectation": "https://tumblr.com/username"},
-				{"task_config": "https://username.tumblr.com", "expectation": "https://tumblr.com/username/"}
+				{"task_config": "https://tumblr.com/username", "expectation": {"UrlIs": "https://tumblr.com/username"}},
+				{"task_config": "https://username.tumblr.com", "expectation": {"UrlIs": "https://tumblr.com/username/"}}
 			]
 		},
 		{
@@ -107,7 +107,7 @@
 							}
 						}
 					},
-					"expectation": "https://example.com"
+					"expectation": {"UrlIs": "https://example.com/"}
 				}
 			]
 		},
@@ -124,7 +124,7 @@
 							}
 						}
 					},
-					"expectation": "https://example.com"
+					"expectation": {"UrlIs": "https://example.com/"}
 				}
 			]
 		},
@@ -141,7 +141,7 @@
 							}
 						}
 					},
-					"expectation": "https://x.com/example"
+					"expectation": {"UrlIs": "https://x.com/example"}
 				}
 			]
 		}

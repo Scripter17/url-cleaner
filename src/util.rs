@@ -86,8 +86,6 @@ pub(crate) fn neg_vec_keep<I: IntoIterator>(iter: I, start: isize, end: Option<i
 }
 
 /// Serde helper function.
-pub(crate) const fn get_false() -> bool {false}
-/// Serde helper function.
 pub(crate) const fn is_false(x: &bool) -> bool {!*x}
 /// Serde helper function.
 pub(crate) const fn get_true() -> bool {true}

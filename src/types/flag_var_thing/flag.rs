@@ -14,13 +14,36 @@ use crate::util::*;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum FlagType {
     /// Get it from [`TaskStateView::params`]'s [`Params::vars`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, params = Params {
+    ///     flags: ["abc".into()].into(),
+    ///     ..Default::default()
+    /// });
+    ///
+    /// assert!( FlagType::Params.get(&task_state, "abc").unwrap());
+    /// assert!(!FlagType::Params.get(&task_state, "def").unwrap());
+    /// ```
     #[default]
     Params,
     /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
-    Common,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`TaskScratchpad::vars`]
+    CommonArg,
+    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, scratchpad = Scratchpad {
+    ///     flags: ["abc".into()].into(),
+    ///     ..Default::default()
+    /// });
+    ///
+    /// assert!(FlagType::Scratchpad.get(&task_state, "abc").unwrap())
+    /// ```
     Scratchpad
 }
 
@@ -33,8 +56,8 @@ pub enum GetFlagError {
     /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when trying to use [`FlagType::Common`] outside of a common context.
-    #[error("Tried to use FlagType::Common outside of a common context.")]
+    /// Returned when trying to use [`FlagType::CommonArg`] outside of a common context.
+    #[error("Tried to use FlagType::CommonArg outside of a common context.")]
     NotInCommonContext
 }
 
@@ -47,11 +70,11 @@ impl From<StringSourceError> for GetFlagError {
 impl FlagType {
     /// Gets a flag.
     /// # Errors
-    /// If `self` is [`Self::Common`] and `task_state`'s [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
+    /// If `self` is [`Self::CommonArg`] and `task_state`'s [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     pub fn get(&self, task_state: &TaskStateView, name: &str) -> Result<bool, GetFlagError> {
         Ok(match self {
             Self::Params     => task_state.params     .flags.contains(name),
-            Self::Common     => task_state.common_args.ok_or(GetFlagError::NotInCommonContext)?.flags.contains(name),
+            Self::CommonArg  => task_state.common_args.ok_or(GetFlagError::NotInCommonContext)?.flags.contains(name),
             Self::Scratchpad => task_state.scratchpad .flags.contains(name)
         })
     }
@@ -81,7 +104,7 @@ impl Suitability for FlagRef {
     fn assert_suitability(&self, config: &Cleaner) {
         match (&self.r#type, &self.name) {
             (FlagType::Params, StringSource::String(name)) => assert!(config.docs.flags.contains_key(name), "Undocumented Flag: {name}"),
-            (FlagType::Common | FlagType::Scratchpad, StringSource::String(_)) => {},
+            (FlagType::CommonArg | FlagType::Scratchpad, StringSource::String(_)) => {},
             _ => panic!("Unsuitable FlagRef: {self:?}")
         }
     }

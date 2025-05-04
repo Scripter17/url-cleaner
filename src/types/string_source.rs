@@ -29,7 +29,7 @@ pub enum StringSource {
     /// ```
     /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
-    /// 
+    ///
     /// assert_eq!(StringSource::None.get(&task_state).unwrap(), None);
     /// ```
     #[default]
@@ -41,7 +41,7 @@ pub enum StringSource {
     /// ```
     /// use url_cleaner::types::*;
     /// url_cleaner::task_state_view!(task_state);
-    /// 
+    ///
     /// StringSource::Error("Message".into()).get(&task_state).unwrap_err();
     /// ```
     Error(String),
@@ -348,7 +348,7 @@ pub enum StringSource {
     /// Gets the [`Map`] specified by [`Self::ParamsMap::name`] from [`Params::maps`] then indexes it with [`Self::ParamsMap::key`].
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
-    /// 
+    ///
     /// If [`Self::ParamsMap::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::ParamsMapNotFound`].
     /// # Examples
     /// ```
@@ -492,8 +492,8 @@ pub enum StringSource {
     ///
     /// assert!(matches!(
     ///     StringSource::StripBefore {
-    ///         value: "abc".into(),
-    ///         find: "b".into()
+    ///         value: Box::new("abc".into()),
+    ///         find : Box::new("b".into())
     ///     }.get(&task_state_view).unwrap(),
     ///     Some(Cow::Borrowed("bc"))
     /// ));
@@ -516,8 +516,8 @@ pub enum StringSource {
     ///
     /// assert!(matches!(
     ///     StringSource::StripAfter {
-    ///         value: "abc".into(),
-    ///         find: "b".into()
+    ///         value: Box::new("abc".into()),
+    ///         find : Box::new("b".into())
     ///     }.get(&task_state_view).unwrap(),
     ///     Some(Cow::Borrowed("ab"))
     /// ));
@@ -540,8 +540,8 @@ pub enum StringSource {
     ///
     /// assert!(matches!(
     ///     StringSource::KeepBefore {
-    ///         value: "abc".into(),
-    ///         find: "b".into()
+    ///         value: Box::new("abc".into()),
+    ///         find : Box::new("b".into())
     ///     }.get(&task_state_view).unwrap(),
     ///     Some(Cow::Borrowed("a"))
     /// ));
@@ -566,8 +566,8 @@ pub enum StringSource {
     ///
     /// assert!(matches!(
     ///     StringSource::KeepAfter {
-    ///         value: "abc".into(),
-    ///         find: "b".into()
+    ///         value: Box::new("abc".into()),
+    ///         find : Box::new("b".into())
     ///     }.get(&task_state_view).unwrap(),
     ///     Some(Cow::Borrowed("c"))
     /// ));
@@ -646,7 +646,7 @@ pub enum StringSource {
     ///     string_sources: [
     ///         ("abc".into(), "def".into()),
     ///         ("def".into(), StringSource::Var(Box::new(VarRef {
-    ///             r#type: VarType::Common,
+    ///             r#type: VarType::CommonArg,
     ///             name: "common_var".into()
     ///         })))
     ///     ].into(),
@@ -685,7 +685,7 @@ pub enum StringSource {
     /// fn some_complex_operation<'a>(task_state: &'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
     ///     Ok(Some("a".into()))
     /// }
-    /// 
+    ///
     /// assert_eq!(StringSource::Custom(some_complex_operation).get(&task_state).unwrap(), Some("a".into()));
     /// ```
     #[expect(clippy::type_complexity, reason = "Who cares")]
@@ -697,14 +697,15 @@ pub enum StringSource {
 
 impl FromStr for StringSource {
     type Err = Infallible;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::String(s.to_string()))
+        Ok(s.into())
     }
 }
 
 impl From<&str> for StringSource {
     fn from(value: &str) -> Self {
-        Self::String(value.into())
+        value.to_string().into()
     }
 }
 
@@ -714,17 +715,6 @@ impl From<String> for StringSource {
     }
 }
 
-impl From<&str> for Box<StringSource> {
-    fn from(value: &str) -> Self {
-        Box::new(value.into())
-    }
-}
-
-impl From<String> for Box<StringSource> {
-    fn from(value: String) -> Self {
-        Box::new(value.into())
-    }
-}
 impl Serialize for StringSource {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
@@ -733,6 +723,7 @@ impl Serialize for StringSource {
         }
     }
 }
+
 impl<'de> Deserialize<'de> for StringSource {
     fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct V;
@@ -963,20 +954,14 @@ impl StringSource {
             Self::ExtractBetween {value, start, end} => {
                 Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
                     Cow::Borrowed(x) => Cow::Borrowed(x
-                        .split_once(get_str!(start, task_state, StringSourceError))
-                        .ok_or(StringSourceError::ExtractBetweenStartNotFound)?
-                        .1
-                        .split_once(get_str!(end, task_state, StringSourceError))
-                        .ok_or(StringSourceError::ExtractBetweenEndNotFound)?
-                        .0),
+                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenStartNotFound)?.1
+                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenEndNotFound  )?.0
+                    ),
                     Cow::Owned(x) => Cow::Owned(x
-                        .split_once(get_str!(start, task_state, StringSourceError))
-                        .ok_or(StringSourceError::ExtractBetweenStartNotFound)?
-                        .1
-                        .split_once(get_str!(end, task_state, StringSourceError))
-                        .ok_or(StringSourceError::ExtractBetweenEndNotFound)?
-                        .0
-                        .to_string())
+                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenStartNotFound)?.1
+                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenEndNotFound  )?.0
+                        .to_string()
+                    )
                 })
             },
             #[cfg(feature = "cache")]

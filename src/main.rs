@@ -24,7 +24,6 @@ mod util;
 /// Enabled features:
 #[cfg_attr(feature = "default-cleaner", doc = "default-cleaner")]
 #[cfg_attr(feature = "regex"          , doc = "regex"          )]
-#[cfg_attr(feature = "glob"           , doc = "glob"           )]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
 #[cfg_attr(feature = "base64"         , doc = "base64"         )]
@@ -35,7 +34,6 @@ mod util;
 /// Disabled features:
 #[cfg_attr(not(feature = "default-cleaner"), doc = "default-cleaner")]
 #[cfg_attr(not(feature = "regex"          ), doc = "regex"          )]
-#[cfg_attr(not(feature = "glob"           ), doc = "glob"           )]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]

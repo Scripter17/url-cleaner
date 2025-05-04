@@ -150,9 +150,6 @@ pub enum StringMatcher {
     /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
-    /// Passes if the call to [`GlobWrapper::matches`] returns [`true`].
-    #[cfg(feature = "glob")]
-    Glob(GlobWrapper),
     /// Applies [`Self::Modified::modification`] to a copy of the string, leaving the original unchanged, and returns the satisfaction of [`Self::Modified::matcher`] on that string.
     /// # Errors
     /// If the call to [`StringModification::apply`] returns an error, that error is returned.
@@ -254,13 +251,6 @@ pub enum StringMatcher {
 impl From<RegexWrapper> for StringMatcher {
     fn from(value: RegexWrapper) -> Self {
         Self::Regex(value)
-    }
-}
-
-#[cfg(feature = "glob")]
-impl From<GlobWrapper> for StringMatcher {
-    fn from(value: GlobWrapper) -> Self {
-        Self::Glob(value)
     }
 }
 
@@ -390,7 +380,6 @@ impl StringMatcher {
             },
             Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, task_state)?; temp}, task_state)?,
             #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack),
-            #[cfg(feature = "glob" )] Self::Glob(glob) => glob.matches(haystack),
             Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars).is_empty(),
             Self::AllCharsMatch(matcher) => {
                 for char in haystack.chars() {

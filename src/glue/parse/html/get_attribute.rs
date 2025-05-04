@@ -145,13 +145,13 @@ type EK = GAVSyntaxErrorKind;
 /// assert_eq!(parse::html::get_attribute_value("<a href=b href=a&quot;a     >", "href").unwrap(), Some(Some("a\"a".to_string())));
 ///
 /// assert_eq!(parse::html::get_attribute_value("<a>", "href").unwrap(), None, "1");
-/// 
+///
 /// assert_eq!(parse::html::get_attribute_value("<a href>"                           , "href").unwrap(), Some(None));
 ///
 /// assert_eq!(parse::html::get_attribute_value("<a href href=\"1\">"                , "href").unwrap(), Some(Some("1".to_string())));
 /// assert_eq!(parse::html::get_attribute_value("<a href href=\"1\" href>"           , "href").unwrap(), Some(None));
 /// assert_eq!(parse::html::get_attribute_value("<a href href=\"1\" href href=\"2\">", "href").unwrap(), Some(Some("2".to_string())));
-/// 
+///
 /// assert_eq!(parse::html::get_attribute_value("<a href=\"1\" href>"                , "href").unwrap(), Some(None));
 /// assert_eq!(parse::html::get_attribute_value("<a href=\"1\" href href=\"2\">"     , "href").unwrap(), Some(Some("2".to_string())));
 /// assert_eq!(parse::html::get_attribute_value("<a href=\"1\" href href=\"2\" href>", "href").unwrap(), Some(None));

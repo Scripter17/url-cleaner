@@ -108,6 +108,13 @@ pub enum Condition {
 
 
 
+    /// Passes if the URL is the specified string.
+    ///
+    /// Used for testing.
+    UrlIs(String),
+
+
+
     /// Gets the value specified by [`Self::PartMap::part`], indexes [`Self::PartMap::map`], and returns the value of the returned [`Self`].
     ///
     /// If the call to [`Map::get`] returns [`None`], fails.
@@ -181,41 +188,313 @@ pub enum Condition {
 
 
     /// Passes if the value of [`UrlPart::Host`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::HostIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::HostIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(!Condition::HostIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(!Condition::HostIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::HostIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::HostIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     HostIs(Option<String>),
     /// Passes if the value of [`UrlPart::Subdomain`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(!Condition::SubdomainIs(Some("www".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::SubdomainIs(Some("www".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::SubdomainIs(Some("www".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::SubdomainIs(Some("www".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::SubdomainIs(Some("www".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::SubdomainIs(Some("www".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     SubdomainIs(Option<String>),
     /// Passes if the value of [`UrlPart::RegDomain`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::RegDomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!( Condition::RegDomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::RegDomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::RegDomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::RegDomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::RegDomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     RegDomainIs(Option<String>),
     /// Passes if the value of [`UrlPart::Domain`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::DomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!( Condition::DomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(!Condition::DomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(!Condition::DomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::DomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::DomainIs(Some("example.com".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     DomainIs(Option<String>),
     /// Passes if the value of [`UrlPart::DomainMiddle`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::DomainMiddleIs(Some("example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!( Condition::DomainMiddleIs(Some("example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::DomainMiddleIs(Some("example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::DomainMiddleIs(Some("example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::DomainMiddleIs(Some("example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::DomainMiddleIs(Some("example".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     DomainMiddleIs(Option<String>),
     /// Passes if the value of [`UrlPart::NotDomainSuffix`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(!Condition::NotDomainSuffixIs(Some("www.example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::NotDomainSuffixIs(Some("www.example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::NotDomainSuffixIs(Some("www.example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::NotDomainSuffixIs(Some("www.example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::NotDomainSuffixIs(Some("www.example".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::NotDomainSuffixIs(Some("www.example".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     NotDomainSuffixIs(Option<String>),
     /// Passes if the value of [`UrlPart::DomainSuffix`] is equal to the specified string.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!( Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
+    /// ```
     DomainSuffixIs(Option<String>),
     /// Passes if the value of [`UrlPart::DomainSuffix`] is contained in the specified [`Set`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::HostIsOneOf([Some("example.com".to_string()), Some("www.example.com".to_string())].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::HostIsOneOf([Some("example.com".to_string()), Some("www.example.com".to_string())].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::HostIsOneOf([Some("example.com".to_string()), Some("www.example.com".to_string())].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(!Condition::HostIsOneOf([Some("example.com".to_string()), Some("www.example.com".to_string())].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::HostIsOneOf([Some("example.com".to_string()), Some("www.example.com".to_string())].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::HostIsOneOf([Some("example.com".to_string()), Some("www.example.com".to_string())].into()).satisfied_by(&task_state).unwrap());
+    /// ```
     HostIsOneOf(Set<String>),
     /// Passes if the value of [`UrlPart::Host`] is [`Some`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(Condition::UrlHasHost.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(Condition::UrlHasHost.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(Condition::UrlHasHost.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(Condition::UrlHasHost.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(Condition::UrlHasHost.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(Condition::UrlHasHost.satisfied_by(&task_state).unwrap());
+    /// ```
     UrlHasHost,
     /// Passes if the URL is a [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name).
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(!Condition::HostIsFqdn.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!( Condition::HostIsFqdn.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(!Condition::HostIsFqdn.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::HostIsFqdn.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::HostIsFqdn.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::HostIsFqdn.satisfied_by(&task_state).unwrap());
+    /// ```
     HostIsFqdn,
     /// Passes if the URL's host is a domain.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::HostIsDomain.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!( Condition::HostIsDomain.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::HostIsDomain.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!( Condition::HostIsDomain.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::HostIsDomain.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::HostIsDomain.satisfied_by(&task_state).unwrap());
+    /// ```
     HostIsDomain,
     /// Passes if the URL's host is an IP address.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(!Condition::HostIsIp.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::HostIsIp.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(!Condition::HostIsIp.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(!Condition::HostIsIp.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!( Condition::HostIsIp.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!( Condition::HostIsIp.satisfied_by(&task_state).unwrap());
+    /// ```
     HostIsIp,
     /// Passes if the URL's host is an IPv4 address.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(!Condition::HostIsIpv4.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::HostIsIpv4.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(!Condition::HostIsIpv4.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(!Condition::HostIsIpv4.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!( Condition::HostIsIpv4.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!(!Condition::HostIsIpv4.satisfied_by(&task_state).unwrap());
+    /// ```
     HostIsIpv4,
     /// Passes if the URL's host is an IPv6 address.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!(!Condition::HostIsIpv6.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com.");
+    /// assert!(!Condition::HostIsIpv6.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!(!Condition::HostIsIpv6.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com.");
+    /// assert!(!Condition::HostIsIpv6.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://127.0.0.1");
+    /// assert!(!Condition::HostIsIpv6.satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://[::1]");
+    /// assert!( Condition::HostIsIpv6.satisfied_by(&task_state).unwrap());
+    /// ```
     HostIsIpv6,
 
 
 
+    /// Passes if the value of [`UrlPart::Query`] is the specified value.
+    QueryIs(Option<String>),
     /// Passes if the URL's query has at least one query parameter with the specified name.
-    QueryHasParam(String),
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com?a=2&b=3");
+    /// assert!( Condition::HasQueryParam("a".into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::HasQueryParam("b".into()).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::HasQueryParam("c".into()).satisfied_by(&task_state).unwrap());
+    /// ```
+    HasQueryParam(QueryParamSelector),
     /// Passes if the [`UrlPart::Path`] starts with the specified value.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com/a/b/c");
+    /// assert!( Condition::PathStartsWith(""        .into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::PathStartsWith("/"       .into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::PathStartsWith("/a"      .into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::PathStartsWith("/a/"     .into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::PathStartsWith("/a/b"    .into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::PathStartsWith("/a/b/"   .into()).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::PathStartsWith("/a/b/c"  .into()).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::PathStartsWith("/a/b/c/" .into()).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::PathStartsWith("/a/b/c/d".into()).satisfied_by(&task_state).unwrap());
+    /// ```
     PathStartsWith(String),
     /// Passes if the value of [`UrlPart::Path`] is the specified value.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com/a/b/c");
+    /// assert!( Condition::PathStartsWith("/a/b/c" .into()).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::PathStartsWith("/a/b/c/".into()).satisfied_by(&task_state).unwrap());
+    /// ```
     PathIs(String),
 
 
@@ -223,6 +502,16 @@ pub enum Condition {
     /// Passes if the value of [`Self::PartIs::part`] is the same as the value of [`Self::PartIs::value`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com/abc?a=2");
+    /// assert!(Condition::PartIs {part: UrlPart::Host                  , value: "example.com".into()}.satisfied_by(&task_state).unwrap());
+    /// assert!(Condition::PartIs {part: UrlPart::Path                  , value: "/abc"       .into()}.satisfied_by(&task_state).unwrap());
+    /// assert!(Condition::PartIs {part: UrlPart::Query                 , value: "a=2"        .into()}.satisfied_by(&task_state).unwrap());
+    /// assert!(Condition::PartIs {part: UrlPart::QueryParam("a".into()), value: "2"          .into()}.satisfied_by(&task_state).unwrap());
+    /// ```
     PartIs {
         /// The [`UrlPart`] to get.
         part: UrlPart,
@@ -236,6 +525,15 @@ pub enum Condition {
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`ConditionError::StringSourceIsNone`].
     ///
     /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com/abc");
+    ///
+    /// assert!(Condition::PartContains {part: UrlPart::Path, value: "/ab".into(), at: StringLocation::Start}.satisfied_by(&task_state).unwrap());
+    /// Condition::PartContains {part: UrlPart::Fragment, value: "".into(), at: StringLocation::Start}.satisfied_by(&task_state).unwrap_err();
+    /// ```
     PartContains {
         /// The part to look in.
         part: UrlPart,
@@ -244,7 +542,7 @@ pub enum Condition {
         /// Where to look in [`Self::PartContains::part`] for [`Self::PartContains::value`].
         ///
         /// Defaults to [`StringLocation::Anywhere`].
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
     /// Passes if [`Self::PartMatches::part`] satisfies [`Self::PartMatches::matcher`].
@@ -252,6 +550,15 @@ pub enum Condition {
     /// If the call to [`UrlPart::get`] returns [`None`], returns the error [`ConditionError::PartIsNone`].
     ///
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com/abc");
+    ///
+    /// assert!(Condition::PartMatches {part: UrlPart::Path, matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap());
+    /// Condition::PartMatches {part: UrlPart::Fragment, matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap_err();
+    /// ```
     PartMatches {
         /// The part to match the value of.
         part: UrlPart,
@@ -259,6 +566,15 @@ pub enum Condition {
         matcher: StringMatcher
     },
     /// Passes if [`Self::PartIsOneOf::part`] is in [`Self::PartIsOneOf::values`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com/abc");
+    ///
+    /// assert!(Condition::PartIsOneOf {part: UrlPart::Path    , values: [Some("/abc".into()), None].into()}.satisfied_by(&task_state).unwrap());
+    /// assert!(Condition::PartIsOneOf {part: UrlPart::Fragment, values: [Some("/abc".into()), None].into()}.satisfied_by(&task_state).unwrap());
+    /// ```
     PartIsOneOf {
         /// The part to check the value of.
         part: UrlPart,
@@ -290,6 +606,15 @@ pub enum Condition {
     /// Passes if [`Self::StringIs::left`] is [`Self::StringIs::right`].
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// assert!( Condition::StringIs {left: "a".into(), right: "a".into()}.satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::StringIs {left: "a".into(), right: "b".into()}.satisfied_by(&task_state).unwrap());
+    /// ```
     StringIs {
         /// The left hand side of the equality check.
         left: StringSource,
@@ -303,6 +628,14 @@ pub enum Condition {
     /// If either call to [`StringSource::get`] returns [`None`], returns the error [`ConditionError::StringSourceIsNone`].
     ///
     /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// assert!(Condition::StringContains {value: "abc".into(), substring: "b".into(), at: StringLocation::Anywhere}.satisfied_by(&task_state).unwrap());
+    /// ```
     StringContains {
         /// The value to search for [`Self::StringContains::substring`].
         value: StringSource,
@@ -321,6 +654,14 @@ pub enum Condition {
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`ConditionError::StringSourceIsNone`].
     ///
     /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// assert!(Condition::StringMatches {value: "abc".into(), matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap());
+    /// ```
     StringMatches {
         /// The value to check the value of.
         value: StringSource,
@@ -337,10 +678,33 @@ pub enum Condition {
     /// If [`TaskStateView::commons`]'s [`Commons::conditions`] doesn't contain a [`Self`] with the specified name, returns the error [`ConditionError::CommonConditionNotFound`].
     ///
     /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, commons = Commons {
+    ///     conditions: [("abc".into(), Condition::Always)].into(),
+    ///     ..Default::default()
+    /// });
+    ///
+    /// assert!(Condition::Common(CommonCall {name: Box::new("abc".into()), args: Default::default()}).satisfied_by(&task_state).unwrap());
+    /// ```
     Common(CommonCall),
     /// Calls the specified function and returns its value.
     /// # Errors
     /// If the call to the contained function returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// fn some_complex_operation(task_state: &TaskStateView) -> Result<bool, ConditionError> {
+    ///     Ok(true)
+    /// }
+    ///
+    /// assert!(Condition::Custom(some_complex_operation).satisfied_by(&task_state).unwrap());
+    /// ```
     #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
@@ -442,6 +806,13 @@ impl Condition {
                 }
                 false
             },
+
+
+
+            Self::UrlIs(value) => task_state.url == value,
+
+
+
             Self::PartMap  {part , map} => map.get(part .get(task_state.url) ).map(|x| x.satisfied_by(task_state)).unwrap_or(Ok(false))?,
             Self::StringMap{value, map} => map.get(value.get(task_state    )?).map(|x| x.satisfied_by(task_state)).unwrap_or(Ok(false))?,
 
@@ -482,7 +853,8 @@ impl Condition {
 
             // Specific parts.
 
-            Self::QueryHasParam(name) => task_state.url.has_query_param(name, 0),
+            Self::QueryIs(value) => task_state.url.query() == value.as_deref(),
+            Self::HasQueryParam(QueryParamSelector {name, index}) => task_state.url.has_query_param(name, *index),
             Self::PathStartsWith(value) => task_state.url.path().starts_with(value),
             Self::PathIs(value) => task_state.url.path() == value,
 

@@ -68,7 +68,7 @@ pub enum CharRefError {
 /// assert_eq!(parse::html::parse_char_ref("amp" ).unwrap(), "&");
 /// assert_eq!(parse::html::parse_char_ref("#65" ).unwrap(), "A");
 /// assert_eq!(parse::html::parse_char_ref("#x41").unwrap(), "A");
-/// 
+///
 /// parse::html::parse_char_ref("unknown").unwrap_err();
 /// ```
 pub fn parse_char_ref(char_ref: &str) -> Result<Cow<'static, str>, CharRefError> {
@@ -2261,7 +2261,7 @@ enum HTMLNCRLastState {
 /// # use url_cleaner::glue::*;
 /// assert_eq!(parse::html::parse_num_char_ref("#65" ).unwrap(), 'A');
 /// assert_eq!(parse::html::parse_num_char_ref("#x41").unwrap(), 'A');
-/// 
+///
 /// parse::html::parse_num_char_ref("#10").unwrap_err();
 /// ```
 #[allow(clippy::unwrap_used, reason = "Shouldn't ever happen.")]

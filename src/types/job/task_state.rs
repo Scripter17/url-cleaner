@@ -11,8 +11,8 @@ use crate::glue::*;
 pub struct TaskState<'a> {
     /// The [`BetterUrl`] being modified.
     pub url: &'a mut BetterUrl,
-    /// The [`TaskScratchpad`] being used.
-    pub scratchpad: &'a mut TaskScratchpad,
+    /// The [`Scratchpad`] being used.
+    pub scratchpad: &'a mut Scratchpad,
     /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
     pub common_args: Option<&'a CommonCallArgs<'a>>,
     /// The [`TaskContext`] of the [`Task`] this came form.
@@ -52,17 +52,19 @@ impl<'a> TaskState<'a> {
 /// Helper macro to make docs briefer.
 #[macro_export]
 macro_rules! task_state {
-    ($task_state:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, job_context = $job_context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)?) => {
-        let url                                     = "https://example.com"; $(let url         = $url        ;)?
-        let context    : $crate::types::TaskContext = Default::default();    $(let context     = $context    ;)?
-        let job_context: $crate::types::JobContext  = Default::default();    $(let job_context = $job_context;)?
-        let params     : $crate::types::Params      = Default::default();    $(let params      = $params     ;)?
-        let commons    : $crate::types::Commons     = Default::default();    $(let commons     = $commons    ;)?
+    ($task_state:ident $(, url = $url:expr)? $(, scratchpad = $scratchpad:expr)? $(, common_args: $common_args:expr)? $(, context = $context:expr)? $(, job_context = $job_context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)?) => {
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     url                                                = "https://example.com"; $(let url         = $url        ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let mut scratchpad :        $crate::types::Scratchpad      = Default::default();    $(let scratchpad  = $scratchpad ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     common_args: Option<$crate::types::CommonCallArgs> = Default::default();    $(let common_args = $common_args;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     context    :        $crate::types::TaskContext     = Default::default();    $(let context     = $context    ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     job_context:        $crate::types::JobContext      = Default::default();    $(let job_context = $job_context;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     params     :        $crate::types::Params          = Default::default();    $(let params      = $params     ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     commons    :        $crate::types::Commons         = Default::default();    $(let commons     = $commons    ;)?
 
-        let mut $task_state = url_cleaner::types::TaskState {
-            url        : &mut BetterUrl::parse(url).unwrap(),
-            scratchpad : &mut Default::default(),
-            common_args: None,
+        let mut $task_state = $crate::types::TaskState {
+            url        : &mut url.try_into().unwrap(),
+            scratchpad : &mut scratchpad,
+            common_args: common_args.as_ref(),
             context    : &context,
             job_context: &job_context,
             params     : &params,
@@ -78,8 +80,8 @@ macro_rules! task_state {
 pub struct TaskStateView<'a> {
     /// The [`BetterUrl`] being modified.
     pub url: &'a BetterUrl,
-    /// The [`TaskScratchpad`] being used.
-    pub scratchpad: &'a TaskScratchpad,
+    /// The [`Scratchpad`] being used.
+    pub scratchpad: &'a Scratchpad,
     /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
     pub common_args: Option<&'a CommonCallArgs<'a>>,
     /// The [`TaskContext`] of the [`Task`] this came form.
@@ -99,7 +101,7 @@ impl<'a> TaskStateView<'a> {
     /// Makes an [`reqwest::blocking::Client`] using the relevant [`HttpClientConfig`] and [`HttpClientConfigDiff`]s.
     /// # Errors
     /// If the call to [`HttpClientConfig::make`] returns an error, that error is returned.
-    /// 
+    ///
     /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns an error, that error is returned.
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
@@ -122,17 +124,19 @@ impl<'a> TaskStateView<'a> {
 /// Helper macro to make docs briefer.
 #[macro_export]
 macro_rules! task_state_view {
-    ($task_state_view:ident $(, url = $url:expr)? $(, context = $context:expr)? $(, job_context = $job_context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)?) => {
-        let url                                     = "https://example.com"; $(let url         = $url        ;)?
-        let context    : $crate::types::TaskContext = Default::default();    $(let context     = $context    ;)?
-        let job_context: $crate::types::JobContext  = Default::default();    $(let job_context = $job_context;)?
-        let params     : $crate::types::Params      = Default::default();    $(let params      = $params     ;)?
-        let commons    : $crate::types::Commons     = Default::default();    $(let commons     = $commons    ;)?
+    ($task_state_view:ident $(, url = $url:expr)? $(, scratchpad = $scratchpad:expr)? $(, common_args: $common_args:expr)? $(, context = $context:expr)? $(, job_context = $job_context:expr)? $(, params = $params:expr)? $(, commons = $commons:expr)?) => {
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let url                                                = "https://example.com"; $(let url         = $url        ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let scratchpad :        $crate::types::Scratchpad      = Default::default();    $(let scratchpad  = $scratchpad ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let common_args: Option<$crate::types::CommonCallArgs> = Default::default();    $(let common_args = $common_args;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let context    :        $crate::types::TaskContext     = Default::default();    $(let context     = $context    ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let job_context:        $crate::types::JobContext      = Default::default();    $(let job_context = $job_context;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let params     :        $crate::types::Params          = Default::default();    $(let params      = $params     ;)?
+        #[allow(unused_variables, reason = "You're a macro. Shut up.")] let commons    :        $crate::types::Commons         = Default::default();    $(let commons     = $commons    ;)?
 
-        let mut $task_state_view = url_cleaner::types::TaskStateView {
-            url        : &BetterUrl::parse(url).unwrap(),
-            scratchpad : &Default::default(),
-            common_args: None,
+        let $task_state_view = $crate::types::TaskStateView {
+            url        : &url.try_into().unwrap(),
+            scratchpad : &scratchpad,
+            common_args: common_args.as_ref(),
             context    : &context,
             job_context: &job_context,
             params     : &params,

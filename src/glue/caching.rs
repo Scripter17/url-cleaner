@@ -3,7 +3,6 @@
 use std::sync::Mutex;
 use std::str::FromStr;
 use std::cell::OnceCell;
-use std::path::Path;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
@@ -32,7 +31,8 @@ pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
     id INTEGER NOT NULL PRIMARY KEY,
     category TEXT NOT NULL,
     "key" TEXT NOT NULL,
-    value TEXT
+    value TEXT,
+    UNIQUE(category, "key") ON CONFLICT REPLACE
 )"#;
 
 /// An entry in the cache database.
@@ -62,8 +62,29 @@ pub struct NewCacheEntry<'a> {
 }
 
 /// A [`Mutex`]ed [`InnerCache`].
+/// # Examples
+/// ```
+/// use url_cleaner::glue::*;
+///
+/// // Note the immutability.
+/// let cache = Cache::new(CachePath::Memory);
+///
+/// assert_eq!(cache.read("category", "key").unwrap(), None);
+/// cache.write("category", "key", None).unwrap();
+/// assert_eq!(cache.read("category", "key").unwrap(), Some(None));
+/// cache.write("category", "key", Some("value")).unwrap();
+/// assert_eq!(cache.read("category", "key").unwrap(), Some(Some("value".into())));
+/// ```
 #[derive(Debug, Default)]
 pub struct Cache(pub Mutex<InnerCache>);
+
+impl Cache {
+    /// Create a new unconnected [`Self`].
+    #[allow(dead_code, reason = "Public API.")]
+    pub fn new(path: CachePath) -> Self {
+        path.into()
+    }
+}
 
 impl From<InnerCache> for Cache {
     fn from(value: InnerCache) -> Self {
@@ -78,12 +99,33 @@ impl From<CachePath> for Cache {
 }
 
 /// A lazily connected connection to the cache database.
+/// # Examples
+/// ```
+/// use url_cleaner::glue::*;
+///
+/// // Note the mutability.
+/// let mut cache = InnerCache::new(CachePath::Memory);
+///
+///
+/// assert_eq!(cache.read("category", "key").unwrap(), None);
+/// cache.write("category", "key", None).unwrap();
+/// assert_eq!(cache.read("category", "key").unwrap(), Some(None));
+/// cache.write("category", "key", Some("value")).unwrap();
+/// assert_eq!(cache.read("category", "key").unwrap(), Some(Some("value".into())));
+/// ```
 #[derive(Default)]
 pub struct InnerCache {
     /// The path of the database.
     path: CachePath,
     /// The connection to the database.
     connection: OnceCell<SqliteConnection>
+}
+
+impl InnerCache {
+    /// Create a new unconnected [`Self`].
+    pub fn new(path: CachePath) -> Self {
+        path.into()
+    }
 }
 
 impl PartialEq for InnerCache {
@@ -121,22 +163,18 @@ impl CachePath {
     /// The cache's path as a [`str`].
     ///
     /// If `self` is [`Self::Memory`], returns `:memory:`.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::glue::*;
+    ///
+    /// assert_eq!(CachePath::Memory                          .as_str(), ":memory:");
+    /// assert_eq!(CachePath::Path(       "abc.sqlite".into()).as_str(), "abc.sqlite");
+    /// assert_eq!(CachePath::Path("file://abc.sqlite".into()).as_str(), "file://abc.sqlite");
+    /// ```
     pub fn as_str(&self) -> &str {
         match self {
             Self::Memory => ":memory:",
             Self::Path(x) => x
-        }
-    }
-
-    /// The cache's path as a [`Path`].
-    ///
-    /// If `self` is [`Self::Memory`], returns [`None`].
-    ///
-    /// If `self` is [`Self::Path`] and the path starts with `file://`, returns the path without the `file://`.
-    pub fn as_path(&self) -> Option<&Path> {
-        match self {
-            Self::Memory => None,
-            Self::Path(x) => Some(x.strip_prefix("file://").unwrap_or(x).as_ref())
         }
     }
 }
@@ -151,7 +189,7 @@ impl FromStr for CachePath {
     type Err = std::convert::Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(s.to_string().into())
+        Ok(s.into())
     }
 }
 
@@ -308,10 +346,9 @@ impl InnerCache {
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
     pub fn write(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
         debug!(self, InnerCache::write, self, category, key, value);
-        diesel::replace_into(cache::table)
-            .values(&NewCacheEntry {category, key, value})
-            .returning(CacheEntry::as_returning())
-            .get_result(self.connect()?)?;
+        diesel::insert_into(cache::table)
+            .values(NewCacheEntry {category, key, value})
+            .execute(self.connect()?)?;
         Ok(())
     }
 }

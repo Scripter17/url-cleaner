@@ -16,5 +16,5 @@ pub mod task_context;
 pub use task_context::*;
 pub mod task_state;
 pub use task_state::*;
-pub mod task_scratchpad;
-pub use task_scratchpad::*;
+pub mod scratchpad;
+pub use scratchpad::*;

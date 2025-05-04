@@ -28,6 +28,7 @@ pub struct Set<T> {
 }
 
 impl<T: Hash + Eq> Set<T> {
+    /// [`HashSet::contains`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -44,6 +45,22 @@ impl<T: Hash + Eq> Set<T> {
         match value {
             Some(x) => self.set.contains(x),
             None => self.if_null
+        }
+    }
+
+    /// [`HashSet::insert`].
+    pub fn insert(&mut self, value: Option<T>) -> bool {
+        match value {
+            Some(value) => self.set.insert(value),
+            None => {let ret = !self.if_null; self.if_null = true; ret}
+        }
+    }
+
+    /// [`HashSet::remove`].
+    pub fn remove<Q>(&mut self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Hash + Eq + ?Sized {
+        match value {
+            Some(value) => self.set.remove(value),
+            None => {let ret = self.if_null; self.if_null = false; ret}
         }
     }
 }
@@ -64,6 +81,16 @@ impl<T: Hash + Eq> PartialEq for Set<T> {
     }
 }
 impl<T: Hash + Eq> Eq for Set<T> {}
+
+impl<T: Eq + Hash, const N: usize> From<[Option<T>; N]> for Set<T> {
+    fn from(value: [Option<T>; N]) -> Self {
+        let mut ret = Self::default();
+        for x in value {
+            ret.insert(x);
+        }
+        ret
+    }
+}
 
 impl<T: Hash + Eq> From<HashSet<Option<T>>> for Set<T> {
     fn from(value: HashSet<Option<T>>) -> Self {
@@ -121,10 +148,7 @@ impl<'de, T: Deserialize<'de> + Eq + Hash> Visitor<'de> for SetDeserializer<T> {
     fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
         let mut ret = Set::default();
         while let Some(x) = seq.next_element()? {
-            match x {
-                Some(x) => {ret.set.insert(x);},
-                None => ret.if_null = true
-            }
+            ret.insert(x);
         }
         Ok(ret)
     }

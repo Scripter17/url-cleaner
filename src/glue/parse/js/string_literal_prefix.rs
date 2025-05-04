@@ -84,7 +84,7 @@ pub enum StringLiteralPrefixError {
 /// assert_eq!(parse::js::string_literal_prefix("'\"\\''outside"                                                 ).unwrap(), "\"'"                 );
 /// assert_eq!(parse::js::string_literal_prefix("'a\\na'"                                                        ).unwrap(), "a\na"                );
 /// assert_eq!(parse::js::string_literal_prefix("'a\\\na'"                                                       ).unwrap(), "aa"                  );
-/// 
+///
 /// parse::js::string_literal_prefix("\"\\u{00000a}\"").unwrap_err();
 /// ```
 #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
