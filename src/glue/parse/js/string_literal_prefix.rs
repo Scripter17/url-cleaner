@@ -3,6 +3,8 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
+use crate::util::*;
+
 /// The last state of the state machine used to unescape javascript string literal prefixes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StringLiteralPrefixLastState {
@@ -90,6 +92,7 @@ pub enum StringLiteralPrefixError {
 #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
 #[allow(clippy::unwrap_used, reason = "Who cares?")]
 pub fn string_literal_prefix(s: &str) -> Result<String, StringLiteralPrefixError> {
+    debug!(&(), prefix::js::string_literal_prefix, s);
     let mut ret = String::new();
     let mut last_state = StringLiteralPrefixLastState::Outside;
 
@@ -97,6 +100,7 @@ pub fn string_literal_prefix(s: &str) -> Result<String, StringLiteralPrefixError
     let mut quote = '"';
 
     for (i, c) in s.chars().enumerate() {
+        debug!(&(), prefix::js::string_literal_prefix, i, c, last_state, scratchspace, quote, ret);
         #[allow(clippy::arithmetic_side_effects, reason = "Shouldn't ever happen.")]
         match (last_state, c) {
             (StringLiteralPrefixLastState::Outside         , '"' | '\''                       ) => {last_state = StringLiteralPrefixLastState::Inside          ; quote = c;},
@@ -140,6 +144,8 @@ pub fn string_literal_prefix(s: &str) -> Result<String, StringLiteralPrefixError
             _ => Err(StringLiteralPrefixError::SyntaxError {last_state, i, c, scratchspace, quote, partial: ret.clone()})?
         };
     }
+
+    debug!(&(), prefix::js::string_literal_prefix, ret);
 
     Ok(ret)
 }

@@ -33,7 +33,7 @@ pub struct Params {
     /// Defaults to an empty [`HashMap`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub sets: HashMap<String, HashSet<String>>,
+    pub sets: HashMap<String, Set<String>>,
     /// Lists are a niche thing that lets you iterate over a set of values in a known order.
     ///
     /// Defaults to an empty [`HashMap`].
@@ -120,10 +120,10 @@ pub struct ParamsDiff {
     #[serde(default, skip_serializing_if = "is_default")] pub init_sets: Vec<String>,
     /// [`Params::sets`] and values to insert into them.
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_sets: HashMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_sets: HashMap<String, Vec<Option<String>>>,
     /// [`Params::sets`] and values to remove from them.
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, Vec<Option<String>>>,
     /// [`Params::sets`] to delete.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_sets: Vec<String>,
     /// [`Params::maps`] to init.
@@ -166,7 +166,7 @@ impl ParamsDiff {
         for (k, vs) in self.remove_from_sets {
             if let Some(x) = to.sets.get_mut(&k) {
                 for v in vs {
-                    x.remove(&v);
+                    x.remove(v.as_ref());
                 }
             }
         }
@@ -210,41 +210,41 @@ pub struct ParamsDiffArgParser {
     #[arg(short, long, value_names = ["NAME"])]
     pub flag  : Vec<String>,
     /// Unset a params flag.
-    #[arg(       long, value_names = ["NAME"])]
+    #[arg(long, value_names = ["NAME"])]
     pub unflag: Vec<String>,
     /// Set a params var.
     #[arg(short, long, num_args(2), value_names = ["NAME", "VALUE"])]
     pub var: Vec<Vec<String>>,
     /// Unset a params var.
-    #[arg(       long, value_names = ["NAME"])]
+    #[arg(long, value_names = ["NAME"])]
     pub unvar : Vec<String>,
     /// Insert a value into a params set.
-    #[arg(       long, num_args(1..), value_names = ["NAME", "VALUE1"])]
+    #[arg(long, num_args(1..), value_names = ["NAME", "VALUE1"])]
     pub insert_into_set: Vec<Vec<String>>,
     /// Remove a value from a params set.
-    #[arg(       long, num_args(1..), value_names = ["NAME", "VALUE1"])]
+    #[arg(long, num_args(1..), value_names = ["NAME", "VALUE1"])]
     pub remove_from_set: Vec<Vec<String>>,
     /// Insert a value into a params map.
-    #[arg(       long, num_args(2..), value_names = ["NAME", "KEY1", "VALUE1"])]
+    #[arg(long, num_args(2..), value_names = ["NAME", "KEY1", "VALUE1"])]
     pub insert_into_map: Vec<Vec<String>>,
     /// Remove a value from a params map.
-    #[arg(       long, num_args(1..), value_names = ["NAME", "KEY1"])]
+    #[arg(long, num_args(1..), value_names = ["NAME", "KEY1"])]
     pub remove_from_map: Vec<Vec<String>>,
-    /// Whether or not to read from the cache. If no value is provided, assumes `true`.
+    /// Overrides if the cleaner reads from the cache. If no value is provided, assumes `true`.
     #[cfg(feature = "cache")]
-    #[arg(       long, num_args(0..=1), default_missing_value("true"))]
+    #[arg(long, num_args(0..=1), default_missing_value("true"))]
     pub read_cache : Option<bool>,
-    /// Whether or not to write to the cache. If no value is provided, assumes `true`.
+    /// Overrides if the cleaner writes to the cache. If no value is provided, assumes `true`.
     #[cfg(feature = "cache")]
-    #[arg(       long, num_args(0..=1), default_missing_value("true"))]
+    #[arg(long, num_args(0..=1), default_missing_value("true"))]
     pub write_cache: Option<bool>,
-    /// The proxy to use.
+    /// Overrides the proxy to use.
     #[cfg(feature = "http")]
-    #[arg(       long)]
+    #[arg(long)]
     pub proxy: Option<ProxyConfig>,
-    /// Whether or not to ignore all proxies. If no value is provided, assumes `true`.
+    /// Overrides if all proxies should be ignored. If no value is provided, assumes `true`.
     #[cfg(feature = "http")]
-    #[arg(       long, num_args(0..=1), default_missing_value("true"))]
+    #[arg(long, num_args(0..=1), default_missing_value("true"))]
     pub no_proxy: Option<bool>
 }
 
@@ -338,8 +338,8 @@ impl ParamsDiffArgParser {
             }).collect::<Result<_, _>>()?,
             unvars : self.unvar.into_iter().collect(),
             init_sets: Default::default(),
-            insert_into_sets: self.insert_into_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::InsertIntoSetsNoName)}).collect::<Result<_, _>>()?,
-            remove_from_sets: self.remove_from_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromSetsNoName)}).collect::<Result<_, _>>()?,
+            insert_into_sets: self.insert_into_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x.into_iter().map(Some).collect()))} else {Err(ParamsDiffArgParserValueWrong::InsertIntoSetsNoName)}).collect::<Result<_, _>>()?,
+            remove_from_sets: self.remove_from_set.into_iter().map(|mut x| if !x.is_empty() {Ok((x.swap_remove(0), x.into_iter().map(Some).collect()))} else {Err(ParamsDiffArgParserValueWrong::RemoveFromSetsNoName)}).collect::<Result<_, _>>()?,
             delete_sets     : Default::default(),
             init_maps       : Default::default(),
             map_diffs       : {

@@ -56,8 +56,8 @@ commands = ["dep:which"]
 custom = []
 
 # Print debug info at various points.
-# Wrapping specific items in their own Debug variants gives much more detail, but this can show you where to wrap stuff.
-# The exact effects of this feature are currently unspecified, not covered in any stability guarantees, and should not be parsed unless you're willing to rewrite the parser at stupid times for stupider reasons.
+# Exact format unspecified, but should be reasonably easy for humans to parse.
+# Tip: do `|& grep -oP '^.{0,200}'` to be able to read it.
 debug = []
 
 # https://stackoverflow.com/a/54842093/10720231

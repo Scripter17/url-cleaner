@@ -25,7 +25,7 @@ done
 if [ $AUTO_DOMAINS -eq 1 ]; then
   echo "Getting domains"
   readarray -t DOMAINS < <(
-    cat default-config.json |\
+    cat default-cleaner.json |\
       jq '
         (.. | try select(contains({part: "Domain"}) or contains({part: "Host"})).map | try keys[]),
         (.params.named_partitionings.hwwwwdpafqdnp_categories[][])
@@ -61,7 +61,7 @@ if [ $EXTRACT_DATA -eq 1 ]; then
 fi
 
 echo "Cleaning URLs"
-cat reddit-inputs.json | jq '.[].url' -r | target/release/url-cleaner --config default-config.json --read-cache false --write-cache false --json > reddit-outputs.json
+cat reddit-inputs.json | jq '.[].url' -r | target/release/url-cleaner --cleaner default-cleaner.json --read-cache false --write-cache false --json > reddit-outputs.json
 
 echo "Compiling results"
 cat reddit-outputs.json |\

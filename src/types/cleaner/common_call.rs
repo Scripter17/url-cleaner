@@ -83,7 +83,7 @@ impl CommonCallArgsSource {
 }
 
 /// The args a [`Commons`] thing is called with.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct CommonCallArgs<'a> {
     /// The flags that are set.
     pub flags: &'a HashSet<String>,

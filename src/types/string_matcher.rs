@@ -1,8 +1,8 @@
 //! Rules for matching a string.
 
-use std::collections::HashSet;
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::collections::HashMap;
+use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -30,6 +30,15 @@ pub enum StringMatcher {
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
+
+    /// Passes if the string is [`Some`] and [`Self::IsSomeAnd::0`] passes.
+    /// # Errors
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    IsSomeAnd(Box<Self>),
+    /// Passes if the string is [`None`] or [`Self::IsNoneOr::0`] passes.
+    /// # Errors
+    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    IsNoneOr(Box<Self>),
 
     /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
     /// # Errors
@@ -76,9 +85,9 @@ pub enum StringMatcher {
         /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
         r#else: Box<Self>
     },
-    /// Checks the contained [`Self`]s in order, stopping as soon as a call to [`Self::satisfied_by`] doesn't return an error.
+    /// Calls [`Self::satisfied_by`] on each contained [`Self`] in order, returning the first to return [`Ok`].
     /// # Errors
-    /// If all calls to [`Self::satisfied_by`] return errors, the last error is returned. In the future this should be changed to return all errors.
+    /// If all calls to [`Self::satisfied_by`] error, the errors are returned in a [`StringMatcherError::FirstNotErrorErrors`].
     FirstNotError(Vec<Self>),
 
     /// Passes if the string contains [`Self::Contains::value`] at [`Self::Contains::at`].
@@ -137,8 +146,8 @@ pub enum StringMatcher {
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     Is(StringSource),
-    /// Passes if the string is in the specified [`HashSet`].
-    IsOneOf(HashSet<String>),
+    /// Passes if the string is in the specified [`Set`].
+    IsOneOf(Set<String>),
     /// Passes if the string is in the specified [`Params::sets`].
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
@@ -244,7 +253,7 @@ pub enum StringMatcher {
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
-    Custom(fn(&str, &TaskStateView) -> Result<bool, StringMatcherError>)
+    Custom(fn(Option<&str>, &TaskStateView) -> Result<bool, StringMatcherError>)
 }
 
 #[cfg(feature = "regex")]
@@ -285,6 +294,9 @@ pub enum StringMatcherError {
         /// The error returned by [`StringMatcher::TryElse::else`]. 
         else_error: Box<Self>
     },
+    /// Returned when all [`StringMatcher`]s in a [`StringMatcher::FirstNotError`] error.
+    #[error("All StringMatchers in a StringMatcher::FirstNotError errored.")]
+    FirstNotErrorErrors(Vec<Self>),
     /// Returned when a segment isn't found.
     #[error("The requested segment wasn't found.")]
     SegmentNotFound,
@@ -300,6 +312,9 @@ pub enum StringMatcherError {
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Returned when the string to match is [`None`] where it has to be [`Some`].
+    #[error("The string to match was None where it had to be Some.")]
+    StringIsNone,
     /// An arbitrary [`std::error::Error`] for use with [`StringMatcher::Custom`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
@@ -310,7 +325,7 @@ impl StringMatcher {
     /// Returns [`true`] if `haystack` satisfies `self`.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn satisfied_by(&self, haystack: &str, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
+    pub fn satisfied_by(&self, haystack: Option<&str>, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
         debug!(self, StringMatcher::satisfied_by, self);
         Ok(match self {
             Self::Always => true,
@@ -323,6 +338,9 @@ impl StringMatcher {
             },
 
             // Logic.
+
+            Self::IsSomeAnd(matcher) => haystack.is_some() && matcher.satisfied_by(haystack, task_state)?,
+            Self::IsNoneOr(matcher) => haystack.is_none() || matcher.satisfied_by(haystack, task_state)?,
 
             Self::If {r#if, then, r#else} => if r#if.satisfied_by(haystack, task_state)? {then} else {r#else}.satisfied_by(haystack, task_state)?,
             Self::All(matchers) => {
@@ -349,19 +367,22 @@ impl StringMatcher {
             Self::TreatErrorAsFail(matcher) => matcher.satisfied_by(haystack, task_state).unwrap_or(false),
             Self::TryElse{r#try, r#else} => r#try.satisfied_by(haystack, task_state).or_else(|try_error| r#else.satisfied_by(haystack, task_state).map_err(|else_error| StringMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(matchers) => {
-                let mut result = Ok(false); // The initial value doesn't mean anything.
+                let mut errors = Vec::new();
                 for matcher in matchers {
-                    result = matcher.satisfied_by(haystack, task_state);
-                    if result.is_ok() {return result;}
+                    match matcher.satisfied_by(haystack, task_state) {
+                        Ok(x) => return Ok(x),
+                        Err(e) => errors.push(e)
+                    }
                 }
-                result?
+                Err(StringMatcherError::FirstNotErrorErrors(errors))?
             },
 
             // Other.
 
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
-            Self::Contains {at, value} => at.satisfied_by(haystack, get_str!(value, task_state, StringMatcherError))?,
+            Self::Contains {at, value} => at.satisfied_by(haystack.ok_or(StringMatcherError::StringIsNone)?, get_str!(value, task_state, StringMatcherError))?,
             Self::ContainsAny {values, at} => {
+                let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
                 for value in values {
                     if at.satisfied_by(haystack, get_str!(value, task_state, StringModificationError))? {
                         return Ok(true)
@@ -371,6 +392,7 @@ impl StringMatcher {
             },
             // Cannot wait for [`Iterator::try_any`](https://github.com/rust-lang/rfcs/pull/3233)
             Self::ContainsAnyInList {at, list} => {
+                let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
                 for x in task_state.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
                     if at.satisfied_by(haystack, x)? {
                         return Ok(true);
@@ -378,11 +400,15 @@ impl StringMatcher {
                 }
                 false
             },
-            Self::Modified {modification, matcher} => matcher.satisfied_by(&{let mut temp=haystack.to_string(); modification.apply(&mut temp, task_state)?; temp}, task_state)?,
-            #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack),
-            Self::OnlyTheseChars(chars) => haystack.trim_start_matches(&**chars).is_empty(),
+            Self::Modified {modification, matcher} => {
+                let mut temp = haystack.map(Cow::Borrowed);
+                modification.apply(&mut temp, task_state)?;
+                matcher.satisfied_by(temp.as_deref(), task_state)?
+            }
+            #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::OnlyTheseChars(chars) => haystack.ok_or(StringMatcherError::StringIsNone)?.trim_start_matches(&**chars).is_empty(),
             Self::AllCharsMatch(matcher) => {
-                for char in haystack.chars() {
+                for char in haystack.ok_or(StringMatcherError::StringIsNone)?.chars() {
                     if !matcher.satisfied_by(char)? {
                         return Ok(false);
                     }
@@ -390,35 +416,35 @@ impl StringMatcher {
                 true
             },
             Self::AnyCharMatches(matcher) => {
-                for char in haystack.chars() {
+                for char in haystack.ok_or(StringMatcherError::StringIsNone)?.chars() {
                     if matcher.satisfied_by(char)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::IsAscii => haystack.is_ascii(),
-            Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(neg_nth(haystack.split(get_str!(split, task_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?, task_state)?,
+            Self::IsAscii => haystack.ok_or(StringMatcherError::StringIsNone)?.is_ascii(),
+            Self::NthSegmentMatches {n, split, matcher} => matcher.satisfied_by(Some(neg_nth(haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?), task_state)?,
             Self::AnySegmentMatches {split, matcher} => {
-                for segment in haystack.split(get_str!(split, task_state, StringMatcherError)) {
-                    if matcher.satisfied_by(segment, task_state)? {
+                for segment in haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)) {
+                    if matcher.satisfied_by(Some(segment), task_state)? {
                         return Ok(true);
                     }
                 };
                 return Ok(false);
             },
-            Self::Is(source) => Some(haystack) == source.get(task_state)?.as_deref(),
+            Self::Is(source) => haystack == source.get(task_state)?.as_deref(),
             Self::InSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
-            Self::LengthIs(x) => haystack.len() == *x,
+            Self::LengthIs(x) => haystack.ok_or(StringMatcherError::StringIsNone)?.len() == *x,
             Self::SegmentsEndWith { split, value } => {
                 let split = get_str!(split, task_state, StringMatcherError);
                 // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value, task_state, StringMatcherError).split(split)).all(|(x, y)| x==y)
-                haystack.strip_suffix(get_str!(value, task_state, StringMatcherError))
+                haystack.ok_or(StringMatcherError::StringIsNone)?.strip_suffix(get_str!(value, task_state, StringMatcherError))
                     .is_some_and(|x| x.split(split).last()==Some(""))
             },
             Self::SegmentsStartWith { split, value } => {
                 let split = get_str!(split, task_state, StringMatcherError);
-                haystack.strip_prefix(get_str!(value, task_state, StringMatcherError))
+                haystack.ok_or(StringMatcherError::StringIsNone)?.strip_prefix(get_str!(value, task_state, StringMatcherError))
                     .is_some_and(|x| x.strip_prefix(split).is_some())
             },
             Self::Common(common_call) => {

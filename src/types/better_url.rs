@@ -221,7 +221,7 @@ impl BetterUrl {
     /// assert_eq!(url.ipv4_details  (), Some(Ipv4Details {}));
     /// assert_eq!(url.ipv6_details  (), None);
     /// ```
-    pub fn ipv4_details  (&self) -> Option<Ipv4Details> {self.host_details()?.ipv4_details()}
+    pub fn ipv4_details(&self) -> Option<Ipv4Details> {self.host_details()?.ipv4_details()}
     /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
     /// ```
     /// use url_cleaner::types::*;
@@ -231,7 +231,7 @@ impl BetterUrl {
     /// assert_eq!(url.ipv4_details  (), None);
     /// assert_eq!(url.ipv6_details  (), Some(Ipv6Details {}));
     /// ```
-    pub fn ipv6_details  (&self) -> Option<Ipv6Details> {self.host_details()?.ipv6_details()}
+    pub fn ipv6_details(&self) -> Option<Ipv6Details> {self.host_details()?.ipv6_details()}
 
     /// [`Url::domain`] but without the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
     /// # Examples
@@ -328,7 +328,7 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c" ).unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c"]);
     /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c/").unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c", ""]);
     /// ```
-    pub fn path_segments    (&self) -> Result<Split<'_, char>, UrlDoesNotHavePathSegments> {self.url.path_segments().ok_or(UrlDoesNotHavePathSegments)}
+    pub fn path_segments(&self) -> Result<Split<'_, char>, UrlDoesNotHavePathSegments> {self.url.path_segments().ok_or(UrlDoesNotHavePathSegments)}
     /// Gets an object that can mutate the segments of [`Self`]'s path.
     /// # Errors
     /// If the call to [`Url::path_segments_mut`] returns an error, returns the error [`UrlDoesNotHavePathSegments`].
@@ -378,15 +378,32 @@ impl BetterUrl {
     /// [`Url::set_fragment`].
     pub fn set_fragment     (&mut self, fragment: Option<&str>)                                 {self.url.set_fragment(fragment)}
     /// An iterator over query parameters without percent decoding anything.
-    pub fn raw_query_pairs  (&self) -> Option<impl Iterator<Item = (&str, Option<&str>)>>       {Some(self.query()?.split('&').map(|kev| kev.split_once('=').map_or((kev, None), |(k, v)| (k, Some(v)))))}
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
+    ///
+    /// let mut raw_query_pairs = url.raw_query_pairs().unwrap();
+    ///
+    /// assert_eq!(raw_query_pairs.next(), Some(("a"  , Some("1"))));
+    /// assert_eq!(raw_query_pairs.next(), Some(("%61", Some("2"))));
+    /// assert_eq!(raw_query_pairs.next(), Some(("a"  , Some("3"))));
+    /// assert_eq!(raw_query_pairs.next(), Some(("b"  , Some("%41"))));
+    /// assert_eq!(raw_query_pairs.next(), Some(("%62", Some("%42"))));
+    /// assert_eq!(raw_query_pairs.next(), Some(("b"  , Some("%43"))));
+    /// ```
+    pub fn raw_query_pairs(&self) -> Option<impl Iterator<Item = (&str, Option<&str>)>> {Some(self.query()?.split('&').map(|kev| kev.split_once('=').map_or((kev, None), |(k, v)| (k, Some(v)))))}
     /// Return [`true`] if [`Self::get_query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
+    ///
+    /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     ///
     /// Please note that this returns [`true`] even if the query param has no value.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
     ///
-    /// let url = BetterUrl::parse("https://example.com?a=1&a=2&a&a=4").unwrap();
+    /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a&%61=4").unwrap();
     ///
     /// assert!( url.has_query_param("a", 0));
     /// assert!( url.has_query_param("a", 1));
@@ -399,6 +416,8 @@ impl BetterUrl {
     }
 
     /// Get the selected query parameter.
+    ///
+    /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     ///
     /// First [`Option`] is if there's a query.
     ///
@@ -438,9 +457,9 @@ impl BetterUrl {
     pub fn get_query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<Cow<'a, str>>>> {
         self.get_raw_query_param(name, index).map(|v| v.map(|v| v.map(|v| peh(v))))
     }
-    /// Get the selected query paremeter without percent decoding the vlue.
+    /// Get the selected query paremeter without percent decoding the value.
     ///
-    /// The names, however, are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
+    /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -459,6 +478,8 @@ impl BetterUrl {
     }
 
     /// Set the selected query parameter.
+    ///
+    /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     ///
     /// If there are N query parameters named `name` and `index` is N, appends a new query parameter to the end.
     ///
@@ -513,6 +534,8 @@ impl BetterUrl {
         self.set_raw_query_param(&form_urlencoded::byte_serialize(name.as_bytes()).collect::<String>(), index, to.as_ref().map(|to| to.as_deref()))
     }
     /// Sets the selected query parameter, without ensuring either the name or the value are valid.
+    ///
+    /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     ///
     /// If there are N query parameters named `name` and `index` is N, appends a new query parameter to the end.
     ///

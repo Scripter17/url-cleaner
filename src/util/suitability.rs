@@ -35,6 +35,8 @@ pub(crate) fn set_is_documented               (name: &StringSource, config: &Cle
 pub(crate) fn map_is_documented               (name: &StringSource, config: &Cleaner) {if let StringSource::String(name) = name {assert!(config.docs.maps               .contains_key(name), "Undocumented Map: {name}")}}
 /// Suitability helper function to check that a named partitioning is documented.
 pub(crate) fn named_partitioning_is_documented(name: &StringSource, config: &Cleaner) {if let StringSource::String(name) = name {assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}")}}
+/// Suitability helper function to check that a named partitioning is documented.
+pub(crate) fn literal_named_partitioning_is_documented(name: &str,  config: &Cleaner) {assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}")}
 
 impl<K: Suitability, V: Suitability> Suitability for HashMap<K, V> {
     fn assert_suitability(&self, config: &Cleaner) {

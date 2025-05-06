@@ -85,6 +85,10 @@ pub enum StringSource {
         /// The value to return if [`Self::TryElse::try`] is an error.
         r#else: Box<Self>
     },
+    /// Calls [`Self::get`] on each contained [`Self`] in order, returning the first to return [`Ok`].
+    /// # Errors
+    /// If all calls to [`Self::get`] error, the errors are returned in a [`StringSourceError::FirstNotErrorErrors`].
+    FirstNotError(Vec<Self>),
     /// Print debug info about the contained [`Self`] and its call to [`Self::get`].
     ///
     /// The exact info printed is unspecified and subject to change at any time for any reason.
@@ -384,11 +388,13 @@ pub enum StringSource {
         /// The value to index the [`Map`] with.
         key: Box<Self>
     },
-    /// Gets the [`NamedPartitioning`] specified by [`Self::ParamsNamedPartitioning::name`] from [`Params::named_partitionings`] then gets the name of the partition containing [`Self::ParamsNamedPartitioning::element`].
+    /// Gets the [`NamedPartitioning`] specified by [`Self::NamedPartitioning::named_partitioning`] from [`Params::named_partitionings`] then gets the name of the partition containing [`Self::NamedPartitioning::element`].
     /// # Errors
     /// If either call to [`Self::get`] returns an error, that error is returned.
     ///
-    /// If [`Self::ParamsNamedPartitioning::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::ParamsNamedPartitioningNotFound`].
+    /// If either call to [`Self::get`] returns an [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    ///
+    /// If the [`NamedPartitioning`] isn't found, returns the error [`StringSourceError::NamedPartitioningNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -405,15 +411,15 @@ pub enum StringSource {
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::ParamsNamedPartitioning {
-    ///     name: Box::new("thing".into()),
+    /// assert_eq!(StringSource::NamedPartitioning {
+    ///     named_partitioning: Box::new("thing".into()),
     ///     element: Box::new("a".into())
     /// }.get(&task_state).unwrap(), Some("abc".into()));
     /// ```
-    ParamsNamedPartitioning {
+    NamedPartitioning {
         /// The name of the [`Params::named_partitionings`] to index.
         #[suitable(assert = "named_partitioning_is_documented")]
-        name: Box<Self>,
+        named_partitioning: Box<Self>,
         /// The element whose partition to get the name of.
         element: Box<Self>
     },
@@ -434,10 +440,10 @@ pub enum StringSource {
     ///     modification: Box::new(StringModification::Uppercase)
     /// }.get(&task_state).unwrap(), Some("ABC".into()));
     ///
-    /// assert_eq!(StringSource::Modified {
+    /// StringSource::Modified {
     ///     value: Box::new(StringSource::None),
     ///     modification: Box::new(StringModification::Uppercase)
-    /// }.get(&task_state).unwrap(), None);
+    /// }.get(&task_state).unwrap_err();
     /// ```
     Modified {
         /// The value to get and modify.
@@ -477,132 +483,6 @@ pub enum StringSource {
         key: Box<Self>,
         /// The value to cache.
         value: Box<Self>
-    },
-    /// Finds the first instance of the specified substring and removes everything before it.
-    ///
-    /// Useful in combination with [`StringModification::GetJsStringLiteralPrefix`].
-    ///
-    /// Equivalent to [`StringModification::StripBefore`] but doesn't require allocating borrowed strings.
-    /// # Examples
-    /// ```
-    /// use std::borrow::Cow;
-    /// use url_cleaner::types::*;
-    ///
-    /// url_cleaner::task_state_view!(task_state_view);
-    ///
-    /// assert!(matches!(
-    ///     StringSource::StripBefore {
-    ///         value: Box::new("abc".into()),
-    ///         find : Box::new("b".into())
-    ///     }.get(&task_state_view).unwrap(),
-    ///     Some(Cow::Borrowed("bc"))
-    /// ));
-    /// ```
-    StripBefore {
-        /// The value to get a substring of.
-        value: Box<Self>,
-        /// The value to strip everything beefore the first instance of.
-        find: Box<Self>
-    },
-    /// Finds the first instance of the specified substring and removes everything after it.
-    ///
-    /// Equivalent to [`StringModification::StripAfter`] but doesn't require allocating borrowed strings.
-    /// # Examples
-    /// ```
-    /// use std::borrow::Cow;
-    /// use url_cleaner::types::*;
-    ///
-    /// url_cleaner::task_state_view!(task_state_view);
-    ///
-    /// assert!(matches!(
-    ///     StringSource::StripAfter {
-    ///         value: Box::new("abc".into()),
-    ///         find : Box::new("b".into())
-    ///     }.get(&task_state_view).unwrap(),
-    ///     Some(Cow::Borrowed("ab"))
-    /// ));
-    /// ```
-    StripAfter {
-        /// The value to get a substring of.
-        value: Box<Self>,
-        /// The value to strip everything before the first instance of.
-        find: Box<Self>
-    },
-    /// Finds the first instance of the specified substring and keeps only everything before it.
-    ///
-    /// Equivalent to [`StringModification::KeepBefore`] but doesn't require allocating borrowed strings.
-    /// # Examples
-    /// ```
-    /// use std::borrow::Cow;
-    /// use url_cleaner::types::*;
-    ///
-    /// url_cleaner::task_state_view!(task_state_view);
-    ///
-    /// assert!(matches!(
-    ///     StringSource::KeepBefore {
-    ///         value: Box::new("abc".into()),
-    ///         find : Box::new("b".into())
-    ///     }.get(&task_state_view).unwrap(),
-    ///     Some(Cow::Borrowed("a"))
-    /// ));
-    /// ```
-    KeepBefore {
-        /// The value to get a substring of.
-        value: Box<Self>,
-        /// The value to keep everything beefore the first instance of.
-        find: Box<Self>
-    },
-    /// Finds the first instance of the specified substring and keeps only everything after it.
-    ///
-    /// Useful in combination with [`StringModification::GetHtmlAttribute`].
-    ///
-    /// Equivalent to [`StringModification::KeepAfter`] but doesn't require allocating borrowed strings.
-    /// # Examples
-    /// ```
-    /// use std::borrow::Cow;
-    /// use url_cleaner::types::*;
-    ///
-    /// url_cleaner::task_state_view!(task_state_view);
-    ///
-    /// assert!(matches!(
-    ///     StringSource::KeepAfter {
-    ///         value: Box::new("abc".into()),
-    ///         find : Box::new("b".into())
-    ///     }.get(&task_state_view).unwrap(),
-    ///     Some(Cow::Borrowed("c"))
-    /// ));
-    /// ```
-    KeepAfter {
-        /// The value to get a substring of.
-        value: Box<Self>,
-        /// The value to keep everything before the first instance of.
-        find: Box<Self>
-    },
-    /// Gets the value of [`Self::ExtractBetween::value`] and gets the substring after the first instance of [`Self::ExtractBetween::start`] and the first subsequent instance of [`Self::ExtractBetween::end`].
-    /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If [`Self::ExtractBetween::start`] isn't found in [`Self::ExtractBetween::value`], returns the error [`StringSourceError::ExtractBetweenStartNotFound`].
-    ///
-    /// If [`Self::ExtractBetween::end`] isn't found in [`Self::ExtractBetween::value`], returns the error [`StringSourceError::ExtractBetweenEndNotFound`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner::types::*;
-    /// url_cleaner::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::ExtractBetween {
-    ///     value: Box::new("abcaaba".into()),
-    ///     start: Box::new("b".into()),
-    ///     end  : Box::new("a".into())
-    /// }.get(&task_state).unwrap(), Some("c".into()));
-    /// ```
-    ExtractBetween {
-        /// The value to extract part of.
-        value: Box<Self>,
-        /// The value before the substring to get from [`Self::ExtractBetween::value`].
-        start: Box<Self>,
-        /// The value after the substring to get from [`Self::ExtractBetween::value`].
-        end: Box<Self>
     },
     /// Gets the value of [`Self::RegexFind::value`] and calls [`Regex::find`] on it.
     ///
@@ -682,7 +562,7 @@ pub enum StringSource {
     /// use url_cleaner::glue::*;
     /// url_cleaner::task_state_view!(task_state);
     ///
-    /// fn some_complex_operation<'a>(task_state: &'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    /// fn some_complex_operation<'a>(task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
     ///     Ok(Some("a".into()))
     /// }
     ///
@@ -692,7 +572,7 @@ pub enum StringSource {
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
-    Custom(for<'a> fn(&'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError>)
+    Custom(for<'a> fn(&TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError>)
 }
 
 impl FromStr for StringSource {
@@ -763,6 +643,17 @@ pub enum StringSourceError {
     /// Returned when a [`StringSource::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
+    /// Returned when both [`StringModification`]s in a [`StringModification::TryElse`] return errors.
+    #[error("Both StringModifications in a StringModification::TryElse returned errors.")]
+    TryElseError {
+        /// The error returned by [`StringModification::TryElse::try`]. 
+        try_error: Box<Self>,
+        /// The error returned by [`StringModification::TryElse::else`]. 
+        else_error: Box<Self>
+    },
+    /// Returned when all [`StringModification`]s in a [`StringModification::FirstNotError`] error.
+    #[error("All StringModifications in a StringModification::FirstNotError errored.")]
+    FirstNotErrorErrors(Vec<Self>),
     /// Returned when a [`StringModificationError`] is encounterd.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
@@ -811,13 +702,7 @@ pub enum StringSourceError {
     ParamsMapNotFound,
     /// Returned when the requested [`Params::named_partitionings`] isn't found
     #[error("The requested Params NamedPartitioning was not found.")]
-    ParamsNamedPartitioningNotFound,
-    /// Returned when the [`StringSource::ExtractBetween::start`] isn't found in the string.
-    #[error("The StringSource::ExtractBetween::start wasn't found in the string.")]
-    ExtractBetweenStartNotFound,
-    /// Returned when the [`StringSource::ExtractBetween::end`] isn't found in the string.
-    #[error("The StringSource::ExtractBetween::end wasn't found in the string.")]
-    ExtractBetweenEndNotFound,
+    NamedPartitioningNotFound,
     /// Returned when the requested [`Commons::string_sources`] isn't found.
     #[error("The requested common StringSource was not found.")]
     CommonStringSourceNotFound,
@@ -834,9 +719,6 @@ pub enum StringSourceError {
     /// Returned when a [`GetVarError`] is encountered.
     #[error(transparent)]
     GetVarError(#[from] GetVarError),
-    /// Returned when a substring isn't found in the string.
-    #[error("The substring wasn't found in the string.")]
-    SubstringNotFound,
     /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
     #[cfg(feature = "custom")]
     #[error(transparent)]
@@ -860,7 +742,7 @@ impl StringSource {
     /// Get the string.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'a>(&'a self, task_state: &'a TaskStateView) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         debug!(self, StringSource::get, self, task_state);
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
@@ -868,7 +750,17 @@ impl StringSource {
             Self::Error(msg) => Err(StringSourceError::ExplicitError(msg.clone()))?,
             Self::ErrorToNone(value) => value.get(task_state).ok().flatten(),
             Self::ErrorToEmptyString(value) => value.get(task_state).unwrap_or(Some(Cow::Borrowed(""))),
-            Self::TryElse{r#try, r#else} => r#try.get(task_state).or_else(|_| r#else.get(task_state))?,
+            Self::TryElse{r#try, r#else} => r#try.get(task_state).or_else(|try_error| r#else.get(task_state).map_err(|else_error| StringSourceError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
+            Self::FirstNotError(sources) => {
+                let mut errors = Vec::new();
+                for source in sources {
+                    match source.get(task_state) {
+                        Ok(x) => return Ok(x),
+                        Err(e) => errors.push(e)
+                    }
+                }
+                Err(StringSourceError::FirstNotErrorErrors(errors))?
+            },
             Self::Debug(source) => {
                 let ret = source.get(task_state);
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\ntask_state: {task_state:?}\nret: {ret:?}");
@@ -884,7 +776,7 @@ impl StringSource {
             Self::Join {values, join} => values.iter().map(|value| value.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
             Self::IfFlag {flag, then, r#else} => if flag.get(task_state)? {then} else {r#else}.get(task_state)?,
             Self::IfStringMatches {value, matcher, then, r#else} => {
-                if matcher.satisfied_by(get_str!(value, task_state, StringSourceError), task_state)? {
+                if matcher.satisfied_by(value.get(task_state)?.as_deref(), task_state)? {
                     then.get(task_state)?
                 } else {
                     r#else.get(task_state)?
@@ -905,18 +797,13 @@ impl StringSource {
             Self::ExtractPart{value, part} => value.get(task_state)?.map(|url_str| BetterUrl::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::Var(var_ref) => var_ref.get(task_state)?,
             Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::ParamsMapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
-            Self::ParamsNamedPartitioning {name, element} => task_state.params.named_partitionings
-                .get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::ParamsNamedPartitioningNotFound)?
-                .get_partition(get_str!(element, task_state, StringSourceError)).map(Cow::Borrowed),
+            Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
+                .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
+                .get_partition_of(get_str!(element, task_state, StringSourceError)).map(Cow::Borrowed),
             Self::Modified {value, modification} => {
-                match value.as_ref().get(task_state)? {
-                    Some(x) => {
-                        let mut x = x.into_owned();
-                        modification.apply(&mut x, task_state)?;
-                        Some(Cow::Owned(x))
-                    },
-                    None => None
-                }
+                let mut ret = value.get(task_state)?;
+                modification.apply(&mut ret, task_state)?;
+                ret
             },
             #[cfg(feature = "regex")]
             Self::RegexFind {value, regex} => match value.get(task_state)? {
@@ -932,38 +819,8 @@ impl StringSource {
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(task_state)?)),
 
-            Self::StripBefore{value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
-                Cow::Borrowed(    value) => Cow::Borrowed(&value[  value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?..]),
-                Cow::Owned   (mut value) => {        value.drain(..value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?  ); Cow::Owned(value)}
-            }),
-            Self::KeepBefore {value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
-                Cow::Borrowed(    value) => Cow::Borrowed(&value[..value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?  ]),
-                Cow::Owned   (mut value) => {        value.drain(  value.find(get_str!(find, task_state, StringSourceError)).ok_or(StringSourceError::SubstringNotFound)?..); Cow::Owned(value)}
-            }),
-            #[allow(clippy::arithmetic_side_effects, reason = "If value contains find, then value is at least (the index of value)+(the length of find) long.")]
-            Self::StripAfter {value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
-                Cow::Borrowed(    value) => {let find = get_str!(find, task_state, StringSourceError); Cow::Borrowed(&value[..value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()  ])},
-                Cow::Owned   (mut value) => {let find = get_str!(find, task_state, StringSourceError);          value.drain(  value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()..); Cow::Owned(value)}
-            }),
-            #[allow(clippy::arithmetic_side_effects, reason = "If value contains find, then value is at least (the index of value)+(the length of find) long.")]
-            Self::KeepAfter  {value, find} => Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
-                Cow::Borrowed(    value) => {let find = get_str!(find, task_state, StringSourceError); Cow::Borrowed(&value[  value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()..])},
-                Cow::Owned   (mut value) => {let find = get_str!(find, task_state, StringSourceError);          value.drain(..value.find(find).ok_or(StringSourceError::SubstringNotFound)? + find.len()  ); Cow::Owned(value)}
-            }),
 
-            Self::ExtractBetween {value, start, end} => {
-                Some(match value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)? {
-                    Cow::Borrowed(x) => Cow::Borrowed(x
-                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenStartNotFound)?.1
-                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenEndNotFound  )?.0
-                    ),
-                    Cow::Owned(x) => Cow::Owned(x
-                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenStartNotFound)?.1
-                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringSourceError::ExtractBetweenEndNotFound  )?.0
-                        .to_string()
-                    )
-                })
-            },
+
             #[cfg(feature = "cache")]
             Self::Cache {category, key, value} => {
                 let category = get_string!(category, task_state, StringSourceError);

@@ -33,6 +33,7 @@ for arg in "$@"; do
   shift
   case "$arg" in
     --no-compile)      mode=        ; compile=0                          ;;
+    --only-compile)    mode=        ; hyperfine=0; callgrind=0; massif=0 ;;
     --no-hyperfine)    mode=        ; hyperfine=0                        ;;
     --callgrind)       mode=        ; callgrind=1                        ;;
     --massif)          mode=        ; massif=1                           ;;

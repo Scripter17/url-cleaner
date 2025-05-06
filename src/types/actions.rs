@@ -7,9 +7,10 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 use serde_with::{serde_as, SetPreventDuplicates};
 use thiserror::Error;
-use url::Url;
 #[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
+#[expect(unused_imports, reason = "Used in doc comment.")]
+use url::Url;
 
 use crate::glue::*;
 use crate::types::*;
@@ -442,7 +443,7 @@ pub enum Action {
     /// assert_eq!(task_state.url, "https://example.com/abc");
     ///
     /// Action::ModifyPart {part: UrlPart::Query, modification: StringModification::Set("abc".into())}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/abc");
+    /// assert_eq!(task_state.url, "https://example.com/abc?abc");
     /// ```
     ModifyPart {
         /// The part to modify.
@@ -580,12 +581,8 @@ pub enum Action {
     /// url_cleaner::task_state!(task_state);
     ///
     /// Action::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set("123".into())}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
-    /// Action::SetScratchpadVar {name: "abc".into(), value: "def".into()}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("def"));
-    /// Action::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set("123".into())}.apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("123"));
-    /// Action::SetScratchpadVar {name: "abc".into(), value: StringSource::None}.apply(&mut task_state).unwrap();
+    /// Action::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set(StringSource::None)}.apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
     /// ```
     ModifyScratchpadVar {
@@ -678,6 +675,9 @@ pub enum ActionError {
         /// The error returned by [`Action::TryElse::else`]. 
         else_error: Box<Self>
     },
+    /// Returned when all [`Action`]s in a [`Action::FirstNotError`] error.
+    #[error("All Actions in a Action::FirstNotError errored.")]
+    FirstNotErrorErrors(Vec<Self>),
 
     /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
     #[error("A StringSource returned None where it had to return Some.")]
@@ -819,12 +819,14 @@ impl Action {
                 }
             },
             Self::FirstNotError(actions) => {
-                let mut result = Ok(());
+                let mut errors = Vec::new();
                 for action in actions {
-                    result = action.apply(task_state);
-                    if result.is_ok() {break}
+                    match action.apply(task_state) {
+                        Ok(()) => return Ok(()),
+                        Err(e) => errors.push(e)
+                    }
                 }
-                result?
+                Err(ActionError::FirstNotErrorErrors(errors))?
             },
             Self::RevertOnError {action, filter} => {
                 let old_url = task_state.url.clone();
@@ -875,7 +877,7 @@ impl Action {
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 for param in query.split('&') {
-                    if !matcher.satisfied_by(&peh(param.split('=').next().expect("The first segment to always exist.")), &task_state.to_view())? {
+                    if !matcher.satisfied_by(Some(&*peh(param.split('=').next().expect("The first segment to always exist."))), &task_state.to_view())? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -885,7 +887,7 @@ impl Action {
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::new();
                 for param in query.split('&') {
-                    if matcher.satisfied_by(&peh(param.split('=').next().expect("The first segment to always exist.")), &task_state.to_view())? {
+                    if matcher.satisfied_by(Some(&*peh(param.split('=').next().expect("The first segment to always exist."))), &task_state.to_view())? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -897,7 +899,7 @@ impl Action {
                 let name = name.get(&task_state_view)?.ok_or(ActionError::StringSourceIsNone)?;
 
                 match task_state.url.get_query_param(&name, 0) {
-                    Some(Some(Some(new_url))) => {*task_state.url = Url::parse(&new_url)?.into();},
+                    Some(Some(Some(new_url))) => {*task_state.url = BetterUrl::parse(&new_url)?;},
                     Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
                     Some(None)                => Err(ActionError::QueryParamNotFound)?,
                     None                      => Err(ActionError::NoQuery)?
@@ -912,17 +914,15 @@ impl Action {
             // Generic part handling.
 
             Self::SetPart{part, value} => part.set(task_state.url, value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?, // The deref is needed for borrow checking reasons.
-            Self::ModifyPart{part, modification} => if let Some(mut temp) = part.get(task_state.url).map(|x| x.into_owned()) {
+            Self::ModifyPart{part, modification} => {
+                let mut temp = part.get(task_state.url);
                 modification.apply(&mut temp, &task_state.to_view())?;
-                part.set(task_state.url, Some(&temp))?;
-            }
+                part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
+            },
             Self::CopyPart{from, to} => to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?,
             Self::MovePart{from, to} => {
-                let mut temp_url = task_state.url.clone();
-                let temp_url_ref = &mut temp_url;
-                to.set(temp_url_ref, from.get(temp_url_ref).map(|x| x.into_owned()).as_deref())?;
-                from.set(&mut temp_url, None)?;
-                *task_state.url = temp_url;
+                to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?;
+                from.set(task_state.url, None)?;
             },
 
             // Miscellaneous.
@@ -962,9 +962,11 @@ impl Action {
             },
             Self::ModifyScratchpadVar {name, modification} => {
                 let name = get_string!(name, task_state, ActionError).to_owned();
-                if let Some(mut value) = task_state.scratchpad.vars.get(&name).map(ToOwned::to_owned) {
-                    modification.apply(&mut value, &task_state.to_view())?;
-                    let _ = task_state.scratchpad.vars.insert(name, value);
+                let mut value = task_state.scratchpad.vars.get(&name).map(|x| Cow::Borrowed(&**x));
+                modification.apply(&mut value, &task_state.to_view())?;
+                match value {
+                    Some(value) => {let _ = task_state.scratchpad.vars.insert(name, value.into_owned());},
+                    None => {let _ = task_state.scratchpad.vars.remove(&name);}
                 }
             },
             #[cfg(feature = "cache")]

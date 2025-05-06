@@ -556,8 +556,8 @@ pub enum Condition {
     ///
     /// url_cleaner::task_state_view!(task_state, url = "https://example.com/abc");
     ///
-    /// assert!(Condition::PartMatches {part: UrlPart::Path, matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap());
-    /// Condition::PartMatches {part: UrlPart::Fragment, matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap_err();
+    /// assert!(Condition::PartMatches {part: UrlPart::Path    , matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap());
+    /// assert!(Condition::PartMatches {part: UrlPart::Fragment, matcher: StringMatcher::Always}.satisfied_by(&task_state).unwrap());
     /// ```
     PartMatches {
         /// The part to match the value of.
@@ -599,6 +599,18 @@ pub enum Condition {
         var: VarRef,
         /// The value to check if [`Self::VarIs::var`] is.
         value: StringSource
+    },
+    /// Passes if [`Self::PartIsInNamedPartitioning::part`] is in the specified [`NamedPartitioning`].
+    /// # Errors
+    /// If the call to [`UrlPart::get`] returns an [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    ///
+    /// If the [`NamedPartitioning`] isn't found, returns the error [`StringSourceError::NamedPartitioningNotFound`].
+    PartIsInNamedPartitioning {
+        /// The [`NamedPartitioning`] to use.
+        #[suitable(assert = "literal_named_partitioning_is_documented")]
+        named_partitioning: String,
+        /// The [`UrlPart`] to get the partition of.
+        part: UrlPart
     },
 
 
@@ -759,7 +771,10 @@ pub enum ConditionError {
     GetFlagError(#[from] GetFlagError),
     /// Returned when a [`GetVarError`] is encountered.
     #[error(transparent)]
-    GetVarError(#[from] GetVarError)
+    GetVarError(#[from] GetVarError),
+    /// Returned when the requested [`Params::named_partitionings`] isn't found
+    #[error("The requested Params NamedPartitioning was not found.")]
+    NamedPartitioningNotFound
 }
 
 impl Condition {
@@ -862,19 +877,20 @@ impl Condition {
 
             Self::PartIs       {part, value    } => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
             Self::PartContains {part, value, at} => at.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, get_str!(value, task_state, ConditionError))?,
-            Self::PartMatches  {part, matcher  } => matcher.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?, task_state)?,
-            Self::PartIsOneOf  {part, values   } => values .contains    ( part.get(task_state.url).as_deref()),
+            Self::PartMatches  {part, matcher  } => matcher.satisfied_by(part.get(task_state.url).as_deref(), task_state)?,
+            Self::PartIsOneOf  {part, values   } => values .contains    (part.get(task_state.url).as_deref()),
 
             // Miscellaneous.
 
             Self::FlagIsSet(flag)    => flag.get(task_state)?,
             Self::VarIs {var, value} => var .get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
+            Self::PartIsInNamedPartitioning {named_partitioning, part} => task_state.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.contains(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?),
 
             // String source.
 
             Self::StringIs {left, right} => left.get(task_state)? == right.get(task_state)?,
             Self::StringContains {value, substring, at} => at.satisfied_by(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
-            Self::StringMatches {value, matcher} => matcher.satisfied_by(get_str!(value, task_state, ConditionError), task_state)?,
+            Self::StringMatches {value, matcher} => matcher.satisfied_by(value.get(task_state)?.as_deref(), task_state)?,
 
             // Misc.
 

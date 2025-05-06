@@ -63,7 +63,7 @@ impl VarType {
     /// Get the var.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'a>(&self, task_state: &'a TaskStateView, name: &str) -> Result<Option<Cow<'a, str>>, GetVarError> {
+    pub fn get<'a>(&self, task_state: &TaskStateView<'a>, name: &str) -> Result<Option<Cow<'a, str>>, GetVarError> {
         Ok(match self {
             Self::Params      => task_state.params     .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::JobContext  => task_state.job_context.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
@@ -107,7 +107,7 @@ impl VarRef {
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`GetVarError::StringSourceIsNone`].
     ///
     /// If the call to [`VarType::get`] returns an error, that error is returned.
-    pub fn get<'a>(&self, task_state: &'a TaskStateView) -> Result<Option<Cow<'a, str>>, GetVarError> {
+    pub fn get<'a>(&self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, GetVarError> {
         self.r#type.get(task_state, get_str!(self.name, task_state, GetVarError))
     }
 }

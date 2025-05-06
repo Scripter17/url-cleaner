@@ -70,63 +70,61 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 <!--cmd scripts/gen-docs.py-->
 #### Flags
 
-- `bypass.vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
-- `embed-compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-host` and `bsky.app` to the variable `bsky-embed-host`.
-- `keep-lang`: Keeps language query parameters.
-- `no-https-upgrade`: Disable upgrading `http` URLs to `https`.
-- `no-network`: Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.
-- `remove-unused-search-query`: Remove search queries from URLs that aren't search results (for example, posts).
+- `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
+- `embed_compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter_embed_host` and `bsky.app` to the variable `bsky_embed_host`.
+- `keep_lang`: Keeps language query parameters.
+- `no_https_upgrade`: Disable upgrading `http` URLs to `https`.
+- `no_network`: Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.
+- `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
 - `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
-- `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki-host` variable.
+- `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki_host` variable.
 - `unbreezewiki`: Replace Breezewiki hosts with fandom.com.
-- `invidious`: Replace youtube/known Invidious hosts with the `invidious-host` variabel.
+- `invidious`: Replace youtube/known Invidious hosts with the `invidious_host` variabel.
 - `uninvidious`: Replace Invidious hosts with youtube.com
-- `nitter`: Replace twitter/known Nitter hosts with the `nitter-host` variable.
+- `nitter`: Replace twitter/known Nitter hosts with the `nitter_host` variable.
 - `unnitter`: Replace Nitter hosts with x.com.
-- `discord-unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
-- `furaffinity-sfw`: Turn `furaffinity.net` into `sfw.furaffinity.net`
-- `furaffinity-unsfw`: Turn `sfw.furaffinity.net` into `furaffinity.net`
-- `instagram-unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
-- `tumblr-unsubdomain-blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
-- `youtube-keep-sub-confirmation`: Don't remove the `sub_confirmation` query param from youtube.com URLs.
-- `youtube-unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube-unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube-unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
-- `youtube-unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
+- `discord_unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
+- `furaffinity_sfw`: Turn `furaffinity.net` into `sfw.furaffinity.net`
+- `furaffinity_unsfw`: Turn `sfw.furaffinity.net` into `furaffinity.net`
+- `instagram_unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
+- `tumblr_unsubdomain_blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
+- `youtube_keep_sub_confirmation`: Don't remove the `sub_confirmation` query param from youtube.com URLs.
+- `youtube_unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
+- `youtube_unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
+- `youtube_unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
+- `youtube_unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
 
 #### Vars
 
-- `bluesky-embed-host`: The domain to use for bluesky when the `embed-compatibility` flag is set. Defaults to `fxbsky.com`.
-- `breezewiki-host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
-- `bypass.vip-api-key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
-- `invidious-host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
-- `nitter-host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
-- `pixiv-embed-host`: The domain to use for pixiv when the `embed-compatibility` flag is set. Defaults to `phixiv.com`.
-- `twitter-embed-host`: The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`.
+- `bluesky_embed_host`: The domain to use for bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.
+- `breezewiki_host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
+- `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
+- `invidious_host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
+- `nitter_host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
+- `pixiv_embed_host`: The domain to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.
+- `twitter_embed_host`: The domain to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`.
 
 #### Environment Vars
 
-- `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable.
+- `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass_vip_api_key` variable.
 
 #### Sets
 
-- `bypass.vip-hwwwwdpafqdnps`: The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.
-- `email-link-format-1-hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
-- `https-upgrade-host-blacklist`: Hosts to never upgrade from `http` to `https`.
-- `redirect-hwwwwdpafqdnps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` action applied.
-- `redirect-reg-domains`: The `redirect-hwwwwdpafqdnpes` set but using the `RegDomain` of the URL.
-- `remove-empty-fragment-reg-domain-blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
-- `remove-empty-query-reg-domain-blacklist`: The RegDomains to not remove an empty query from.
-- `remove-fqdn-period-reg-domain-blacklist`: The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
-- `remove-www-subdomain-reg-domain-blacklist`: The RegDomains to not remove a `www` subdomain from.
-- `unmobile-reg-domain-blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
-- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp-prefixes` set are also removed.
-- `utps-reg-domain-whitelist`: RegDomains to never remove universal tracking parameters from.
+- `bypass_vip_hwwwwdpafqdnps`: The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.
+- `email_link_format_1_hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
+- `https_upgrade_host_blacklist`: Hosts to never upgrade from `http` to `https`.
+- `redirect_hwwwwdpafqdnps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` action applied.
+- `remove_empty_fragment_reg_domain_blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
+- `remove_empty_query_reg_domain_blacklist`: The RegDomains to not remove an empty query from.
+- `remove_fqdn_period_reg_domain_blacklist`: The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
+- `unmobile_reg_domain_blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
+- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp_host_whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp_prefixes` set are also removed.
+- `utps_reg_domain_whitelist`: RegDomains to never remove universal tracking parameters from.
 
 #### Lists
 
-- `utp-prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
+- `utp_prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
 
 #### Maps
 
@@ -135,6 +133,10 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 #### Named Partitionings
 
 - `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
+- `www_subdomain_handling`: What to do instead of removing `www` subdomains.
+- `domain_middle_expand_mode`: How to handle redirect `DomainMiddle`s,
+- `hwwwwdpafqdnp_expand_mode`: How to handle redirect `HostWithoutWWWDotPrefix`s.
+- `reg_domain_expand_mode`: How to handle redirect `RegDomain`s,
 
 #### Job Context
 
@@ -160,35 +162,35 @@ Reasonably fast. [`benchmarking/benchmark.sh`] is a Bash script that runs some H
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.14.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-04-26.
+Last updated 2025-05-06.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  6.134,
-    "1"    :  6.177,
-    "10"   :  6.356,
-    "100"  :  6.580,
-    "1000" :  9.107,
-    "10000": 31.404
+    "0"    :  6.250,
+    "1"    :  6.298,
+    "10"   :  6.435,
+    "100"  :  6.740,
+    "1000" :  9.161,
+    "10000": 31.966
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  6.152,
-    "1"    :  6.235,
-    "10"   :  6.383,
-    "100"  :  6.693,
-    "1000" : 10.263,
-    "10000": 42.639
+    "0"    :  6.300,
+    "1"    :  6.302,
+    "10"   :  6.464,
+    "100"  :  6.978,
+    "1000" : 11.564,
+    "10000": 54.514
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  6.128,
-    "1"    :  6.248,
-    "10"   :  6.388,
-    "100"  :  6.867,
-    "1000" : 11.759,
-    "10000": 56.349
+    "0"    :  6.137,
+    "1"    :  6.247,
+    "10"   :  6.392,
+    "100"  :  6.887,
+    "1000" : 11.604,
+    "10000": 55.025
   }
 }
 ```
@@ -230,7 +232,18 @@ Unless a `Debug` variant is used, the following should always be true:
 
 The `--json`/`-j` flag can be used to have URL Cleaner output JSON instead of lines.
 
-The exact format is currently in flux, though it should always be identical to [URL Cleaner Site](https://github.com/Scripter17/url-cleaner-site)'s output.
+The format looks like this, but minified:
+
+```Json
+{"Ok": {
+  "urls": [
+    {"Ok": "https://example.com/success"},
+    {"Err": "https://example.com/failure"}
+  ]
+}}
+```
+
+The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
 
 ### Exit code
 

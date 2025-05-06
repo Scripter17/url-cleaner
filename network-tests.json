@@ -8,7 +8,8 @@
 				{"task_config": "https://gprivate.com/6bi5b"                               , "expectation": {"UrlIs": "https://google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"}},
 				{"task_config": "http://bfy.tw/9ZSk"                                       , "expectation": {"UrlIs": "https://google.com/search?q=How+does+the+US+government+work"}},
 				{"task_config": "https://fireship.page.link/slack"                         , "expectation": {"UrlIs": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"}},
-				{"task_config": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre", "expectation": {"UrlIs": "https://open.spotify.com/album/76qQt7n5SKtIa38BmZxvl4"}}
+				{"task_config": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre", "expectation": {"UrlIs": "https://open.spotify.com/album/76qQt7n5SKtIa38BmZxvl4"}},
+				{"task_config": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"       , "expectation": {"UrlIs": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"}}
       ]
     }
   ]

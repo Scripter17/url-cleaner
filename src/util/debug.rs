@@ -10,14 +10,26 @@ pub(crate) struct DebugState {
     ///
     /// Basically the call stack depth.
     pub(crate) indent: usize,
-    /// The time the last printing finished.
-    pub(crate) time: Option<std::time::Instant>,
-    /// Map of item addresses to the last line they showed up on.
-    pub(crate) ills: HashMap<(usize, &'static str), usize>,
-    /// Map of item addresses to amount of times they were printed.
-    pub(crate) ics: HashMap<(usize, &'static str), usize>,
-    /// Current line.
-    pub(crate) line: usize
+    /// The number of the next debug line.
+    pub(crate) line: usize,
+    /// The details for each item.
+    ///
+    /// Key is address, type, and [`Debug`] value.
+    pub(crate) item_details: HashMap<(usize, &'static str, String), ItemDetails>
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct ItemDetails {
+    /// Details for each call.
+    pub(crate) call_details: HashMap<(&'static str, Vec<String>), CallDetails>
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct CallDetails {
+    /// Amount of times this item had this call.
+    pub(crate) count: usize,
+    /// Last time this item had this call.
+    pub(crate) last_line: Option<usize>
 }
 
 pub(crate) static DEBUG_STATE: LazyLock<Mutex<DebugState>> = LazyLock::new(|| Mutex::new(DebugState::default()));
@@ -39,39 +51,35 @@ macro_rules! debug {
         let _deindenter = {
             let mut dsl = crate::util::DEBUG_STATE.lock().unwrap();
 
-            dsl.line += 1;
-
-            match dsl.time {
-                Some(x) => eprint!("{:>4} {:>8.2?}", dsl.line, x.elapsed()),
-                None    => eprint!("{:>4}         ", dsl.line)
-            }
-
-            let iid = ($self as *const _ as usize, stringify!($func));
-
-            let ic = dsl.ics.entry(iid).or_default();
-            let icc = match *ic {
-                0 => "".to_string(),
-                x => x.to_string()
-            };
-            *ic += 1;
-
+            let indent = dsl.indent;
             let line = dsl.line;
-            let ill = match dsl.ills.entry(iid) {
-                std::collections::hash_map::Entry::Occupied(mut e) => {e.insert(line).to_string()    },
-                std::collections::hash_map::Entry::Vacant  (    e) => {e.insert(line); "".to_string()}
-            };
+
+            let call_details = dsl.item_details.entry(($self as *const _ as usize, std::any::type_name_of_val($self), format!("{:?}", $self))).or_default()
+                .call_details.entry((stringify!($func), vec![$(format!("{:?}", $name)),*])).or_default();
 
             eprint!(
-                " {icc:>4} {ill:>4} {}{}",
-                "|   ".repeat(dsl.indent),
-                stringify!($func)
+                "{:>4} {:>4} {:>4} {}{}; self: {:?}",
+                line,
+                match call_details.count {
+                    0 => "".to_string(),
+                    x => x.to_string()
+                },
+                match call_details.last_line {
+                    Some(x) => x.to_string(),
+                    None => "".to_string()
+                },
+                "|   ".repeat(indent),
+                stringify!($func),
+                $self
             );
-            $(eprint!($comment);)?
-            $(eprint!(concat!("; ", stringify!($name), ": {:?}"), $name);)*
+            $(eprint!("; {}: {:?}", stringify!($name), $name);)*
             eprintln!();
 
+            call_details.count += 1;
+            call_details.last_line = Some(line);
+
+            dsl.line += 1;
             dsl.indent += 1;
-            dsl.time = Some(std::time::Instant::now());
 
             crate::util::Deindenter
         };

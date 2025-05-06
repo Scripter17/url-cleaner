@@ -2,12 +2,14 @@
 
 use std::borrow::Cow;
 
+use serde::Serialize;
+
 use crate::types::*;
 use crate::util::*;
 use crate::glue::*;
 
 /// The state of a [`Task`] being done.
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct TaskState<'a> {
     /// The [`BetterUrl`] being modified.
     pub url: &'a mut BetterUrl,
@@ -25,6 +27,7 @@ pub struct TaskState<'a> {
     pub commons: &'a Commons,
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
+    #[serde(skip)]
     pub cache: &'a Cache
 }
 
@@ -76,7 +79,7 @@ macro_rules! task_state {
 }
 
 /// An immutable view of a [`TaskState`].
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct TaskStateView<'a> {
     /// The [`BetterUrl`] being modified.
     pub url: &'a BetterUrl,
@@ -94,6 +97,7 @@ pub struct TaskStateView<'a> {
     pub commons: &'a Commons,
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
+    #[serde(skip)]
     pub cache: &'a Cache
 }
 

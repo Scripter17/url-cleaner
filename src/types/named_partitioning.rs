@@ -21,17 +21,17 @@ use crate::util::*;
 ///
 /// let digits = serde_json::from_str::<NamedPartitioning>(r#"{"even": ["0", "2", "4", "6", "8"], "odd": ["1", "3", "5", "7", "9"]}"#).unwrap();
 ///
-/// assert_eq!(digits.get_partition("0"), Some("even"));
-/// assert_eq!(digits.get_partition("1"), Some("odd" ));
-/// assert_eq!(digits.get_partition("2"), Some("even"));
-/// assert_eq!(digits.get_partition("3"), Some("odd" ));
-/// assert_eq!(digits.get_partition("4"), Some("even"));
-/// assert_eq!(digits.get_partition("5"), Some("odd" ));
-/// assert_eq!(digits.get_partition("6"), Some("even"));
-/// assert_eq!(digits.get_partition("7"), Some("odd" ));
-/// assert_eq!(digits.get_partition("8"), Some("even"));
-/// assert_eq!(digits.get_partition("9"), Some("odd" ));
-/// assert_eq!(digits.get_partition("a"), None);
+/// assert_eq!(digits.get_partition_of("0"), Some("even"));
+/// assert_eq!(digits.get_partition_of("1"), Some("odd" ));
+/// assert_eq!(digits.get_partition_of("2"), Some("even"));
+/// assert_eq!(digits.get_partition_of("3"), Some("odd" ));
+/// assert_eq!(digits.get_partition_of("4"), Some("even"));
+/// assert_eq!(digits.get_partition_of("5"), Some("odd" ));
+/// assert_eq!(digits.get_partition_of("6"), Some("even"));
+/// assert_eq!(digits.get_partition_of("7"), Some("odd" ));
+/// assert_eq!(digits.get_partition_of("8"), Some("even"));
+/// assert_eq!(digits.get_partition_of("9"), Some("odd" ));
+/// assert_eq!(digits.get_partition_of("a"), None);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Suitability)]
 pub struct NamedPartitioning {
@@ -89,9 +89,20 @@ impl NamedPartitioning {
         Ok(ret)
     }
 
+    /// If `element`] is in `self`, return [`true`].
+    pub fn contains(&self, element: &str) -> bool {
+        self.map.contains_key(element)
+    }
+
     /// If `element`] is in `self`, return the partition it belongs to.
-    pub fn get_partition<'a>(&'a self, element: &str) -> Option<&'a str> {
+    pub fn get_partition_of<'a>(&'a self, element: &str) -> Option<&'a str> {
+        debug!(self, NamedPartitioning::get_partition_of, element);
         self.map.get(element).map(|x| &**x)
+    }
+
+    /// The map.
+    pub fn map(&self) -> &HashMap<String, Arc<str>> {
+        &self.map
     }
 
     /// The list of partition names.

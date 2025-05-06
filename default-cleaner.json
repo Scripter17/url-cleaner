@@ -6,67 +6,70 @@
 			"The default cleaner; Meant for general purpose every day URL Cleaning."
 		],
 		"flags": {
-			"bypass.vip"                : "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.",
-			"embed-compatibility"       : "Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter-embed-host` and `bsky.app` to the variable `bsky-embed-host`.",
-			"keep-lang"                 : "Keeps language query parameters.",
-			"no-https-upgrade"          : "Disable upgrading `http` URLs to `https`.",
-			"no-network"                : "Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.",
-			"remove-unused-search-query": "Remove search queries from URLs that aren't search results (for example, posts).",
+			"bypass_vip"                : "Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.",
+			"embed_compatibility"       : "Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter_embed_host` and `bsky.app` to the variable `bsky_embed_host`.",
+			"keep_lang"                 : "Keeps language query parameters.",
+			"no_https_upgrade"          : "Disable upgrading `http` URLs to `https`.",
+			"no_network"                : "Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.",
+			"remove_unused_search_query": "Remove search queries from URLs that aren't search results (for example, posts).",
 			"tor2web2tor"               : "Replace `**.onion.**` domains with `**.onion` domains.",
 			"unmobile"                  : "Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.",
 
-			"breezewiki"  : "Replace fandom/known Breezewiki hosts with the `breezewiki-host` variable.",
+			"breezewiki"  : "Replace fandom/known Breezewiki hosts with the `breezewiki_host` variable.",
 			"unbreezewiki": "Replace Breezewiki hosts with fandom.com.",
-			"invidious"   : "Replace youtube/known Invidious hosts with the `invidious-host` variabel.",
+			"invidious"   : "Replace youtube/known Invidious hosts with the `invidious_host` variabel.",
 			"uninvidious" : "Replace Invidious hosts with youtube.com",
-			"nitter"      : "Replace twitter/known Nitter hosts with the `nitter-host` variable.",
+			"nitter"      : "Replace twitter/known Nitter hosts with the `nitter_host` variable.",
 			"unnitter"    : "Replace Nitter hosts with x.com.",
 
-			"discord-unexternal"           : "Replace `images-ext-1.discordapp.net` with the original images they refer to.",
-			"furaffinity-sfw"              : "Turn `furaffinity.net` into `sfw.furaffinity.net`",
-			"furaffinity-unsfw"            : "Turn `sfw.furaffinity.net` into `furaffinity.net`",
-			"instagram-unprofilecard"      : "Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.",
-			"tumblr-unsubdomain-blog"      : "Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.",
-			"youtube-keep-sub-confirmation": "Don't remove the `sub_confirmation` query param from youtube.com URLs.",
-			"youtube-unembed"              : "Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.",
-			"youtube-unlive"               : "Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.",
-			"youtube-unplaylist"           : "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
-			"youtube-unshort"              : "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`."
+			"discord_unexternal"           : "Replace `images-ext-1.discordapp.net` with the original images they refer to.",
+			"furaffinity_sfw"              : "Turn `furaffinity.net` into `sfw.furaffinity.net`",
+			"furaffinity_unsfw"            : "Turn `sfw.furaffinity.net` into `furaffinity.net`",
+			"instagram_unprofilecard"      : "Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.",
+			"tumblr_unsubdomain_blog"      : "Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.",
+			"youtube_keep_sub_confirmation": "Don't remove the `sub_confirmation` query param from youtube.com URLs.",
+			"youtube_unembed"              : "Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.",
+			"youtube_unlive"               : "Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.",
+			"youtube_unplaylist"           : "Removes the `list` query parameter from `https://youtube.com/watch` URLs.",
+			"youtube_unshort"              : "Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`."
 		},
 		"vars": {
-			"bluesky-embed-host": "The domain to use for bluesky when the `embed-compatibility` flag is set. Defaults to `fxbsky.com`.",
-			"breezewiki-host"   : "The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled",
-			"bypass.vip-api-key": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.",
-			"invidious-host"    : "The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled",
-			"nitter-host"       : "The domain to replace twitter/nitter domains with when the `nitter` flag is enabled",
-			"pixiv-embed-host"  : "The domain to use for pixiv when the `embed-compatibility` flag is set. Defaults to `phixiv.com`.",
-			"twitter-embed-host": "The domain to use for twitter when the `embed-compatibility` flag is set. Defaults to `vxtwitter.com`."
+			"bluesky_embed_host": "The domain to use for bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.",
+			"breezewiki_host"   : "The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled",
+			"bypass_vip_api_key": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.",
+			"invidious_host"    : "The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled",
+			"nitter_host"       : "The domain to replace twitter/nitter domains with when the `nitter` flag is enabled",
+			"pixiv_embed_host"  : "The domain to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.",
+			"twitter_embed_host": "The domain to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`."
 		},
 		"environment_vars": {
-			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass.vip-api-key` variable."
+			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass_vip_api_key` variable."
 		},
 		"sets": {
-			"bypass.vip-hwwwwdpafqdnps"                 : "The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.",
-			"email-link-format-1-hosts"                 : "(TEMPORARY NAME) Hosts that use unknown link format 1.",
-			"https-upgrade-host-blacklist"              : "Hosts to never upgrade from `http` to `https`.",
-			"redirect-hwwwwdpafqdnps"                   : "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` action applied.",
-			"redirect-reg-domains"                      : "The `redirect-hwwwwdpafqdnpes` set but using the `RegDomain` of the URL.",
-			"remove-empty-fragment-reg-domain-blacklist": "The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.",
-			"remove-empty-query-reg-domain-blacklist"   : "The RegDomains to not remove an empty query from.",
-			"remove-fqdn-period-reg-domain-blacklist"   : "The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.",
-			"remove-www-subdomain-reg-domain-blacklist" : "The RegDomains to not remove a `www` subdomain from.",
-			"unmobile-reg-domain-blacklist"             : "Effectively unsets the `unmobile` flag for the specified `RegDomain`s.",
-			"utps"                                      : "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp-host-whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp-prefixes` set are also removed.",
-			"utps-reg-domain-whitelist"                 : "RegDomains to never remove universal tracking parameters from."
+			"bypass_vip_hwwwwdpafqdnps"                 : "The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.",
+			"email_link_format_1_hosts"                 : "(TEMPORARY NAME) Hosts that use unknown link format 1.",
+			"https_upgrade_host_blacklist"              : "Hosts to never upgrade from `http` to `https`.",
+			"redirect_hwwwwdpafqdnps"                   : "Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are \"www.\" then a host in this set) will have the `ExpandRedirect` action applied.",
+			"remove_empty_fragment_reg_domain_blacklist": "The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.",
+			"remove_empty_query_reg_domain_blacklist"   : "The RegDomains to not remove an empty query from.",
+			"remove_fqdn_period_reg_domain_blacklist"   : "The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.",
+			"unmobile_reg_domain_blacklist"             : "Effectively unsets the `unmobile` flag for the specified `RegDomain`s.",
+			"utps"                                      : "The set of \"universal tracking parameters\" that are always removed for any URL with a host not in the `utp_host_whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp_prefixes` set are also removed.",
+			"utps_reg_domain_whitelist"                 : "RegDomains to never remove universal tracking parameters from."
 		},
 		"lists": {
-			"utp-prefixes": "If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed."
+			"utp_prefixes": "If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed."
 		},
 		"maps": {
 			"hwwwwdpafqdnp_lang_query_params": "The name of the `HostWithoutWWWDotPrefixAndFqdnPeriod`'s language query parameter."
 		},
 		"named_partitionings": {
-			"hwwwwdpafqdnp_categories": "Categories of similar websites with shared cleaning methods."
+			"hwwwwdpafqdnp_categories": "Categories of similar websites with shared cleaning methods.",
+			"www_subdomain_handling": "What to do instead of removing `www` subdomains.",
+
+			"domain_middle_expand_mode": "How to handle redirect `DomainMiddle`s,",
+			"hwwwwdpafqdnp_expand_mode": "How to handle redirect `HostWithoutWWWDotPrefix`s.",
+			"reg_domain_expand_mode"   : "How to handle redirect `RegDomain`s,"
 		},
 		"job_context": {
 			"vars": {
@@ -86,54 +89,16 @@
 	},
 	"params": {
 		"vars": {
-			"bluesky-embed-host": "fxbsky.app",
-			"breezewiki-host"   : "breezewiki.com",
-			"invidious-host"    : "yewtu.be",
-			"nitter-host"       : "nitter.net",
-			"pixiv-embed-host"  : "phixiv.net",
-			"twitter-embed-host": "vxtwitter.com"
+			"bluesky_embed_host": "fxbsky.app",
+			"breezewiki_host"   : "breezewiki.com",
+			"invidious_host"    : "yewtu.be",
+			"nitter_host"       : "nitter.net",
+			"pixiv_embed_host"  : "phixiv.net",
+			"twitter_embed_host": "vxtwitter.com"
 		},
 		"sets": {
-			"bypass.vip-hwwwwdpafqdnps": [
-				"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "bit.ly", "booo.st", "boost.ink", "bst.gg",
-				"cemendemons.com", "depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "ift.tt", "is.gd",
-				"leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com", "loot-link.com", "loot-links.com", "lootdest.com",
-				"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com",
-				"newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com",
-				"rebrand.ly", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com",
-				"sub2unlock.io", "sub2unlock.net", "sub4unlock.io", "t.co", "tavernleaks.com", "thepremium.online", "tiny.cc", "tinylf.com",
-				"tinylink.onl", "tinyurl.com", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", "xprmpacks.com"
-			],
-			"email-link-format-1-hosts": ["action.openmedia.org"],
-			"https-upgrade-host-blacklist": ["orteil.dashnet.org", "localhost"],
-			"redirect-hwwwwdpafqdnps": [
-				"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.io", "amzn.asia",
-				"amzn.ew", "amzn.to", "api.link.agorapulse.com", "api.linkr.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com", "bitly.com",
-				"bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge",
-				"chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "diplo.de",
-				"dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo",
-				"go.bsky.app", "go.forbes.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me",
-				"goo.gl", "goo.su", "goodsmile.link", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd", "is.gd", "iwe.one",
-				"j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "kre.pe", "kre.pe", "l.euronews.com", "l.leparisien.fr", "l.leparisien.fr",
-				"lin.ee", "line.ee", "link.animaapp.com", "linkr.it", "lnkd.in", "loom.ly", "loom.ly", "lpc.ca", "m.sesame.org", "mol.im", "mply.io",
-				"msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm",
-				"nyp.st", "nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc",
-				"onl.tw", "open-api.tiktok.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me",
-				"play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qr1.be", "rb.gy", "rb.gy", "rblx.co", "rdbl.co",
-				"rdcu.be", "rebrand.ly", "redd.it", "reut.rs", "rog.gg", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev",
-				"shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "spr.ly", "spr.ly", "sqex.to", "square.link",
-				"sta.sh", "t.co", "t.ly", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co",
-				"tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me",
-				"vm.tiktok.com", "w.wiki", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
-			],
-			"redirect-reg-domains": [
-				"adj.st", "goo.gl", "o93x.net", "onelink.me", "page.link", "pusle.ly", "visitlink.me"
-			],
-			"remove-empty-fragment-reg-domain-blacklist": [],
-			"remove-empty-query-reg-domain-blacklist": [],
-			"remove-fqdn-period-reg-domain-blacklist": [],
-			"remove-www-subdomain-reg-domain-blacklist": ["shorturl.at", "proozy.com", "teepublic.com"],
-			"unmobile-reg-domain-blacklist": ["tumblr.com", "deviantart.com"],
+			"https_upgrade_host_blacklist": ["orteil.dashnet.org", "localhost"],
+			"unmobile_reg_domain_blacklist": ["tumblr.com", "deviantart.com"],
 			"utps": [
 				"Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_branch_match_id", "_branch_referrer", "_clde", "_cldee", "_ga",
 				"_gl", "_hsenc", "_io_session_id", "_kx", "_ope", "_openstat", "_sgm_action", "_sgm_campaign", "_sgm_source", "_trkparms",
@@ -157,10 +122,10 @@
 				"vsm_type", "wbraid", "wickedid", "wpb_advertiser", "wpb_id", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid"
 
 			],
-			"utps-reg-domain-whitelist": ["bambulab.com"]
+			"utps_reg_domain_whitelist": ["bambulab.com"]
 		},
 		"lists": {
-			"utp-prefixes": [
+			"utp_prefixes": [
 				"__s", "at_custom", "cm_mmc", "utm_"
 			]
 		},
@@ -177,7 +142,7 @@
 			"hwwwwdpafqdnp_categories": {
 				"alibaba": ["alibaba.com", "aliexpress.com", "1688.com"],
 				"bluesky": ["bsky.app"],
-				"bluesky-embed-hosts": ["fxbsky.app"],
+				"bluesky_embed_hosts": ["fxbsky.app"],
 				"breezewiki": [
 					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org",
 					"breezewiki.catsarch.com", "breezewiki.com", "breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net",
@@ -185,8 +150,8 @@
 					"bw.artemislena.eu", "bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion",
 					"nerd.whatever.social", "z.opnxng.com"
 				],
-				"deviantart-embed-hosts": ["fxdeviantart.com"],
-				"discord-external": ["images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net"],
+				"deviantart_embed_hosts": ["fxdeviantart.com"],
+				"discord_external": ["images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net"],
 				"disney": ["disney.com", "marvel.com"],
 				"furaffinity": ["furaffinity.net", "sfw.furaffinity.net"],
 				"instagram": ["instagram.com", "threads.net"],
@@ -226,8 +191,69 @@
 			    "vernzdedoxuflrrxc4vbatbkpjh4k22ecgiqgimdiif62onhagva.b32.i2p", "vfaomgh4jxphpbdfizkm5gbtjahmei234giqj4facbwhrfjtcldauqad.onion",
 			    "wiio4sgs4247brk7hj6qck2jxnvldwfdbguigc5ivpxrsegnliyfvuqd.onion", "xcancel.com", "xnaas.github.io"
 				],
-				"pixiv-embed-hosts": ["phixiv.net"],
-				"twitter-embed-hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"]
+				"pixiv_embed_hosts": ["phixiv.net"],
+				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"]
+			},
+
+
+
+			"www_subdomain_handling": {
+				"add": ["torproject.org", "shorturl.add"],
+				"keep": ["shorturl.at", "proozy.com", "boxd.it"],
+				"sometimes_add": ["facebook.com", "teepublic.com"]
+			},
+
+
+
+			"domain_middle_expand_mode": {
+				"special": ["google"]
+			},
+			"hwwwwdpafqdnp_expand_mode": {
+				"bypass_vip": [
+					"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "booo.st", "boost.ink", "bst.gg", "cemendemons.com",
+					"depravityweb.co", "fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "leakutopia.site", "links-loot.com",
+					"linksloot.net", "linkvertise.com", "loot-link.com", "loot-links.com", "lootdest.com", "lootdest.info", "lootdest.org",
+					"lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com", "newsociety0.co", "ofpacksmega.com",
+					"only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com", "rekonise.com", "secret-links.com",
+					"secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com", "sub2unlock.io", "sub2unlock.net", "sub4unlock.io",
+					"tavernleaks.com", "thepremium.online", "tinylink.onl", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd",
+					"wc.wtf", "work.ink", "xprmpacks.com"
+				],
+				"redirect": [
+					"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amzn.asia",
+					"amzn.ew", "amzn.to", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bit.ly", "bitly.com",
+					"bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge",
+					"chng.it", "clckhl.co", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "depop.app.link", "diplo.de",
+					"dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo",
+					"go.forbes.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me",
+					"goo.gl", "goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd",
+					"iwe.one", "j.mp", "jbgm.es", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.euronews.com", "l.leparisien.fr",
+					"line.ee", "link.animaapp.com", "linkr.it", "lnkd.in", "loom.ly", "lpc.ca", "m.sesame.org", "mol.im", "mply.io", "msft.it",
+					"msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nas.cr", "nbc4i.co", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyer.cm", "nyp.st",
+					"nyti.ms", "nyto.ms", "on.forbes.com", "on.ft.com", "on.msnbc.com", "on.nyc.gov", "onl.bz", "onl.la", "onl.sc", "onl.tw",
+					"operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st",
+					"politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qr1.be", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be",
+					"rebrand.ly", "redd.it", "reut.rs", "rog.gg", "rzr.to", "s.goodsmile.link", "s.team", "s76.co", "share.firefox.dev", "shor.tf",
+					"shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.ly",
+					"t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "tmz.me", "to.pbs.org",
+					"tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", "visitlink.me", "vm.tiktok.com", "w.wiki",
+					"wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "yrp.ca"
+				],
+				"special": [
+					"1link.club", "allmylinks.com", "api.linkr.bio", "api.linkr.com", "awin1.com", "bfy.tw", "bugzil.la", "buymeacoff.ee",
+					"cach.me", "click.notification.elsevier.com", "deviantart.com", "duckduckgo.com",
+					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "go.bsky.app", "goodreads.com", "gprivate.com",
+					"href.li", "instagr.am", "l.instagram.com", "l.threads.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "mfy.gg",
+					"o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
+					"rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com",
+					"skfb.ly", "smarturl.it", "ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.co", "t.umblr.com",
+					"tee.pub", "tinyurl.com", "toyhou.se", "twpf.jp", "urldefense.com", "youtube.com"
+				],
+				"unknown_format_1": ["action.openmedia.org"]
+			},
+			"reg_domain_expand_mode": {
+				"redirect": ["adj.st", "goo.gl", "o93x.net", "page.link", "pusle.ly", "visitlink.me"],
+				"special": ["carleton.ca", "lnk.to", "onelink.me", "pulse.ly", "smartadserver.com", "vk.com"]
 			}
 		},
 		"http_client_config": {
@@ -242,8 +268,8 @@
 	},
 	"commons": {
 		"actions": {
-			"extract-from-page": {"If": {
-				"if": {"Not": {"FlagIsSet": "no-network"}},
+			"extract_from_page": {"If": {
+				"if": {"Not": {"FlagIsSet": "no_network"}},
 				"then": {"All": [
 					{"Common": "universal"},
 					{"SetPart": {
@@ -260,7 +286,9 @@
 				]}
 			}},
 
-			"redirect-shortcut": {"If": {
+
+
+			"redirect_shortcut": {"If": {
 				"if": {"All": [
 					{"Not": {"StringIs": {"left": {"Var": {"type": "TaskContext", "name": "redirect_shortcut"}}, "right": null}}},
 					{"StringIs": {
@@ -272,63 +300,83 @@
 				"then": {"All": [
 					{"SetPart": {"part": "Whole", "value": {"Var": {"type": "TaskContext", "name": "redirect_shortcut"}}}},
 					{"SetScratchpadFlag": {"name": "redirect_shortcut_used", "value": true}}
-				]}
+				]},
+				"else": {"If": {
+					"if": {"Not": {"FlagIsSet": "no_network"}},
+					"then": {"All": [
+						{"Common": "universal"},
+						{"ExpandRedirect": {}}
+					]}
+				}}
 			}},
+
+
 
 			"universal": {"All": [
 				{"If": {
 					"if": {"All": [
 						{"PartIs": {"part": "Scheme", "value": "http"}},
-						{"Not": {"FlagIsSet": "no-https-upgrade"}},
+						{"Not": {"FlagIsSet": "no_https_upgrade"}},
 						{"Not": "HostIsIp"},
 						{"Not": {"PartMatches": {
 							"part": "Host",
-							"matcher": {"InSet": "https-upgrade-host-blacklist"}
+							"matcher": {"InSet": "https_upgrade_host_blacklist"}
 						}}}
 					]},
 					"then": {"SetPart": {"part": "Scheme", "value": "https"}}
 				}},
 				{"If": {
-					"if": {"Not": {"FlagIsSet": "keep-lang"}},
+					"if": {"Not": {"FlagIsSet": "keep_lang"}},
 					"then": {"RemoveQueryParam": {"ParamsMap": {"name": "hwwwwdpafqdnp_lang_query_params", "key": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}}}
 				}},
 				{"If": {
 					"if": {"Not": {"PartIs": {"part": "RegDomain", "value": null}}},
 					"then": {"All": [
 						{"If": {
-							"if": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "utps-reg-domain-whitelist"}}}},
+							"if": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "utps_reg_domain_whitelist"}}}},
 							"then": {"All": [
 								{"RemoveQueryParamsMatching": {"Any": [
 									{"InSet": "utps"},
-									{"ContainsAnyInList": {"at": "Start", "list": "utp-prefixes"}}
+									{"ContainsAnyInList": {"at": "Start", "list": "utp_prefixes"}}
 								]}},
 								{"ModifyPart": {
 									"part": "Fragment",
-									"modification": {"RemoveQueryParamsMatching": {"Any": [
+									"modification": {"IfSome": {"RemoveQueryParamsMatching": {"Any": [
 										{"InSet": "utps"},
-										{"ContainsAnyInList": {"at": "Start", "list": "utp-prefixes"}}
-									]}
-								}}}
+										{"ContainsAnyInList": {"at": "Start", "list": "utp_prefixes"}}
+									]}}}
+								}}
 							]}
 						}},
-						{"If": {
-							"if": {"All": [
-								{"SubdomainIs": "www"},
-								{"Not": {"Any": [
-									{"PartMap": {
-										"part": "RegDomain",
-										"map": {
-											"facebook.com" : {"PathStartsWith": "/share/"},
-											"teepublic.com": {"PathStartsWith": "/lic/"}
-										}
-									}},
-									{"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-www-subdomain-reg-domain-blacklist"}}}
-								]}}
-							]},
-							"then": {"SetPart": {"part": "Subdomain", "value": null}}
+						{"StringMap": {
+							"value": {"NamedPartitioning": {"named_partitioning": "www_subdomain_handling", "element": {"Part": "RegDomain"}}},
+							"map": {
+								"keep": "None",
+								"add": {"If": {
+									"if": {"SubdomainIs": null},
+									"then": {"SetPart": {"part": "Subdomain", "value": "www"}}
+								}},
+								"sometimes_add": {"If": {
+									"if": {"All": [
+										{"SubdomainIs": null},
+										{"PartMap": {
+											"part": "RegDomain",
+											"map": {
+												"facebook.com" : {"PathStartsWith": "/share/"},
+												"teepublic.com": {"PathStartsWith": "/lic/"}
+											}
+										}}
+									]},
+									"then": {"SetPart": {"part": "Subdomain", "value": "www"}}
+								}}
+							},
+							"else": {"If": {
+								"if": {"SubdomainIs": "www"},
+								"then": {"SetPart": {"part": "Subdomain", "value": null}}
+							}}
 						}},
 						{"If": {
-							"if": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-fqdn-period-reg-domain-blacklist"}}}},
+							"if": {"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove_fqdn_period_reg_domain_blacklist"}}}},
 							"then": {"SetPart": {
 								"part": "FqdnPeriod",
 								"value": null
@@ -337,14 +385,14 @@
 						{"If": {
 							"if": {"All": [
 								{"PartIs": {"part": "Query", "value": ""}},
-								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-query-reg-domain-blacklist"}}}}
+								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove_empty_query_reg_domain_blacklist"}}}}
 							]},
 							"then": "RemoveQuery"
 						}},
 						{"If": {
 							"if": {"All": [
 								{"PartIs": {"part": "Fragment", "value": ""}},
-								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove-empty-fragment-reg-domain-blacklist"}}}}
+								{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove_empty_fragment_reg_domain_blacklist"}}}}
 							]},
 							"then": {"SetPart": {"part": "Fragment", "value": null}}
 						}}
@@ -352,7 +400,9 @@
 				}}
 			]},
 
-			"url-from-query-param-or-query": {"FirstNotError": [
+
+
+			"url_from_query_param_or_query": {"FirstNotError": [
 				{"GetUrlFromQueryParam": {"Var": {"type": "CommonArg", "name": "param"}}},
 				{"CopyPart": {"from": "Query", "to": "Whole"}},
 				{"SetPart": {
@@ -384,623 +434,587 @@
 			"if": {"PartIsOneOf": {"part": "Scheme", "values": ["http", "https"]}},
 			"then": {"All": [
 				{"If": {
-					"if": {"Any": [
-						{"PartMatches": {
-							"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
-							"matcher": {"Any": [
-								{"InSet": "redirect-hwwwwdpafqdnps"},
-								{"InSet": "bypass.vip-hwwwwdpafqdnps"},
-								{"IsOneOf": [
-									"1link.club", "action.openmedia.org", "allmylinks.com", "api.linkr.bio", "api.pinterest.com", "awin1.com", "bfy.tw", "boxd.it",
-									"bugzil.la", "buymeacoff.ee", "buymeacoffee.com", "cach.me", "carleton.ca", "cash.app", "click.notification.elsevier.com",
-									"deviantart.com", "duckduckgo.com", "duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion",
-									"e.emailalerts.cnn.com", "facebook.com", "goodreads.com", "google.com", "gprivate.com", "href.li", "instagr.am", "instagram.com",
-									"l.instagram.com", "l.threads.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "m.vk.com", "old.reddit.com", "open.substack.com",
-									"out.reddit.com", "pawoo.net", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "rd.goodreads.com", "reddit.com", "reurl.cc",
-									"shareasale-analytics.com", "shareasale.com", "sketchfab.com", "sketchfab.com", "skfb.ly", "smarturl.it", "ss3.shipstation.com",
-									"steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "teepublic.com", "tinyurl.com", "toyhou.se",
-									"twpf.jp", "urldefense.com", "vk.com", "youtube.com", "apexpartner.app", "redirect.viglink.com", "linkprotect.cudasvc.com", "ro.blox.com"
-								]},
-								{"Contains": {"value": "google"}}
-							]}
-						}},
-						{"TreatErrorAsFail": {"PartMatches": {
-							"part": "RegDomain",
-							"matcher": {"Any": [
-								{"IsOneOf": ["smartadserver.com", "lnk.to"]},
-								{"InSet": "redirect-reg-domains"}
-							]}
-						}}}
-					]},
+					"if": {"TreatErrorAsFail": {"Any": [
+						{"PartIsInNamedPartitioning": {"named_partitioning": "hwwwwdpafqdnp_expand_mode", "part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}},
+						{"PartIsInNamedPartitioning": {"named_partitioning": "reg_domain_expand_mode"   , "part": "RegDomain"}},
+						{"PartIsInNamedPartitioning": {"named_partitioning": "domain_middle_expand_mode", "part": "DomainMiddle"}}
+					]}},
 					"then": {"Repeat": {
 						"actions": [
-							{
-								"PartMap": {
-									"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
-									"map": {
-										"1link.club": {"Common": {
-											"name": "extract-from-page",
-											"args": {
-												"string_modifications": {
-													"extractor": {"All": [
-														{"StripBefore": "<a id=\"download\""},
-														{"GetHtmlAttribute": "href"}
-													]}
-												}
-											}
-										}},
-										"action.openmedia.org": {"If": {
-											"if": {"PathStartsWith": "/page/email/click"},
-											"then": "RemoveQuery"
-										}},
-										"allmylinks.com": {"Common": {
-											"name": "redirect-shortcut",
-											"args": {"vars": {"expected_reg_domain": "allmylinks.com"}}
-										}},
-										"api.linkr.bio": {"If": {
-											"if": {"PathIs": "/callbacks/go"},
-											"then": {"GetUrlFromQueryParam": "url"}
-										}},
-										"api.linkr.com": {"If": {
-											"if": {"PathIs": "/callbacks/go"},
-											"then": {"GetUrlFromQueryParam": "url"}
-										}},
-										"awin1.com": {"If": {
-											"if": {"PathIs": "/cread.php"},
-											"then": {"TryElse": {
-												"try": {"GetUrlFromQueryParam": "ued"},
-												"else": {"If": {
-													"if": {"Not": {"FlagIsSet": "no-network"}},
-													"then": {"All": [
-														{"Common": "universal"},
-														{"ExpandRedirect": {}},
-														{"RemoveQueryParams": ["source", "awc", "sv1", "sv_campaign_id"]}
-													]}
-												}}
-											}}
-										}},
-										"bfy.tw": {"Common": {
-											"name": "extract-from-page",
-											"args": {
-												"string_modifications": {
-													"extractor": {"All": [
-														{"StripBefore": "<a href="},
-														{"GetHtmlAttribute": "href"}
-													]}
-												}
-											}
-										}},
-										"boxd.it": {"All": [
-											{"Common": "universal"},
-											{"SetPart": {"part": "Subdomain", "value": null}}
-										]},
-										"bugzil.la": {"All": [
-											{"SetHost": "bugzilla.mozilla.org"},
-											{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "id"}}},
-											{"SetPart": {"part": "Path", "value": "/show_bug.cgi"}}
-										]},
-										"buymeacoff.ee": {"SetHost": "buymeacoffee.com"},
-										"cach.me": {"SetHost": "cash.app"},
-										"click.notification.elsevier.com": {"If": {
-											"if": {"PathStartsWith": "/CL0/"},
-											"then": {"SetPart": {
-												"part": "Whole",
-												"value": {"Modified": {
-													"value": {"Part": "Path"},
-													"modification": {"All": [
-														{"KeepSegmentRange": {"split": "/", "start": 2, "end": -3}},
-														"PercentDecode"
-													]}
-												}}
-											}}
-										}},
-										"deviantart.com": {"If": {
-											"if": {"PathIs": "/users/outgoing"},
-											"then": {"Common": {
-												"name": "url-from-query-param-or-query",
-												"args": {"vars": {"param": "url"}}
-											}}
-										}},
-										"duckduckgo.com": {"If": {
-											"if": {"PathIs": "/l/"},
-											"then": {"GetUrlFromQueryParam": "uddg"}
-										}},
-										"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion": {"If": {
-											"if": {"PathIs": "/l/"},
-											"then": {"GetUrlFromQueryParam": "uddg"}
-										}},
-										"e.emailalerts.cnn.com": {"SetPart": {
-											"part": "Whole",
-											"value": {"Modified": {
-												"value": {"Part": "Query"},
-												"modification": {"All": [
-													{"KeepNthSegment": {"split": "/", "index": 2}},
-													{"RemoveChar": 0},
-													"Base64Decode",
-													{"KeepNthSegment": {"split": ",", "index": -1}}
-												]}
-											}}
-										}},
-										"go.bsky.app": {"TryElse": {
-											"try": {"GetUrlFromQueryParam": "u"},
-											"else": {"If": {
-												"if": {"Not": {"FlagIsSet": "no-network"}},
-												"then": {"ExpandRedirect": {}}
-											}}
-										}},
-										"goodreads.com": {"If": {
-											"if": {"PathIs": "/gp/r.html"},
-											"then": {"GetUrlFromQueryParam": "U"}
-										}},
-										"gprivate.com": {"Common": {
-											"name": "extract-from-page",
-											"args": {
-												"string_modifications": {
-													"extractor": {"All": [
-														{"KeepAfter": "window.location = "},
-														"GetJsStringLiteralPrefix"
-													]}
-												}
-											}
-										}},
-										"href.li": {"SetPart": {
-											"part": "Whole",
-											"value": {"Part": {"PositionRange": {"start": "BeforeQuery", "end": "AfterFragment"}}}
-										}},
-										"instagr.am": {"SetHost": "instagram.com"},
-										"l.instagram.com": {"GetUrlFromQueryParam": "u"},
-										"l.threads.com": {"GetUrlFromQueryParam": "u"},
-										"linkprotect.cudasvc.com": {"GetUrlFromQueryParam": "a"},
-										"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
-										"lmgtfy2.com": {"If": {
-											"if": {"Not": {"PartIs": {"part": {"QueryParam": "q"}, "value": null}}},
-											"then": {
-												"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"value": {"Map": {
-															"value": {"Part": {"QueryParam": "s"}},
-															"map": {
-																"g": {"Map": {
-																	"value": {"Part": {"QueryParam": "t"}},
-																	"map": {
-																		"w" : "https://google.com/search?q=",
-																		"i" : "https://google.com/search?tbm=isch&q=",
-																		"v" : "https://google.com/search?tbm=vid&q=",
-																		"m" : "https://google.com/maps?q=",
-																		"n" : "https://google.com/search?tbm=nws&q=",
-																		"s" : "https://google.com/search?tbm=shop&q=",
-																		"b" : "https://google.com/search?tbm=bks&q=",
-																		"f" : "https://google.com/finance?q=",
-																		"sc": "https://scholar.google.com/scholar?q="
-																	},
-																	"if_null": "https://www.google.com/search?q="
-																}},
-																"c": "https://chat.openai.com/search?q=",
-																"b": "https://startpage.com/search?q=",
-																"y": "https://search.yahoo.com/search?q=",
-																"d": "https://duckduckgo.com/?q=",
-																"k": "https://ask.com/web?q=",
-																"a": "https://search.aol.com/aol/search?q=",
-																"w": "https://wikipedia.org/w/index.php?search=",
-																"s": "https://snopes.com/search/?q="
-															}
-														}},
-														"modification": {"Append": {"Part": {"QueryParam": "q"}}}
-													}}
-												}
-											}
-										}},
-										"lnk.bio": {"If": {
-											"if": {"PathIs": "/go"},
-											"then": {"GetUrlFromQueryParam": "d"}
-										}},
-										"mfy.gg": {"SetHost": "metafy.gg"},
-										"o93x.net": {"GetUrlFromQueryParam": "u"},
-										"open-api.tiktok.com": {"AllowQueryParams": ["open_id"]},
-										"open.substack.com": {"If": {
-											"if": {"PathStartsWith": "/pub/"},
-											"then": {"All": [
-												{"CopyPart": {"from": {"PathSegment": 1}, "to": "Subdomain"}},
-												{"SetPart": {"part": {"PathSegment": 0}, "value": null}},
-												{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
-											]}
-										}},
-										"out.reddit.com": {"GetUrlFromQueryParam": "url"},
-										"pixiv.net": {"If": {
-											"if": {"PathIs": "/jump.php"},
-											"then": {"Common": {
-												"name": "url-from-query-param-or-query",
-												"args": {"vars": {"param": "url"}}
-											}}
-										}},
-										"preview.tinyurl.com": {"SetPart": {
-											"part": "Whole",
-											"value": {"Join": {
-												"values": [
-													"https://tinyurl.com/preview",
-													{"Part": "Path"}
-												]
-											}}
-										}},
-										"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
-										"rd.goodreads.com": {"If": {
-											"if": {"PathIs": "/gp/r.html"},
-											"then": {"GetUrlFromQueryParam": "U"}
-										}},
-										"redirect.viglink.com": {"TryElse": {
-											"try": {"GetUrlFromQueryParam": "u"},
-											"else": {"GetUrlFromQueryParam": "out"}
-										}},
-										"reurl.cc": {"CacheUrl": {
-											"category": "redirect",
-											"action": {"If": {
-												"if": {"Not": {"FlagIsSet": "no-network"}},
-												"then": {"SetPart": {
-													"part": "Whole",
-													"value": {"HttpRequest": {"response_handler": {"Header": "target"}}}
-												}}
-											}}
-										}},
-										"ro.blox.com": {"GetUrlFromQueryParam": "af_web_dp"},
-										"shareasale-analytics.com": {"If": {
-											"if": {"PartContains": {"part": "Path", "value": ".cfm", "at": "End"}},
-											"then": {"FirstNotError": [
-												{"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"value": {"Part": {"QueryParam": "urllink"}},
-														"modification": {"All": [
-															{"StripMaybePrefix": "http://"},
-															{"StripMaybePrefix": "https://"},
-															{"Insert": {"index": 0, "value": "https://"}}
-														]}
-													}}
-												}},
-												{"All": [
-													{"AllowQueryParams": ["d", "b", "u", "m"]},
-													{"Common": {
-														"name": "extract-from-page",
-														"args": {
-															"string_modifications": {
-																"extractor": {"All": [
-																	{"KeepAfter": "replace("},
-																	"GetJsStringLiteralPrefix"
-																]}
-															}
-														}
-													}}
-												]}
-											]}
-										}},
-										"shareasale.com": {"If": {
-											"if": {"PartContains": {"part": "Path", "value": ".cfm", "at": "End"}},
-											"then": {"FirstNotError": [
-												{"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"value": {"Part": {"QueryParam": "urllink"}},
-														"modification": {"All": [
-															{"StripMaybePrefix": "http://"},
-															{"StripMaybePrefix": "https://"},
-															{"Insert": {"index": 0, "value": "https://"}}
-														]}
-													}}
-												}},
-												{"All": [
-													{"SetHost": "shareasale-analytics.com"},
-													{"AllowQueryParams": ["d", "b", "u", "m"]},
-													{"Common": {
-														"name": "extract-from-page",
-														"args": {
-															"string_modifications": {
-																"extractor": {"All": [
-																	{"KeepAfter": "replace("},
-																	"GetJsStringLiteralPrefix"
-																]}
-															}
-														}
-													}}
-												]}
-											]}
-										}},
-										"shorturl.at": {"SetPart": {"part": "Subdomain", "value": "www"}},
-										"skfb.ly": {"All": [
-											{"SetHost": "sketchfab.com"},
-											{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "s"}}
-										]},
-										"smarturl.it": {"Common": {
-											"name": "extract-from-page",
-											"args": {
-												"string_modifications": {
-													"extractor": {"All": [
-														{"KeepAfter": "\"originalUrl\":"},
-														"GetJsStringLiteralPrefix"
-													]}
-												}
-											}
-										}},
-										"ss3.shipstation.com": {"SetPart": {
-											"part": "Whole",
-											"value": {"Join": {
-												"values": [
-													"https://",
-													{"Modified": {
-														"value": {"Part": "Whole"},
-														"modification": {"StripPrefix": "https://ss3.shipstation.com/"}
-													}}
-												]
-											}}
-										}},
-										"steamcommunity.com": {"If": {
-											"if": {"PathStartsWith": "/linkfilter"},
-											"then": {"GetUrlFromQueryParam": "u"}
-										}},
-										"subscribestar.adult": {"If": {
-											"if": {"PathIs": "/away"},
-											"then": {"SetPart": {
-												"part": "Whole",
-												"value": {"Modified": {
-													"value": {"Part": {"QueryParam": "url"}},
-													"modification": {"All": [
-														{"Replace": {"find": "\n", "replace": ""}},
-														"Base64Decode"
-													]}
-												}}
-											}}
-										}},
-										"substack.com": {"All": [
-											{"If": {
-												"if": {"PathStartsWith": "/p/"},
-												"then": {"RemoveQueryParams": ["token"]}
+							{"StringMap": {
+								"value": {"NamedPartitioning": {"named_partitioning": "domain_middle_expand_mode", "element": {"Part": "DomainMiddle"}}},
+								"map": {
+									"google": {"If": {
+										"if": {"PathIs": "/url"},
+										"then": {"GetUrlFromQueryParam": "q"}
+									}}
+								}
+							}},
+
+
+
+							{"StringMap": {
+								"value": {"NamedPartitioning": {"named_partitioning": "reg_domain_expand_mode", "element": {"Part": "RegDomain"}}},
+								"map": {
+									"redirect": {"If": {
+										"if": {"Not": {"FlagIsSet": "no_network"}},
+										"then": {"ExpandRedirect": {}}
+									}},
+									"special": {"PartMap": {
+										"part": "RegDomain",
+										"map": {
+											"carleton.ca": {"If": {
+												"if": {"PartIs": {"part": {"QueryParam": "action"}, "value": "redirect"}},
+												"then": {"GetUrlFromQueryParam": "url"}
 											}},
-											{"If": {
-												"if": {"PathIs": "/app-link/post"},
-												"then": {"AllowQueryParams": ["publication_id", "post_id", "submitLike", "action"]}
-											}},
-											{"If": {
-												"if": {"All": [
-													{"PathStartsWith": "/redirect/"},
-													{"PartMatches": {"part": {"PathSegment": 1}, "matcher": {"LengthIs": 36}}}
-												]},
-												"then": "RemoveQuery"
-											}},
-											{"If": {
-												"if": {"PathStartsWith": "/redirect/2/"},
-												"then": {"SetPart": {
-													"part": "Whole",
-													"value": {"Modified": {
-														"value": {"Part": {"PathSegment": 2}},
-														"modification": {"All": [
-															{"KeepBefore": "."},
-															"Base64Decode",
-															{"JsonPointer": "/e"}
-														]}
-													}}
-												}}
-											}}
-										]},
-										"t.co": {"Common": {
-											"name": "redirect-shortcut",
-											"args": {"vars": {"expected_reg_domain": "x.com"}}
-										}},
-										"t.umblr.com": {"GetUrlFromQueryParam": "z"},
-										"tee.pub": {"SetHost": "www.teepublic.com"},
-										"tinyurl.com": {"All": [
-											{"PartMap": {
-												"part": {"PathSegment": 0},
-												"map": {
-													"preview": "None",
-													"app": {"SetPart": {"part": {"PathSegment": 0}, "value": "preview"}}
-												},
-												"else": {"SetPart": {"part": {"BeforePathSegment": 0}, "value": "preview"}}
-											}},
-											{"Common": {
-												"name": "extract-from-page",
+											"lnk.to": {"Common": {
+												"name": "extract_from_page",
 												"args": {
 													"string_modifications": {
 														"extractor": {"All": [
-															{"KeepAfter": "let url = "},
+															{"KeepAfter": "\"originalUrl\":"},
+															{"TryElse": {
+																"try": "GetJsStringLiteralPrefix",
+																"else": {"Set": {"Part": "Whole"}}
+															}}
+														]}
+													}
+												}
+											}},
+											"onelink.me": {"All": [
+												"RemoveQuery",
+												{"If": {
+													"if": {"Not": {"FlagIsSet": "no_network"}},
+													"then": {"All": [
+														{"Common": "universal"},
+														{"ExpandRedirect": {}}
+													]}
+												}}
+											]},
+											"pulse.ly": {"All": [
+												{"SetHost": "api.link.agorapulse.com"},
+												{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "redirect"}}
+											]},
+											"smartadserver.com": {"If": {
+												"if": {"PathIs": "/click"},
+												"then": {"GetUrlFromQueryParam": "go"}
+											}},
+											"vk.com": {"If": {
+												"if": {"PathIs": "/away.php"},
+												"then": {"GetUrlFromQueryParam": "to"}
+											}}
+										}
+									}}
+								}
+							}},
+
+
+
+							{"StringMap": {
+								"value": {"NamedPartitioning": {"named_partitioning": "hwwwwdpafqdnp_expand_mode", "element": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}},
+								"map": {
+									"bypass_vip": {"If": {
+										"if": {"All": [
+											{"FlagIsSet": "bypass_vip"},
+											{"Not": {"FlagIsSet": "no_network"}}
+										]},
+										"then": {"All": [
+											{"Common": "universal"},
+											{"CacheUrl": {
+												"category": "redirect",
+												"action": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"value": {"HttpRequest": {
+															"url": {"Join": {
+																"values": [
+																	{"IfStringIsNone": {
+																		"value": {"NoneTo": {
+																			"value": {"Var": "bypass_vip_api_key"},
+																			"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+																		}},
+																		"then": "https://api.bypass.vip/bypass?url=",
+																		"else": "https://api.bypass.vip/premium/bypass?url="
+																	}},
+																	{"Modified": {"value": {"Part": "Whole"}, "modification": "PercentEncode"}}
+																]
+															}},
+															"headers": {
+																"x-api-key": {"NoneTo": {
+																	"value": {"Var": "bypass_vip_api_key"},
+																	"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+																}}
+															}
+														}},
+														"modification": {"JsonPointer": "/result"}
+													}}
+												}}
+											}}
+										]}
+									}},
+									"unknown_format_1": {"If": {
+										"if": {"PathStartsWith": "/page/email/redirect"},
+										"then": {"All": [
+											{"CopyPart": {"from": {"QueryParam": "campaignpageurl"}, "to": "Whole"}},
+											{"RemoveQueryParams": ["ea.url.id"]}
+										]}
+									}},
+									"redirect": {"If": {
+										"if": {"All": [
+											{"Not": {"FlagIsSet": "no_network"}},
+											{"PartMap": {
+												"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
+												"map": {
+													"allmylinks.com"   : {"PathIs": "/link/out"},
+													"apexpartner.app"  : {"PathStartsWith": "/redirect/"},
+													"api.pinterest.com": {"PathStartsWith": "/url_shortener/"},
+													"facebook.com"     : {"PathStartsWith": "/share/"},
+													"old.reddit.com"   : {"PartContains": {"part": "Path", "value": "/s/"}},
+													"pawoo.net"        : {"PathStartsWith": "/oauth_authentications/"},
+													"qudsnen.co"       : {"Not": {"PartIs": {"part": {"QueryParam": "p"}, "value": null}}},
+													"reddit.com"       : {"PartContains": {"part": "Path", "value": "/s/"}},
+													"sketchfab.com"    : {"PathStartsWith": "/s/"},
+													"substack.com"     : {"Any": [
+														{"PathStartsWith": "/redirect/2/"},
+														{"PathIs": "/app-link/post"}
+													]},
+													"teepublic.com": {"PathStartsWith": "/lic/"}
+												},
+												"else": "Always"
+											}}
+										]},
+										"then": {"All": [
+											{"Common": "universal"},
+											{"ExpandRedirect": {}}
+										]}
+									}},
+									"special": {"PartMap": {
+										"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
+										"map": {
+											"1link.club": {"Common": {
+												"name": "extract_from_page",
+												"args": {
+													"string_modifications": {
+														"extractor": {"All": [
+															{"StripBefore": "<a id=\"download\""},
+															{"GetHtmlAttribute": "href"}
+														]}
+													}
+												}
+											}},
+											"allmylinks.com": {"Common": {
+												"name": "redirect_shortcut",
+												"args": {"vars": {"expected_reg_domain": "allmylinks.com"}}
+											}},
+											"api.linkr.bio": {"If": {
+												"if": {"PathIs": "/callbacks/go"},
+												"then": {"GetUrlFromQueryParam": "url"}
+											}},
+											"api.linkr.com": {"If": {
+												"if": {"PathIs": "/callbacks/go"},
+												"then": {"GetUrlFromQueryParam": "url"}
+											}},
+											"awin1.com": {"If": {
+												"if": {"PathIs": "/cread.php"},
+												"then": {"TryElse": {
+													"try": {"GetUrlFromQueryParam": "ued"},
+													"else": {"If": {
+														"if": {"Not": {"FlagIsSet": "no_network"}},
+														"then": {"All": [
+															{"Common": "universal"},
+															{"ExpandRedirect": {}},
+															{"RemoveQueryParams": ["source", "awc", "sv1", "sv_campaign_id"]}
+														]}
+													}}
+												}}
+											}},
+											"bfy.tw": {"Common": {
+												"name": "extract_from_page",
+												"args": {
+													"string_modifications": {
+														"extractor": {"All": [
+															{"StripBefore": "<a href="},
+															{"GetHtmlAttribute": "href"}
+														]}
+													}
+												}
+											}},
+											"bugzil.la": {"All": [
+												{"SetHost": "bugzilla.mozilla.org"},
+												{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "id"}}},
+												{"SetPart": {"part": "Path", "value": "/show_bug.cgi"}}
+											]},
+											"buymeacoff.ee": {"SetHost": "buymeacoffee.com"},
+											"cach.me": {"SetHost": "cash.app"},
+											"click.notification.elsevier.com": {"If": {
+												"if": {"PathStartsWith": "/CL0/"},
+												"then": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"value": {"Part": "Path"},
+														"modification": {"All": [
+															{"KeepSegmentRange": {"split": "/", "start": 2, "end": -3}},
+															"PercentDecode"
+														]}
+													}}
+												}}
+											}},
+											"deviantart.com": {"If": {
+												"if": {"PathIs": "/users/outgoing"},
+												"then": {"Common": {
+													"name": "url_from_query_param_or_query",
+													"args": {"vars": {"param": "url"}}
+												}}
+											}},
+											"duckduckgo.com": {"If": {
+												"if": {"PathIs": "/l/"},
+												"then": {"GetUrlFromQueryParam": "uddg"}
+											}},
+											"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion": {"If": {
+												"if": {"PathIs": "/l/"},
+												"then": {"GetUrlFromQueryParam": "uddg"}
+											}},
+											"e.emailalerts.cnn.com": {"SetPart": {
+												"part": "Whole",
+												"value": {"Modified": {
+													"value": {"Part": "Query"},
+													"modification": {"All": [
+														{"KeepNthSegment": {"split": "/", "index": 2}},
+														{"RemoveChar": 0},
+														"Base64Decode",
+														{"KeepNthSegment": {"split": ",", "index": -1}}
+													]}
+												}}
+											}},
+											"go.bsky.app": {"TryElse": {
+												"try": {"GetUrlFromQueryParam": "u"},
+												"else": {"If": {
+													"if": {"Not": {"FlagIsSet": "no_network"}},
+													"then": {"ExpandRedirect": {}}
+												}}
+											}},
+											"goodreads.com": {"If": {
+												"if": {"PathIs": "/gp/r.html"},
+												"then": {"GetUrlFromQueryParam": "U"}
+											}},
+											"gprivate.com": {"Common": {
+												"name": "extract_from_page",
+												"args": {
+													"string_modifications": {
+														"extractor": {"All": [
+															{"KeepAfter": "window.location = "},
 															"GetJsStringLiteralPrefix"
 														]}
 													}
 												}
-											}}
-										]},
-										"toyhou.se": {"If": {
-											"if": {"PathIs": "/~r"},
-											"then": {"GetUrlFromQueryParam": "q"}
-										}},
-										"twpf.jp": {"If": {
-											"if": {"PartIs": {"part": "Path", "value": "/home/jump"}},
-											"then": {"SetPart": {
+											}},
+											"href.li": {"SetPart": {
 												"part": "Whole",
-												"value": {"Modified": {
-													"value": {"Part": {"QueryParam": "p"}},
-													"modification": "PercentDecode"
-												}}
-											}}
-										}},
-										"urldefense.com": {"If": {
-											"if": {"PathStartsWith": "/v3/"},
-											"then": {"SetPart": {
-												"part": "Whole",
-												"value": {"Modified": {
-													"value": {"Part": "Whole"},
-													"modification": {"All": [
-														{"KeepSegmentRange": {"split": "__;", "end": -1}},
-														{"KeepSegmentRange": {"split": "__", "start": 1}},
-														{"Replace": {"find": "*", "replace": "%"}}
-													]}
-												}}
-											}}
-										}},
-										"youtube.com": {"If": {
-											"if": {"PathIs": "/redirect"},
-											"then": {"GetUrlFromQueryParam": "q"}
-										}}
-									}
-								}
-							},
-
-
-
-							{
-								"PartMap": {
-									"part": "RegDomain",
-									"map": {
-										"carleton.ca": {"If": {
-											"if": {"PartIs": {"part": {"QueryParam": "action"}, "value": "redirect"}},
-											"then": {"GetUrlFromQueryParam": "url"}
-										}},
-										"lnk.to": {"Common": {
-											"name": "extract-from-page",
-											"args": {
-												"string_modifications": {
-													"extractor": {"All": [
-														{"KeepAfter": "\"originalUrl\":"},
-														"GetJsStringLiteralPrefix"
-													]}
-												}
-											}
-										}},
-										"onelink.me": "RemoveQuery",
-										"pulse.ly": {"All": [
-											{"SetHost": "api.link.agorapulse.com"},
-											{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "redirect"}}
-										]},
-										"smartadserver.com": {"If": {
-											"if": {"PathIs": "/click"},
-											"then": {"GetUrlFromQueryParam": "go"}
-										}},
-										"visitlink.me": {"SetPart": {"part": "Subdomain", "value": null}},
-										"vk.com": {"If": {
-											"if": {"PathIs": "/away.php"},
-											"then": {"GetUrlFromQueryParam": "to"}
-										}}
-									}
-								}
-							},
-
-
-
-							{"If": {
-								"if": {"All": [
-									{"FlagIsSet": "bypass.vip"},
-									{"Not": {"FlagIsSet": "no-network"}},
-									{"PartMatches": {"part": "HostWithoutWWWDotPrefixAndFqdnPeriod", "matcher": {"InSet": "bypass.vip-hwwwwdpafqdnps"}}}
-								]},
-								"then": {"All": [
-									{"Common": "universal"},
-									{"CacheUrl": {
-										"category": "redirect",
-										"action": {"SetPart": {
-											"part": "Whole",
-											"value": {"Modified": {
-												"value": {"HttpRequest": {
-													"url": {"Join": {
-														"values": [
-															{"IfStringIsNone": {
-																"value": {"NoneTo": {
-																	"value": {"Var": "bypass.vip-api-key"},
-																	"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
-																}},
-																"then": "https://api.bypass.vip/bypass?url=",
-																"else": "https://api.bypass.vip/premium/bypass?url="
+												"value": {"Part": {"PositionRange": {"start": "BeforeQuery", "end": "AfterFragment"}}}
+											}},
+											"instagr.am": {"SetHost": "instagram.com"},
+											"l.instagram.com": {"GetUrlFromQueryParam": "u"},
+											"l.threads.com": {"GetUrlFromQueryParam": "u"},
+											"linkprotect.cudasvc.com": {"GetUrlFromQueryParam": "a"},
+											"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
+											"lmgtfy2.com": {"If": {
+												"if": {"Not": {"PartIs": {"part": {"QueryParam": "q"}, "value": null}}},
+												"then": {
+													"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"value": {"Map": {
+																"value": {"Part": {"QueryParam": "s"}},
+																"map": {
+																	"g": {"Map": {
+																		"value": {"Part": {"QueryParam": "t"}},
+																		"map": {
+																			"w" : "https://google.com/search?q=",
+																			"i" : "https://google.com/search?tbm=isch&q=",
+																			"v" : "https://google.com/search?tbm=vid&q=",
+																			"m" : "https://google.com/maps?q=",
+																			"n" : "https://google.com/search?tbm=nws&q=",
+																			"s" : "https://google.com/search?tbm=shop&q=",
+																			"b" : "https://google.com/search?tbm=bks&q=",
+																			"f" : "https://google.com/finance?q=",
+																			"sc": "https://scholar.google.com/scholar?q="
+																		},
+																		"if_null": "https://www.google.com/search?q="
+																	}},
+																	"c": "https://chat.openai.com/search?q=",
+																	"b": "https://startpage.com/search?q=",
+																	"y": "https://search.yahoo.com/search?q=",
+																	"d": "https://duckduckgo.com/?q=",
+																	"k": "https://ask.com/web?q=",
+																	"a": "https://search.aol.com/aol/search?q=",
+																	"w": "https://wikipedia.org/w/index.php?search=",
+																	"s": "https://snopes.com/search/?q="
+																}
 															}},
-															{"Modified": {"value": {"Part": "Whole"}, "modification": "PercentEncode"}}
-														]
-													}},
-													"headers": {
-														"x-api-key": {"NoneTo": {
-															"value": {"Var": "bypass.vip-api-key"},
-															"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+															"modification": {"Append": {"Part": {"QueryParam": "q"}}}
 														}}
 													}
+												}
+											}},
+											"lnk.bio": {"If": {
+												"if": {"PathIs": "/go"},
+												"then": {"GetUrlFromQueryParam": "d"}
+											}},
+											"mfy.gg": {"SetHost": "metafy.gg"},
+											"o93x.net": {"GetUrlFromQueryParam": "u"},
+											"open-api.tiktok.com": {"All": [
+												{"AllowQueryParams": ["open_id"]},
+												{"If": {
+													"if": {"Not": {"FlagIsSet": "no_network"}},
+													"then": {"All": [
+														{"Common": "universal"},
+														{"ExpandRedirect": {}}
+													]}
+												}}
+											]},
+											"open.substack.com": {"If": {
+												"if": {"PathStartsWith": "/pub/"},
+												"then": {"All": [
+													{"CopyPart": {"from": {"PathSegment": 1}, "to": "Subdomain"}},
+													{"SetPart": {"part": {"PathSegment": 0}, "value": null}},
+													{"SetPart": {"part": {"PathSegment": 0}, "value": null}}
+												]}
+											}},
+											"out.reddit.com": {"GetUrlFromQueryParam": "url"},
+											"pixiv.net": {"If": {
+												"if": {"PathIs": "/jump.php"},
+												"then": {"Common": {
+													"name": "url_from_query_param_or_query",
+													"args": {"vars": {"param": "url"}}
+												}}
+											}},
+											"preview.tinyurl.com": {"SetPart": {
+												"part": "Whole",
+												"value": {"Join": {
+													"values": [
+														"https://tinyurl.com/preview",
+														{"Part": "Path"}
+													]
+												}}
+											}},
+											"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
+											"rd.goodreads.com": {"If": {
+												"if": {"PathIs": "/gp/r.html"},
+												"then": {"GetUrlFromQueryParam": "U"}
+											}},
+											"redirect.viglink.com": {"TryElse": {
+												"try": {"GetUrlFromQueryParam": "u"},
+												"else": {"GetUrlFromQueryParam": "out"}
+											}},
+											"reurl.cc": {"CacheUrl": {
+												"category": "redirect",
+												"action": {"If": {
+													"if": {"Not": {"FlagIsSet": "no_network"}},
+													"then": {"SetPart": {
+														"part": "Whole",
+														"value": {"HttpRequest": {"response_handler": {"Header": "target"}}}
+													}}
+												}}
+											}},
+											"ro.blox.com": {"GetUrlFromQueryParam": "af_web_dp"},
+											"shareasale-analytics.com": {"If": {
+												"if": {"PartContains": {"part": "Path", "value": ".cfm", "at": "End"}},
+												"then": {"FirstNotError": [
+													{"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"value": {"Part": {"QueryParam": "urllink"}},
+															"modification": {"All": [
+																{"StripMaybePrefix": "http://"},
+																{"StripMaybePrefix": "https://"},
+																{"Insert": {"index": 0, "value": "https://"}}
+															]}
+														}}
+													}},
+													{"All": [
+														{"AllowQueryParams": ["d", "b", "u", "m"]},
+														{"Common": {
+															"name": "extract_from_page",
+															"args": {
+																"string_modifications": {
+																	"extractor": {"All": [
+																		{"KeepAfter": "replace("},
+																		"GetJsStringLiteralPrefix"
+																	]}
+																}
+															}
+														}}
+													]}
+												]}
+											}},
+											"shareasale.com": {"If": {
+												"if": {"PartContains": {"part": "Path", "value": ".cfm", "at": "End"}},
+												"then": {"FirstNotError": [
+													{"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"value": {"Part": {"QueryParam": "urllink"}},
+															"modification": {"All": [
+																{"StripMaybePrefix": "http://"},
+																{"StripMaybePrefix": "https://"},
+																{"Insert": {"index": 0, "value": "https://"}}
+															]}
+														}}
+													}},
+													{"All": [
+														{"SetHost": "shareasale-analytics.com"},
+														{"AllowQueryParams": ["d", "b", "u", "m"]},
+														{"Common": {
+															"name": "extract_from_page",
+															"args": {
+																"string_modifications": {
+																	"extractor": {"All": [
+																		{"KeepAfter": "replace("},
+																		"GetJsStringLiteralPrefix"
+																	]}
+																}
+															}
+														}}
+													]}
+												]}
+											}},
+											"skfb.ly": {"All": [
+												{"SetHost": "sketchfab.com"},
+												{"SetPart": {"part": {"BeforePathSegment": 0}, "value": "s"}}
+											]},
+											"smarturl.it": {"Common": {
+												"name": "extract_from_page",
+												"args": {
+													"string_modifications": {
+														"extractor": {"All": [
+															{"KeepAfter": "\"originalUrl\":"},
+															"GetJsStringLiteralPrefix"
+														]}
+													}
+												}
+											}},
+											"ss3.shipstation.com": {"SetPart": {
+												"part": "Whole",
+												"value": {"Join": {
+													"values": [
+														"https://",
+														{"Modified": {
+															"value": {"Part": "Whole"},
+															"modification": {"StripPrefix": "https://ss3.shipstation.com/"}
+														}}
+													]
+												}}
+											}},
+											"steamcommunity.com": {"If": {
+												"if": {"PathStartsWith": "/linkfilter"},
+												"then": {"GetUrlFromQueryParam": "u"}
+											}},
+											"subscribestar.adult": {"If": {
+												"if": {"PathIs": "/away"},
+												"then": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"value": {"Part": {"QueryParam": "url"}},
+														"modification": {"All": [
+															{"Replace": {"find": "\n", "replace": ""}},
+															"Base64Decode"
+														]}
+													}}
+												}}
+											}},
+											"substack.com": {"All": [
+												{"If": {
+													"if": {"PathStartsWith": "/p/"},
+													"then": {"RemoveQueryParams": ["token"]}
 												}},
-												"modification": {"JsonPointer": "/result"}
+												{"If": {
+													"if": {"PathIs": "/app-link/post"},
+													"then": {"AllowQueryParams": ["publication_id", "post_id", "submitLike", "action"]}
+												}},
+												{"If": {
+													"if": {"All": [
+														{"PathStartsWith": "/redirect/"},
+														{"PartMatches": {"part": {"PathSegment": 1}, "matcher": {"LengthIs": 36}}}
+													]},
+													"then": "RemoveQuery"
+												}},
+												{"If": {
+													"if": {"PathStartsWith": "/redirect/2/"},
+													"then": {"SetPart": {
+														"part": "Whole",
+														"value": {"Modified": {
+															"value": {"Part": {"PathSegment": 2}},
+															"modification": {"All": [
+																{"KeepBefore": "."},
+																"Base64Decode",
+																{"JsonPointer": "/e"}
+															]}
+														}}
+													}}
+												}}
+											]},
+											"t.co": {"Common": {
+												"name": "redirect_shortcut",
+												"args": {"vars": {"expected_reg_domain": "x.com"}}
+											}},
+											"t.umblr.com": {"GetUrlFromQueryParam": "z"},
+											"tee.pub": {"SetHost": "www.teepublic.com"},
+											"tinyurl.com": {"All": [
+												{"PartMap": {
+													"part": {"PathSegment": 0},
+													"map": {
+														"preview": "None",
+														"app": {"SetPart": {"part": {"PathSegment": 0}, "value": "preview"}}
+													},
+													"else": {"SetPart": {"part": {"BeforePathSegment": 0}, "value": "preview"}}
+												}},
+												{"Common": {
+													"name": "extract_from_page",
+													"args": {
+														"string_modifications": {
+															"extractor": {"All": [
+																{"KeepAfter": "let url = "},
+																"GetJsStringLiteralPrefix"
+															]}
+														}
+													}
+												}}
+											]},
+											"toyhou.se": {"If": {
+												"if": {"PathIs": "/~r"},
+												"then": {"GetUrlFromQueryParam": "q"}
+											}},
+											"twpf.jp": {"If": {
+												"if": {"PartIs": {"part": "Path", "value": "/home/jump"}},
+												"then": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"value": {"Part": {"QueryParam": "p"}},
+														"modification": "PercentDecode"
+													}}
+												}}
+											}},
+											"urldefense.com": {"If": {
+												"if": {"PathStartsWith": "/v3/"},
+												"then": {"SetPart": {
+													"part": "Whole",
+													"value": {"Modified": {
+														"value": {"Part": "Whole"},
+														"modification": {"All": [
+															{"KeepSegmentRange": {"split": "__;", "end": -1}},
+															{"KeepSegmentRange": {"split": "__", "start": 1}},
+															{"Replace": {"find": "*", "replace": "%"}}
+														]}
+													}}
+												}}
+											}},
+											"youtube.com": {"If": {
+												"if": {"PathIs": "/redirect"},
+												"then": {"GetUrlFromQueryParam": "q"}
 											}}
-										}}
-									}}
-								]}
-							}},
-
-
-
-							{
-								"PartMap": {
-									"part": "DomainMiddle",
-									"map": {
-										"google": {"If": {
-											"if": {"PathIs": "/url"},
-											"then": {"GetUrlFromQueryParam": "q"}
 										}}
 									}
 								}
-							},
-
-
-
-							{"If": {
-								"if": {"All": [
-									{"PartMatches": {
-										"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
-										"matcher": {"InSet": "email-link-format-1-hosts"}
-									}},
-									{"PathStartsWith": "/page/email/redirect"}
-								]},
-								"then": {"All": [
-									{"CopyPart": {"from": {"QueryParam": "campaignpageurl"}, "to": "Whole"}},
-									{"RemoveQueryParams": ["ea.url.id"]}
-								]}
-							}},
-
-
-
-							{"If": {
-								"if": {"All": [
-									{"Not": {"FlagIsSet": "no-network"}},
-									{"Any": [
-										{"PartMatches": {
-											"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
-											"matcher": {"InSet": "redirect-hwwwwdpafqdnps"}
-										}},
-										{"TreatErrorAsFail": {"PartMatches": {
-											"part": "RegDomain",
-											"matcher": {"InSet": "redirect-reg-domains"}
-										}}},
-										{"PartMap": {
-											"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
-											"map": {
-												"allmylinks.com"   : {"PathIs": "/link/out"},
-												"apexpartner.app"  : {"PathStartsWith": "/redirect/"},
-												"api.pinterest.com": {"PathStartsWith": "/url_shortener/"},
-												"facebook.com"     : {"PathStartsWith": "/share/"},
-												"old.reddit.com"   : {"PartContains": {"part": "Path", "value": "/s/"}},
-												"pawoo.net"        : {"PathStartsWith": "/oauth_authentications/"},
-												"qudsnen.co"       : {"Not": {"PartIs": {"part": {"QueryParam": "p"}, "value": null}}},
-												"reddit.com"       : {"PartContains": {"part": "Path", "value": "/s/"}},
-												"sketchfab.com"    : {"PathStartsWith": "/s/"},
-												"substack.com"     : {"Any": [
-													{"PathStartsWith": "/redirect/2/"},
-													{"PathIs": "/app-link/post"}
-												]},
-												"teepublic.com": {"PathStartsWith": "/lic/"}
-											}
-										}},
-										{"All": [
-											{"PartMatches": {
-												"part": "HostWithoutWWWDotPrefixAndFqdnPeriod",
-												"matcher": {"InSet": "email-link-format-1-hosts"}
-											}},
-											{"PathStartsWith": "/page/email/click"}
-										]}
-									]}
-								]},
-								"then": {"All": [
-									{"Common": "universal"},
-									{"ExpandRedirect": {}}
-								]}
 							}}
 						]
 					}}
@@ -1012,12 +1026,12 @@
 					"If": {
 						"if": {"All": [
 							{"FlagIsSet": "unmobile"},
-							{"TreatErrorAsFail": {"Not": {
+							{"Not": {
 								"PartMatches": {
 									"part": "RegDomain",
-									"matcher": {"InSet": "unmobile-reg-domain-blacklist"}
+									"matcher": {"InSet": "unmobile_reg_domain_blacklist"}
 								}
-							}}}
+							}}
 						]},
 						"then": {"All": [
 							{"If": {
@@ -1041,10 +1055,10 @@
 
 
 				{"StringMap": {
-					"value": {"ParamsNamedPartitioning": {"name": "hwwwwdpafqdnp_categories", "element": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}},
+					"value": {"NamedPartitioning": {"named_partitioning": "hwwwwdpafqdnp_categories", "element": {"Part": "HostWithoutWWWDotPrefixAndFqdnPeriod"}}},
 					"map": {
 						"alibaba": {"RemoveQueryParams": ["spm"]},
-						"bluesky-embed-hosts": {"SetPart": {"part": "RegDomain", "value": "bsky.app"}},
+						"bluesky_embed_hosts": {"SetPart": {"part": "RegDomain", "value": "bsky.app"}},
 						"breezewiki": {"If": {
 							"if": {"All": [
 								{"Any": [
@@ -1058,9 +1072,9 @@
 								{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
 							]}
 						}},
-						"deviantart-embed-hosts": {"SetPart": {"part": "RegDomain", "value": "deviantart.com"}},
-						"discord-external": {"If": {
-							"if": {"FlagIsSet": "discord-unexternal"},
+						"deviantart_embed_hosts": {"SetPart": {"part": "RegDomain", "value": "deviantart.com"}},
+						"discord_external": {"If": {
+							"if": {"FlagIsSet": "discord_unexternal"},
 							"then": {"SetPart": {
 								"part": "Whole",
 								"value": {"Modified": {
@@ -1101,8 +1115,8 @@
 							]},
 							"then": {"SetHost": "x.com"}
 						}},
-						"pixiv-embed-hosts": {"SetHost": "pixiv.net"},
-						"twitter-embed-hosts": {"SetHost": "x.com"}
+						"pixiv_embed_hosts": {"SetHost": "pixiv.net"},
+						"twitter_embed_hosts": {"SetHost": "x.com"}
 					}
 				}},
 
@@ -1110,8 +1124,8 @@
 
 				{
 					"StringMap": {
-						"value": {"ErrorToNone": {"ParamsNamedPartitioning": {
-							"name": "hwwwwdpafqdnp_categories",
+						"value": {"ErrorToNone": {"NamedPartitioning": {
+							"named_partitioning": "hwwwwdpafqdnp_categories",
 							"element": {"Modified": {
 								"value": {"Var": {"type": "JobContext", "name": "SOURCE_HOST"}},
 								"modification": {"StripMaybePrefix": "www."}
@@ -1162,7 +1176,7 @@
 												"x"            : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                  }},
 												"youtube"      : {"RegexReplace": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com/)?([^/]+)$"                     , "replace": "https://youtube.com/$1"            }}
 											},
-											"else": {"Set": {"Part": "Whole"}}
+											"else": {"Error": "Unknown Furaffinity contact info like field."}
 										}}
 									}}
 								}}
@@ -1175,8 +1189,8 @@
 
 				{
 					"PartMap": {
-						"comment-1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
-						"comment-2": "There's a PartMap under this one for DomainSuffix. Try it there.",
+						"comment_1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
+						"comment_2": "There's a PartMap under this one for DomainSuffix. Try it there.",
 						"part": "RegDomain",
 						"map": {
 							"acer.com": {"RemoveQueryParamsMatching": {"Contains": {"at": "Start", "value": "internal_"}}},
@@ -1201,7 +1215,7 @@
 							"boosty.to": {"RemoveQueryParams": ["share"]},
 							"browserstack.com": {"ModifyPart": {
 								"part": "Fragment",
-								"modification": {"RemoveQueryParamsMatching": {"IsOneOf": ["ref", "source"]}}
+								"modification": {"IfSome": {"RemoveQueryParamsMatching": {"IsOneOf": ["ref", "source"]}}}
 							}},
 							"bsky.social": {"If": {
 								"if": {"Not": {"PartIsOneOf": {"part": "Subdomain", "values": ["www", null]}}},
@@ -1227,6 +1241,7 @@
 									"then": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}
 								}}
 							]},
+							"crunchyroll.com": {"RemoveQueryParams": ["referrer"]},
 							"deviantart.com": {"If": {
 								"if": {"All": [
 									{"Not": {"PartIs": {"part": "Subdomain", "value": "www"}}},
@@ -1253,7 +1268,7 @@
 									"if": {"FlagIsSet": "breezewiki"},
 									"then": {"All": [
 										{"CopyPart": {"from": "Subdomain", "to": {"BeforePathSegment": 0}}},
-										{"SetPart": {"part": "Host", "value": {"Var": "breezewiki-host"}}},
+										{"SetPart": {"part": "Host", "value": {"Var": "breezewiki_host"}}},
 										{"PartMap": {
 											"part": {"PathSegment": 2},
 											"map": {
@@ -1271,14 +1286,14 @@
 							"furaffinity.net": {"All": [
 								{"If": {
 									"if": {"All": [
-										{"FlagIsSet": "furaffinity-sfw"},
+										{"FlagIsSet": "furaffinity_sfw"},
 										{"PartIsOneOf": {"part": "Subdomain", "values": ["www", null]}}
 									]},
 									"then": {"SetPart": {"part": "Subdomain", "value": "sfw"}}}
 								},
 								{"If": {
 									"if": {"All": [
-										{"FlagIsSet": "furaffinity-unsfw"},
+										{"FlagIsSet": "furaffinity_unsfw"},
 										{"SubdomainIs": "sfw"}
 									]},
 									"then": {"SetPart": {"part": "Subdomain", "value": null}}
@@ -1310,7 +1325,7 @@
 							}},
 							"instagram.com": {"If": {
 								"if": {"All": [
-									{"FlagIsSet": "instagram-unprofilecard"},
+									{"FlagIsSet": "instagram_unprofilecard"},
 									{"PartIs": {"part": {"PathSegment": 1}, "value": "profilecard"}}
 								]},
 								"then": {"SetPart": {"part": {"PathSegment": 1}, "value": null}}
@@ -1331,7 +1346,7 @@
 							"nature.com": {"RemoveQueryParams": ["sharing_token"]},
 							"overpass-turbo.eu": {"If": {
 								"if": {"All": [
-									{"Not": {"FlagIsSet": "no-network"}},
+									{"Not": {"FlagIsSet": "no_network"}},
 									{"PathStartsWith": "/s/"}
 								]},
 								"then": {"All": [
@@ -1362,7 +1377,7 @@
 							]},
 							"rule34.xxx": {"If": {
 								"if": {"All": [
-									{"FlagIsSet": "remove-unused-search-query"},
+									{"FlagIsSet": "remove_unused_search_query"},
 									{"PartIs": {"part": {"QueryParam": "s"}, "value": "view"}}
 								]},
 								"then": {"RemoveQueryParams": ["tags"]}
@@ -1431,7 +1446,7 @@
 								}},
 								{"If": {
 									"if": {"All": [
-										{"FlagIsSet": "tumblr-unsubdomain-blog"},
+										{"FlagIsSet": "tumblr_unsubdomain_blog"},
 										{"Not": {"PartIsOneOf": {"part": "Subdomain", "values": ["at", "www", null]}}}
 									]},
 									"then": {"All": [
@@ -1468,9 +1483,9 @@
 									"if": {"PartMap": {
 										"part": {"PathSegment": 0},
 										"map": {
-											"shorts": {"FlagIsSet": "youtube-unshort"},
-											"live"  : {"FlagIsSet": "youtube-unlive"},
-											"embed" : {"FlagIsSet": "youtube-unembed"}
+											"shorts": {"FlagIsSet": "youtube_unshort"},
+											"live"  : {"FlagIsSet": "youtube_unlive"},
+											"embed" : {"FlagIsSet": "youtube_unembed"}
 										}
 									}},
 									"then": {"All": [
@@ -1480,18 +1495,18 @@
 								}},
 								{"If": {
 									"if": {"All": [
-										{"FlagIsSet": "youtube-unplaylist"},
+										{"FlagIsSet": "youtube_unplaylist"},
 										{"PathStartsWith": "/watch"}
 									]},
 									"then": {"RemoveQueryParams": ["list"]}
 								}},
 								{"If": {
-									"if": {"Not": {"FlagIsSet": "youtube-keep-sub-confirmation"}},
+									"if": {"Not": {"FlagIsSet": "youtube_keep_sub_confirmation"}},
 									"then": {"RemoveQueryParams": ["sub_confirmation"]}
 								}},
 								{"If": {
 									"if": {"FlagIsSet": "invidious"},
-									"then": {"SetPart": {"part": "Host", "value": {"Var": "invidious-host"}}}
+									"then": {"SetPart": {"part": "Host", "value": {"Var": "invidious_host"}}}
 								}}
 							]}
 						}
@@ -1537,7 +1552,7 @@
 									]}
 								}},
 								{"If": {
-									"if": {"FlagIsSet": "embed-compatibility"},
+									"if": {"FlagIsSet": "embed_compatibility"},
 									"then": {"SetPart": {"part": "RegDomain", "value": "fxbsky.app"}}
 								}}
 							]},
@@ -1546,7 +1561,7 @@
 								"then": {"RemoveQueryParams": ["q"]}
 							}},
 							"l.mlive.com": {"Common": {
-								"name": "extract-from-page",
+								"name": "extract_from_page",
 								"args": {
 									"string_modifications": {
 										"extractor": {"All": [
@@ -1590,14 +1605,14 @@
 								}},
 								{"If": {
 									"if": {"All": [
-										{"FlagIsSet": "embed-compatibility"},
+										{"FlagIsSet": "embed_compatibility"},
 										{"PartIs": {"part": {"PathSegment": 1}, "value": "status"}}
 									]},
-									"then": {"SetPart": {"part": "Host", "value": {"Var": "twitter-embed-host"}}}
+									"then": {"SetPart": {"part": "Host", "value": {"Var": "twitter_embed_host"}}}
 								}},
 								{"If": {
 									"if": {"FlagIsSet": "nitter"},
-									"then": {"SetPart": {"part": "Host", "value": {"Var": "nitter-host"}}}
+									"then": {"SetPart": {"part": "Host", "value": {"Var": "nitter_host"}}}
 								}}
 							]}
 						}
@@ -1659,7 +1674,7 @@
 								{"RemoveQueryParams": ["sca_esv", "usp"]},
 								{"ModifyPart": {
 									"part": "Fragment",
-									"modification": {"RemoveQueryParamsMatching": {"IsOneOf": ["vhid", "vssid"]}}
+									"modification": {"IfSome": {"RemoveQueryParamsMatching": {"IsOneOf": ["vhid", "vssid"]}}}
 								}}
 							]},
 							"onion": {"If": {

@@ -38,7 +38,10 @@
 					"expectation": {"UrlIs": "https://facebook.com/TheLancetMedicalJournal"}
 				},
 
-				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": {"UrlIs": "https://example.com/?abc=123&def=456#1"}}
+				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": {"UrlIs": "https://example.com/?abc=123&def=456#1"}},
+
+				{"task_config": "https://facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}},
+				{"task_config": "https://www.facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}}
 			]
 		},
 		{
@@ -67,7 +70,7 @@
 			]
 		},
 		{
-			"params_diff": {"flags": ["embed-compatibility"]},
+			"params_diff": {"flags": ["embed_compatibility"]},
 			"tests": [
 				{"task_config": "https://bsky.app", "expectation": {"UrlIs": "https://fxbsky.app/"}},
 				{"task_config": "https://fxbsky.app", "expectation": {"UrlIs": "https://fxbsky.app/"}}
@@ -88,14 +91,14 @@
 			]
 		},
 		{
-			"params_diff": {"flags": ["tumblr-unsubdomain-blog"]},
+			"params_diff": {"flags": ["tumblr_unsubdomain_blog"]},
 			"tests": [
 				{"task_config": "https://tumblr.com/username", "expectation": {"UrlIs": "https://tumblr.com/username"}},
 				{"task_config": "https://username.tumblr.com", "expectation": {"UrlIs": "https://tumblr.com/username/"}}
 			]
 		},
 		{
-			"params_diff": {"flags": ["no-network"]},
+			"params_diff": {"flags": ["no_network"]},
 			"job_context": {"vars": {"SOURCE_REG_DOMAIN": "allmylinks.com"}},
 			"tests": [
 				{
@@ -112,7 +115,7 @@
 			]
 		},
 		{
-			"params_diff": {"flags": ["no-network"]},
+			"params_diff": {"flags": ["no_network"]},
 			"job_context": {"vars": {"SOURCE_REG_DOMAIN": "x.com"}},
 			"tests": [
 				{

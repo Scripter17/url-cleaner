@@ -13,7 +13,7 @@ use crate::util::*;
 /// Also has [`Self::else`] to specify a return value when a key isn't otherwise found.
 #[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub struct Map<T> {
+pub struct Map<T: Debug> {
     /// The map from [`Some`] to `T`.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]
     pub map: HashMap<String, T>,
@@ -25,13 +25,24 @@ pub struct Map<T> {
     pub r#else: Option<Box<T>>
 }
 
-impl<T> Map<T> {
+impl<T: Debug> Map<T> {
+    /// [`HashMap::with_capacity`].
+    pub fn with_capacity(capacity: usize) -> Self {
+        Map {
+            map: HashMap::with_capacity(capacity),
+            if_null: None,
+            r#else: None
+            
+        }
+    }
+
     /// If [`Some`], returns the corresponding value from [`Self::map`].
     ///
     /// If [`None`], returns the value of [`Self::if_null`].
     ///
     /// If either of the above return [`None`], returns the value of [`Self::else`].
-    pub fn get<U: AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
+    pub fn get<U: Debug + AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
+        debug!(self, Map::get, key);
         match key {
             Some(key) => self.map.get(key.as_ref()),
             None => self.if_null.as_deref()
@@ -39,7 +50,7 @@ impl<T> Map<T> {
     }
 }
 
-impl<T> Default for Map<T> {
+impl<T: Debug> Default for Map<T> {
     fn default() -> Self {
         Self {
             map    : Default::default(),
@@ -63,7 +74,7 @@ pub struct MapDiff<T> {
     pub remove: HashSet<String>
 }
 
-impl<T> MapDiff<T> {
+impl<T: Debug> MapDiff<T> {
     /// Applies the diff.
     pub fn apply(self, to: &mut Map<T>) {
         to.map.extend(self.insert);
