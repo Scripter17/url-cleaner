@@ -1,3 +1,5 @@
+//! The derive macro for URL Cleaner's `Suitability` trait.
+
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use quote::*;
@@ -5,9 +7,13 @@ use syn::*;
 use syn::parse::*;
 use syn::ext::IdentExt;
 
+/// Value for a `#[suitable = "..."]` override.
 enum SuitabilityOverride {
+    /// Never suitable.
     Never,
+    /// Always suitable.
     Always,
+    /// Suitable if and only if the specified function doesn't panic.
     Assert(Path)
 }
 
@@ -27,10 +33,12 @@ impl Parse for SuitabilityOverride {
     }
 }
 
+/// Getsa [`SuitabilityOverride`] from an item's attributes.
 fn get_suitability_override(attrs: &[Attribute]) -> Result<Option<SuitabilityOverride>> {
-    attrs.into_iter().find(|attr| attr.path().is_ident("suitable")).map(|attr| attr.parse_args()).transpose()
+    attrs.iter().find(|attr| attr.path().is_ident("suitable")).map(|attr| attr.parse_args()).transpose()
 }
 
+/// The derive macro for URL Cleaner's `Suitability` trait.
 pub(crate) fn suitablility_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -83,7 +91,7 @@ pub(crate) fn suitablility_derive(input: TokenStream) -> TokenStream {
                                     None => format_ident!("field_{}", i)
                                 };
 
-                                match get_suitability_override(&attrs) {
+                                match get_suitability_override(attrs) {
                                     Ok(Some(SuitabilityOverride::Never))        => quote!{panic!("{} is never suitable", stringify!(#name::#variant.#ident));},
                                     Ok(Some(SuitabilityOverride::Always))       => quote!{},
                                     Ok(Some(SuitabilityOverride::Assert(func))) => quote!{#func(#ident, config);},
@@ -93,7 +101,7 @@ pub(crate) fn suitablility_derive(input: TokenStream) -> TokenStream {
                             });
                             quote!{Self::#variant #captures => {#(#x)*}}
                         },
-                        Err(e) => e.into_compile_error().into()
+                        Err(e) => e.into_compile_error()
                     }
                 });
 

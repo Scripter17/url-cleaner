@@ -61,7 +61,7 @@ if [ $EXTRACT_DATA -eq 1 ]; then
 fi
 
 echo "Cleaning URLs"
-cat reddit-inputs.json | jq '.[].url' -r | target/release/url-cleaner --cleaner default-cleaner.json --read-cache false --write-cache false --json > reddit-outputs.json
+cat reddit-inputs.json | jq '.[].url' -r | cargo run --bin url-cleaner -r -- --read-cache false --write-cache false --json > reddit-outputs.json
 
 echo "Compiling results"
 cat reddit-outputs.json |\
