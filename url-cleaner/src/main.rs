@@ -1,4 +1,8 @@
 //! URL Cleaner - Explicit non-consent to URL spytext.
+//!
+//! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
+
+#![allow(rustdoc::bare_urls, reason = "All useuless.")]
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};

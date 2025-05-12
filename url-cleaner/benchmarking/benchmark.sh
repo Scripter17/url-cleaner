@@ -27,7 +27,7 @@ mode=
 
 features=
 out="benchmarks-$(date +%s).tar.gz"
-cleaner="../default-cleaner.json"
+cleaner="../../url-cleaner-engine/default-cleaner.json"
 
 for arg in "$@"; do
   shift
@@ -72,7 +72,7 @@ if [ $compile -eq 1 ]; then
   if [ $? -ne 0 ]; then exit 3; fi
 fi
 
-COMMAND="../target/release/url-cleaner --cleaner '$cleaner' $@"
+COMMAND="../../target/release/url-cleaner --cleaner '$cleaner' $@"
 
 if [ $hyperfine -eq 1 ]; then
   echo "Doing Hyperfine stuff"

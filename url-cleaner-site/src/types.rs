@@ -84,13 +84,13 @@ pub struct DomainParts<'a> {
     pub domain           : &'a str,
     /// The [`UrlPart::Subdomain`].
     pub subdomain        : Option<&'a str>,
-    /// The [`UrlPart::NotSuffix`].
+    /// The [`UrlPart::NotDomainSuffix`].
     pub not_domain_suffix: Option<&'a str>,
-    /// The [`UrlPart::Middle`].
+    /// The [`UrlPart::DomainMiddle`].
     pub domain_middle    : Option<&'a str>,
     /// The [`UrlPart::RegDomain`].
     pub reg_domain       : Option<&'a str>,
-    /// The [`UrlPart::Suffix`].
+    /// The [`UrlPart::DomainSuffix`].
     pub domain_suffix    : Option<&'a str>
 }
 

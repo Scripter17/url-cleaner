@@ -24,4 +24,3 @@ indexing_slicing = "deny"
 unit_arg = "allow"
 match_like_matches_macro = "allow"
 module_inception = "allow"
-useless_asref = "allow" # A false positive in src/types/better_url/host_details.rs that cannot be shut up.

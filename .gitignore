@@ -1,11 +1,6 @@
-/target
-/benchmarking/stdin
+target
+stdin
 *.out*
-*.zip
-*.tar
-*.gz
-sync.sh
+*.tar.gz
 *.sqlite
-!empty-cache.sqlite
-*.minified*
-/reddit*
+reddit*.json

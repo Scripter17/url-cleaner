@@ -1,5 +1,7 @@
 # The default cleaner
 
+The default cleaner is included by in URL Cleaner Engine and is intended for normal everyday use.
+
 The default cleaner is intended to always obey the following rules:
 
 - Cleaning the URL shouldn't cause any "meaningful semantic changes"<sup>[definition?]</sup> when opening the result.

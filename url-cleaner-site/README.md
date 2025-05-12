@@ -4,7 +4,7 @@ A simple HTTP server to allow using URL Cleaner in web browser userscripts and o
 
 ## Default cleaner.
 
-See [`../default-cleaner.md`] for details on how the default cleaner works.
+See [`../default_cleaner.md`](../default_cleaner.md) for details about the included default cleaner.
 
 ## TLS/HTTPS
 

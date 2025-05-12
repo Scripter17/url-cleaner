@@ -85,7 +85,7 @@ pub struct ServerConfig {
     pub cleaner_string: String,
     /// The number of threads to spawn for each [`BulkJob`].
     pub threads: NonZero<usize>,
-    /// The max size for a [`BulkSize`]'s JSON representation.
+    /// The max size for a [`BulkJob`]'s JSON representation.
     pub max_json_size: rocket::data::ByteUnit
 }
 
