@@ -1,5 +1,8 @@
 # URL Cleaner
 
+[![docs.rs](https://img.shields.io/docsrs/url-cleaner)](https://docs.rs/url-cleaner/latest/url_cleaner/)
+[![Crates.io Version](https://img.shields.io/crates/v/url-cleaner)](https://crates.io/crates/url-cleaner/)
+
 The CLI interface for URL Cleaner.
 
 ## Default cleaner

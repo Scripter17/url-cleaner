@@ -37,7 +37,7 @@ See [`default_cleaner.md`](default_cleaner.md) for details about the included de
 
 ## Performance
 
-URL Cleaner is pretty fast. See [`url-cleaner/README.md#performance`] and [`url-cleaner-site/README.md#performance`] for detials.
+URL Cleaner is pretty fast. See [`url-cleaner/README.md#performance`](url-cleaner/README.md#performance) and [`url-cleaner-site/README.md#performance`](url-cleaner-site/README.md#performance) for detials.
 
 #### Credits
 

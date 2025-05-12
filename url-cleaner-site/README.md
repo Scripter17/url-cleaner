@@ -1,5 +1,8 @@
 # URL Cleaner Site
 
+[![docs.rs](https://img.shields.io/docsrs/url-cleaner-site)](https://docs.rs/url-cleaner-site/latest/url_cleaner-site/)
+[![Crates.io Version](https://img.shields.io/crates/v/url-cleaner-site)](https://crates.io/crates/url-cleaner-site/)
+
 A simple HTTP server to allow using URL Cleaner in web browser userscripts and other applications where SSH tunnels are infeasable.
 
 ## Default cleaner.
