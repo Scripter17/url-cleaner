@@ -1,7 +1,8 @@
 {
   "comment": "https://en.wikipedia.org/wiki/Busy_beaver#List_of_busy_beavers",
-  "insert_into_maps": {
+  "map_diffs": {
     "state_set": {
+      "insert": {
       "a,0": "1",
       "a,1": "1",
       "b,0": "1",
@@ -12,8 +13,10 @@
       "d,1": "1",
       "e,0": "1",
       "e,1": "0"
+      }
     },
     "state_move": {
+      "insert": {
       "a,0": "r",
       "a,1": "l",
       "b,0": "r",
@@ -24,8 +27,10 @@
       "d,1": "l",
       "e,0": "r",
       "e,1": "l"
+      }
     },
     "state_map": {
+      "insert": {
       "a,0": "b",
       "a,1": "c",
       "b,0": "c",
@@ -36,6 +41,7 @@
       "d,1": "d",
       "e,0": "halt",
       "e,1": "a"
+      }
     }
   }
 }

@@ -1,0 +1,114 @@
+{
+  "docs": {
+    "description": [
+      "An implementation of a Universal Turing Machine",
+      "See the included Busy Beaver ParamsDiffs for examples on how to program it."
+    ]
+  },
+  "commons": {
+    "string_sources": {
+      "initial-state": "a",
+      "halt-state": "halt",
+      "blank-symbol": "0",
+      "key": {"Join": {"values": [{"Var": {"type": "Scratchpad", "name": "state"}}, ",", {"Var": {"type": "Scratchpad", "name": "read"}}]}}
+    },
+    "actions": {
+      "r": {"All": [
+        {"If": {
+          "if": {"StringMatches": {
+            "value": {"Var": {"type": "Scratchpad", "name": "tape"}},
+            "matcher": {"LengthIs": 0}
+          }},
+          "then": {"ModifyScratchpadVar": {
+            "name": "tape",
+            "modification": {"Append": {"Common": "blank-symbol"}}
+          }}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape-behind",
+          "modification": {"Append": {"Modified": {"value": {"Var": {"type": "Scratchpad", "name": "tape"}}, "modification": {"KeepRange": {"start": 0, "end": 1}}}}}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape",
+          "modification": {"RemoveChar": 0}
+        }}
+      ]},
+      "l": {"All": [
+        {"If": {
+          "if": {"StringMatches": {
+            "value": {"Var": {"type": "Scratchpad", "name": "tape-behind"}},
+            "matcher": {"LengthIs": 0}
+          }},
+          "then": {"ModifyScratchpadVar": {
+            "name": "tape-behind",
+            "modification": {"Append": {"Common": "blank-symbol"}}
+          }}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape",
+          "modification": {"Prepend": {"Modified": {"value": {"Var": {"type": "Scratchpad", "name": "tape-behind"}}, "modification": {"KeepRange": {"start": -1}}}}}
+        }},
+        {"ModifyScratchpadVar": {
+          "name": "tape-behind",
+          "modification": {"RemoveChar": -1}
+        }}
+      ]},
+      "s": "None"
+    }
+  },
+  "actions": [
+    {"SetScratchpadVar": {"name": "state"      , "value": {"Common": "initial-state"}     }},
+    {"SetScratchpadVar": {"name": "tape-behind", "value": ""                              }},
+    {"SetScratchpadVar": {"name": "tape"       , "value": {"Part": {"QueryParam": "tape"}}}},
+    {"Repeat": {
+      "actions": [
+        {"If": {
+          "if": {"Not": {"StringIs": {"left": {"Var": {"type": "Scratchpad", "name": "state"}}, "right": {"Common": "halt-state"}}}},
+          "then": {"All": [
+            {"If": {
+              "if": {"StringMatches": {
+                "value": {"Var": {"type": "Scratchpad", "name": "tape"}},
+                "matcher": {"LengthIs": 0}
+              }},
+              "then": {"ModifyScratchpadVar": {
+                "name": "tape",
+                "modification": {"Append": {"Common": "blank-symbol"}}
+              }}
+            }},
+            {"SetScratchpadVar": {
+              "name": "read",
+              "value": {
+                "Modified": {
+                  "value": {"Var": {"type": "Scratchpad", "name": "tape"}},
+                  "modification": {"KeepRange": {
+                    "start": 0,
+                    "end": 1
+                  }}
+                }
+              }
+            }},
+            {"SetScratchpadVar": {
+              "name": "tape",
+              "value": {"Join": {
+                "values": [
+                  {"ParamsMap": {"name": "state_set", "key": {"Common": "key"}}},
+                  {"Modified": {"value": {"Var": {"type": "Scratchpad", "name": "tape"}}, "modification": {"KeepRange": {"start": 1}}}}
+                ]
+              }}
+            }},
+            {"Common": {"name": {"ParamsMap": {"name": "state_move", "key": {"Common": "key"}}}}},
+            {"SetScratchpadVar": {
+              "name": "state",
+              "value": {"ParamsMap": {"name": "state_map", "key": {"Common": "key"}}}
+            }}
+          ]}
+        }}
+      ],
+      "limit": 18446744073709551615
+    }},
+    {"SetPart": {
+      "part": {"QueryParam": "tape"},
+      "value": {"Join": {"values": [{"Var": {"type": "Scratchpad", "name": "tape-behind"}}, {"Var": {"type": "Scratchpad", "name": "tape"}}]}}
+    }}
+  ]
+}

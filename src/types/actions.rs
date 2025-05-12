@@ -194,7 +194,7 @@ pub enum Action {
         limit: u64
     },
 
-    /// If the contained [`Self`] returns an error that matches [`Self::IgnoreError::filter`], ignore it.
+    /// If the contained [`Self`] returns an error, ignore it.
     ///
     /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
     /// # Examples
@@ -202,57 +202,21 @@ pub enum Action {
     /// use url_cleaner::types::*;
     /// url_cleaner::task_state!(task_state);
     ///
-    /// Action::IgnoreError {
-    ///     action: Box::new(Action::Error("...".into())),
-    ///     filter: Default::default()
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// Action::IgnoreError {
-    ///     action: Box::new(Action::Error("...".into())),
-    ///     filter: ActionErrorFilter(Some([ActionErrorName::ExplicitError].into()))
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// Action::IgnoreError {
-    ///     action: Box::new(Action::Error("...".into())),
-    ///     filter: ActionErrorFilter(Some([ActionErrorName::StringSourceIsNone].into()))
-    /// }.apply(&mut task_state).unwrap_err();
+    /// Action::IgnoreError(Box::new(Action::Error("...".into()))).apply(&mut task_state).unwrap();
     /// ```
-    IgnoreError {
-        /// The [`Self`] to try to apply.
-        #[serde(flatten)]
-        action: Box<Self>,
-        /// The filter of which errors to catch.
-        ///
-        /// Defaults to all errors.
-        #[serde(default, skip_serializing_if = "is_default")]
-        filter: ActionErrorFilter
-    },
-    /// If the contained [`Self`] returns an error that matches [`Self::RevertOnError::filter`], revert the [`TaskState`] to its previous state.
+    IgnoreError(Box<Self>),
+    /// If the contained [`Self`] returns an error, revert the [`TaskState`] to its previous state.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned.
-    RevertOnError {
-        /// The [`Self`] to try to apply.
-        #[serde(flatten)]
-        action: Box<Self>,
-        /// The filters of which error to catch.
-        ///
-        /// Defaults to all errors.
-        #[serde(default, skip_serializing_if = "is_default")]
-        filter: ActionErrorFilter
-    },
-    /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error that matches [`Self::TryElse::filter`], apply [`Self::TryElse::else`].
+    RevertOnError(Box<Self>),
+    /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
     /// # Errors
     /// If both calls to [`Self::apply`] return errors, both errors are returned.
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
         /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
-        r#else: Box<Self>,
-        /// The filter of which errors to catch.
-        ///
-        /// Defaults to all errors.
-        #[serde(default, skip_serializing_if = "is_default")]
-        filter: ActionErrorFilter
+        r#else: Box<Self>
     },
     /// Applies the contained [`Self`]s in order, stopping as soon as a call to [`Self::apply`] doesn't return an error.
     /// # Errors
@@ -449,6 +413,17 @@ pub enum Action {
         /// The part to modify.
         part: UrlPart,
         /// The modification to apply to the part.
+        modification: StringModification
+    },
+    /// If the specified [`UrlPart`] is [`Some`], apply [`Self::ModifyPartIfSome::modification`].
+    /// # Errors
+    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
+    ///
+    /// If the call to [`UrlPart::set`] returns an error, that error is returned.
+    ModifyPartIfSome {
+        /// The [`UrlPart`] to modify.
+        part: UrlPart,
+        /// The [`StringModification`] to apply.
         modification: StringModification
     },
     /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], leaving [`Self::CopyPart::from`] unchanged.
@@ -662,7 +637,7 @@ pub enum Action {
 const fn get_10_u64() -> u64 {10}
 
 /// The enum of errors [`Action::apply`] can return.
-#[derive(Debug, Error, ErrorFilter)]
+#[derive(Debug, Error)]
 pub enum ActionError {
     /// Returned when a [`Action::Error`] is used.
     #[error("Explicit error: {0}")]
@@ -796,7 +771,7 @@ impl Action {
                 let mut previous_url;
                 let mut previous_scratchpad;
                 for _ in 0..*limit {
-                    previous_url = task_state.url.clone();
+                    previous_url = task_state.url.to_string();
                     previous_scratchpad = task_state.scratchpad.clone();
                     for action in actions {
                         action.apply(task_state)?;
@@ -806,16 +781,12 @@ impl Action {
             },
             // Error handling.
 
-            Self::IgnoreError {action, filter} => if let Err(e) = action.apply(task_state) {if !filter.matches(&e) {Err(e)?}},
-            Self::TryElse{ r#try, filter, r#else } => match r#try.apply(task_state) {
+            Self::IgnoreError(action) => {let _ = action.apply(task_state);},
+            Self::TryElse{ r#try, r#else } => match r#try.apply(task_state) {
                 Ok(x) => x,
-                Err(try_error) => if filter.matches(&try_error) {
-                    match r#else.apply(task_state) {
-                        Ok(x) => x,
-                        Err(else_error) => Err(ActionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
-                    }
-                } else {
-                    Err(try_error)?
+                Err(try_error) => match r#else.apply(task_state) {
+                    Ok(x) => x,
+                    Err(else_error) => Err(ActionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
                 }
             },
             Self::FirstNotError(actions) => {
@@ -828,14 +799,12 @@ impl Action {
                 }
                 Err(ActionError::FirstNotErrorErrors(errors))?
             },
-            Self::RevertOnError {action, filter} => {
+            Self::RevertOnError(action) => {
                 let old_url = task_state.url.clone();
                 let old_scratchpad = task_state.scratchpad.clone();
                 if let Err(e) = action.apply(task_state) {
-                    if filter.matches(&e) {
-                        *task_state.url = old_url;
-                        *task_state.scratchpad = old_scratchpad;
-                    }
+                    *task_state.url = old_url;
+                    *task_state.scratchpad = old_scratchpad;
                     Err(e)?;
                 }
             },
@@ -913,14 +882,20 @@ impl Action {
 
             // Generic part handling.
 
-            Self::SetPart{part, value} => part.set(task_state.url, value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?, // The deref is needed for borrow checking reasons.
-            Self::ModifyPart{part, modification} => {
+            Self::SetPart {part, value} => part.set(task_state.url, value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?, // The deref is needed for borrow checking reasons.
+            Self::ModifyPart {part, modification} => {
                 let mut temp = part.get(task_state.url);
                 modification.apply(&mut temp, &task_state.to_view())?;
                 part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
             },
-            Self::CopyPart{from, to} => to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?,
-            Self::MovePart{from, to} => {
+            Self::ModifyPartIfSome {part, modification} => {
+                if let mut temp @ Some(_) = part.get(task_state.url) {
+                    modification.apply(&mut temp, &task_state.to_view())?;
+                    part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
+                }
+            }
+            Self::CopyPart {from, to} => to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?,
+            Self::MovePart {from, to} => {
                 to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?;
                 from.set(task_state.url, None)?;
             },

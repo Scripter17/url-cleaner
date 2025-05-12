@@ -1,7 +1,5 @@
 //! Macros.
 
-pub(crate) use url_cleaner_macros::ErrorFilter;
-
 /// Helper macro to make serde use [`FromStr`] to deserialize strings.
 ///
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.

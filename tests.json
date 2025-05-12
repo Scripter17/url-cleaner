@@ -41,7 +41,21 @@
 				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": {"UrlIs": "https://example.com/?abc=123&def=456#1"}},
 
 				{"task_config": "https://facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}},
-				{"task_config": "https://www.facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}}
+				{"task_config": "https://www.facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}},
+
+				{"task_config": "https://example.com/"   , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com./"  , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com/?"  , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com./?" , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com/#"  , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com./#" , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com/?#" , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com./?#", "expectation": {"UrlIs": "https://example.com/"}},
+
+				{"task_config": "https://127.0.0.1/"     , "expectation": {"UrlIs": "https://127.0.0.1/"}},
+				{"task_config": "https://127.0.0.1/?   " , "expectation": {"UrlIs": "https://127.0.0.1/"}},
+				{"task_config": "https://127.0.0.1/#   " , "expectation": {"UrlIs": "https://127.0.0.1/"}},
+				{"task_config": "https://127.0.0.1/?#"   , "expectation": {"UrlIs": "https://127.0.0.1/"}}
 			]
 		},
 		{
@@ -86,8 +100,8 @@
 		{
 			"params_diff": {"flags": ["uninvidious"]},
 			"tests": [
-				{"task_config": "https://youtube.com/watch?v=12345", "expectation": {"UrlIs": "https://youtube.com/watch?v=12345"}},
-				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": {"UrlIs": "https://youtube.com/watch?v=12345"}}
+				{"task_config": "https://youtube.com/watch?v=12345", "expectation": {"UrlIs": "https://www.youtube.com/watch?v=12345"}},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": {"UrlIs": "https://www.youtube.com/watch?v=12345"}}
 			]
 		},
 		{

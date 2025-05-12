@@ -1,7 +1,5 @@
 //! Logic for when a [`TaskState`] should be modified.
 
-use std::collections::HashSet;
-
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
@@ -147,29 +145,11 @@ pub enum Condition {
     /// If the call to [`Self::satisfied_by`] returns an error, passes.
     ///
     /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsPass {
-        /// The [`Self`] to try to test.
-        #[serde(flatten)]
-        condition: Box<Self>,
-        /// The filter of which errors to catch.
-        ///
-        /// Defaults to all errors.
-        #[serde(default, skip_serializing_if = "is_default")]
-        filter: ConditionErrorFilter
-    },
+    TreatErrorAsPass(Box<Self>),
     /// If the call to [`Self::satisfied_by`] returns an error, fails.
     ///
     /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsFail {
-        /// The [`Self`] to try to test.
-        #[serde(flatten)]
-        condition: Box<Self>,
-        /// The filter of which errors to catch.
-        ///
-        /// Defaults to all errors.
-        #[serde(default, skip_serializing_if = "is_default")]
-        filter: ConditionErrorFilter
-    },
+    TreatErrorAsFail(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
     /// If both calls to [`Self::satisfied_by`] return errors, both errors are returned.
@@ -177,12 +157,7 @@ pub enum Condition {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
         /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
-        r#else: Box<Self>,
-        /// The filter of which errors to catch.
-        ///
-        /// Defaults to all errors.
-        #[serde(default, skip_serializing_if = "is_default")]
-        filter: ConditionErrorFilter
+        r#else: Box<Self>
     },
 
 
@@ -320,7 +295,20 @@ pub enum Condition {
     /// assert!(!Condition::DomainSuffixIs(Some("com".into())).satisfied_by(&task_state).unwrap());
     /// ```
     DomainSuffixIs(Option<String>),
-    /// Passes if the value of [`UrlPart::DomainSuffix`] is contained in the specified [`Set`].
+    /// Passes if the value of [`UrlPart::Subdomain`] is contained in the specified [`Set`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state, url = "https://example.com");
+    /// assert!( Condition::SubdomainIsOneOf([Some("www".to_string()), None].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://www.example.com");
+    /// assert!( Condition::SubdomainIsOneOf([Some("www".to_string()), None].into()).satisfied_by(&task_state).unwrap());
+    /// url_cleaner::task_state_view!(task_state, url = "https://abc.example.com");
+    /// assert!(!Condition::SubdomainIsOneOf([Some("www".to_string()), None].into()).satisfied_by(&task_state).unwrap());
+    /// ```
+    SubdomainIsOneOf(Set<String>),
+    /// Passes if the value of [`UrlPart::Host`] is contained in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner::types::*;
@@ -600,18 +588,6 @@ pub enum Condition {
         /// The value to check if [`Self::VarIs::var`] is.
         value: StringSource
     },
-    /// Passes if [`Self::PartIsInNamedPartitioning::part`] is in the specified [`NamedPartitioning`].
-    /// # Errors
-    /// If the call to [`UrlPart::get`] returns an [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
-    ///
-    /// If the [`NamedPartitioning`] isn't found, returns the error [`StringSourceError::NamedPartitioningNotFound`].
-    PartIsInNamedPartitioning {
-        /// The [`NamedPartitioning`] to use.
-        #[suitable(assert = "literal_named_partitioning_is_documented")]
-        named_partitioning: String,
-        /// The [`UrlPart`] to get the partition of.
-        part: UrlPart
-    },
 
 
 
@@ -633,6 +609,19 @@ pub enum Condition {
         /// The right hand side of the equality check.
         right: StringSource
     },
+    /// Passes if the specified [`StringSource`] is [`Some`].
+    /// # Errors
+    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner::types::*;
+    ///
+    /// url_cleaner::task_state_view!(task_state);
+    ///
+    /// assert!( Condition::StringIsSome("abc"       .into()).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::StringIsSome(None::<&str>.into()).satisfied_by(&task_state).unwrap());
+    /// ```
+    StringIsSome(StringSource),
     /// Passes if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::value`].
     /// # Errors
     /// If either call to [`StringSource::get`] returns an error, that error is returned.
@@ -725,7 +714,7 @@ pub enum Condition {
 }
 
 /// The enum of errors [`Condition::satisfied_by`] can return.
-#[derive(Debug, Error, ErrorFilter)]
+#[derive(Debug, Error)]
 pub enum ConditionError {
     /// Returned when a [`Condition::Error`] is used.
     #[error("Explicit error: {0}")]
@@ -771,10 +760,7 @@ pub enum ConditionError {
     GetFlagError(#[from] GetFlagError),
     /// Returned when a [`GetVarError`] is encountered.
     #[error(transparent)]
-    GetVarError(#[from] GetVarError),
-    /// Returned when the requested [`Params::named_partitionings`] isn't found
-    #[error("The requested Params NamedPartitioning was not found.")]
-    NamedPartitioningNotFound
+    GetVarError(#[from] GetVarError)
 }
 
 impl Condition {
@@ -833,17 +819,13 @@ impl Condition {
 
             // Error handling.
 
-            Self::TreatErrorAsPass {condition, filter} => match condition.satisfied_by(task_state) {Ok(x) => x, Err(e) => if filter.matches(&e) {true } else {Err(e)?}},
-            Self::TreatErrorAsFail {condition, filter} => match condition.satisfied_by(task_state) {Ok(x) => x, Err(e) => if filter.matches(&e) {false} else {Err(e)?}},
-            Self::TryElse{ r#try, filter, r#else } => match r#try.satisfied_by(task_state) {
+            Self::TreatErrorAsPass(condition) => condition.satisfied_by(task_state).unwrap_or(true),
+            Self::TreatErrorAsFail(condition) => condition.satisfied_by(task_state).unwrap_or(false),
+            Self::TryElse{ r#try, r#else } => match r#try.satisfied_by(task_state) {
                 Ok(x) => x,
-                Err(try_error) => if filter.matches(&try_error) {
-                    match r#else.satisfied_by(task_state) {
-                        Ok(x) => x,
-                        Err(else_error) => Err(ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
-                    }
-                } else {
-                    Err(try_error)?
+                Err(try_error) => match r#else.satisfied_by(task_state) {
+                    Ok(x) => x,
+                    Err(else_error) => Err(ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
                 }
             },
 
@@ -857,6 +839,7 @@ impl Condition {
             Self::NotDomainSuffixIs(x) => UrlPart::NotDomainSuffix.get(task_state.url).as_deref() == x.as_deref(),
             Self::DomainSuffixIs   (x) => UrlPart::DomainSuffix   .get(task_state.url).as_deref() == x.as_deref(),
 
+            Self::SubdomainIsOneOf(subdomains) => subdomains.contains(task_state.url.subdomain()),
             Self::HostIsOneOf(hosts) => hosts.contains(task_state.url.host_str()),
 
             Self::UrlHasHost   => task_state.url.host().is_some(),
@@ -884,11 +867,11 @@ impl Condition {
 
             Self::FlagIsSet(flag)    => flag.get(task_state)?,
             Self::VarIs {var, value} => var .get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
-            Self::PartIsInNamedPartitioning {named_partitioning, part} => task_state.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.contains(&part.get(task_state.url).ok_or(ConditionError::PartIsNone)?),
 
             // String source.
 
             Self::StringIs {left, right} => left.get(task_state)? == right.get(task_state)?,
+            Self::StringIsSome(value) => value.get(task_state)?.is_some(),
             Self::StringContains {value, substring, at} => at.satisfied_by(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
             Self::StringMatches {value, matcher} => matcher.satisfied_by(value.get(task_state)?.as_deref(), task_state)?,
 

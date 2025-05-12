@@ -60,7 +60,6 @@ impl<T: Debug + Hash + Eq> Set<T> {
 
     /// [`HashSet::insert`].
     pub fn insert(&mut self, value: Option<T>) -> bool {
-        debug!(self, Set::insert, value);
         match value {
             Some(value) => self.set.insert(value),
             None => {let ret = !self.if_null; self.if_null = true; ret}
@@ -76,7 +75,6 @@ impl<T: Debug + Hash + Eq> Set<T> {
 
     /// [`HashSet::remove`].
     pub fn remove<Q>(&mut self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Debug + Hash + Eq + ?Sized {
-        debug!(self, Set::remove, value);
         match value {
             Some(value) => self.set.remove(value),
             None => {let ret = self.if_null; self.if_null = false; ret}
@@ -105,6 +103,36 @@ impl<T: Debug + Eq + Hash, const N: usize> From<[Option<T>; N]> for Set<T> {
     fn from(value: [Option<T>; N]) -> Self {
         let mut ret = Self::default();
         for x in value {
+            ret.insert(x);
+        }
+        ret
+    }
+}
+
+impl<T: Debug + Eq + Hash, const N: usize> From<[T; N]> for Set<T> {
+    fn from(value: [T; N]) -> Self {
+        let mut ret = Self::default();
+        for x in value {
+            ret.insert(Some(x));
+        }
+        ret
+    }
+}
+
+impl<T: Debug + Eq + Hash> FromIterator<T> for Set<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self{
+        let mut ret = Self::default();
+        for x in iter {
+            ret.insert(Some(x));
+        }
+        ret
+    }
+}
+
+impl<T: Debug + Eq + Hash> FromIterator<Option<T>> for Set<T> {
+    fn from_iter<I: IntoIterator<Item = Option<T>>>(iter: I) -> Self{
+        let mut ret = Self::default();
+        for x in iter {
             ret.insert(x);
         }
         ret

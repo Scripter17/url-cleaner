@@ -29,9 +29,9 @@ impl<T: Debug> Map<T> {
     /// [`HashMap::with_capacity`].
     pub fn with_capacity(capacity: usize) -> Self {
         Map {
-            map: HashMap::with_capacity(capacity),
+            map    : HashMap::with_capacity(capacity),
             if_null: None,
-            r#else: None
+            r#else : None
             
         }
     }

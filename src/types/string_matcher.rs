@@ -31,6 +31,10 @@ pub enum StringMatcher {
     #[suitable(never)]
     Debug(Box<Self>),
 
+    /// Passes if the string is [`Some`].
+    IsSome,
+    /// Passes if the string is [`None`].
+    IsNone,
     /// Passes if the string is [`Some`] and [`Self::IsSomeAnd::0`] passes.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
@@ -339,6 +343,8 @@ impl StringMatcher {
 
             // Logic.
 
+            Self::IsSome => haystack.is_some(),
+            Self::IsNone => haystack.is_none(),
             Self::IsSomeAnd(matcher) => haystack.is_some() && matcher.satisfied_by(haystack, task_state)?,
             Self::IsNoneOr(matcher) => haystack.is_none() || matcher.satisfied_by(haystack, task_state)?,
 

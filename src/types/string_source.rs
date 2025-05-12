@@ -403,8 +403,8 @@ pub enum StringSource {
     ///         (
     ///             "thing".into(),
     ///             NamedPartitioning::try_from_iter([
-    ///                 ("abc".into(), vec!["a".into(), "b".into(), "c".into()]),
-    ///                 ("def".into(), vec!["d".into(), "e".into(), "f".into()])
+    ///                 ("abc".into(), vec![Some("a".into()), Some("b".into()), Some("c".into())]),
+    ///                 ("def".into(), vec![Some("d".into()), Some("e".into()), Some("f".into())])
     ///             ]).unwrap()
     ///         )
     ///     ].into(),
@@ -424,8 +424,6 @@ pub enum StringSource {
         element: Box<Self>
     },
     /// Gets the value of [`Self::Modified::value`] then applies [`Self::Modified::modification`].
-    ///
-    /// If the value of [`Self::Modified::value`] is [`None`], simply returns [`None`].
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     ///
@@ -592,6 +590,30 @@ impl From<&str> for StringSource {
 impl From<String> for StringSource {
     fn from(value: String) -> Self {
         Self::String(value)
+    }
+}
+
+impl From<Option<&str>> for StringSource {
+    fn from(value: Option<&str>) -> Self {
+        value.map(ToString::to_string).into()
+    }
+}
+
+impl From<Option<String>> for StringSource {
+    fn from(value: Option<String>) -> Self {
+        match value {
+            Some(x) => x.into(),
+            None => Self::None
+        }
+    }
+}
+
+impl From<Option<StringSource>> for StringSource {
+    fn from(value: Option<StringSource>) -> Self {
+        match value {
+            Some(x) => x,
+            None => Self::None
+        }
     }
 }
 
@@ -799,7 +821,7 @@ impl StringSource {
             Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::ParamsMapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
             Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
                 .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
-                .get_partition_of(get_str!(element, task_state, StringSourceError)).map(Cow::Borrowed),
+                .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
             Self::Modified {value, modification} => {
                 let mut ret = value.get(task_state)?;
                 modification.apply(&mut ret, task_state)?;

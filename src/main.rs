@@ -206,7 +206,7 @@ fn main() -> Result<ExitCode, CliError> {
                 }
             };
 
-            for (in_sender, task_config_string) in in_senders.into_iter().cycle().zip(job) {
+            for (in_sender, task_config_string) in {in_senders}.iter().cycle().zip(job) {
                 in_sender.send(task_config_string).expect("The in receiver to still exist.");
             }
         }).expect("Making threads to work fine.");
@@ -229,31 +229,28 @@ fn main() -> Result<ExitCode, CliError> {
             }).expect("Making threads to work fine.");
         }).for_each(drop);
 
-        let some_ok_ref  = &some_ok;
-        let some_err_ref = &some_err;
-
         // Stdout thread.
 
-        std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, move || {
-            let mut some_ok_ref_lock  = some_ok_ref .lock().expect("No panics.");
-            let mut some_err_ref_lock = some_err_ref.lock().expect("No panics.");
+        std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, || {
+            let mut some_ok_lock  = some_ok .lock().expect("No panics.");
+            let mut some_err_lock = some_err.lock().expect("No panics.");
 
             if args.json {
                 let mut first_job = true;
 
                 print!("{{\"Ok\":{{\"urls\":[");
 
-                for or in out_recievers.iter().cycle() {
+                for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
                         Ok(Ok(url)) => {
                             if !first_job {print!(",");}
                             print!("{{\"Ok\":{}}}", serde_json::to_string(url.as_str()).expect("Serializing a string to never fail."));
-                            *some_ok_ref_lock = true;
+                            *some_ok_lock = true;
                         },
                         Ok(Err(e)) => {
                             if !first_job {print!(",");}
                             print!("{{\"Err\":{}}}", serde_json::to_string(&format!("{e:?}")).expect("Serializing a string to never fail."));
-                            *some_err_ref_lock = true;
+                            *some_err_lock = true;
                         },
                         Err(_) => break
                     }
@@ -262,16 +259,16 @@ fn main() -> Result<ExitCode, CliError> {
 
                 print!("]}}}}");
             } else {
-                for or in out_recievers.iter().cycle() {
+                for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
                         Ok(Ok(url)) => {
                             println!("{}", url.as_str());
-                            *some_ok_ref_lock = true;
+                            *some_ok_lock = true;
                         },
                         Ok(Err(e)) => {
                             println!();
                             eprintln!("{e:?}");
-                            *some_err_ref_lock = true;
+                            *some_err_lock = true;
                         }
                         Err(_) => break
                     }

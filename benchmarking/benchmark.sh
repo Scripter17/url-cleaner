@@ -26,8 +26,8 @@ ignore_failure=
 mode=
 
 features=
-
 out="benchmarks-$(date +%s).tar.gz"
+cleaner="../default-cleaner.json"
 
 for arg in "$@"; do
   shift
@@ -43,13 +43,15 @@ for arg in "$@"; do
     --nums)            mode=nums    ; NUMS=( )                           ;;
     --features)        mode=features                                     ;;
     --out)             mode=out                                          ;;
+    --cleaner)         mode=cleaner                                      ;;
     --)                break ;;
     --*)               echo Unknown option \"$arg\"; exit 1 ;;
     *) case "$mode" in
-      urls) URLS=( ${URLS[@]} "$arg" ) ;;
-      nums) NUMS=( ${NUMS[@]} "$arg" ) ;;
+      urls) URLS=( "${URLS[@]}" "$arg" ) ;;
+      nums) NUMS=( "${NUMS[@]}" "$arg" ) ;;
       features) features=(--features "$arg") ;;
       out) out="$arg" ;;
+      cleaner) cleaner="$arg" ;;
       "") echo "Modal argument without mode"; exit 1 ;;
     esac
   esac
@@ -70,9 +72,10 @@ if [ $compile -eq 1 ]; then
   if [ $? -ne 0 ]; then exit 3; fi
 fi
 
-COMMAND="../target/release/url-cleaner --cleaner ../default-cleaner.json $@"
+COMMAND="../target/release/url-cleaner --cleaner '$cleaner' $@"
 
 if [ $hyperfine -eq 1 ]; then
+  echo "Doing Hyperfine stuff"
   touch stdin
   hyperfine \
     -L num $(IFS=, ; echo "${NUMS[*]}") \
@@ -86,7 +89,8 @@ if [ $hyperfine -eq 1 ]; then
     --sort command \
     --export-json "hyperfine.out.json" \
     --command-name ""\
-    $ignore_failure
+    $ignore_failure\
+    --style color
   rm stdin
   ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
   pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
