@@ -14,9 +14,7 @@ use crate::util::*;
 
 diesel::table! {
     /// The table containing cache entries.
-    cache (id) {
-        /// The entry's unique ID.
-        id -> Integer,
+    cache (category, key) {
         /// The "category" of the entry.
         category -> Text,
         /// The "key" of the entry.
@@ -28,7 +26,6 @@ diesel::table! {
 
 /// The Sqlite command to initialize the cache database.
 pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
-    id INTEGER NOT NULL PRIMARY KEY,
     category TEXT NOT NULL,
     "key" TEXT NOT NULL,
     value TEXT,
@@ -39,8 +36,6 @@ pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(table_name = cache)]
 pub struct CacheEntry {
-    /// The ID of the entry.
-    pub id: i32,
     /// The category of the entry.
     pub category: String,
     /// The key of the entry.

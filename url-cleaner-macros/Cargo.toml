@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner-macros"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2024"
 description = "Macros for URL Cleaner"
 repository = "https://github.com/Scripter17/url-cleaner"
@@ -13,9 +13,9 @@ readme = "README.md"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.94"
+proc-macro2 = "1.0.95"
 quote = "1.0.40"
-syn = "2.0.100"
+syn = "2.0.101"
 
 [lints]
 workspace = true

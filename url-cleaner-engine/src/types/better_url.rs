@@ -211,7 +211,9 @@ impl BetterUrl {
     /// assert_eq!(url.ipv4_details  (), None);
     /// assert_eq!(url.ipv6_details  (), None);
     /// ```
-    pub fn domain_details(&self) -> Option<DomainDetails> {self.host_details()?.domain_details()}
+    pub fn domain_details(&self) -> Option<DomainDetails> {
+        self.host_details()?.domain_details()
+    }
     /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -221,7 +223,9 @@ impl BetterUrl {
     /// assert_eq!(url.ipv4_details  (), Some(Ipv4Details {}));
     /// assert_eq!(url.ipv6_details  (), None);
     /// ```
-    pub fn ipv4_details(&self) -> Option<Ipv4Details> {self.host_details()?.ipv4_details()}
+    pub fn ipv4_details(&self) -> Option<Ipv4Details> {
+        self.host_details()?.ipv4_details()
+    }
     /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -231,7 +235,9 @@ impl BetterUrl {
     /// assert_eq!(url.ipv4_details  (), None);
     /// assert_eq!(url.ipv6_details  (), Some(Ipv6Details {}));
     /// ```
-    pub fn ipv6_details(&self) -> Option<Ipv6Details> {self.host_details()?.ipv6_details()}
+    pub fn ipv6_details(&self) -> Option<Ipv6Details> {
+        self.host_details()?.ipv6_details()
+    }
 
     /// [`Url::domain`] but without the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
     /// # Examples
@@ -244,7 +250,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().domain(), Some("www.example.com"  ));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain(), Some("www.example.co.uk"));
     /// ```
-    pub fn domain(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_bounds())}
+    pub fn domain(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.domain_bounds())
+    }
     /// If [`Self`] has a [`UrlPart::Subdomain`], return it.
     /// # Examples
     /// ```
@@ -256,7 +264,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().subdomain(), Some("www"));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().subdomain(), Some("www"));
     /// ```
-    pub fn subdomain(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.subdomain_bounds()?)}
+    pub fn subdomain(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.subdomain_bounds()?)
+    }
     /// If [`Self`] has a [`UrlPart::NotDomainSuffix`], return it.
     /// # Examples
     /// ```
@@ -268,7 +278,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().not_domain_suffix(), Some("www.example"));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().not_domain_suffix(), Some("www.example"));
     /// ```
-    pub fn not_domain_suffix(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.not_domain_suffix_bounds()?)}
+    pub fn not_domain_suffix(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.not_domain_suffix_bounds()?)
+    }
     /// If [`Self`] has a [`UrlPart::DomainMiddle`], return it.
     /// # Examples
     /// ```
@@ -280,7 +292,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().domain_middle(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain_middle(), Some("example"));
     /// ```
-    pub fn domain_middle(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_middle_bounds()?)}
+    pub fn domain_middle(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.domain_middle_bounds()?)
+    }
     /// If [`Self`] has a [`UrlPart::RegDomain`], return it.
     /// # Examples
     /// ```
@@ -292,7 +306,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().reg_domain(), Some("example.com"  ));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().reg_domain(), Some("example.co.uk"));
     /// ```
-    pub fn reg_domain(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.reg_domain_bounds()?)}
+    pub fn reg_domain(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.reg_domain_bounds()?)
+    }
     /// If [`Self`] has a [`UrlPart::DomainSuffix`], return it.
     /// # Examples
     /// ```
@@ -304,7 +320,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().domain_suffix(), Some("com"  ));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().domain_suffix(), Some("co.uk"));
     /// ```
-    pub fn domain_suffix(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.domain_suffix_bounds()?)}
+    pub fn domain_suffix(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.domain_suffix_bounds()?)
+    }
     /// If [`Self`] is a [fully qualified domain anme](https://en.wikipedia.org/wiki/Fully_qualified_domain_name), returns the FQDN period.
     /// # Examples
     /// ```
@@ -316,7 +334,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://www.example.com."  ).unwrap().fqdn_period(), Some("."));
     /// assert_eq!(BetterUrl::parse("https://www.example.co.uk.").unwrap().fqdn_period(), Some("."));
     /// ```
-    pub fn fqdn_period(&self) -> Option<&str> {self.host_str()?.get(self.domain_details()?.fqdn_period?..)}
+    pub fn fqdn_period(&self) -> Option<&str> {
+        self.host_str()?.get(self.domain_details()?.fqdn_period?..)
+    }
 
     /// Gets an object that can iterate over the segments of [`Self`]'s path.
     /// # Errors
@@ -328,7 +348,9 @@ impl BetterUrl {
     /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c" ).unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c"]);
     /// assert_eq!(BetterUrl::parse("https://example.com/a/b/c/").unwrap().path_segments().unwrap().collect::<Vec<_>>(), ["a", "b", "c", ""]);
     /// ```
-    pub fn path_segments(&self) -> Result<Split<'_, char>, UrlDoesNotHavePathSegments> {self.url.path_segments().ok_or(UrlDoesNotHavePathSegments)}
+    pub fn path_segments(&self) -> Result<Split<'_, char>, UrlDoesNotHavePathSegments> {
+        self.url.path_segments().ok_or(UrlDoesNotHavePathSegments)
+    }
     /// Gets an object that can mutate the segments of [`Self`]'s path.
     /// # Errors
     /// If the call to [`Url::path_segments_mut`] returns an error, returns the error [`UrlDoesNotHavePathSegments`].
@@ -343,40 +365,77 @@ impl BetterUrl {
     /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/");
     /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/");
     /// ```
-    pub fn path_segments_mut(&mut self                        ) -> Result<PathSegmentsMut<'_>, UrlDoesNotHavePathSegments> {self.url.path_segments_mut().map_err(|()| UrlDoesNotHavePathSegments)}
+    pub fn path_segments_mut(&mut self) -> Result<PathSegmentsMut<'_>, UrlDoesNotHavePathSegments> {
+        debug!(self, BetterUrl::path_segments_mut);
+        self.url.path_segments_mut().map_err(|()| UrlDoesNotHavePathSegments)
+    }
 
     /// Sets the [`UrlPart::Scheme`].
     /// # Errors
     /// If the call to [`Url::set_scheme`] returns an error, returns the error [`SetSchemeError`].
-    pub fn set_scheme       (&mut self, scheme  : &str        ) -> Result<(), SetSchemeError>   {self.url.set_scheme(scheme).map_err(|()| SetSchemeError)}
+    pub fn set_scheme(&mut self, scheme: &str) -> Result<(), SetSchemeError> {
+        debug!(self, BetterUrl::set_scheme, scheme);
+        self.url.set_scheme(scheme).map_err(|()| SetSchemeError)
+    }
     /// Sets the [`UrlPart::Username`].
     /// # Errors
     /// If the call to [`Url::set_username`] returns an error, returns the error [`SetUsernameError`].
-    pub fn set_username     (&mut self, username: &str        ) -> Result<(), SetUsernameError> {self.url.set_username(username).map_err(|()| SetUsernameError)}
+    pub fn set_username(&mut self, username: &str) -> Result<(), SetUsernameError> {
+        debug!(self, BetterUrl::set_username, username);
+        self.url.set_username(username).map_err(|()| SetUsernameError)
+    }
     /// Sets the [`UrlPart::Password`].
     /// # Errors
     /// If the call to [`Url::set_password`] returns an error, returns the error [`SetPasswordError`].
-    pub fn set_password     (&mut self, password: Option<&str>) -> Result<(), SetPasswordError> {self.url.set_password(password).map_err(|()| SetPasswordError)}
+    pub fn set_password(&mut self, password: Option<&str>) -> Result<(), SetPasswordError> {
+        debug!(self, BetterUrl::set_password , password);
+        self.url.set_password(password).map_err(|()| SetPasswordError)
+    }
     /// Sets the [`UrlPart::Host`].
     /// # Errors
     /// If the call to [`Url::set_host`] returns an error, the error is returned..
-    pub fn set_host         (&mut self, host    : Option<&str>) -> Result<(), SetHostError>     {self.url.set_host(host)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
+    pub fn set_host(&mut self, host: Option<&str>) -> Result<(), SetHostError> {
+        debug!(self, BetterUrl::set_host, host);
+        self.url.set_host(host)?;
+        self.host_details = self.url.host().map(|host| HostDetails::from_host(&host));
+        Ok(())
+    }
     /// Sets the [`UrlPart::Host`].
     /// # Errors
     /// If the call to [`Url::set_ip_host`] returns an error, returns the error [`SetIpHostError`].
-    pub fn set_ip_host      (&mut self, address : IpAddr      ) -> Result<(), SetIpHostError>   {self.url.set_ip_host(address).map_err(|()| SetIpHostError)?; self.host_details = self.url.host().map(|host| HostDetails::from_host(&host)); Ok(())}
+    pub fn set_ip_host(&mut self, address: IpAddr) -> Result<(), SetIpHostError> {
+        debug!(self, BetterUrl::set_ip_host, address);
+        self.url.set_ip_host(address).map_err(|()| SetIpHostError)?;
+        self.host_details = self.url.host().map(|host| HostDetails::from_host(&host));
+        Ok(())
+    }
     /// Sets the [`UrlPart::Port`].
     /// # Errors
     /// If the call to [`Url::set_port`] returns an error, returns the error [`SetPortError`].
-    pub fn set_port         (&mut self, port    : Option<u16> ) -> Result<(), SetPortError>     {self.url.set_port(port).map_err(|()| SetPortError)}
+    pub fn set_port(&mut self, port: Option<u16>) -> Result<(), SetPortError> {
+        debug!(self, BetterUrl::set_port, port);
+        self.url.set_port(port).map_err(|()| SetPortError)
+    }
     /// [`Url::set_path`].
-    pub fn set_path         (&mut self, path    : &str        )                                 {self.url.set_path(path)}
+    pub fn set_path(&mut self, path: &str) {
+        debug!(self, BetterUrl::set_path, path);
+        self.url.set_path(path)
+    }
     /// [`Url::set_query`].
-    pub fn set_query        (&mut self, query   : Option<&str>)                                 {self.url.set_query(query)}
+    pub fn set_query(&mut self, query: Option<&str>) {
+        debug!(self, BetterUrl::set_query, query);
+        self.url.set_query(query)
+    }
     /// [`Url::query_pairs_mut`].
-    pub fn query_pairs_mut  (&mut self                        ) -> Serializer<'_, UrlQuery<'_>> {self.url.query_pairs_mut()}
+    pub fn query_pairs_mut(&mut self) -> Serializer<'_, UrlQuery<'_>> {
+        debug!(self, BetterUrl::query_pairs_mut);
+        self.url.query_pairs_mut()
+    }
     /// [`Url::set_fragment`].
-    pub fn set_fragment     (&mut self, fragment: Option<&str>)                                 {self.url.set_fragment(fragment)}
+    pub fn set_fragment(&mut self, fragment: Option<&str>) {
+        debug!(self, BetterUrl::set_fragment, fragment);
+        self.url.set_fragment(fragment)
+    }
     /// An iterator over query parameters without percent decoding anything.
     /// # Examples
     /// ```
@@ -663,6 +722,7 @@ impl BetterUrl {
     /// let mut url = BetterUrl::parse("https://www.example.co.uk.").unwrap(); url.set_domain_host("example.com").unwrap(); assert_eq!(url.host_str(), Some("example.com"));
     /// ```
     pub fn set_domain_host(&mut self, domain: &str) -> Result<(), SetDomainHostError> {
+        debug!(self, BetterUrl::set_domain_host, domain);
         if let Ok(host_details @ HostDetails::Domain(_)) = HostDetails::from_host_str(domain) {
             self.url.set_host(Some(domain))?;
             self.host_details = Some(host_details);

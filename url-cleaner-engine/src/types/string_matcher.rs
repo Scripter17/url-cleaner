@@ -170,7 +170,7 @@ pub enum StringMatcher {
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
     Modified {
         /// The [`StringModification`] to apply to the copy of the string.
-        modification: StringModification,
+        modification: Box<StringModification>,
         /// The [`Self`] to match the modified string with.
         matcher: Box<Self>
     },
@@ -330,7 +330,7 @@ impl StringMatcher {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn satisfied_by(&self, haystack: Option<&str>, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
-        debug!(self, StringMatcher::satisfied_by, self);
+        debug!(self, StringMatcher::satisfied_by, haystack, task_state);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

@@ -10,6 +10,7 @@ The default cleaner is intended to always obey the following rules:
 - It should always be both deterministic and idempotent.
   - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
 - The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
+  - All other features are expected to be enabled.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 

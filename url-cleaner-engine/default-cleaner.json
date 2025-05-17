@@ -151,7 +151,7 @@
 					"nerd.whatever.social", "z.opnxng.com"
 				],
 				"deviantart_embed_hosts": ["fxdeviantart.com"],
-				"discord_external": ["images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net"],
+				"discord_external": ["images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net", "images-ext-4.discordapp.net", "images-ext-5.discordapp.net"],
 				"disney": ["disney.com", "marvel.com"],
 				"furaffinity": ["furaffinity.net", "sfw.furaffinity.net"],
 				"instagram": ["instagram.com", "threads.net"],
@@ -206,6 +206,7 @@
 
 
 			"domain_middle_expand_mode": {
+				"redirect": [],
 				"special": ["google"]
 			},
 			"hwwwwdpafqdnp_expand_mode": {
@@ -318,7 +319,7 @@
 			"universal": {"All": [
 				{"If": {
 					"if": {"All": [
-						{"PartIs": {"part": "Scheme", "value": "http"}},
+						{"SchemeIs": "http"},
 						{"Not": {"FlagIsSet": "no_https_upgrade"}},
 						{"Not": "HostIsIp"},
 						{"Not": {"PartMatches": {
@@ -382,14 +383,14 @@
 				}},
 				{"If": {
 					"if": {"All": [
-						{"PartIs": {"part": "Query", "value": ""}},
+						{"QueryIs": ""},
 						{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove_empty_query_reg_domain_blacklist"}}}}
 					]},
 					"then": "RemoveQuery"
 				}},
 				{"If": {
 					"if": {"All": [
-						{"PartIs": {"part": "Fragment", "value": ""}},
+						{"FragmentIs": ""},
 						{"Not": {"PartMatches": {"part": "RegDomain", "matcher": {"InSet": "remove_empty_fragment_reg_domain_blacklist"}}}}
 					]},
 					"then": {"SetPart": {"part": "Fragment", "value": null}}
@@ -414,7 +415,7 @@
 	"actions": [
 		{"If": {
 			"if": {"All": [
-				{"PartIs": {"part": "Whole", "value": "javascript:void(0);"}},
+				{"UrlIs": "javascript:void(0);"},
 				{"StringIs": {
 					"left": {"Var": {"type": "JobContext", "name": "SOURCE_REG_DOMAIN"}},
 					"right": "furaffinity.net"
@@ -434,6 +435,13 @@
 						{"StringMap": {
 							"value": {"NamedPartitioning": {"named_partitioning": "domain_middle_expand_mode", "element": {"Part": "DomainMiddle"}}},
 							"map": {
+								"redirect": {"If": {
+									"if": {"Not": {"FlagIsSet": "no_network"}},
+									"then": {"All": [
+										{"Common": "universal"},
+										{"ExpandRedirect": {}}
+									]}
+								}},
 								"special": {"PartMap": {
 									"part": "DomainMiddle",
 									"map": {
@@ -1009,7 +1017,7 @@
 											"then": {"GetUrlFromQueryParam": "q"}
 										}},
 										"twpf.jp": {"If": {
-											"if": {"PartIs": {"part": "Path", "value": "/home/jump"}},
+											"if": {"PathIs": "/home/jump"},
 											"then": {"SetPart": {
 												"part": "Whole",
 												"value": {"Modified": {
@@ -1097,12 +1105,9 @@
 						"deviantart_embed_hosts": {"SetPart": {"part": "RegDomain", "value": "deviantart.com"}},
 						"discord_external": {"If": {
 							"if": {"FlagIsSet": "discord_unexternal"},
-							"then": {"SetPart": {
+							"then": {"ModifyPart": {
 								"part": "Whole",
-								"value": {"Modified": {
-									"value": {"Part": "Path"},
-									"modification": {"RegexReplace": {"regex": "/[^/]+/[^/]+/([^/]+)/([^/]+)/([^?#]+)", "replace": "$1://$2/$3"}}
-								}}
+								"modification": {"RegexReplace": {"regex": ".+?/(https?)/([^/]+)/([^?#]+)", "replace": "$1://$2/$3"}}
 							}}
 						}},
 						"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
@@ -1453,7 +1458,10 @@
 							{"If": {
 								"if": {"All": [
 									{"FlagIsSet": "tumblr_unsubdomain_blog"},
-									{"Not": {"SubdomainIsOneOf": ["at", "www", null]}}
+									{"Not": {"Any": [
+										{"SubdomainIsOneOf": ["at", "www", null]},
+										{"PartContains": {"part": "Subdomain", "value": "."}}
+									]}}
 								]},
 								"then": {"All": [
 									{"If": {

@@ -1,6 +1,5 @@
 # URL Cleaner
 
-[![docs.rs](https://img.shields.io/docsrs/url-cleaner)](https://docs.rs/url-cleaner/latest/url_cleaner/)
 [![Crates.io Version](https://img.shields.io/crates/v/url-cleaner)](https://crates.io/crates/url-cleaner/)
 
 The CLI interface for URL Cleaner.
@@ -13,35 +12,35 @@ See [`../default_cleaner.md`](../default_cleaner.md) for details about the inclu
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 24.10 (kernel 6.14.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-05-06.
+Last updated 2025-05-13.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  6.142,
-    "1"    :  6.199,
-    "10"   :  6.315,
-    "100"  :  6.535,
-    "1000" :  9.192,
-    "10000": 31.578
+    "0"    :  6.389,
+    "1"    :  6.509,
+    "10"   :  6.599,
+    "100"  :  6.796,
+    "1000" :  9.561,
+    "10000": 33.029
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  6.136,
-    "1"    :  6.236,
-    "10"   :  6.292,
-    "100"  :  6.815,
-    "1000" : 11.300,
-    "10000": 52.947
+    "0"    :  6.293,
+    "1"    :  6.523,
+    "10"   :  6.611,
+    "100"  :  6.925,
+    "1000" : 11.576,
+    "10000": 54.227
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  6.240,
-    "1"    :  6.223,
-    "10"   :  6.331,
-    "100"  :  6.934,
-    "1000" : 11.573,
-    "10000": 54.185
+    "0"    :  6.363,
+    "1"    :  6.529,
+    "10"   :  6.644,
+    "100"  :  7.056,
+    "1000" : 11.744,
+    "10000": 55.628
   }
 }
 ```

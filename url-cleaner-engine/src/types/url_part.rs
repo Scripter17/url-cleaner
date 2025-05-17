@@ -854,7 +854,7 @@ impl From<String> for QueryParamSelector {
 impl UrlPart {
     /// Gets the value.
     pub fn get<'a>(&self, url: &'a BetterUrl) -> Option<Cow<'a, str>> {
-        debug!(self, UrlPart::get, self, url);
+        debug!(self, UrlPart::get, url);
         Some(match self {
             Self::Debug(part) => {
                 let ret = part.get(url);
@@ -942,7 +942,7 @@ impl UrlPart {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), UrlPartSetError> {
-        debug!(self, UrlPart::set, self, url, to);
+        debug!(self, UrlPart::set, url, to);
         match (self, to) {
             (Self::Debug(part), _) => {
                 let old = part.get(url).to_owned();

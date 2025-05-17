@@ -7,7 +7,6 @@
 use std::path::PathBuf;
 use std::io::{self, IsTerminal};
 use std::process::ExitCode;
-use std::num::NonZero;
 
 use clap::{Parser, CommandFactory};
 use thiserror::Error;
@@ -42,26 +41,38 @@ use url_cleaner_engine::testing::*;
 #[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Clone, PartialEq, Eq, Parser)]
-#[command(version = env!("VERSION_INFO"))]
 pub struct Args {
     /// The URLs to clean before STDIN.
-    /// Can contain a task context by using {"url":"https://example.com","context":{...}}
+    ///
+    /// The following are all equivalent:
+    /// 
+    /// https://example.com
+    /// "https://example.com"
+    /// {"url": "https://example.com"}
+    /// {"url": "https://example.com", "context": {}}
+    /// {"url": "https://example.com", "context": {"vars": []}}
+    ///
+    /// The following also sets the TaskContext var `a` to `2`.
+    /// 
+    /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
     pub urls: Vec<LazyTaskConfig>,
     /// The config file to use.
+    /// 
     /// Omit to use the built in default cleaner.
     #[cfg(feature = "default-cleaner")]
-    #[arg(short, long, verbatim_doc_comment)]
+    #[arg(short, long)]
     pub cleaner: Option<PathBuf>,
     /// The cleaner file to use.
+    /// 
     /// Required as the `default-cleaner` feature is disabled.
     #[cfg(not(feature = "default-cleaner"))]
-    #[arg(short, long, verbatim_doc_comment)]
+    #[arg(short, long)]
     pub cleaner: PathBuf,
     /// The cache to use.
     /// Defaults to the value specified by the cleaner.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     pub cache_path: Option<CachePath>,
     /// Output results as JSON.
     ///
@@ -70,7 +81,7 @@ pub struct Args {
     /// {"Ok": {
     ///   "urls": [
     ///     {"Ok": "https://example.com/success"},
-    ///     {"Err": "https://example.com/failure"}
+    ///     {"Err": "Error message"}
     ///   ]
     /// }}
     /// 
@@ -78,27 +89,29 @@ pub struct Args {
     #[arg(short, long, verbatim_doc_comment)]
     pub json: bool,
     /// The ParamsDiff files to apply to the cleaner's Params.
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     pub params_diff: Vec<PathBuf>,
     /// Generate a ParamsDiff from CLI arguments.
     #[command(flatten)]
     pub params_diff_args: ParamsDiffArgParser,
     /// The context to share between all Tasks.
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     pub job_context: Option<String>,
     /// The number of worker threads to use.
-    /// Omit to use the current CPU's thread count.
-    #[arg(long, verbatim_doc_comment)]
-    pub threads: Option<NonZero<usize>>,
+    /// 
+    /// Zero uses the CPU's thread count.
+    #[arg(long, default_value_t = 0)]
+    pub threads: usize,
     /// Test files to run.
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     pub tests: Vec<PathBuf>,
     /// Asserts the "suitability" of the loaded cleaner.
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     pub test_suitability: bool,
     /// Print the cleaner after all ParamsDiffs are applied.
+    /// 
     /// Exact output isn't stable due to HashSets/HashMaps having a random order.
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     pub export_cleaner: bool
 }
 
@@ -180,7 +193,7 @@ fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "cache")]
     let cache = args.cache_path.as_ref().unwrap_or(&cleaner.cache_path).clone().into();
 
-    let threads = args.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")).get();
+    let threads = if args.threads == 0 {std::thread::available_parallelism().expect("To be able to get the available parallelism.").get()} else {args.threads};
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 

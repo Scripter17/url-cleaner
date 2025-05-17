@@ -46,7 +46,7 @@ impl std::ops::Drop for Deindenter {
 
 /// When the debug feature is enabled, print debug info.
 macro_rules! debug {
-    ($self:expr, $func:pat, $($comment:literal,)? $($name:ident),*) => {
+    ($self:expr, $func:pat $(, $name:ident)*) => {
         #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
         let _deindenter = {
             let mut dsl = crate::util::DEBUG_STATE.lock().unwrap();

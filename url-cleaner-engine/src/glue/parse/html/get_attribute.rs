@@ -114,6 +114,8 @@ type LB = GAVLastBite;
 type EK = GAVSyntaxErrorKind;
 
 /// Take a string that starts with an HTML element and get the value of the last attribute with the specified name.
+///
+/// Currently recoverable errors (as defined by the spec) aren't recovered from. I should eventually make this do that.
 /// # Errors
 /// It's complicated, but TL;DR if the spec says an error happens (even if it can recover), that error is returned.
 ///

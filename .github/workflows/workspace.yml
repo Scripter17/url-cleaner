@@ -1,0 +1,14 @@
+name: Whole
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: versions
+      run: bash -c '[ $(grep -P "(^|// @|^url-cleaner.*)version" */Cargo.toml url-cleaner-site/userscript.js -rIh | grep -oP "\d[\d.]+" | uniq | wc -l) -eq 1 ]'

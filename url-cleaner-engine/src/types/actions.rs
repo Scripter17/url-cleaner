@@ -739,7 +739,7 @@ impl Action {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ActionError> {
-        debug!(self, Action::apply, self, task_state);
+        debug!(self, Action::apply, task_state);
         match self {
             // Testing.
 

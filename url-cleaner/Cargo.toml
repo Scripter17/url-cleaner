@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2024"
 description = "A CLI tool and library for URL manipulation with a focus on stripping tracking garbage."
 repository = "https://github.com/Scripter17/url-cleaner"
@@ -10,12 +10,12 @@ license = "AGPL-3.0-or-later"
 readme = "README.md"
 
 [dependencies]
-clap = "4.5.37"
+clap = "4.5.38"
 serde = "1.0.219"
 serde_json = "1.0.140"
 thiserror = "2.0.12"
 url = { version = "2.5.4", features = ["serde"] }
-url-cleaner-engine = { path = "../url-cleaner-engine", version = "0.10.0", default-features = false }
+url-cleaner-engine = { path = "../url-cleaner-engine", version = "0.11.0", default-features = false }
 
 [features]
 default = ["default-cleaner"]

@@ -90,18 +90,70 @@ pub enum Condition {
     /// If the call to [`Self::satisfied_by`] passes or fails, invert it into failing or passing.
     /// # Errors
     /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// assert!(!Condition::Not(Box::new(Condition::Always)).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::Not(Box::new(Condition::Never )).satisfied_by(&task_state).unwrap());
+    /// ```
     Not(Box<Self>),
     /// If all contained [`Self`]s pass, passes.
     ///
     /// If any contained [`Self`] fails, fails.
     /// # Errors
     /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// assert!(!Condition::All(vec![
+    ///     Condition::Never,
+    ///     Condition::Never
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::All(vec![
+    ///     Condition::Never,
+    ///     Condition::Always
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// assert!(!Condition::All(vec![
+    ///     Condition::Always,
+    ///     Condition::Never
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::All(vec![
+    ///     Condition::Always,
+    ///     Condition::Always
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// ```
     All(Vec<Self>),
     /// If any contained [`Self`] passes, passes.
     ///
     /// If all contained [`Self`]s fail, fails.
     /// # Errors
     /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    /// 
+    /// assert!(!Condition::Any(vec![
+    ///     Condition::Never,
+    ///     Condition::Never
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::Any(vec![
+    ///     Condition::Never,
+    ///     Condition::Always
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::Any(vec![
+    ///     Condition::Always,
+    ///     Condition::Never
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// assert!( Condition::Any(vec![
+    ///     Condition::Always,
+    ///     Condition::Always
+    /// ]).satisfied_by(&task_state).unwrap());
+    /// ```
     Any(Vec<Self>),
 
 
@@ -109,6 +161,13 @@ pub enum Condition {
     /// Passes if the URL is the specified string.
     ///
     /// Used for testing.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state, url = "https://example.com");
+    ///
+    /// assert!(Condition::UrlIs("https://example.com/".into()).satisfied_by(&task_state).unwrap());
+    /// ```
     UrlIs(String),
 
 
@@ -135,8 +194,8 @@ pub enum Condition {
     StringMap {
         /// The [`StringSource`] to index [`Self::StringMap::map`] with.
         value: StringSource,
-        #[serde(flatten)]
         /// The [`Map`] to index with [`Self::StringMap::value`].
+        #[serde(flatten)]
         map: Map<Self>
     },
 
@@ -162,6 +221,8 @@ pub enum Condition {
 
 
 
+    /// Passes if the value of [`UrlPart::Scheme`] is equal to the specified string.
+    SchemeIs(String),
     /// Passes if the value of [`UrlPart::Host`] is equal to the specified string.
     /// # Examples
     /// ```
@@ -484,6 +545,8 @@ pub enum Condition {
     /// assert!(!Condition::PathStartsWith("/a/b/c/".into()).satisfied_by(&task_state).unwrap());
     /// ```
     PathIs(String),
+    /// Passes if the value of [`UrlPart::Fragment`] is the specified value.
+    FragmentIs(Option<String>),
 
 
 
@@ -768,7 +831,7 @@ impl Condition {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn satisfied_by(&self, task_state: &TaskStateView) -> Result<bool, ConditionError> {
-        debug!(self, Condition::satisfied_by, self, task_state);
+        debug!(self, Condition::satisfied_by, task_state);
         Ok(match self {
             // Debug/constants.
 
@@ -851,10 +914,12 @@ impl Condition {
 
             // Specific parts.
 
+            Self::SchemeIs(value) => task_state.url.scheme() == value,
             Self::QueryIs(value) => task_state.url.query() == value.as_deref(),
             Self::HasQueryParam(QueryParamSelector {name, index}) => task_state.url.has_query_param(name, *index),
             Self::PathStartsWith(value) => task_state.url.path().starts_with(value),
             Self::PathIs(value) => task_state.url.path() == value,
+            Self::FragmentIs(value) => task_state.url.fragment() == value.as_deref(),
 
             // General parts.
 

@@ -765,7 +765,7 @@ impl StringSource {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
-        debug!(self, StringSource::get, self, task_state);
+        debug!(self, StringSource::get, task_state);
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::None => None,

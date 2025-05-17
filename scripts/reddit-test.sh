@@ -25,7 +25,7 @@ done
 if [ $AUTO_DOMAINS -eq 1 ]; then
   echo "Getting domains"
   readarray -t DOMAINS < <(
-    cat default-cleaner.json |\
+    cat url-cleaner-engine/default-cleaner.json |\
       jq '
         (.. | try select(contains({part: "Domain"}) or contains({part: "Host"})).map | try keys[]),
         (.params.named_partitionings.hwwwwdpafqdnp_categories[][])

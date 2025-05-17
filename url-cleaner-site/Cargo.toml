@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner-site"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2024"
 description = "A basic HTTP server and userscript to make using URL Cleaner in a browser easier."
 repository = "https://github.com/Scripter17/url-cleaner"
@@ -10,14 +10,15 @@ license = "AGPL-3.0-or-later"
 readme = "README.md"
 
 [dependencies]
-clap = "4.5.37"
+clap = "4.5.38"
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls"] }
 serde = "1.0.219"
 serde_json = "1.0.140"
 thiserror = "2.0.12"
 url = { version = "2.5.4", features = ["serde"] }
-url-cleaner-engine = { path = "../url-cleaner-engine", version = "0.10.0", default-features = false }
+url-cleaner-engine = { path = "../url-cleaner-engine", version = "0.11.0", default-features = false }
+url-cleaner-site-types = { path = "../url-cleaner-site-types", version = "0.11.0" }
 
 [features]
 default = ["default-cleaner"]

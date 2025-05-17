@@ -60,14 +60,14 @@ if [  $hyperfine -eq 1 ] && ! which -s jq       ; then echo 'Jq not found; Pleas
 if [  $hyperfine -eq 1 ] && ! which -s bat      ; then echo 'Bat not found; Please run `cargo install bat`.'                                     ; exit 2; fi
 
 if [ $compile -eq 1 ]; then
-  if [ -e ../target/release/url-cleaner-site ]; then
-    old_mtime=$(stat -c %Y ../target/release/url-cleaner-site)
+  if [ -e ../../target/release/url-cleaner-site ]; then
+    old_mtime=$(stat -c %Y ../../target/release/url-cleaner-site)
   else
     old_mtime=0
   fi
   cargo build -r ${features[@]} --config profile.release.strip=false --config profile.release.debug=2
   if [ $? -ne 0 ]; then exit 3; fi
-  if [ $old_mtime -lt $(stat -c %Y ../target/release/url-cleaner-site) ]; then
+  if [ $old_mtime -lt $(stat -c %Y ../../target/release/url-cleaner-site) ]; then
     read -p "Press enter once you've (re)started URL Cleaner Site using the newly compiled binary." < /dev/tty
   fi
 fi

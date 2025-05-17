@@ -52,3 +52,10 @@ jobs:
     - uses: actions/checkout@v3
     - name: offline_tests
       run: cargo run -- --tests ../tests/offline.json
+
+  order:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: order
+      run: bash -c 'seq -f "https://%0.0f.com" 100 | cargo run | sort -Vc'

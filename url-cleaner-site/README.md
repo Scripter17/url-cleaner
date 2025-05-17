@@ -1,6 +1,5 @@
 # URL Cleaner Site
 
-[![docs.rs](https://img.shields.io/docsrs/url-cleaner-site)](https://docs.rs/url-cleaner-site/latest/url_cleaner-site/)
 [![Crates.io Version](https://img.shields.io/crates/v/url-cleaner-site)](https://crates.io/crates/url-cleaner-site/)
 
 A simple HTTP server to allow using URL Cleaner in web browser userscripts and other applications where SSH tunnels are infeasable.
@@ -27,33 +26,33 @@ On the same laptop used in URL Cleaner's example benchmarks and with TLS, hyperf
 
 Without TLS, the benchmarks are about 15ms faster, but the worst case scenario is provided because it's more useful.
 
-Last updated 2025-04-23.
+Last updated 2025-05-13.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  26.413,
-    "1"    :  28.502,
-    "10"   :  26.480,
-    "100"  :  26.371,
-    "1000" :  30.198,
-    "10000":  61.400
+    "0"    : 24.293,
+    "1"    : 24.488,
+    "10"   : 24.376,
+    "100"  : 24.637,
+    "1000" : 27.485,
+    "10000": 56.652
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  26.247,
-    "1"    :  26.339,
-    "10"   :  26.288,
-    "100"  :  26.655,
-    "1000" :  32.473,
-    "10000":  80.217
+    "0"    : 24.225,
+    "1"    : 24.376,
+    "10"   : 24.442,
+    "100"  : 24.906,
+    "1000" : 30.412,
+    "10000": 85.094
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  26.475,
-    "1"    :  26.390,
-    "10"   :  26.175,
-    "100"  :  27.682,
-    "1000" :  36.432,
-    "10000": 113.727
+    "0"    : 24.234,
+    "1"    : 24.308,
+    "10"   : 24.340,
+    "100"  : 24.998,
+    "1000" : 31.804,
+    "10000": 97.209
   }
 }
 ```

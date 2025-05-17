@@ -18,9 +18,7 @@ use clap::{Parser, CommandFactory};
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
-
-mod types;
-use types::*;
+use url_cleaner_site_types::*;
 
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_JSON_SIZE: &str = "25MiB";
@@ -62,7 +60,7 @@ struct Args {
     pub params_diff_args: ParamsDiffArgParser,
     /// Amount of threads to process tasks in.
     /// 
-    /// Zero gets the current CPU threads.
+    /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     pub threads: usize,
     /// The (optional) TLS/HTTPS cert. If specified, requires `--key`.
@@ -241,7 +239,7 @@ async fn clean(state: &State<ServerState>, bulk_job: Json<BulkJob>) -> Json<Resu
 /// The error handler for the `/clean` route.
 #[catch(default)]
 async fn clean_error(status: Status, _request: &Request<'_>) -> Json<Result<(), CleaningError>> {
-    Json(Err(crate::types::CleaningError {
+    Json(Err(CleaningError {
         status: status.code,
         reason: status.reason()
     }))
@@ -255,6 +253,6 @@ async fn get_max_json_size(state: &State<ServerState>) -> String {
 
 /// The `host-parts` route.
 #[post("/", data="<host>")]
-async fn host_parts(host: &str) -> Json<Result<HostParts<'_>, CouldntParseHost>> {
+async fn host_parts(host: &str) -> Json<Result<HostParts, CouldntParseHost>> {
     Json(HostParts::try_from(host).map_err(|_| CouldntParseHost))
 }

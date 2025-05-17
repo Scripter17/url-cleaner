@@ -4,3 +4,4 @@ stdin
 *.tar.gz
 *.sqlite
 reddit*.json
+reddit*.txt

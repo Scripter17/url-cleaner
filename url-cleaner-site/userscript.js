@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URL Cleaner
 // @copyright    AGPL-3.0-or-later
-// @version      0.9.0
+// @version      0.11.0
 // @description  The userscript that comes with URL Cleaner Site.
 // @author       Scripter17@Github.com
 // @match        https://*/*
@@ -33,9 +33,9 @@ window.config = {
 	}
 };
 
-window.cleaned_elements = new WeakMap();
-window.too_big_elements = new WeakSet();
-window.errored_elements = new WeakSet();
+window.cleaned_elements = new WeakMap(); // A map from elements to the last value this userscript set its href to. Used to check if a mutation is relevant.
+window.too_big_elements = new WeakSet(); // Set of elements whose hrefs were bigger than URL Cleaner Site's max size.
+window.errored_elements = new WeakSet(); // Set of elements whose hrefs returned an error.
 window.total_elements_cleaned = 0;
 window.total_time_cleaning = 0;
 
@@ -61,7 +61,7 @@ async function clean_elements(elements, bulk_job) {
 			window.too_big_elements.add(elements[0]);
 			return;
 		} else {
-			/// Cut the list in half and do them separately.
+			// Cut the list in half and do them separately.
 			await clean_elements(elements.slice(0, elements.length/2), {...bulk_job, tasks: bulk_job.tasks.slice(0, bulk_job.tasks.length/2)});
 			elements = elements.slice(elements.length/2);
 			bulk_job.tasks = bulk_job.tasks.slice(bulk_job.tasks.length/2);
@@ -143,6 +143,7 @@ function element_to_task_config(element) {
 			}
 		};
 	} else if (/(^|\.)allmylinks\.com$/.test(window.location.hostname) && element.pathname=="/link/out" && element.title.startsWith("http")) {
+		// Same shortcut thing as the twitter stuff above.
 		return {
 			url: element.href,
 			context: {
@@ -152,7 +153,7 @@ function element_to_task_config(element) {
 			}
 		};
 	} else if (/(^|\.)furaffinity\.net$/.test(window.location.hostname) && element.matches(".user-contact-user-info a")) {
-		/// Allows unmangling contact info links.
+		// Allows unmangling contact info links.
 
 		// Some contact info fields let invalid inputs result in invalid URLs, which URL Cleaner can't accept.
 		// If this happens, just replace it with a dummy value and hope the unmangling works.
@@ -173,6 +174,7 @@ function element_to_task_config(element) {
 			}
 		};
 	} else if (/(^|\.)bsky\.app$/.test(window.location.hostname) && element.getAttribute("href").startsWith("/profile/did:plc:") && element.innerText.startsWith("@")) {
+		// Allows replacing `/profile/did:plc:` URLs with the `/profile/example.com`, as it should be.
 		return {
 			url: element.href,
 			context: {
@@ -182,6 +184,7 @@ function element_to_task_config(element) {
 			}
 		};
 	} else if (/(^|\.)saucenao\.com$/.test(window.location.hostname) && /^https:\/\/(www\.)?(x|twitter)\.com\//.test(element.href)) {
+		// Fixes twitter URLs returned by SauceNAO.
 		return {
 			url: element.href,
 			context: {
