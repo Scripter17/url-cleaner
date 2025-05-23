@@ -1,4 +1,4 @@
-name: Whole
+name: Workspace
 
 on: [push, pull_request]
 
@@ -11,4 +11,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: versions
-      run: bash -c '[ $(grep -P "(^|// @|^url-cleaner.*)version" */Cargo.toml url-cleaner-site/userscript.js -rIh | grep -oP "\d[\d.]+" | uniq | wc -l) -eq 1 ]'
+      run: bash -c '[ $(grep -P "(^|// @|^url-cleaner.*)version" */Cargo.toml site/userscript.js -rIh | grep -oP "\d[\d.]+" | uniq | wc -l) -eq 1 ]'

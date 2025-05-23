@@ -26,4 +26,4 @@ with open("url-cleaner-engine/default-cleaner.json", "r") as f:
     x = json.loads(f.read())["docs"]
     del x["title"]
     del x["description"]
-    thing(x, 2)
+    thing(x, 3)

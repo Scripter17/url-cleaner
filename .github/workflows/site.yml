@@ -1,4 +1,4 @@
-name: URL Cleaner Site
+name: Site
 
 on: [push, pull_request]
 
@@ -7,7 +7,7 @@ env:
 
 defaults:
   run:
-    working-directory: url-cleaner-site
+    working-directory: site
 
 jobs:
   build:

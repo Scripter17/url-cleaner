@@ -14,7 +14,7 @@ URL Cleaner is designed to make this as comprehensive, fast, and easy as possibl
 URL Cleaner and its default cleaner are under very active development so many websites may break, be partially unhandled, or give otherwise incorrect results.
 Even if URL Cleaner gives correct results, there are still details you should keep in mind.
 
-1. Unless you set the `no-network` flag, the default cleaner will expand supported redirect websites like `bit.ly` and `t.co`.
+1. Unless you set the `no_network` flag, the default cleaner will expand supported redirect websites like `bit.ly` and `t.co`.
    In addition to the obvious issues inherent to redirect sites, if one of the supported redirect sites expires, a malicious actor can buy the domain and send you a URL that gets detected as a redirect to find your IP address.
 
 2. Some redirect websites have URLs that contain a redirect ID and the redirect destination. For example, `https://example-redirect-site.com/redirect/1234?destination=https://example.com`.
@@ -24,22 +24,22 @@ Even if URL Cleaner gives correct results, there are still details you should ke
    If this mismatch happens, it's possible for that malivius intermediary to detect whether or not you're using URL Cleaner if your version of the default cleaner gets the wrong answer.
    If a website is vulnerable to this and the default cleaner gets the wrong answer, the default cleaner is considered at fault and must be updates. If you ever see this happen, PLEASE tell me.
 
-3. One of the main intended ways to use URL Cleaner is [URL Cleaner Site](url-cleaner-site), a basic HTTP server + userscript combo to automatically clean every link on every website you visit.
+3. One of the main intended ways to use URL Cleaner is [URL Cleaner Site](site), a basic HTTP server + userscript combo to automatically clean every link on every website you visit.
    While it's extremely easy for websites to tell you're using URL Cleaner Site, the info leak is both small and impossible to fix, so I won't try to fix it.
    What is an issue is that expanded redirects are cached so network requests only have to be sent once. This means that if you see a `https://bit.ly/1234` link for the first time, URL Cleaner Site sends a request for it and caches the result.
    Then, any time you see it again, URL Cleaner Site simply references the cache for the destination. While this should always give the correct result, it means that a website can tell whether or not you've seen the link before based on how fast the cleaning happens.
 
-While URL Cleaner's default cleaner is definitely a net positive in most cases and when used carefully, you should at no point blindly trust it to be doing things perfectly and you should always be a little paranoid.
+While URL Cleaner's default cleaner is definitely a net positive in most cases, you should keep an eye on its output to make sure it gets everything.
 
-## Default cleaner.
+## Default cleaner
 
 See [`default_cleaner.md`](default_cleaner.md) for details about the included default cleaner.
 
 ## Performance
 
-URL Cleaner is pretty fast. See [`url-cleaner/README.md#performance`](url-cleaner/README.md#performance) and [`url-cleaner-site/README.md#performance`](url-cleaner-site/README.md#performance) for detials.
+URL Cleaner is pretty fast. See [`cli/README.md#performance`](url-cleaner/README.md#performance) and [`site/README.md#performance`](url-cleaner-site/README.md#performance) for detials.
 
-#### Credits
+## Credits
 
 The people and projects I have stolen various parts of the default cleaner from.
 

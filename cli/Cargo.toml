@@ -1,0 +1,40 @@
+[package]
+name = "url-cleaner"
+version = "0.11.0"
+edition = "2024"
+description = "A CLI tool and library for URL manipulation with a focus on stripping tracking garbage."
+repository = "https://github.com/Scripter17/url-cleaner"
+keywords = ["url", "url-tracking", "privacy", "url-cleaner"]
+categories = ["command-line-utilities"]
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4.5.38", features = ["derive", "unstable-v5"] }
+serde = "1.0.219"
+serde_json = "1.0.140"
+thiserror = "2.0.12"
+url = { version = "2.5.4", features = ["serde"] }
+url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
+
+[features]
+default = ["default-cleaner"]
+
+default-cleaner = [
+  "url-cleaner-engine/default-cleaner",
+  "regex",
+  "http",
+  "cache",
+  "base64"
+]
+
+regex    = ["url-cleaner-engine/regex"]
+http     = ["url-cleaner-engine/http"]
+cache    = ["url-cleaner-engine/cache"]
+base64   = ["url-cleaner-engine/base64"]
+custom   = ["url-cleaner-engine/custom"]
+commands = ["url-cleaner-engine/commands"]
+debug    = ["url-cleaner-engine/debug"]
+
+[lints]
+workspace = true

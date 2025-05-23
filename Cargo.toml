@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["url-cleaner-engine", "url-cleaner", "url-cleaner-site-types", "url-cleaner-site"]
+members = ["engine", "cli", "site-types", "site"]
 
 [workspace.lints.rust]
 missing_docs = "warn"

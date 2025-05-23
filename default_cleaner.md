@@ -4,20 +4,32 @@ The default cleaner is included by in URL Cleaner Engine and is intended for nor
 
 The default cleaner is intended to always obey the following rules:
 
-- Cleaning the URL shouldn't cause any "meaningful semantic changes"<sup>[definition?]</sup> when opening the result.
-    - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
+- Cleaning a URL shouldn't cause any "meaningful semantic changes"<sup>[definition?]</sup> when opening the result.
+  - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
 - URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error or become semantically invalid.
+  - Basically, if opening a pre-clean URL doesn't return a an error, opening the post-clean URL shouldn't return an error.
 - It should always be both deterministic and idempotent.
   - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
 - The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
   - All other features are expected to be enabled.
+    - Some may happen to not be required, but changes that make them required aren't considered breaking.
+- When the `no_network` flag is set, the default cleaner should NEVER make ANY network requests.
+  - The `no_network` flag should be equivalent to compiling URL Cleaner without network support and removing all network stuff from the default cleaner.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 
 Additionally, these rules may be changed at any time for any reason. Usually just for clarification.
 
+## Params
+
+Cleaners use params to customize what exactly actions do, such as letting you choose whether or not to change `x.com` URLs to `vxtwitter.com` URLs.
+
+The default cleaner contains many flags and vars to control behavior I often want but don't want to make default. If there's a reasonably common task you sometimes want to do, I may be willing to integrate it into the default cleaner.
+
+And yes I know the environment vars section shouldn't be listed under params. I don't want to refactor the script to generate markdown from cleaner docs.
+
 <!--cmd scripts/gen-docs.py-->
-## Flags
+### Flags
 
 - `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
 - `embed_compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter_embed_host` and `bsky.app` to the variable `bsky_embed_host`.
@@ -44,7 +56,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `youtube_unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
 - `youtube_unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
 
-## Vars
+### Vars
 
 - `bluesky_embed_host`: The domain to use for bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.
 - `breezewiki_host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
@@ -54,11 +66,11 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `pixiv_embed_host`: The domain to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.
 - `twitter_embed_host`: The domain to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`.
 
-## Environment Vars
+### Environment Vars
 
 - `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass_vip_api_key` variable.
 
-## Sets
+### Sets
 
 - `bypass_vip_hwwwwdpafqdnps`: The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.
 - `email_link_format_1_hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
@@ -71,15 +83,15 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp_host_whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp_prefixes` set are also removed.
 - `utps_reg_domain_whitelist`: RegDomains to never remove universal tracking parameters from.
 
-## Lists
+### Lists
 
 - `utp_prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
 
-## Maps
+### Maps
 
 - `hwwwwdpafqdnp_lang_query_params`: The name of the `HostWithoutWWWDotPrefixAndFqdnPeriod`'s language query parameter.
 
-## Named Partitionings
+### Named Partitionings
 
 - `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
 - `www_subdomain_handling`: What to do instead of removing `www` subdomains.
@@ -87,16 +99,16 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 - `hwwwwdpafqdnp_expand_mode`: How to handle redirect `HostWithoutWWWDotPrefix`s.
 - `reg_domain_expand_mode`: How to handle redirect `RegDomain`s,
 
-## Job Context
+### Job Context
 
-### Vars
+#### Vars
 
 - `SOURCE_HOST`: The `Host` of the "source" of the jobs. Usually the webpage it came from.
 - `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the jobs, Usually the webpage it came from.
 
-## Task Context
+### Task Context
 
-### Vars
+#### Vars
 
 - `bsky_handle`: The handle of an `@user.bsky.social`, used to replace the `/did:plc:12345678` in the URL with the actual handle.
 - `faci_site_name`: For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.

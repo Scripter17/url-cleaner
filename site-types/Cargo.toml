@@ -1,0 +1,19 @@
+[package]
+name = "url-cleaner-site-types"
+version = "0.11.0"
+edition = "2024"
+description = "Types for URL Cleaner Site."
+repository = "https://github.com/Scripter17/url-cleaner"
+keywords = ["url-cleaner"]
+categories = []
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+[dependencies]
+serde = { version = "1.0.219", features = ["derive"] }
+thiserror = "2.0.12"
+url = "2.5.4"
+url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
+
+[lints]
+workspace = true
