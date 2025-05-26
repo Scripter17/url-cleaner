@@ -58,9 +58,7 @@ pub struct Cleaner {
 impl Cleaner {
     /// Load [`Self`] from a JSON file.
     /// # Errors
-    /// If the call to [`std::fs::read_to_string`] returns an error, that error is returned.
-    ///
-    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(std::fs::read_to_string), callerr(serde_json::from_str))]
     pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetCleanerError> {
         serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
     }
@@ -69,6 +67,7 @@ impl Cleaner {
     ///
     /// If you know you're only going to get the default config once, [`Self::get_default_no_cache`] is better because you can apply [`ParamsDiff`]s to it without [`Clone::clone`]ing.
     /// # Errors
+    #[doc = edoc!(callerr(Self::get_default_no_cache))]
     /// If the call to [`Self::get_default_no_cache`] returns an error, that error is returned.
     /// # Examples
     /// ```
@@ -90,7 +89,7 @@ impl Cleaner {
     ///
     /// If you're getting the default config often and rarely using [`ParamsDiff`]s, [`Self::get_default`] may be better due to it only deserializing the config once.
     /// # Errors
-    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(serde_json::from_str))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -106,9 +105,7 @@ impl Cleaner {
     ///
     /// If `path` is [`None`], returns the result of [`Self::get_default`] in a [`Cow::Borrowed`].
     /// # Errors
-    /// If the call to [`Self::load_from_file`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::get_default`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(Self::load_from_file), callerr(Self::get_default))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -135,9 +132,7 @@ impl Cleaner {
     ///
     /// If `path` is [`None`], returns the result of [`Self::get_default_no_cache`].
     /// # Errors
-    /// If the call to [`Self::load_from_file`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::get_default`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(Self::load_from_file), callerr(Self::get_default_no_cache))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -164,7 +159,7 @@ impl Cleaner {
     ///
     /// If an error is returned, `job_state` may be left in a partially modified state.
     /// # Errors
-    /// If any call to [`Action::apply`] returns an error, that error is returned.
+    #[doc = edoc!(applyerr(Action, 3))]
     pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
         for action in &self.actions {
             action.apply(job_state)?;

@@ -4,6 +4,7 @@ use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
+use crate::util::*;
 
 /// Allows lazily making a [`Task`].
 ///
@@ -37,7 +38,7 @@ impl<'a> TryFrom<LazyTask<'a>> for Task<'a> {
 
     /// Makes the [`Task`].
     /// # Errors
-    /// If the call to [`LazyTaskConfig::make`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(LazyTaskConfig::make))]
     fn try_from(value: LazyTask<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             config: value.config.make()?,
@@ -52,7 +53,7 @@ impl<'a> TryFrom<LazyTask<'a>> for Task<'a> {
 impl<'a> LazyTask<'a> {
     /// Makes the [`Task`].
     /// # Errors
-    /// If the call to [`LazyTaskConfig::make`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(LazyTaskConfig::make))]
     pub fn make(self) -> Result<Task<'a>, MakeTaskError> {
         self.try_into()
     }

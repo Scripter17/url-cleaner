@@ -172,7 +172,7 @@ pub struct UrlDoesNotHavePathSegments;
 impl BetterUrl {
     /// Parse a URL.
     /// # Errors
-    /// If the call to [`Url::parse`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(Url::parse))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -340,7 +340,7 @@ impl BetterUrl {
 
     /// Gets an object that can iterate over the segments of [`Self`]'s path.
     /// # Errors
-    /// If the call to [`Url::path_segments`] returns [`None`], returns the error [`UrlDoesNotHavePathSegments`].
+    #[doc = edoc!(callnone(Url::path_segments, UrlDoesNotHavePathSegments))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;

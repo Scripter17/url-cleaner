@@ -37,16 +37,18 @@ pub enum StringMatcher {
     IsNone,
     /// Passes if the string is [`Some`] and [`Self::IsSomeAnd::0`] passes.
     /// # Errors
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Self))]
     IsSomeAnd(Box<Self>),
     /// Passes if the string is [`None`] or [`Self::IsNoneOr::0`] passes.
     /// # Errors
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Self))]
     IsNoneOr(Box<Self>),
 
-    /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
+    /// If the call to [`Self::If::if`] passes, return the value of [`Self::If::then`].
+    ///
+    /// If the call to [`Self::If::if`] fails, return the value of [`Self::If::else`].
     /// # Errors
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned after the debug info is printed.
+    #[doc = edoc!(satisfyerr(Self, 2))]
     If {
         /// The [`Self`] to decide between [`Self::If::then`] and [`Self::If::else`].
         r#if: Box<Self>,
@@ -57,19 +59,19 @@ pub enum StringMatcher {
     },
     /// If the call to [`Self::satisfied_by`] passes or fails, invert it into failing or passing.
     /// # Errors
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Self))]
     Not(Box<Self>),
     /// If all contained [`Self`]s pass, passes.
     ///
     /// If any contained [`Self`] fails, fails.
     /// # Errors
-    /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Self, 3))]
     All(Vec<Self>),
     /// If any contained [`Self`] passes, passes.
     ///
     /// If all contained [`Self`]s fail, fails.
     /// # Errors
-    /// If any call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Self, 3))]
     Any(Vec<Self>),
 
     /// If the call to [`Self::satisfied_by`] returns an error, passes.
@@ -82,7 +84,7 @@ pub enum StringMatcher {
     TreatErrorAsFail(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
-    /// If both calls to [`Self::satisfied_by`] return errors, both errors are returned.
+    #[doc = edoc!(satisfyerrte(Self, StringMatcher))]
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
@@ -91,16 +93,12 @@ pub enum StringMatcher {
     },
     /// Calls [`Self::satisfied_by`] on each contained [`Self`] in order, returning the first to return [`Ok`].
     /// # Errors
-    /// If all calls to [`Self::satisfied_by`] error, the errors are returned in a [`StringMatcherError::FirstNotErrorErrors`].
+    #[doc = edoc!(satisfyerrfne(Self, StringMatcher))]
     FirstNotError(Vec<Self>),
 
     /// Passes if the string contains [`Self::Contains::value`] at [`Self::Contains::at`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF the call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
-    ///
-    /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), satisfyerr(StringLocation))]
     Contains {
         /// The value to look for at [`Self::Contains::at`].
         value: StringSource,
@@ -112,11 +110,7 @@ pub enum StringMatcher {
     },
     /// Effectively [`Self::Contains`] for each value in [`Self::ContainsAny::values`].
     /// # Errors
-    /// If any call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF any call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
-    ///
-    /// If any call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(StringSource, 3), getnone(StringSource, StringMatcher, 3), satisfyerr(StringLocation, 3))]
     ContainsAny {
         /// The value to look for at [`Self::Contains::at`].
         values: Vec<StringSource>,
@@ -128,13 +122,11 @@ pub enum StringMatcher {
     },
     /// Effectively [`Self::ContainsAny`] for each value in the [`Params::lists`]s specified by [`Self::ContainsAnyInList::list`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF the call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher))]
     ///
     /// If no list with the specified name is found, returns the error [`StringMatcherError::ListNotFound`].
     ///
-    /// If any call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(StringLocation, 3))]
     ContainsAnyInList {
         /// The name of the [`Params::lists`] whose values to look for.
         list: StringSource,
@@ -148,26 +140,22 @@ pub enum StringMatcher {
     ///
     /// If the call to [`StringSource::get`] returns [`None`], returns [`false`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(StringSource))]
     Is(StringSource),
     /// Passes if the string is in the specified [`Set`].
     IsOneOf(Set<String>),
     /// Passes if the string is in the specified [`Params::sets`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF the call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), notfound(Set, StringMatcher))]
     InSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the call to [`Regex::is_match`] returns [`true`].
     /// # Errors
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(RegexWrapper))]
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
     /// Applies [`Self::Modified::modification`] to a copy of the string, leaving the original unchanged, and returns the satisfaction of [`Self::Modified::matcher`] on that string.
     /// # Errors
-    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(applyerr(StringModification), satisfyerr(Self))]
     Modified {
         /// The [`StringModification`] to apply to the copy of the string.
         modification: Box<StringModification>,
@@ -178,23 +166,21 @@ pub enum StringMatcher {
     OnlyTheseChars(Vec<char>),
     /// Passes if all [`char`]s in the string satisfies the specified [`CharMatcher`].
     /// # Errors
-    /// If any call to [`CharMatcher::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(CharMatcher, 3))]
     AllCharsMatch(CharMatcher),
     /// Passes if any [`char`]s in the string satisfies the specified [`CharMatcher`].
     /// # Errors
-    /// If any call to [`CharMatcher::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(CharMatcher, 3))]
     AnyCharMatches(CharMatcher),
     /// Passes if [`str::is_ascii`] returns [`true`].
     IsAscii,
     /// Splits the string with [`Self::NthSegmentMatches::split`], gets the [`Self::NthSegmentMatches::n`]th segment, and returns the satisfaction of [`Self::NthSegmentMatches::matcher`] of it.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF the call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher))]
     ///
     /// If the segment isn't found, returns the error [`StringMatcherError::SegmentNotFound`].
     ///
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Self))]
     NthSegmentMatches {
         /// The value to split the string with.
         split: StringSource,
@@ -205,11 +191,7 @@ pub enum StringMatcher {
     },
     /// Splits the string with [`Self::NthSegmentMatches::split`] and passes if any segment satisfies [`Self::AnySegmentMatches::matcher`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF the call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
-    ///
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), satisfyerr(Self))]
     AnySegmentMatches {
         /// The value to split the string with.
         split: StringSource,
@@ -220,9 +202,7 @@ pub enum StringMatcher {
     LengthIs(usize),
     /// Splits the string with [`Self::SegmentsStartWith::split`] and passes if the list of segments starts with the list of segments from splitting [`Self::SegmentsStartWith::value`] with [`Self::SegmentsStartWith::split`].
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF either call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
     SegmentsStartWith {
         /// The value to split the strings with.
         split: Box<StringSource>,
@@ -231,9 +211,7 @@ pub enum StringMatcher {
     },
     /// Splits the string with [`Self::SegmentsEndWith::split`] and passes if the list of segments ends with the list of segments from splitting [`Self::SegmentsEndWith::value`] with [`Self::SegmentsEndWith::split`].
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// IF either call to [`StringSource::get`] returns [`None`], returns the error [`StringMatcherError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
     SegmentsEndWith {
         /// The value to split the strings with.
         split: Box<StringSource>,
@@ -242,18 +220,11 @@ pub enum StringMatcher {
     },
     /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
-    /// If [`CommonCall::name`]'s call to [`StringSource::get`] returns an error, returns the error [`StringMatcherError::StringSourceIsNone`].
-    ///
-    /// If no [`Self`] with the specified name is found, returns the error [`StringMatcherError::CommonStringMatcherNotFound`].
-    ///
-    /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringMatcher, CommonCall::name), commonnotfound(Self, StringMatcher), callerr(CommonCallArgsSource::build), satisfyerr(Self))]
     Common(CommonCall),
     /// Calls the contained function.
     /// # Errors
-    /// If the call to the contained function returns an error, that error is returned.
-    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[doc = edoc!(callerr(Self::Custom::0))]
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
@@ -304,9 +275,12 @@ pub enum StringMatcherError {
     /// Returned when a segment isn't found.
     #[error("The requested segment wasn't found.")]
     SegmentNotFound,
-    /// The requested list wasn't found.
+    /// Returned when a list wasn't found.
     #[error("The requested list wasn't found.")]
     ListNotFound,
+    /// Returned when a [`Set`] isn't found.
+    #[error("The requested set wasn't found.")]
+    SetNotFound,
     /// Returned when a [`CharMatcherError`] is encountered.
     #[error(transparent)]
     CharMatcherError(#[from] CharMatcherError),
@@ -440,7 +414,7 @@ impl StringMatcher {
                 return Ok(false);
             },
             Self::Is(source) => haystack == source.get(task_state)?.as_deref(),
-            Self::InSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).is_some_and(|set| set.contains(haystack)),
+            Self::InSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
             Self::LengthIs(x) => haystack.ok_or(StringMatcherError::StringIsNone)?.len() == *x,
             Self::SegmentsEndWith { split, value } => {
                 let split = get_str!(split, task_state, StringMatcherError);

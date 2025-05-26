@@ -86,7 +86,7 @@ pub enum StringSource {
     ErrorToEmptyString(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::get`] returns an error, instead return the value of [`Self::TryElse::else`].
     /// # Errors
-    /// If both [`Self::TryElse::try`] and [`Self::TryElse::else`]'s calls to [`Self::get`] return an error, [`Self::TryElse::else`]'s error is returned.
+    #[doc = edoc!(geterrte(Self, StringSource))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -104,7 +104,7 @@ pub enum StringSource {
     },
     /// Calls [`Self::get`] on each contained [`Self`] in order, returning the first to return [`Ok`].
     /// # Errors
-    /// If all calls to [`Self::get`] error, the errors are returned in a [`StringSourceError::FirstNotErrorErrors`].
+    #[doc = edoc!(geterrfne(Self, StringSource))]
     FirstNotError(Vec<Self>),
     /// Print debug info about the contained [`Self`] and its call to [`Self::get`].
     ///
@@ -112,14 +112,14 @@ pub enum StringSource {
     /// # Suitability
     /// Always unsuiable to be in the default config.
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
     /// If the call to [`Self::get`] returns [`None`], instead returns an empty string.
     ///
     /// Otherwise leaves the return value unchanged.
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -130,7 +130,7 @@ pub enum StringSource {
     NoneToEmptyString(Box<Self>),
     /// If [`Self::NoneTo::value`]'s call to [`Self::get`] returns [`None`], returns the value of [`Self::NoneTo::if_none`].
     /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self, 2))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -155,9 +155,7 @@ pub enum StringSource {
 
     /// Joins a list of [`Self`]s delimited by [`Self::Join::join`].
     /// # Errors
-    /// If any call to [`Self::get`] returns an error, the error is returned.
-    ///
-    /// If any call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(Self), getnone(Self, StringSource))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -179,9 +177,7 @@ pub enum StringSource {
     },
     /// If the [`Params::flags`] specified by [`Self::IfFlag::flag`] is set, return the value of [`Self::IfFlag::then`]. If it's not set, return the value of [`Self::IfFlag::else`].
     /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If [`Self::IfFlag::flag`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
+    #[doc = edoc!(geterr(FlagRef), geterr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -211,11 +207,7 @@ pub enum StringSource {
     /// Gets the value of [`Self::IfStringMatches::value`] then, if it satisfies [`Self::IfStringMatches::matcher`], returns the value of [`Self::IfStringMatches::then`].
     /// If it doesn't match, returns the value of [`Self::IfStringMatches::else`]
     /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If [`Self::IfStringMatches`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
-    ///
-    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self, 3), satisfyerr(StringMatcher))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -248,7 +240,7 @@ pub enum StringSource {
     /// If the value of [`Self::IfStringIsNone::value`] is [`None`], returns the value of [`Self::IfStringIsNone::then`].
     /// If it's [`Some`], returns the value of [`Self::IfStringIsNone::else`].
     /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self, 3))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -276,7 +268,7 @@ pub enum StringSource {
     },
     /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, get it.
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -330,7 +322,7 @@ pub enum StringSource {
     Part(UrlPart),
     /// Parses [`Self::ExtractPart`] as a [`BetterUrl`] and returns the part specified by [`Self::ExtractPart::part`].
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self), callerr(BetterUrl::parse))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -351,7 +343,7 @@ pub enum StringSource {
     ///
     /// Can by any type of var supported by [`VarType`].
     /// # Errors
-    /// If the call to [`VarRef::get`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(VarRef::get))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -368,9 +360,7 @@ pub enum StringSource {
     Var(Box<VarRef>),
     /// Gets the [`Map`] specified by [`Self::ParamsMap::name`] from [`Params::maps`] then indexes it with [`Self::ParamsMap::key`].
     /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If [`Self::ParamsMap::name`]'s call to [`Self::get`] returns [`None`], returns the error [`StringSourceError::ParamsMapNotFound`].
+    #[doc = edoc!(geterr(Self, 2), notfound(Map, StringSource))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -407,11 +397,7 @@ pub enum StringSource {
     },
     /// Gets the [`NamedPartitioning`] specified by [`Self::NamedPartitioning::named_partitioning`] from [`Params::named_partitionings`] then gets the name of the partition containing [`Self::NamedPartitioning::element`].
     /// # Errors
-    /// If either call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If either call to [`Self::get`] returns an [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
-    ///
-    /// If the [`NamedPartitioning`] isn't found, returns the error [`StringSourceError::NamedPartitioningNotFound`].
+    #[doc = edoc!(geterr(Self, 2), getnone(Self, StringSource, 2), notfound(NamedPartitioning, StringSource))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -442,9 +428,7 @@ pub enum StringSource {
     },
     /// Gets the value of [`Self::Modified::value`] then applies [`Self::Modified::modification`].
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self), applyerr(StringModification))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -469,27 +453,19 @@ pub enum StringSource {
 
     /// Calls [`RequestConfig::response`] and returns the value.
     /// # Errors
-    /// If the call to [`RequestConfig::response`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(RequestConfig::response))]
     #[cfg(feature = "http")]
     HttpRequest(Box<RequestConfig>),
-    /// Calls [`CommandConfig::response`] and returns the value.
+    /// Calls [`CommandConfig::output`] and returns the value.
     /// # Errors
-    /// If the call to [`CommandConfig::response`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(CommandConfig::output))]
     #[cfg(feature = "commands")]
     CommandOutput(Box<CommandConfig>),
-    /// If [`TaskStateView::cache`] has an entry for [`Self::Cache::category`] and [`Self::Cache::key`], returns its value.
+    /// If an entry with a category of [`Self::Cache::category`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
     ///
-    /// If the cache doesn't have a matching entry, gets the value of [`Self::Cache::value`] and inserts it into the cache.
-    ///
-    /// If the value of [`Self::Cache::value`] is [`None`], the value is still inserted into the cache.
-    ///
-    /// If the value of [`Self::Cache::value`] is an error, nothing is cached.
+    /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
     /// # Errors
-    /// If any call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Cache::read`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Cache::write`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(Cache::read), geterr(Self), callerr(Cache::write))]
     #[cfg(feature = "cache")]
     Cache {
         /// The category of the thing to cache.
@@ -503,9 +479,7 @@ pub enum StringSource {
     ///
     /// If the value of [`Self::RegexFind::value`] is [`None`], simply returns [`None`].
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(Self), geterr(RegexWrapper))]
     /// # Examples
     /// ```
     /// use std::str::FromStr;
@@ -527,13 +501,7 @@ pub enum StringSource {
     },
     /// Calls a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_sources`].
     /// # Errors
-    /// If [`CommonCall::name`]'s call to [`Self::get`] returns an error, returns the error [`StringSourceError::StringSourceIsNone`].
-    ///
-    /// If no [`Self`] with the specified name is found, returns the error [`StringSourceError::CommonStringSourceNotFound`].
-    ///
-    /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    #[doc = edoc!(ageterr(Self, CommonCall::name), agetnone(Self, StringSource, CommonCall::name), commonnotfound(Self, StringSource), callerr(CommonCallArgsSource::build), geterr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -569,7 +537,7 @@ pub enum StringSource {
     Common(CommonCall),
     /// Calls the contained function and returns what it does.
     /// # Errors
-    /// If the call to the contained function returns an error, that error is returned.
+    #[doc = edoc!(callerr(Self::Custom::0))]
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
@@ -583,7 +551,6 @@ pub enum StringSource {
     ///
     /// assert_eq!(StringSource::Custom(some_complex_operation).get(&task_state).unwrap(), Some("a".into()));
     /// ```
-    #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
@@ -739,9 +706,9 @@ pub enum StringSourceError {
     /// Returned when a [`Box<StringMatcherError>`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] Box<StringMatcherError>),
-    /// Returned when the requested [`Params::maps`] isn't found.
-    #[error("The requested Params map was not found.")]
-    ParamsMapNotFound,
+    /// Returned when the requested [`Map`] isn't found.
+    #[error("The requested map was not found.")]
+    MapNotFound,
     /// Returned when the requested [`Params::named_partitionings`] isn't found
     #[error("The requested Params NamedPartitioning was not found.")]
     NamedPartitioningNotFound,
@@ -849,7 +816,7 @@ impl StringSource {
             Self::Part(part) => part.get(task_state.url),
             Self::ExtractPart{value, part} => value.get(task_state)?.map(|url_str| BetterUrl::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::ParamsMapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
             Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
                 .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
                 .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),

@@ -24,15 +24,9 @@ done
 
 if [ $AUTO_DOMAINS -eq 1 ]; then
   echo "Getting domains"
-  readarray -t DOMAINS < <(
-    cat url-cleaner-engine/default-cleaner.json |\
-      jq '
-        (.. | try select(contains({part: "Domain"}) or contains({part: "Host"})).map | try keys[]),
-        (.params.named_partitionings.hwwwwdpafqdnp_categories[][])
-      ' -r |\
-      sort -u |\
-      grep -Pv '\.(onion|i2p)$'
-  )
+  cd $(dirname "$0")
+  readarray -t DOMAINS < <(./domains.sh)
+  cd - &> /dev/null
 fi
 
 if [ $GET_DATA -eq 1 ]; then

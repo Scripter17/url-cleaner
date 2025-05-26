@@ -11,4 +11,42 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: versions
-      run: bash -c '[ $(grep -P "(^|// @|^url-cleaner.*)version" */Cargo.toml site/userscript.js -rIh | grep -oP "\d[\d.]+" | uniq | wc -l) -eq 1 ]'
+      run: |
+        version_lines=$(grep -PI '^(// @|url-cleaner).*version' */Cargo.toml site/userscript.js)
+        versions=$(echo "$version_lines" | grep -oP '\d[\d.]+')
+        if [ $(echo "$versions" | uniq | wc -l) -ne 1 ]; then
+          pad_to=$(echo "$version_lines" | grep -oP '^.+?:' | wc -L)
+          echo "Version mismatch!"
+          echo "$version_lines" | sed -E ":a s/^(.{0,$pad_to}): ?/\1 : /; ta"
+          exit 1
+        fi
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: doc
+      run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --each-feature --no-deps --document-private-items
+
+  clippy_default:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: clippy_default
+      run: cargo clippy -- -Dwarnings
+
+  clippy_all:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: clippy_all
+      run: cargo clippy --all-features -- -Dwarnings
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: test
+      run: cargo hack test --each-feature

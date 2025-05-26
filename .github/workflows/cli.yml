@@ -10,52 +10,11 @@ defaults:
     working-directory: cli
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: build
-      run: cargo build
-
-  build_ndf:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: build_ndf
-      run: cargo build --no-default-features
-
-  cargo_test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: cargo_test
-      run: cargo test
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: clippy
-      run: RUSTFLAGS=-Awarnings cargo clippy
-
-  offline_tests:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: offline_tests
-      run: cargo run -- --tests ../tests/offline.json
-
   order:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: order
-      run: bash -c 'seq -f "https://%0.0f.com" 100 | cargo run | sort -Vc'
-
-  powerset:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: powerset
-      run: RUSTFLAGS=-Awarnings cargo hack test --feature-powerset --depth 2
+      run: |
+        set -o pipefail
+        seq -f "https://%0.0f.com" 100 | cargo run | sort -Vc

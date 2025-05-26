@@ -31,71 +31,69 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 <!--cmd scripts/gen-docs.py-->
 ### Flags
 
-- `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand linkvertise and some other links.
-- `embed_compatibility`: Sets the domain of twitter domiains (and supported twitter redirects like `vxtwitter.com`) to the variable `twitter_embed_host` and `bsky.app` to the variable `bsky_embed_host`.
-- `keep_lang`: Keeps language query parameters.
-- `no_https_upgrade`: Disable upgrading `http` URLs to `https`.
-- `no_network`: Don't make any HTTP requests. Some redirect websites will still work because they include the destination in the URL.
+- `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
+- `embed_compatibility`: Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.
+- `no_https_upgrade`: Disable upgrading `http` URLs to `https`. See the `https_upgrade_host_blacklist` set if you only want to not upgrade specific hosts.
+- `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
+- `remove_lang`: Remove language info. Very minimal and probably pretty buggy.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
-- `tor2web2tor`: Replace `**.onion.**` domains with `**.onion` domains.
-- `unmobile`: Convert `https://m.example.com`, `https://mobile.example.com`, `https://abc.m.example.com`, and `https://abc.mobile.example.com` into `https://example.com` and `https://abc.example.com`.
-- `breezewiki`: Replace fandom/known Breezewiki hosts with the `breezewiki_host` variable.
-- `unbreezewiki`: Replace Breezewiki hosts with fandom.com.
-- `invidious`: Replace youtube/known Invidious hosts with the `invidious_host` variabel.
-- `uninvidious`: Replace Invidious hosts with youtube.com
-- `nitter`: Replace twitter/known Nitter hosts with the `nitter_host` variable.
-- `unnitter`: Replace Nitter hosts with x.com.
-- `discord_unexternal`: Replace `images-ext-1.discordapp.net` with the original images they refer to.
-- `furaffinity_sfw`: Turn `furaffinity.net` into `sfw.furaffinity.net`
-- `furaffinity_unsfw`: Turn `sfw.furaffinity.net` into `furaffinity.net`
-- `instagram_unprofilecard`: Turns `https://instagram.com/username/profilecard` into `https://instagram.com/username`.
-- `tumblr_unsubdomain_blog`: Changes `blog.tumblr.com` URLs to `tumblr.com/blog` URLs. Doesn't move `at` or `www` subdomains.
-- `youtube_keep_sub_confirmation`: Don't remove the `sub_confirmation` query param from youtube.com URLs.
-- `youtube_unembed`: Turns `https://youtube.com/embed/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube_unlive`: Turns `https://youtube.com/live/abc` into `https://youtube.com/watch?v=abc`.
-- `youtube_unplaylist`: Removes the `list` query parameter from `https://youtube.com/watch` URLs.
-- `youtube_unshort`: Turns `https://youtube.com/shorts/abc` into `https://youtube.com/watch?v=abc`.
+- `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
+- `unmobile`: Remove `m` and `mobile` segments from the subdomain. Should be expanded to query params.
+- `breezewiki`: Change fandom/known Breezewiki hosts to the `breezewiki_host` var.
+- `unbreezewiki`: Change known Breezewiki hosts to `fandom.com`.
+- `invidious`: Change youtube/known Invidious hosts to the `invidious_host` var.
+- `uninvidious`: Change known Invidious hosts to `youtube.com`.
+- `nitter`: Change twitter/known Nitter hosts `nitter_host` var.
+- `unnitter`: Change known Nitter hosts to `x.com`.
+- `discord_unexternal`: Change `images-ext-*.discordapp.net` URLs to the original images they refer to.
+- `furaffinity_sfw`: Change `furaffinity.net` to `sfw.furaffinity.net`.
+- `furaffinity_unsfw`: Change `sfw.furaffinity.net` to `furaffinity.net`.
+- `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
+- `tumblr_unsubdomain_blog`: Change `blog.tumblr.com` to `tumblr.com/blog`.
+- `youtube_remove_sub_confirmation`: Keep the `sub_confirmation` query paramerer in `youtube.com` URLs.
+- `youtube_unembed`: Change `youtube.com/embed/abc` to `youtube.com/watch?v=abc`.
+- `youtube_unlive`: Change `youtube.com/live/abc` to `youtube.com/watch?v=abc`.
+- `youtube_unshort`: Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`.
+- `youtube_unplaylist`: Remove the `list` query param from `https://youtube.com/watch` URLs.
 
 ### Vars
 
-- `bluesky_embed_host`: The domain to use for bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.
-- `breezewiki_host`: The domain to replace fandom/Breezewiki domains with when the `breezewiki` flag is enabled
-- `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment variable.
-- `invidious_host`: The domain to replace twitter/Invidious domains with when the `invidious` flag is enabled
-- `nitter_host`: The domain to replace twitter/nitter domains with when the `nitter` flag is enabled
-- `pixiv_embed_host`: The domain to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.
-- `twitter_embed_host`: The domain to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`.
+- `bluesky_embed_host`: The host to use for Bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.
+- `pixiv_embed_host`: The host to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.
+- `twitter_embed_host`: The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`.
+- `breezewiki_host`: The host to replace fandom/known Breezewiki hosts with when the `breezewiki` flag is enabled. Defaults to `breezewiki.com`.
+- `invidious_host`: The host to replace youtube/known Invidious hosts with when the `invidious` flag is enabled. Defaults to `yewtu.be`.
+- `nitter_host`: The host to replace twitter/known Nitter hosts with when the `nitter` flag is enabled. Defaults to `nitter.net`.
+- `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var.
 
 ### Environment Vars
 
-- `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip)'s premium backend. Can be overridden with the `bypass_vip_api_key` variable.
+- `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip). Can be overridden with the `bypass_vip_api_key` var.
 
 ### Sets
 
-- `bypass_vip_hwwwwdpafqdnps`: The `HostWithoutWWWDotPrefixAndFqdnPeriod`es of websites bypass.vip can expand.
-- `email_link_format_1_hosts`: (TEMPORARY NAME) Hosts that use unknown link format 1.
-- `https_upgrade_host_blacklist`: Hosts to never upgrade from `http` to `https`.
-- `redirect_hwwwwdpafqdnps`: Hosts that are considered redirects in the sense that they return HTTP 3xx status codes. URLs with hosts in this set (as well as URLs with hosts that are "www." then a host in this set) will have the `ExpandRedirect` action applied.
-- `remove_empty_fragment_reg_domain_blacklist`: The RegDomains to not remove an empty fragment (the #stuff at the end (but specifically just a #)) from.
-- `remove_empty_query_reg_domain_blacklist`: The RegDomains to not remove an empty query from.
+- `https_upgrade_host_blacklist`: Hosts to not upgrade from `http` to `https`.
+- `remove_empty_fragment_reg_domain_blacklist`: The RegDomains to not remove a empty fragments from.
+- `remove_empty_query_reg_domain_blacklist`: The RegDomains to not remove a empty querys from.
 - `remove_fqdn_period_reg_domain_blacklist`: The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
-- `unmobile_reg_domain_blacklist`: Effectively unsets the `unmobile` flag for the specified `RegDomain`s.
-- `utps`: The set of "universal tracking parameters" that are always removed for any URL with a host not in the `utp_host_whitelist` set. Please note that, in addition to all values in this set, any value starting with a value in the `utp_prefixes` set are also removed.
-- `utps_reg_domain_whitelist`: RegDomains to never remove universal tracking parameters from.
+- `unmobile_reg_domain_blacklist`: RegDomains to not apply the `unmobile` flag to.
+- `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `utps_reg_domain_whitelist` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
+- `utps_reg_domain_whitelist`: The RegDomains to not remove universal tracking parameters from.
+- `subdomain_none_to_www_reg_domains`: The RegDomains to keep `www` subdomains and set empty subdomains to `www`.
 
 ### Lists
 
-- `utp_prefixes`: If a query parameter starts with any of the strings in this list (such as `utm_`) it is removed.
+- `utp_prefixes`: Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove.
 
 ### Maps
 
-- `hwwwwdpafqdnp_lang_query_params`: The name of the `HostWithoutWWWDotPrefixAndFqdnPeriod`'s language query parameter.
+- `hwwwwdpafqdnp_lang_query_params`: The name of each `HostWithoutWWWDotPrefixAndFqdnPeriod`'s language query param.
 
 ### Named Partitionings
 
 - `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
 - `www_subdomain_handling`: What to do instead of removing `www` subdomains.
-- `domain_middle_expand_mode`: How to handle redirect `DomainMiddle`s,
+- `domain_middle_expand_mode`: How to handle redirect `DomainMiddle`s.
 - `hwwwwdpafqdnp_expand_mode`: How to handle redirect `HostWithoutWWWDotPrefix`s.
 - `reg_domain_expand_mode`: How to handle redirect `RegDomain`s,
 
@@ -103,16 +101,16 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 #### Vars
 
-- `SOURCE_HOST`: The `Host` of the "source" of the jobs. Usually the webpage it came from.
-- `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the jobs, Usually the webpage it came from.
+- `SOURCE_HOST`: The `Host` of the "source" of the job. Usually the webpage it came from.
+- `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the job, Usually the webpage it came from.
 
 ### Task Context
 
 #### Vars
 
-- `bsky_handle`: The handle of an `@user.bsky.social`, used to replace the `/did:plc:12345678` in the URL with the actual handle.
-- `faci_site_name`: For furaffinity contact info links, the name of the website the contact info is for. Used for unmangling.
+- `bsky_handle`: The handle of the user for `bsky.app/profile/did:plc:12345678` URLs.
+- `faci_site_name`: The name of the website this URL is contact info for. Used for unmangling furaffinity contact info links.
 - `link_text`: The text of the link the job came from.
-- `redirect_shortcut`: For links that use redirect sites but have the final URL in the link's text/title/whatever, this is used to avoid sending that HTTP request.
-- `twitter_handle`: The handle of the twitter user for a `/i/web/status/` and `/i/user/` twitter URLs.
+- `redirect_shortcut`: The destination of a redirect as specified by some part of the source. For example, the link's text.
+- `twitter_handle`: The handle of the twitter user for `x.com/i/web/status/` and `x.com/i/user/` URLs.
 <!--/cmd-->

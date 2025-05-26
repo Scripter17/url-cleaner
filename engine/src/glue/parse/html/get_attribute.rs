@@ -197,7 +197,7 @@ pub fn get_attribute_value<'a>(input: &'a str, name: &'a str) -> Result<Option<O
     Err(GAVError::UnfinishedTag)
 }
 
-/// Advance the state of the [`get_attribute_name`] DFA.
+/// Advance the state of the [`get_attribute_value`] DFA.
 fn munch(state: &mut GAVState, i: usize, c: char) -> Result<(), GAVSyntaxErrorKind> {
     debug!(&(), parse::html::get_attribute::munch, state, i, c);
     match (state.last_bite, c) {

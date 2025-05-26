@@ -22,7 +22,7 @@ def thing(x, i):
                 print(line)
             last = list
 
-with open("url-cleaner-engine/default-cleaner.json", "r") as f:
+with open("engine/default-cleaner.json", "r") as f:
     x = json.loads(f.read())["docs"]
     del x["title"]
     del x["description"]

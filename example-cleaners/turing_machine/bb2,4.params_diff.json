@@ -1,5 +1,5 @@
 {
-  "comment": "https://rosettacode.org/wiki/Universal_Turing_machine#",
+  "comment": "https://wiki.bbchallenge.org/wiki/BB(2,4)",
   "map_diffs": {
     "state_set": {
       "insert": {

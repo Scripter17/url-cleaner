@@ -34,7 +34,7 @@
 
 				{
 					"task_config": "https://click.notification.elsevier.com/CL0/https:%2F%2Ffacebook.com%2FTheLancetMedicalJournal/1/0100017b6336ece0-e16eeb62-7506-49ae-9b9f-96c2e2caccc1-000000/XNF87Ruy8xfaatSlPiHGJWGJetPIroNvIDdfy0xkyW4=211",
-					"expectation": {"UrlIs": "https://facebook.com/TheLancetMedicalJournal"}
+					"expectation": {"UrlIs": "https://www.facebook.com/TheLancetMedicalJournal"}
 				},
 
 				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": {"UrlIs": "https://example.com/?abc=123&def=456#1"}},
@@ -53,10 +53,10 @@
 				{"task_config": "https://127.0.0.1/#   " , "expectation": {"UrlIs": "https://127.0.0.1/"}},
 				{"task_config": "https://127.0.0.1/?#"   , "expectation": {"UrlIs": "https://127.0.0.1/"}},
 
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example"  , "expectation": {"UrlIs": "https://tumblr.com/example" }},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example/" , "expectation": {"UrlIs": "https://tumblr.com/example/"}},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example" , "expectation": {"UrlIs": "https://tumblr.com/example" }},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example/", "expectation": {"UrlIs": "https://tumblr.com/example/"}},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example"  , "expectation": {"UrlIs": "https://www.tumblr.com/example" }},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example/" , "expectation": {"UrlIs": "https://www.tumblr.com/example/"}},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example" , "expectation": {"UrlIs": "https://www.tumblr.com/example" }},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example/", "expectation": {"UrlIs": "https://www.tumblr.com/example/"}},
 				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com"  , "expectation": {"UrlIs": "https://example.tumblr.com/"}},
 				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com." , "expectation": {"UrlIs": "https://example.tumblr.com/"}}
 			]
@@ -117,8 +117,8 @@
 		{
 			"params_diff": {"flags": ["tumblr_unsubdomain_blog"]},
 			"tests": [
-				{"task_config": "https://tumblr.com/username", "expectation": {"UrlIs": "https://tumblr.com/username"}},
-				{"task_config": "https://username.tumblr.com", "expectation": {"UrlIs": "https://tumblr.com/username/"}}
+				{"task_config": "https://tumblr.com/username", "expectation": {"UrlIs": "https://www.tumblr.com/username"}},
+				{"task_config": "https://username.tumblr.com", "expectation": {"UrlIs": "https://www.tumblr.com/username/"}}
 			]
 		},
 		{

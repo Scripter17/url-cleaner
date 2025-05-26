@@ -42,7 +42,7 @@ pub enum StringModification {
     /// # Suitability
     /// Always unsuiable to be in the default config.
     /// # Errors
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
 
@@ -78,7 +78,7 @@ pub enum StringModification {
     IgnoreError(Box<Self>),
     /// If the contained [`Self`] returns an error, revert the string to its previous value then return the error.
     /// # Errors
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(applyerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -98,7 +98,7 @@ pub enum StringModification {
     ///
     /// Does not revert on error. For that, see [`Self::RevertOnError`].
     /// # Errors
-    /// If both calls to [`Self::apply`] return errors, both errors are returned.
+    #[doc = edoc!(applyerrte(Self, StringModification))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -121,7 +121,7 @@ pub enum StringModification {
     ///
     /// Does not revert on error. For that, see [`Self::RevertOnError`].
     /// # Errors
-    /// If any call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(applyerr(Self, 3))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -141,7 +141,7 @@ pub enum StringModification {
     ///
     /// Does not revert on error. For that, see [`Self::RevertOnError`].
     /// # Errors
-    /// If all calls to [`Self::apply`] error, the errors are returned in a [`StringModificationError::FirstNotErrorErrors`].
+    #[doc = edoc!(applyerrfne(Self, StringModification))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -160,15 +160,15 @@ pub enum StringModification {
 
 
 
-    /// Only apply [`Self::IfSome::0`] if the string is [`Some`].
+    /// Only apply the [`Self`] if the string is [`Some`].
+    /// # Errors
+    #[doc = edoc!(applyerr(Self))]
     IfSome(Box<Self>),
     /// If the call to [`Self::If::condition`] passes, apply [`Self::If::then`].
     ///
     /// If the call to [`Self::If::condition`] fails and [`Self::If::else`] is [`Some`], apply [`Self::If::else`].
     /// # Errors
-    /// If the call to [`Condition::satisfied_by`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(Condition), applyerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -206,9 +206,7 @@ pub enum StringModification {
     ///
     /// If the string does not satisfy [`Self::IfMatches::matcher`] and [`Self::IfMatches::else`] is [`Some`], apply [`Self::IfMatches::else`].
     /// # Errors
-    /// If the call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(satisfyerr(StringMatcher), applyerr(Self))]
     IfMatches {
         /// The [`StringMatcher`] to check if the string satisfies.
         matcher: Box<StringMatcher>,
@@ -222,15 +220,7 @@ pub enum StringModification {
     },
     /// If the string containes [`Self::IfContains::value`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
     /// # Errors
-    /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
-    ///
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If the call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError), satisfyerr(StringLocation), applyerr(Self))]
     IfContains {
         /// The [`StringSource`] to look for in the string.
         value: StringSource,
@@ -241,25 +231,17 @@ pub enum StringModification {
         /// The [`Self`] to apply if [`Self::IfContains::value`] is not found at [`Self::IfContains::at`].
         r#else: Option<Box<Self>>
     },
-    /// If the string containes any value in [`Self::IfContains::values`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
+    /// If the string containes any value in [`Self::IfContainsAny::values`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
     /// # Errors
-    /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
-    ///
-    /// If any call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If any call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If any call to [`StringLocation::satisfied_by`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 3), getnone(StringSource, StringModificationError, 3), satisfyerr(StringLocation, 3), applyerr(Self, 3))]
     IfContainsAny {
         /// The [`StringSource`]s to look for in the string.
         values: Vec<StringSource>,
-        /// The [`StringLocation`] to look for [`Self::IfContains::values`] at.
+        /// The [`StringLocation`] to look for [`Self::IfContainsAny::values`] at.
         at: StringLocation,
-        /// The [`Self`] to apply if any value in [`Self::IfContains::values`] is found at [`Self::IfContains::at`].
+        /// The [`Self`] to apply if any value in [`Self::IfContainsAny::values`] is found at [`Self::IfContains::at`].
         then: Box<Self>,
-        /// The [`Self`] to apply if no values in [`Self::IfContains::values`] are found at [`Self::IfContains::at`].
+        /// The [`Self`] to apply if no values in [`Self::IfContainsAny::values`] are found at [`Self::IfContains::at`].
         r#else: Option<Box<Self>>
     },
 
@@ -267,19 +249,19 @@ pub enum StringModification {
 
     /// Sets the string to the specified value.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(StringSource))]
     Set(StringSource),
     /// Appends the specified value.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     Append(StringSource),
     /// Prepends the specified value.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     Prepend(StringSource),
     /// Replace all instances of [`Self::Replace::find`] with [`Self::Replace::replace`].
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2), getnone(StringSource, StringModification, 2))]
     Replace {
         /// The value to replace with [`Self::Replace::replace`].
         find: StringSource,
@@ -288,11 +270,9 @@ pub enum StringModification {
     },
     /// Replace the specified range with [`Self::ReplaceRange::replace`].
     /// # Errors
-    /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringModificationError::InvalidSlice`].
+    /// If either [`Self::ReplaceRange::start`] and/or [`Self::ReplaceRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
     ///
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ReplaceRange {
         /// The start of the range to replace.
         start: isize,
@@ -304,18 +284,20 @@ pub enum StringModification {
     /// Sets the string to lowercase.
     ///
     /// See [`str::to_lowercase`] for details.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
     Lowercase,
     /// Sets the string to uppercase.
     ///
     /// See [`str::to_uppercase`] for details.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
     Uppercase,
     /// Removes the specified prefix.
     ///
     /// If you want to not return an error when the string doesn't start with the prefix, see [`Self::StripMaybePrefix`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the string doesn't start with the specified prefix, returns the error [`StringModificationError::PrefixNotFound`].
     StripPrefix(StringSource),
@@ -323,31 +305,23 @@ pub enum StringModification {
     ///
     /// If you want to not return an error when the string doesn't start with the suffix, see [`Self::StripMaybeSuffix`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the string doesn't start with the specified suffix, returns the error [`StringModificationError::SuffixNotFound`].
     StripSuffix(StringSource),
     /// If the string starts with the specified value, remove it.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     StripMaybePrefix(StringSource),
     /// If the string ends with the specified value, remove it.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     StripMaybeSuffix(StringSource),
     /// Replace up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
     ///
     /// See [`str::replacen`] for details.
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     Replacen {
         /// The value to replace with [`Self::Replacen::replace`].
         find: StringSource,
@@ -360,11 +334,9 @@ pub enum StringModification {
     ///
     /// See [`String::insert_str`] for details.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If the call to [`String::insert_str`] would panic, returns the error [`StringModificationError::InvalidIndex`].
+    /// If [`Self::Insert::index`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidIndex`].
     Insert {
         /// The value to insert at [`Self::Insert::index`].
         value: StringSource,
@@ -375,13 +347,15 @@ pub enum StringModification {
     ///
     /// See [`String::remove`] for details.
     /// # Errors
-    /// If the call to [`String::remove`] would panic, returns the error [`StringModificationError::InvalidIndex`].
+    #[doc = edoc!(stringisnone(StringModification))]
+    /// 
+    /// If the specified index isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidIndex`].
     RemoveChar(isize),
     /// Removes everything outside the specified range.
     /// # Errors
-    /// If the range is out of bounds, returns the error [`StringModificationError::InvalidSlice`].
-    ///
-    /// If the call to [`str::get`] returns [`None`], returns the error [`StringModificationError::InvalidSlice`].
+    #[doc = edoc!(stringisnone(StringModification))]
+    /// 
+    /// If either [`Self::KeepRange::start`] and/or [`Self::KeepRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
     KeepRange {
         /// The start of the range to keep.
         start: isize,
@@ -393,11 +367,7 @@ pub enum StringModification {
 
     /// Calls [`::regex::Regex::captures`] and returns the result of [`::regex::Captures::expand`]ing with [`Self::RegexCaptures::replace`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If the call to [`Regex::captures`] returns [`None`], returns the error [`StringModificationError::RegexMatchNotFound`];
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), callnone(Regex::captures, StringModificationError::RegexMatchNotFound))]
     #[cfg(feature = "regex")]
     RegexCaptures {
         /// The [`RegexWrapper`] to capture with.
@@ -405,13 +375,9 @@ pub enum StringModification {
         /// The format string to pass to [`::regex::Captures::expand`].
         replace: StringSource
     },
-    /// [`::regex::Captures::expand`] each [`::regex::Regex::captures_iter`] with [`Self::JoinAllRegexCaptures::replace`] and join them with [`Self::JoinAllRegexCaptures::join`].
+    /// [`::regex::Captures::expand`]s each [`::regex::Regex::captures_iter`] with [`Self::JoinAllRegexCaptures::replace`] and join them with [`Self::JoinAllRegexCaptures::join`].
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
     #[cfg(feature = "regex")]
     JoinAllRegexCaptures {
         /// The [`RegexWrapper`] to capture with.
@@ -423,18 +389,12 @@ pub enum StringModification {
     },
     /// Calls [`Regex::find`] and returns its value.
     /// # Errors
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Regex::find`] returns [`None`], returns the errorr [`StringModificationError::RegexMatchNotFound`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(RegexWrapper), callnone(Regex::find, StringModificationError::RegexMatchNotFound))]
     #[cfg(feature = "regex")]
     RegexFind(RegexWrapper),
     /// [`Regex::replace`]s the first match of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
     /// # Errors
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
     #[cfg(feature = "regex")]
     RegexReplace {
         /// The [`RegexWrapper`] to search with.
@@ -444,11 +404,7 @@ pub enum StringModification {
     },
     /// [`Regex::replace`]s the all matches of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
     /// # Errors
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
     #[cfg(feature = "regex")]
     RegexReplaceAll {
         /// The [`RegexWrapper`] to search with.
@@ -458,11 +414,7 @@ pub enum StringModification {
     },
     /// [`Regex::replacen`]s the first [`Self::RegexReplacen::n`] of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
     /// # Errors
-    /// If the call to [`RegexWrapper::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
     #[cfg(feature = "regex")]
     RegexReplacen {
         /// The [`RegexWrapper`] to search with.
@@ -478,6 +430,8 @@ pub enum StringModification {
     /// Percent encodes the string.
     ///
     /// Please note that this can be deserialized from `"PercentDecode"`, in which case the contained [`PercentEncodeAlphabet`] is defaulted.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -489,15 +443,19 @@ pub enum StringModification {
     ///
     /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
     /// # Errors
-    /// If the call to [`::percent_encoding::PercentDecode::decode_utf8`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), callerr(::percent_encoding::PercentDecode::decode_utf8))]
     PercentDecode,
     /// [`Self::PercentDecode`] but replaces non-UTF-8 percent encoded byte equences with U+FFFD (�), the replacement character.
     ///
     /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
     LossyPercentDecode,
     /// Base64 encodes the string.
     ///
     /// Please note that this can be deserialized from `"Base64Encode"`, in which case the contained [`Base64Config`] is defaulted.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -510,9 +468,7 @@ pub enum StringModification {
     ///
     /// Please note that this can be deserialized from `"Base64Decode"`, in which case the contained [`Base64Config`] is defaulted.
     /// # Errors
-    /// If the call to [`::base64::engine::GeneralPurpose::decode`] returns an error, that error is returned.
-    ///
-    /// If the call to [`String::from_utf8`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), callerr(::base64::engine::GeneralPurpose::decode), callerr(String::from_utf8))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -528,7 +484,7 @@ pub enum StringModification {
     ///
     /// Useful in combination with [`Self::KeepAfter`].
     /// # Errors
-    /// If the call to [`parse::js::string_literal_prefix()`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), callerr(parse::js::string_literal_prefix))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -546,15 +502,13 @@ pub enum StringModification {
     GetJsStringLiteralPrefix,
     /// Processes HTML character references/escape codes like `&map;` into `&` and `&41;` into `A`.
     /// # Errors
-    /// If the call to [`parse::html::unescape_text`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), callerr(parse::html::unescape_text))]
     UnescapeHtmlText,
     /// Parses the HTML element at the start of the string and returns the [`Self::UnescapeHtmlText`]ed value of the last attribute with the specified name.
     ///
     /// Useful in combination with [`Self::StripBefore`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`parse::html::get_attribute_value`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), callerr(parse::html::get_attribute_value))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -570,17 +524,11 @@ pub enum StringModification {
     /// assert_eq!(to, Some("https://example.com?a=2&b=3".into()));
     /// ```
     GetHtmlAttribute(StringSource),
-    /// Parses the string as JSON and uses [`serde_json::Value::pointer`] with the specified pointer.
+    /// Parses the string as JSON and uses [`serde_json::Value::pointer_mut`] with the specified pointer.
     ///
     /// When extracting values from javascript, it's often faster to find the start of the desired string and use [`Self::GetJsStringLiteralPrefix`].
     /// # Errors
-    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If the call to [`serde_json::Value::pointer_mut`] returns [`None`], returns the error [`StringModificationError::JsonValueNotFound`].
+    #[doc = edoc!(stringisnone(StringModification), callerr(serde_json::from_str), geterr(StringSource), getnone(StringSource, StringModification), callnone(serde_json::Value::pointer_mut, StringModificationError::JsonValueNotFound))]
     ///
     /// If the call to [`serde_json::Value::pointer_mut`] doesn't return a [`serde_json::Value::String`], returns the error [`StringModificationError::JsonPointeeIsNotAString`].
     JsonPointer(StringSource),
@@ -593,7 +541,9 @@ pub enum StringModification {
     ///
     /// Currently does not do percent decoding, so `%61=2` isn't normalized to `a=2`.
     /// # Errors
-    /// If any call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
+    ///
+    #[doc = edoc!(stringisnone(StringModification), satisfyerr(StringMatcher, 3))]
     RemoveQueryParamsMatching(Box<StringMatcher>),
     /// Split the string on `&`, split each segment on `=`, and keep only segments whose first subsegment matches the specified [`StringMatcher`].
     ///
@@ -601,15 +551,13 @@ pub enum StringModification {
     ///
     /// Currently does not do percent decoding, so `%61=2` isn't normalized to `a=2`.
     /// # Errors
-    /// If any call to [`StringMatcher::satisfied_by`] returns an error, that error is returned.
+    #[doc = edoc!(stringisnone(StringModification), satisfyerr(StringMatcher, 3))]
     AllowQueryParamsMatching(Box<StringMatcher>),
     /// Finds the first instance of the specified substring and removes everything before it.
     ///
     /// Useful in combination with [`Self::GetJsStringLiteralPrefix`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
@@ -626,9 +574,7 @@ pub enum StringModification {
     StripBefore(StringSource),
     /// Finds the first instance of the specified substring and removes everything after it.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
@@ -645,9 +591,7 @@ pub enum StringModification {
     StripAfter(StringSource),
     /// Finds the first instance of the specified substring and keeps only everything before it.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
@@ -666,9 +610,7 @@ pub enum StringModification {
     ///
     /// Useful in combination with [`Self::GetHtmlAttribute`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
@@ -685,9 +627,7 @@ pub enum StringModification {
     KeepAfter(StringSource),
     /// Effectively [`Self::KeepAfter`] with [`Self::ExtractBetween::start`] and [`Self::KeepBefore`] with [`Self::ExtractBetween::end`].
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If either call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2), getnone(StringSource, StringModification, 2))]
     ///
     /// If the value of [`Self::ExtractBetween::start`] isn't found in the string, returns the error [`StringModificationError::ExtractBetweenStartNotFound`].
     ///
@@ -700,9 +640,7 @@ pub enum StringModification {
     },
     /// Split the string with [`Self::KeepNthSegment::split`] and keep only the [`Self::KeepNthSegment::index`] segment.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
     KeepNthSegment {
@@ -713,9 +651,7 @@ pub enum StringModification {
     },
     /// Split the string with [`Self::KeepSegmentRange`] and keep only the segments between [`Self::KeepSegmentRange::start`] (inclusive) and [`Self::KeepSegmentRange::end`] (exclusive).
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error that error is returned.
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the range isn't found, returns the error [`StringModificationError::SegmentRangeNotFound`].
     /// # Examples
@@ -760,9 +696,7 @@ pub enum StringModification {
     },
     /// Split the string with [`Self::SetSegment::split`] and set the [`Self::SetSegment::index`] segment to [`Self::SetSegment::value`].
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If [`Self::SetSegment::split`]'s call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2))]
     ///
     /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
     SetSegment {
@@ -777,9 +711,7 @@ pub enum StringModification {
     ///
     /// If [`Self::InsertSegment::index`] is equal to the amount of segments, appends the new segment at the end.
     /// # Errors
-    /// If either call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If [`Self::SetSegment::split`]'s call to [`StringSource::get`] returns [`None`], returns the error [`StringModificationError::StringSourceIsNone`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2))]
     ///
     /// If the segment boundary isn't found, returns the error [`StringModificationError::SegmentNotFound`].
     InsertSegment {
@@ -794,7 +726,7 @@ pub enum StringModification {
     ///
     /// If the call to [`Map::get`] returns [`None`], does nothing.
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is retutrned.
+    #[doc = edoc!(geterr(StringSource), applyerr(Self))]
     Map {
         /// The value to index [`Self::Map::map`] with.
         value: Box<StringSource>,
@@ -804,26 +736,17 @@ pub enum StringModification {
     },
     /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
-    /// If [`CommonCall::name`]'s call to [`StringSource::get`] returns an error, returns the error [`StringModificationError::StringSourceIsNone`].
-    ///
-    /// If no [`Self`] with the specified name is found, returns the error [`StringModificationError::CommonStringModificationNotFound`].
-    ///
-    /// If the call to [`CommonCallArgsSource::build`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringModification, CommonCall::name), commonnotfound(Self, StringModification), callerr(CommonCallArgsSource::build), applyerr(Self))]
     Common(CommonCall),
     /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_modifications`] and applies it.
     /// # Errors
-    /// If no [`Self`] with the specified name is found, returns the error [`StringModificationError::CommonCallArgStringModificationNotFound`].
-    ///
     /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringModificationError::NotInCommonContext`].
     ///
-    /// If the call to [`Self::apply`] returns an error, that error is returned.
+    #[doc = edoc!(commoncallargnotfound(Self, StringModification), applyerr(Self))]
     CommonCallArg(StringSource),
     /// Calls the contained function.
     /// # Errors
-    /// If the call to the contained function returns an error, that error is returned.
-    #[expect(clippy::type_complexity, reason = "Who cares")]
+    #[doc = edoc!(callerr(Self::Custom::0))]
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
@@ -1139,8 +1062,9 @@ impl StringModification {
             },
             Self::Insert{index, value} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                if to.is_char_boundary(neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?) {
-                    to.insert_str(neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?, get_str!(value, task_state, StringModificationError));
+                let index = neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?;
+                if to.is_char_boundary(index) {
+                    to.insert_str(index, get_str!(value, task_state, StringModificationError));
                 } else {
                     Err(StringModificationError::InvalidIndex)?;
                 }

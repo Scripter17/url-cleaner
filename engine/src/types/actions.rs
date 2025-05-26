@@ -231,7 +231,7 @@ pub enum Action {
     RevertOnError(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
     /// # Errors
-    #[doc = edoc!(applyerrtryelse(Self, Action))]
+    #[doc = edoc!(applyerrte(Self, Action))]
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
@@ -505,7 +505,7 @@ pub enum Action {
     },
     /// Sets the specified [`Scratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ACtion))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -564,11 +564,11 @@ pub enum Action {
         /// The modification to apply.
         modification: StringModification
     },
-    /// If an entry with the specified category and a key of the current [`TaskState::url`] exists in the cache, sets the [`TaskState::url`] to the entry's value.
+    /// If an entry with a category of [`Self::CacheUrl::category`] and a key of [`TaskState::url`] exists in the [`TaskState::cache`], sets the URL to the entry's value.
     ///
-    /// If no matching entry exists, applies [`Self::CacheUrl::action`] and makes a new entry with the specified category, the previous [`TaskState::url`] as the key, and the new [`TaskState::url`] as the value.
+    /// If no such entry exists, applies [`Self::CacheUrl::action`] and inserts a new entry equivalent to applying it.
     ///
-    /// If an error is returned, no new cache entry is written.
+    /// Does not cache the [`TaskState::scratchpad`].
     /// # Errors
     #[doc = edoc!(callerr(Cache::read), callnone(Cache::read, ActionError::CachedUrlIsNone), callerr(BetterUrl::parse), applyerr(Self), callerr(Cache::write))]
     #[cfg(feature = "cache")]
@@ -580,7 +580,7 @@ pub enum Action {
     },
     /// Applies a [`Self`] from [`TaskState::commons`]'s [`Commons::actions`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource), commonnotfound(Self, Action), callerr(CommonCallArgsSource::build), applyerr(Self))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), commonnotfound(Self, Action), callerr(CommonCallArgsSource::build), applyerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -608,14 +608,13 @@ pub enum Action {
     ///
     /// Action::Custom(some_complex_operation).apply(&mut task_state).unwrap();
     /// ```
-    #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
     Custom(fn(&mut TaskState) -> Result<(), ActionError>)
 }
 
-/// Helper function to get the default [`Rule::Repeat::limit`].
+/// Helper function to get the default [`Action::Repeat::limit`].
 const fn get_10_u64() -> u64 {10}
 
 /// The enum of errors [`Action::apply`] can return.

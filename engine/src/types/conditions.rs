@@ -49,7 +49,7 @@ pub enum Condition {
     ///
     /// If the call to [`Self::If::if`] fails, return the value of [`Self::If::else`].
     /// # Errors
-    #[doc = edoc!(satisfyerr(Self, 3))]
+    #[doc = edoc!(satisfyerr(Self, 2))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -209,7 +209,7 @@ pub enum Condition {
     TreatErrorAsFail(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::satisfied_by`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
-    #[doc = edoc!(satisfyerrtryelse(Self, Condition))]
+    #[doc = edoc!(satisfyerrte(Self, Condition))]
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
@@ -624,6 +624,16 @@ pub enum Condition {
         /// The set of values to check if [`Self::PartIsOneOf::part`] is one of.
         values: Set<String>
     },
+    /// Passes if [`Self::PartIsInSet`] is in the set specified by [`Self::PartIsInSet::set`].
+    /// # Errors
+    #[doc = edoc!(notfound(Set, Condition))]
+    PartIsInSet {
+        /// The part to check the value of.
+        part: UrlPart,
+        /// The name of the set to check if [`Self::PartIsInSet::part`] is in.
+        #[suitable(assert = "lit_set_is_documented")]
+        set: String
+    },
 
 
 
@@ -677,7 +687,7 @@ pub enum Condition {
     StringIsSome(StringSource),
     /// Passes if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::value`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource), satisfyerr(StringLocation))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), satisfyerr(StringLocation))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -699,7 +709,7 @@ pub enum Condition {
     },
     /// Passes if [`Self::StringMatches::value`] satisfies [`Self::StringMatches::matcher`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource), satisfyerr(StringMatcher))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), satisfyerr(StringMatcher))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -719,7 +729,7 @@ pub enum Condition {
 
     /// Get a [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] and pass if it's satisfied.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource), commonnotfound(Self, Condition), callerr(CommonCallArgsSource::build), satisfyerr(Self))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), commonnotfound(Self, Condition), callerr(CommonCallArgsSource::build), satisfyerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -747,7 +757,6 @@ pub enum Condition {
     ///
     /// assert!(Condition::Custom(some_complex_operation).satisfied_by(&task_state).unwrap());
     /// ```
-    #[expect(clippy::type_complexity, reason = "Who cares")]
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
@@ -789,6 +798,9 @@ pub enum ConditionError {
     /// Returned when a [`Condition`] with the specified name isn't found in the [`Commons::conditions`].
     #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
     CommonConditionNotFound,
+    /// Returned when a [`Set`] wasn't found.
+    #[error("The requested set wasn't found.")]
+    SetNotFound,
     /// Returned when a [`CommonCallArgsError`] is encountered/
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
@@ -905,6 +917,7 @@ impl Condition {
             Self::PartContains {part, value, at} => at.satisfied_by(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
             Self::PartMatches  {part, matcher  } => matcher.satisfied_by(part.get(task_state.url).as_deref(), task_state)?,
             Self::PartIsOneOf  {part, values   } => values .contains    (part.get(task_state.url).as_deref()),
+            Self::PartIsInSet  {part, set      } => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(part.get(task_state.url).as_deref()),
 
             // Miscellaneous.
 

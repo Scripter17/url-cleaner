@@ -5,3 +5,4 @@ stdin
 *.sqlite
 reddit*.json
 reddit*.txt
+bacon.toml

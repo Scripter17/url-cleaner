@@ -2,7 +2,8 @@
 //!
 //! No the default config does not and will never use this.
 
-use std::process::{Command, Stdio};
+#[expect(unused_imports, reason = "Used in doc comments.")]
+use std::process::{Command, Stdio, ExitStatus, ChildStdin, Child};
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::{from_utf8, FromStr};
@@ -71,7 +72,7 @@ crate::util::string_or_struct_magic!(CommandConfig);
 /// The enum of errors the various [`CommandConfig`] methods can return.
 #[derive(Debug, Error)]
 pub enum CommandError {
-    /// Returned when an [`io::Error`] is encountered.
+    /// Returned when an [`std::io::Error`] is encountered.
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     /// Returned when an [`std::str::Utf8Error`] is encountered.

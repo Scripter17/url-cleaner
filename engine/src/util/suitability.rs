@@ -30,11 +30,31 @@ always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
 
 /// Suitability helper function to check that a set is documented.
-pub(crate) fn set_is_documented               (name: &StringSource, config: &Cleaner) {if let StringSource::String(name) = name {assert!(config.docs.sets               .contains_key(name), "Undocumented Set: {name}")}}
+pub(crate) fn set_is_documented(name: &StringSource, config: &Cleaner) {
+    if let StringSource::String(name) = name {
+        assert!(config.params.sets.contains_key(name), "Unset Set: {name}");
+        assert!(config.docs.sets.contains_key(name), "Undocumented Set: {name}");
+    }
+}
+/// Suitability helper function to check that a set is documented.
+pub(crate) fn lit_set_is_documented(name: &String, config: &Cleaner) {
+    assert!(config.params.sets.contains_key(name), "Unset Set: {name}");
+    assert!(config.docs.sets.contains_key(name), "Undocumented Set: {name}")
+}
 /// Suitability helper function to check that a map is documented.
-pub(crate) fn map_is_documented               (name: &StringSource, config: &Cleaner) {if let StringSource::String(name) = name {assert!(config.docs.maps               .contains_key(name), "Undocumented Map: {name}")}}
+pub(crate) fn map_is_documented(name: &StringSource, config: &Cleaner) {
+    if let StringSource::String(name) = name {
+        assert!(config.params.maps.contains_key(name), "Unset Map: {name}");
+        assert!(config.docs.maps.contains_key(name), "Undocumented Map: {name}");
+    }
+}
 /// Suitability helper function to check that a named partitioning is documented.
-pub(crate) fn named_partitioning_is_documented(name: &StringSource, config: &Cleaner) {if let StringSource::String(name) = name {assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}")}}
+pub(crate) fn named_partitioning_is_documented(name: &StringSource, config: &Cleaner) {
+    if let StringSource::String(name) = name {
+        assert!(config.params.named_partitionings.contains_key(name), "Unset NamedPartitioning: {name}");
+        assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}");
+    }
+}
 
 impl<K: Suitability, V: Suitability> Suitability for HashMap<K, V> {
     fn assert_suitability(&self, config: &Cleaner) {

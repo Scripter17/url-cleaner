@@ -1,12 +1,14 @@
 //! Caching to allow for only expanding redirects the first time you encounter them.
 
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use std::sync::Mutex;
+
 pub mod path;
 pub use path::*;
 pub mod inner;
 pub use inner::*;
 pub mod outer;
 pub use outer::*;
-
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};

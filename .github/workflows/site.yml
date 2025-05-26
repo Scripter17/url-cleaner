@@ -10,38 +10,17 @@ defaults:
     working-directory: site
 
 jobs:
-  build:
+  order:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: build
-      run: cargo build
-
-  build_ndf:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: build_ndf
-      run: cargo build --no-default-features
-
-  cargo_test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: cargo_test
-      run: cargo test
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: clippy
-      run: RUSTFLAGS=-Awarnings cargo clippy
-
-  powerset:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: powerset
-      run: RUSTFLAGS=-Awarnings cargo hack test --feature-powerset --depth 2
+    - name: order
+      run: |
+        set -o pipefail
+        cargo run |& tee site-run.log &
+        site=$!
+        while ! grep "Rocket has launched" site-run.log; do
+          if ! kill -0 "$site"; then exit 1; fi
+          sleep 0.1
+        done
+        ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 100; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc

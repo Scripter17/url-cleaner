@@ -32,9 +32,9 @@ pub(crate) struct CallDetails {
     pub(crate) last_line: Option<usize>
 }
 
-pub(crate) static DEBUG_STATE: LazyLock<Mutex<DebugState>> = LazyLock::new(|| Mutex::new(DebugState::default()));
+pub(crate) static DEBUG_STATE: LazyLock<Mutex<DebugState>> = LazyLock::new(Default::default);
 
-/// When dropped, decrements [`INDENT`].
+/// When dropped, decrements [`DEBUG_STATE`]'s [`DebugState::indent`].
 pub(crate) struct Deindenter;
 
 impl std::ops::Drop for Deindenter {

@@ -4,6 +4,7 @@ use thiserror::Error;
 
 use crate::types::*;
 use crate::glue::*;
+use crate::util::*;
 
 /// An individual job.
 #[derive(Debug)]
@@ -22,7 +23,7 @@ pub struct Task<'a> {
 impl Task<'_> {
     /// Do the job, returning the resulting [`BetterUrl`].
     /// # Errors
-    /// If the call to [`Cleaner::apply`] returns an error, that error is returned.
+    #[doc = edoc!(applyerr(Cleaner))]
     pub fn r#do(mut self) -> Result<BetterUrl, DoTaskError> {
         self.cleaner.apply(&mut TaskState {
             url: &mut self.config.url,

@@ -27,7 +27,7 @@ mode=
 
 features=
 out="benchmarks-$(date +%s).tar.gz"
-cleaner="../../url-cleaner-engine/default-cleaner.json"
+cleaner="../../engine/default-cleaner.json"
 
 for arg in "$@"; do
   shift

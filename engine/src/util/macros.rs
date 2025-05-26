@@ -1,5 +1,12 @@
 //! Macros.
 
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use std::str::FromStr;
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use std::borrow::Cow;
+#[expect(unused_imports, reason = "Used in doc comments.")]
+use crate::types::*;
+
 /// Helper macro to make serde use [`FromStr`] to deserialize strings.
 ///
 /// See [serde_with#702](https://github.com/jonasbb/serde_with/issues/702#issuecomment-1951348210) for details.

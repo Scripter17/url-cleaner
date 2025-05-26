@@ -104,9 +104,7 @@ pub struct TaskStateView<'a> {
 impl<'a> TaskStateView<'a> {
     /// Makes an [`reqwest::blocking::Client`] using the relevant [`HttpClientConfig`] and [`HttpClientConfigDiff`]s.
     /// # Errors
-    /// If the call to [`HttpClientConfig::make`] returns an error, that error is returned.
-    ///
-    /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns an error, that error is returned.
+    #[doc = edoc!(callerr(HttpClientConfig::make), callerr(reqwest::blocking::ClientBuilder::build))]
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
         debug!(self, Params::http_client, http_client_config_diff);

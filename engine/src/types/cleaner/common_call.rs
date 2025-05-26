@@ -72,7 +72,7 @@ impl From<StringSourceError> for CommonCallArgsError {
 impl CommonCallArgsSource {
     /// Builds the [`CommonCallArgs`].
     /// # Errors
-    /// If a call to [`StringSource::get`] returns an error, that error is returned.
+    #[doc = edoc!(geterr(StringSource))]
     pub fn build<'a>(&'a self, task_state: &TaskStateView) -> Result<CommonCallArgs<'a>, CommonCallArgsError> {
         Ok(CommonCallArgs {
             flags: &self.flags,
