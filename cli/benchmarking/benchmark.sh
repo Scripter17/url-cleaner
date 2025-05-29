@@ -82,9 +82,8 @@ if [ $hyperfine -eq 1 ]; then
     -L num $(IFS=, ; echo "${NUMS[*]}") \
     -L url $(IFS=, ; echo "${URLS[*]}") \
     --prepare "bash -c \"yes '{url}' | head -n {num} > stdin\"" \
-    --warmup 20 \
-    --min-runs 30\
-    --max-runs 100 \
+    --warmup 100 \
+    --runs 100 \
     -N \
     --input stdin \
     "$COMMAND"\

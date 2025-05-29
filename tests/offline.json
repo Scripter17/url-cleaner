@@ -7,11 +7,11 @@
 				{"task_config": "http://example.com"                                                                       , "expectation": {"UrlIs": "https://example.com/"}},
 				{
 					"task_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
-					"expectation": {"UrlIs": "https://amazon.ca/dp/B0C6DX66TN"}
+					"expectation": {"UrlIs": "https://www.amazon.ca/dp/B0C6DX66TN"}
 				},
 				{
 					"task_config": "https://amazon.com/gp/offer-listing/123",
-					"expectation": {"UrlIs": "https://amazon.com/dp/123?aod=1"}
+					"expectation": {"UrlIs": "https://www.amazon.com/dp/123?aod=1"}
 				},
 
 				{"task_config": "https://bsky.app"        , "expectation": {"UrlIs": "https://bsky.app/"}},

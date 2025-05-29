@@ -15,6 +15,7 @@ The default cleaner is intended to always obey the following rules:
     - Some may happen to not be required, but changes that make them required aren't considered breaking.
 - When the `no_network` flag is set, the default cleaner should NEVER make ANY network requests.
   - The `no_network` flag should be equivalent to compiling URL Cleaner without network support and removing all network stuff from the default cleaner.
+- Opening a URL outputted by the default cleaner with the `no_network` flag disabled any the `bypass_vip`/any future related flags enebled should never result in a redirect.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 

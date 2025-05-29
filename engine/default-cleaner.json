@@ -55,7 +55,8 @@
 			"unmobile_reg_domain_blacklist"             : "RegDomains to not apply the `unmobile` flag to.",
 			"utps"                                      : "Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `utps_reg_domain_whitelist` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.",
 			"utps_reg_domain_whitelist"                 : "The RegDomains to not remove universal tracking parameters from.",
-			"subdomain_none_to_www_reg_domains"         : "The RegDomains to keep `www` subdomains and set empty subdomains to `www`."
+			"subdomain_none_to_www_reg_domains"         : "The RegDomains to keep `www` subdomains and set empty subdomains to `www`.",
+			"subdomain_none_to_www_domain_middles"      : "The DomainMiddles to keep `www` subdomains and set empty subdomains to `www`."
 		},
 		"lists": {
 			"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."
@@ -129,6 +130,7 @@
 			"utps_reg_domain_whitelist": ["bambulab.com"],
 
 
+
 			"subdomain_none_to_www_reg_domains": [
 				"1688.com", "acer.com", "alibaba.com", "amtrak.com", "atom.bio", "bbc.com", "bell.ca", "browserstack.com", "cbc.ca", "cbsnews.com", 
 				"change.org", "cnbc.com", "cnn.com", "crunchyroll.com", "deviantart.com", "disney.com", "facebook.com", "fandom.com", 
@@ -136,7 +138,8 @@
 				"lenovo.com", "loblaws.ca", "marvel.com", "minds.com", "nature.com", "patreon.com", "phoronix.com", "pixiv.net", "proozy.com", 
 				"reddit.com", "shorturl.add", "shorturl.at", "snapchat.com", "spotify.com", "teepublic.com", "theguardian.com", "threads.com", 
 				"threads.net", "tiktok.com", "torproject.org", "tumblr.com", "washingtonpost.com", "yahoo.com", "youtube.com"
-			]
+			],
+			"subdomain_none_to_www_domain_middles": ["amazon"]
 		},
 		"lists": {
 			"utp_prefixes": [
@@ -250,7 +253,7 @@
 					"spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", 
 					"tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", 
 					"uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", 
-					"x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca"
+					"x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca", "bgfn.sh"
 				],
 				"sometimes_redirect": [
 					"apexpartner.app", "api.pinterest.com", "facebook.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com", "sketchfab.com", 
@@ -363,10 +366,16 @@
 					]}
 				}},
 				{"If": {
-					"if": {"PartIsInSet": {
-						"part": "RegDomain",
-						"set": "subdomain_none_to_www_reg_domains"
-					}},
+					"if": {"Any": [
+						{"PartIsInSet": {
+							"part": "RegDomain",
+							"set": "subdomain_none_to_www_reg_domains"
+						}},
+						{"PartIsInSet": {
+							"part": "DomainMiddle",
+							"set": "subdomain_none_to_www_domain_middles"
+						}}
+					]},
 					"then": {"If": {
 						"if": {"SubdomainIs": null},
 						"then": {"SetPart": {"part": "Subdomain", "value": "www"}}
@@ -1296,7 +1305,7 @@
 						]},
 						"cnbc.com": {"RemoveQueryParams": ["par"]},
 						"cnn.com": {"All": [
-							{"RemoveQueryParams": ["bt_ee", "bt_ts"]},
+							{"RemoveQueryParams": ["bt_ee", "bt_ts", "source", "iid"]},
 							{"If": {
 								"if": {"PartContains": {"part": {"PathSegment": -1}, "value": "h_", "at": "Start"}},
 								"then": {"SetPart": {"part": {"PathSegment": -1}, "value": null}}

@@ -88,8 +88,8 @@ if [ $hyperfine -eq 1 ]; then
     -L num $(echo "${NUMS[@]}" | sed "s/ /,/g") \
     -L url $(echo "${URLS[@]}" | sed "s/ /,/g") \
     --prepare "bash -c \"yes '\\\"{url}\\\"' | head -n {num} | jq -sc '{tasks: .}' > stdin\"" \
-    --max-runs 100 \
-    --warmup 20 \
+    --warmup 100 \
+    --runs 100 \
     --input stdin \
     -N \
     "$COMMAND" \
