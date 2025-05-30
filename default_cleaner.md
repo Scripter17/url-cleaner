@@ -34,7 +34,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
 - `embed_compatibility`: Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.
-- `keep_http`: Disable upgrading `http` URLs to `https`. See the `host_keep_http` set if you only want to not upgrade specific hosts.
+- `keep_http`: Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
 - `remove_lang`: Remove language info. Very minimal and probably pretty buggy.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
@@ -73,12 +73,12 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 ### Sets
 
-- `host_keep_http`: The `Host`s to not upgrade from `http` to `https`.
+- `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
+- `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
 - `rd_keep_empty_fragment`: The `RegDomain`s to not remove an empty `Fragment` from.
 - `rd_keep_empty_query`: The `RegDomain`s to not remove an empty `Query` from.
 - `rd_keep_fqdn_period`: The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
 - `rd_keep_mobile`: The `RegDomain`s to not apply the `unmobile` flag to.
-- `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
 - `rd_keep_utps`: The `RegDomain`s to not remove universal tracking parameters from.
 - `rd_ensure_www_subdomain`: The `RegDomain`s to keep `www` subdomains and set empty subdomains to `www`.
 - `dm_ensure_www_subdomain`: The `DomainMiddle`s to keep `www` subdomains and set empty subdomains to `www`.
@@ -89,14 +89,13 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 ### Maps
 
-- `hwwwwdpafqdnp_lang_query_params`: The name of each `HostWithoutWWWDotPrefixAndFqdnPeriod`'s language query param.
+- `nh_lang_query_params`: The name of each `NormalizedHost`'s language query param.
 
 ### Named Partitionings
 
-- `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
-- `www_subdomain_handling`: What to do instead of removing `www` subdomains.
+- `nh_categories`: Categories of similar websites with shared cleaning methods.
 - `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
-- `hwwwwdpafqdnp_expand_mode`: How to handle redirect `HostWithoutWWWDotPrefix`s.
+- `nh_expand_mode`: How to handle redirect `NormalizedHost`s.
 - `rd_expand_mode`: How to handle redirect `RegDomain`s,
 
 ### Job Context
@@ -104,6 +103,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 #### Vars
 
 - `SOURCE_HOST`: The `Host` of the "source" of the job. Usually the webpage it came from.
+- `SOURCE_NORMALIZED_HOST`: The `NormalizedHost` of the "source" of the job. Usually the webpage it came from.
 - `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the job, Usually the webpage it came from.
 
 ### Task Context
