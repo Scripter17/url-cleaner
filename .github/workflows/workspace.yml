@@ -21,6 +21,14 @@ jobs:
           exit 1
         fi
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: test
+      run: cargo hack test --each-feature
+
   doc:
     runs-on: ubuntu-latest
     steps:
@@ -42,11 +50,3 @@ jobs:
     - uses: actions/checkout@v3
     - name: clippy_all
       run: cargo clippy --all-features -- -Dwarnings
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: test
-      run: cargo hack test --each-feature

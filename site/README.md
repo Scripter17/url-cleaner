@@ -26,33 +26,33 @@ On the same laptop used in URL Cleaner's example benchmarks and with TLS, hyperf
 
 Without TLS, the benchmarks are about 15ms faster, but the worst case scenario is provided because it's more useful.
 
-Last updated 2025-05-26.
+Last updated 2025-05-30.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    : 24.297,
-    "1"    : 24.373,
-    "10"   : 24.478,
-    "100"  : 24.757,
-    "1000" : 27.617,
-    "10000": 55.571
+    "0"    : 24.617,
+    "1"    : 24.277,
+    "10"   : 24.277,
+    "100"  : 24.645,
+    "1000" : 27.353,
+    "10000": 53.427
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    : 24.276,
-    "1"    : 24.434,
-    "10"   : 24.397,
-    "100"  : 24.879,
-    "1000" : 29.133,
-    "10000": 73.093
+    "0"    : 24.195,
+    "1"    : 24.292,
+    "10"   : 24.337,
+    "100"  : 24.864,
+    "1000" : 28.853,
+    "10000": 70.724
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    : 24.278,
-    "1"    : 24.450,
-    "10"   : 24.375,
-    "100"  : 25.045,
-    "1000" : 31.305,
-    "10000": 92.470
+    "0"    : 24.243,
+    "1"    : 24.318,
+    "10"   : 24.353,
+    "100"  : 24.835,
+    "1000" : 30.909,
+    "10000": 90.698
   }
 }
 ```

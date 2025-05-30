@@ -207,10 +207,11 @@ async function get_job_context() {
 		if (ret.vars === undefined) {ret.vars = {};}
 
 		ret.vars.SOURCE_HOST = window.location.hostname;
+		ret.vars.SOURCE_NORMALIZED_HOST = ret.vars.SOURCE_HOST.replace(/^www\./g, "").replace(/\.$/g, "");
 
 		let domain_parts = (await get_host_parts(window.location.hostname))?.Ok?.Domain;
 		if (domain_parts) {
-			for (let part of ["domain", "reg_domain"]) {
+			for (let part of ["reg_domain"]) {
 				if (domain_parts[part]) {
 					ret.vars["SOURCE_" + part.toUpperCase()] = domain_parts[part];
 				}

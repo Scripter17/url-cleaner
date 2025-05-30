@@ -17,42 +17,63 @@ if ls | grep -qF '.out'; then
   rm *.out*
 fi
 
-compile=1
-hyperfine=1
-callgrind=0
-massif=0
-ignore_failure=
-
 mode=
 
+compile=1
 features=
-out="benchmarks-$(date +%s).tar.gz"
+
 cleaner="../../engine/default-cleaner.json"
+
+hyperfine=1
+warmup=100
+runs=100
+ignore_failure=
+
+callgrind=0
+massif=0
+
+out="benchmarks-$(date +%s).tar.gz"
 
 for arg in "$@"; do
   shift
   case "$arg" in
     --no-compile)      mode=        ; compile=0                          ;;
     --only-compile)    mode=        ; hyperfine=0; callgrind=0; massif=0 ;;
+    --features)        mode=features                                     ;;
+
+    --cleaner)         mode=cleaner                                      ;;
+
+    --all)             mode=        ; hyperfine=1; callgrind=1; massif=1 ;;
     --no-hyperfine)    mode=        ; hyperfine=0                        ;;
+    --warmup)          mode=warmup                                       ;;
+    --runs)            mode=runs                                         ;;
+    --ignore-failure)  mode=        ; ignore_failure=--ignore-failure    ;;
+
     --callgrind)       mode=        ; callgrind=1                        ;;
     --massif)          mode=        ; massif=1                           ;;
-    --ignore-failure)  mode=        ; ignore_failure=--ignore-failure    ;;
-    --all)             mode=        ; hyperfine=1; callgrind=1; massif=1 ;;
+
     --urls)            mode=urls    ; URLS=( )                           ;;
     --nums)            mode=nums    ; NUMS=( )                           ;;
-    --features)        mode=features                                     ;;
+
     --out)             mode=out                                          ;;
-    --cleaner)         mode=cleaner                                      ;;
+
     --)                break ;;
     --*)               echo Unknown option \"$arg\"; exit 1 ;;
+
     *) case "$mode" in
-      urls) URLS=( "${URLS[@]}" "$arg" ) ;;
-      nums) NUMS=( "${NUMS[@]}" "$arg" ) ;;
       features) features=(--features "$arg") ;;
-      out) out="$arg" ;;
-      cleaner) cleaner="$arg" ;;
-      "") echo "Modal argument without mode"; exit 1 ;;
+
+      cleaner)  cleaner="$arg" ;;
+
+      urls)     URLS=( "${URLS[@]}" "$arg" ) ;;
+      nums)     NUMS=( "${NUMS[@]}" "$arg" ) ;;
+
+      warmup)   warmup="$arg" ;;
+      runs)     runs="$arg" ;;
+
+      out)      out="$arg" ;;
+
+      "")       echo "Modal argument without mode"; exit 1 ;;
     esac
   esac
 done
@@ -76,14 +97,15 @@ COMMAND="../../target/release/url-cleaner --cleaner $cleaner $@"
 
 if [ $hyperfine -eq 1 ]; then
   echo "Doing Hyperfine stuff"
+
   touch stdin
   hyperfine \
     --command-name ""\
     -L num $(IFS=, ; echo "${NUMS[*]}") \
     -L url $(IFS=, ; echo "${URLS[*]}") \
     --prepare "bash -c \"yes '{url}' | head -n {num} > stdin\"" \
-    --warmup 100 \
-    --runs 100 \
+    --warmup $warmup \
+    --runs $runs \
     -N \
     --input stdin \
     "$COMMAND"\
@@ -92,6 +114,7 @@ if [ $hyperfine -eq 1 ]; then
     --sort command \
     --export-json "hyperfine.out.json"
   rm stdin
+
   ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
   pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
   cat hyperfine.out.json |\

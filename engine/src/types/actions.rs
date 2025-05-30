@@ -751,8 +751,13 @@ impl Action {
             },
             Self::PartMap  {part , map} => if let Some(action) = map.get(part .get( task_state.url      ) ) {action.apply(task_state)?;},
             Self::StringMap{value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
+
+            Self::PartNamedPartitioningMap   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
+            Self::StringNamedPartitioningMap {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
+
             Self::PartNamedPartitioningMap   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
             Self::StringNamedPartitioningMap {named_partitioning, value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
+
             Self::Repeat{actions, limit} => {
                 let mut previous_url;
                 let mut previous_scratchpad;

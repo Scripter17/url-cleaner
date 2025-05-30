@@ -84,23 +84,23 @@ pub enum UrlPart {
     ///
     /// Please note that for [fully qualified domain names](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) this includes the ending `.`.
     Host,
-    /// [`Self::Host`] but with the `www.` at the start, if it's there, removed.
+    /// [`Self::Host`] but with the `www.` prefix (if it's there) and `.` suffix (if it's there) removed.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
     /// let mut url = BetterUrl::parse("https://www.www.example.com").unwrap();
-    /// assert_eq!(UrlPart::HostWithoutWWWDotPrefixAndFqdnPeriod.get(&url), Some("www.example.com".into()));
+    /// assert_eq!(UrlPart::NormalizedHost.get(&url), Some("www.example.com".into()));
     ///
-    /// UrlPart::HostWithoutWWWDotPrefixAndFqdnPeriod.set(&mut url, Some("www.example.com")).unwrap();
-    /// assert_eq!(UrlPart::HostWithoutWWWDotPrefixAndFqdnPeriod.get(&url), Some("example.com".into()));
+    /// UrlPart::NormalizedHost.set(&mut url, Some("www.example.com")).unwrap();
+    /// assert_eq!(UrlPart::NormalizedHost.get(&url), Some("example.com".into()));
     ///
     /// assert_eq!(url.host_str(), Some("example.com"));
     ///
     /// let mut url = BetterUrl::parse("https://www.www.example.com.").unwrap();
-    /// assert_eq!(UrlPart::HostWithoutWWWDotPrefixAndFqdnPeriod.get(&url), Some("www.example.com".into()));
+    /// assert_eq!(UrlPart::NormalizedHost.get(&url), Some("www.example.com".into()));
     /// ```
-    HostWithoutWWWDotPrefixAndFqdnPeriod,
+    NormalizedHost,
 
 
 
@@ -874,8 +874,8 @@ impl UrlPart {
 
 
 
-            Self::Host => Cow::Borrowed(url.host_str()?),
-            Self::HostWithoutWWWDotPrefixAndFqdnPeriod => Cow::Borrowed(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x)).map(|x| x.strip_suffix(".").unwrap_or(x))?),
+            Self::Host           => Cow::Borrowed(url.host_str()?),
+            Self::NormalizedHost => Cow::Borrowed(url.host_str().map(|x| x.strip_prefix("www.").unwrap_or(x)).map(|x| x.strip_suffix(".").unwrap_or(x))?),
 
 
 
@@ -954,7 +954,7 @@ impl UrlPart {
 
             (Self::Whole   , Some(to)) => *url=BetterUrl::parse(to)?,
             (Self::Whole   , None    ) => Err(UrlPartSetError::WholeCannotBeNone)?,
-            (Self::Scheme  , Some(to)) => url.set_scheme  (to)?,
+            (Self::Scheme  , Some(to)) => url.set_scheme(to)?,
             (Self::Scheme  , None    ) => Err(UrlPartSetError::SchemeCannotBeNone)?,
             (Self::Username, Some(to)) => url.set_username(to)?,
             (Self::Username, None    ) => Err(UrlPartSetError::UsernameCannotBeNone)?,
@@ -963,7 +963,7 @@ impl UrlPart {
 
 
             (Self::Host , _) => url.set_host(to)?,
-            (Self::HostWithoutWWWDotPrefixAndFqdnPeriod, _) => url.set_host(to.map(|to| to.strip_prefix("www.").unwrap_or(to)).map(|x| x.strip_suffix(".").unwrap_or(x)))?,
+            (Self::NormalizedHost, _) => url.set_host(to.map(|to| to.strip_prefix("www.").unwrap_or(to)).map(|x| x.strip_suffix(".").unwrap_or(x)))?,
 
 
 

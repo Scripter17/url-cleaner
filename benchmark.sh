@@ -13,11 +13,17 @@ SITEARGS=( )
 for arg in "$@"; do
   case "$mode" in
     "") case "$arg" in
+      --all-args) mode=all ;;
+
       --no-cli) CLI=0 ;;
       --cli-args) mode=cli ;;
 
       --no-site) SITE=0 ;;
       --site-args) mode=site ;;
+    esac ;;
+    all) case "$arg" in
+      ";") mode= ;;
+      *) CLIARGS=( "${CLIARGS[@]}" "$arg" ); SITEARGS=( "${SITEARGS[@]}" "$arg" ) ;;
     esac ;;
     cli) case "$arg" in
       ";") mode= ;;

@@ -38,7 +38,7 @@ pub struct Cleaner {
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_path: CachePath,
-    /// Fine tuning shared between all [`Task`]s of a [`Job`] and maybe multiple [`Job`]s.
+    /// Tuning shared between all [`Task`]s spawned with this [`Cleaner`].
     ///
     /// Defaults to an empty [`Params`].
     #[serde(default, skip_serializing_if = "is_default")]

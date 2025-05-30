@@ -120,7 +120,10 @@ impl FlagRef {
     /// If the call to [`FlagType::get`] returns an error, that error is returned.
     pub fn get(&self, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
         debug!(self, FlagRef::get, task_state);
-        self.r#type.get(task_state, get_str!(self.name, task_state, GetFlagError))
+        match self {
+            Self {r#type, name: StringSource::String(name)} => r#type.get(task_state, name),
+            _ => self.r#type.get(task_state, get_str!(self.name, task_state, GetFlagError))
+        }
     }
 }
 

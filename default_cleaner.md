@@ -34,7 +34,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
 - `embed_compatibility`: Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.
-- `no_https_upgrade`: Disable upgrading `http` URLs to `https`. See the `https_upgrade_host_blacklist` set if you only want to not upgrade specific hosts.
+- `keep_http`: Disable upgrading `http` URLs to `https`. See the `host_keep_http` set if you only want to not upgrade specific hosts.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
 - `remove_lang`: Remove language info. Very minimal and probably pretty buggy.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
@@ -73,14 +73,15 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 ### Sets
 
-- `https_upgrade_host_blacklist`: Hosts to not upgrade from `http` to `https`.
-- `remove_empty_fragment_reg_domain_blacklist`: The RegDomains to not remove a empty fragments from.
-- `remove_empty_query_reg_domain_blacklist`: The RegDomains to not remove a empty querys from.
-- `remove_fqdn_period_reg_domain_blacklist`: The RegDomains to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
-- `unmobile_reg_domain_blacklist`: RegDomains to not apply the `unmobile` flag to.
-- `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `utps_reg_domain_whitelist` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
-- `utps_reg_domain_whitelist`: The RegDomains to not remove universal tracking parameters from.
-- `subdomain_none_to_www_reg_domains`: The RegDomains to keep `www` subdomains and set empty subdomains to `www`.
+- `host_keep_http`: The `Host`s to not upgrade from `http` to `https`.
+- `rd_keep_empty_fragment`: The `RegDomain`s to not remove an empty `Fragment` from.
+- `rd_keep_empty_query`: The `RegDomain`s to not remove an empty `Query` from.
+- `rd_keep_fqdn_period`: The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
+- `rd_keep_mobile`: The `RegDomain`s to not apply the `unmobile` flag to.
+- `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
+- `rd_keep_utps`: The `RegDomain`s to not remove universal tracking parameters from.
+- `rd_ensure_www_subdomain`: The `RegDomain`s to keep `www` subdomains and set empty subdomains to `www`.
+- `dm_ensure_www_subdomain`: The `DomainMiddle`s to keep `www` subdomains and set empty subdomains to `www`.
 
 ### Lists
 
@@ -94,9 +95,9 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `hwwwwdpafqdnp_categories`: Categories of similar websites with shared cleaning methods.
 - `www_subdomain_handling`: What to do instead of removing `www` subdomains.
-- `domain_middle_expand_mode`: How to handle redirect `DomainMiddle`s.
+- `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
 - `hwwwwdpafqdnp_expand_mode`: How to handle redirect `HostWithoutWWWDotPrefix`s.
-- `reg_domain_expand_mode`: How to handle redirect `RegDomain`s,
+- `rd_expand_mode`: How to handle redirect `RegDomain`s,
 
 ### Job Context
 
