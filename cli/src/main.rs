@@ -97,6 +97,14 @@ pub struct Args {
     /// Vars to insert into the params.
     #[arg(short, long)]
     pub var: Vec<Vec<String>>,
+    /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    pub read_cache: Option<bool>,
+    /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    pub write_cache: Option<bool>,
     /// The context to share between all Tasks.
     #[arg(long)]
     pub job_context: Option<String>,
@@ -171,6 +179,14 @@ fn main() -> Result<ExitCode, CliError> {
                 _ => Err(CliError::VarTooManyArgs)?
             }
         }
+    }
+    #[cfg(feature = "cache")]
+    if let Some(read_cache) = args.read_cache {
+        cleaner.params.read_cache = read_cache;
+    }
+    #[cfg(feature = "cache")]
+    if let Some(write_cache) = args.write_cache {
+        cleaner.params.write_cache = write_cache;
     }
     #[cfg(feature = "cache")]
     if let Some(cache_path) = args.cache_path {

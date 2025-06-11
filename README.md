@@ -50,4 +50,4 @@ The people and projects I have stolen various parts of the default cleaner from.
 
 ## Funding
 
-URL Cleaner does not accept donations. If you feel the need to donate please instead donate to [The Tor Project](https://donate.torproject.org/) and/or [The Internet Archive](https://archive.org/donate/).
+If for some reason you want to give me money, my paypal is jameschristopherwise@gmail.com.

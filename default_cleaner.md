@@ -10,6 +10,7 @@ The default cleaner is intended to always obey the following rules:
   - Basically, if opening a pre-clean URL doesn't return a an error, opening the post-clean URL shouldn't return an error.
 - It should always be both deterministic and idempotent.
   - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
+- Shuffling the input list of URLs should always give the same (equally shuffled) output.
 - The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
   - All other features are expected to be enabled.
     - Some may happen to not be required, but changes that make them required aren't considered breaking.
@@ -80,8 +81,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `rd_keep_fqdn_period`: The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
 - `rd_keep_mobile`: The `RegDomain`s to not apply the `unmobile` flag to.
 - `rd_keep_utps`: The `RegDomain`s to not remove universal tracking parameters from.
-- `rd_ensure_www_subdomain`: The `RegDomain`s to keep `www` subdomains and set empty subdomains to `www`.
-- `dm_ensure_www_subdomain`: The `DomainMiddle`s to keep `www` subdomains and set empty subdomains to `www`.
 
 ### Lists
 
@@ -94,6 +93,8 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 ### Named Partitionings
 
 - `nh_categories`: Categories of similar websites with shared cleaning methods.
+- `rd_www_subdomain`: The `RegDomain`s to ensure/remove `www` `Subdomain`s.
+- `dm_www_subdomain`: The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.
 - `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
 - `nh_expand_mode`: How to handle redirect `NormalizedHost`s.
 - `rd_expand_mode`: How to handle redirect `RegDomain`s,

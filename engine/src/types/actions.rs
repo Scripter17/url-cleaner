@@ -277,7 +277,7 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// Action::RemoveQueryParams(["a".to_string(), "b".to_string()].into()).apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.url.query(), Some("c=5"));
@@ -291,10 +291,10 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// Action::AllowQueryParams(["a".to_string(), "b".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("a=2&b=3&a=4"));
+    /// assert_eq!(task_state.url.query(), Some("a=2&b=3&%61=4"));
     /// Action::AllowQueryParams(["c".to_string()].into()).apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.url.query(), None);
     /// ```
@@ -307,7 +307,7 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// Action::RemoveQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.url.query(), Some("b=3&c=5"));
@@ -325,14 +325,25 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// Action::AllowQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("a=2&a=4"));
+    /// assert_eq!(task_state.url.query(), Some("a=2&%61=4"));
     /// Action::AllowQueryParamsMatching(StringMatcher::Is("b".into())).apply(&mut task_state).unwrap();
     /// assert_eq!(task_state.url.query(), None);
     /// ```
     AllowQueryParamsMatching(StringMatcher),
+    /// Extreme shorthand for handling universal query parameters.
+    /// # Errors
+    #[doc = edoc!(notfound(Set, Action))]
+    ///
+    /// If the list isn't found, returns the error [`ActionError::ListNotFound`].
+    RemoveQueryParamsInSetOrStartingWithAnyInList {
+        /// The name of the [`Set`] in [`Params::sets`] to use.
+        set: String,
+        /// The name of the list in [`Params::lists`] to use.
+        list: String
+    },
     /// Sets [`UrlPart::Whole`] to the value of the first query parameter with a name determined by the [`TaskState`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
@@ -352,6 +363,8 @@ pub enum Action {
 
 
 
+    /// Replace an entire [`TaskState::url`] to a constant value without reparsing it for each [`Task`].
+    SetWhole(BetterUrl),
     /// Sets the [`UrlPart::Host`] to the specified value.
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::set_host))]
@@ -675,9 +688,18 @@ pub enum ActionError {
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
     ConditionError(#[from] ConditionError),
-    /// Returned when a [`NamedPartitioning with the specified name isn't found.`]
+    /// Returned when a [`StringLocationError`] is encountered.
+    #[error(transparent)]
+    StringLocationError(#[from] StringLocationError),
+    /// Returned when a [`NamedPartitioning`] with the specified name isn't found.
     #[error("A NamedPartitioning with the specified name wasn't found.")]
     NamedPartitioningNotFound,
+    /// Returned when a [`Set`] with the specified name isn't found.
+    #[error("A Set with the specified name wasn't found.")]
+    SetNotFound,
+    /// Returned when a list with the specified name isn't found.
+    #[error("A list with the specified name wasn't found.")]
+    ListNotFound,
 
     /// Returned when a [`reqwest::Error`] is encountered.
     #[cfg(feature = "http")]
@@ -854,6 +876,19 @@ impl Action {
                 }
                 task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
+            Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(query) = task_state.url.query() {
+                let mut new = String::new();
+                let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
+                let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
+                for param in query.split('&') {
+                    let name = peh(param.split('=').next().expect("The first segment to always exist."));
+                    if !set.contains(Some(&*name)) && !list.iter().any(|x| name.starts_with(x)) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+            },
             Self::GetUrlFromQueryParam(name) => {
                 let task_state_view = task_state.to_view();
                 let name = name.get(&task_state_view)?.ok_or(ActionError::StringSourceIsNone)?;
@@ -868,6 +903,7 @@ impl Action {
 
             // Other parts.
 
+            Self::SetWhole(new) => *task_state.url = new.clone(),
             Self::SetHost(new_host) => task_state.url.set_host(new_host.as_deref())?,
             Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, ActionError))?.into(),
 

@@ -21,6 +21,16 @@ jobs:
           exit 1
         fi
 
+  mds:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: mds
+      run: |
+        old=$(cat *.md */*.md)
+        scripts/fill-mds.sh
+        test "$old" == "$(cat *.md */*.md)"
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -37,16 +47,18 @@ jobs:
     - name: doc
       run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --each-feature --no-deps --document-private-items
 
-  clippy_default:
+  clippy_powerset_with_default:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: clippy_default
-      run: cargo clippy -- -Dwarnings
+    - uses: taiki-e/install-action@cargo-hack
+    - name: clippy_powerset_with_default
+      run: cargo hack clippy --feature-powerset --at-least-one-of default,default --exclude url-cleaner-site-types --exclude url-cleaner-macros -- -D warnings
 
-  clippy_all:
+  clippy_other:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: clippy_all
-      run: cargo clippy --all-features -- -Dwarnings
+    - uses: taiki-e/install-action@cargo-hack
+    - name: clippy_other
+      run: cargo hack clippy --each-feature -- -D warnings -A unused_imports -A dead_code

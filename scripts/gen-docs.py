@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+# Generate documentation from the default cleaner.
+
 import json
 
 last = None

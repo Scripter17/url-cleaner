@@ -10,7 +10,7 @@ license = "AGPL-3.0-or-later"
 readme = "README.md"
 
 [dependencies]
-clap = { version = "4.5.39", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.40", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls"] }
 serde = "1.0.219"

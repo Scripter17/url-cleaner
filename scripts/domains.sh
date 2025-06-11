@@ -1,13 +1,16 @@
 #!/usr/bin/bash
 
-cd $(dirname "$0")
+# Get all domains from the default cleaner.
 
-cat ../engine/default-cleaner.json |\
+cd $(dirname "$0")/..
+
+cat engine/default-cleaner.json |\
   jq '
-    (.. | try select(contains({part: "Domain"}) or contains({part: "Host"})).map | try keys[]),
-    (.params.named_partitionings.hwwwwdpafqdnp_categories[][])
+    (.actions | .. | objects | select(.part | try test("Domain|Host")).map | try keys[]),
+    (.params | .. | objects | to_entries[] | select(.key | test("^(nh|dm|rd)_")).value | .. | strings)
   ' -r |\
   sort -u |\
+  grep -F '.' |\
   grep -Pv '\.(onion|i2p)$'
 
 cd - &> /dev/null

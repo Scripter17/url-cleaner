@@ -19,8 +19,13 @@ jobs:
         set -o pipefail
         cargo run |& tee site-run.log &
         site=$!
-        while ! grep "Rocket has launched" site-run.log; do
-          if ! kill -0 "$site"; then exit 1; fi
+        while true; do
           sleep 0.1
+          if ! kill -0 "$site"; then
+            exit 1
+          fi
+          if grep "Rocket has launched" site-run.log; then
+            break
+          fi
         done
         ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 100; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc

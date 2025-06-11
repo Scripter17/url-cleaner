@@ -12,6 +12,7 @@ else
   URLS=( )
 fi
 NUMS=( 0 1 10 100 1000 10000 )
+SERVERS=( http://127.0.0.1:9149 )
 
 if ls | grep -qF '.out'; then
   rm *.out*
@@ -39,7 +40,7 @@ for arg in "$@"; do
     --features)        mode=features                                    ;;
 
     --https)           mode=         ; server="${server/#http:/https:}" ;;
-    --server)          mode=server                                      ;;
+    --servers)         mode=servers  ; SERVERS=( )                      ;;
 
     --all)             mode=         ; hyperfine=1                      ;;
     --no-hyperfine)    mode=         ; hyperfine=0                      ;;
@@ -58,7 +59,7 @@ for arg in "$@"; do
     *) case "$mode" in
       features) features=(--features "$arg") ;;
 
-      server)   server="$arg" ;;
+      servers)  SERVERS=( "${SERVERS[@]}" "$arg" ) ;;
 
       urls)     URLS=( "${URLS[@]}" "$arg" ) ;;
       nums)     NUMS=( "${NUMS[@]}" "$arg" ) ;;
@@ -82,7 +83,7 @@ if [  $hyperfine -eq 1 ] && ! which -s hyperfine; then echo 'Hyperfine not found
 if [  $hyperfine -eq 1 ] && ! which -s jq       ; then echo 'Jq not found; Please install it. Also please learn it it'"'"'s a really handy tool.'; exit 2; fi
 if [  $hyperfine -eq 1 ] && ! which -s bat      ; then echo 'Bat not found; Please run `cargo install bat`.'                                     ; exit 2; fi
 
-if [ $compile -eq 1 ]; then
+if [ $compile -eq 1 -a $hyperfine -eq 1 ]; then
   if [ -e ../../target/release/url-cleaner-site ]; then
     old_mtime=$(stat -c %Y ../../target/release/url-cleaner-site)
   else
@@ -95,49 +96,52 @@ if [ $compile -eq 1 ]; then
   fi
 fi
 
-COMMAND="curl --json @- $server/clean -f"
+for server in "${SERVERS[@]}"; do
+  echo "Benchmarking $server"
+  if [ $hyperfine -eq 1 ]; then
+    COMMAND="curl --json @- $server/clean -f"
 
-curl $server &> /dev/null
-case $? in
-  0) ;;
-  1) echo 'Server protocol mismatch. Perhaps you forgot to specify `--https`?'      ; exit 4 ;;
-  7) echo 'Server not found. Perhaps it failed to start because of a broken config?'; exit 4 ;;
-  *) echo "Unknown error when accessing server."                                    ; exit 4 ;;
-esac
+    curl $server &> /dev/null
+    case $? in
+      0) ;;
+      1) echo 'Server protocol mismatch. Perhaps you forgot to specify `--https`?'      ; exit 4 ;;
+      7) echo 'Server not found. Perhaps it failed to start because of a broken config?'; exit 4 ;;
+      *) echo "Unknown error when accessing server."                                    ; exit 4 ;;
+    esac
 
-if [ $hyperfine -eq 1 ]; then
-  echo "Doing Hyperfine stuff"
+    echo "Doing Hyperfine stuff"
 
-  touch stdin
-  hyperfine \
-    --command-name ""\
-    -L num $(IFS=, ; echo "${NUMS[*]}") \
-    -L url $(IFS=, ; echo "${URLS[*]}") \
-    --prepare "bash -c \"yes '\\\"{url}\\\"' | head -n {num} | jq -sc '{tasks: .}' > stdin\"" \
-    --warmup $warmup \
-    --runs $runs \
-    -N \
-    --input stdin \
-    "$COMMAND" \
-    $ignore_failure \
-    --style color \
-    --sort command \
-    --export-json "hyperfine.out.json"
-  rm stdin
+    touch stdin
+    hyperfine \
+      --command-name ""\
+      -L num $(IFS=, ; echo "${NUMS[*]}") \
+      -L url $(IFS=, ; echo "${URLS[*]}") \
+      --prepare "bash -c \"yes '\\\"{url}\\\"' | head -n {num} | jq -sc '{tasks: .}' > stdin\"" \
+      --warmup $warmup \
+      --runs $runs \
+      -N \
+      --input stdin \
+      "$COMMAND" \
+      $ignore_failure \
+      --style color \
+      --sort command \
+      --export-json "hyperfine.out.json"
+    rm stdin
 
-  ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
-  pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
-  cat hyperfine.out.json |\
-    jq 'reduce .results[] as $result ({}; .[$result.parameters.url][$result.parameters.num] = ($result.mean * 1000000 | floor / 1000 | tonumber))' |\
-    sed -E "/^    / {\
-      /\./! s/(,?)$/.\1/;\
-      :a s/(\.[0123456789]{0,2})(,?$)/\10\2/; ta\
-      :b s/( \".{0,$ql}):/\1 :/; tb\
-      :c s/:(.{0,$pl}\.)/: \1/; tc\
-    }" |\
-    tee hyperfine.out-summary.json |\
-    bat -ppl json
-fi
+    ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
+    pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
+    cat hyperfine.out.json |\
+      jq 'reduce .results[] as $result ({}; .[$result.parameters.url][$result.parameters.num] = ($result.mean * 1000000 | floor / 1000 | tonumber))' |\
+      sed -E "/^    / {\
+        /\./! s/(,?)$/.\1/;\
+        :a s/(\.[0123456789]{0,2})(,?$)/\10\2/; ta\
+        :b s/( \".{0,$ql}):/\1 :/; tb\
+        :c s/:(.{0,$pl}\.)/: \1/; tc\
+      }" |\
+      tee hyperfine.out-summary.json |\
+      bat -ppl json
+  fi
+done
 
 if ls | grep -qF '.out'; then
   tar -czf $out *.out*

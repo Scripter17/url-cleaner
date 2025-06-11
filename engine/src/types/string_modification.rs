@@ -535,24 +535,53 @@ pub enum StringModification {
 
 
 
-    /// Split the string on `&`, split each segment on `=`, and remove all segments whose first subsegment matches the specified [`StringMatcher`].
-    ///
-    /// Useful for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
-    ///
-    /// Currently does not do percent decoding, so `%61=2` isn't normalized to `a=2`.
+    /// The same operation [`Action::RemoveQueryParamsMatching`] does to a [`UrlPart::Query`].
     /// # Errors
     /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
     ///
     #[doc = edoc!(stringisnone(StringModification), satisfyerr(StringMatcher, 3))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
+    ///
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, Some("b=3&c=5".into()));
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, Some("c=5".into()));
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("c".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, None);
+    /// ```
     RemoveQueryParamsMatching(Box<StringMatcher>),
-    /// Split the string on `&`, split each segment on `=`, and keep only segments whose first subsegment matches the specified [`StringMatcher`].
-    ///
-    /// Useful for websites that put tracking parameters in the [`UrlPart::Fragment`] of all places.
-    ///
-    /// Currently does not do percent decoding, so `%61=2` isn't normalized to `a=2`.
+    /// The same operation [`Action::AllowQueryParamsMatching`] does to a [`UrlPart::Query`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), satisfyerr(StringMatcher, 3))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
+    ///
+    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, Some("a=2&%61=4".into()));
+    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, None);
+    /// ```
     AllowQueryParamsMatching(Box<StringMatcher>),
+    /// The same operation [`Action::RemoveQueryParamsInSetOrStartingWithAnyInList`] does to a [`UrlPart::Query`].
+    /// # Errors
+    #[doc = edoc!(notfound(Set, StringModification))]
+    ///
+    /// If the list isn't found, returns the error [`StringModificationError::ListNotFound`].
+    RemoveQueryParamsInSetOrStartingWithAnyInList {
+        /// The name of the [`Set`] in [`Params::sets`] to use.
+        set: String,
+        /// The name of the list in [`Params::lists`] to use.
+        list: String
+    },
     /// Finds the first instance of the specified substring and removes everything before it.
     ///
     /// Useful in combination with [`Self::GetJsStringLiteralPrefix`].
@@ -896,6 +925,12 @@ pub enum StringModificationError {
     /// Returned when the string to modify is [`None`] where it has to be [`Some`].
     #[error("The string to modify was None where it had to be Some")]
     StringIsNone,
+    /// Returned when a [`Set`] with the specified name isn't found.
+    #[error("A Set with the specified name wasn't found.")]
+    SetNotFound,
+    /// Returned when a list with the specified name isn't found.
+    #[error("A list with the specified name wasn't found.")]
+    ListNotFound,
     /// An arbitrary [`std::error::Error`] for use with [`StringModification::Custom`].
     #[cfg(feature = "custom")]
     #[error(transparent)]
@@ -1162,26 +1197,41 @@ impl StringModification {
 
 
             Self::RemoveQueryParamsMatching(matcher) => {
-                let inner = to.as_ref().ok_or(StringModificationError::StringIsNone)?;
-                *to = Some(Cow::<str>::Owned(inner.split('&').filter_map(|kev|
-                    matcher.satisfied_by(
-                        Some(kev.split('=').next().expect("Why can't I #[allow] an .expect() here?")),
-                        task_state
-                    )
-                    .map(|x| (!x).then_some(kev))
-                    .transpose()
-                ).collect::<Result<Vec<_>, _>>()?.join("&"))).filter(|x| !x.is_empty());
+                if let Some(inner) = to {
+                    let mut ret = String::new();
+                    for param in inner.split('&') {
+                        if !matcher.satisfied_by(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
+                            if !ret.is_empty() {ret.push('&');}
+                            ret.push_str(param);
+                        }
+                    }
+                    *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
+                }
             },
             Self::AllowQueryParamsMatching(matcher) => {
-                let inner = to.as_ref().ok_or(StringModificationError::StringIsNone)?;
-                *to = Some(Cow::<str>::Owned(inner.split('&').filter_map(|kev|
-                    matcher.satisfied_by(
-                        Some(kev.split('=').next().expect("Why can't I #[allow] an .expect() here?")),
-                        task_state
-                    )
-                    .map(|x| x.then_some(kev))
-                    .transpose()
-                ).collect::<Result<Vec<_>, _>>()?.join("&"))).filter(|x| !x.is_empty());
+                if let Some(inner) = to {
+                    let mut ret = String::new();
+                    for param in inner.split('&') {
+                        if matcher.satisfied_by(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
+                            if !ret.is_empty() {ret.push('&');}
+                            ret.push_str(param);
+                        }
+                    }
+                    *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
+                }
+            },
+            Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
+                let mut new = String::new();
+                let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
+                let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
+                for param in inner.split('&') {
+                    let name = peh(param.split('=').next().expect("The first segment to always exist."));
+                    if !set.contains(Some(&*name)) && !list.iter().any(|x| name.starts_with(x)) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                *to = Some(Cow::<str>::Owned(new)).filter(|x| !x.is_empty());
             },
 
 

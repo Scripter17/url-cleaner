@@ -52,6 +52,14 @@ struct Args {
     /// Vars to insert into the params.
     #[arg(short, long)]
     pub var: Vec<Vec<String>>,
+    /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    pub read_cache: Option<bool>,
+    /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    pub write_cache: Option<bool>,
     /// The max size of a POST request to the `/clean` endpoint.
     /// 
     /// The included userscript uses the `/get-max-json-size` endpoint to query this value and adjust its batch sizes accordingly.
@@ -134,6 +142,14 @@ async fn rocket() -> _ {
         }
     }
     #[cfg(feature = "cache")]
+    if let Some(read_cache) = args.read_cache {
+        cleaner.params.read_cache = read_cache;
+    }
+    #[cfg(feature = "cache")]
+    if let Some(write_cache) = args.write_cache {
+        cleaner.params.write_cache = write_cache;
+    }
+    #[cfg(feature = "cache")]
     if let Some(cache_path) = args.cache_path {
         cleaner.cache_path = cache_path;
     }
@@ -169,14 +185,9 @@ async fn rocket() -> _ {
 /// The `/` route.
 #[get("/")]
 async fn index() -> &'static str {
-    r#"Both URL Cleaner Site and URL Cleaner are licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later).
+    r#"URL Cleaner Site is licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later).
 https://www.gnu.org/licenses/agpl-3.0.html
-
-The original source code of URL Cleaner Site: https://github.com/Scripter17/url-cleaner-site
-The original source code of URL Cleaner: https://github.com/Scripter17/url-cleaner
-
-The modified source code of URL Cleaner Site (if applicable):
-The modified source code of URL Cleaner (if applicable):"#
+https://github.com/Scripter17/url-cleaner"#
 }
 
 /// The `/get-cleaner` route.

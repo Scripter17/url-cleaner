@@ -21,7 +21,7 @@ pub struct Task<'a> {
 }
 
 impl Task<'_> {
-    /// Do the job, returning the resulting [`BetterUrl`].
+    /// Do the task, returning the resulting [`BetterUrl`].
     /// # Errors
     #[doc = edoc!(applyerr(Cleaner))]
     pub fn r#do(mut self) -> Result<BetterUrl, DoTaskError> {

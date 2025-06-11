@@ -85,6 +85,7 @@ pub enum Condition {
         /// The [`Self`] to use if [`Self::If::if`] passes.
         then: Box<Self>,
         /// The [`Self`] to use if [`Self::If::if`] fails.
+        #[serde(default, skip_serializing_if = "is_default")]
         r#else: Option<Box<Self>>
     },
     /// If the call to [`Self::satisfied_by`] passes or fails, invert it into failing or passing.
@@ -641,6 +642,10 @@ pub enum Condition {
     /// # Errors
     #[doc = edoc!(geterr(FlagRef))]
     FlagIsSet(FlagRef),
+    /// Passes if the specified flag is not set.
+    /// # Errors
+    #[doc = edoc!(geterr(FlagRef))]
+    FlagIsNotSet(FlagRef),
     /// Passes if [`Self::VarIs::var`] is [`Self::VarIs::value`].
     /// # Errors
     #[doc = edoc!(geterr(VarRef), geterr(StringSource))]
@@ -921,8 +926,9 @@ impl Condition {
 
             // Miscellaneous.
 
-            Self::FlagIsSet(flag)    => flag.get(task_state)?,
-            Self::VarIs {var, value} => var .get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
+            Self::FlagIsSet(flag)    =>  flag.get(task_state)?,
+            Self::FlagIsNotSet(flag) => !flag.get(task_state)?,
+            Self::VarIs {var, value} =>  var .get(task_state)?.as_deref() == value.get(task_state)?.as_deref(),
 
             // String source.
 

@@ -3,6 +3,6 @@ stdin
 *.out*
 *.tar.gz
 *.sqlite
-reddit*.json
-reddit*.txt
 bacon.toml
+/reddit*
+/*-result*

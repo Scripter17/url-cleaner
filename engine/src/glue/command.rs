@@ -14,7 +14,6 @@ use std::ffi::OsString;
 use url::Url;
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
-use which::which;
 
 use crate::types::*;
 use crate::util::*;
@@ -112,12 +111,6 @@ impl CommandConfig {
             }
         }
         Ok(ret)
-    }
-
-    /// Returns [`true`] if [`Self::program`] is findable and exists.
-    #[must_use]
-    pub fn exists(&self) -> bool {
-        PathBuf::from(&self.program).exists() || which(&self.program).is_ok()
     }
 
     /// Executes the command and gets its exit code.

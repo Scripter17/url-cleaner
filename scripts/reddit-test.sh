@@ -1,5 +1,9 @@
 #!/usr/bin/bash
 
+# Takes a list of domains from the command line (or domains.sh), gets real world URLs from reddit, then cleans them.
+
+cd $(dirname "$0")/..
+
 MODE=
 DOMAINS=( )
 PAGES=1
@@ -67,3 +71,5 @@ cat reddit-outputs.json |\
         .Ok.urls
       ] | transpose | map({source: .[0], url: .[1], result: .[2]})
     ' > reddit-results.json
+
+cd - &> /dev/null
