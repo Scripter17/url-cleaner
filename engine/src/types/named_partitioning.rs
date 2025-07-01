@@ -112,7 +112,7 @@ impl NamedPartitioning {
 
     /// If `element`] is in `self`, return [`true`].
     pub fn contains(&self, element: Option<&str>) -> bool {
-        debug!(self, NamedPartitioning::contains, element);
+        debug!(NamedPartitioning::contains, self, element);
         match element {
             Some(element) => self.map.contains_key(element),
             None => self.if_null.is_some()
@@ -121,7 +121,7 @@ impl NamedPartitioning {
 
     /// If `element`] is in `self`, return the partition it belongs to.
     pub fn get_partition_of<'a>(&'a self, element: Option<&str>) -> Option<&'a str> {
-        debug!(self, NamedPartitioning::get_partition_of, element);
+        debug!(NamedPartitioning::get_partition_of, self, element);
         match element {
             Some(element) => self.map.get(element).map(|x| &**x),
             None => self.if_null.as_deref()

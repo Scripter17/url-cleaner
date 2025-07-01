@@ -58,7 +58,21 @@
 				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example" , "expectation": {"UrlIs": "https://www.tumblr.com/example" }},
 				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example/", "expectation": {"UrlIs": "https://www.tumblr.com/example/"}},
 				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com"  , "expectation": {"UrlIs": "https://example.tumblr.com/"}},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com." , "expectation": {"UrlIs": "https://example.tumblr.com/"}}
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com." , "expectation": {"UrlIs": "https://example.tumblr.com/"}},
+
+				{"task_config": "https://bsky.app/profile/abc"            , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc."           , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.b"          , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bs"         , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsk"        , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky"       , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky."      , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky.s"     , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky.so"    , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky.soc"   , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky.soci"  , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky.socia" , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
+				{"task_config": "https://bsky.app/profile/abc.bsky.social", "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}}
 			]
 		},
 		{
@@ -96,8 +110,8 @@
 		{
 			"params_diff": {"flags": ["embed_compatibility"]},
 			"tests": [
-				{"task_config": "https://bsky.app", "expectation": {"UrlIs": "https://fxbsky.app/"}},
-				{"task_config": "https://fxbsky.app", "expectation": {"UrlIs": "https://fxbsky.app/"}}
+				{"task_config": "https://bsky.app/profile/abc.bsky.social/post/123"  , "expectation": {"UrlIs": "https://fxbsky.app/profile/abc.bsky.social/post/123"}},
+				{"task_config": "https://fxbsky.app/profile/abc.bsky.social/post/123", "expectation": {"UrlIs": "https://fxbsky.app/profile/abc.bsky.social/post/123"}}
 			]
 		},
 		{
@@ -163,7 +177,7 @@
 						"url": "https://twitter.com/not-actually-important",
 						"context": {
 							"vars": {
-								"faci_site_name": "twitter",
+								"contact_info_site_name": "twitter",
 								"link_text": "@example"
 							}
 						}

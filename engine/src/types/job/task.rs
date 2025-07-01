@@ -7,7 +7,7 @@ use crate::glue::*;
 use crate::util::*;
 
 /// An individual job.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Task<'a> {
     /// The [`TaskConfig`] to use.
     pub config: TaskConfig,

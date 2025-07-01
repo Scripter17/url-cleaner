@@ -26,6 +26,6 @@ def thing(x, i):
 
 with open("engine/default-cleaner.json", "r") as f:
     x = json.loads(f.read())["docs"]
-    del x["title"]
+    del x["name"]
     del x["description"]
     thing(x, 3)

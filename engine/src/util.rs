@@ -3,8 +3,6 @@
 use std::ops::Bound;
 use std::borrow::Cow;
 
-use thiserror::Error;
-
 mod macros;
 pub(crate) use macros::*;
 mod suitability;
@@ -97,45 +95,52 @@ pub(crate) fn exorub(i: Option<usize>) -> Bound<usize> {
     }
 }
 
-/// Where to put a value relative to a segment.
-#[derive(Debug, Clone)]
-pub(crate) enum SegRel {
-    /// Insert it before the segment.
-    Before,
-    /// Set the segment to the value.
-    At,
-    /// Insert it after the segment.
-    After
-}
-
-#[derive(Debug, Error)]
-#[error("Segment not found.")]
-pub(crate) struct SegmentNotFound;
-
-/// Set a segment or insert a new one before or after it.
-pub(crate) fn set_rel_segment<'a, I: IntoIterator<Item = &'a str>>(i: I, n: isize, rel: SegRel, to: Option<&'a str>) -> Result<Vec<&'a str>, SegmentNotFound> {
-    let mut segments = i.into_iter().collect::<Vec<_>>();
-
-    #[allow(clippy::indexing_slicing, reason = "`fixed_n` is guaranteed to be in bounds.")]
-    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-    match (neg_index(n, segments.len()), to, rel) {
-        (Some(fixed_n), Some(to), SegRel::Before) => segments.insert(fixed_n, to),
-        (Some(fixed_n), Some(to), SegRel::At    ) => segments[fixed_n]=to,
-        (Some(fixed_n), Some(to), SegRel::After ) => segments.insert(fixed_n + 1, to),
-
-        (Some(fixed_n), None    , SegRel::At) => {let _ = segments.remove(fixed_n);}
-        (Some(_      ), None    , _         ) => {},
-
-        (None         , Some(_ ), _) => Err(SegmentNotFound)?,
-        (None         , None    , _) => {}
-    }
-
-    Ok(segments)
-}
-
 /// Percent encoding helper.
 pub(crate) fn peh(s: &str) -> Cow<'_, str> {
     percent_encoding::percent_decode_str(s).decode_utf8_lossy()
+}
+
+/// Helper method.
+/// # Errors
+/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segemnt_not_found`.
+pub(crate) fn set_segment<'a, E>(part: &'a str, index: isize, value: Option<&'a str>, segment_not_found: E, split: char) -> Result<Vec<&'a str>, E> {
+    let mut segments = part.split(split).collect::<Vec<_>>();
+    let index = neg_index(index, segments.len()).ok_or(segment_not_found)?;
+    match value {
+        #[expect(clippy::indexing_slicing, reason = "Can't happen.")]
+        Some(value) => segments[index] = value,
+        None => {segments.remove(index);}
+    }
+    Ok(segments)
+}
+
+/// Helper method.
+///
+/// Assumes `split` is one byte but this is only called with `.` and `/` so who cares.
+/// # Errors
+/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segemnt_not_found`.
+pub(crate) fn insert_segment_at<E>(part: &str, index: isize, value: &str, segment_not_found: E, split: char, join: &str) -> Result<String, E> {
+    use std::ops::Bound;
+    #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+    let start_of_first_shifted_segment = (match index {
+        0.. => part.split(split).nth(index as usize),
+        ..0 => part.split(split).nth_back((-index) as usize)
+    }.ok_or(segment_not_found)?.as_ptr() as usize) - (part.as_ptr() as usize);
+    Ok(format!(
+        "{}{value}{join}{}",
+        part.get((Bound::Unbounded, Bound::Excluded(start_of_first_shifted_segment))).expect("This to be written right."),
+        part.get((Bound::Included(start_of_first_shifted_segment), Bound::Unbounded)).expect("This to be written right.")
+    ))
+}
+
+/// Helper method.
+/// # Errors
+/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segemnt_not_found`.
+pub(crate) fn insert_segment_after<E>(part: &str, index: isize, value: &str, segment_not_found: E, split: char, join: &str) -> Result<String, E> {
+    let mut segments = part.split(split).collect::<Vec<_>>();
+    #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+    segments.insert(neg_index(index, segments.len()).ok_or(segment_not_found)? + 1, value);
+    Ok(segments.join(join))
 }
 
 #[cfg(test)]

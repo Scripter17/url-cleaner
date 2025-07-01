@@ -33,11 +33,11 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 <!--cmd scripts/gen-docs.py-->
 ### Flags
 
+- `keep_affiliate`: Don't remove affiliate info from affiliate links.
 - `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
 - `embed_compatibility`: Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.
 - `keep_http`: Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
-- `remove_lang`: Remove language info. Very minimal and probably pretty buggy.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
 - `unmobile`: Remove `m` and `mobile` segments from the subdomain. Should be expanded to query params.
@@ -52,11 +52,11 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `furaffinity_unsfw`: Change `sfw.furaffinity.net` to `furaffinity.net`.
 - `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
 - `tumblr_unsubdomain_blog`: Change `blog.tumblr.com` to `tumblr.com/blog`.
-- `youtube_remove_sub_confirmation`: Keep the `sub_confirmation` query paramerer in `youtube.com` URLs.
+- `youtube_remove_sub_confirmation`: Remove the `sub_confirmation` query paramerer in `youtube.com` URLs.
 - `youtube_unembed`: Change `youtube.com/embed/abc` to `youtube.com/watch?v=abc`.
 - `youtube_unlive`: Change `youtube.com/live/abc` to `youtube.com/watch?v=abc`.
 - `youtube_unshort`: Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`.
-- `youtube_unplaylist`: Remove the `list` query param from `https://youtube.com/watch` URLs.
+- `youtube_unplaylist`: Remove the `list` query param from `youtube.com/watch` URLs.
 
 ### Vars
 
@@ -86,10 +86,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `utp_prefixes`: Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove.
 
-### Maps
-
-- `nh_lang_query_params`: The name of each `NormalizedHost`'s language query param.
-
 ### Named Partitionings
 
 - `nh_categories`: Categories of similar websites with shared cleaning methods.
@@ -111,9 +107,8 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 #### Vars
 
-- `bsky_handle`: The handle of the user for `bsky.app/profile/did:plc:12345678` URLs.
-- `faci_site_name`: The name of the website this URL is contact info for. Used for unmangling furaffinity contact info links.
+- `handle`: The handle to replace the user ID with.
+- `contact_info_site_name`: The name oe the website this URL is contact info for.
 - `link_text`: The text of the link the job came from.
 - `redirect_shortcut`: The destination of a redirect as specified by some part of the source. For example, the link's text.
-- `twitter_handle`: The handle of the twitter user for `x.com/i/web/status/` and `x.com/i/user/` URLs.
 <!--/cmd-->

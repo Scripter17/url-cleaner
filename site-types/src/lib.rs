@@ -6,7 +6,7 @@ pub mod clean;
 pub use clean::*;
 pub mod get_host_parts;
 pub use get_host_parts::*;
-mod util;
+pub(crate) mod util;
 
 pub use clean::CleanResult;
 pub use get_host_parts::GetHostPartsResult;

@@ -132,18 +132,18 @@ impl RequestConfig {
     /// If any of [`Self::headers`]'s calls to [`HeaderName::try_from`] returns an error, that error is returned.
     ///
     /// If the call to [`RequestBody::apply`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &TaskStateView) -> Result<reqwest::blocking::RequestBuilder, MakeHttpRequestError> {
-        let mut ret=job_state.http_client(self.client_config_diff.as_ref())?
+    pub fn make(&self, task_state: &TaskStateView) -> Result<reqwest::blocking::RequestBuilder, MakeHttpRequestError> {
+        let mut ret=task_state.http_client(self.client_config_diff.as_ref())?
             .request(
                 self.method.clone(),
-                Url::parse(get_str!(self.url, job_state, MakeHttpRequestError))?,
+                Url::parse(get_str!(self.url, task_state, MakeHttpRequestError))?,
             );
         for (name, value) in self.headers.iter() {
-            if let Some(value) = value.get(job_state)? {
+            if let Some(value) = value.get(task_state)? {
                 ret = ret.header(HeaderName::try_from(name)?, HeaderValue::try_from(value.into_owned())?);
             }
         }
-        if let Some(body) = &self.body {ret=body.apply(ret, job_state)?;}
+        if let Some(body) = &self.body {ret=body.apply(ret, task_state)?;}
         Ok(ret)
     }
 
@@ -152,8 +152,8 @@ impl RequestConfig {
     /// If the call to [`Self::make`] returns an error, that error is returned.
     ///
     /// If the call to [`reqwest::blocking::RequestBuilder::send`] returns an error, that error is returned.
-    pub fn send(&self, job_state: &TaskStateView) -> Result<reqwest::blocking::Response, SendHttpRequestError> {
-        Ok(self.make(job_state)?.send()?)
+    pub fn send(&self, task_state: &TaskStateView) -> Result<reqwest::blocking::Response, SendHttpRequestError> {
+        Ok(self.make(task_state)?.send()?)
     }
 
     /// Make the request, send it, and return the response specified by [`Self::response_handler`].
@@ -161,8 +161,8 @@ impl RequestConfig {
     /// If the call to [`Self::send`] returns an error, that error is returned.
     ///
     /// If the call to [`RequestHandler::handle`} returns an error, that error is returned.
-    pub fn response(&self, job_state: &TaskStateView) -> Result<String, HttpResponseError> {
-        Ok(self.response_handler.handle(self.send(job_state)?, job_state)?)
+    pub fn response(&self, task_state: &TaskStateView) -> Result<String, HttpResponseError> {
+        Ok(self.response_handler.handle(self.send(task_state)?, task_state)?)
     }
 }
 
@@ -208,19 +208,19 @@ impl RequestBody {
     /// Inserts the specified body into a [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn apply(&self, request: reqwest::blocking::RequestBuilder, job_state: &TaskStateView) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
+    pub fn apply(&self, request: reqwest::blocking::RequestBuilder, task_state: &TaskStateView) -> Result<reqwest::blocking::RequestBuilder, RequestBodyError> {
         Ok(match self {
-            Self::Text(source) => request.body(get_string!(source, job_state, RequestBodyError)),
+            Self::Text(source) => request.body(get_string!(source, task_state, RequestBodyError)),
             Self::Form(map) => {
                 let mut ret = HashMap::new();
                 for (k, v) in map.iter() {
-                    if let Some(v) = v.get(job_state)? {
+                    if let Some(v) = v.get(task_state)? {
                         ret.insert(k, v);
                     }
                 }
                 request.form(&ret)
             },
-            Self::Json(json) => request.json(&json.make(job_state)?)
+            Self::Json(json) => request.json(&json.make(task_state)?)
         })
     }
 }
@@ -288,13 +288,13 @@ impl ResponseHandler {
     /// Gets the specified part of a [`reqwest::blocking::Response`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn handle(&self, response: reqwest::blocking::Response, job_state: &TaskStateView) -> Result<String, ResponseHandlerError> {
+    pub fn handle(&self, response: reqwest::blocking::Response, task_state: &TaskStateView) -> Result<String, ResponseHandlerError> {
         Ok(match self {
             Self::Body => response.text()?,
-            Self::Header(source) => response.headers().get(get_str!(source, job_state, ResponseHandlerError)).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
+            Self::Header(source) => response.headers().get(get_str!(source, task_state, ResponseHandlerError)).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             Self::Url => response.url().as_str().to_string(),
             Self::Cookie(source) => {
-                let name = get_string!(source, job_state, ResponseHandlerError);
+                let name = get_string!(source, task_state, ResponseHandlerError);
                 response.cookies().find(|cookie| cookie.name()==name).ok_or(ResponseHandlerError::CookieNotFound)?.value().to_string()
             }
         })

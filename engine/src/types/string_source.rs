@@ -24,6 +24,15 @@ use crate::util::*;
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(remote = "Self")]
 pub enum StringSource {
+    /// Return a reference to the contained [`String`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// assert_eq!(StringSource::String("abc".into()).get(&task_state).unwrap(), Some("abc".into()));
+    /// ```
+    String(String),
     /// Always returns [`None`].
     ///
     /// Deserializes from and serializes to `null`.
@@ -39,18 +48,6 @@ pub enum StringSource {
     /// ```
     #[default]
     None,
-    /// If [`Self::AssertMatches::value`] satisfies [`Self::AssertMatches::matcher`], return it. Otherwise return the error [`StringSourceError::AssertMatchesFailed`].
-    /// # Errors
-    /// If [`Self::AssertMatches::value`] doesn't satisfy [`Self::AssertMatches::matcher`], returns the error [`StringSourceError::AssertMatchesFailed`].
-    AssertMatches {
-        /// The [`Self`] to assert matches [`Self::AssertMatches::matcher`].
-        value: Box<Self>,
-        /// The [`StringMatcher`] to match [`Self::AssertMatches::value`].
-        matcher: Box<StringMatcher>,
-        /// The error message. Defaults to [`Self::None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        message: Box<Self>
-    },
     /// Always returns [`StringSourceError::ExplicitError`] with the included error.
     /// # Errors
     /// Always returns the error [`StringSourceError::ExplicitError`].
@@ -152,28 +149,17 @@ pub enum StringSource {
         /// The value to return if [`Self::NoneTo::value`] is [`None`].
         if_none: Box<Self>
     },
-
-    /// Joins a list of [`Self`]s delimited by [`Self::Join::join`].
+    /// If [`Self::AssertMatches::value`] satisfies [`Self::AssertMatches::matcher`], return it. Otherwise return the error [`StringSourceError::AssertMatchesFailed`].
     /// # Errors
-    #[doc = edoc!(geterr(Self), getnone(Self, StringSource))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::Join {
-    ///     values: vec!["abc".into(), "def".into()],
-    ///     join: "/".into()
-    /// }.get(&task_state).unwrap(), Some("abc/def".into()));
-    /// ```
-    Join {
-        /// The values to join the values of with [`Self::Join::join`].
-        values: Vec<Self>,
-        /// The string to join the values of [`Self::Join::values`].
-        ///
-        /// Defaults to the empty string.
+    /// If [`Self::AssertMatches::value`] doesn't satisfy [`Self::AssertMatches::matcher`], returns the error [`StringSourceError::AssertMatchesFailed`].
+    AssertMatches {
+        /// The [`Self`] to assert matches [`Self::AssertMatches::matcher`].
+        value: Box<Self>,
+        /// The [`StringMatcher`] to match [`Self::AssertMatches::value`].
+        matcher: Box<StringMatcher>,
+        /// The error message. Defaults to [`Self::None`].
         #[serde(default, skip_serializing_if = "is_default")]
-        join: String
+        message: Box<Self>
     },
     /// If the [`Params::flags`] specified by [`Self::IfFlag::flag`] is set, return the value of [`Self::IfFlag::then`]. If it's not set, return the value of [`Self::IfFlag::else`].
     /// # Errors
@@ -204,39 +190,6 @@ pub enum StringSource {
         /// The value to return if the flag is unset.
         r#else: Box<Self>
     },
-    /// Gets the value of [`Self::IfStringMatches::value`] then, if it satisfies [`Self::IfStringMatches::matcher`], returns the value of [`Self::IfStringMatches::then`].
-    /// If it doesn't match, returns the value of [`Self::IfStringMatches::else`]
-    /// # Errors
-    #[doc = edoc!(geterr(Self, 3), satisfyerr(StringMatcher))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::IfStringMatches {
-    ///     value  : Box::new("abc".into()),
-    ///     matcher: Box::new(StringMatcher::Is("abc".into())),
-    ///     then   : Box::new("matches".into()),
-    ///     r#else : Box::new("doesn't match".into())
-    /// }.get(&task_state).unwrap(), Some("matches".into()));
-    ///
-    /// assert_eq!(StringSource::IfStringMatches {
-    ///     value  : Box::new("def".into()),
-    ///     matcher: Box::new(StringMatcher::Is("abc".into())),
-    ///     then   : Box::new("matches".into()),
-    ///     r#else : Box::new("doesn't match".into())
-    /// }.get(&task_state).unwrap(), Some("doesn't match".into()));
-    /// ```
-    IfStringMatches {
-        /// The value to match.
-        value: Box<Self>,
-        /// The matcher to match [`Self::IfStringMatches::value`].
-        matcher: Box<StringMatcher>,
-        /// The value to return if [`Self::IfStringMatches::matcher`] passes.
-        then: Box<Self>,
-        /// The value to return if [`Self::IfStringMatches::matcher`] fails.
-        r#else: Box<Self>
-    },
     /// If the value of [`Self::IfStringIsNone::value`] is [`None`], returns the value of [`Self::IfStringIsNone::then`].
     /// If it's [`Some`], returns the value of [`Self::IfStringIsNone::else`].
     /// # Errors
@@ -264,6 +217,39 @@ pub enum StringSource {
         /// The value to return if [`Self::IfStringIsNone::value`] returns [`None`].
         then: Box<Self>,
         /// The value to return if [`Self::IfStringIsNone::value`] returns [`Some`].
+        r#else: Box<Self>
+    },
+    /// Gets the value of [`Self::IfStringMatches::value`] then, if it satisfies [`Self::IfStringMatches::matcher`], returns the value of [`Self::IfStringMatches::then`].
+    /// If it doesn't match, returns the value of [`Self::IfStringMatches::else`]
+    /// # Errors
+    #[doc = edoc!(geterr(Self, 3), checkerr(StringMatcher))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// assert_eq!(StringSource::IfStringMatches {
+    ///     value  : Box::new("abc".into()),
+    ///     matcher: Box::new(StringMatcher::Is("abc".into())),
+    ///     then   : Box::new("matches".into()),
+    ///     r#else : Box::new("doesn't match".into())
+    /// }.get(&task_state).unwrap(), Some("matches".into()));
+    ///
+    /// assert_eq!(StringSource::IfStringMatches {
+    ///     value  : Box::new("def".into()),
+    ///     matcher: Box::new(StringMatcher::Is("abc".into())),
+    ///     then   : Box::new("matches".into()),
+    ///     r#else : Box::new("doesn't match".into())
+    /// }.get(&task_state).unwrap(), Some("doesn't match".into()));
+    /// ```
+    IfStringMatches {
+        /// The value to match.
+        value: Box<Self>,
+        /// The matcher to match [`Self::IfStringMatches::value`].
+        matcher: Box<StringMatcher>,
+        /// The value to return if [`Self::IfStringMatches::matcher`] passes.
+        then: Box<Self>,
+        /// The value to return if [`Self::IfStringMatches::matcher`] fails.
         r#else: Box<Self>
     },
     /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, get it.
@@ -302,15 +288,9 @@ pub enum StringSource {
         #[serde(flatten)]
         map: Map<Self>,
     },
-    /// Return a reference to the contained [`String`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::String("abc".into()).get(&task_state).unwrap(), Some("abc".into()));
-    /// ```
-    String(String),
+
+
+
     /// Returns the value of the specified [`UrlPart`] of the [`TaskStateView::url`].
     /// # Examples
     /// ```
@@ -322,7 +302,7 @@ pub enum StringSource {
     Part(UrlPart),
     /// Parses [`Self::ExtractPart`] as a [`BetterUrl`] and returns the part specified by [`Self::ExtractPart::part`].
     /// # Errors
-    #[doc = edoc!(geterr(Self), callerr(BetterUrl::parse))]
+    #[doc = edoc!(geterr(Self), getnone(StringSource, StringSource), callerr(BetterUrl::parse))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -339,6 +319,34 @@ pub enum StringSource {
         /// The [`UrlPart`] to get from [`Self::ExtractPart::value`].
         part: UrlPart
     },
+
+
+
+    /// Joins a list of [`Self`]s delimited by [`Self::Join::join`].
+    /// # Errors
+    #[doc = edoc!(geterr(Self), getnone(Self, StringSource))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// assert_eq!(StringSource::Join {
+    ///     values: vec!["abc".into(), "def".into()],
+    ///     join: "/".into()
+    /// }.get(&task_state).unwrap(), Some("abc/def".into()));
+    /// ```
+    Join {
+        /// The values to join the values of with [`Self::Join::join`].
+        values: Vec<Self>,
+        /// The string to join the values of [`Self::Join::values`].
+        ///
+        /// Defaults to the empty string.
+        #[serde(default, skip_serializing_if = "is_default")]
+        join: String
+    },
+
+
+
     /// Gets the var specified by the [`VarRef`].
     ///
     /// Can by any type of var supported by [`VarType`].
@@ -426,6 +434,9 @@ pub enum StringSource {
         /// The element whose partition to get the name of.
         element: Box<Self>
     },
+
+
+
     /// Gets the value of [`Self::Modified::value`] then applies [`Self::Modified::modification`].
     /// # Errors
     #[doc = edoc!(geterr(Self), applyerr(StringModification))]
@@ -451,30 +462,8 @@ pub enum StringSource {
         modification: Box<StringModification>
     },
 
-    /// Calls [`RequestConfig::response`] and returns the value.
-    /// # Errors
-    #[doc = edoc!(callerr(RequestConfig::response))]
-    #[cfg(feature = "http")]
-    HttpRequest(Box<RequestConfig>),
-    /// Calls [`CommandConfig::output`] and returns the value.
-    /// # Errors
-    #[doc = edoc!(callerr(CommandConfig::output))]
-    #[cfg(feature = "commands")]
-    CommandOutput(Box<CommandConfig>),
-    /// If an entry with a category of [`Self::Cache::category`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
-    ///
-    /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
-    /// # Errors
-    #[doc = edoc!(callerr(Cache::read), geterr(Self), callerr(Cache::write))]
-    #[cfg(feature = "cache")]
-    Cache {
-        /// The category of the thing to cache.
-        category: Box<Self>,
-        /// The key of the thing thing to cache.
-        key: Box<Self>,
-        /// The value to cache.
-        value: Box<Self>
-    },
+
+
     /// Gets the value of [`Self::RegexFind::value`] and calls [`Regex::find`] on it.
     ///
     /// If the value of [`Self::RegexFind::value`] is [`None`], simply returns [`None`].
@@ -498,6 +487,39 @@ pub enum StringSource {
         value: Box<Self>,
         /// The [`Regex`] to use to find the substring.
         regex: RegexWrapper
+    },
+
+
+
+    /// Calls [`RequestConfig::response`] and returns the value.
+    /// # Errors
+    #[doc = edoc!(callerr(RequestConfig::response))]
+    #[cfg(feature = "http")]
+    HttpRequest(Box<RequestConfig>),
+
+
+
+    /// Calls [`CommandConfig::output`] and returns the value.
+    /// # Errors
+    #[doc = edoc!(callerr(CommandConfig::output))]
+    #[cfg(feature = "commands")]
+    CommandOutput(Box<CommandConfig>),
+
+
+
+    /// If an entry with a category of [`Self::Cache::category`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
+    ///
+    /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
+    /// # Errors
+    #[doc = edoc!(callerr(Cache::read), geterr(Self), callerr(Cache::write))]
+    #[cfg(feature = "cache")]
+    Cache {
+        /// The category of the thing to cache.
+        category: Box<Self>,
+        /// The key of the thing thing to cache.
+        key: Box<Self>,
+        /// The value to cache.
+        value: Box<Self>
     },
     /// Calls a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_sources`].
     /// # Errors
@@ -752,18 +774,10 @@ impl StringSource {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
-        debug!(self, StringSource::get, task_state);
+        debug!(StringSource::get, self);
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string.as_str())),
             Self::None => None,
-            Self::AssertMatches {value, matcher, message} => {
-                let ret = value.get(task_state)?;
-                if matcher.satisfied_by(ret.as_deref(), task_state)? {
-                    ret
-                } else {
-                    Err(StringSourceError::AssertMatchesFailed(message.get(task_state)?.unwrap_or_default().into_owned()))?
-                }
-            }
             Self::Error(msg) => Err(StringSourceError::ExplicitError(msg.clone()))?,
             Self::ErrorToNone(value) => value.get(task_state).ok().flatten(),
             Self::ErrorToEmptyString(value) => value.get(task_state).unwrap_or(Some(Cow::Borrowed(""))),
@@ -788,43 +802,46 @@ impl StringSource {
                 Some(x) => Some(x),
                 None => if_none.get(task_state)?
             },
-
-
-
-            // I love that [`Result`] and [`Option`] implement [`FromIterator`].
-            // It's so silly but it works SO well.
-            Self::Join {values, join} => values.iter().map(|value| value.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
-            Self::IfFlag {flag, then, r#else} => if flag.get(task_state)? {then} else {r#else}.get(task_state)?,
-            Self::IfStringMatches {value, matcher, then, r#else} => {
-                if matcher.satisfied_by(value.get(task_state)?.as_deref(), task_state)? {
-                    then.get(task_state)?
+            Self::AssertMatches {value, matcher, message} => {
+                let ret = value.get(task_state)?;
+                if matcher.check(ret.as_deref(), task_state)? {
+                    ret
                 } else {
-                    r#else.get(task_state)?
+                    Err(StringSourceError::AssertMatchesFailed(message.get(task_state)?.unwrap_or_default().into_owned()))?
                 }
             },
-            Self::IfStringIsNone {value, then, r#else} => {
-                if value.get(task_state)?.is_none() {
-                    then.get(task_state)?
-                } else {
-                    r#else.get(task_state)?
-                }
-            },
+            Self::IfFlag          {flag ,          then, r#else} => if               flag .get(task_state)?                          {then} else {r#else}.get(task_state)?,
+            Self::IfStringIsNone  {value,          then, r#else} => if               value.get(task_state)?.is_none()                {then} else {r#else}.get(task_state)?,
+            Self::IfStringMatches {value, matcher, then, r#else} => if matcher.check(value.get(task_state)?.as_deref(), task_state)? {then} else {r#else}.get(task_state)?,
             Self::Map {value, map} => map.get(value.get(task_state)?).ok_or(StringSourceError::StringNotInMap)?.get(task_state)?,
 
 
 
             Self::Part(part) => part.get(task_state.url),
-            Self::ExtractPart{value, part} => value.get(task_state)?.map(|url_str| BetterUrl::parse(&url_str)).transpose()?.and_then(|url| part.get(&url).map(|part_value| Cow::Owned(part_value.into_owned()))),
+            Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| Cow::Owned(x.into_owned())),
+
+
+
+            Self::Join {values, join} => values.iter().map(|value| value.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+
+
+
             Self::Var(var_ref) => var_ref.get(task_state)?,
             Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
             Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
                 .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
                 .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
+
+
+
             Self::Modified {value, modification} => {
                 let mut ret = value.get(task_state)?;
                 modification.apply(&mut ret, task_state)?;
                 ret
             },
+
+
+
             #[cfg(feature = "regex")]
             Self::RegexFind {value, regex} => match value.get(task_state)? {
                 Some(Cow::Owned   (value)) => regex.get()?.find(&value).map(|x| Cow::Owned   (x.as_str().to_string())),
@@ -832,10 +849,13 @@ impl StringSource {
                 None => None
             },
 
-            // External state.
+
 
             #[cfg(feature = "http")]
             Self::HttpRequest(config) => Some(Cow::Owned(config.response(task_state)?)),
+
+
+
             #[cfg(feature = "commands")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(task_state)?)),
 

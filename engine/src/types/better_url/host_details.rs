@@ -1,6 +1,7 @@
 //! Details for hosts not stored/exposed by [`url`].
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -95,6 +96,14 @@ impl TryFrom<HostDetails> for Ipv6Details {
     }
 }
 
+impl FromStr for HostDetails {
+    type Err = url::ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse(s)
+    }
+}
+
 impl HostDetails {
     /// Gets the details of a host [`str`].
     /// # Errors
@@ -103,24 +112,12 @@ impl HostDetails {
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert!(matches!(HostDetails::from_host_str("example.com").unwrap(), HostDetails::Domain(_)));
-    /// assert!(matches!(HostDetails::from_host_str("127.0.0.1"  ).unwrap(), HostDetails::Ipv4  (_)));
-    /// assert!(matches!(HostDetails::from_host_str("[::1]"      ).unwrap(), HostDetails::Ipv6  (_)));
+    /// assert!(matches!(HostDetails::parse("example.com").unwrap(), HostDetails::Domain(_)));
+    /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap(), HostDetails::Ipv4  (_)));
+    /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap(), HostDetails::Ipv6  (_)));
     /// ```
-    pub fn from_host_str(host: &str) -> Result<Self, url::ParseError> {
+    pub fn parse(host: &str) -> Result<Self, url::ParseError> {
         url::Host::parse(host).map(|host| Self::from_host(&host))
-    }
-
-    /// Gets the details of a domain host.
-    /// # Errors
-    /// If the call to [`DomainDetails::from_domain_str] returns an error, that error is returned.
-    pub fn from_domain_str(domain: &str) -> Result<Self, GetDomainDetailsError> {
-        Ok(DomainDetails::from_domain_str(domain)?.into())
-    }
-
-    /// Gets the details of a domain host without checking if it's a domain.
-    pub fn from_domain_str_unchecked(domain: &str) -> Self {
-        DomainDetails::from_domain_str_unchecked(domain).into()
     }
 
     /// Gets the details of an [`Ipv4Addr`] host.
@@ -174,10 +171,15 @@ impl HostDetails {
     /// ```
     pub fn from_host<T: AsRef<str>>(host: &url::Host<T>) -> Self {
         match host {
-            url::Host::Domain(domain) => Self::from_domain_str_unchecked(domain.as_ref()),
+            url::Host::Domain(domain) => Self::Domain(DomainDetails::parse_unchecked(domain.as_ref())),
             url::Host::Ipv4  (addr  ) => Self::from_ipv4_addr(*addr),
             url::Host::Ipv6  (addr  ) => Self::from_ipv6_addr(*addr)
         }
+    }
+
+    /// Gets the details of a [`url::Url`].
+    pub fn from_url(url: &url::Url) -> Option<Self> {
+        url.host().map(|host| Self::from_host(&host))
     }
 
     /// If `self` is [`Self::Domain`], return it.
@@ -185,9 +187,9 @@ impl HostDetails {
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert!(matches!(HostDetails::from_host_str("example.com").unwrap().domain_details(), Some(_)));
-    /// assert!(matches!(HostDetails::from_host_str("127.0.0.1"  ).unwrap().domain_details(), None   ));
-    /// assert!(matches!(HostDetails::from_host_str("[::1]"      ).unwrap().domain_details(), None   ));
+    /// assert!(matches!(HostDetails::parse("example.com").unwrap().domain_details(), Some(_)));
+    /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().domain_details(), None   ));
+    /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap().domain_details(), None   ));
     /// ```
     pub fn domain_details(&self) -> Option<&DomainDetails> {
         match self {
@@ -201,9 +203,9 @@ impl HostDetails {
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert!(matches!(HostDetails::from_host_str("example.com").unwrap().ipv4_details(), None   ));
-    /// assert!(matches!(HostDetails::from_host_str("127.0.0.1"  ).unwrap().ipv4_details(), Some(_)));
-    /// assert!(matches!(HostDetails::from_host_str("[::1]"      ).unwrap().ipv4_details(), None   ));
+    /// assert!(matches!(HostDetails::parse("example.com").unwrap().ipv4_details(), None   ));
+    /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv4_details(), Some(_)));
+    /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap().ipv4_details(), None   ));
     /// ```
     pub fn ipv4_details(&self) -> Option<&Ipv4Details> {
         match self {
@@ -217,9 +219,9 @@ impl HostDetails {
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert!(matches!(HostDetails::from_host_str("example.com").unwrap().ipv6_details(), None   ));
-    /// assert!(matches!(HostDetails::from_host_str("127.0.0.1"  ).unwrap().ipv6_details(), None   ));
-    /// assert!(matches!(HostDetails::from_host_str("[::1]"      ).unwrap().ipv6_details(), Some(_)));
+    /// assert!(matches!(HostDetails::parse("example.com").unwrap().ipv6_details(), None   ));
+    /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv6_details(), None   ));
+    /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap().ipv6_details(), Some(_)));
     /// ```
     pub fn ipv6_details(&self) -> Option<&Ipv6Details> {
         match self {

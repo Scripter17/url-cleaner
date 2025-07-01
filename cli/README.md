@@ -12,35 +12,35 @@ See [`../default_cleaner.md`](../default_cleaner.md) for details about the inclu
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 25.04 (kernel 6.14.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-06-11.
+Last updated 2025-07-01.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  6.538,
-    "1"    :  6.607,
-    "10"   :  6.580,
-    "100"  :  6.843,
-    "1000" :  9.420,
-    "10000": 30.782
+    "0"    :  6.331,
+    "1"    :  6.497,
+    "10"   :  6.575,
+    "100"  :  6.856,
+    "1000" :  9.239,
+    "10000": 29.846
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  6.376,
-    "1"    :  6.467,
-    "10"   :  6.588,
-    "100"  :  6.894,
-    "1000" : 10.430,
-    "10000": 40.691
+    "0"    :  6.325,
+    "1"    :  6.501,
+    "10"   :  6.572,
+    "100"  :  6.925,
+    "1000" : 10.427,
+    "10000": 40.991
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  6.360,
-    "1"    :  6.454,
-    "10"   :  6.648,
-    "100"  :  7.068,
-    "1000" : 11.446,
-    "10000": 48.881
+    "0"    :  6.301,
+    "1"    :  6.532,
+    "10"   :  6.673,
+    "100"  :  7.118,
+    "1000" : 11.329,
+    "10000": 49.429
   }
 }
 ```

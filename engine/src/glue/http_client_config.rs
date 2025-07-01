@@ -27,6 +27,11 @@ pub struct HttpClientConfig {
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub https_only: bool,
+    /// The value passed to [`reqwest::blocking::ClientBuilder::referer`].
+    ///
+    /// Defaults to [`false`] and frankly there's no legitimate reason for the header to exist or for you to turn it on.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub referer: bool,
     /// Proxies to use.
     ///
     /// All proxies supported by [`reqwest`] should always be supported, but if I missed anything let me know.
@@ -37,18 +42,13 @@ pub struct HttpClientConfig {
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub no_proxy: bool,
-    /// The value passed to [`reqwest::blocking::ClientBuilder::referer`].
-    ///
-    /// Defaults to [`false`] and frankly there's no legitimate reason for the header to exist or for you to turn it on.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub referer: bool,
     /// Extra PEM encoded TLS certificates to trust.
     ///
     /// See [`reqwest::blocking::ClientBuilder::add_root_certificate`] and [`reqwest::tls::Certificate::from_pem`] for details.
     ///
     /// Defaults to an empty list.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub extra_certificates: HashSet<String>
+    pub extra_root_certificates: HashSet<String>
 }
 
 /// The policy on how to handle [HTTP redirects](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections).
@@ -98,10 +98,10 @@ impl HttpClientConfig {
         for proxy in &self.proxies {
             temp = temp.proxy(proxy.clone().make()?);
         }
-        for cert in &self.extra_certificates {
+        if self.no_proxy {temp = temp.no_proxy();}
+        for cert in &self.extra_root_certificates {
             temp = temp.add_root_certificate(reqwest::tls::Certificate::from_pem(cert.as_bytes())?);
         }
-        if self.no_proxy {temp = temp.no_proxy();}
         temp.build()
     }
 }
@@ -130,12 +130,12 @@ pub struct HttpClientConfigDiff {
     /// If [`Some`], overwrites [`HttpClientConfig::referer`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub referer: Option<bool>,
-    /// Adds to [`HttpClientConfig::extra_certificates`].
+    /// Adds to [`HttpClientConfig::extra_root_certificates`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub add_extra_certificates: HashSet<String>,
-    /// Removes from [`HttpClientConfig::extra_certificates`].
+    pub add_extra_root_certificates: HashSet<String>,
+    /// Removes from [`HttpClientConfig::extra_root_certificates`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub remove_extra_certificates: HashSet<String>
+    pub remove_extra_root_certificates: HashSet<String>
 }
 
 impl HttpClientConfigDiff {
@@ -148,7 +148,7 @@ impl HttpClientConfigDiff {
         to.proxies.extend(self.add_proxies.clone());
         if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
         if let Some(referer) = self.referer {to.no_proxy = referer;}
-        to.extra_certificates.extend(self.add_extra_certificates.clone());
-        to.extra_certificates.retain(|extra_certificate| !self.remove_extra_certificates.contains(extra_certificate));
+        to.extra_root_certificates.extend(self.add_extra_root_certificates.clone());
+        to.extra_root_certificates.retain(|extra_root_certificate| !self.remove_extra_root_certificates.contains(extra_root_certificate));
     }
 }

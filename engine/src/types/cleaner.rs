@@ -157,12 +157,12 @@ impl Cleaner {
 
     /// Applies each [`Action`] in [`Self::actions`] in order to the provided [`TaskState`].
     ///
-    /// If an error is returned, `job_state` may be left in a partially modified state.
+    /// If an error is returned, `task_state` may be left in a partially modified state.
     /// # Errors
     #[doc = edoc!(applyerr(Action, 3))]
-    pub fn apply(&self, job_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
+    pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
         for action in &self.actions {
-            action.apply(job_state)?;
+            action.apply(task_state)?;
         }
         Ok(())
     }

@@ -12,10 +12,11 @@ for file in *.md */*.md; do
       echo "$line"
     fi
 
-    if cmd=$(echo $line | grep -oP '^(?<=<!--cmd ).+(?=-->)$'); then
+    if cmd=$(echo "$line" | grep -oP '(?<=<!--cmd ).+(?=-->)'); then
       bash -c "$cmd"
       printlines=0
     elif [ "$line" == '<!--/cmd-->' ]; then
+      echo "$line"
       printlines=1
     fi
   done < "$file" > "$file.temp"

@@ -119,16 +119,16 @@ impl StringSourceJsonValue {
     /// See each variant of [`Self`] for when each variant returns an error.
     ///
     /// But TL;DR: If any call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make(&self, job_state: &TaskStateView) -> Result<Value, StringSourceError> {
-        debug!(self, StringSourceJsonValue::make, self, job_state);
+    pub fn make(&self, task_state: &TaskStateView) -> Result<Value, StringSourceError> {
+        debug!(StringSourceJsonValue::make, self);
 
         Ok(match self {
             Self::Null      => Value::Null,
             Self::Bool  (x) => Value::Bool(*x),
             Self::Number(x) => Value::Number(x.clone()),
-            Self::String(x) => Value::String(get_string!(x, job_state, StringSourceError)),
-            Self::Array (x) => Value::Array(x.iter().map(|x| x.make(job_state)).collect::<Result<_, _>>()?),
-            Self::Object(x) => Value::Object(x.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), v.make(job_state)?))).collect::<Result<_, _>>()?)
+            Self::String(x) => Value::String(get_string!(x, task_state, StringSourceError)),
+            Self::Array (x) => Value::Array(x.iter().map(|x| x.make(task_state)).collect::<Result<_, _>>()?),
+            Self::Object(x) => Value::Object(x.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), v.make(task_state)?))).collect::<Result<_, _>>()?)
         })
     }
 }

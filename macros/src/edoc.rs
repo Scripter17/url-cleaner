@@ -150,10 +150,10 @@ fn thing2(span: Span, name: &str, args: &[Arg]) -> Result<String> {
         ("seterr"               , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::set"))         , x.clone()                ])?,
         ("seterr"               , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
 
-        ("satisfyerr"           , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::satisfied_by")), x.clone()                ])?,
-        ("satisfyerr"           , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
-        ("satisfyerrte"         , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::satisfied_by")), epa.clone()              ])?,
-        ("satisfyerrfne"        , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::satisfied_by")), epa.clone()              ])?,
+        ("checkerr"             , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::check"))       , x.clone()                ])?,
+        ("checkerr"             , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                       , Arg::Int(1)              ])?,
+        ("checkerrte"           , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::check"))       , epa.clone()              ])?,
+        ("checkerrfne"          , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::check"))       , epa.clone()              ])?,
 
         ("applyerr"             , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::apply"))       , x.clone()                ])?,
         ("applyerr"             , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,

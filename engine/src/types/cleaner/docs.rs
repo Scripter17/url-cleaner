@@ -15,9 +15,9 @@ use crate::util::*;
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct CleanerDocs {
-    /// The title of the [`Cleaner`].
+    /// The name of the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub title: Option<String>,
+    pub name: Option<String>,
     /// The description of the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub description: Option<Vec<String>>,

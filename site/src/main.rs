@@ -11,7 +11,6 @@ use std::num::NonZero;
 #[macro_use] extern crate rocket;
 use rocket::serde::json::Json;
 use rocket::http::Status;
-use rocket::Request;
 use rocket::data::Limits;
 use rocket::State;
 use clap::Parser;
@@ -38,79 +37,79 @@ struct Args {
     /// A url_cleaner::types::Cleaner JSON file. If none is provided, uses URL Cleaner's default cleaner.
     #[cfg(feature = "default-cleaner")]
     #[arg(long, short)]
-    pub cleaner: Option<PathBuf>,
+    cleaner: Option<PathBuf>,
     /// A url_cleaner::types::Cleaner JSON file. Has to be set because this instance of URL Cleaner Site was compiled without a default cleaner.
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(long, short)]
-    pub cleaner: PathBuf,
+    cleaner: PathBuf,
     /// A url_cleaner::types::ParamsDiff JSON file to apply to the cleaner by default.
     #[arg(long)]
-    pub params_diff: Vec<PathBuf>,
+    params_diff: Vec<PathBuf>,
     /// Flags to insert into the params.
     #[arg(short, long)]
-    pub flag: Vec<String>,
+    flag: Vec<String>,
     /// Vars to insert into the params.
     #[arg(short, long)]
-    pub var: Vec<Vec<String>>,
+    var: Vec<Vec<String>>,
     /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
-    pub read_cache: Option<bool>,
+    read_cache: Option<bool>,
     /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
-    pub write_cache: Option<bool>,
+    write_cache: Option<bool>,
     /// The max size of a POST request to the `/clean` endpoint.
     /// 
     /// The included userscript uses the `/get-max-json-size` endpoint to query this value and adjust its batch sizes accordingly.
     #[arg(long, default_value = DEFAULT_MAX_JSON_SIZE, value_parser = parse_byte_unit)]
-    pub max_size: rocket::data::ByteUnit,
+    max_size: rocket::data::ByteUnit,
     /// The IP to listen to.
     #[arg(long, default_value = DEFAULT_BIND_IP, aliases = ["ip", "address"])]
-    pub bind: IpAddr,
+    bind: IpAddr,
     /// The port to listen to.
     #[arg(long, default_value_t = DEFAULT_PORT)]
-    pub port: u16,
+    port: u16,
     /// Overrides the cleaner's [`Cleaner::cache_path`].
     #[arg(long)]
     #[cfg(feature = "cache")]
-    pub cache_path: Option<CachePath>,
+    cache_path: Option<CachePath>,
     /// Amount of threads to process tasks in.
     /// 
     /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
-    pub threads: usize,
+    threads: usize,
     /// The (optional) TLS/HTTPS cert. If specified, requires `--key`.
     #[arg(long, requires = "key")]
-    pub cert: Option<PathBuf>,
+    cert: Option<PathBuf>,
     /// The (optional) TLS/HTTPS key. If specified, requires `--cert`.
     #[arg(long, requires = "cert")]
-    pub key: Option<PathBuf>
+    key: Option<PathBuf>
 }
 
 /// The config for the server.
 #[derive(Debug)]
-pub struct ServerConfig {
+struct ServerConfig {
     /// The [`Cleaner`] to use.
-    pub cleaner: Cleaner,
+    cleaner: Cleaner,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
-    pub cache: Cache,
+    cache: Cache,
     /// A [`String`] version of [`Self::cleaner`].
-    pub cleaner_string: String,
+    cleaner_string: String,
     /// The number of threads to spawn for each [`JobConfig`].
-    pub threads: NonZero<usize>,
+    threads: NonZero<usize>,
     /// The max size for a [`JobConfig`]'s JSON representation.
-    pub max_json_size: rocket::data::ByteUnit
+    max_json_size: rocket::data::ByteUnit
 }
 
 /// The state of the server.
 #[derive(Debug)]
-pub struct ServerState {
+struct ServerState {
     /// The [`ServerConfig`] to use.
-    pub config: ServerConfig,
+    config: ServerConfig,
     /// The number of [`JobConfig`]s handled. Used for naming threads.
-    pub job_count: Mutex<usize>,
+    job_count: Mutex<usize>,
 }
 
 /// Make the server.
@@ -172,14 +171,7 @@ async fn rocket() -> _ {
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
         tls: args.cert.zip(args.key).map(|(cert, key)| rocket::config::TlsConfig::from_paths(cert, key)), // No unwraps.
         ..rocket::Config::default()
-    })
-        .mount("/", routes![index])
-        .mount("/clean", routes![clean])
-        .register("/clean", catchers![clean_error])
-        .mount("/get-max-json-size", routes![get_max_json_size])
-        .mount("/get-cleaner", routes![get_cleaner])
-        .mount("/get-host-parts", routes![get_host_parts])
-        .manage(server_state)
+    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner, get_host_parts]).manage(server_state)
 }
 
 /// The `/` route.
@@ -191,13 +183,13 @@ https://github.com/Scripter17/url-cleaner"#
 }
 
 /// The `/get-cleaner` route.
-#[get("/")]
+#[get("/get-cleaner")]
 async fn get_cleaner(state: &State<ServerState>) -> &str {
     &state.config.cleaner_string
 }
 
 /// The `/clean` route.
-#[post("/", data="<job_config>")]
+#[post("/clean", data="<job_config>")]
 async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<CleanResult>) {
     match serde_json::from_str::<JobConfig>(job_config) {
         Ok(job_config) => {
@@ -276,23 +268,14 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
     }
 }
 
-/// The error handler for the `/clean` route.
-#[catch(default)]
-async fn clean_error(status: Status, _: &Request<'_>) -> Json<Result<(), CleanError>> {
-    Json(Err(CleanError {
-        status: status.code,
-        message: status.reason().expect("A reason").to_string()
-    }))
-}
-
 /// The `get-max-json-size` route.
-#[get("/")]
+#[get("/get-max-json-size")]
 async fn get_max_json_size(state: &State<ServerState>) -> String {
     state.config.max_json_size.as_u64().to_string()
 }
 
 /// The `get-host-parts` route.
-#[post("/", data="<host>")]
+#[post("/get-host-parts", data="<host>")]
 async fn get_host_parts(host: &str) -> (Status, Json<GetHostPartsResult>) {
     match HostParts::try_from(host).map_err(|_| CouldntParseHost) {
         x @ Ok (_) => (Status {code: 200}, Json(x)),

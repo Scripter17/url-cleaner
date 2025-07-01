@@ -51,7 +51,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
     /// assert!(yes_null.contains(None::<&str>));
     /// ```
     pub fn contains<Q>(&self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Debug + Hash + Eq + ?Sized {
-        debug!(self, Set::contains, value);
+        debug!(Set::contains, self, value);
         match value {
             Some(x) => self.set.contains(x),
             None => self.if_null

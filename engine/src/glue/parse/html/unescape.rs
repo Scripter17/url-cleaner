@@ -31,7 +31,7 @@ pub enum UnescapeTextError {
 /// assert_eq!(parse::html::unescape_text("a&#x41;b").unwrap(), "aAb");
 /// ```
 pub fn unescape_text(s: &str) -> Result<String, UnescapeTextError> {
-    debug!(&(), parse::html::unescape_text, s);
+    debug!(parse::html::unescape_text, &(), s);
     
     let mut ret = String::new();
 
@@ -78,7 +78,7 @@ pub enum CharRefError {
 /// parse::html::parse_char_ref("unknown").unwrap_err();
 /// ```
 pub fn parse_char_ref(char_ref: &str) -> Result<Cow<'static, str>, CharRefError> {
-    debug!(&(), parse::html::parse_char_ref, char_ref);
+    debug!(parse::html::parse_char_ref, &(), char_ref);
 
     if char_ref.starts_with("#") {return Ok(Cow::Owned(parse_num_char_ref(char_ref)?.into()));}
     Ok(Cow::Borrowed(match char_ref {
@@ -2276,14 +2276,14 @@ enum HTMLNCRLastState {
 #[allow(clippy::unwrap_used, reason = "Shouldn't ever happen.")]
 #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
 pub fn parse_num_char_ref(char_ref: &str) -> Result<char, NumCharRefError> {
-    debug!(&(), parse::html::parse_num_char_ref, char_ref);
+    debug!(parse::html::parse_num_char_ref, &(), char_ref);
     
     let mut scratchspace: u32 = 0;
 
     let mut last_state = HTMLNCRLastState::None;
 
     for c in char_ref.chars() {
-        debug!(&(), parse::html::parse_num_char_ref, c, last_state, scratchspace);
+        debug!(parse::html::parse_num_char_ref, &(), c, last_state, scratchspace);
         match (last_state, c) {
             (HTMLNCRLastState::None                             , '#'                              ) => {last_state = HTMLNCRLastState::Hash;},
             (HTMLNCRLastState::None                             , _                                ) => Err(NumCharRefError::NotANumCharRef)?,
@@ -2295,7 +2295,7 @@ pub fn parse_num_char_ref(char_ref: &str) -> Result<char, NumCharRefError> {
         }
     }
 
-    debug!(&(), parse::html::parse_num_char_ref, scratchspace);
+    debug!(parse::html::parse_num_char_ref, &(), scratchspace);
 
     let ret = char::from_u32(scratchspace).ok_or(NumCharRefError::InvalidCharCode(scratchspace))?;
 

@@ -42,7 +42,7 @@ impl<T: Debug> Map<T> {
     ///
     /// If either of the above return [`None`], returns the value of [`Self::else`].
     pub fn get<U: Debug + AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
-        debug!(self, Map::get, key);
+        debug!(Map::get, self, key);
         match key {
             Some(key) => self.map.get(key.as_ref()),
             None => self.if_null.as_deref()

@@ -22,6 +22,7 @@ mode=
 
 compile=1
 features=
+confirm_restart=1
 
 server=http://localhost:9149
 
@@ -35,26 +36,27 @@ out="benchmarks-$(date +%s).tar.gz"
 for arg in "$@"; do
   shift
   case "$arg" in
-    --no-compile)      mode=         ; compile=0                        ;;
-    --only-compile)    mode=         ; hyperfine=0                      ;;
-    --features)        mode=features                                    ;;
+    --no-compile)         mode=         ; compile=0                        ;;
+    --only-compile)       mode=         ; hyperfine=0                      ;;
+    --features)           mode=features                                    ;;
+    --no-confirm-restart) mode=         ; confirm_restart=0                ;;
 
-    --https)           mode=         ; server="${server/#http:/https:}" ;;
-    --servers)         mode=servers  ; SERVERS=( )                      ;;
+    --https)              mode=         ; server="${server/#http:/https:}" ;;
+    --servers)            mode=servers  ; SERVERS=( )                      ;;
 
-    --all)             mode=         ; hyperfine=1                      ;;
-    --no-hyperfine)    mode=         ; hyperfine=0                      ;;
-    --warmup)          mode=warmup                                      ;;
-    --runs)            mode=runs                                        ;;
-    --ignore-failure)  mode=         ; ignore_failure=--ignore-failure  ;;
+    --all)                mode=         ; hyperfine=1                      ;;
+    --no-hyperfine)       mode=         ; hyperfine=0                      ;;
+    --warmup)             mode=warmup                                      ;;
+    --runs)               mode=runs                                        ;;
+    --ignore-failure)     mode=         ; ignore_failure=--ignore-failure  ;;
 
-    --urls)            mode=urls     ; URLS=( )                         ;;
-    --nums)            mode=nums     ; NUMS=( )                         ;;
+    --urls)               mode=urls     ; URLS=( )                         ;;
+    --nums)               mode=nums     ; NUMS=( )                         ;;
 
-    --out)             mode=out                                         ;;
+    --out)                mode=out                                         ;;
 
-    --)                break ;;
-    --*)               echo Unknown option \"$arg\"; exit 1 ;;
+    --)                   break ;;
+    --*)                  echo Unknown option \"$arg\"; exit 1 ;;
 
     *) case "$mode" in
       features) features=(--features "$arg") ;;
@@ -91,9 +93,10 @@ if [ $compile -eq 1 -a $hyperfine -eq 1 ]; then
   fi
   cargo build -r ${features[@]} --config profile.release.strip=false --config profile.release.debug=2
   if [ $? -ne 0 ]; then exit 3; fi
-  if [ $old_mtime -lt $(stat -c %Y ../../target/release/url-cleaner-site) ]; then
-    read -p "Press enter once you've (re)started URL Cleaner Site using the newly compiled binary." < /dev/tty
-  fi
+fi
+
+if [ "$confirm_restart" -eq 1 ]; then
+  read -p "Press enter once you've (re)started URL Cleaner Site using the newly compiled binary." < /dev/tty
 fi
 
 for server in "${SERVERS[@]}"; do

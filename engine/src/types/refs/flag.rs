@@ -23,15 +23,11 @@ pub enum FlagType {
     ///     ..Default::default()
     /// });
     ///
-    /// assert!( FlagType::Params.get(&task_state, "abc").unwrap());
-    /// assert!(!FlagType::Params.get(&task_state, "def").unwrap());
+    /// assert!( FlagType::Params.get("abc", &task_state).unwrap());
+    /// assert!(!FlagType::Params.get("def", &task_state).unwrap());
     /// ```
     #[default]
     Params,
-    /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
-    /// # Errors
-    /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
-    CommonArg,
     /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
     /// # Examples
     /// ```
@@ -42,9 +38,13 @@ pub enum FlagType {
     ///     ..Default::default()
     /// });
     ///
-    /// assert!(FlagType::Scratchpad.get(&task_state, "abc").unwrap())
+    /// assert!(FlagType::Scratchpad.get("abc", &task_state).unwrap())
     /// ```
-    Scratchpad
+    Scratchpad,
+    /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
+    /// # Errors
+    /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
+    CommonArg
 }
 
 /// The enum of erros [`FlagType::get`] and [`FlagRef::get`] can return.
@@ -71,11 +71,11 @@ impl FlagType {
     /// Gets a flag.
     /// # Errors
     /// If `self` is [`Self::CommonArg`] and `task_state`'s [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
-    pub fn get(&self, task_state: &TaskStateView, name: &str) -> Result<bool, GetFlagError> {
+    pub fn get(&self, name: &str, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
         Ok(match self {
-            Self::Params     => task_state.params     .flags.contains(name),
-            Self::CommonArg  => task_state.common_args.ok_or(GetFlagError::NotInCommonContext)?.flags.contains(name),
-            Self::Scratchpad => task_state.scratchpad .flags.contains(name)
+            Self::Params     => task_state.params    .flags.contains(name),
+            Self::Scratchpad => task_state.scratchpad.flags.contains(name),
+            Self::CommonArg  => task_state.common_args.ok_or(GetFlagError::NotInCommonContext)?.flags.contains(name)
         })
     }
 }
@@ -119,10 +119,10 @@ impl FlagRef {
     ///
     /// If the call to [`FlagType::get`] returns an error, that error is returned.
     pub fn get(&self, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
-        debug!(self, FlagRef::get, task_state);
+        debug!(FlagRef::get, self);
         match self {
-            Self {r#type, name: StringSource::String(name)} => r#type.get(task_state, name),
-            _ => self.r#type.get(task_state, get_str!(self.name, task_state, GetFlagError))
+            Self {r#type, name: StringSource::String(name)} => r#type.get(name, task_state),
+            _ => self.r#type.get(get_str!(self.name, task_state, GetFlagError), task_state)
         }
     }
 }

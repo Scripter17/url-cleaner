@@ -32,7 +32,7 @@ impl FromStr for HostParts {
     type Err = url::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match HostDetails::from_host_str(s)? {
+        Ok(match HostDetails::parse(s)? {
             HostDetails::Domain(dd) => Self::Domain(DomainParts {
                 domain           : s.get(dd.domain_bounds()).expect("A domain.").into(),
                 subdomain        : dd.subdomain_bounds        ().and_then(|x| s.get(x).map(Into::into)),

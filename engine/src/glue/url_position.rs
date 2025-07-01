@@ -9,10 +9,10 @@ use crate::util::*;
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Suitability)]
 #[suitable(always)]
 #[serde(transparent)]
-pub struct UrlPosition(#[serde(serialize_with = "serialize", deserialize_with = "deserialize")] pub url::Position);
+pub struct BetterUrlPosition(#[serde(serialize_with = "serialize", deserialize_with = "deserialize")] pub url::Position);
 
 #[allow(non_upper_case_globals, reason = "Simulating enum variants.")]
-impl UrlPosition {
+impl BetterUrlPosition {
     /// [`url::Position::AfterFragment`].
     pub const AfterFragment : Self = Self(url::Position:: AfterFragment );
     /// [`url::Position::AfterHost`].
@@ -47,7 +47,7 @@ impl UrlPosition {
     pub const BeforeUsername: Self = Self(url::Position:: BeforeUsername);
 }
 
-impl PartialEq for UrlPosition {
+impl PartialEq for BetterUrlPosition {
     fn eq(&self, other: &Self) -> bool {
         match (self.0, other.0) {
             (Position::AfterFragment , Position::AfterFragment ) => true,
@@ -71,9 +71,9 @@ impl PartialEq for UrlPosition {
     }
 }
 
-impl Eq for UrlPosition {}
+impl Eq for BetterUrlPosition {}
 
-/// Serializer for [`UrlPosition`].
+/// Serializer for [`BetterUrlPosition`].
 fn serialize<S: Serializer>(value: &Position, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(match value {
         Position::BeforeScheme   => "BeforeScheme",
@@ -95,7 +95,7 @@ fn serialize<S: Serializer>(value: &Position, serializer: S) -> Result<S::Ok, S:
     })
 }
 
-/// Visitor for [`UrlPosition`].
+/// Visitor for [`BetterUrlPosition`].
 struct PositionVisitor;
 
 impl Visitor<'_> for PositionVisitor {
@@ -128,36 +128,36 @@ impl Visitor<'_> for PositionVisitor {
     }
 }
 
-/// Deserializer for [`UrlPosition`].
+/// Deserializer for [`BetterUrlPosition`].
 fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Position, D::Error> {
     deserializer.deserialize_any(PositionVisitor)
 }
 
-impl From<url::Position> for UrlPosition {
+impl From<url::Position> for BetterUrlPosition {
     fn from(value: url::Position) -> Self {
         Self(value)
     }
 }
 
-impl From<UrlPosition> for url::Position {
-    fn from(value: UrlPosition) -> Self {
+impl From<BetterUrlPosition> for url::Position {
+    fn from(value: BetterUrlPosition) -> Self {
         value.0
     }
 }
 
-impl AsRef<url::Position> for UrlPosition {
+impl AsRef<url::Position> for BetterUrlPosition {
     fn as_ref(&self) -> &url::Position {
         &self.0
     }
 }
 
-impl AsMut<url::Position> for UrlPosition {
+impl AsMut<url::Position> for BetterUrlPosition {
     fn as_mut(&mut self) -> &mut url::Position {
         &mut self.0
     }
 }
 
-impl std::ops::Deref for UrlPosition {
+impl std::ops::Deref for BetterUrlPosition {
     type Target = url::Position;
 
     fn deref(&self) -> &Self::Target {
@@ -165,13 +165,13 @@ impl std::ops::Deref for UrlPosition {
     }
 }
 
-impl std::ops::DerefMut for UrlPosition {
+impl std::ops::DerefMut for BetterUrlPosition {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl std::fmt::Display for UrlPosition {
+impl std::fmt::Display for BetterUrlPosition {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str(match self.0 {
             url::Position::BeforeScheme   => "BeforeScheme",

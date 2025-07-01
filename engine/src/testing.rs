@@ -72,7 +72,7 @@ impl TestSet {
         for (test, task_source, expectation) in self.tests.into_iter().zip(job).zip(expectations).map(|((x, y), z)| (x, y, z)) {
             println!("Running test: {}", serde_json::to_string(&test).expect("Serialization to never fail"));
             crate::task_state_view!(task_state, url = task_source.expect("Making TaskSource failed.").make().expect("Making Task failed.").r#do().expect("Task failed."));
-            assert!(expectation.satisfied_by(&task_state).is_ok_and(|x| x), "The expectation failed.\nExpectation: {expectation:?}\ntask_state: {task_state:?}");
+            assert!(expectation.check(&task_state).is_ok_and(|x| x), "The expectation failed.\nExpectation: {expectation:?}\ntask_state: {task_state:?}");
         }
 
         println!();

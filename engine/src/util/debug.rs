@@ -46,19 +46,18 @@ impl std::ops::Drop for Deindenter {
 
 /// When the debug feature is enabled, print debug info.
 macro_rules! debug {
-    ($self:expr, $func:pat $(, $name:ident)*) => {
+    ($func:pat, $self:expr $(, $arg:expr)*) => {
         #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
         let _deindenter = {
             let mut dsl = crate::util::DEBUG_STATE.lock().unwrap();
-
             let indent = dsl.indent;
             let line = dsl.line;
 
             let call_details = dsl.item_details.entry(($self as *const _ as usize, std::any::type_name_of_val($self), format!("{:?}", $self))).or_default()
-                .call_details.entry((stringify!($func), vec![$(format!("{:?}", $name)),*])).or_default();
+                .call_details.entry((stringify!($func), vec![$(format!("{:?}", $arg)),*])).or_default();
 
-            eprint!(
-                "{:>4} {:>4} {:>4} {}{}; self: {:?}",
+            println!(
+                "{:>3}-{:>3}-{:>3}-{}{}",
                 line,
                 match call_details.count {
                     0 => "".to_string(),
@@ -68,12 +67,11 @@ macro_rules! debug {
                     Some(x) => x.to_string(),
                     None => "".to_string()
                 },
-                "|   ".repeat(indent),
-                stringify!($func),
-                $self
+                "|---".repeat(indent),
+                stringify!($func)
             );
-            $(eprint!("; {}: {:?}", stringify!($name), $name);)*
-            eprintln!();
+            eprintln!("            {}- self: {:?}", "|   ".repeat(indent), $self);
+            $(eprintln!("            {}- {}: {:?}", "|   ".repeat(indent), stringify!($arg), $arg);)*
 
             call_details.count += 1;
             call_details.last_line = Some(line);

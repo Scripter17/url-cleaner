@@ -45,29 +45,29 @@ macro_rules! string_or_struct_magic {
 
 /// Helper macro to get a [`StringSource`]'s value as a [`String`] or return an error if it's [`None`].
 macro_rules! get_string {
-    ($value:expr, $job_state:expr, $error:ty) => {
-        $value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
+    ($value:expr, $task_state:expr, $error:ty) => {
+        $value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
     }
 }
 
 /// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
 macro_rules! get_str {
-    ($value:expr, $job_state:expr, $error:ty) => {
-        &*$value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
+    ($value:expr, $task_state:expr, $error:ty) => {
+        &*$value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
     }
 }
 
 /// Helper macro to get a [`StringSource`]'s value as a [`Cow`] or return an error if it's [`None`].
 macro_rules! get_cow {
-    ($value:expr, $job_state:expr, $error:ty) => {
-        $value.get(&$job_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
+    ($value:expr, $task_state:expr, $error:ty) => {
+        $value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
     }
 }
 
 /// Helper macro to impl [`From`] for unit types like [`SetPortError`].
 macro_rules! from_units {
     ($sum:ty, $($unit:tt),*) => {
-        $(impl From<$unit> for UrlPartSetError {
+        $(impl From<$unit> for $sum {
             #[doc = concat!("[`Self::", stringify!($unit), "`]")]
             fn from(value: $unit) -> Self {
                 // Ensures the type is actually a unit.

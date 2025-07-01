@@ -97,16 +97,16 @@ impl CommandConfig {
     /// Builds the [`Command`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn build(&self, job_state: &TaskStateView) -> Result<Command, CommandError> {
+    pub fn build(&self, task_state: &TaskStateView) -> Result<Command, CommandError> {
         let mut ret = Command::new(&self.program);
         for arg in self.args.iter() {
-            ret.arg(OsString::from(get_string!(arg, job_state, CommandError)));
+            ret.arg(OsString::from(get_string!(arg, task_state, CommandError)));
         }
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
         }
         for (k, v) in self.envs.iter() {
-            if let Some(v) = v.get(job_state)? {
+            if let Some(v) = v.get(task_state)? {
                 ret.env(k, &*v);
             }
         }
@@ -120,8 +120,8 @@ impl CommandConfig {
     /// If the call to [`Command::status`] returns an error, that error is returned.
     ///
     /// If the call to [`ExitStatus::code`] returns [`None`], returns the error [`CommandError::SignalTermination`].
-    pub fn exit_code(&self, job_state: &TaskStateView) -> Result<i32, CommandError> {
-        self.build(job_state)?.status()?.code().ok_or(CommandError::SignalTermination)
+    pub fn exit_code(&self, task_state: &TaskStateView) -> Result<i32, CommandError> {
+        self.build(task_state)?.status()?.code().ok_or(CommandError::SignalTermination)
     }
 
     /// Executes the command and returns its STDOUT.
@@ -138,16 +138,16 @@ impl CommandConfig {
     ///
     /// If the call to [`std::str::from_utf8`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever panic.")]
-    pub fn output(&self, job_state: &TaskStateView) -> Result<String, CommandError> {
+    pub fn output(&self, task_state: &TaskStateView) -> Result<String, CommandError> {
         // https://stackoverflow.com/a/49597789/10720231
-        let mut command = self.build(job_state)?;
+        let mut command = self.build(task_state)?;
         command.stdout(Stdio::piped());
         command.stderr(Stdio::null());
         let child = if let Some(stdin) = &self.stdin {
             command.stdin(Stdio::piped());
             let mut child=command.spawn()?;
             let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
-            child_stdin.write_all(get_string!(stdin, job_state, CommandError).as_bytes())?;
+            child_stdin.write_all(get_string!(stdin, task_state, CommandError).as_bytes())?;
             child
         } else {
             command.spawn()?
@@ -161,7 +161,7 @@ impl CommandConfig {
     ///
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     #[allow(dead_code, reason = "Public API.")]
-    pub fn get_url(&self, job_state: &TaskStateView) -> Result<Url, CommandError> {
-        Ok(Url::parse(self.output(job_state)?.trim_end_matches(['\r', '\n']))?)
+    pub fn get_url(&self, task_state: &TaskStateView) -> Result<Url, CommandError> {
+        Ok(Url::parse(self.output(task_state)?.trim_end_matches(['\r', '\n']))?)
     }
 }

@@ -50,6 +50,26 @@ impl<'a> TaskState<'a> {
             cache      : self.cache
         }
     }
+
+    /// Make a [`TaskStateDebugHelper`].
+    pub fn debug_helper(&self) -> TaskStateDebugHelper<'_> {
+        TaskStateDebugHelper {
+            url: self.url,
+            scratchpad: self.scratchpad,
+            common_args: self.common_args
+        }
+    }
+}
+
+/// Used by [`Action`]'s implementation of the `debug` feature to only print stuff that can change.
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct TaskStateDebugHelper<'a> {
+    /// [`TaskState::url`].
+    pub url: &'a BetterUrl,
+    /// [`TaskState::scratchpad`].
+    pub scratchpad: &'a Scratchpad,
+    /// [`TaskState::common_args`]
+    pub common_args: Option<&'a CommonCallArgs<'a>>
 }
 
 /// Helper macro to make docs briefer.
@@ -107,7 +127,7 @@ impl<'a> TaskStateView<'a> {
     #[doc = edoc!(callerr(HttpClientConfig::make), callerr(reqwest::blocking::ClientBuilder::build))]
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        debug!(self, Params::http_client, http_client_config_diff);
+        debug!(TaskStateView::http_client, &self.params.http_client_config, http_client_config_diff);
 
         let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
 
@@ -118,8 +138,17 @@ impl<'a> TaskStateView<'a> {
 
     /// No-op to make some internal macros more convenient.
     #[allow(clippy::wrong_self_convention, reason = "Don't care.")]
-    pub(crate) const fn to_view(&'a self) -> &'a TaskStateView<'a> {
-        self
+    pub(crate) const fn to_view(&'a self) -> TaskStateView<'a> {
+        *self
+    }
+
+    /// Make a [`TaskStateDebugHelper`].
+    pub fn debug_helper(&self) -> TaskStateDebugHelper<'_> {
+        TaskStateDebugHelper {
+            url: self.url,
+            scratchpad: self.scratchpad,
+            common_args: self.common_args
+        }
     }
 }
 

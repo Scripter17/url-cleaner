@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: versions
       run: |
-        version_lines=$(grep -PI '^(// @version|url-cleaner.+version|^version)' */Cargo.toml site/userscript.js)
+        version_lines=$(grep -PI '^(// @version|url-cleaner.+version|^version)' */Cargo.toml site/url-cleaner-site.js)
         versions=$(echo "$version_lines" | grep -oP '\d[\d.]+')
         if [ $(echo "$versions" | uniq | wc -l) -ne 1 ]; then
           pad_to=$(echo "$version_lines" | grep -oP '^.+?:' | wc -L)
@@ -30,6 +30,13 @@ jobs:
         old=$(cat *.md */*.md)
         scripts/fill-mds.sh
         test "$old" == "$(cat *.md */*.md)"
+
+  build_bench:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: build_bench
+      run: cargo bench --no-run
 
   test:
     runs-on: ubuntu-latest

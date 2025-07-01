@@ -168,7 +168,7 @@ pub enum StringModification {
     ///
     /// If the call to [`Self::If::condition`] fails and [`Self::If::else`] is [`Some`], apply [`Self::If::else`].
     /// # Errors
-    #[doc = edoc!(satisfyerr(Condition), applyerr(Self))]
+    #[doc = edoc!(checkerr(Condition), applyerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -206,7 +206,7 @@ pub enum StringModification {
     ///
     /// If the string does not satisfy [`Self::IfMatches::matcher`] and [`Self::IfMatches::else`] is [`Some`], apply [`Self::IfMatches::else`].
     /// # Errors
-    #[doc = edoc!(satisfyerr(StringMatcher), applyerr(Self))]
+    #[doc = edoc!(checkerr(StringMatcher), applyerr(Self))]
     IfMatches {
         /// The [`StringMatcher`] to check if the string satisfies.
         matcher: Box<StringMatcher>,
@@ -220,7 +220,7 @@ pub enum StringModification {
     },
     /// If the string containes [`Self::IfContains::value`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
     /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError), satisfyerr(StringLocation), applyerr(Self))]
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError), checkerr(StringLocation), applyerr(Self))]
     IfContains {
         /// The [`StringSource`] to look for in the string.
         value: StringSource,
@@ -233,7 +233,7 @@ pub enum StringModification {
     },
     /// If the string containes any value in [`Self::IfContainsAny::values`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
     /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 3), getnone(StringSource, StringModificationError, 3), satisfyerr(StringLocation, 3), applyerr(Self, 3))]
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 3), getnone(StringSource, StringModificationError, 3), checkerr(StringLocation, 3), applyerr(Self, 3))]
     IfContainsAny {
         /// The [`StringSource`]s to look for in the string.
         values: Vec<StringSource>,
@@ -243,6 +243,18 @@ pub enum StringModification {
         then: Box<Self>,
         /// The [`Self`] to apply if no values in [`Self::IfContainsAny::values`] are found at [`Self::IfContains::at`].
         r#else: Option<Box<Self>>
+    },
+    /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, applies it.
+    ///
+    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), applyerr(Self))]
+    Map {
+        /// The value to index [`Self::Map::map`] with.
+        value: Box<StringSource>,
+        /// The [`Map`] to index with [`Self::Map::value`].
+        #[serde(flatten)]
+        map: Map<Self>,
     },
 
 
@@ -259,77 +271,6 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     Prepend(StringSource),
-    /// Replace all instances of [`Self::Replace::find`] with [`Self::Replace::replace`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2), getnone(StringSource, StringModification, 2))]
-    Replace {
-        /// The value to replace with [`Self::Replace::replace`].
-        find: StringSource,
-        /// The value to replace instances of [`Self::Replace::find`] with.
-        replace: StringSource
-    },
-    /// Replace the specified range with [`Self::ReplaceRange::replace`].
-    /// # Errors
-    /// If either [`Self::ReplaceRange::start`] and/or [`Self::ReplaceRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
-    ///
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    ReplaceRange {
-        /// The start of the range to replace.
-        start: isize,
-        /// The end of the range to replace.
-        end: Option<isize>,
-        /// The value to replace the range with.
-        replace: StringSource
-    },
-    /// Sets the string to lowercase.
-    ///
-    /// See [`str::to_lowercase`] for details.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification))]
-    Lowercase,
-    /// Sets the string to uppercase.
-    ///
-    /// See [`str::to_uppercase`] for details.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification))]
-    Uppercase,
-    /// Removes the specified prefix.
-    ///
-    /// If you want to not return an error when the string doesn't start with the prefix, see [`Self::StripMaybePrefix`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    ///
-    /// If the string doesn't start with the specified prefix, returns the error [`StringModificationError::PrefixNotFound`].
-    StripPrefix(StringSource),
-    /// Removes the specified suffix.
-    ///
-    /// If you want to not return an error when the string doesn't start with the suffix, see [`Self::StripMaybeSuffix`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    ///
-    /// If the string doesn't start with the specified suffix, returns the error [`StringModificationError::SuffixNotFound`].
-    StripSuffix(StringSource),
-    /// If the string starts with the specified value, remove it.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    StripMaybePrefix(StringSource),
-    /// If the string ends with the specified value, remove it.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    StripMaybeSuffix(StringSource),
-    /// Replace up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
-    ///
-    /// See [`str::replacen`] for details.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    Replacen {
-        /// The value to replace with [`Self::Replacen::replace`].
-        find: StringSource,
-        /// The value to replace instances of [`Self::Replacen::find`] with.
-        replace: StringSource,
-        /// The maximum amount of instances to replace.
-        count: usize
-    },
     /// Insert [`Self::Insert::value`] at [`Self::Insert::index`].
     ///
     /// See [`String::insert_str`] for details.
@@ -343,6 +284,45 @@ pub enum StringModification {
         /// The index to insert [`Self::Insert::value`] at.
         index: isize
     },
+    /// Sets the string to lowercase.
+    ///
+    /// See [`str::to_lowercase`] for details.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
+    Lowercase,
+    /// Sets the string to uppercase.
+    ///
+    /// See [`str::to_uppercase`] for details.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
+    Uppercase,
+
+
+
+    /// Removes the specified prefix.
+    ///
+    /// If you want to not return an error when the string doesn't start with the prefix, see [`Self::StripMaybePrefix`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
+    ///
+    /// If the string doesn't start with the specified prefix, returns the error [`StringModificationError::PrefixNotFound`].
+    StripPrefix(StringSource),
+    /// If the string starts with the specified value, remove it.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
+    StripMaybePrefix(StringSource),
+    /// Removes the specified suffix.
+    ///
+    /// If you want to not return an error when the string doesn't start with the suffix, see [`Self::StripMaybeSuffix`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
+    ///
+    /// If the string doesn't start with the specified suffix, returns the error [`StringModificationError::SuffixNotFound`].
+    StripSuffix(StringSource),
+    /// If the string ends with the specified value, remove it.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
+    StripMaybeSuffix(StringSource),
     /// Removes the [`char`] at the specified index.
     ///
     /// See [`String::remove`] for details.
@@ -351,237 +331,26 @@ pub enum StringModification {
     /// 
     /// If the specified index isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidIndex`].
     RemoveChar(isize),
-    /// Removes everything outside the specified range.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification))]
-    /// 
-    /// If either [`Self::KeepRange::start`] and/or [`Self::KeepRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
-    KeepRange {
-        /// The start of the range to keep.
-        start: isize,
-        /// The end of the range to keep.
-        end: Option<isize>
-    },
 
 
 
-    /// Calls [`::regex::Regex::captures`] and returns the result of [`::regex::Captures::expand`]ing with [`Self::RegexCaptures::replace`].
+    /// Finds the first instance of the specified substring and keeps only everything before it.
     /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), callnone(Regex::captures, StringModificationError::RegexMatchNotFound))]
-    #[cfg(feature = "regex")]
-    RegexCaptures {
-        /// The [`RegexWrapper`] to capture with.
-        regex: RegexWrapper,
-        /// The format string to pass to [`::regex::Captures::expand`].
-        replace: StringSource
-    },
-    /// [`::regex::Captures::expand`]s each [`::regex::Regex::captures_iter`] with [`Self::JoinAllRegexCaptures::replace`] and join them with [`Self::JoinAllRegexCaptures::join`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
-    #[cfg(feature = "regex")]
-    JoinAllRegexCaptures {
-        /// The [`RegexWrapper`] to capture with.
-        regex: RegexWrapper,
-        /// The format string to pass to [`::regex::Captures::expand`].
-        replace: StringSource,
-        /// The [`StringSource`] to join the expanded captures with.
-        join: StringSource
-    },
-    /// Calls [`Regex::find`] and returns its value.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(RegexWrapper), callnone(Regex::find, StringModificationError::RegexMatchNotFound))]
-    #[cfg(feature = "regex")]
-    RegexFind(RegexWrapper),
-    /// [`Regex::replace`]s the first match of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
-    #[cfg(feature = "regex")]
-    RegexReplace {
-        /// The [`RegexWrapper`] to search with.
-        regex: RegexWrapper,
-        /// The format string to expand the capture with.
-        replace: StringSource
-    },
-    /// [`Regex::replace`]s the all matches of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
-    #[cfg(feature = "regex")]
-    RegexReplaceAll {
-        /// The [`RegexWrapper`] to search with.
-        regex: RegexWrapper,
-        /// The format string to expand the captures with.
-        replace: StringSource
-    },
-    /// [`Regex::replacen`]s the first [`Self::RegexReplacen::n`] of [`Self::RegexReplace::regex`] with [`Self::RegexReplace::replace`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
-    #[cfg(feature = "regex")]
-    RegexReplacen {
-        /// The [`RegexWrapper`] to search with.
-        regex: RegexWrapper,
-        /// The number of captures to find and replace.
-        n: usize,
-        /// The format string to expand the captures with.
-        replace: StringSource
-    },
-
-
-
-    /// Percent encodes the string.
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
-    /// Please note that this can be deserialized from `"PercentDecode"`, in which case the contained [`PercentEncodeAlphabet`] is defaulted.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification))]
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert_eq!(serde_json::from_str::<StringModification>(r#""PercentEncode""#).unwrap(), StringModification::PercentEncode(Default::default()));
+    /// url_cleaner_engine::task_state_view!(task_state_view);
+    /// let mut to = Some("abc".into());
+    ///
+    /// StringModification::KeepBefore("b".into()).apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, Some("a".into()));
     /// ```
-    PercentEncode(#[serde(default, skip_serializing_if = "is_default")] PercentEncodeAlphabet),
-    /// Percent decodes the string.
-    ///
-    /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), callerr(::percent_encoding::PercentDecode::decode_utf8))]
-    PercentDecode,
-    /// [`Self::PercentDecode`] but replaces non-UTF-8 percent encoded byte equences with U+FFFD (�), the replacement character.
-    ///
-    /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification))]
-    LossyPercentDecode,
-    /// Base64 encodes the string.
-    ///
-    /// Please note that this can be deserialized from `"Base64Encode"`, in which case the contained [`Base64Config`] is defaulted.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    ///
-    /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Encode""#).unwrap(), StringModification::Base64Encode(Default::default()));
-    /// ```
-    #[cfg(feature = "base64")]
-    Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
-    /// Base64 decodes the string.
-    ///
-    /// Please note that this can be deserialized from `"Base64Decode"`, in which case the contained [`Base64Config`] is defaulted.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), callerr(::base64::engine::GeneralPurpose::decode), callerr(String::from_utf8))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    ///
-    /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Decode""#).unwrap(), StringModification::Base64Decode(Default::default()));
-    /// ```
-    #[cfg(feature = "base64")]
-    Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
-
-
-
-    /// Parses the javascript string literal at the start of the string and returns its value.
-    ///
-    /// Useful in combination with [`Self::KeepAfter`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), callerr(parse::js::string_literal_prefix))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// let mut to = Some(r#"let destination = "https:\/\/example.com";"#.into());
-    ///
-    /// StringModification::All(vec![
-    ///     StringModification::KeepAfter("let destination = ".into()),
-    ///     StringModification::GetJsStringLiteralPrefix
-    /// ]).apply(&mut to, &task_state).unwrap();;
-    ///
-    /// assert_eq!(to, Some("https://example.com".into()));
-    /// ```
-    GetJsStringLiteralPrefix,
-    /// Processes HTML character references/escape codes like `&map;` into `&` and `&41;` into `A`.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), callerr(parse::html::unescape_text))]
-    UnescapeHtmlText,
-    /// Parses the HTML element at the start of the string and returns the [`Self::UnescapeHtmlText`]ed value of the last attribute with the specified name.
-    ///
-    /// Useful in combination with [`Self::StripBefore`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), callerr(parse::html::get_attribute_value))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// let mut to = Some(r#"Redirecting you to <a id="destination" href="https://example.com?a=2&amp;b=3">example.com</a>..."#.into());
-    ///
-    /// StringModification::All(vec![
-    ///     StringModification::StripBefore(r#"<a id="destination""#.into()),
-    ///     StringModification::GetHtmlAttribute("href".into())
-    /// ]).apply(&mut to, &task_state).unwrap();
-    ///
-    /// assert_eq!(to, Some("https://example.com?a=2&b=3".into()));
-    /// ```
-    GetHtmlAttribute(StringSource),
-    /// Parses the string as JSON and uses [`serde_json::Value::pointer_mut`] with the specified pointer.
-    ///
-    /// When extracting values from javascript, it's often faster to find the start of the desired string and use [`Self::GetJsStringLiteralPrefix`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), callerr(serde_json::from_str), geterr(StringSource), getnone(StringSource, StringModification), callnone(serde_json::Value::pointer_mut, StringModificationError::JsonValueNotFound))]
-    ///
-    /// If the call to [`serde_json::Value::pointer_mut`] doesn't return a [`serde_json::Value::String`], returns the error [`StringModificationError::JsonPointeeIsNotAString`].
-    JsonPointer(StringSource),
-
-
-
-    /// The same operation [`Action::RemoveQueryParamsMatching`] does to a [`UrlPart::Query`].
-    /// # Errors
-    /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
-    ///
-    #[doc = edoc!(stringisnone(StringModification), satisfyerr(StringMatcher, 3))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
-    ///
-    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
-    /// assert_eq!(to, Some("b=3&c=5".into()));
-    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
-    /// assert_eq!(to, Some("c=5".into()));
-    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("c".into()))).apply(&mut to, &task_state).unwrap();
-    /// assert_eq!(to, None);
-    /// ```
-    RemoveQueryParamsMatching(Box<StringMatcher>),
-    /// The same operation [`Action::AllowQueryParamsMatching`] does to a [`UrlPart::Query`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), satisfyerr(StringMatcher, 3))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
-    ///
-    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
-    /// assert_eq!(to, Some("a=2&%61=4".into()));
-    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
-    /// assert_eq!(to, None);
-    /// ```
-    AllowQueryParamsMatching(Box<StringMatcher>),
-    /// The same operation [`Action::RemoveQueryParamsInSetOrStartingWithAnyInList`] does to a [`UrlPart::Query`].
-    /// # Errors
-    #[doc = edoc!(notfound(Set, StringModification))]
-    ///
-    /// If the list isn't found, returns the error [`StringModificationError::ListNotFound`].
-    RemoveQueryParamsInSetOrStartingWithAnyInList {
-        /// The name of the [`Set`] in [`Params::sets`] to use.
-        set: String,
-        /// The name of the list in [`Params::lists`] to use.
-        list: String
-    },
+    KeepBefore(StringSource),
     /// Finds the first instance of the specified substring and removes everything before it.
     ///
     /// Useful in combination with [`Self::GetJsStringLiteralPrefix`].
@@ -601,6 +370,19 @@ pub enum StringModification {
     /// assert_eq!(to, Some("bc".into()));
     /// ```
     StripBefore(StringSource),
+    /// Effectively [`Self::KeepAfter`] with [`Self::KeepBetween::start`] and [`Self::KeepBefore`] with [`Self::KeepBetween::end`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2), getnone(StringSource, StringModification, 2))]
+    ///
+    /// If the value of [`Self::KeepBetween::start`] isn't found in the string, returns the error [`StringModificationError::KeepBetweenStartNotFound`].
+    ///
+    /// If the value of [`Self::KeepBetween::end`] isn't found in the string after [`Self::KeepBetween::start`], returns the error [`StringModificationError::KeepBetweenEndNotFound`].
+    KeepBetween {
+        /// The value to [`Self::KeepAfter`].
+        start: StringSource,
+        /// The value to [`Self::KeepBefore`].
+        end: StringSource
+    },
     /// Finds the first instance of the specified substring and removes everything after it.
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
@@ -618,23 +400,6 @@ pub enum StringModification {
     /// assert_eq!(to, Some("ab".into()));
     /// ```
     StripAfter(StringSource),
-    /// Finds the first instance of the specified substring and keeps only everything before it.
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
-    ///
-    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    ///
-    /// url_cleaner_engine::task_state_view!(task_state_view);
-    /// let mut to = Some("abc".into());
-    ///
-    /// StringModification::KeepBefore("b".into()).apply(&mut to, &task_state_view).unwrap();
-    ///
-    /// assert_eq!(to, Some("a".into()));
-    /// ```
-    KeepBefore(StringSource),
     /// Finds the first instance of the specified substring and keeps only everything after it.
     ///
     /// Useful in combination with [`Self::GetHtmlAttribute`].
@@ -654,18 +419,88 @@ pub enum StringModification {
     /// assert_eq!(to, Some("c".into()));
     /// ```
     KeepAfter(StringSource),
-    /// Effectively [`Self::KeepAfter`] with [`Self::ExtractBetween::start`] and [`Self::KeepBefore`] with [`Self::ExtractBetween::end`].
+
+
+
+    /// Replace up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
+    ///
+    /// See [`str::replacen`] for details.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
+    Replacen {
+        /// The value to replace with [`Self::Replacen::replace`].
+        find: StringSource,
+        /// The value to replace instances of [`Self::Replacen::find`] with.
+        replace: StringSource,
+        /// The maximum amount of instances to replace.
+        count: usize
+    },
+    /// Replace all instances of [`Self::ReplaceAll::find`] with [`Self::ReplaceAll::replace`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2), getnone(StringSource, StringModification, 2))]
+    ReplaceAll {
+        /// The value to replace with [`Self::ReplaceAll::replace`].
+        find: StringSource,
+        /// The value to replace instances of [`Self::ReplaceAll::find`] with.
+        replace: StringSource
+    },
+
+
+
+    /// Replace the specified range with [`Self::ReplaceRange::replace`].
+    /// # Errors
+    /// If either [`Self::ReplaceRange::start`] and/or [`Self::ReplaceRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
     ///
-    /// If the value of [`Self::ExtractBetween::start`] isn't found in the string, returns the error [`StringModificationError::ExtractBetweenStartNotFound`].
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
+    ReplaceRange {
+        /// The start of the range to replace.
+        start: isize,
+        /// The end of the range to replace.
+        end: Option<isize>,
+        /// The value to replace the range with.
+        replace: StringSource
+    },
+    /// Removes everything outside the specified range.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
+    /// 
+    /// If either [`Self::KeepRange::start`] and/or [`Self::KeepRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
+    KeepRange {
+        /// The start of the range to keep.
+        start: isize,
+        /// The end of the range to keep.
+        end: Option<isize>
+    },
+
+
+
+    /// Split the string with [`Self::SetSegment::split`] and set the [`Self::SetSegment::index`] segment to [`Self::SetSegment::value`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2))]
     ///
-    /// If the value of [`Self::ExtractBetween::end`] isn't found in the string after [`Self::ExtractBetween::start`], returns the error [`StringModificationError::ExtractBetweenEndNotFound`].
-    ExtractBetween {
-        /// The value to [`Self::KeepAfter`].
-        start: StringSource,
-        /// The value to [`Self::KeepBefore`].
-        end: StringSource
+    /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
+    SetSegment {
+        /// The value to split the string with.
+        split: StringSource,
+        /// The index of the segment to set.
+        index: isize,
+        /// The value to set the segment to.
+        value: StringSource
+    },
+    /// Split the string with [`Self::InsertSegment::split`] and inserts [`Self::InsertSegment::value`] before the [`Self::InsertSegment::index`] segment.
+    ///
+    /// If [`Self::InsertSegment::index`] is equal to the amount of segments, appends the new segment at the end.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2))]
+    ///
+    /// If the segment boundary isn't found, returns the error [`StringModificationError::SegmentNotFound`].
+    InsertSegment {
+        /// The value to split the string with.
+        split: StringSource,
+        /// The location to insert the value at.
+        index: isize,
+        /// The value to insert.
+        value: StringSource
     },
     /// Split the string with [`Self::KeepNthSegment::split`] and keep only the [`Self::KeepNthSegment::index`] segment.
     /// # Errors
@@ -723,46 +558,235 @@ pub enum StringModification {
         #[serde(default, skip_serializing_if = "is_default")]
         end: Option<isize>
     },
-    /// Split the string with [`Self::SetSegment::split`] and set the [`Self::SetSegment::index`] segment to [`Self::SetSegment::value`].
+
+
+
+    /// Parses the javascript string literal at the start of the string and returns its value.
+    ///
+    /// Useful in combination with [`Self::KeepAfter`].
     /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2))]
+    #[doc = edoc!(stringisnone(StringModification), callerr(parse::js::string_literal_prefix))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
     ///
-    /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
-    SetSegment {
-        /// The value to split the string with.
-        split: StringSource,
-        /// The index of the segment to set.
-        index: isize,
-        /// The value to set the segment to.
-        value: StringSource
-    },
-    /// Split the string with [`Self::InsertSegment::split`] and inserts [`Self::InsertSegment::value`] before the [`Self::InsertSegment::index`] segment.
+    /// let mut to = Some(r#"let destination = "https:\/\/example.com";"#.into());
     ///
-    /// If [`Self::InsertSegment::index`] is equal to the amount of segments, appends the new segment at the end.
+    /// StringModification::All(vec![
+    ///     StringModification::KeepAfter("let destination = ".into()),
+    ///     StringModification::GetJsStringLiteralPrefix
+    /// ]).apply(&mut to, &task_state).unwrap();;
+    ///
+    /// assert_eq!(to, Some("https://example.com".into()));
+    /// ```
+    GetJsStringLiteralPrefix,
+    /// Processes HTML character references/escape codes like `&map;` into `&` and `&41;` into `A`.
     /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2))]
+    #[doc = edoc!(stringisnone(StringModification), callerr(parse::html::unescape_text))]
+    UnescapeHtmlText,
+    /// Parses the HTML element at the start of the string and returns the [`Self::UnescapeHtmlText`]ed value of the last attribute with the specified name.
     ///
-    /// If the segment boundary isn't found, returns the error [`StringModificationError::SegmentNotFound`].
-    InsertSegment {
-        /// The value to split the string with.
-        split: StringSource,
-        /// The location to insert the value at.
-        index: isize,
-        /// The value to insert.
-        value: StringSource
-    },
-    /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, applies it.
-    ///
-    /// If the call to [`Map::get`] returns [`None`], does nothing.
+    /// Useful in combination with [`Self::StripBefore`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), applyerr(Self))]
-    Map {
-        /// The value to index [`Self::Map::map`] with.
-        value: Box<StringSource>,
-        /// The [`Map`] to index with [`Self::Map::value`].
-        #[serde(flatten)]
-        map: Map<Self>,
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), callerr(parse::html::get_attribute_value))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// let mut to = Some(r#"Redirecting you to <a id="destination" href="https://example.com?a=2&amp;b=3">example.com</a>..."#.into());
+    ///
+    /// StringModification::All(vec![
+    ///     StringModification::StripBefore(r#"<a id="destination""#.into()),
+    ///     StringModification::GetHtmlAttribute("href".into())
+    /// ]).apply(&mut to, &task_state).unwrap();
+    ///
+    /// assert_eq!(to, Some("https://example.com?a=2&b=3".into()));
+    /// ```
+    GetHtmlAttribute(StringSource),
+
+
+
+    /// Calls [`Regex::find`] and returns its value.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(RegexWrapper), callnone(Regex::find, StringModificationError::RegexMatchNotFound))]
+    #[cfg(feature = "regex")]
+    RegexFind(RegexWrapper),
+    /// Calls [`::regex::Regex::captures`] and returns the result of [`::regex::Captures::expand`]ing with [`Self::RegexSubstitute::replace`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), callnone(Regex::captures, StringModificationError::RegexMatchNotFound))]
+    #[cfg(feature = "regex")]
+    RegexSubstitute {
+        /// The [`RegexWrapper`] to capture with.
+        regex: RegexWrapper,
+        /// The format string to pass to [`::regex::Captures::expand`].
+        replace: StringSource
     },
+    /// [`::regex::Captures::expand`]s each [`::regex::Regex::captures_iter`] with [`Self::JoinAllRegexSubstitutions::replace`] and join them with [`Self::JoinAllRegexSubstitutions::join`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
+    #[cfg(feature = "regex")]
+    JoinAllRegexSubstitutions {
+        /// The [`RegexWrapper`] to capture with.
+        regex: RegexWrapper,
+        /// The format string to pass to [`::regex::Captures::expand`].
+        replace: StringSource,
+        /// The [`StringSource`] to join the expanded captures with.
+        join: StringSource
+    },
+    /// [`Regex::replace`]s the first match of [`Self::RegexReplaceOne::regex`] with [`Self::RegexReplaceOne::replace`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
+    #[cfg(feature = "regex")]
+    RegexReplaceOne {
+        /// The [`RegexWrapper`] to search with.
+        regex: RegexWrapper,
+        /// The format string to expand the capture with.
+        replace: StringSource
+    },
+    /// [`Regex::replace`]s the all matches of [`Self::RegexReplaceAll::regex`] with [`Self::RegexReplaceAll::replace`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
+    #[cfg(feature = "regex")]
+    RegexReplaceAll {
+        /// The [`RegexWrapper`] to search with.
+        regex: RegexWrapper,
+        /// The format string to expand the captures with.
+        replace: StringSource
+    },
+    /// [`Regex::replacen`]s the first [`Self::RegexReplacen::n`] of [`Self::RegexReplacen::regex`] with [`Self::RegexReplacen::replace`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(RegexWrapper))]
+    #[cfg(feature = "regex")]
+    RegexReplacen {
+        /// The [`RegexWrapper`] to search with.
+        regex: RegexWrapper,
+        /// The number of captures to find and replace.
+        n: usize,
+        /// The format string to expand the captures with.
+        replace: StringSource
+    },
+
+
+
+    /// Parses the string as JSON and uses [`serde_json::Value::pointer_mut`] with the specified pointer.
+    ///
+    /// When extracting values from javascript, it's often faster to find the start of the desired string and use [`Self::GetJsStringLiteralPrefix`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), callerr(serde_json::from_str), geterr(StringSource), getnone(StringSource, StringModification), callnone(serde_json::Value::pointer_mut, StringModificationError::JsonValueNotFound))]
+    ///
+    /// If the call to [`serde_json::Value::pointer_mut`] doesn't return a [`serde_json::Value::String`], returns the error [`StringModificationError::JsonPointeeIsNotAString`].
+    JsonPointer(StringSource),
+
+
+
+    /// Percent encodes the string.
+    ///
+    /// Please note that this can be deserialized from `"PercentDecode"`, in which case the contained [`PercentEncodeAlphabet`] is defaulted.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""PercentEncode""#).unwrap(), StringModification::PercentEncode(Default::default()));
+    /// ```
+    PercentEncode(#[serde(default, skip_serializing_if = "is_default")] PercentEncodeAlphabet),
+    /// Percent decodes the string.
+    ///
+    /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), callerr(::percent_encoding::PercentDecode::decode_utf8))]
+    PercentDecode,
+    /// [`Self::PercentDecode`] but replaces non-UTF-8 percent encoded byte equences with U+FFFD (�), the replacement character.
+    ///
+    /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
+    LossyPercentDecode,
+
+
+
+    /// Base64 encodes the string.
+    ///
+    /// Please note that this can be deserialized from `"Base64Encode"`, in which case the contained [`Base64Config`] is defaulted.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Encode""#).unwrap(), StringModification::Base64Encode(Default::default()));
+    /// ```
+    #[cfg(feature = "base64")]
+    Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+    /// Base64 decodes the string.
+    ///
+    /// Please note that this can be deserialized from `"Base64Decode"`, in which case the contained [`Base64Config`] is defaulted.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), callerr(::base64::engine::GeneralPurpose::decode), callerr(String::from_utf8))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Decode""#).unwrap(), StringModification::Base64Decode(Default::default()));
+    /// ```
+    #[cfg(feature = "base64")]
+    Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+
+
+
+    /// The same operation [`Action::RemoveQueryParamsMatching`] does to a [`UrlPart::Query`].
+    /// # Errors
+    /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
+    ///
+    #[doc = edoc!(stringisnone(StringModification), checkerr(StringMatcher, 3))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
+    ///
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, Some("b=3&c=5".into()));
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, Some("c=5".into()));
+    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("c".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, None);
+    /// ```
+    RemoveQueryParamsMatching(Box<StringMatcher>),
+    /// The same operation [`Action::AllowQueryParamsMatching`] does to a [`UrlPart::Query`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), checkerr(StringMatcher, 3))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
+    ///
+    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, Some("a=2&%61=4".into()));
+    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
+    /// assert_eq!(to, None);
+    /// ```
+    AllowQueryParamsMatching(Box<StringMatcher>),
+    /// The same operation [`Action::RemoveQueryParamsInSetOrStartingWithAnyInList`] does to a [`UrlPart::Query`].
+    /// # Errors
+    #[doc = edoc!(notfound(Set, StringModification))]
+    ///
+    /// If the list isn't found, returns the error [`StringModificationError::ListNotFound`].
+    RemoveQueryParamsInSetOrStartingWithAnyInList {
+        /// The name of the [`Set`] in [`Params::sets`] to use.
+        set: String,
+        /// The name of the list in [`Params::lists`] to use.
+        list: String
+    },
+
+
+
     /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringModification, CommonCall::name), commonnotfound(Self, StringModification), callerr(CommonCallArgsSource::build), applyerr(Self))]
@@ -883,12 +907,12 @@ pub enum StringModificationError {
     /// Returned when a [`StringLocationError`] is encountered.
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
-    /// Returned when the [`StringModification::ExtractBetween::start`] isn't found in the string.
-    #[error("The StringModification::ExtractBetween::start isn't found in the string.")]
-    ExtractBetweenStartNotFound,
-    /// Returned when the [`StringModification::ExtractBetween::end`] isn't found in the string after the [`StringModification::ExtractBetween::start`].
-    #[error("The StringModification::ExtractBetween::end isn't found in the string after the StringModification::ExtractBetween::start.")]
-    ExtractBetweenEndNotFound,
+    /// Returned when the [`StringModification::KeepBetween::start`] isn't found in the string.
+    #[error("The StringModification::KeepBetween::start isn't found in the string.")]
+    KeepBetweenStartNotFound,
+    /// Returned when the [`StringModification::KeepBetween::end`] isn't found in the string after the [`StringModification::KeepBetween::start`].
+    #[error("The StringModification::KeepBetween::end isn't found in the string after the StringModification::KeepBetween::start.")]
+    KeepBetweenEndNotFound,
     /// Returned when a [`StringModification`] with the specified name isn't found in the [`Commons::string_modifications`].
     #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
     CommonStringModificationNotFound,
@@ -961,7 +985,7 @@ impl StringModification {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn apply(&self, to: &mut Option<Cow<'_, str>>, task_state: &TaskStateView) -> Result<(), StringModificationError> {
-        debug!(self, StringModification::apply, to, task_state);
+        debug!(StringModification::apply, self, to);
         match self {
             Self::None => {},
             Self::Error(msg) => Err(StringModificationError::ExplicitError(msg.clone()))?,
@@ -996,24 +1020,24 @@ impl StringModification {
                 Err(StringModificationError::FirstNotErrorErrors(errors))?
             },
             Self::IfSome(modification) => if to.is_some() {modification.apply(to, task_state)?;}
-            Self::If {condition, then, r#else} => if condition.satisfied_by(task_state)? {
+            Self::If {condition, then, r#else} => if condition.check(task_state)? {
                 then.apply(to, task_state)?
             } else if let Some(r#else) = r#else {
                 r#else.apply(to, task_state)?
             },
-            Self::IfMatches {matcher, then, r#else} => if matcher.satisfied_by(to.as_deref(), task_state)? {
+            Self::IfMatches {matcher, then, r#else} => if matcher.check(to.as_deref(), task_state)? {
                 then.apply(to, task_state)?;
             } else if let Some(r#else) = r#else {
                 r#else.apply(to, task_state)?
             },
-            Self::IfContains {value, at, then, r#else} => if at.satisfied_by(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringModificationError::StringSourceIsNone)?)? {
+            Self::IfContains {value, at, then, r#else} => if at.check(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringModificationError::StringSourceIsNone)?)? {
                 then.apply(to, task_state)?;
             } else if let Some(r#else) = r#else {
                 r#else.apply(to, task_state)?;
             },
             Self::IfContainsAny {values, at, then, r#else} => {
                 for value in values {
-                    if at.satisfied_by(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringModificationError::StringSourceIsNone)?)? {
+                    if at.check(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringModificationError::StringSourceIsNone)?)? {
                         return then.apply(to, task_state);
                     }
                 }
@@ -1021,25 +1045,10 @@ impl StringModification {
                     r#else.apply(to, task_state)?;
                 }
             },
-            Self::SetSegment {split, index, value} => {
-                let split = get_cow!(split, task_state, StringModificationError);
-                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
-                let fixed_index = neg_index(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                match value.get(task_state)? {
-                    Some(value) => *segments.get_mut(fixed_index).expect("StringModification::SetSegment to be implemented correctly") = value,
-                    None => {segments.remove(fixed_index);}
-                }
-                *to = Some(Cow::Owned(segments.join(&*split)));
-            },
-            Self::InsertSegment {split, index, value} => {
-                let split = get_cow!(split, task_state, StringModificationError);
-                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
-                let fixed_index = neg_range_boundary(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
-                if let Some(value) = value.get(task_state)? {
-                    segments.insert(fixed_index, value);
-                }
-                *to = Some(Cow::Owned(segments.join(&*split)));
-            },
+            Self::Map {value, map} => if let Some(x) = map.get(value.get(task_state)?) {x.apply(to, task_state)?;},
+
+
+
             Self::Set(value)     => *to = value.get(task_state)?.map(|x| Cow::Owned(x.into_owned())),
             Self::Append(value)  => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().push_str(get_str!(value, task_state, StringModificationError)),
             Self::Prepend(value) => {
@@ -1047,53 +1056,6 @@ impl StringModification {
                 let mut ret=get_string!(value, task_state, StringModificationError);
                 ret.push_str(suffix);
                 *to=Some(Cow::Owned(ret));
-            },
-            Self::Replace{find, replace}             => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replace (get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError)))),
-            Self::Replacen{find, replace, count}     => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replacen(get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError), *count))),
-            Self::ReplaceRange{start, end, replace}  => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let range=neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?;
-                if to.get(range).is_some() {
-                    to.replace_range(range, get_str!(replace, task_state, StringModificationError));
-                } else {
-                    Err(StringModificationError::InvalidSlice)?;
-                }
-            },
-            Self::Lowercase => *to = Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.to_lowercase())),
-            Self::Uppercase => *to = Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.to_uppercase())),
-            Self::StripPrefix(prefix) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let prefix = get_str!(prefix, task_state, StringModificationError);
-                match to {
-                    Cow::Owned(inner) => if inner.starts_with(prefix) {inner.drain(..prefix.len());} else {Err(StringModificationError::PrefixNotFound)?;},
-                    Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_prefix(prefix).ok_or(StringModificationError::PrefixNotFound)?)
-                }
-            },
-            #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
-            Self::StripSuffix(suffix) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let suffix = get_str!(suffix, task_state, StringModificationError);
-                match to {
-                    Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;},
-                    Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_suffix(suffix).ok_or(StringModificationError::SuffixNotFound)?)
-                }
-            },
-            Self::StripMaybePrefix(prefix) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let prefix = get_str!(prefix, task_state, StringModificationError);
-                match to {
-                    Cow::Owned(inner) => if inner.starts_with(prefix) {inner.drain(..prefix.len());},
-                    Cow::Borrowed(inner) => if let Some(x) = inner.strip_prefix(prefix) {*to = Cow::Borrowed(x);}
-                }
-            },
-            #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
-            Self::StripMaybeSuffix(suffix) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let suffix = get_str!(suffix, task_state, StringModificationError);
-                match to {
-                    Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len() - suffix.len());},
-                    Cow::Borrowed(inner) => if let Some(x) = inner.strip_suffix(suffix) {*to = Cow::Borrowed(x);}
-                }
             },
             Self::Insert{index, value} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
@@ -1104,6 +1066,45 @@ impl StringModification {
                     Err(StringModificationError::InvalidIndex)?;
                 }
             },
+            Self::Lowercase => *to = Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.to_lowercase())),
+            Self::Uppercase => *to = Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.to_uppercase())),
+
+
+
+            Self::StripPrefix(prefix) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let prefix = get_str!(prefix, task_state, StringModificationError);
+                match to {
+                    Cow::Owned(inner) => if inner.starts_with(prefix) {inner.drain(..prefix.len());} else {Err(StringModificationError::PrefixNotFound)?;},
+                    Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_prefix(prefix).ok_or(StringModificationError::PrefixNotFound)?)
+                }
+            },
+            Self::StripMaybePrefix(prefix) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let prefix = get_str!(prefix, task_state, StringModificationError);
+                match to {
+                    Cow::Owned(inner) => if inner.starts_with(prefix) {inner.drain(..prefix.len());},
+                    Cow::Borrowed(inner) => if let Some(x) = inner.strip_prefix(prefix) {*to = Cow::Borrowed(x);}
+                }
+            },
+            Self::StripSuffix(suffix) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let suffix = get_str!(suffix, task_state, StringModificationError);
+                #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
+                match to {
+                    Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;},
+                    Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_suffix(suffix).ok_or(StringModificationError::SuffixNotFound)?)
+                }
+            },
+            Self::StripMaybeSuffix(suffix) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let suffix = get_str!(suffix, task_state, StringModificationError);
+                #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
+                match to {
+                    Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len() - suffix.len());},
+                    Cow::Borrowed(inner) => if let Some(x) = inner.strip_suffix(suffix) {*to = Cow::Borrowed(x);}
+                }
+            },
             Self::RemoveChar(index) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 if to.is_char_boundary(neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?) {
@@ -1112,130 +1113,17 @@ impl StringModification {
                     Err(StringModificationError::InvalidIndex)?;
                 }
             },
-            Self::KeepRange{start, end} => {
+
+
+
+            Self::KeepBefore(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let s = get_str!(s, task_state, StringModificationError);
                 match to {
-                    Cow::Owned(inner) => *inner = inner.get(neg_range(*start, *end, inner.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
-                    Cow::Borrowed(inner) => *inner = inner.get(neg_range(*start, *end, inner.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?
+                    Cow::Owned(inner) => {inner.drain(inner.find(s).ok_or(StringModificationError::SubstringNotFound)?..);},
+                    Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..inner.find(s).ok_or(StringModificationError::SubstringNotFound)?])
                 }
             },
-            #[cfg(feature = "regex")]
-            Self::RegexCaptures {regex, replace} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let replace = get_str!(replace, task_state, StringModificationError);
-                let mut temp = "".to_string();
-                regex.get()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
-                *to = temp;
-            },
-            #[cfg(feature = "regex")]
-            Self::JoinAllRegexCaptures {regex, replace, join} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let replace = get_str!(replace, task_state, StringModificationError);
-                let join = get_str!(join, task_state, StringModificationError);
-                let regex = regex.get()?;
-                let mut temp = "".to_string();
-                if join.is_empty() {
-                    for captures in regex.captures_iter(to) {
-                        captures.expand(replace, &mut temp);
-                    }
-                } else {
-                    let mut iter = regex.captures_iter(to).peekable();
-                    while let Some(captures) = iter.next() {
-                        captures.expand(replace, &mut temp);
-                        if iter.peek().is_some() {temp.push_str(join);}
-                    }
-                }
-                *to = temp;
-            },
-            #[cfg(feature = "regex")]
-            Self::RegexFind(regex) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.find(to).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string();
-            },
-            #[cfg(feature = "regex")]
-            Self::RegexReplace {regex,replace} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.replace(to,get_str!(replace, task_state, StringModificationError)).into_owned();
-            },
-            #[cfg(feature = "regex")]
-            Self::RegexReplaceAll {regex,replace} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.replace_all(to,get_str!(replace, task_state, StringModificationError)).into_owned();
-            },
-            #[cfg(feature = "regex")]
-            Self::RegexReplacen {regex, n, replace} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.replacen(to, *n, get_str!(replace, task_state, StringModificationError)).into_owned();
-            },
-            Self::PercentEncode(alphabet) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = utf8_percent_encode(to, alphabet.get()).to_string();
-            },
-            Self::PercentDecode => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = percent_decode_str (to).decode_utf8()?.into_owned();
-            },
-            Self::LossyPercentDecode => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = percent_decode_str (to).decode_utf8_lossy().into_owned();
-            },
-            #[cfg(feature = "base64")] Self::Base64Encode(config) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = config.build().encode(to.as_bytes());
-            },
-            #[cfg(feature = "base64")] Self::Base64Decode(config) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = String::from_utf8(config.build().decode(to.as_bytes())?)?;
-            },
-            Self::JsonPointer(pointer) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                match serde_json::from_str::<serde_json::Value>(to)?.pointer_mut(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
-                    serde_json::Value::String(s) => *to = s,
-                    _ => Err(StringModificationError::JsonPointeeIsNotAString)?
-                }
-            },
-
-
-            Self::RemoveQueryParamsMatching(matcher) => {
-                if let Some(inner) = to {
-                    let mut ret = String::new();
-                    for param in inner.split('&') {
-                        if !matcher.satisfied_by(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
-                            if !ret.is_empty() {ret.push('&');}
-                            ret.push_str(param);
-                        }
-                    }
-                    *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
-                }
-            },
-            Self::AllowQueryParamsMatching(matcher) => {
-                if let Some(inner) = to {
-                    let mut ret = String::new();
-                    for param in inner.split('&') {
-                        if matcher.satisfied_by(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
-                            if !ret.is_empty() {ret.push('&');}
-                            ret.push_str(param);
-                        }
-                    }
-                    *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
-                }
-            },
-            Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
-                let mut new = String::new();
-                let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
-                let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
-                for param in inner.split('&') {
-                    let name = peh(param.split('=').next().expect("The first segment to always exist."));
-                    if !set.contains(Some(&*name)) && !list.iter().any(|x| name.starts_with(x)) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                *to = Some(Cow::<str>::Owned(new)).filter(|x| !x.is_empty());
-            },
-
-
-
             Self::StripBefore(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let s = get_str!(s, task_state, StringModificationError);
@@ -1244,12 +1132,18 @@ impl StringModification {
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[inner.find(s).ok_or(StringModificationError::SubstringNotFound)?..])
                 }
             },
-            Self::KeepBefore(s) => {
+            Self::KeepBetween {start, end} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
-                match to {
-                    Cow::Owned(inner) => {inner.drain(inner.find(s).ok_or(StringModificationError::SubstringNotFound)?..);},
-                    Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..inner.find(s).ok_or(StringModificationError::SubstringNotFound)?])
+                *to = match to {
+                    Cow::Borrowed(inner) => Cow::Borrowed(inner
+                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenStartNotFound)?.1
+                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenEndNotFound  )?.0
+                    ),
+                    Cow::Owned(inner) => Cow::Owned(inner
+                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenStartNotFound)?.1
+                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenEndNotFound  )?.0
+                        .to_string()
+                    )
                 }
             },
             Self::StripAfter(s) => {
@@ -1270,20 +1164,207 @@ impl StringModification {
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()..])
                 }
             },
-            Self::ExtractBetween {start, end} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                *to = match to {
-                    Cow::Borrowed(inner) => Cow::Borrowed(inner
-                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringModificationError::ExtractBetweenStartNotFound)?.1
-                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringModificationError::ExtractBetweenEndNotFound  )?.0
-                    ),
-                    Cow::Owned(inner) => Cow::Owned(inner
-                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringModificationError::ExtractBetweenStartNotFound)?.1
-                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringModificationError::ExtractBetweenEndNotFound  )?.0
-                        .to_string()
-                    )
+
+
+
+            Self::Replacen{find, replace, count}     => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replacen(get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError), *count))),
+            Self::ReplaceAll{find, replace}             => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replace (get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError)))),
+
+
+
+            Self::ReplaceRange{start, end, replace}  => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                let range=neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?;
+                if to.get(range).is_some() {
+                    to.replace_range(range, get_str!(replace, task_state, StringModificationError));
+                } else {
+                    Err(StringModificationError::InvalidSlice)?;
                 }
             },
+            Self::KeepRange{start, end} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                match to {
+                    Cow::Owned(inner) => *inner = inner.get(neg_range(*start, *end, inner.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?.to_string(),
+                    Cow::Borrowed(inner) => *inner = inner.get(neg_range(*start, *end, inner.len()).ok_or(StringModificationError::InvalidSlice)?).ok_or(StringModificationError::InvalidSlice)?
+                }
+            },
+
+
+
+            Self::SetSegment {split, index, value} => {
+                let split = get_cow!(split, task_state, StringModificationError);
+                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
+                let fixed_index = neg_index(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                match value.get(task_state)? {
+                    Some(value) => *segments.get_mut(fixed_index).expect("StringModification::SetSegment to be implemented correctly") = value,
+                    None => {segments.remove(fixed_index);}
+                }
+                *to = Some(Cow::Owned(segments.join(&*split)));
+            },
+            Self::InsertSegment {split, index, value} => {
+                let split = get_cow!(split, task_state, StringModificationError);
+                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
+                let fixed_index = neg_range_boundary(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
+                if let Some(value) = value.get(task_state)? {
+                    segments.insert(fixed_index, value);
+                }
+                *to = Some(Cow::Owned(segments.join(&*split)));
+            },
+            Self::KeepNthSegment {split, index} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                *to = match to {
+                    Cow::Owned(inner) => Cow::Owned(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string()),
+                    Cow::Borrowed(inner) => Cow::Borrowed(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?),
+                }
+            },
+            Self::KeepSegmentRange {split, start, end} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                let split = get_str!(split, task_state, StringModificationError);
+                *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split);
+            },
+
+
+
+            Self::GetJsStringLiteralPrefix => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                *to = Cow::Owned(parse::js::string_literal_prefix(to)?);
+            },
+            Self::UnescapeHtmlText => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                *to = Cow::Owned(parse::html::unescape_text(to)?);
+            },
+            Self::GetHtmlAttribute(name) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                *to = Cow::Owned(parse::html::get_attribute_value(to, get_str!(name, task_state, StringModificationError))?.ok_or(StringModificationError::HtmlAttributeNotFound)?.ok_or(StringModificationError::HtmlAttributeHasNoValue)?);
+            },
+
+
+
+            #[cfg(feature = "regex")]
+            Self::RegexFind(regex) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = regex.get()?.find(to).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string();
+            },
+            #[cfg(feature = "regex")]
+            Self::RegexSubstitute {regex, replace} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                let replace = get_str!(replace, task_state, StringModificationError);
+                let mut temp = "".to_string();
+                regex.get()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
+                *to = temp;
+            },
+            #[cfg(feature = "regex")]
+            Self::JoinAllRegexSubstitutions {regex, replace, join} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                let replace = get_str!(replace, task_state, StringModificationError);
+                let join = get_str!(join, task_state, StringModificationError);
+                let regex = regex.get()?;
+                let mut temp = "".to_string();
+                if join.is_empty() {
+                    for captures in regex.captures_iter(to) {
+                        captures.expand(replace, &mut temp);
+                    }
+                } else {
+                    let mut iter = regex.captures_iter(to).peekable();
+                    while let Some(captures) = iter.next() {
+                        captures.expand(replace, &mut temp);
+                        if iter.peek().is_some() {temp.push_str(join);}
+                    }
+                }
+                *to = temp;
+            },
+            #[cfg(feature = "regex")]
+            Self::RegexReplaceOne {regex,replace} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = regex.get()?.replace(to,get_str!(replace, task_state, StringModificationError)).into_owned();
+            },
+            #[cfg(feature = "regex")]
+            Self::RegexReplaceAll {regex,replace} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = regex.get()?.replace_all(to,get_str!(replace, task_state, StringModificationError)).into_owned();
+            },
+            #[cfg(feature = "regex")]
+            Self::RegexReplacen {regex, n, replace} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = regex.get()?.replacen(to, *n, get_str!(replace, task_state, StringModificationError)).into_owned();
+            },
+
+
+
+            Self::JsonPointer(pointer) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                match serde_json::from_str::<serde_json::Value>(to)?.pointer_mut(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
+                    serde_json::Value::String(s) => *to = s,
+                    _ => Err(StringModificationError::JsonPointeeIsNotAString)?
+                }
+            },
+
+
+
+            Self::PercentEncode(alphabet) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = utf8_percent_encode(to, alphabet.get()).to_string();
+            },
+            Self::PercentDecode => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = percent_decode_str(to).decode_utf8()?.into_owned();
+            },
+            Self::LossyPercentDecode => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = percent_decode_str(to).decode_utf8_lossy().into_owned();
+            },
+
+
+
+            #[cfg(feature = "base64")]
+            Self::Base64Encode(config) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = config.build().encode(to.as_bytes());
+            },
+            #[cfg(feature = "base64")]
+            Self::Base64Decode(config) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
+                *to = String::from_utf8(config.build().decode(to.as_bytes())?)?;
+            },
+
+
+
+            Self::RemoveQueryParamsMatching(matcher) => if let Some(inner) = to {
+                let mut ret = String::with_capacity(inner.len());
+                for param in inner.split('&') {
+                    if !matcher.check(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
+                        if !ret.is_empty() {ret.push('&');}
+                        ret.push_str(param);
+                    }
+                }
+                *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
+            },
+            Self::AllowQueryParamsMatching(matcher) => if let Some(inner) = to {
+                let mut ret = String::with_capacity(inner.len());
+                for param in inner.split('&') {
+                    if matcher.check(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
+                        if !ret.is_empty() {ret.push('&');}
+                        ret.push_str(param);
+                    }
+                }
+                *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
+            },
+            Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
+                let mut new = String::with_capacity(inner.len());
+                let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
+                let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
+                for param in inner.split('&') {
+                    let name = peh(param.split('=').next().expect("The first segment to always exist."));
+                    if !set.contains(Some(&*name)) && !list.iter().any(|x| name.starts_with(x)) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                *to = Some(Cow::<str>::Owned(new)).filter(|x| !x.is_empty());
+            },
+
+
+
             Self::Common(common_call) => {
                 task_state.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
@@ -1301,35 +1382,6 @@ impl StringModification {
                 )?;
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
-
-            Self::GetJsStringLiteralPrefix => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                *to = Cow::Owned(parse::js::string_literal_prefix(to)?);
-            },
-            Self::UnescapeHtmlText => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                *to = Cow::Owned(parse::html::unescape_text(to)?);
-            },
-            Self::GetHtmlAttribute(name) => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                *to = Cow::Owned(parse::html::get_attribute_value(to, get_str!(name, task_state, StringModificationError))?.ok_or(StringModificationError::HtmlAttributeNotFound)?.ok_or(StringModificationError::HtmlAttributeHasNoValue)?);
-            },
-
-            Self::Map {value, map} => if let Some(x) = map.get(value.get(task_state)?) {x.apply(to, task_state)?;},
-
-            Self::KeepNthSegment {split, index} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                *to = match to {
-                    Cow::Owned(inner) => Cow::Owned(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string()),
-                    Cow::Borrowed(inner) => Cow::Borrowed(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?),
-                }
-            },
-            Self::KeepSegmentRange {split, start, end} => {
-                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let split = get_str!(split, task_state, StringModificationError);
-                *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split);
-            },
-
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, task_state)?
         };

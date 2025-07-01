@@ -22,12 +22,12 @@ pub enum VarType {
     JobContext,
     /// Get it from [`TaskStateView::context`]'s [`TaskContext::vars`].
     TaskContext,
+    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
+    Scratchpad,
     /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     CommonArg,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
-    Scratchpad,
     /// Get it from [`std::env::var`].
     ///
     /// Even though [`std::env::var`] returns an [`Err`] when the environment variable isn't present, this instead returns [`None`].
@@ -63,13 +63,13 @@ impl VarType {
     /// Get the var.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'a>(&self, task_state: &TaskStateView<'a>, name: &str) -> Result<Option<Cow<'a, str>>, GetVarError> {
+    pub fn get<'a>(&self, name: &str, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, GetVarError> {
         Ok(match self {
             Self::Params      => task_state.params     .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::JobContext  => task_state.job_context.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::TaskContext => task_state.context    .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
-            Self::CommonArg   => task_state.common_args.ok_or(GetVarError::NotInCommonContext)?.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::Scratchpad  => task_state.scratchpad .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
+            Self::CommonArg   => task_state.common_args.ok_or(GetVarError::NotInCommonContext)?.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::Env         => match env::var(name) {
                 Ok(value) => Some(Cow::Owned(value)),
                 Err(env::VarError::NotPresent) => None,
@@ -108,10 +108,10 @@ impl VarRef {
     ///
     /// If the call to [`VarType::get`] returns an error, that error is returned.
     pub fn get<'a>(&self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, GetVarError> {
-        debug!(self, VarRef::get, task_state);
+        debug!(VarRef::get, self);
         match self {
-            Self {r#type, name: StringSource::String(name)} => r#type.get(task_state, name),
-            _ => self.r#type.get(task_state, get_str!(self.name, task_state, GetVarError))
+            Self {r#type, name: StringSource::String(name)} => r#type.get(name, task_state),
+            _ => self.r#type.get(get_str!(self.name, task_state, GetVarError), task_state)
         }
     }
 }
