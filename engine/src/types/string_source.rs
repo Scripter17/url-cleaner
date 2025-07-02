@@ -521,7 +521,7 @@ pub enum StringSource {
         /// The value to cache.
         value: Box<Self>
     },
-    /// Calls a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_sources`].
+    /// Calls a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::string_sources`].
     /// # Errors
     #[doc = edoc!(ageterr(Self, CommonCall::name), agetnone(Self, StringSource, CommonCall::name), commonnotfound(Self, StringSource), callerr(CommonCallArgsSource::build), geterr(Self))]
     /// # Examples
@@ -550,13 +550,19 @@ pub enum StringSource {
     ///
     /// assert_eq!(StringSource::Common(CommonCall {
     ///     name: Box::new("def".into()),
-    ///     args: CommonCallArgsSource {
+    ///     args: Box::new(CommonCallArgsSource {
     ///         vars: [("common_var".into(), "ghi".into())].into(),
     ///         ..Default::default()
-    ///     }
+    ///     })
     /// }).get(&task_state).unwrap(), Some("ghi".into()));
     /// ```
     Common(CommonCall),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_sources`] and applies it.
+    /// # Errors
+    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringSourceError::NotInCommonContext`].
+    ///
+    #[doc = edoc!(commoncallargnotfound(Self, StringSource), geterr(Self))]
+    CommonCallArg(Box<Self>),
     /// Calls the contained function and returns what it does.
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
@@ -685,23 +691,44 @@ pub enum StringSourceError {
     /// Returned when all [`StringModification`]s in a [`StringModification::FirstNotError`] error.
     #[error("All StringModifications in a StringModification::FirstNotError errored.")]
     FirstNotErrorErrors(Vec<Self>),
+
+    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
+    #[error("The specified StringSource returned None where it had to be Some.")]
+    StringSourceIsNone,
     /// Returned when a [`StringModificationError`] is encounterd.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
+    /// Returned when a [`Box<StringMatcherError>`] is encountered.
+    #[error(transparent)]
+    StringMatcherError(#[from] Box<StringMatcherError>),
+
+    /// Returned when a [`url::ParseError`] is encountered.
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`StringSource::Map::map`] doesn't have the requested value.
+    #[error("The StringSource::Map::map didn't have the requested value.")]
+    StringNotInMap,
+    /// Returned when the requested [`Map`] isn't found.
+    #[error("The requested map was not found.")]
+    MapNotFound,
+    /// Returned when the requested [`Params::named_partitionings`] isn't found
+    #[error("The requested Params NamedPartitioning was not found.")]
+    NamedPartitioningNotFound,
+    /// Returned when a [`GetFlagError`] is encountered.
+    #[error(transparent)]
+    GetFlagError(#[from] GetFlagError),
+    /// Returned when a [`GetVarError`] is encountered.
+    #[error(transparent)]
+    GetVarError(#[from] GetVarError),
+
+    /// Returned when a[`::regex::Error`]  is encountered.
+    #[cfg(feature = "regex")]
+    #[error(transparent)]
+    RegexError(#[from] ::regex::Error),
     #[cfg(feature = "http")]
     /// Returned when a [`reqwest::Error`] is encountered.
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
-    #[cfg(feature = "http")]
-    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
-    #[error(transparent)]
-    HeaderToStrError(#[from] reqwest::header::ToStrError),
-    /// Returned when a [`url::ParseError`] is encountered.
-    #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
-    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone,
     /// Returned when a [`HttpResponseError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
@@ -710,46 +737,36 @@ pub enum StringSourceError {
     #[cfg(feature = "http")]
     #[error(transparent)]
     ReponseHandlerError(#[from] ResponseHandlerError),
-    #[cfg(feature = "commands")]
-    /// Returned when a [`CommandError`] is encountered.
+    #[cfg(feature = "http")]
+    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[error(transparent)]
-    CommandError(#[from] Box<CommandError>),
-    /// Returned when a [`StringSource::Map::map`] doesn't have the requested value.
-    #[error("The StringSource::Map::map didn't have the requested value.")]
-    StringNotInMap,
-    #[cfg(feature = "cache")]
+    HeaderToStrError(#[from] reqwest::header::ToStrError),
     /// Returned when a [`ReadFromCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     ReadFromCacheError(#[from] ReadFromCacheError),
-    #[cfg(feature = "cache")]
     /// Returned when a [`WriteToCacheError`] is encountered.
+    #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
-    /// Returned when a [`Box<StringMatcherError>`] is encountered.
+    /// Returned when a [`CommandError`] is encountered.
+    #[cfg(feature = "commands")]
     #[error(transparent)]
-    StringMatcherError(#[from] Box<StringMatcherError>),
-    /// Returned when the requested [`Map`] isn't found.
-    #[error("The requested map was not found.")]
-    MapNotFound,
-    /// Returned when the requested [`Params::named_partitionings`] isn't found
-    #[error("The requested Params NamedPartitioning was not found.")]
-    NamedPartitioningNotFound,
-    /// Returned when the requested [`Commons::string_sources`] isn't found.
-    #[error("The requested common StringSource was not found.")]
-    CommonStringSourceNotFound,
+    CommandError(#[from] Box<CommandError>),
+
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
-    /// Returned when a[`::regex::Error`]  is encountered.
-    #[cfg(feature = "regex")]
-    #[error(transparent)]
-    RegexError(#[from] ::regex::Error),
-    /// Returned when a [`GetFlagError`] is encountered.
-    #[error(transparent)]
-    GetFlagError(#[from] GetFlagError),
-    /// Returned when a [`GetVarError`] is encountered.
-    #[error(transparent)]
-    GetVarError(#[from] GetVarError),
+    /// Returned when the requested [`Commons::string_sources`] isn't found.
+    #[error("The requested common StringSource was not found.")]
+    CommonStringSourceNotFound,
+    /// Returned when trying to use [`StringSource::CommonCallArg`] outside of a common context.
+    #[error("Tried to use StringSource::CommonCallArg outside of a common context.")]
+    NotInCommonContext,
+    /// Returned when the [`StringSource`] requested from a [`StringSource::CommonCallArg`] isn't found.
+    #[error("The StringSource requested from a StringSource::CommonCallArg wasn't found.")]
+    CommonCallArgStringSourceNotFound,
+
     /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
     #[cfg(feature = "custom")]
     #[error(transparent)]
@@ -827,8 +844,8 @@ impl StringSource {
 
 
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
-            Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
+            Self::ParamsMap {name, key} => task_state.cleaner.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::NamedPartitioning {named_partitioning, element} => task_state.cleaner.params.named_partitionings
                 .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
                 .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
 
@@ -865,29 +882,34 @@ impl StringSource {
             Self::Cache {category, key, value} => {
                 let category = get_string!(category, task_state, StringSourceError);
                 let key = get_string!(key, task_state, StringSourceError);
-                if task_state.params.read_cache {
+                if task_state.cleaner.params.read_cache {
                     if let Some(ret) = task_state.cache.read(&category, &key)? {
                         return Ok(ret.map(Cow::Owned));
                     }
                 }
+                let start = std::time::Instant::now();
                 let ret = value.get(task_state)?;
-                if task_state.params.write_cache {
-                    task_state.cache.write(&category, &key, ret.as_deref())?;
+                let duration = start.elapsed();
+                if task_state.cleaner.params.write_cache {
+                    task_state.cache.write(&category, &key, ret.as_deref(), duration)?;
                 }
                 ret
             },
             Self::Common(common_call) => {
-                task_state.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
+                task_state.cleaner.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
                     common_args: Some(&common_call.args.build(task_state)?),
                     url        : task_state.url,
                     scratchpad : task_state.scratchpad,
                     context    : task_state.context,
                     job_context: task_state.job_context,
-                    params     : task_state.params,
-                    commons    : task_state.commons,
+                    cleaner    : task_state.cleaner,
                     #[cfg(feature = "cache")]
                     cache      : task_state.cache
                 })?.map(|x| Cow::Owned(x.into_owned()))
+            },
+            Self::CommonCallArg(name) => match &**name {
+                StringSource::String(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(         name                                ).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,
+                _                          => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?
             },
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?

@@ -66,6 +66,8 @@ impl TestSet {
             cleaner: &cleaner,
             #[cfg(feature = "cache")]
             cache: &Default::default(),
+            #[cfg(feature = "cache")]
+            cache_delay: false,
             lazy_task_configs: Box::new(task_configs.into_iter().map(|task_config| Ok(task_config.into())))
         };
 

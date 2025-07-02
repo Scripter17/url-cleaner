@@ -53,9 +53,6 @@
 			"utps": "Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.",
 
 			"nh_keep_http"           : "The `NormalizedHost`s to not upgrade from `http` to `https`.",
-			"rd_keep_empty_fragment" : "The `RegDomain`s to not remove an empty `Fragment` from.",
-			"rd_keep_empty_query"    : "The `RegDomain`s to not remove an empty `Query` from.",
-			"rd_keep_fqdn_period"    : "The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.",
 			"rd_keep_mobile"         : "The `RegDomain`s to not apply the `unmobile` flag to."
 		},
 		"lists": {
@@ -100,9 +97,6 @@
 		"sets": {
 			"nh_keep_http": ["localhost", "orteil.dashnet.org"],
 			"rd_keep_mobile": ["deviantart.com", "tumblr.com"],
-			"rd_keep_empty_fragment": [],
-			"rd_keep_empty_query": [],
-			"rd_keep_fqdn_period": [],
 			"utps": [
 				"action_object_map", "action_ref_map", "action_type_map", "adfrom", "adjust_adgroup", "adjust_campaign", "adjust_creative", "adjust_referrer",
 				"adjust_tracker", "adjust_tracker_limit", "admitad_uid", "af_ad", "af_adset", "af_click_lookback", "af_force_deeplink", "af_xp", "aiad_clid", "ar_ad",
@@ -201,12 +195,12 @@
 				],
 				"remove": [
 					"a.co", "adfoc.us", "allmylinks.com", "antifandom.com", "apexgamingpcs.com", "bambulab.com", "beacons.ai", "bit.ly", "bitly.com", "bityl.co", "boost.ink",
-					"boosty.to", "booth.pm", "breezewiki.com", "bw.artemislena.eu", "bw.hamstro.dev", "carleton.ca", "carrd.co", "cutt.ly", "dis.gd", "drinkctrl.com",
-					"drive.google.com", "duckduckgo.com", "fansly.com", "flip.it", "g.co", "gelbooru.com", "gum.co", "href.li", "inkbunny.net", "invidious.nerdvpn.de",
-					"linktr.ee", "lmddgtfy.net", "lmgtfy2.com", "loom.ly", "mboost.me", "nitter.net", "nitter.tiekoetter.com", "onlyfans.com", "pawoo.net", "qudsnen.co",
-					"shor.tf", "sketchfab.com", "smartadserver.com", "socialwolvez.com", "stackoverflow.com", "steamcommunity.com", "sub2unlock.io", "sub4unlock.io",
-					"subscribestar.adult", "substack.com", "supernote.com", "support.google.com", "theonion.com", "tinyurl.com", "t.ly", "toyhou.se", "twitter.com", "unes.co",
-					"visitlink.me", "vk.com", "xcancel.com", "x.com", "yewtu.be", "zionism.observer", "z.opnxng.com"
+					"boosty.to", "booth.pm", "breezewiki.com", "buymeacoffee.com", "bw.artemislena.eu", "bw.hamstro.dev", "carleton.ca", "carrd.co", "cash.app", "cutt.ly",
+					"dis.gd", "drinkctrl.com", "drive.google.com", "duckduckgo.com", "fansly.com", "flip.it", "g.co", "gelbooru.com", "gum.co", "href.li", "inkbunny.net",
+					"invidious.nerdvpn.de", "linktr.ee", "lmddgtfy.net", "lmgtfy2.com", "loom.ly", "mboost.me", "metafy.gg", "nitter.net", "nitter.tiekoetter.com", "onlyfans.com",
+					"pawoo.net", "qudsnen.co", "shor.tf", "sketchfab.com", "smartadserver.com", "socialwolvez.com", "stackoverflow.com", "steamcommunity.com", "sub2unlock.io",
+					"sub4unlock.io", "subscribestar.adult", "substack.com", "supernote.com", "support.google.com", "theonion.com", "throne.com", "tinyurl.com", "t.ly",
+					"toyhou.se", "twitter.com", "unes.co", "visitlink.me", "vk.com", "xcancel.com", "x.com", "yewtu.be", "zionism.observer", "z.opnxng.com"
 				]
 			},
 			"dm_www_subdomain": {
@@ -370,26 +364,11 @@
 					}}
 				}},
 				{"If": {
-					"if": {"All": [
-						"HostIsFqdn",
-						{"Not": {"RegDomainIsInSet": "rd_keep_fqdn_period"}}
-					]},
+					"if": "HostIsFqdn",
 					"then": "RemoveFqdnPeriod"
 				}},
-				{"If": {
-					"if": {"All": [
-						{"QueryIs": ""},
-						{"Not": {"RegDomainIsInSet": "rd_keep_empty_query"}}
-					]},
-					"then": "RemoveQuery"
-				}},
-				{"If": {
-					"if": {"All": [
-						{"FragmentIs": ""},
-						{"Not": {"RegDomainIsInSet": "rd_keep_empty_fragment"}}
-					]},
-					"then": "RemoveFragment"
-				}}
+				"RemoveEmptyQuery",
+				"RemoveEmptyFragment"
 			]},
 
 
@@ -818,7 +797,7 @@
 											}
 										}},
 										"href.li": {"SetWhole": {"Part": {"PositionRange": {"start": "BeforeQuery", "end": "AfterFragment"}}}},
-										"instagr.am": {"SetHost": "instagram.com"},
+										"instagr.am": {"SetHost": "www.instagram.com"},
 										"l.instagram.com": {"GetUrlFromQueryParam": "u"},
 										"l.threads.com": {"GetUrlFromQueryParam": "u"},
 										"lego.com": {"If": {
@@ -1158,7 +1137,7 @@
 					"part": "NormalizedHost",
 					"map": {
 						"bluesky_embed_hosts": {"SetHost": "bsky.app"},
-						"pixiv_embed_hosts": {"SetHost": "pixiv.net"},
+						"pixiv_embed_hosts": {"SetHost": "www.pixiv.net"},
 						"twitter_embed_hosts": {"SetHost": "x.com"},
 
 						"breezewiki": {"If": {
@@ -1167,7 +1146,7 @@
 								{"Not": {"PathIs": "/"}}
 							]},
 							"then": {"All": [
-								{"SetHost": "fandom.com"},
+								{"SetHost": "www.fandom.com"},
 								{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
 							]},
 							"else": {"SetHost": {"Var": "breezewiki_host"}}
@@ -1177,7 +1156,7 @@
 								{"FlagIsSet": "uninvidious"},
 								{"PathSegmentIsOneOf": {"index": 0, "values": ["channel", "search", "watch"]}}
 							]},
-							"then": {"SetHost": "youtube.com"},
+							"then": {"SetHost": "www.youtube.com"},
 							"else": {"SetHost": {"Var": "invidious_host"}}
 						}},
 						"nitter": {"If": {
@@ -1200,7 +1179,7 @@
 						}},
 						"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
 						"instagram": {"All": [
-							{"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g"]},
+							{"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl"]},
 							{"If": {
 								"if": {"RegDomainIs": "threads.net"},
 								"then": {"SetHost": "www.threads.com"}
@@ -1371,7 +1350,7 @@
 								]}
 							}}
 						]},
-						"fori.io": {"SetHost": "foriio.com"},
+						"fori.io": {"SetHost": "www.foriio.com"},
 						"furaffinity.net": {"All": [
 							{"If": {
 								"if": {"All": [
@@ -1493,7 +1472,7 @@
 						]},
 						"stackoverflow.com": {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
 						"sta.sh": {"All": [
-							{"SetHost": "deviantart.com"},
+							{"SetHost": "www.deviantart.com"},
 							{"SetPathSegment": {"index": 0, "value": "stash"}}
 						]},
 						"steampowered.com": {"RemoveQueryParam": "snr"},
@@ -1588,7 +1567,7 @@
 						"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
 						"youtu.be": {"All": [
 							{"RemoveQueryParams": ["si", "feature", "pp"]},
-							{"SetHost" : "youtube.com"},
+							{"SetHost" : "www.youtube.com"},
 							{"CopyPart": {"from": {"PathSegment": 0}, "to": {"QueryParam": "v"}}},
 							{"SetPath" : "/watch"}
 						]},

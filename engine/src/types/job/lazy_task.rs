@@ -19,7 +19,7 @@ pub struct LazyTask<'a> {
     pub cleaner: &'a Cleaner,
     /// The [`Cache`].
     #[cfg(feature = "cache")]
-    pub cache: &'a Cache
+    pub cache: CacheHandle<'a>
 }
 
 /// The enum of errors that can happen when making a [`TaskConfig`].

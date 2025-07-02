@@ -1,10 +1,13 @@
 //! The home if [`InnerCache`].
 
 use std::cell::OnceCell;
+use std::time::Duration;
 
 use diesel::prelude::*;
 #[expect(unused_imports, reason = "Used in docs.")]
 use diesel::query_builder::SqlQuery;
+use rand::rngs::SmallRng;
+use rand::{SeedableRng, Rng};
 
 use crate::util::*;
 use super::*;
@@ -13,29 +16,41 @@ use super::*;
 /// # Examples
 /// ```
 /// use url_cleaner_engine::glue::*;
+/// use std::time::Duration;
 ///
 /// // Note the mutability.
 /// let mut cache = InnerCache::new(CachePath::Memory);
 ///
-///
-/// assert_eq!(cache.read("category", "key").unwrap(), None);
-/// cache.write("category", "key", None).unwrap();
-/// assert_eq!(cache.read("category", "key").unwrap(), Some(None));
-/// cache.write("category", "key", Some("value")).unwrap();
-/// assert_eq!(cache.read("category", "key").unwrap(), Some(Some("value".into())));
+/// assert_eq!(cache.read("category", "key", false).unwrap(), None);
+/// cache.write("category", "key", None, Default::default()).unwrap();
+/// assert_eq!(cache.read("category", "key", false).unwrap(), Some(None));
+/// cache.write("category", "key", Some("value"), Default::default()).unwrap();
+/// assert_eq!(cache.read("category", "key", false).unwrap(), Some(Some("value".into())));
 /// ```
-#[derive(Default)]
 pub struct InnerCache {
     /// The path of the database.
     path: CachePath,
     /// The connection to the database.
-    connection: OnceCell<SqliteConnection>
+    connection: OnceCell<SqliteConnection>,
+    /// RNG source for artificial delays.
+    rng: SmallRng
+}
+
+impl Default for InnerCache {
+    fn default() -> Self {
+        Self {
+            path: Default::default(),
+            connection: Default::default(),
+            rng: SmallRng::from_rng(&mut rand::rng())
+        }
+    }
 }
 
 impl ::core::fmt::Debug for InnerCache {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         f.debug_struct("InnerCache")
             .field("path", &self.path)
+            .field("rng", &self.rng)
             .field("connection", if self.connection.get().is_some() {&"OnceCell(..)"} else {&"OnceCell(<uninit>)"})
             .finish()
     }
@@ -59,7 +74,7 @@ impl From<CachePath> for InnerCache {
     fn from(value: CachePath) -> Self {
         Self {
             path: value,
-            connection: Default::default()
+            ..Default::default()
         }
     }
 }
@@ -114,7 +129,7 @@ impl InnerCache {
     /// If the call to [`Self::connect`] returns an error, that error is returned.
     ///
     /// If the call to [`RunQueryDsl::load`] returns an error, that error is returned.
-    pub fn read(&mut self, category: &str, key: &str) -> Result<Option<Option<String>>, ReadFromCacheError> {
+    pub fn read(&mut self, category: &str, key: &str, delay: bool) -> Result<Option<Option<String>>, ReadFromCacheError> {
         debug!(InnerCache::read, self, category, key);
         Ok(cache::dsl::cache
             .filter(cache::dsl::category.eq(category))
@@ -123,7 +138,12 @@ impl InnerCache {
             .select(CacheEntry::as_select())
             .load(self.connect()?)?
             .first()
-            .map(|cache_entry| cache_entry.value.to_owned()))
+            .map(|CacheEntry {value, duration_ms, ..}| {
+                if delay {
+                    std::thread::sleep(Duration::from_millis(((*duration_ms as f32) * self.rng.random_range(0.75..1.25)) as u64));
+                }
+                value.to_owned()
+            }))
     }
 
     /// Writes to the database, overwriting the entry the equivalent call to [`Self::read`] would return.
@@ -131,10 +151,10 @@ impl InnerCache {
     /// If the call to [`Self::connect`] returns an error, that error is returned.
     ///
     /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
-    pub fn write(&mut self, category: &str, key: &str, value: Option<&str>) -> Result<(), WriteToCacheError> {
+    pub fn write(&mut self, category: &str, key: &str, value: Option<&str>, duration: Duration) -> Result<(), WriteToCacheError> {
         debug!(InnerCache::write, self, category, key, value);
         diesel::insert_into(cache::table)
-            .values(NewCacheEntry {category, key, value})
+            .values(NewCacheEntry {category, key, value, duration_ms: duration.as_millis() as i32})
             .execute(self.connect()?)?;
         Ok(())
     }

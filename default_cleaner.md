@@ -74,9 +74,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
 - `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
-- `rd_keep_empty_fragment`: The `RegDomain`s to not remove an empty `Fragment` from.
-- `rd_keep_empty_query`: The `RegDomain`s to not remove an empty `Query` from.
-- `rd_keep_fqdn_period`: The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
 - `rd_keep_mobile`: The `RegDomain`s to not apply the `unmobile` flag to.
 
 ### Lists

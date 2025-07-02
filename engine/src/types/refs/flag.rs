@@ -13,7 +13,7 @@ use crate::util::*;
 /// Defaults to [`Self::Params`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum FlagType {
-    /// Get it from [`TaskStateView::params`]'s [`Params::vars`].
+    /// Get it from [`TaskStateView::cleaner`]'s [`Cleaner::params`]'s [`Params::vars`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -73,8 +73,8 @@ impl FlagType {
     /// If `self` is [`Self::CommonArg`] and `task_state`'s [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     pub fn get(&self, name: &str, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
         Ok(match self {
-            Self::Params     => task_state.params    .flags.contains(name),
-            Self::Scratchpad => task_state.scratchpad.flags.contains(name),
+            Self::Params     => task_state.cleaner.params.flags.contains(name),
+            Self::Scratchpad => task_state.scratchpad    .flags.contains(name),
             Self::CommonArg  => task_state.common_args.ok_or(GetFlagError::NotInCommonContext)?.flags.contains(name)
         })
     }

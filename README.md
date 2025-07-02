@@ -25,17 +25,19 @@ URL Cleaner also comes with an HTTP server and a browser userscript for integrat
 
 URL Cleaner and co. will never contain any telemetry. If I ever add it, you are required to kill me on sight.
 
-However, using URL Cleaner, and especially URL Cleaner Site, creates a number of privacy concerns of various obviousity.
+However, using URL Cleaner Site and its included userscript to clean every URL on every webpage you visit naturally raises a few issues, the majority of which are due to expanding redirect URLs by sending HTTP requests.
 
-Using [URL Cleaner Site](site) and its [userscript](site/url-cleaner-site.js), you can automatically clean all links on every website you visit.
-This of course comes with the obvious fingerprinting issues where websites can tell you're using URL Cleaner Site, what ParamsDiff you've chosen, and sometimes even which version of the default cleaner it's using.
-However, because redirect links (like bit.ly links) are expanded and cached by default, websites can also tell if you've seen a certain link before based on how long it takes for the userscript to replace it.
+If you want to sidestep the entire headache and replace it with a worse one just set the `no_network` flag.
 
-**This allows malicious websites to fingerprint you basically perfectly.**
+1. Websites can tell you're using URL Cleaner Site and its userscript. It's not hard to tell.
 
-You can defend against this by enabling the `no_network` flag and/or by specifying `--read-cache false` on the command line.
+2. Websites can possibly figure out which version of the default cleaner you're using, and pretty easily figure out what params diff you're using.
 
-In the future, better defenses like artificial delays, cache expiration, and others may or may not (but should) be added.
+3. While URL Cleaner Site artificially delays cache reads to make it harder for websites to tell if you've seen a URL before, the defense is very basic and likely not particularly robust.
+
+4. Even with cache delays, websites can figure out how many threads your URL Cleaner Site instance is using by noticing you're expanding redirects (for example) 4 times as fast as would be possible without parallelizing.
+
+5. Caching at all means the website you're on and the website whose redirect URL you're getting from the cache can check the redirect website's logs to see whether or not you actually sent an HTTP request.
 
 # Default cleaner
 

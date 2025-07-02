@@ -1084,7 +1084,7 @@ pub enum Condition {
 
     // Misc.
 
-    /// Get a [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] and pass if it's satisfied.
+    /// Get a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::conditions`] and pass if it's satisfied.
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), commonnotfound(Self, Condition), callerr(CommonCallArgsSource::build), checkerr(Self))]
     /// # Examples
@@ -1099,6 +1099,12 @@ pub enum Condition {
     /// assert!(Condition::Common(CommonCall {name: Box::new("abc".into()), args: Default::default()}).check(&task_state).unwrap());
     /// ```
     Common(CommonCall),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::conditions`] and applies it.
+    /// # Errors
+    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`ConditionError::NotInCommonContext`].
+    ///
+    #[doc = edoc!(commoncallargnotfound(Self, Condition), checkerr(Self))]
+    CommonCallArg(StringSource),
     /// Calls the specified function and returns its value.
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
@@ -1178,7 +1184,13 @@ pub enum ConditionError {
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
 
-    /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
+    /// Returned when trying to use [`Condition::CommonCallArg`] outside of a common context.
+    #[error("Tried to use Condition::CommonCallArg outside of a common context.")]
+    NotInCommonContext,
+     /// Returned when the [`Condition`] requested from a [`Condition::CommonCallArg`] isn't found.
+    #[error("The Condition requested from a Condition::CommonCallArg wasn't found.")]
+    CommonCallArgConditionNotFound,
+   /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
     Custom(Box<dyn std::error::Error + Send>)
@@ -1246,16 +1258,16 @@ impl Condition {
             Self::PartMap  {part , map} => if let Some(condition) = map.get(part .get(task_state.url) ) {condition.check(task_state)?} else {false},
             Self::StringMap{value, map} => if let Some(condition) = map.get(value.get(task_state    )?) {condition.check(task_state)?} else {false},
 
-            Self::PartNamedPartitioning   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringNamedPartitioning {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {condition.check(task_state)?} else {false},
+            Self::PartNamedPartitioning   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(condition) = map.get(task_state.cleaner.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {condition.check(task_state)?} else {false},
+            Self::StringNamedPartitioning {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(condition) = map.get(task_state.cleaner.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {condition.check(task_state)?} else {false},
 
-            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ConditionError::StringSourceIsNone)?).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ConditionError::StringSourceIsNone)?).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {condition.check(task_state)?} else {false},
+            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(condition) = map.get(task_state.cleaner.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ConditionError::StringSourceIsNone)?).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {condition.check(task_state)?} else {false},
+            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(condition) = map.get(task_state.cleaner.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ConditionError::StringSourceIsNone)?).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {condition.check(task_state)?} else {false},
 
             // Params
 
-            Self::FlagIsSet   (FlagRef {name: StringSource::String(name), r#type: FlagType::Params}) =>  task_state.params.flags.contains(name),
-            Self::FlagIsNotSet(FlagRef {name: StringSource::String(name), r#type: FlagType::Params}) => !task_state.params.flags.contains(name),
+            Self::FlagIsSet   (FlagRef {name: StringSource::String(name), r#type: FlagType::Params}) =>  task_state.cleaner.params.flags.contains(name),
+            Self::FlagIsNotSet(FlagRef {name: StringSource::String(name), r#type: FlagType::Params}) => !task_state.cleaner.params.flags.contains(name),
 
             Self::FlagIsSet(flag)    =>  flag.get(task_state)?,
             Self::FlagIsNotSet(flag) => !flag.get(task_state)?,
@@ -1279,7 +1291,7 @@ impl Condition {
             Self::SchemeIs(StringSource::String(value)) => task_state.url.scheme() == value,
             Self::SchemeIs(value) => Some(task_state.url.scheme()) == value.get(task_state)?.as_deref(),
             Self::SchemeIsOneOf(values) => values.contains(Some(task_state.url.scheme())),
-            Self::SchemeIsInSet(set) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.scheme())),
+            Self::SchemeIsInSet(set) => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.scheme())),
 
             // Host is
 
@@ -1337,18 +1349,18 @@ impl Condition {
 
             // Host is in set
 
-            Self::HostIsInSet           (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str         ()),
-            Self::NormalizedHostIsInSet (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normalized_host  ()),
-            Self::SubdomainIsInSet      (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain        ()),
-            Self::RegDomainIsInSet      (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.reg_domain       ()),
-            Self::DomainIsInSet         (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain           ()),
-            Self::DomainMiddleIsInSet   (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle    ()),
-            Self::NotDomainSuffixIsInSet(x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.not_domain_suffix()),
-            Self::DomainSuffixIsInSet   (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix    ()),
+            Self::HostIsInSet           (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str         ()),
+            Self::NormalizedHostIsInSet (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normalized_host  ()),
+            Self::SubdomainIsInSet      (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain        ()),
+            Self::RegDomainIsInSet      (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.reg_domain       ()),
+            Self::DomainIsInSet         (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain           ()),
+            Self::DomainMiddleIsInSet   (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle    ()),
+            Self::NotDomainSuffixIsInSet(x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.not_domain_suffix()),
+            Self::DomainSuffixIsInSet   (x) => task_state.cleaner.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix    ()),
 
-            Self::DomainSegmentIsInSet       {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
-            Self::SubdomainSegmentIsInSet    {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain_segment    (*index)),
-            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
+            Self::DomainSegmentIsInSet       {index, set} => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
+            Self::SubdomainSegmentIsInSet    {index, set} => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain_segment    (*index)),
+            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
 
             // Misc. host
 
@@ -1365,7 +1377,7 @@ impl Condition {
             Self::PathIs(value                      ) => Some(task_state.url.path()) == value.get(task_state)?.as_deref(),
 
             Self::PathIsOneOf   (values) => values.contains(Some(task_state.url.path())),
-            Self::PathIsInSet   (set   ) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
+            Self::PathIsInSet   (set   ) => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
             Self::PathStartsWith(value ) => task_state.url.path().starts_with(value),
 
             Self::PathHasSegments => task_state.url.path().starts_with('/'),
@@ -1375,7 +1387,7 @@ impl Condition {
             Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index)? == value.get(task_state)?.as_deref(),
 
             Self::PathSegmentIsOneOf {index, values} => values.contains(task_state.url.path_segment(*index)?),
-            Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index)?),
+            Self::PathSegmentIsInSet {index, set} => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index)?),
 
             // Query
 
@@ -1390,7 +1402,7 @@ impl Condition {
             Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten() == value.get(task_state)?,
 
             Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => values.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
-            Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
+            Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
 
             // Fragment
 
@@ -1400,7 +1412,7 @@ impl Condition {
 
             Self::FragmentIsOneOf(values) => values.contains(task_state.url.fragment()),
 
-            Self::FragmentIsInSet(set) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
+            Self::FragmentIsInSet(set) => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
 
             Self::FragmentStartsWith(StringSource::String(value)) => task_state.url.fragment() == Some(value),
             Self::FragmentStartsWith(value                      ) => task_state.url.fragment() == value.get(task_state)?.as_deref(),
@@ -1416,23 +1428,24 @@ impl Condition {
 
             Self::PartMatches {part, matcher} => matcher.check   (part.get(task_state.url).as_deref(), task_state)?,
             Self::PartIsOneOf {part, values } => values .contains(part.get(task_state.url).as_deref()),
-            Self::PartIsInSet {part, set    } => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(part.get(task_state.url).as_deref()),
+            Self::PartIsInSet {part, set    } => task_state.cleaner.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(part.get(task_state.url).as_deref()),
 
             // Misc
 
             Self::Common(common_call) => {
-                task_state.commons.conditions.get(get_str!(common_call.name, task_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.check(&TaskStateView {
+                task_state.cleaner.commons.conditions.get(get_str!(common_call.name, task_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.check(&TaskStateView {
                     common_args: Some(&common_call.args.build(task_state)?),
                     url        : task_state.url,
                     scratchpad : task_state.scratchpad,
                     context    : task_state.context,
                     job_context: task_state.job_context,
-                    params     : task_state.params,
-                    commons    : task_state.commons,
+                    cleaner    : task_state.cleaner,
                     #[cfg(feature = "cache")]
                     cache      : task_state.cache
                 })?
             },
+            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(         name                             ).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
+            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         })

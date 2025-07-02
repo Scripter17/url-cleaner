@@ -17,7 +17,7 @@ pub struct Task<'a> {
     pub cleaner: &'a Cleaner,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
-    pub cache: &'a Cache
+    pub cache: CacheHandle<'a>,
 }
 
 impl Task<'_> {
@@ -31,8 +31,7 @@ impl Task<'_> {
             common_args: None,
             context: &self.config.context,
             job_context: self.job_context,
-            params: &self.cleaner.params,
-            commons: &self.cleaner.commons,
+            cleaner: self.cleaner,
             #[cfg(feature = "cache")]
             cache: self.cache
         })?;

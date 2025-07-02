@@ -17,3 +17,6 @@ url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features 
 
 [lints]
 workspace = true
+
+[features]
+cache = []

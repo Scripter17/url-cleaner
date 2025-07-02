@@ -136,9 +136,6 @@ pub enum CharMatcher {
 /// The enum of errors [`CharMatcher::check`] can return.
 #[derive(Debug, Error)]
 pub enum CharMatcherError {
-    /// Returned when attempting to use [`CharMatcher::IsDigitRadix`] with an invalid radix (above 36).
-    #[error("Attempted to use CharMatcher::IsDigitRadix with an invalid radix ({0}).")]
-    InvalidRadix(u32),
     /// Returned when a [`StringMatcher::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
@@ -149,7 +146,11 @@ pub enum CharMatcherError {
         try_error: Box<Self>,
         /// The error returned by [`CharMatcher::TryElse::else`]. 
         else_error: Box<Self>
-    }
+    },
+
+    /// Returned when attempting to use [`CharMatcher::IsDigitRadix`] with an invalid radix (above 36).
+    #[error("Attempted to use CharMatcher::IsDigitRadix with an invalid radix ({0}).")]
+    InvalidRadix(u32)
 }
 
 impl CharMatcher {

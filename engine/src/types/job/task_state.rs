@@ -21,14 +21,12 @@ pub struct TaskState<'a> {
     pub context: &'a TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
     pub job_context: &'a JobContext,
-    /// The [`Params`] being used.
-    pub params: &'a Params,
-    /// The [`Commons`] that can be called.
-    pub commons: &'a Commons,
+    /// The [`Cleaner`] that can be called.
+    pub cleaner: &'a Cleaner,
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: &'a Cache
+    pub cache: CacheHandle<'a>
 }
 
 impl<'a> TaskState<'a> {
@@ -44,8 +42,7 @@ impl<'a> TaskState<'a> {
             common_args: self.common_args,
             context    : self.context,
             job_context: self.job_context,
-            params     : self.params,
-            commons    : self.commons,
+            cleaner    : self.cleaner,
             #[cfg(feature = "cache")]
             cache      : self.cache
         }
@@ -84,16 +81,27 @@ macro_rules! task_state {
         #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     params     :        $crate::types::Params          = Default::default();    $(let params      = $params     ;)?
         #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     commons    :        $crate::types::Commons         = Default::default();    $(let commons     = $commons    ;)?
 
-        let mut $task_state = $crate::types::TaskState {
-            url        : &mut url.try_into().unwrap(),
-            scratchpad : &mut scratchpad,
-            common_args: common_args.as_ref(),
-            context    : &context,
-            job_context: &job_context,
-            params     : &params,
-            commons    : &commons,
+        let mut $task_state = {
             #[cfg(feature = "cache")]
-            cache      : &Default::default()
+            use $crate::glue::CacheHandle;
+
+            $crate::types::TaskState {
+                url        : &mut url.try_into().unwrap(),
+                scratchpad : &mut scratchpad,
+                common_args: common_args.as_ref(),
+                context    : &context,
+                job_context: &job_context,
+                cleaner    : &Cleaner {
+                    params,
+                    commons,
+                    ..Default::default()
+                },
+                #[cfg(feature = "cache")]
+                cache      : CacheHandle {
+                    cache: &Default::default(),
+                    delay: false
+                }
+            }
         };
     };
 }
@@ -111,14 +119,12 @@ pub struct TaskStateView<'a> {
     pub context: &'a TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
     pub job_context: &'a JobContext,
-    /// The [`Params`] being used.
-    pub params: &'a Params,
-    /// The [`Commons`] that can be called.
-    pub commons: &'a Commons,
+    /// The [`Cleaner`] that can be called.
+    pub cleaner: &'a Cleaner,
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: &'a Cache
+    pub cache: CacheHandle<'a>,
 }
 
 impl<'a> TaskStateView<'a> {
@@ -127,9 +133,9 @@ impl<'a> TaskStateView<'a> {
     #[doc = edoc!(callerr(HttpClientConfig::make), callerr(reqwest::blocking::ClientBuilder::build))]
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        debug!(TaskStateView::http_client, &self.params.http_client_config, http_client_config_diff);
+        debug!(TaskStateView::http_client, &self.cleaner.params.http_client_config, http_client_config_diff);
 
-        let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
+        let mut http_client_config = Cow::Borrowed(&self.cleaner.params.http_client_config);
 
         if let Some(diff) = http_client_config_diff {diff.apply(http_client_config.to_mut());}
 
@@ -164,16 +170,27 @@ macro_rules! task_state_view {
         #[allow(unused_variables, reason = "You're a macro. Shut up.")] let params     :        $crate::types::Params          = Default::default();    $(let params      = $params     ;)?
         #[allow(unused_variables, reason = "You're a macro. Shut up.")] let commons    :        $crate::types::Commons         = Default::default();    $(let commons     = $commons    ;)?
 
-        let $task_state_view = $crate::types::TaskStateView {
-            url        : &url.try_into().unwrap(),
-            scratchpad : &scratchpad,
-            common_args: common_args.as_ref(),
-            context    : &context,
-            job_context: &job_context,
-            params     : &params,
-            commons    : &commons,
+        let $task_state_view = {
             #[cfg(feature = "cache")]
-            cache      : &Default::default()
+            use $crate::glue::CacheHandle;
+
+            $crate::types::TaskStateView {
+                url        : &url.try_into().unwrap(),
+                scratchpad : &scratchpad,
+                common_args: common_args.as_ref(),
+                context    : &context,
+                job_context: &job_context,
+                cleaner    : &Cleaner {
+                    params,
+                    commons,
+                    ..Default::default()
+                },
+                #[cfg(feature = "cache")]
+                cache      : CacheHandle {
+                    cache: &Default::default(),
+                    delay: false
+                }
+            }
         };
     };
 }

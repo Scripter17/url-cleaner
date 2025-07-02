@@ -392,15 +392,6 @@ pub enum StringLocationError {
     /// Returned when a [`StringLocation::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
-    /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
-    #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]
-    InvalidSlice,
-    /// Returned when an index is either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
-    InvalidIndex,
-    /// Returned when a segment isn't found.
-    #[error("The requested segment wasn't found.")]
-    SegmentNotFound,
     /// Returned when both [`StringLocation`]s in a [`StringLocation::TryElse`] return errors.
     #[error("Both StringLocations in a StringLocation::TryElse returned errors.")]
     TryElseError {
@@ -409,6 +400,16 @@ pub enum StringLocationError {
         /// The error returned by [`StringLocation::TryElse::else`]. 
         else_error: Box<Self>
     },
+
+    /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]
+    InvalidSlice,
+    /// Returned when an index is either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidIndex,
+    /// Returned when a segment isn't found.
+    #[error("The requested segment wasn't found.")]
+    SegmentNotFound
 }
 
 impl StringLocation {

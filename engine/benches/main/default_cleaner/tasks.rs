@@ -4,6 +4,7 @@ use criterion::Criterion;
 use crate::*;
 
 use url_cleaner_engine::types::*;
+use url_cleaner_engine::glue::*;
 
 const TASK_URLS: [&'static str; 3] = [
     "https://x.com?a=2",
@@ -20,7 +21,10 @@ fn r#do(c: &mut Criterion) {
             job_context: &Default::default(),
             cleaner: Cleaner::get_default().unwrap(),
             #[cfg(feature = "cache")]
-            cache: &Default::default()
+            cache: CacheHandle {
+                cache: &Default::default(),
+                delay: false
+            }
         };
 
         c.bench_function(

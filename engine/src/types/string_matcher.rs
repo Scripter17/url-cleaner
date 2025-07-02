@@ -32,18 +32,7 @@ pub enum StringMatcher {
     #[suitable(never)]
     Debug(Box<Self>),
 
-    /// Passes if the string is [`Some`].
-    IsSome,
-    /// Passes if the string is [`None`].
-    IsNone,
-    /// Passes if the string is [`Some`] and [`Self::IsSomeAnd::0`] passes.
-    /// # Errors
-    #[doc = edoc!(checkerr(Self))]
-    IsSomeAnd(Box<Self>),
-    /// Passes if the string is [`None`] or [`Self::IsNoneOr::0`] passes.
-    /// # Errors
-    #[doc = edoc!(checkerr(Self))]
-    IsNoneOr(Box<Self>),
+    // Logic
 
     /// If the call to [`Self::If::if`] passes, return the value of [`Self::If::then`].
     ///
@@ -97,6 +86,23 @@ pub enum StringMatcher {
     #[doc = edoc!(checkerrfne(Self, StringMatcher))]
     FirstNotError(Vec<Self>),
 
+    // Equality
+
+    /// Passes if the string is equal to the value of the specified [`StringSource`].
+    ///
+    /// If the call to [`StringSource::get`] returns [`None`], returns [`false`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    Is(StringSource),
+    /// Passes if the string is in the specified [`Set`].
+    IsOneOf(Set<String>),
+    /// Passes if the string is in the specified [`Params::sets`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), notfound(Set, StringMatcher))]
+    IsInSet(#[suitable(assert = "set_is_documented")] StringSource),
+
+    // Containment
+
     /// Passes if the sring starts with the specified string.
     /// # Errors
     /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
@@ -113,6 +119,7 @@ pub enum StringMatcher {
     /// # Errors
     /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
     IsSuffixOf(String),
+
     /// Passes if the string contains [`Self::Contains::value`] at [`Self::Contains::at`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), checkerr(StringLocation))]
@@ -153,32 +160,9 @@ pub enum StringMatcher {
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-    /// Passes if the string is equal to the value of the specified [`StringSource`].
-    ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns [`false`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    Is(StringSource),
-    /// Passes if the string is in the specified [`Set`].
-    IsOneOf(Set<String>),
-    /// Passes if the string is in the specified [`Params::sets`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), notfound(Set, StringMatcher))]
-    InSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the call to [`Regex::is_match`] returns [`true`].
-    /// # Errors
-    #[doc = edoc!(geterr(RegexWrapper))]
-    #[cfg(feature = "regex")]
-    Regex(RegexWrapper),
-    /// Applies [`Self::Modified::modification`] to a copy of the string, leaving the original unchanged, and returns the satisfaction of [`Self::Modified::matcher`] on that string.
-    /// # Errors
-    #[doc = edoc!(applyerr(StringModification), checkerr(Self))]
-    Modified {
-        /// The [`StringModification`] to apply to the copy of the string.
-        modification: Box<StringModification>,
-        /// The [`Self`] to match the modified string with.
-        matcher: Box<Self>
-    },
+
+    // Char matching
+
     /// Passes if all [`char`]s in the string are in the specified [`HashSet`].
     AllCharsAreOneOf(HashSet<char>),
     /// Passes if any of the [`char`]s in the string are in the specified [`HashSet`].
@@ -195,6 +179,9 @@ pub enum StringMatcher {
     AnyCharMatches(CharMatcher),
     /// Passes if [`str::is_ascii`] returns [`true`].
     IsAscii,
+
+    // Segments
+
     /// Splits the string with [`Self::NthSegmentMatches::split`], gets the [`Self::NthSegmentMatches::n`]th segment, and returns the satisfaction of [`Self::NthSegmentMatches::matcher`] of it.
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher))]
@@ -219,8 +206,6 @@ pub enum StringMatcher {
         /// The [`Self`] to match the segments with.
         matcher: Box<Self>
     },
-    /// Passes if the length of the string is the specified value.
-    LengthIs(usize),
     /// Splits the string with [`Self::SegmentsStartWith::split`] and passes if the list of segments starts with the list of segments from splitting [`Self::SegmentsStartWith::value`] with [`Self::SegmentsStartWith::split`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
@@ -239,10 +224,55 @@ pub enum StringMatcher {
         /// The value to get the subsegments from.
         value: Box<StringSource>
     },
-    /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
+
+    // Other
+
+    /// Passes if the length of the string is the specified value.
+    LengthIs(usize),
+
+    /// Applies [`Self::Modified::modification`] to a copy of the string, leaving the original unchanged, and returns the satisfaction of [`Self::Modified::matcher`] on that string.
+    /// # Errors
+    #[doc = edoc!(applyerr(StringModification), checkerr(Self))]
+    Modified {
+        /// The [`StringModification`] to apply to the copy of the string.
+        modification: Box<StringModification>,
+        /// The [`Self`] to match the modified string with.
+        matcher: Box<Self>
+    },
+
+    /// Passes if the string is [`Some`].
+    IsSome,
+    /// Passes if the string is [`None`].
+    IsNone,
+    /// Passes if the string is [`Some`] and [`Self::IsSomeAnd::0`] passes.
+    /// # Errors
+    #[doc = edoc!(checkerr(Self))]
+    IsSomeAnd(Box<Self>),
+    /// Passes if the string is [`None`] or [`Self::IsNoneOr::0`] passes.
+    /// # Errors
+    #[doc = edoc!(checkerr(Self))]
+    IsNoneOr(Box<Self>),
+
+    // Glue
+
+    /// Passes if the call to [`Regex::is_match`] returns [`true`].
+    /// # Errors
+    #[doc = edoc!(geterr(RegexWrapper))]
+    #[cfg(feature = "regex")]
+    Regex(RegexWrapper),
+
+    // Common/Custom
+
+    /// Gets a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringMatcher, CommonCall::name), commonnotfound(Self, StringMatcher), callerr(CommonCallArgsSource::build), checkerr(Self))]
     Common(CommonCall),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_matchers`] and applies it.
+    /// # Errors
+    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringMatcherError::NotInCommonContext`].
+    ///
+    #[doc = edoc!(commoncallargnotfound(Self, StringMatcher), checkerr(Self))]
+    CommonCallArg(StringSource),
     /// Calls the contained function.
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
@@ -266,22 +296,6 @@ pub enum StringMatcherError {
     /// Returned when a [`StringMatcher::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
-    /// Returned when a [`StringLocationError`] is encountered.
-    #[error(transparent)]
-    StringLocationError(#[from] StringLocationError),
-    /// Returned when a [`StringModificationError`] is encountered.
-    #[error(transparent)]
-    StringModificationError(#[from] StringModificationError),
-    /// Returned when a [`StringSourceError`] is encountered.
-    #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-    /// Returned when a [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("A StringSource returned None where it had to return Some.")]
-    StringSourceIsNone,
-    /// Returned when a [`::regex::Error`] is encountered.
-    #[cfg(feature = "regex")]
-    #[error(transparent)]
-    RegexError(#[from] ::regex::Error),
     /// Returned when both [`StringMatcher`]s in a [`StringMatcher::TryElse`] return errors.
     #[error("Both StringMatchers in a StringMatcher::TryElse returned errors.")]
     TryElseError {
@@ -293,6 +307,27 @@ pub enum StringMatcherError {
     /// Returned when all [`StringMatcher`]s in a [`StringMatcher::FirstNotError`] error.
     #[error("All StringMatchers in a StringMatcher::FirstNotError errored.")]
     FirstNotErrorErrors(Vec<Self>),
+
+    /// Returned when the string to match is [`None`] where it has to be [`Some`].
+    #[error("The string to match was None where it had to be Some.")]
+    StringIsNone,
+
+    /// Returned when a [`StringSourceError`] is encountered.
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError),
+    /// Returned when a [`StringSource`] returns [`None`] where it has to return [`Some`].
+    #[error("A StringSource returned None where it had to return Some.")]
+    StringSourceIsNone,
+    /// Returned when a [`StringModificationError`] is encountered.
+    #[error(transparent)]
+    StringModificationError(#[from] StringModificationError),
+    /// Returned when a [`StringLocationError`] is encountered.
+    #[error(transparent)]
+    StringLocationError(#[from] StringLocationError),
+    /// Returned when a [`CharMatcherError`] is encountered.
+    #[error(transparent)]
+    CharMatcherError(#[from] CharMatcherError),
+
     /// Returned when a segment isn't found.
     #[error("The requested segment wasn't found.")]
     SegmentNotFound,
@@ -302,18 +337,25 @@ pub enum StringMatcherError {
     /// Returned when a [`Set`] isn't found.
     #[error("The requested set wasn't found.")]
     SetNotFound,
-    /// Returned when a [`CharMatcherError`] is encountered.
+
+    /// Returned when a [`::regex::Error`] is encountered.
+    #[cfg(feature = "regex")]
     #[error(transparent)]
-    CharMatcherError(#[from] CharMatcherError),
-    /// Returned when a [`StringMatcher`] with the specified name isn't found in the [`Commons::string_matchers`].
-    #[error("A StringMatcher with the specified name wasn't found in the Commons::string_matchers.")]
-    CommonStringMatcherNotFound,
+    RegexError(#[from] ::regex::Error),
+
     /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
-    /// Returned when the string to match is [`None`] where it has to be [`Some`].
-    #[error("The string to match was None where it had to be Some.")]
-    StringIsNone,
+    /// Returned when a [`StringMatcher`] with the specified name isn't found in the [`Commons::string_matchers`].
+    #[error("A StringMatcher with the specified name wasn't found in the Commons::string_matchers.")]
+    CommonStringMatcherNotFound,
+    /// Returned when trying to use [`StringMatcher::CommonCallArg`] outside of a common context.
+    #[error("Tried to use StringMatcher::CommonCallArg outside of a common context.")]
+    NotInCommonContext,
+    /// Returned when the [`StringMatcher`] requested from a [`StringMatcher::CommonCallArg`] isn't found.
+    #[error("The StringMatcher requested from a StringMatcher::CommonCallArg wasn't found.")]
+    CommonCallArgStringMatcherNotFound,
+
     /// An arbitrary [`std::error::Error`] for use with [`StringMatcher::Custom`].
     #[error(transparent)]
     #[cfg(feature = "custom")]
@@ -337,11 +379,6 @@ impl StringMatcher {
             },
 
             // Logic.
-
-            Self::IsSome => haystack.is_some(),
-            Self::IsNone => haystack.is_none(),
-            Self::IsSomeAnd(matcher) => haystack.is_some() && matcher.check(haystack, task_state)?,
-            Self::IsNoneOr(matcher) => haystack.is_none() || matcher.check(haystack, task_state)?,
 
             Self::If {r#if, then, r#else} => if r#if.check(haystack, task_state)? {then} else {r#else}.check(haystack, task_state)?,
             Self::All(matchers) => {
@@ -378,13 +415,22 @@ impl StringMatcher {
                 Err(StringMatcherError::FirstNotErrorErrors(errors))?
             },
 
-            // Other.
+            // Equality
 
+            Self::Is(StringSource::String(value)) => haystack == Some(value),
+            Self::Is(StringSource::None) => haystack.is_none(),
+            Self::Is(value) => haystack == value.get(task_state)?.as_deref(),
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
+            Self::IsInSet(name) => task_state.cleaner.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
+
+            // Containment
+
             Self::StartsWith(needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.starts_with(needle),
-            Self::EndsWith(needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.ends_with(needle),
+            Self::EndsWith  (needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.ends_with  (needle),
             Self::IsPrefixOf(needle) => needle.starts_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
-            Self::IsSuffixOf(needle) => needle.ends_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::IsSuffixOf(needle) => needle.ends_with  (haystack.ok_or(StringMatcherError::StringIsNone)?),
+
+            Self::Contains {at, value: StringSource::String(value)} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, value)?,
             Self::Contains {at, value} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, get_str!(value, task_state, StringMatcherError))?,
             Self::ContainsAny {values, at} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
@@ -395,22 +441,18 @@ impl StringMatcher {
                 }
                 false
             },
-            // Cannot wait for [`Iterator::try_any`](https://github.com/rust-lang/rfcs/pull/3233)
             Self::ContainsAnyInList {at, list} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
-                for x in task_state.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
+                for x in task_state.cleaner.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
                     if at.check(haystack, x)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Modified {modification, matcher} => {
-                let mut temp = haystack.map(Cow::Borrowed);
-                modification.apply(&mut temp, task_state)?;
-                matcher.check(temp.as_deref(), task_state)?
-            }
-            #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack.ok_or(StringMatcherError::StringIsNone)?),
+
+            // Char matcher
+
             Self::AllCharsAreOneOf(chars) =>  haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| chars.contains(&c)),
             Self::AnyCharIsOneOf  (chars) =>  haystack.ok_or(StringMatcherError::StringIsNone)?.chars().any(|c| chars.contains(&c)),
             Self::NoCharIsOneOf   (chars) => !haystack.ok_or(StringMatcherError::StringIsNone)?.chars().any(|c| chars.contains(&c)),
@@ -431,6 +473,9 @@ impl StringMatcher {
                 false
             },
             Self::IsAscii => haystack.ok_or(StringMatcherError::StringIsNone)?.is_ascii(),
+
+            // Segments
+
             Self::NthSegmentMatches {n, split, matcher} => matcher.check(Some(neg_nth(haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)), *n).ok_or(StringMatcherError::SegmentNotFound)?), task_state)?,
             Self::AnySegmentMatches {split, matcher} => {
                 for segment in haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)) {
@@ -440,9 +485,6 @@ impl StringMatcher {
                 };
                 return Ok(false);
             },
-            Self::Is(source) => haystack == source.get(task_state)?.as_deref(),
-            Self::InSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
-            Self::LengthIs(x) => haystack.ok_or(StringMatcherError::StringIsNone)?.len() == *x,
             Self::SegmentsEndWith { split, value } => {
                 let split = get_str!(split, task_state, StringMatcherError);
                 // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value, task_state, StringMatcherError).split(split)).all(|(x, y)| x==y)
@@ -454,8 +496,30 @@ impl StringMatcher {
                 haystack.ok_or(StringMatcherError::StringIsNone)?.strip_prefix(get_str!(value, task_state, StringMatcherError))
                     .is_some_and(|x| x.strip_prefix(split).is_some())
             },
+
+            // Other
+
+            Self::LengthIs(x) => haystack.ok_or(StringMatcherError::StringIsNone)?.len() == *x,
+
+            Self::Modified {modification, matcher} => {
+                let mut temp = haystack.map(Cow::Borrowed);
+                modification.apply(&mut temp, task_state)?;
+                matcher.check(temp.as_deref(), task_state)?
+            }
+
+            Self::IsSome => haystack.is_some(),
+            Self::IsNone => haystack.is_none(),
+            Self::IsSomeAnd(matcher) => haystack.is_some() && matcher.check(haystack, task_state)?,
+            Self::IsNoneOr(matcher) => haystack.is_none() || matcher.check(haystack, task_state)?,
+
+            // Glue
+
+            #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack.ok_or(StringMatcherError::StringIsNone)?),
+
+            // Common/Custom
+
             Self::Common(common_call) => {
-                task_state.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.check(
+                task_state.cleaner.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.check(
                     haystack,
                     &TaskStateView {
                         common_args: Some(&common_call.args.build(task_state)?),
@@ -463,13 +527,14 @@ impl StringMatcher {
                         scratchpad : task_state.scratchpad,
                         context    : task_state.context,
                         job_context: task_state.job_context,
-                        params     : task_state.params,
-                        commons    : task_state.commons,
+                        cleaner    : task_state.cleaner,
                         #[cfg(feature = "cache")]
                         cache      : task_state.cache
                     }
                 )?
             },
+            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(         name                                 ).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
+            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(haystack, task_state)?,
         })

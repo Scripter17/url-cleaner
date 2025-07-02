@@ -787,7 +787,7 @@ pub enum StringModification {
 
 
 
-    /// Gets a [`Self`] from [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Gets a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringModification, CommonCall::name), commonnotfound(Self, StringModification), callerr(CommonCallArgsSource::build), applyerr(Self))]
     Common(CommonCall),
@@ -839,44 +839,6 @@ pub enum StringModificationError {
     /// Returned when a [`StringModification::Error`] is used.
     #[error("Explicit error: {0}")]
     ExplicitError(String),
-    /// Returned when a [`std::str::Utf8Error`] is encountered.
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-    /// Returned when a [`serde_json::Error`] is encountered.
-    #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when a JSON value isn't found.
-    #[error("The requested JSON value was not found.")]
-    JsonValueNotFound,
-    /// Returned when a JSON pointee isn't a string.
-    #[error("The requested JSON pointee was not a string.")]
-    JsonPointeeIsNotAString,
-    /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
-    #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]
-    InvalidSlice,
-    /// Returned when an index is either not on a UTF-8 boundary or out of bounds.
-    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
-    InvalidIndex,
-    /// Returned when a segment isn't found.
-    #[error("The requested segment wasn't found.")]
-    SegmentNotFound,
-    /// Returned when a segment range isn't found
-    #[error("The requested segment range wasn't found.")]
-    SegmentRangeNotFound,
-    /// Returned when the string being modified doesn't start with the specified prefix.
-    #[error("The string being modified didn't start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
-    PrefixNotFound,
-    /// Returned when the string being modified doesn't end with the specified suffix.
-    #[error("The string being modified didn't end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
-    SuffixNotFound,
-    /// Returned when a [`Regex`] doesn't find any matches in the string.
-    #[cfg(feature = "regex")]
-    #[error("The regex didn't find any matches in the string.")]
-    RegexMatchNotFound,
-    /// Returned when a [`::regex::Error`] is encountered.
-    #[cfg(feature = "regex")]
-    #[error(transparent)]
-    RegexError(#[from] ::regex::Error),
     /// Returned when both [`StringModification`]s in a [`StringModification::TryElse`] return errors.
     #[error("Both StringModifications in a StringModification::TryElse returned errors.")]
     TryElseError {
@@ -888,13 +850,10 @@ pub enum StringModificationError {
     /// Returned when all [`StringModification`]s in a [`StringModification::FirstNotError`] error.
     #[error("All StringModifications in a StringModification::FirstNotError errored.")]
     FirstNotErrorErrors(Vec<Self>),
-    /// Returned when a [`::base64::DecodeError`] is encountered.
-    #[cfg(feature = "base64")]
+
+    /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
-    Base64DecodeError(#[from] ::base64::DecodeError),
-    /// Returned when a [`std::string::FromUtf8Error`] is encountered.
-    #[error(transparent)]
-    FromUtf8Error(#[from] std::string::FromUtf8Error),
+    ConditionError(#[from] Box<ConditionError>),
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
@@ -907,18 +866,51 @@ pub enum StringModificationError {
     /// Returned when a [`StringLocationError`] is encountered.
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
+
+    /// Returned when a [`serde_json::Error`] is encountered.
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a JSON value isn't found.
+    #[error("The requested JSON value was not found.")]
+    JsonValueNotFound,
+    /// Returned when a JSON pointee isn't a string.
+    #[error("The requested JSON pointee was not a string.")]
+    JsonPointeeIsNotAString,
+
+    /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
+    #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]
+    InvalidSlice,
+    /// Returned when an index is either not on a UTF-8 boundary or out of bounds.
+    #[error("The requested index was either not on a UTF-8 boundary or out of bounds.")]
+    InvalidIndex,
+    /// Returned when a segment isn't found.
+    #[error("The requested segment wasn't found.")]
+    SegmentNotFound,
+    /// Returned when a segment range isn't found
+    #[error("The requested segment range wasn't found.")]
+    SegmentRangeNotFound,
+
+    /// Returned when the string being modified doesn't start with the specified prefix.
+    #[error("The string being modified didn't start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
+    PrefixNotFound,
+    /// Returned when the string being modified doesn't end with the specified suffix.
+    #[error("The string being modified didn't end with the provided suffix. Maybe try `StringModification::StripMaybeSuffix`?")]
+    SuffixNotFound,
+
+    /// Returned when a [`std::str::Utf8Error`] is encountered.
+    #[error(transparent)]
+    Utf8Error(#[from] std::str::Utf8Error),
+    /// Returned when a [`std::string::FromUtf8Error`] is encountered.
+    #[error(transparent)]
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
+
     /// Returned when the [`StringModification::KeepBetween::start`] isn't found in the string.
     #[error("The StringModification::KeepBetween::start isn't found in the string.")]
     KeepBetweenStartNotFound,
     /// Returned when the [`StringModification::KeepBetween::end`] isn't found in the string after the [`StringModification::KeepBetween::start`].
     #[error("The StringModification::KeepBetween::end isn't found in the string after the StringModification::KeepBetween::start.")]
     KeepBetweenEndNotFound,
-    /// Returned when a [`StringModification`] with the specified name isn't found in the [`Commons::string_modifications`].
-    #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
-    CommonStringModificationNotFound,
-    /// Returned when a [`ConditionError`] is encountered.
-    #[error(transparent)]
-    ConditionError(#[from] Box<ConditionError>),
+
     /// Returned when a [`parse::js::StringLiteralPrefixError`] is encountered.
     #[error(transparent)]
     JsStringLiteralPrefixError(#[from] parse::js::StringLiteralPrefixError),
@@ -934,18 +926,10 @@ pub enum StringModificationError {
     /// Returned when the requested HTML attribute doesn't have a value.
     #[error("The requested HTML attribute doesn't have a value.")]
     HtmlAttributeHasNoValue,
+
     /// Returned when a substring isn't found in the string.
     #[error("The substring wasn't found in the string.")]
     SubstringNotFound,
-    /// Returned when a [`CommonCallArgsError`] is encountered.
-    #[error(transparent)]
-    CommonCallArgsError(#[from] CommonCallArgsError),
-    /// Returned when trying to use [`StringModification::CommonCallArg`] outside of a common context.
-    #[error("Tried to use StringModification::CommonCallArg outside of a common context.")]
-    NotInCommonContext,
-    /// Returned when the [`StringModification`] requested from a [`StringModification::CommonCallArg`] isn't found.
-    #[error("The StringModification requested from a StringModification::CommonCallArg wasn't found.")]
-    CommonCallArgStringModificationNotFound,
     /// Returned when the string to modify is [`None`] where it has to be [`Some`].
     #[error("The string to modify was None where it had to be Some")]
     StringIsNone,
@@ -955,6 +939,33 @@ pub enum StringModificationError {
     /// Returned when a list with the specified name isn't found.
     #[error("A list with the specified name wasn't found.")]
     ListNotFound,
+
+    /// Returned when a [`::regex::Error`] is encountered.
+    #[cfg(feature = "regex")]
+    #[error(transparent)]
+    RegexError(#[from] ::regex::Error),
+    /// Returned when a [`Regex`] doesn't find any matches in the string.
+    #[cfg(feature = "regex")]
+    #[error("The regex didn't find any matches in the string.")]
+    RegexMatchNotFound,
+    /// Returned when a [`::base64::DecodeError`] is encountered.
+    #[cfg(feature = "base64")]
+    #[error(transparent)]
+    Base64DecodeError(#[from] ::base64::DecodeError),
+
+    /// Returned when a [`CommonCallArgsError`] is encountered.
+    #[error(transparent)]
+    CommonCallArgsError(#[from] CommonCallArgsError),
+    /// Returned when a [`StringModification`] with the specified name isn't found in the [`Commons::string_modifications`].
+    #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
+    CommonStringModificationNotFound,
+    /// Returned when trying to use [`StringModification::CommonCallArg`] outside of a common context.
+    #[error("Tried to use StringModification::CommonCallArg outside of a common context.")]
+    NotInCommonContext,
+    /// Returned when the [`StringModification`] requested from a [`StringModification::CommonCallArg`] isn't found.
+    #[error("The StringModification requested from a StringModification::CommonCallArg wasn't found.")]
+    CommonCallArgStringModificationNotFound,
+
     /// An arbitrary [`std::error::Error`] for use with [`StringModification::Custom`].
     #[cfg(feature = "custom")]
     #[error(transparent)]
@@ -1355,8 +1366,8 @@ impl StringModification {
             },
             Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
                 let mut new = String::with_capacity(inner.len());
-                let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
-                let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
+                let set = task_state.cleaner.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
+                let list = task_state.cleaner.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
                 for param in inner.split('&') {
                     let name = peh(param.split('=').next().expect("The first segment to always exist."));
                     if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
@@ -1372,7 +1383,7 @@ impl StringModification {
 
 
             Self::Common(common_call) => {
-                task_state.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
+                task_state.cleaner.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
                     &TaskStateView {
                         common_args: Some(&common_call.args.build(task_state)?),
@@ -1380,14 +1391,14 @@ impl StringModification {
                         scratchpad : task_state.scratchpad,
                         context    : task_state.context,
                         job_context: task_state.job_context,
-                        params     : task_state.params,
-                        commons    : task_state.commons,
+                        cleaner    : task_state.cleaner,
                         #[cfg(feature = "cache")]
                         cache      : task_state.cache
                     }
                 )?;
             },
-            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
+            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(         name                                      ).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
+            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, task_state)?
         };

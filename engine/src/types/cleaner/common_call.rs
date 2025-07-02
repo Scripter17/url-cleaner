@@ -19,7 +19,7 @@ pub struct CommonCall {
     ///
     /// Defaults to [`CommonCallArgsSource::default`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub args: CommonCallArgsSource
+    pub args: Box<CommonCallArgsSource>
 }
 
 impl FromStr for CommonCall {
@@ -48,11 +48,31 @@ pub struct CommonCallArgsSource {
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, StringSource>,
+    /// The [`Condition`]s to use.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub conditions: HashMap<String, Condition>,
+    /// The [`Action`]s to use.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub actions: HashMap<String, Action>,
+    /// The [`StringSource`]s to use.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub string_sources: HashMap<String, StringSource>,
     /// The [`StringModification`]s to use.
     ///
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub string_modifications: HashMap<String, StringModification>
+    pub string_modifications: HashMap<String, StringModification>,
+    /// The [`StringMatcher`]s to use.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub string_matchers: HashMap<String, StringMatcher>
 }
 
 /// The enum of errors [`CommonCallArgsSource::build`] can return.
@@ -77,7 +97,11 @@ impl CommonCallArgsSource {
         Ok(CommonCallArgs {
             flags: &self.flags,
             vars: self.vars.iter().filter_map(|(k, v)| match v.get(task_state) {Ok(Some(x)) => Some(Ok((&**k, x.into_owned()))), Ok(None) => None, Err(e) => Some(Err(e))}).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
-            string_modifications: &self.string_modifications
+            conditions: &self.conditions,
+            actions: &self.actions,
+            string_sources: &self.string_sources,
+            string_modifications: &self.string_modifications,
+            string_matchers: &self.string_matchers
         })
     }
 }
@@ -89,6 +113,14 @@ pub struct CommonCallArgs<'a> {
     pub flags: &'a HashSet<String>,
     /// The vars that are set.
     pub vars: HashMap<&'a str, String>,
+    /// The [`Condition`]s to use.
+    pub conditions: &'a HashMap<String, Condition>,
+    /// The [`Action`]s to use.
+    pub actions: &'a HashMap<String, Action>,
+    /// The [`StringSource`]s to use.
+    pub string_sources: &'a HashMap<String, StringSource>,
     /// The [`StringModification`]s to use.
-    pub string_modifications: &'a HashMap<String, StringModification>
+    pub string_modifications: &'a HashMap<String, StringModification>,
+    /// The [`StringMatcher`]s to use.
+    pub string_matchers: &'a HashMap<String, StringMatcher>
 }
