@@ -217,7 +217,7 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                         #[cfg(feature = "cache")]
                         cache: &state.config.cache,
                         #[cfg(feature = "cache")]
-                        cache_delay: job_config.cache_delay.unwrap_or(true),
+                        cache_delay: job_config.cache_delay.unwrap_or(false),
                         lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
                     };
                     for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {

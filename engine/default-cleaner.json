@@ -52,8 +52,8 @@
 		"sets": {
 			"utps": "Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.",
 
-			"nh_keep_http"           : "The `NormalizedHost`s to not upgrade from `http` to `https`.",
-			"rd_keep_mobile"         : "The `RegDomain`s to not apply the `unmobile` flag to."
+			"nh_keep_http"  : "The `NormalizedHost`s to not upgrade from `http` to `https`.",
+			"rd_keep_mobile": "The `RegDomain`s to not apply the `unmobile` flag to."
 		},
 		"lists": {
 			"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."

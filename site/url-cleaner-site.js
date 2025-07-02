@@ -201,7 +201,9 @@ function element_to_task_config(element) {
 // Because the webpage's URL can change without reloading the script, this needs to be calculated per job config.
 // Don't worry, it's fast. I think.
 async function get_job_context() {
-	let ret = {};
+	let ret = {
+		cache_delay: true
+	};
 
 	if (window.config.send_host) {
 		if (ret.vars === undefined) {ret.vars = {};}
