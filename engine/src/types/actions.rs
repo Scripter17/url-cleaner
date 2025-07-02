@@ -18,11 +18,23 @@ use crate::util::*;
 
 /// Actions are how [`TaskState`]s get manipulated to clean URLs.
 ///
-/// Please note that, in general, when a [`Action`] returns an [`Err`], the [`TaskState`] may still be modified.
+/// Please note that, in general, when a [`Action`] returns an [`Err`], the [`TaskState`] may still be modified. For example:
+/// ```
+/// use url_cleaner_engine::types::*;
+/// url_cleaner_engine::task_state!(task_state, url = "https://example.com");
 ///
-/// For example, a [`Action::All`] containing 3 [`Action`]s and the second one returns an error, the effect of the first [`Action`] is still applied.
+/// Action::All(vec![
+///     Action::SetPath("/change".into()),
+///     Action::Error("This won't revert the above".into()),
+///     Action::SetPath("/wont-happen".into())
+/// ]).apply(&mut task_state).unwrap_err();
 ///
-/// In practice this should rarely be an issue, but when it is, use [`Action::RevertOnError`].
+/// assert_eq!(task_state.url, "https://example.com/change");
+/// ```
+///
+/// This is because reverting on an error requires keeping a copy of the input state, which is very expensive compared to the benefit.
+///
+/// If you need to revert the task state when an error is returned, use [`Self::RevertOnError`] to revert the effects but still return the error, and optionally [`Self::IgnoreError`] to ignore the error.
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Action {
@@ -224,14 +236,41 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state!(task_state);
+    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com");
     ///
-    /// Action::IgnoreError(Box::new(Action::Error("...".into()))).apply(&mut task_state).unwrap();
+    /// Action::IgnoreError(Box::new(
+    ///     Action::RevertOnError(Box::new(
+    ///         Action::All(vec![
+    ///             Action::SetPath("/change".into()),
+    ///             Action::Error("This won't revert the above".into()),
+    ///             Action::SetPath("/wont-happen".into())
+    ///         ])
+    ///     ))
+    /// )).apply(&mut task_state).unwrap(); // Error is ignored.
+    ///
+    /// assert_eq!(task_state.url, "https://example.com/"); // The first `Action::SetPath` is reverted.
     /// ```
     IgnoreError(Box<Self>),
-    /// If the contained [`Self`] returns an error, revert the [`TaskState`] to its previous state.
+    /// If the contained [`Self`] returns an error, revert the [`TaskState`] to its previous state then return the error.
+    ///
+    /// To ignore errors, put this in a [`Self::IgnoreError`].
     /// # Errors
     #[doc = edoc!(applyerr(Self))]
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com");
+    ///
+    /// Action::RevertOnError(Box::new(
+    ///     Action::All(vec![
+    ///         Action::SetPath("/change".into()),
+    ///         Action::Error("This won't revert the above".into()),
+    ///         Action::SetPath("/wont-happen".into())
+    ///     ])
+    /// )).apply(&mut task_state).unwrap_err(); // Still returns an error.
+    ///
+    /// assert_eq!(task_state.url, "https://example.com/"); // The first `Action::SetPath` is reverted.
+    /// ```
     RevertOnError(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
     /// # Errors
@@ -1152,7 +1191,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::RemoveQueryParam(name) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1163,7 +1204,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::AllowQueryParam(StringSource::String(name)) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1173,7 +1216,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::AllowQueryParam(name) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1184,7 +1229,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1194,7 +1241,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1204,7 +1253,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1214,7 +1265,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1224,7 +1277,9 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
             Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1232,12 +1287,14 @@ impl Action {
                 let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
                 for param in query.split('&') {
                     let name = peh(param.split('=').next().expect("The first segment to always exist."));
-                    if !set.contains(Some(&*name)) && !list.iter().any(|x| name.starts_with(x)) {
+                    if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if new.len() != query.len() {
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
 
             Self::GetUrlFromQueryParam(name) => {

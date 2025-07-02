@@ -11,9 +11,7 @@ The default cleaner is intended to always obey the following rules:
 - It should always be both deterministic and idempotent.
   - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
 - Shuffling the input list of URLs should always give the same (equally shuffled) output.
-- The `command` and `custom` features, as well as any features starting with `debug` or `experiment` are never expected to be enabled.
-  - All other features are expected to be enabled.
-    - Some may happen to not be required, but changes that make them required aren't considered breaking.
+- Only the `default-cleaner` feature is expected to be enabled, and it is always expected to be enabled.
 - When the `no_network` flag is set, the default cleaner should NEVER make ANY network requests.
   - The `no_network` flag should be equivalent to compiling URL Cleaner without network support and removing all network stuff from the default cleaner.
 - Opening a URL outputted by the default cleaner with the `no_network` flag disabled any the `bypass_vip`/any future related flags enebled should never result in a redirect.
@@ -80,7 +78,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `rd_keep_empty_query`: The `RegDomain`s to not remove an empty `Query` from.
 - `rd_keep_fqdn_period`: The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.
 - `rd_keep_mobile`: The `RegDomain`s to not apply the `unmobile` flag to.
-- `rd_keep_utps`: The `RegDomain`s to not remove universal tracking parameters from.
 
 ### Lists
 

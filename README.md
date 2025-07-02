@@ -35,7 +35,7 @@ However, because redirect links (like bit.ly links) are expanded and cached by d
 
 You can defend against this by enabling the `no_network` flag and/or by specifying `--read-cache false` on the command line.
 
-In the future, better defenses like artificial delays, cache expiration, may or may not be added.
+In the future, better defenses like artificial delays, cache expiration, and others may or may not (but should) be added.
 
 # Default cleaner
 

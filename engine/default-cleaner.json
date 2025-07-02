@@ -56,8 +56,7 @@
 			"rd_keep_empty_fragment" : "The `RegDomain`s to not remove an empty `Fragment` from.",
 			"rd_keep_empty_query"    : "The `RegDomain`s to not remove an empty `Query` from.",
 			"rd_keep_fqdn_period"    : "The `RegDomain`s to not remove remove the [fully qualified domain](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period from.",
-			"rd_keep_mobile"         : "The `RegDomain`s to not apply the `unmobile` flag to.",
-			"rd_keep_utps"           : "The `RegDomain`s to not remove universal tracking parameters from."
+			"rd_keep_mobile"         : "The `RegDomain`s to not apply the `unmobile` flag to."
 		},
 		"lists": {
 			"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."
@@ -122,8 +121,7 @@
 				"_sgm_action", "_sgm_campaign", "_sgm_source", "sms_click", "sms_source", "sms_uph", "spot_im_redirect_source", "srsltid", "sscid", "ss_email_id", "Tcsack",
 				"tduid", "_trkparms", "_trksid", "ttclid", "twclid", "unicorn_click_id", "user_email_address", "usqp", "utm", "vc_lpp", "vero_conv", "vero_id", "vgo_ee",
 				"vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wickedid", "wpb_advertiser", "wpb_id", "wt_mc", "xtor", "yclid", "ymclid", "ymid", "ysclid", "_zucks_suid"
-			],
-			"rd_keep_utps": ["bambulab.com"]
+			]
 		},
 		"lists": {
 			"utp_prefixes": [
@@ -332,21 +330,16 @@
 					]},
 					"then": {"SetScheme": "https"}
 				}},
-				{"If": {
-					"if": {"Not": {"RegDomainIsInSet": "rd_keep_utps"}},
-					"then": {"All": [
-						{"RemoveQueryParamsInSetOrStartingWithAnyInList": {
-							"set": "utps",
-							"list": "utp_prefixes"
-						}},
-						{"ModifyPartIfSome": {
-							"part": "Fragment",
-							"modification": {"RemoveQueryParamsInSetOrStartingWithAnyInList": {
-								"set": "utps",
-								"list": "utp_prefixes"
-							}}
-						}}
-					]}
+				{"RemoveQueryParamsInSetOrStartingWithAnyInList": {
+					"set": "utps",
+					"list": "utp_prefixes"
+				}},
+				{"ModifyPartIfSome": {
+					"part": "Fragment",
+					"modification": {"RemoveQueryParamsInSetOrStartingWithAnyInList": {
+						"set": "utps",
+						"list": "utp_prefixes"
+					}}
 				}},
 				{"PartNamedPartitioning": {
 					"part": "RegDomain",

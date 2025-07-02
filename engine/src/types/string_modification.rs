@@ -1330,24 +1330,28 @@ impl StringModification {
 
 
             Self::RemoveQueryParamsMatching(matcher) => if let Some(inner) = to {
-                let mut ret = String::with_capacity(inner.len());
+                let mut new = String::with_capacity(inner.len());
                 for param in inner.split('&') {
                     if !matcher.check(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
-                        if !ret.is_empty() {ret.push('&');}
-                        ret.push_str(param);
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
                     }
                 }
-                *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
+                if new.len() != inner.len() {
+                    *to = Some(Cow::<str>::Owned(new)).filter(|new| !new.is_empty());
+                }
             },
             Self::AllowQueryParamsMatching(matcher) => if let Some(inner) = to {
-                let mut ret = String::with_capacity(inner.len());
+                let mut new = String::with_capacity(inner.len());
                 for param in inner.split('&') {
                     if matcher.check(Some(&peh(param.split('=').next().expect("The first segment to always exist"))), task_state)? {
-                        if !ret.is_empty() {ret.push('&');}
-                        ret.push_str(param);
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
                     }
                 }
-                *to = Some(Cow::<str>::Owned(ret)).filter(|ret| !ret.is_empty());
+                if new.len() != inner.len() {
+                    *to = Some(Cow::<str>::Owned(new)).filter(|new| !new.is_empty());
+                }
             },
             Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
                 let mut new = String::with_capacity(inner.len());
@@ -1355,12 +1359,14 @@ impl StringModification {
                 let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
                 for param in inner.split('&') {
                     let name = peh(param.split('=').next().expect("The first segment to always exist."));
-                    if !set.contains(Some(&*name)) && !list.iter().any(|x| name.starts_with(x)) {
+                    if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
                 }
-                *to = Some(Cow::<str>::Owned(new)).filter(|x| !x.is_empty());
+                if new.len() != inner.len() {
+                    *to = Some(Cow::<str>::Owned(new)).filter(|x| !x.is_empty());
+                }
             },
 
 
