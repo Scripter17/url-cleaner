@@ -806,7 +806,7 @@ pub enum Action {
         /// The action to apply and cache.
         action: Box<Self>
     },
-    /// Applies a [`Self`] from [`TaskState::cleaner`]'s [`Cleaner::commons`]'s [`Commons::actions`].
+    /// Applies a [`Self`] from [`TaskState::commons`]'s [`Commons::actions`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), commonnotfound(Self, Action), callerr(CommonCallArgsSource::build), applyerr(Self))]
     /// # Examples
@@ -1107,11 +1107,11 @@ impl Action {
             Self::PartMap   {part , map} => if let Some(action) = map.get(part .get( task_state.url      ) ) {action.apply(task_state)?;},
             Self::StringMap {value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
 
-            Self::PartNamedPartitioning   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(action) = map.get(task_state.cleaner.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
-            Self::StringNamedPartitioning {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(action) = map.get(task_state.cleaner.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
+            Self::PartNamedPartitioning   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
+            Self::StringNamedPartitioning {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
 
-            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.cleaner.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
-            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(action) = map.get(task_state.cleaner.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
+            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
+            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
 
             // Whole
 
@@ -1300,8 +1300,8 @@ impl Action {
             },
             Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
-                let set = task_state.cleaner.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
-                let list = task_state.cleaner.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
+                let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
+                let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
                 for param in query.split('&') {
                     let name = peh(param.split('=').next().expect("The first segment to always exist."));
                     if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
@@ -1362,9 +1362,9 @@ impl Action {
             #[cfg(feature = "http")]
             Self::ExpandRedirect {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache")]
-                if task_state.cleaner.params.read_cache {
-                    if let Some(new_url) = task_state.cache.read("redirect", task_state.url.as_str())? {
-                        *task_state.url = BetterUrl::parse(&new_url.ok_or(ActionError::CachedUrlIsNone)?)?;
+                if task_state.params.read_cache {
+                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {category: "redirect", key: task_state.url.as_str()})? {
+                        *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
                 }
@@ -1379,8 +1379,13 @@ impl Action {
                 #[cfg(feature = "cache")]
                 let duration = start.elapsed();
                 #[cfg(feature = "cache")]
-                if task_state.cleaner.params.write_cache {
-                    task_state.cache.write("redirect", task_state.url.as_str(), Some(new_url.as_str()), duration)?;
+                if task_state.params.write_cache {
+                    task_state.cache.write(NewCacheEntry {
+                        category: "redirect",
+                        key: task_state.url.as_str(),
+                        value: Some(new_url.as_str()),
+                        duration
+                    })?;
                 }
                 *task_state.url=new_url;
             },
@@ -1408,9 +1413,9 @@ impl Action {
             #[cfg(feature = "cache")]
             Self::CacheUrl {category, action} => {
                 let category = get_string!(category, task_state, ActionError);
-                if task_state.cleaner.params.read_cache {
-                    if let Some(new_url) = task_state.cache.read(&category, task_state.url.as_str())? {
-                        *task_state.url = BetterUrl::parse(&new_url.ok_or(ActionError::CachedUrlIsNone)?)?;
+                if task_state.params.read_cache {
+                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {category: &category, key: task_state.url.as_str()})? {
+                        *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
                 }
@@ -1418,18 +1423,24 @@ impl Action {
                 let start = std::time::Instant::now();
                 action.apply(task_state)?;
                 let duration = start.elapsed();
-                if task_state.cleaner.params.write_cache {
-                    task_state.cache.write(&category, &old_url, Some(task_state.url.as_str()), duration)?;
+                if task_state.params.write_cache {
+                    task_state.cache.write(NewCacheEntry {
+                        category: &category,
+                        key: &old_url,
+                        value: Some(task_state.url.as_str()),
+                        duration
+                    })?;
                 }
             },
             Self::Common(common_call) => {
-                task_state.cleaner.commons.actions.get(get_str!(common_call.name, task_state, ActionError)).ok_or(ActionError::CommonActionNotFound)?.apply(&mut TaskState {
+                task_state.commons.actions.get(get_str!(common_call.name, task_state, ActionError)).ok_or(ActionError::CommonActionNotFound)?.apply(&mut TaskState {
                     common_args: Some(&common_call.args.build(&task_state.to_view())?),
                     url        : task_state.url,
                     scratchpad : task_state.scratchpad,
                     context    : task_state.context,
                     job_context: task_state.job_context,
-                    cleaner    : task_state.cleaner,
+                    params     : task_state.params,
+                    commons    : task_state.commons,
                     #[cfg(feature = "cache")]
                     cache      : task_state.cache
                 })?

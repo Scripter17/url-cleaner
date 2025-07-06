@@ -787,7 +787,7 @@ pub enum StringModification {
 
 
 
-    /// Gets a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Gets a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringModification, CommonCall::name), commonnotfound(Self, StringModification), callerr(CommonCallArgsSource::build), applyerr(Self))]
     Common(CommonCall),
@@ -1366,8 +1366,8 @@ impl StringModification {
             },
             Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
                 let mut new = String::with_capacity(inner.len());
-                let set = task_state.cleaner.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
-                let list = task_state.cleaner.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
+                let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
+                let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
                 for param in inner.split('&') {
                     let name = peh(param.split('=').next().expect("The first segment to always exist."));
                     if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
@@ -1383,7 +1383,7 @@ impl StringModification {
 
 
             Self::Common(common_call) => {
-                task_state.cleaner.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
+                task_state.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
                     &TaskStateView {
                         common_args: Some(&common_call.args.build(task_state)?),
@@ -1391,7 +1391,8 @@ impl StringModification {
                         scratchpad : task_state.scratchpad,
                         context    : task_state.context,
                         job_context: task_state.job_context,
-                        cleaner    : task_state.cleaner,
+                        params     : task_state.params,
+                        commons    : task_state.commons,
                         #[cfg(feature = "cache")]
                         cache      : task_state.cache
                     }

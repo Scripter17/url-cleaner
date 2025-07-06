@@ -21,12 +21,14 @@ pub struct TaskState<'a> {
     pub context: &'a TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
     pub job_context: &'a JobContext,
-    /// The [`Cleaner`] that can be called.
-    pub cleaner: &'a Cleaner,
+    /// The [`Params`] to use.
+    pub params: &'a Params,
+    /// The [`Commons`] that can be called.
+    pub commons: &'a Commons,
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: CacheHandle<'a>
+    pub cache: &'a CacheHandle<'a>
 }
 
 impl<'a> TaskState<'a> {
@@ -42,7 +44,8 @@ impl<'a> TaskState<'a> {
             common_args: self.common_args,
             context    : self.context,
             job_context: self.job_context,
-            cleaner    : self.cleaner,
+            params     : self.params,
+            commons    : self.commons,
             #[cfg(feature = "cache")]
             cache      : self.cache
         }
@@ -91,15 +94,12 @@ macro_rules! task_state {
                 common_args: common_args.as_ref(),
                 context    : &context,
                 job_context: &job_context,
-                cleaner    : &Cleaner {
-                    params,
-                    commons,
-                    ..Default::default()
-                },
+                params     : &params,
+                commons    : &commons,
                 #[cfg(feature = "cache")]
-                cache      : CacheHandle {
+                cache      : &CacheHandle {
                     cache: &Default::default(),
-                    delay: false
+                    config: Default::default()
                 }
             }
         };
@@ -119,12 +119,14 @@ pub struct TaskStateView<'a> {
     pub context: &'a TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
     pub job_context: &'a JobContext,
-    /// The [`Cleaner`] that can be called.
-    pub cleaner: &'a Cleaner,
+    /// The [`Params`] to use.
+    pub params: &'a Params,
+    /// The [`Commons`] that can be called.
+    pub commons: &'a Commons,
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: CacheHandle<'a>,
+    pub cache: &'a CacheHandle<'a>
 }
 
 impl<'a> TaskStateView<'a> {
@@ -133,9 +135,9 @@ impl<'a> TaskStateView<'a> {
     #[doc = edoc!(callerr(HttpClientConfig::make), callerr(reqwest::blocking::ClientBuilder::build))]
     #[cfg(feature = "http")]
     pub fn http_client(&self, http_client_config_diff: Option<&HttpClientConfigDiff>) -> reqwest::Result<reqwest::blocking::Client> {
-        debug!(TaskStateView::http_client, &self.cleaner.params.http_client_config, http_client_config_diff);
+        debug!(TaskStateView::http_client, &self.params.http_client_config, http_client_config_diff);
 
-        let mut http_client_config = Cow::Borrowed(&self.cleaner.params.http_client_config);
+        let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
 
         if let Some(diff) = http_client_config_diff {diff.apply(http_client_config.to_mut());}
 
@@ -180,15 +182,12 @@ macro_rules! task_state_view {
                 common_args: common_args.as_ref(),
                 context    : &context,
                 job_context: &job_context,
-                cleaner    : &Cleaner {
-                    params,
-                    commons,
-                    ..Default::default()
-                },
+                params     : &params,
+                commons    : &commons,
                 #[cfg(feature = "cache")]
-                cache      : CacheHandle {
+                cache      : &CacheHandle {
                     cache: &Default::default(),
-                    delay: false
+                    config: Default::default()
                 }
             }
         };

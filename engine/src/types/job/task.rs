@@ -26,14 +26,15 @@ impl Task<'_> {
     #[doc = edoc!(applyerr(Cleaner))]
     pub fn r#do(mut self) -> Result<BetterUrl, DoTaskError> {
         self.cleaner.apply(&mut TaskState {
-            url: &mut self.config.url,
-            scratchpad: &mut Default::default(),
+            url        : &mut self.config.url,
+            scratchpad : &mut Default::default(),
             common_args: None,
-            context: &self.config.context,
+            context    : &self.config.context,
             job_context: self.job_context,
-            cleaner: self.cleaner,
+            params     : &self.cleaner.params,
+            commons    : &self.cleaner.commons,
             #[cfg(feature = "cache")]
-            cache: self.cache
+            cache      : &self.cache
         })?;
         Ok(self.config.url)
     }

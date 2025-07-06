@@ -243,7 +243,7 @@ fn main() -> Result<ExitCode, CliError> {
                 #[cfg(feature = "cache")]
                 cache  : &cache,
                 #[cfg(feature = "cache")]
-                cache_delay: false,
+                cache_handle_config: Default::default(),
                 lazy_task_configs: {
                     let ret = args.urls.into_iter().map(Ok);
                     if !io::stdin().is_terminal() {

@@ -521,7 +521,7 @@ pub enum StringSource {
         /// The value to cache.
         value: Box<Self>
     },
-    /// Calls a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::string_sources`].
+    /// Calls a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_sources`].
     /// # Errors
     #[doc = edoc!(ageterr(Self, CommonCall::name), agetnone(Self, StringSource, CommonCall::name), commonnotfound(Self, StringSource), callerr(CommonCallArgsSource::build), geterr(Self))]
     /// # Examples
@@ -844,8 +844,8 @@ impl StringSource {
 
 
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.cleaner.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
-            Self::NamedPartitioning {named_partitioning, element} => task_state.cleaner.params.named_partitionings
+            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
                 .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
                 .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
 
@@ -882,27 +882,33 @@ impl StringSource {
             Self::Cache {category, key, value} => {
                 let category = get_string!(category, task_state, StringSourceError);
                 let key = get_string!(key, task_state, StringSourceError);
-                if task_state.cleaner.params.read_cache {
-                    if let Some(ret) = task_state.cache.read(&category, &key)? {
-                        return Ok(ret.map(Cow::Owned));
+                if task_state.params.read_cache {
+                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {category: &category, key: &key})? {
+                        return Ok(entry.value.map(Cow::Owned));
                     }
                 }
                 let start = std::time::Instant::now();
                 let ret = value.get(task_state)?;
                 let duration = start.elapsed();
-                if task_state.cleaner.params.write_cache {
-                    task_state.cache.write(&category, &key, ret.as_deref(), duration)?;
+                if task_state.params.write_cache {
+                    task_state.cache.write(NewCacheEntry {
+                        category: &category,
+                        key: &key,
+                        value: ret.as_deref(),
+                        duration
+                    })?;
                 }
                 ret
             },
             Self::Common(common_call) => {
-                task_state.cleaner.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
+                task_state.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
                     common_args: Some(&common_call.args.build(task_state)?),
                     url        : task_state.url,
                     scratchpad : task_state.scratchpad,
                     context    : task_state.context,
                     job_context: task_state.job_context,
-                    cleaner    : task_state.cleaner,
+                    params     : task_state.params,
+                    commons    : task_state.commons,
                     #[cfg(feature = "cache")]
                     cache      : task_state.cache
                 })?.map(|x| Cow::Owned(x.into_owned()))

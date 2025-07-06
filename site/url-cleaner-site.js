@@ -285,7 +285,13 @@ async function get_host_parts(host) {
 					mutation.target.addEventListener("click", async function(e) {
 						if (window.cleaned_elements.has(e.target) || window.too_big_elements.has(e.target) || window.errored_elements.has(e.target)) {return;}
 						e.preventDefault();
-						await clean_elements([e.target]);
+						try {
+							await clean_elements([e.target]);
+						} catch (err) {
+							console.error("[URLC] an error ocurred while handling an uncleaning clickjack (better term pending):", e, err);
+							e.target.click();
+							throw err;
+						}
 						e.target.click();
 					}, {capture: true, once: true});
 				}

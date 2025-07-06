@@ -24,7 +24,7 @@ use crate::glue::*;
 ///         ..Default::default()
 ///     },
 #[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
-#[cfg_attr(feature = "cache", doc = "    cache_delay: false,")]
+#[cfg_attr(feature = "cache", doc = "    cache_handle_config: Default::default(),")]
 ///     lazy_task_configs: Box::new([Ok("https://example.com?utm_source=url_cleaner".into())].into_iter())
 /// };
 ///
@@ -42,11 +42,9 @@ pub struct Job<'a> {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache,
-    /// If [`true`], delay cache reads by about as long as the inital computation took.
-    ///
-    /// This reduces the ability for websites to tell if you have a URL cached.
+    /// The [`CacheHandleConfig`] to make a [`CacheHandle`] with [`Self::cache`].
     #[cfg(feature = "cache")]
-    pub cache_delay: bool,
+    pub cache_handle_config: CacheHandleConfig,
     /// Source of [`LazyTaskConfig`]s.
     pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig, GetLazyTaskConfigError>>>
 }
@@ -59,7 +57,7 @@ impl ::core::fmt::Debug for Job<'_> {
         #[cfg(feature = "cache")]
         x.field("cache"  , &self.cache);
         #[cfg(feature = "cache")]
-        x.field("cache_delay", &self.cache_delay);
+        x.field("cache_handle_config", &self.cache_handle_config);
         x.field("lazy_task_configs", &"...");
         x.finish()
     }
@@ -77,7 +75,7 @@ impl<'a> Iterator for Job<'a> {
                 #[cfg(feature = "cache")]
                 cache: CacheHandle {
                     cache: self.cache,
-                    delay: self.cache_delay
+                    config: self.cache_handle_config
                 }
             }),
             Err(e) => Err(e.into())

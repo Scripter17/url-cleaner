@@ -23,7 +23,7 @@ fn r#do(c: &mut Criterion) {
             #[cfg(feature = "cache")]
             cache: CacheHandle {
                 cache: &Default::default(),
-                delay: false
+                config: Default::default()
             }
         };
 

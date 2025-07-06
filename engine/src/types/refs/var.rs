@@ -15,7 +15,7 @@ use crate::util::*;
 /// Defaults to [`Self::Params`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub enum VarType {
-    /// Get it from [`TaskStateView::cleaner`]'s [`Cleaner::params`]'s [`Params::vars`].
+    /// Get it from [`TaskStateView::params`]'s [`Params::vars`].
     #[default]
     Params,
     /// Get it from [`TaskStateView::job_context`]'s [`JobContext::vars`].
@@ -65,10 +65,10 @@ impl VarType {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'a>(&self, name: &str, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, GetVarError> {
         Ok(match self {
-            Self::Params      => task_state.cleaner.params.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
-            Self::JobContext  => task_state.job_context   .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
-            Self::TaskContext => task_state.context       .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
-            Self::Scratchpad  => task_state.scratchpad    .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
+            Self::Params      => task_state.params     .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
+            Self::JobContext  => task_state.job_context.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
+            Self::TaskContext => task_state.context    .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
+            Self::Scratchpad  => task_state.scratchpad .vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::CommonArg   => task_state.common_args.ok_or(GetVarError::NotInCommonContext)?.vars.get(name).map(|x| Cow::Borrowed(x.as_str())),
             Self::Env         => match env::var(name) {
                 Ok(value) => Some(Cow::Owned(value)),

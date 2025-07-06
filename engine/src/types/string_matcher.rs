@@ -263,7 +263,7 @@ pub enum StringMatcher {
 
     // Common/Custom
 
-    /// Gets a [`Self`] from [`TaskStateView::cleaner`]'s [`Cleaner::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Gets a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
     #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringMatcher, CommonCall::name), commonnotfound(Self, StringMatcher), callerr(CommonCallArgsSource::build), checkerr(Self))]
     Common(CommonCall),
@@ -421,7 +421,7 @@ impl StringMatcher {
             Self::Is(StringSource::None) => haystack.is_none(),
             Self::Is(value) => haystack == value.get(task_state)?.as_deref(),
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
-            Self::IsInSet(name) => task_state.cleaner.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
+            Self::IsInSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
 
             // Containment
 
@@ -443,7 +443,7 @@ impl StringMatcher {
             },
             Self::ContainsAnyInList {at, list} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
-                for x in task_state.cleaner.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
+                for x in task_state.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
                     if at.check(haystack, x)? {
                         return Ok(true);
                     }
@@ -519,7 +519,7 @@ impl StringMatcher {
             // Common/Custom
 
             Self::Common(common_call) => {
-                task_state.cleaner.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.check(
+                task_state.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.check(
                     haystack,
                     &TaskStateView {
                         common_args: Some(&common_call.args.build(task_state)?),
@@ -527,7 +527,8 @@ impl StringMatcher {
                         scratchpad : task_state.scratchpad,
                         context    : task_state.context,
                         job_context: task_state.job_context,
-                        cleaner    : task_state.cleaner,
+                        params     : task_state.params,
+                        commons    : task_state.commons,
                         #[cfg(feature = "cache")]
                         cache      : task_state.cache
                     }
