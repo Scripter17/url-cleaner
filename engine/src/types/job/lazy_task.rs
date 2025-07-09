@@ -16,7 +16,7 @@ pub struct LazyTask<'a> {
     /// The [`JobContext`].
     pub job_context: &'a JobContext,
     /// The [`Cleaner`].
-    pub cleaner: &'a Cleaner,
+    pub cleaner: &'a Cleaner<'a>,
     /// The [`Cache`].
     #[cfg(feature = "cache")]
     pub cache: CacheHandle<'a>

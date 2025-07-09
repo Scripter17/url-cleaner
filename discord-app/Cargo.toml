@@ -1,0 +1,41 @@
+[package]
+name = "url-cleaner-discord-app"
+version = "0.11.0"
+edition = "2024"
+description = "A discord bot to use URL Cleaner."
+repository = "https://github.com/Scripter17/url-cleaner"
+keywords = ["url", "url-tracking", "privacy", "url-cleaner"]
+categories = []
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4.5.40", features = ["derive", "unstable-v5"] }
+poise = { git = "https://github.com/serenity-rs/poise", branch = "next" }
+regex = "1.11.1"
+serde_json = "1.0.140"
+serenity = "0.12.4"
+tokio = { version = "1.46.1", features = ["rt-multi-thread"] }
+url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
+
+[features]
+default = ["default-cleaner"]
+
+default-cleaner = [
+  "url-cleaner-engine/default-cleaner",
+  "regex",
+  "http",
+  "cache",
+  "base64"
+]
+
+regex    = ["url-cleaner-engine/regex"]
+http     = ["url-cleaner-engine/http"]
+cache    = ["url-cleaner-engine/cache"]
+base64   = ["url-cleaner-engine/base64"]
+custom   = ["url-cleaner-engine/custom"]
+commands = ["url-cleaner-engine/commands"]
+debug    = ["url-cleaner-engine/debug"]
+
+[lints]
+workspace = true

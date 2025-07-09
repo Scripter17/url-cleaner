@@ -13,14 +13,15 @@ use crate::glue::*;
 /// The laziness allows dividing the [`LazyTask`]s into worker threads with minimal (if any) bottlenecking.
 /// # Examples
 /// ```
+/// use std::borrow::Cow;
 /// use url_cleaner_engine::types::*;
 ///
 /// let job = Job {
 ///     context: &Default::default(),
 ///     cleaner: &Cleaner {
-///         actions: vec![
+///         actions: Cow::Owned(vec![
 ///             Action::RemoveQueryParams(["utm_source".into()].into())
-///         ],
+///         ]),
 ///         ..Default::default()
 ///     },
 #[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
@@ -38,7 +39,7 @@ pub struct Job<'a> {
     /// The context shared by this [`Job`].
     pub context: &'a JobContext,
     /// The [`Cleaner`] to use.
-    pub cleaner: &'a Cleaner,
+    pub cleaner: &'a Cleaner<'a>,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: &'a Cache,
@@ -46,7 +47,7 @@ pub struct Job<'a> {
     #[cfg(feature = "cache")]
     pub cache_handle_config: CacheHandleConfig,
     /// Source of [`LazyTaskConfig`]s.
-    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig, GetLazyTaskConfigError>>>
+    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig, GetLazyTaskConfigError>> + 'a>
 }
 
 impl ::core::fmt::Debug for Job<'_> {

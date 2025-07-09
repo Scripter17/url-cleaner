@@ -90,13 +90,14 @@ pub struct Args {
     /// Flags to insert into the params.
     pub flag: Vec<String>,
     /// Vars to insert into the params.
-    #[arg(short, long)]
+    #[arg(short, long, num_args = 2)]
     pub var: Vec<Vec<String>>,
     /// The cache to use.
-    /// Defaults to the value specified by the cleaner.
+    ///
+    /// Defaults to "url-cleaner-cache.sqlite"
     #[cfg(feature = "cache")]
     #[arg(long)]
-    pub cache_path: Option<CachePath>,
+    pub cache: Option<CachePath>,
     /// Artifically delay cache reads about as long as the initial run to defend against cache detection.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
@@ -172,14 +173,12 @@ fn main() -> Result<ExitCode, CliError> {
 
     for params_diff in args.params_diff {
         serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile)?
-            .apply(&mut cleaner.params);
+            .apply(cleaner.params.to_mut());
     }
-    for flag in args.flag {
-        cleaner.params.flags.insert(flag);
-    }
+    cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
         match <[String; 2]>::try_from(var) {
-            Ok([name, value]) => {cleaner.params.vars.insert(name, value);}
+            Ok([name, value]) => {cleaner.params.to_mut().vars.insert(name, value);}
             Err(x) => match x.len() {
                 0 => Err(CliError::VarRequiresName)?,
                 1 => Err(CliError::VarRequiresValue)?,
@@ -190,15 +189,11 @@ fn main() -> Result<ExitCode, CliError> {
     }
     #[cfg(feature = "cache")]
     if let Some(read_cache) = args.read_cache {
-        cleaner.params.read_cache = read_cache;
+        cleaner.params.to_mut().read_cache = read_cache;
     }
     #[cfg(feature = "cache")]
     if let Some(write_cache) = args.write_cache {
-        cleaner.params.write_cache = write_cache;
-    }
-    #[cfg(feature = "cache")]
-    if let Some(cache_path) = args.cache_path {
-        cleaner.cache_path = cache_path;
+        cleaner.params.to_mut().write_cache = write_cache;
     }
 
     // Get the [`JobContext`].
@@ -231,7 +226,7 @@ fn main() -> Result<ExitCode, CliError> {
     // Do the job.
 
     #[cfg(feature = "cache")]
-    let cache = cleaner.cache_path.clone().into();
+    let cache = args.cache.unwrap_or("url-cleaner-cache.sqlite".into()).into();
     #[cfg(feature = "cache")]
     let cache_handle_config = CacheHandleConfig {
         delay: args.cache_delay,

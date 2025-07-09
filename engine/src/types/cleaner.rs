@@ -11,7 +11,6 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
 use crate::types::*;
-use crate::glue::*;
 use crate::testing::*;
 use crate::util::*;
 
@@ -26,40 +25,46 @@ pub use commons::*;
 
 /// The config that determines all behavior of how URLs are cleaned.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
-pub struct Cleaner {
+pub struct Cleaner<'a> {
     /// The documentation.
     ///
     /// Defaults to an empty [`CleanerDocs`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub docs: CleanerDocs,
-    /// The location of the cache.
-    ///
-    /// Defaults to being stored in memory and destroyed on program exit.
-    #[cfg(feature = "cache")]
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub cache_path: CachePath,
+    pub docs: Cow<'a, CleanerDocs>,
     /// Tuning shared between all [`Task`]s spawned with this [`Cleaner`].
     ///
     /// Defaults to an empty [`Params`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub params: Params,
+    pub params: Cow<'a, Params>,
     /// Basically functions.
     ///
     /// Defaults to an empty [`Commons`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub commons: Commons,
+    pub commons: Cow<'a, Commons>,
     /// The [`Action`]s to apply.
     ///
     /// Defaults to an empty [`Vec`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub actions: Vec<Action>
+    pub actions: Cow<'a, [Action]>
 }
 
-impl Cleaner {
+impl<'a> Cleaner<'a> {
+    /// Create a new [`Self`] that [`Cow::Borrowed`]s all fields.
+    ///
+    /// Basically a very cheap [`Clone`] that you can apply [`ParamsDiff`]s to.
+    pub fn borrowed(&'a self) -> Self {
+        Self {
+            docs   : Cow::Borrowed(&*self.docs),
+            params : Cow::Borrowed(&*self.params),
+            commons: Cow::Borrowed(&*self.commons),
+            actions: Cow::Borrowed(&*self.actions)
+        }
+    }
+
     /// Load [`Self`] from a JSON file.
     /// # Errors
     #[doc = edoc!(callerr(std::fs::read_to_string), callerr(serde_json::from_str))]
-    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Self, GetCleanerError> {
+    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Cleaner<'static>, GetCleanerError> {
         serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
     }
 
@@ -76,7 +81,7 @@ impl Cleaner {
     /// Cleaner::get_default().unwrap();
     /// ```
     #[cfg(feature = "default-cleaner")]
-    pub fn get_default() -> Result<&'static Self, GetCleanerError> {
+    pub fn get_default() -> Result<&'static Cleaner<'static>, GetCleanerError> {
         if let Some(config) = DEFAULT_CLEANER.get() {
             Ok(config)
         } else {
@@ -97,7 +102,7 @@ impl Cleaner {
     /// Cleaner::get_default_no_cache().unwrap();
     /// ```
     #[cfg(feature = "default-cleaner")]
-    pub fn get_default_no_cache() -> Result<Self, GetCleanerError> {
+    pub fn get_default_no_cache() -> Result<Cleaner<'static>, GetCleanerError> {
         serde_json::from_str(DEFAULT_CLEANER_STR).map_err(Into::into)
     }
 
@@ -161,7 +166,7 @@ impl Cleaner {
     /// # Errors
     #[doc = edoc!(applyerr(Action, 3))]
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
-        for action in &self.actions {
+        for action in &*self.actions {
             action.apply(task_state)?;
         }
         Ok(())

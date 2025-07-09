@@ -4,7 +4,6 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use std::fs::read_to_string;
 use std::str::FromStr;
-use std::borrow::Cow;
 use std::sync::Mutex;
 use std::num::NonZero;
 
@@ -49,7 +48,7 @@ struct Args {
     #[arg(short, long)]
     flag: Vec<String>,
     /// Vars to insert into the params.
-    #[arg(short, long)]
+    #[arg(short, long, num_args = 2)]
     var: Vec<Vec<String>>,
     /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
@@ -70,10 +69,12 @@ struct Args {
     /// The port to listen to.
     #[arg(long, default_value_t = DEFAULT_PORT)]
     port: u16,
-    /// Overrides the cleaner's [`Cleaner::cache_path`].
+    /// The cache to use.
+    ///
+    /// Defaults to "url-cleaner-site-cache.sqlite"
     #[arg(long)]
     #[cfg(feature = "cache")]
-    cache_path: Option<CachePath>,
+    cache: Option<CachePath>,
     /// Defaults whether or not to use cache delay in jobs that don't specify otherwise.
     #[arg(long, default_value_t = false)]
     #[cfg(feature = "cache")]
@@ -99,7 +100,7 @@ struct Args {
 #[derive(Debug)]
 struct ServerConfig {
     /// The [`Cleaner`] to use.
-    cleaner: Cleaner,
+    cleaner: Cleaner<'static>,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
@@ -138,14 +139,12 @@ async fn rocket() -> _ {
     let mut cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
     for params_diff in args.params_diff {
         serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.")
-            .apply(&mut cleaner.params);
+            .apply(cleaner.params.to_mut());
     }
-    for flag in args.flag {
-        cleaner.params.flags.insert(flag);
-    }
+    cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
         match <[String; 2]>::try_from(var) {
-            Ok([name, value]) => {cleaner.params.vars.insert(name, value);}
+            Ok([name, value]) => {cleaner.params.to_mut().vars.insert(name, value);}
             Err(x) => match x.len() {
                 0 => panic!("--var requires name"),
                 1 => panic!("--var requires value"),
@@ -156,21 +155,17 @@ async fn rocket() -> _ {
     }
     #[cfg(feature = "cache")]
     if let Some(read_cache) = args.read_cache {
-        cleaner.params.read_cache = read_cache;
+        cleaner.params.to_mut().read_cache = read_cache;
     }
     #[cfg(feature = "cache")]
     if let Some(write_cache) = args.write_cache {
-        cleaner.params.write_cache = write_cache;
-    }
-    #[cfg(feature = "cache")]
-    if let Some(cache_path) = args.cache_path {
-        cleaner.cache_path = cache_path;
+        cleaner.params.to_mut().write_cache = write_cache;
     }
 
     let server_state = ServerState {
         config: ServerConfig {
             #[cfg(feature = "cache")]
-            cache: cleaner.cache_path.clone().into(),
+            cache: args.cache.unwrap_or("url-cleaner-site-cache.sqlite".into()).into(),
             #[cfg(feature = "cache")]
             cache_delay_default: args.cache_delay_default,
             #[cfg(feature = "cache")]
@@ -214,9 +209,9 @@ async fn get_cleaner(state: &State<ServerState>) -> &str {
 async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<CleanResult>) {
     match serde_json::from_str::<JobConfig>(job_config) {
         Ok(job_config) => {
-            let mut cleaner = Cow::Borrowed(&state.config.cleaner);
+            let mut cleaner = state.config.cleaner.borrowed();
             if let Some(params_diff) = job_config.params_diff {
-                params_diff.apply(&mut cleaner.to_mut().params);
+                params_diff.apply(cleaner.params.to_mut());
             }
 
             let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();

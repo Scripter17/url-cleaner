@@ -1237,9 +1237,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc2fdfdbff08affe55bb779f33b053aa1fe5dd5b54c257343c17edfa55711bdb"
+checksum = "7f66d5bd4c6f02bf0542fad85d626775bab9258cf795a4256dcaf3161114d1df"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -1896,25 +1896,25 @@ dependencies = [
 [[package]]
 name = "poise"
 version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1819d5a45e3590ef33754abce46432570c54a120798bdbf893112b4211fa09a6"
+source = "git+https://github.com/serenity-rs/poise?branch=next#f4b3d5bc27a491e568d157e07d6f6401e369e112"
 dependencies = [
  "async-trait",
  "derivative",
  "futures-util",
+ "indexmap 2.10.0",
  "parking_lot",
  "poise_macros",
  "regex",
  "serenity",
  "tokio",
  "tracing",
+ "trim-in-place",
 ]
 
 [[package]]
 name = "poise_macros"
 version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fa2c123c961e78315cd3deac7663177f12be4460f5440dbf62a7ed37b1effea"
+source = "git+https://github.com/serenity-rs/poise?branch=next#f4b3d5bc27a491e568d157e07d6f6401e369e112"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -1970,9 +1970,9 @@ dependencies = [
 
 [[package]]
 name = "psl"
-version = "2.1.123"
+version = "2.1.124"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19a87cc491d889736c81c11ad02d91628b7fd2078d66c4e1b3f6d348de8900f4"
+checksum = "281f96193296bf4916d7a112df4cc578aaf7a4d71f1570667779bb07364ed837"
 dependencies = [
  "psl-types",
 ]
@@ -3304,6 +3304,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "trim-in-place"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "343e926fc669bc8cde4fa3129ab681c63671bae288b1f1081ceee6d9d37904fc"
+
+[[package]]
 name = "triomphe"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3448,8 +3454,12 @@ dependencies = [
 name = "url-cleaner-discord-app"
 version = "0.11.0"
 dependencies = [
+ "clap",
  "poise",
+ "regex",
+ "serde_json",
  "serenity",
+ "tokio",
  "url-cleaner-engine",
 ]
 

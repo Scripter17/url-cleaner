@@ -81,7 +81,7 @@ impl<T: Suitability> Suitability for Vec<T> {
     }
 }
 
-impl<T: Suitability> Suitability for &[T] {
+impl<T: Suitability> Suitability for [T] {
     fn assert_suitability(&self, config: &Cleaner) {
         for x in self.iter() {
             x.assert_suitability(config)

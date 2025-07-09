@@ -1,7 +1,5 @@
 //! A basic and not very good testing framework.
 
-use std::borrow::Cow;
-
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
@@ -47,7 +45,7 @@ impl TestSet {
     ///
     /// If any test fails, panics.
     pub fn r#do(self, cleaner: &Cleaner) {
-        let mut cleaner = Cow::Borrowed(cleaner);
+        let mut cleaner = cleaner.borrowed();
 
         println!(
             "Running test set:\nparams_diff: {}\njob_context: {}",
@@ -56,7 +54,7 @@ impl TestSet {
         );
 
         if let Some(params_diff) = self.params_diff {
-            params_diff.apply(&mut cleaner.to_mut().params);
+            params_diff.apply(cleaner.params.to_mut());
         }
 
         let (task_configs, expectations) = self.tests.clone().into_iter().map(|Test {task_config, expectation}| (task_config, expectation)).collect::<(Vec<_>, Vec<_>)>();

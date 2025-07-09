@@ -14,7 +14,7 @@ pub struct Task<'a> {
     /// The [`JobContext`] to use.
     pub job_context: &'a JobContext,
     /// The [`Cleaner`] to use.
-    pub cleaner: &'a Cleaner,
+    pub cleaner: &'a Cleaner<'a>,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: CacheHandle<'a>,
