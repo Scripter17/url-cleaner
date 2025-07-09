@@ -15,7 +15,7 @@ use url_cleaner_engine::glue::*;
 /// Basic URL getting regex.
 ///
 /// Does not account for code blocks, spoilers, etc.
-static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\])]+").expect("The URL parsing Regex to be valid."));
+static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\])\s]+").expect("The URL parsing Regex to be valid."));
 
 /// URL Cleaner Site Discord App
 #[derive(Parser)]
@@ -168,6 +168,12 @@ async fn clean_urls_with_params(ctx: Context<'_>, msg: serenity::Message, params
         }
     }
 
-    ctx.send(CreateReply::default().ephemeral(true).content(responses.join("\n"))).await?;
+    let content = if responses.is_empty() {
+        "No URLs found".to_string()
+    } else {
+        responses.join("\n")
+    };
+
+    ctx.send(CreateReply::default().ephemeral(true).content(content)).await?;
     Ok(())
 }
