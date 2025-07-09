@@ -20,12 +20,15 @@ pub struct JobConfig {
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
     #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
-    /// if [`Some`], overwrite [`Job::cache_delay`].
-    ///
-    /// If untrusted parties can detect the presence of the cache delay, it should be enabled.
+    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub cache_delay: Option<bool>
+    pub cache_delay: Option<bool>,
+    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
+    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::unthread`].
+    #[cfg(feature = "cache")]
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub cache_unthread: Option<bool>
 }
 
 /// The [`Result`] returned by the `/clean` route.

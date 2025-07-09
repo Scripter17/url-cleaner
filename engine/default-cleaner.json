@@ -226,7 +226,7 @@
 				],
 				"redirect": [
 					"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "abc7.la", "abc7ne.ws", "abcnews.link", "ab.co", "a.co", "adobe.ly", "aje.io", "amzn.asia", "amzn.eu",
-					"amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bitly.com", "bityl.co", "blizz.ly",
+					"amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly",
 					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "click.linksynergy.com",
 					"cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me",
 					"fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com",
@@ -246,7 +246,7 @@
 					"apexpartner.app", "api.pinterest.com", "facebook.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com", "sketchfab.com", "teepublic.com"
 				],
 				"special": [
-					"1link.club", "affiliate.xp-pen.com", "allmylinks.com", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", "bugzil.la",
+					"1link.club", "affiliate.xp-pen.com", "allmylinks.com", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", "bit.ly", "bugzil.la",
 					"buymeacoff.ee", "cach.me", "cj.dotomi.com", "click.notification.elsevier.com", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "fansly.com", "go.bsky.app", "goodreads.com",
 					"gprivate.com", "href.li", "instagr.am", "lego.com", "linkprotect.cudasvc.com", "l.instagram.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "l.threads.com",
@@ -278,7 +278,7 @@
 				"then": {"All": [
 					{"Common": "universal"},
 					{"SetWhole": {"Cache": {
-						"category": "redirect",
+						"subject": "redirect",
 						"key": {"Part": "Whole"},
 						"value": {"Modified": {
 							"value": {"HttpRequest": {}},
@@ -545,7 +545,7 @@
 									"then": {"All": [
 										{"Common": "universal"},
 										{"CacheUrl": {
-											"category": "redirect",
+											"subject": "redirect",
 											"action": {"SetWhole": {"Modified": {
 												"value": {"HttpRequest": {
 													"url": {"Join": {
@@ -683,6 +683,14 @@
 													]}
 												}
 											}
+										}},
+										"bit.ly": {"If": {
+											"if": {"HasPathSegment": 1},
+											"then": {"All": [
+												"RemoveQuery",
+												{"Common": "universal"},
+												{"ExpandRedirect": {}}
+											]}
 										}},
 										"bugzil.la": {"All": [
 											{"SetHost": "bugzilla.mozilla.org"},
@@ -897,7 +905,7 @@
 											"else": {"GetUrlFromQueryParam": "out"}
 										}},
 										"reurl.cc": {"CacheUrl": {
-											"category": "redirect",
+											"subject": "redirect",
 											"action": {"If": {
 												"if": {"FlagIsNotSet": "no_network"},
 												"then": {"SetWhole": {"HttpRequest": {"response_handler": {"Header": "target"}}}}
@@ -1146,8 +1154,10 @@
 								{"Not": {"PathIs": "/"}}
 							]},
 							"then": {"All": [
-								{"SetHost": "www.fandom.com"},
-								{"MovePart": {"from": {"PathSegment": 0}, "to": "Subdomain"}}
+								{"SetHost": {"Join": {
+									"values": [{"Part": {"PathSegment": 0}}, ".fandom.com"]
+								}}},
+								{"RemovePathSegment": 0}
 							]},
 							"else": {"SetHost": {"Var": "breezewiki_host"}}
 						}},

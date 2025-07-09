@@ -6,10 +6,10 @@ use diesel::prelude::*;
 #[expect(unused_imports, reason = "Used in docs.")]
 use diesel::query_builder::SqlQuery;
 
+use crate::glue::*;
 use crate::util::*;
-use super::*;
 
-/// A lazily connected connection to the cache database.
+/// A lazily connected connection to a Sqlite database.
 /// # Examples
 /// ```
 /// use url_cleaner_engine::glue::*;
@@ -18,11 +18,11 @@ use super::*;
 /// // Note the mutability.
 /// let mut cache = InnerCache::new(CachePath::Memory);
 ///
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), None);
-/// cache.write(NewCacheEntry { category: "category", key: "key", value: None, duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
-/// cache.write(NewCacheEntry { category: "category", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), None);
+/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: None, duration: Default::default() }).unwrap();
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
+/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
 /// ```
 #[derive(Default)]
 pub struct InnerCache {
@@ -117,7 +117,7 @@ impl InnerCache {
     pub fn read(&mut self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
         debug!(InnerCache::read, self, keys);
         Ok(cache::dsl::cache
-            .filter(cache::dsl::category.eq(keys.category))
+            .filter(cache::dsl::subject.eq(keys.subject))
             .filter(cache::dsl::key.eq(keys.key))
             .limit(1)
             .select(CacheEntryValues::as_select())

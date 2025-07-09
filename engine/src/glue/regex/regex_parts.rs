@@ -209,14 +209,14 @@ impl RegexConfig {
     /// assert!(config.unicode); // Was enabled by default and left unchanged.
     /// ```
     pub fn add_flags(&mut self, flags: &str) {
-        if flags.contains('i') {self.case_insensitive    =true;}
-        if flags.contains('R') {self.crlf                =true;}
-        if flags.contains('s') {self.dot_matches_new_line=true;}
-        if flags.contains('x') {self.ignore_whitespace   =true;}
-        if flags.contains('m') {self.multi_line          =true;}
-        if flags.contains('o') {self.octal               =true;}
-        if flags.contains('U') {self.swap_greed          =true;}
-        if flags.contains('u') {self.unicode             =true;}
+        if flags.contains('i') {self.case_insensitive     = true;}
+        if flags.contains('R') {self.crlf                 = true;}
+        if flags.contains('s') {self.dot_matches_new_line = true;}
+        if flags.contains('x') {self.ignore_whitespace    = true;}
+        if flags.contains('m') {self.multi_line           = true;}
+        if flags.contains('o') {self.octal                = true;}
+        if flags.contains('U') {self.swap_greed           = true;}
+        if flags.contains('u') {self.unicode              = true;}
     }
 
     /// Unsets the flags whose characters are in `flags` and leaves the others unchanged.
@@ -235,14 +235,14 @@ impl RegexConfig {
     /// assert!(!config.unicode); // Set by default, left unchanged by the call to [`Self::add_flags`], and unset by the call to [`Self::remove_flags`].
     /// ```
     pub fn remove_flags(&mut self, flags: &str) {
-        if flags.contains('i') {self.case_insensitive    =false;}
-        if flags.contains('R') {self.crlf                =false;}
-        if flags.contains('s') {self.dot_matches_new_line=false;}
-        if flags.contains('x') {self.ignore_whitespace   =false;}
-        if flags.contains('m') {self.multi_line          =false;}
-        if flags.contains('o') {self.octal               =false;}
-        if flags.contains('U') {self.swap_greed          =false;}
-        if flags.contains('u') {self.unicode             =false;}
+        if flags.contains('i') {self.case_insensitive     = false;}
+        if flags.contains('R') {self.crlf                 = false;}
+        if flags.contains('s') {self.dot_matches_new_line = false;}
+        if flags.contains('x') {self.ignore_whitespace    = false;}
+        if flags.contains('m') {self.multi_line           = false;}
+        if flags.contains('o') {self.octal                = false;}
+        if flags.contains('U') {self.swap_greed           = false;}
+        if flags.contains('u') {self.unicode              = false;}
     }
 
     /// Gets the set flags.
@@ -263,14 +263,14 @@ impl RegexConfig {
     #[must_use]
     pub fn get_flags(&self) -> String {
         let mut ret=String::new();
-        if self.case_insensitive    {ret.push('i');}
-        if self.crlf                {ret.push('R');}
-        if self.dot_matches_new_line{ret.push('s');}
-        if self.ignore_whitespace   {ret.push('x');}
-        if self.multi_line          {ret.push('m');}
-        if self.octal               {ret.push('o');}
-        if self.swap_greed          {ret.push('U');}
-        if self.unicode             {ret.push('u');}
+        if self.case_insensitive     {ret.push('i');}
+        if self.crlf                 {ret.push('R');}
+        if self.dot_matches_new_line {ret.push('s');}
+        if self.ignore_whitespace    {ret.push('x');}
+        if self.multi_line           {ret.push('m');}
+        if self.octal                {ret.push('o');}
+        if self.swap_greed           {ret.push('U');}
+        if self.unicode              {ret.push('u');}
         ret
     }
 }

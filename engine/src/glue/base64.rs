@@ -26,18 +26,21 @@ pub struct Base64Config {
     /// The alphabet to use.
     ///
     /// Defaults to [`Base64Alphabet::UrlSafe`].
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub alphabet: Base64Alphabet,
     /// If [`true`], encodes the `=` padding at the end.
     ///
     /// Defaults to [`true`]
-    #[serde(default = "get_true")]
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub encode_padding: bool,
     /// Whether or not to require, refuse, or not care about padding when decoding.
     ///
     /// Defaults to [`DecodePaddingMode::Indifferent`]
-    #[serde(default)]
-    pub decode_padding: Base64DecodePaddingMode
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub decode_padding: Base64DecodePaddingMode,
+    /// [`GeneralPurposeConfig::with_decode_allow_trailing_bits`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub decode_allow_trailing_bits: bool
 }
 
 impl Base64Config {
@@ -48,6 +51,7 @@ impl Base64Config {
             GeneralPurposeConfig::new()
                 .with_decode_padding_mode(self.decode_padding.build())
                 .with_encode_padding(self.encode_padding)
+                .with_decode_allow_trailing_bits(self.decode_allow_trailing_bits)
         )
     }
 }
@@ -57,7 +61,8 @@ impl Default for Base64Config {
         Self {
             alphabet: Default::default(),
             encode_padding: true,
-            decode_padding: Default::default()
+            decode_padding: Default::default(),
+            decode_allow_trailing_bits: false
         }
     }
 }
@@ -69,19 +74,31 @@ impl Default for Base64Config {
 /// See [Wikipedia's Base64 alphabet summary table](https://en.wikipedia.org/wiki/Base64#Variants_summary_table) for details.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Suitability)]
 pub enum Base64Alphabet {
+    /// The standard alphabet, where characters 62 and 63 are `+` and `/`.
+    Standard,
     /// The URL safe alphabet, where characters 62 and 63 are `-` and `_`.
     #[default]
     UrlSafe,
-    /// The standard alphabet, where characters 62 and 63 are `+` and `/`.
-    Standard
+    /// [`base64::alphabet::CRYPT`].
+    Crypt,
+    /// [`base64::alphabet::BCRYPT`].
+    Bcrypt,
+    /// [`base64::alphabet::IMAP_MUTF7`].
+    IMAPMUTF7,
+    /// [`base64::alphabet::BIN_HEX`].
+    BinHex
 }
 
 impl Base64Alphabet {
     /// Makes a [`base64::alphabet::Alphabet`].
     pub fn get(&self) -> &Alphabet {
         match self {
-            Self::UrlSafe  => &base64::alphabet::URL_SAFE,
-            Self::Standard => &base64::alphabet::STANDARD
+            Self::Standard  => &base64::alphabet::STANDARD,
+            Self::UrlSafe   => &base64::alphabet::URL_SAFE,
+            Self::Crypt     => &base64::alphabet::CRYPT,
+            Self::Bcrypt    => &base64::alphabet::BCRYPT,
+            Self::IMAPMUTF7 => &base64::alphabet::IMAP_MUTF7,
+            Self::BinHex    => &base64::alphabet::BIN_HEX
         }
     }
 }

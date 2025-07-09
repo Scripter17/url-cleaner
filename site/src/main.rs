@@ -74,6 +74,14 @@ struct Args {
     #[arg(long)]
     #[cfg(feature = "cache")]
     cache_path: Option<CachePath>,
+    /// Defaults whether or not to use cache delay in jobs that don't specify otherwise.
+    #[arg(long, default_value_t = false)]
+    #[cfg(feature = "cache")]
+    cache_delay_default: bool,
+    /// Defaults whether or not to use cache unthreading in jobs that don't specify otherwise.
+    #[arg(long, default_value_t = false)]
+    #[cfg(feature = "cache")]
+    cache_unthread_default: bool,
     /// Amount of threads to process tasks in.
     /// 
     /// Zero uses the CPU's thread count.
@@ -95,6 +103,12 @@ struct ServerConfig {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
+    /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
+    #[cfg(feature = "cache")]
+    cache_delay_default: bool,
+    /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::unthread`].
+    #[cfg(feature = "cache")]
+    cache_unthread_default: bool,
     /// A [`String`] version of [`Self::cleaner`].
     cleaner_string: String,
     /// The number of threads to spawn for each [`JobConfig`].
@@ -157,9 +171,16 @@ async fn rocket() -> _ {
         config: ServerConfig {
             #[cfg(feature = "cache")]
             cache: cleaner.cache_path.clone().into(),
+            #[cfg(feature = "cache")]
+            cache_delay_default: args.cache_delay_default,
+            #[cfg(feature = "cache")]
+            cache_unthread_default: args.cache_unthread_default,
             cleaner,
             cleaner_string,
-            threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
+            threads: match args.threads {
+                0 => std::thread::available_parallelism().expect("To be able to get the available parallelism."),
+                1.. => NonZero::new(args.threads).expect("The 1.. pattern to mean \"not zero\"")
+            },
             max_json_size: args.max_size
         },
         job_count: Mutex::new(0)
@@ -218,7 +239,8 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                         cache: &state.config.cache,
                         #[cfg(feature = "cache")]
                         cache_handle_config: CacheHandleConfig {
-                            delay: job_config.cache_delay.unwrap_or(false)
+                            delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default),
+                            unthread: job_config.cache_unthread.unwrap_or(state.config.cache_unthread_default)
                         },
                         lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
                     };

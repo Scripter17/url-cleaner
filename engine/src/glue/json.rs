@@ -123,12 +123,13 @@ impl StringSourceJsonValue {
         debug!(StringSourceJsonValue::make, self);
 
         Ok(match self {
-            Self::Null      => Value::Null,
-            Self::Bool  (x) => Value::Bool(*x),
-            Self::Number(x) => Value::Number(x.clone()),
-            Self::String(x) => Value::String(get_string!(x, task_state, StringSourceError)),
-            Self::Array (x) => Value::Array(x.iter().map(|x| x.make(task_state)).collect::<Result<_, _>>()?),
-            Self::Object(x) => Value::Object(x.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), v.make(task_state)?))).collect::<Result<_, _>>()?)
+            Self::Null                            => Value::Null,
+            Self::Bool  (x)                       => Value::Bool(*x),
+            Self::Number(x)                       => Value::Number(x.clone()),
+            Self::String(StringSource::String(x)) => Value::String(x.clone()),
+            Self::String(x)                       => Value::String(get_string!(x, task_state, StringSourceError)),
+            Self::Array (x)                       => Value::Array(x.iter().map(|x| x.make(task_state)).collect::<Result<_, _>>()?),
+            Self::Object(x)                       => Value::Object(x.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), v.make(task_state)?))).collect::<Result<_, _>>()?)
         })
     }
 }

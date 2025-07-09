@@ -1,4 +1,14 @@
 //! Caching to allow for only expanding redirects the first time you encounter them.
+//!
+//! A cache is a Sqlite database composed of one table, "cache", with 4 columns:
+//!
+//! - `subject` (`TEXT NOT NULL`): The subject of the cache entry. For example, redirects have their `subject` set to `redirect`.
+//!
+//! - `key` (`TEXT NOT NULL`): The key of the key/value pair. For example, redirects have their `key` set to the redirect URL.
+//!
+//! - `value` (`TEXT` (maybe null)): The value of the key/value pair. For example, redirects have their `value` set to the URL the starting redirect URL points to.
+//!
+//! - `duration` (`FLOAT`): The amount of time (in seconds) it took to do the thing being cached. For example, redirects have their `duration` set to about as long as it took to do the network request(s). This is used by [`CacheHandle`] to artifically delay cache reads if [`CacheHandleConfig::delay`] is [`true`] to reduce the ability of websites to tell if you've seen a certain URL before.
 
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::sync::Mutex;
@@ -13,6 +23,7 @@ use rand::TryRngCore;
 
 #[expect(unused_imports, reason = "Used in docs.")]
 use crate::types::*;
+use crate::util::*;
 
 pub mod path;
 pub use path::*;
@@ -23,7 +34,11 @@ pub use outer::*;
 pub mod glue;
 pub use glue::*;
 
-/// A wrapper around a [`Cache`] for optional security features like anti-cache detection artificial delays.
+/// A wrapper around a [`Cache`] for optional security features provided by [`CacheHandleConfig`].
+///
+/// Unlike [`Cache`], which is intended to be shared between [`Job`]s, [`CacheHandle`]s are intended to be made on a per-[`Job`] basis using the [`CacheHandleConfig`] appropriate for each particular [`Job`].
+///
+/// For example, a CLI program writing results to a file doesn't need to enable cache delay/unthreading, but a userscipt should.
 /// # Examples
 /// ```
 /// use url_cleaner_engine::glue::*;
@@ -34,11 +49,11 @@ pub use glue::*;
 ///     config: Default::default()
 /// };
 ///
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), None);
-/// cache.write(NewCacheEntry { category: "category", key: "key", value: None, duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
-/// cache.write(NewCacheEntry { category: "category", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), None);
+/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: None, duration: Default::default() }).unwrap();
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
+/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct CacheHandle<'a> {
@@ -49,12 +64,22 @@ pub struct CacheHandle<'a> {
 }
 
 /// Configuration for how a [`CacheHandle`] should behave.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CacheHandleConfig {
     /// If [`true`], delay cache reads by about as long as the inital computation took.
     ///
-    /// This reduces the ability for websites to tell if you have a URL cached.
-    pub delay: bool
+    /// Used by URL Cleaner Site Userscript to reduce the ability of websites to tell if you have a URL cached.
+    ///
+    /// Defaults to [`false`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub delay: bool,
+    /// If [`true`], keep the [`Cache`]'s [`Mutex`] around its [`InnerCache`] locked until the effects of [`Self::delay`] are done, making it as slow as if only one thread was being used.
+    ///
+    /// Used by URL Cleaner Site Userscript to reduce the ability of websites to tell how many threads you're using.
+    ///
+    /// Defaults to [`false`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub unthread: bool
 }
 
 impl CacheHandle<'_> {
@@ -64,7 +89,14 @@ impl CacheHandle<'_> {
     /// # Panics
     /// If, somehow, [`rand::rngs::OsRng`] doesn't work, this panics when [`Self::config`]'s [`CacheHandleConfig::delay`] is [`true`].
     pub fn read(&self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        let ret = self.cache.read(keys)?;
+        let ret;
+        let mut lock;
+        if self.config.unthread {
+            lock = self.cache.get_inner().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?;
+            ret = lock.read(keys)?;
+        } else {
+            ret = self.cache.read(keys)?;
+        }
         if self.config.delay && let Some(CacheEntryValues {duration, ..}) = ret {
             let between_neg_1_and_1 = rand::rngs::OsRng.try_next_u32().expect("Os RNG to be available") as f32 / f32::MAX * 2.0 - 1.0;
             std::thread::sleep(duration.mul_f32(1.0 + between_neg_1_and_1 / 8.0));
@@ -74,7 +106,7 @@ impl CacheHandle<'_> {
 
     /// Writes to the cache.
     ///
-    /// If an entry for the `category` and `key` already exists, overwrites it.
+    /// If an entry for the `subject` and `key` already exists, overwrites it.
     /// # Errors
     /// If the call to [`InnerCache::write`] returns an error, that error is returned.
     pub fn write(&self, entry: NewCacheEntry) -> Result<(), WriteToCacheError> {
@@ -84,9 +116,9 @@ impl CacheHandle<'_> {
 
 diesel::table! {
     /// The table containing cache entries.
-    cache (category, key) {
-        /// The category of the entry.
-        category -> Text,
+    cache (subject, key) {
+        /// The subject of the entry.
+        subject -> Text,
         /// The key of the entry.
         key -> Text,
         /// The value of the entry.
@@ -98,19 +130,19 @@ diesel::table! {
 
 /// The Sqlite command to initialize the cache database.
 pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
-    category TEXT NOT NULL,
+    subject TEXT NOT NULL,
     "key" TEXT NOT NULL,
     value TEXT,
     duration FLOAT NOT NULL,
-    UNIQUE(category, "key") ON CONFLICT REPLACE
+    UNIQUE(subject, "key") ON CONFLICT REPLACE
 )"#;
 
 /// A new entry for the cache database.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Insertable)]
 #[diesel(table_name = cache)]
 pub struct NewCacheEntry<'a> {
-    /// The category of the new entry.
-    pub category: &'a str,
+    /// The subject of the new entry.
+    pub subject: &'a str,
     /// The key of the new entry.
     pub key: &'a str,
     /// The value of the new entry.
@@ -124,8 +156,8 @@ pub struct NewCacheEntry<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Queryable, Selectable)]
 #[diesel(table_name = cache)]
 pub struct CacheEntryKeys<'a> {
-    /// The category of the entry.
-    pub category: &'a str,
+    /// The subject of the entry.
+    pub subject: &'a str,
     /// The key of the entry.
     pub key: &'a str,
 }

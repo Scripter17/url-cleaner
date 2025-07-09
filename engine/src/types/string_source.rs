@@ -323,6 +323,8 @@ pub enum StringSource {
 
 
     /// Joins a list of [`Self`]s delimited by [`Self::Join::join`].
+    ///
+    /// Segments that evaluate to [`None`] are omitted.
     /// # Errors
     #[doc = edoc!(geterr(Self), getnone(Self, StringSource))]
     /// # Examples
@@ -332,6 +334,11 @@ pub enum StringSource {
     ///
     /// assert_eq!(StringSource::Join {
     ///     values: vec!["abc".into(), "def".into()],
+    ///     join: "/".into()
+    /// }.get(&task_state).unwrap(), Some("abc/def".into()));
+    ///
+    /// assert_eq!(StringSource::Join {
+    ///     values: vec!["abc".into(), StringSource::None, "def".into()],
     ///     join: "/".into()
     /// }.get(&task_state).unwrap(), Some("abc/def".into()));
     /// ```
@@ -507,15 +514,15 @@ pub enum StringSource {
 
 
 
-    /// If an entry with a category of [`Self::Cache::category`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
+    /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
     ///
     /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
     /// # Errors
     #[doc = edoc!(callerr(Cache::read), geterr(Self), callerr(Cache::write))]
     #[cfg(feature = "cache")]
     Cache {
-        /// The category of the thing to cache.
-        category: Box<Self>,
+        /// The subject of the thing to cache.
+        subject: Box<Self>,
         /// The key of the thing thing to cache.
         key: Box<Self>,
         /// The value to cache.
@@ -839,7 +846,10 @@ impl StringSource {
 
 
 
-            Self::Join {values, join} => values.iter().map(|value| value.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.map(|x| Cow::Owned(x.join(join))),
+            Self::Join {values, join} => match join.as_str() {
+                "" => Some(Cow::Owned(values.iter().filter_map(|value| value.get(task_state).transpose()).collect::<Result<String, _>>()?)),
+                _  => Some(Cow::Owned(values.iter().filter_map(|value| value.get(task_state).transpose()).collect::<Result<Vec<_>, _>>()?.join(join)))
+            },
 
 
 
@@ -879,11 +889,11 @@ impl StringSource {
 
 
             #[cfg(feature = "cache")]
-            Self::Cache {category, key, value} => {
-                let category = get_string!(category, task_state, StringSourceError);
+            Self::Cache {subject, key, value} => {
+                let subject = get_string!(subject, task_state, StringSourceError);
                 let key = get_string!(key, task_state, StringSourceError);
                 if task_state.params.read_cache {
-                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {category: &category, key: &key})? {
+                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
                         return Ok(entry.value.map(Cow::Owned));
                     }
                 }
@@ -892,7 +902,7 @@ impl StringSource {
                 let duration = start.elapsed();
                 if task_state.params.write_cache {
                     task_state.cache.write(NewCacheEntry {
-                        category: &category,
+                        subject: &subject,
                         key: &key,
                         value: ret.as_deref(),
                         duration

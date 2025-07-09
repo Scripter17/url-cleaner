@@ -70,6 +70,25 @@ impl BetterUrl {
         self.raw_query_pairs().map(|pairs| pairs.filter(|(x, _)| peh(x) == name).nth(index).map(|(_, v)| v))
     }
 
+    /// Return [`true`] if [`Self::raw_query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
+    ///
+    /// Please note that this returns [`true`] even if the query param has no value.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a&%61=4").unwrap();
+    ///
+    /// assert!( url.has_raw_query_param("a", 0));
+    /// assert!( url.has_raw_query_param("a", 1));
+    /// assert!(!url.has_raw_query_param("a", 2));
+    /// assert!(!url.has_raw_query_param("a", 3));
+    /// assert!(!url.has_raw_query_param("a", 4));
+    /// ```
+    pub fn has_raw_query_param(&self, name: &str, index: usize) -> bool {
+        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(key, _)| *key == name).nth(index).is_some())
+    }
+
     /// Return [`true`] if [`Self::query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
     ///
     /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
@@ -88,7 +107,7 @@ impl BetterUrl {
     /// assert!(!url.has_query_param("a", 4));
     /// ```
     pub fn has_query_param(&self, name: &str, index: usize) -> bool {
-        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(x, _)| peh(x) == name).nth(index).is_some())
+        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(key, _)| peh(key) == name).nth(index).is_some())
     }
 
     /// Get the selected query parameter.

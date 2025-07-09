@@ -69,11 +69,6 @@ pub struct Args {
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(short, long)]
     pub cleaner: PathBuf,
-    /// The cache to use.
-    /// Defaults to the value specified by the cleaner.
-    #[cfg(feature = "cache")]
-    #[arg(long)]
-    pub cache_path: Option<CachePath>,
     /// Output results as JSON.
     ///
     /// The format looks like this, but minified:
@@ -97,6 +92,19 @@ pub struct Args {
     /// Vars to insert into the params.
     #[arg(short, long)]
     pub var: Vec<Vec<String>>,
+    /// The cache to use.
+    /// Defaults to the value specified by the cleaner.
+    #[cfg(feature = "cache")]
+    #[arg(long)]
+    pub cache_path: Option<CachePath>,
+    /// Artifically delay cache reads about as long as the initial run to defend against cache detection.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    pub cache_delay: bool,
+    /// Make reading the cache alwasy as slow as `--threads 1` to defend against thread count detection.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    pub cache_unthread: bool,
     /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
@@ -224,8 +232,16 @@ fn main() -> Result<ExitCode, CliError> {
 
     #[cfg(feature = "cache")]
     let cache = cleaner.cache_path.clone().into();
+    #[cfg(feature = "cache")]
+    let cache_handle_config = CacheHandleConfig {
+        delay: args.cache_delay,
+        unthread: args.cache_unthread
+    };
 
-    let threads = if args.threads == 0 {std::thread::available_parallelism().expect("To be able to get the available parallelism.").get()} else {args.threads};
+    let threads = match args.threads {
+        0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
+        1.. => args.threads
+    };
     let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
@@ -243,7 +259,7 @@ fn main() -> Result<ExitCode, CliError> {
                 #[cfg(feature = "cache")]
                 cache  : &cache,
                 #[cfg(feature = "cache")]
-                cache_handle_config: Default::default(),
+                cache_handle_config,
                 lazy_task_configs: {
                     let ret = args.urls.into_iter().map(Ok);
                     if !io::stdin().is_terminal() {

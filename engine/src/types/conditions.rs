@@ -915,6 +915,10 @@ pub enum Condition {
 
     /// Passes if the [`Url::path`] has segments.
     PathHasSegments,
+    /// Passes if the call to [`BetterUrl::path_segment`] returns [`Ok`] of [`Some`].
+    ///
+    /// Fails instead of erroring when the call to [`BetterUrl::path_segment`] returns [`Err`] because not having path segments means it doesn't have the specified path segment.
+    HasPathSegment(isize),
     /// Passes if the [`BetterUrl::path_segment`] is the specified value.
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::path_segment))]
@@ -1380,8 +1384,8 @@ impl Condition {
             Self::PathIsInSet   (set   ) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
             Self::PathStartsWith(value ) => task_state.url.path().starts_with(value),
 
-            Self::PathHasSegments => task_state.url.path().starts_with('/'),
-
+            Self::PathHasSegments => task_state.url.path_has_segments(),
+            Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_ok_and(|segment| segment.is_none()),
             Self::PathSegmentIs {index, value: StringSource::String(value)} => task_state.url.path_segment(*index)? == Some(value),
             Self::PathSegmentIs {index, value: StringSource::None         } => task_state.url.path_segment(*index)?.is_none(),
             Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index)? == value.get(task_state)?.as_deref(),

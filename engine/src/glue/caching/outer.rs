@@ -1,6 +1,6 @@
 //! The home of [`Cache`].
 
-use std::sync::Mutex;
+use std::sync::{Mutex, LockResult, MutexGuard};
 
 #[expect(unused_imports, reason = "Used in docs.")]
 use diesel::query_builder::SqlQuery;
@@ -15,11 +15,11 @@ use super::*;
 /// // Note the immutability.
 /// let cache = Cache::new(CachePath::Memory);
 ///
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), None);
-/// cache.write(NewCacheEntry { category: "category", key: "key", value: None, duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
-/// cache.write(NewCacheEntry { category: "category", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { category: "category", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), None);
+/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: None, duration: Default::default() }).unwrap();
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
+/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
+/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
 /// ```
 #[derive(Debug, Default)]
 pub struct Cache(pub Mutex<InnerCache>);
@@ -45,6 +45,13 @@ impl From<CachePath> for Cache {
 }
 
 impl Cache {
+    /// Get the contained [`InnerCache`].
+    /// # Errors
+    /// If the call to [`Mutex::lock`] returns an error, that error is returned.
+    pub fn get_inner(&self) -> LockResult<MutexGuard<'_, InnerCache>> {
+        self.0.lock()
+    }
+    
     /// Reads from the cache.
     /// # Errors
     /// If the call to [`InnerCache::read`] returns an error, that error is returned.
@@ -54,7 +61,7 @@ impl Cache {
 
     /// Writes to the cache.
     ///
-    /// If an entry for the `category` and `key` already exists, overwrites it.
+    /// If an entry for the `subject` and `key` already exists, overwrites it.
     /// # Errors
     /// If the call to [`InnerCache::write`] returns an error, that error is returned.
     pub fn write(&self, entry: NewCacheEntry) -> Result<(), WriteToCacheError> {

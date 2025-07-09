@@ -56,7 +56,7 @@ macro_rules! debug {
             let call_details = dsl.item_details.entry(($self as *const _ as usize, std::any::type_name_of_val($self), format!("{:?}", $self))).or_default()
                 .call_details.entry((stringify!($func), vec![$(format!("{:?}", $arg)),*])).or_default();
 
-            println!(
+            eprintln!(
                 "{:>3}-{:>3}-{:>3}-{}{}",
                 line,
                 match call_details.count {

@@ -15,9 +15,11 @@
 // ==/UserScript==
 
 window.config = {
-	instance   : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
-	params_diff: null, // Should be set server side. But if you can't, this works.
-	send_host  : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
+	instance      : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
+	params_diff   : null, // Should be set server side. But if you can't, this works.
+	send_host     : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
+	cache_delay   : true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
+	cache_unthread: true, // Make the cache effectively single-threaded to defend against thread count detection.
 	debug: {
 		log: {
 			new_job_config   : false,
@@ -124,9 +126,13 @@ async function clean_elements(elements, job_config) {
 async function elements_to_job_config(elements) {
 	let ret = {
 		tasks: elements.map(x => element_to_task_config(x)),
-		context: await get_job_context()
+		context: await get_job_context(),
+		cache_delay: window.config.cache_delay,
+		cache_unthread: window.config.cache_unthread
 	};
-	if (window.config.params_diff) {ret.params_diff = window.config.params_diff;}
+	if (window.config.params_diff) {
+		ret.params_diff = window.config.params_diff;
+	}
 	return ret;
 }
 
@@ -201,9 +207,7 @@ function element_to_task_config(element) {
 // Because the webpage's URL can change without reloading the script, this needs to be calculated per job config.
 // Don't worry, it's fast. I think.
 async function get_job_context() {
-	let ret = {
-		cache_delay: true
-	};
+	let ret = {};
 
 	if (window.config.send_host) {
 		if (ret.vars === undefined) {ret.vars = {};}

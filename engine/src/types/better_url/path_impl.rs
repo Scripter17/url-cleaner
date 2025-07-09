@@ -33,6 +33,10 @@ impl BetterUrl {
         self.url.set_path(path)
     }
 
+    /// Returns [`true`] if the path has segments.
+    pub fn path_has_segments(&self) -> bool {
+        self.url.path().starts_with('/')
+    }
     /// Gets an object that can iterate over the segments of [`Self`]'s path.
     /// # Errors
     #[doc = edoc!(callnone(Url::path_segments, UrlDoesNotHavePathSegments))]

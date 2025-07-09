@@ -703,7 +703,7 @@ pub enum Action {
 
     /// Sends an HTTP GET request to the current [`TaskState::url`], and sets it either to the value of the response's `Location` header (if the response is a redirect) or the final URL after redirects.
     ///
-    /// If the `cache` feature flag is enabled, caches the operation with the category `redirect`, the key set to the input URL, and the value set to the returned URL.
+    /// If the `cache` feature flag is enabled, caches the operation with the subject `redirect`, the key set to the input URL, and the value set to the returned URL.
     /// # Errors
     #[cfg_attr(feature = "cache", doc = edoc!(callerr(Cache::read), callnone(Cache::read, ActionError::CachedUrlIsNone), callerr(BetterUrl::parse)))]
     #[cfg_attr(feature = "cache", doc = "")]
@@ -792,7 +792,7 @@ pub enum Action {
         /// The modification to apply.
         modification: StringModification
     },
-    /// If an entry with a category of [`Self::CacheUrl::category`] and a key of [`TaskState::url`] exists in the [`TaskState::cache`], sets the URL to the entry's value.
+    /// If an entry with a subject of [`Self::CacheUrl::subject`] and a key of [`TaskState::url`] exists in the [`TaskState::cache`], sets the URL to the entry's value.
     ///
     /// If no such entry exists, applies [`Self::CacheUrl::action`] and inserts a new entry equivalent to applying it.
     ///
@@ -801,8 +801,8 @@ pub enum Action {
     #[doc = edoc!(callerr(Cache::read), callnone(Cache::read, ActionError::CachedUrlIsNone), callerr(BetterUrl::parse), applyerr(Self), callerr(Cache::write))]
     #[cfg(feature = "cache")]
     CacheUrl {
-        /// The category for the cache entry.
-        category: StringSource,
+        /// The subject for the cache entry.
+        subject: StringSource,
         /// The action to apply and cache.
         action: Box<Self>
     },
@@ -1363,7 +1363,7 @@ impl Action {
             Self::ExpandRedirect {headers, http_client_config_diff} => {
                 #[cfg(feature = "cache")]
                 if task_state.params.read_cache {
-                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {category: "redirect", key: task_state.url.as_str()})? {
+                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: task_state.url.as_str()})? {
                         *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
@@ -1381,7 +1381,7 @@ impl Action {
                 #[cfg(feature = "cache")]
                 if task_state.params.write_cache {
                     task_state.cache.write(NewCacheEntry {
-                        category: "redirect",
+                        subject: "redirect",
                         key: task_state.url.as_str(),
                         value: Some(new_url.as_str()),
                         duration
@@ -1411,10 +1411,10 @@ impl Action {
                 }
             },
             #[cfg(feature = "cache")]
-            Self::CacheUrl {category, action} => {
-                let category = get_string!(category, task_state, ActionError);
+            Self::CacheUrl {subject, action} => {
+                let subject = get_string!(subject, task_state, ActionError);
                 if task_state.params.read_cache {
-                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {category: &category, key: task_state.url.as_str()})? {
+                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
                         *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                         return Ok(());
                     }
@@ -1425,7 +1425,7 @@ impl Action {
                 let duration = start.elapsed();
                 if task_state.params.write_cache {
                     task_state.cache.write(NewCacheEntry {
-                        category: &category,
+                        subject: &subject,
                         key: &old_url,
                         value: Some(task_state.url.as_str()),
                         duration

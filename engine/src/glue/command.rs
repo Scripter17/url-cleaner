@@ -147,7 +147,7 @@ impl CommandConfig {
             command.stdin(Stdio::piped());
             let mut child=command.spawn()?;
             let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
-            child_stdin.write_all(get_string!(stdin, task_state, CommandError).as_bytes())?;
+            child_stdin.write_all(get_str!(stdin, task_state, CommandError).as_bytes())?;
             child
         } else {
             command.spawn()?
