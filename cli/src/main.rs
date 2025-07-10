@@ -56,7 +56,7 @@ pub struct Args {
     /// 
     /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
-    pub urls: Vec<LazyTaskConfig>,
+    pub urls: Vec<LazyTaskConfig<'static>>,
     /// The config file to use.
     /// 
     /// Omit to use the built in default cleaner.

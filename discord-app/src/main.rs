@@ -157,7 +157,7 @@ async fn clean_urls_with_params(ctx: Context<'_>, msg: serenity::Message, params
         cache: &ctx.data().cache,
         #[cfg(feature = "cache")]
         cache_handle_config: Default::default(),
-        lazy_task_configs: Box::new(GET_URLS.find_iter(&msg.content).map(|x| Ok(x.as_str().to_string().into())))
+        lazy_task_configs: Box::new(GET_URLS.find_iter(&msg.content).map(|x| Ok(x.as_str().into())))
     };
 
     let mut responses = Vec::new();

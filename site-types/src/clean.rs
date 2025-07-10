@@ -10,9 +10,9 @@ use crate::util::*;
 /// 
 /// Used to construct a [`Job`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct JobConfig {
+pub struct JobConfig<'a> {
     /// The [`LazyTaskConfig`]s to use.
-    pub tasks: Vec<LazyTaskConfig>,
+    pub tasks: Vec<LazyTaskConfig<'a>>,
     /// The [`JobContext`] to use.
     #[serde(default, skip_serializing_if = "is_default")]
     pub context: JobContext,

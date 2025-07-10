@@ -24,7 +24,7 @@ pub struct TaskConfig {
 
 string_or_struct_magic!(TaskConfig);
 
-impl TryFrom<LazyTaskConfig> for TaskConfig {
+impl TryFrom<LazyTaskConfig<'_>> for TaskConfig {
     type Error = MakeTaskConfigError;
 
     /// Makes the [`TaskConfig`].
@@ -37,7 +37,9 @@ impl TryFrom<LazyTaskConfig> for TaskConfig {
             LazyTaskConfig::Made(task_config) => task_config,
             LazyTaskConfig::Url(url)          => url.into(),
             LazyTaskConfig::BetterUrl(url)    => url.into(),
+            LazyTaskConfig::Str(string)       => string.try_into()?,
             LazyTaskConfig::String(string)    => (&*string).try_into()?,
+            LazyTaskConfig::ByteSlice(bytes)  => bytes.try_into()?,
             LazyTaskConfig::Bytes(bytes)      => (&*bytes).try_into()?,
             LazyTaskConfig::JsonValue(value)  => value.try_into()?
         })

@@ -47,7 +47,7 @@ pub struct Job<'a> {
     #[cfg(feature = "cache")]
     pub cache_handle_config: CacheHandleConfig,
     /// Source of [`LazyTaskConfig`]s.
-    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig, GetLazyTaskConfigError>> + 'a>
+    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig<'a>, GetLazyTaskConfigError>> + 'a>
 }
 
 impl ::core::fmt::Debug for Job<'_> {

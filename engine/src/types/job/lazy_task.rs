@@ -12,7 +12,7 @@ use crate::util::*;
 #[derive(Debug, Clone)]
 pub struct LazyTask<'a> {
     /// The [`LazyTaskConfig`].
-    pub config: LazyTaskConfig,
+    pub config: LazyTaskConfig<'a>,
     /// The [`JobContext`].
     pub job_context: &'a JobContext,
     /// The [`Cleaner`].
