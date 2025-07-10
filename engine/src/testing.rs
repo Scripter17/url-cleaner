@@ -66,7 +66,8 @@ impl TestSet {
             cache: &Default::default(),
             #[cfg(feature = "cache")]
             cache_handle_config: Default::default(),
-            lazy_task_configs: Box::new(task_configs.into_iter().map(|task_config| Ok(task_config.into())))
+            unthreader: &Default::default(),
+            lazy_task_configs: Box::new(task_configs.into_iter().map(|task_config| Ok(task_config.into()))),
         };
 
         for (test, task_source, expectation) in self.tests.into_iter().zip(job).zip(expectations).map(|((x, y), z)| (x, y, z)) {

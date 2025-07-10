@@ -530,7 +530,8 @@ impl StringMatcher {
                         params     : task_state.params,
                         commons    : task_state.commons,
                         #[cfg(feature = "cache")]
-                        cache      : task_state.cache
+                        cache      : task_state.cache,
+                        unthreader : task_state.unthreader
                     }
                 )?
             },

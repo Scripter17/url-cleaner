@@ -28,7 +28,10 @@ pub struct TaskState<'a> {
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: &'a CacheHandle<'a>
+    pub cache: &'a CacheHandle<'a>,
+    /// The [`Unthreader`] to use.
+    #[serde(skip)]
+    pub unthreader: &'a Unthreader
 }
 
 impl<'a> TaskState<'a> {
@@ -47,7 +50,8 @@ impl<'a> TaskState<'a> {
             params     : self.params,
             commons    : self.commons,
             #[cfg(feature = "cache")]
-            cache      : self.cache
+            cache      : self.cache,
+            unthreader : self.unthreader,
         }
     }
 
@@ -100,7 +104,8 @@ macro_rules! task_state {
                 cache      : &CacheHandle {
                     cache: &Default::default(),
                     config: Default::default()
-                }
+                },
+                unthreader : &Default::default()
             }
         };
     };
@@ -126,7 +131,10 @@ pub struct TaskStateView<'a> {
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: &'a CacheHandle<'a>
+    pub cache: &'a CacheHandle<'a>,
+    /// The [`Unthreader`] to use.
+    #[serde(skip)]
+    pub unthreader: &'a Unthreader
 }
 
 impl<'a> TaskStateView<'a> {
@@ -188,7 +196,8 @@ macro_rules! task_state_view {
                 cache      : &CacheHandle {
                     cache: &Default::default(),
                     config: Default::default()
-                }
+                },
+                unthreader : &Default::default()
             }
         };
     };

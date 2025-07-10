@@ -18,6 +18,8 @@ pub struct Task<'a> {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     pub cache: CacheHandle<'a>,
+    /// The [`Unthreader`] to use.
+    pub unthreader: &'a Unthreader
 }
 
 impl Task<'_> {
@@ -34,7 +36,8 @@ impl Task<'_> {
             params     : &self.cleaner.params,
             commons    : &self.cleaner.commons,
             #[cfg(feature = "cache")]
-            cache      : &self.cache
+            cache      : &self.cache,
+            unthreader : self.unthreader
         })?;
         Ok(self.config.url)
     }

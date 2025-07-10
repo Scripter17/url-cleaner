@@ -102,10 +102,9 @@ pub struct Args {
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
     pub cache_delay: bool,
-    /// Make reading the cache alwasy as slow as `--threads 1` to defend against thread count detection.
-    #[cfg(feature = "cache")]
+    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
     #[arg(long, default_missing_value = "true")]
-    pub cache_unthread: bool,
+    pub hide_thread_count: bool,
     /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
@@ -229,9 +228,9 @@ fn main() -> Result<ExitCode, CliError> {
     let cache = args.cache.unwrap_or("url-cleaner-cache.sqlite".into()).into();
     #[cfg(feature = "cache")]
     let cache_handle_config = CacheHandleConfig {
-        delay: args.cache_delay,
-        unthread: args.cache_unthread
+        delay: args.cache_delay
     };
+    let unthreader = Unthreader::r#if(args.hide_thread_count);
 
     let threads = match args.threads {
         0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
@@ -255,6 +254,7 @@ fn main() -> Result<ExitCode, CliError> {
                 cache  : &cache,
                 #[cfg(feature = "cache")]
                 cache_handle_config,
+                unthreader: &unthreader,
                 lazy_task_configs: {
                     let ret = args.urls.into_iter().map(Ok);
                     if !io::stdin().is_terminal() {

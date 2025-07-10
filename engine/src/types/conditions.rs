@@ -1446,7 +1446,8 @@ impl Condition {
                     params     : task_state.params,
                     commons    : task_state.commons,
                     #[cfg(feature = "cache")]
-                    cache      : task_state.cache
+                    cache      : task_state.cache,
+                    unthreader : task_state.unthreader
                 })?
             },
             Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(         name                             ).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,

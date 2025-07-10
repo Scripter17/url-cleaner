@@ -15,11 +15,11 @@
 // ==/UserScript==
 
 window.config = {
-	instance      : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
-	params_diff   : null, // Should be set server side. But if you can't, this works.
-	send_host     : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
-	cache_delay   : true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
-	cache_unthread: true, // Make the cache effectively single-threaded to defend against thread count detection.
+	instance         : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
+	params_diff      : null, // Should be set server side. But if you can't, this works.
+	send_host        : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
+	cache_delay      : true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
+	hide_thread_count: true, // Makes requests, cache reads, etc. effectively single threaded to hide thread count.
 	debug: {
 		log: {
 			new_job_config   : false,

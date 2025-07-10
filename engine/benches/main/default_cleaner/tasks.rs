@@ -24,7 +24,8 @@ fn r#do(c: &mut Criterion) {
             cache: CacheHandle {
                 cache: &Default::default(),
                 config: Default::default()
-            }
+            },
+            unthreader: &Default::default()
         };
 
         c.bench_function(

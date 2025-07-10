@@ -24,11 +24,8 @@ pub struct JobConfig<'a> {
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_delay: Option<bool>,
-    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
-    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::unthread`].
-    #[cfg(feature = "cache")]
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub cache_unthread: Option<bool>
+    /// If [`Some`], overwrite whether or not [`Job::unthreader`] is [`Unthreader::No`] or [`Unthreader::Yes`].
+    pub hide_thread_count: Option<bool>
 }
 
 /// The [`Result`] returned by the `/clean` route.

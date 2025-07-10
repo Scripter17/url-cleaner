@@ -72,14 +72,7 @@ pub struct CacheHandleConfig {
     ///
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub delay: bool,
-    /// If [`true`], keep the [`Cache`]'s [`Mutex`] around its [`InnerCache`] locked until the effects of [`Self::delay`] are done, making it as slow as if only one thread was being used.
-    ///
-    /// Used by URL Cleaner Site Userscript to reduce the ability of websites to tell how many threads you're using.
-    ///
-    /// Defaults to [`false`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub unthread: bool
+    pub delay: bool
 }
 
 impl CacheHandle<'_> {
@@ -89,14 +82,7 @@ impl CacheHandle<'_> {
     /// # Panics
     /// If, somehow, [`rand::rngs::OsRng`] doesn't work, this panics when [`Self::config`]'s [`CacheHandleConfig::delay`] is [`true`].
     pub fn read(&self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        let ret;
-        let mut lock;
-        if self.config.unthread {
-            lock = self.cache.get_inner().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?;
-            ret = lock.read(keys)?;
-        } else {
-            ret = self.cache.read(keys)?;
-        }
+        let ret = self.cache.read(keys)?;
         if self.config.delay && let Some(CacheEntryValues {duration, ..}) = ret {
             let between_neg_1_and_1 = rand::rngs::OsRng.try_next_u32().expect("Os RNG to be available") as f32 / f32::MAX * 2.0 - 1.0;
             std::thread::sleep(duration.mul_f32(1.0 + between_neg_1_and_1 / 8.0));

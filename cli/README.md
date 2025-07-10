@@ -17,31 +17,30 @@ Last updated 2025-07-09.
 Also the numbers are in milliseconds.
 
 ```Json
-06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8)
 {
   "https://x.com?a=2": {
-    "0"    :  6.342,
-    "1"    :  6.412,
-    "10"   :  6.480,
-    "100"  :  6.770,
-    "1000" :  9.055,
-    "10000": 29.364
+    "0"    :  6.285,
+    "1"    :  6.386,
+    "10"   :  6.432,
+    "100"  :  6.615,
+    "1000" :  9.086,
+    "10000": 29.549
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  6.234,
-    "1"    :  6.408,
-    "10"   :  6.474,
-    "100"  :  6.828,
-    "1000" : 10.221,
-    "10000": 39.358
+    "0"    :  6.097,
+    "1"    :  6.344,
+    "10"   :  6.398,
+    "100"  :  6.690,
+    "1000" : 10.109,
+    "10000": 39.622
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  6.188,
-    "1"    :  6.402,
-    "10"   :  6.558,
-    "100"  :  6.973,
-    "1000" : 11.102,
-    "10000": 47.532
+    "0"    :  6.104,
+    "1"    :  6.334,
+    "10"   :  6.456,
+    "100"  :  6.905,
+    "1000" : 11.155,
+    "10000": 49.673
   }
 }
 ```

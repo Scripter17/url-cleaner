@@ -879,7 +879,10 @@ impl StringSource {
 
 
             #[cfg(feature = "http")]
-            Self::HttpRequest(config) => Some(Cow::Owned(config.response(task_state)?)),
+            Self::HttpRequest(config) => {
+                let _unthread_hanlde = task_state.unthreader.unthread();
+                Some(Cow::Owned(config.response(task_state)?))
+            },
 
 
 
@@ -920,7 +923,8 @@ impl StringSource {
                     params     : task_state.params,
                     commons    : task_state.commons,
                     #[cfg(feature = "cache")]
-                    cache      : task_state.cache
+                    cache      : task_state.cache,
+                    unthreader : task_state.unthreader
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
             Self::CommonCallArg(name) => match &**name {

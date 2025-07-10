@@ -79,10 +79,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     #[cfg(feature = "cache")]
     cache_delay_default: bool,
-    /// Defaults whether or not to use cache unthreading in jobs that don't specify otherwise.
-    #[arg(long, default_value_t = false)]
-    #[cfg(feature = "cache")]
-    cache_unthread_default: bool,
+    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
+    #[arg(long, default_missing_value = "true")]
+    hide_thread_count: bool,
     /// Amount of threads to process tasks in.
     /// 
     /// Zero uses the CPU's thread count.
@@ -107,13 +106,12 @@ struct ServerConfig {
     /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
     #[cfg(feature = "cache")]
     cache_delay_default: bool,
-    /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::unthread`].
-    #[cfg(feature = "cache")]
-    cache_unthread_default: bool,
     /// A [`String`] version of [`Self::cleaner`].
     cleaner_string: String,
     /// The number of threads to spawn for each [`JobConfig`].
     threads: NonZero<usize>,
+    /// The default value for if [`Job::unthreader`] is [`Unthreader::No`] or [`Unthreader::Yes`].
+    hide_thread_count_default: bool,
     /// The max size for a [`JobConfig`]'s JSON representation.
     max_json_size: rocket::data::ByteUnit
 }
@@ -168,14 +166,13 @@ async fn rocket() -> _ {
             cache: args.cache.unwrap_or("url-cleaner-site-cache.sqlite".into()).into(),
             #[cfg(feature = "cache")]
             cache_delay_default: args.cache_delay_default,
-            #[cfg(feature = "cache")]
-            cache_unthread_default: args.cache_unthread_default,
             cleaner,
             cleaner_string,
             threads: match args.threads {
                 0 => std::thread::available_parallelism().expect("To be able to get the available parallelism."),
                 1.. => NonZero::new(args.threads).expect("The 1.. pattern to mean \"not zero\"")
             },
+            hide_thread_count_default: args.hide_thread_count,
             max_json_size: args.max_size
         },
         job_count: Mutex::new(0)
@@ -225,6 +222,8 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
             {*temp += 1;}
             drop(temp);
 
+            let unthreader = Unthreader::r#if(job_config.hide_thread_count.unwrap_or(state.config.hide_thread_count_default));
+
             std::thread::scope(|s| {
                 std::thread::Builder::new().name(format!("({id}) Task collector")).spawn_scoped(s, || {
                     let job = Job {
@@ -234,9 +233,9 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                         cache: &state.config.cache,
                         #[cfg(feature = "cache")]
                         cache_handle_config: CacheHandleConfig {
-                            delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default),
-                            unthread: job_config.cache_unthread.unwrap_or(state.config.cache_unthread_default)
+                            delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default)
                         },
+                        unthreader: &unthreader,
                         lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
                     };
                     for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {

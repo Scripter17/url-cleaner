@@ -1361,6 +1361,7 @@ impl Action {
 
             #[cfg(feature = "http")]
             Self::ExpandRedirect {headers, http_client_config_diff} => {
+                let _unthread_handle = task_state.unthreader.unthread();
                 #[cfg(feature = "cache")]
                 if task_state.params.read_cache {
                     if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: task_state.url.as_str()})? {
@@ -1412,6 +1413,7 @@ impl Action {
             },
             #[cfg(feature = "cache")]
             Self::CacheUrl {subject, action} => {
+                let _unthread_handle = task_state.unthreader.unthread();
                 let subject = get_string!(subject, task_state, ActionError);
                 if task_state.params.read_cache {
                     if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
@@ -1442,7 +1444,8 @@ impl Action {
                     params     : task_state.params,
                     commons    : task_state.commons,
                     #[cfg(feature = "cache")]
-                    cache      : task_state.cache
+                    cache      : task_state.cache,
+                    unthreader : task_state.unthreader
                 })?
             },
             Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(         name                          ).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,

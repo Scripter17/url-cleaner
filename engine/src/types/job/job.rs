@@ -26,6 +26,7 @@ use crate::glue::*;
 ///     },
 #[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
 #[cfg_attr(feature = "cache", doc = "    cache_handle_config: Default::default(),")]
+///     unthreader: &Default::default(),
 ///     lazy_task_configs: Box::new([Ok("https://example.com?utm_source=url_cleaner".into())].into_iter())
 /// };
 ///
@@ -46,6 +47,8 @@ pub struct Job<'a> {
     /// The [`CacheHandleConfig`] to make a [`CacheHandle`] with [`Self::cache`].
     #[cfg(feature = "cache")]
     pub cache_handle_config: CacheHandleConfig,
+    /// The [`Unthreader`] to use.
+    pub unthreader: &'a Unthreader,
     /// Source of [`LazyTaskConfig`]s.
     pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig<'a>, GetLazyTaskConfigError>> + 'a>
 }
@@ -59,6 +62,7 @@ impl ::core::fmt::Debug for Job<'_> {
         x.field("cache"  , &self.cache);
         #[cfg(feature = "cache")]
         x.field("cache_handle_config", &self.cache_handle_config);
+        x.field("unthreader", &self.unthreader);
         x.field("lazy_task_configs", &"...");
         x.finish()
     }
@@ -77,7 +81,8 @@ impl<'a> Iterator for Job<'a> {
                 cache: CacheHandle {
                     cache: self.cache,
                     config: self.cache_handle_config
-                }
+                },
+                unthreader: self.unthreader
             }),
             Err(e) => Err(e.into())
         })

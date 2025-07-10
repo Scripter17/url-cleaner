@@ -19,7 +19,9 @@ pub struct LazyTask<'a> {
     pub cleaner: &'a Cleaner<'a>,
     /// The [`Cache`].
     #[cfg(feature = "cache")]
-    pub cache: CacheHandle<'a>
+    pub cache: CacheHandle<'a>,
+    /// The [`Unthreader`] to use.
+    pub unthreader: &'a Unthreader
 }
 
 /// The enum of errors that can happen when making a [`TaskConfig`].
@@ -45,7 +47,8 @@ impl<'a> TryFrom<LazyTask<'a>> for Task<'a> {
             job_context: value.job_context,
             cleaner: value.cleaner,
             #[cfg(feature = "cache")]
-            cache: value.cache
+            cache: value.cache,
+            unthreader: value.unthreader
         })
     }
 }
@@ -66,7 +69,8 @@ impl<'a> From<Task<'a>> for LazyTask<'a> {
             job_context: value.job_context,
             cleaner: value.cleaner,
             #[cfg(feature = "cache")]
-            cache: value.cache
+            cache: value.cache,
+            unthreader: value.unthreader
         }
     }
 }
