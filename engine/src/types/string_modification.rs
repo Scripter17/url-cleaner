@@ -1399,8 +1399,7 @@ impl StringModification {
                     }
                 )?;
             },
-            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(         name                                      ).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
-            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
+            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, task_state)?
         };

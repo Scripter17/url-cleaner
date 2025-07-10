@@ -31,7 +31,8 @@ window.config = {
 			href_mutations   : false,
 			max_json_size    : false
 		},
-		wipe_cached_data : false
+		log_cached_data : false,
+		wipe_cached_data: false
 	}
 };
 
@@ -165,9 +166,9 @@ function element_to_task_config(element) {
 		// If this happens, just replace it with a dummy value and hope the unmangling works.
 		// In Rust this would be 0.5 lines (https://youtube.com/watch?v=kpk2tdsPh0A).
 		let url;
-		try {
-			url = new URL(element.href).href;
-		} catch (e) {
+		if URL.canParse(element.href) {
+			url = element.href;
+		} else {
 			url = "https://example.com/PARSE_URL_ERROR";
 		}
 		return {
@@ -239,22 +240,33 @@ async function get_host_parts(host) {
 	let done;
 	let doneawaiter = new Promise(resolve => {done = resolve;});
 	await GM.xmlHttpRequest({
-		url: `${window.config.instance}/get-host-parts`,
+		url: `${window.config.instance}/get-host-and-parent-domains-parts`,
 		method: "POST",
 		data: window.location.hostname,
 		onload: function(response) {done(response.responseText);}
 	});
-	let response = await doneawaiter;
+	let response = JSON.parse(await doneawaiter);
 
-	let response_object = JSON.parse(response);
+	if (response.Ok) {
+		for (let x in response.Ok) {
+			await GM.setValue(`host-parts-of-${x}`, JSON.stringify(response.Ok[x]));
+		}
 
-	await GM.setValue(`host-parts-of-${host}`, response);
-
-	return response_object;
+		return response.Ok[host];
+	} else {
+		console.error(`[URLC] Failed to get host parts of ${host} and its parent.`, response);
+		return {};
+	}
 }
 
 (async () => {
 	console.log("[URLC] URL Cleaner Site Userscript loaded. Please note that initial cleanings take a long time because there's a lot happening.");
+
+	if (window.config.debug.log_cached_data) {
+		for (let name of await GM.listValues()) {
+			console.log(`[URLC] Cached data "${name}": ${await GM.getValue(name)}`);
+		}
+	}
 
 	if (window.config.debug.wipe_cached_data) {
 		for (let name of await GM.listValues()) {

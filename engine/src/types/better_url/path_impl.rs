@@ -6,25 +6,23 @@ use super::*;
 #[derive(Debug, Error)]
 pub enum SetPathSegmentError {
     /// Returned when the URL doesn't have path segments.
-    #[error("The URL does not have path segments.")]
-    UrlDoesNotHavePathSegments,
+    #[error(transparent)]
+    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
     /// Returned when the path segment isn't found.
     #[error("The path segemnt wasn't found.")]
     SegmentNotFound
 }
-from_units!(SetPathSegmentError, UrlDoesNotHavePathSegments);
 
 /// The enum of errors [`BetterUrl::insert_path_segment_at`] and [`BetterUrl::insert_path_segment_after`] can return.
 #[derive(Debug, Error)]
 pub enum InsertPathSegmentError {
     /// Returned when the URL doesn't have path segments.
-    #[error("The URL does not have path segments.")]
-    UrlDoesNotHavePathSegments,
+    #[error(transparent)]
+    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
     /// Returned when the path segment isn't found.
     #[error("The path segemnt wasn't found.")]
     SegmentNotFound
 }
-from_units!(InsertPathSegmentError, UrlDoesNotHavePathSegments);
 
 impl BetterUrl {
     /// [`Url::set_path`].
@@ -105,7 +103,7 @@ impl BetterUrl {
 
     /// Sets the specified path segment.
     /// # Errors
-    #[doc = edoc!(callnone(Self::path_segments_str, SetPathSegmentError::UrlDoesNotHavePathSegments))]
+    #[doc = edoc!(callnone(Self::path_segments_str, UrlDoesNotHavePathSegments))]
     ///
     /// If the specified path segment isn't found, returns the error [`SetPathSegmentError::SegmentNotFound`].
     /// # Examples
@@ -128,7 +126,7 @@ impl BetterUrl {
     /// ````
     pub fn set_path_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetPathSegmentError> {
         self.set_path(&set_segment(
-            self.path_segments_str().ok_or(SetPathSegmentError::UrlDoesNotHavePathSegments)?,
+            self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?,
             index, value, SetPathSegmentError::SegmentNotFound, '/'
         )?.join("/"));
         Ok(())
@@ -138,12 +136,12 @@ impl BetterUrl {
     ///
     /// If the specified segment is one after the last, inserts a new segemnt at the end.
     /// # Errors
-    #[doc = edoc!(callnone(Self::path_segments_str, InsertPathSegmentError::UrlDoesNotHavePathSegments))]
+    #[doc = edoc!(callnone(Self::path_segments_str, UrlDoesNotHavePathSegments))]
     ///
     /// If the specified path segment isn't found, returns the error [`InsertPathSegmentError::SegmentNotFound`].
     pub fn insert_path_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
         self.set_path(&insert_segment_at(
-            self.path_segments_str().ok_or(InsertPathSegmentError::UrlDoesNotHavePathSegments)?,
+            self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?,
             index, value, InsertPathSegmentError::SegmentNotFound, '/', "/"
         )?);
         Ok(())
@@ -153,12 +151,12 @@ impl BetterUrl {
     ///
     /// If the specified segment is one after the last, inserts a new segemnt at the end.
     /// # Errors
-    #[doc = edoc!(callnone(Self::path_segments_str, InsertPathSegmentError::UrlDoesNotHavePathSegments))]
+    #[doc = edoc!(callnone(Self::path_segments_str, UrlDoesNotHavePathSegments))]
     ///
     /// If the specified path segment isn't found, returns the error [`InsertPathSegmentError::SegmentNotFound`].
     pub fn insert_path_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
         self.set_path(&insert_segment_after(
-            self.path_segments_str().ok_or(InsertPathSegmentError::UrlDoesNotHavePathSegments)?,
+            self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?,
             index, value, InsertPathSegmentError::SegmentNotFound, '/', "/"
         )?);
         Ok(())

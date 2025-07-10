@@ -417,9 +417,7 @@ impl StringMatcher {
 
             // Equality
 
-            Self::Is(StringSource::String(value)) => haystack == Some(value),
-            Self::Is(StringSource::None) => haystack.is_none(),
-            Self::Is(value) => haystack == value.get(task_state)?.as_deref(),
+            Self::Is(value) => haystack == get_option_str!(value, task_state),
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
             Self::IsInSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
 
@@ -430,7 +428,6 @@ impl StringMatcher {
             Self::IsPrefixOf(needle) => needle.starts_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
             Self::IsSuffixOf(needle) => needle.ends_with  (haystack.ok_or(StringMatcherError::StringIsNone)?),
 
-            Self::Contains {at, value: StringSource::String(value)} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, value)?,
             Self::Contains {at, value} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, get_str!(value, task_state, StringMatcherError))?,
             Self::ContainsAny {values, at} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
@@ -535,8 +532,7 @@ impl StringMatcher {
                     }
                 )?
             },
-            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(         name                                 ).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
-            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
+            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(haystack, task_state)?,
         })

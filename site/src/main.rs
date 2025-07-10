@@ -6,6 +6,7 @@ use std::fs::read_to_string;
 use std::str::FromStr;
 use std::sync::Mutex;
 use std::num::NonZero;
+use std::collections::HashMap;
 
 #[macro_use] extern crate rocket;
 use rocket::serde::json::Json;
@@ -184,7 +185,7 @@ async fn rocket() -> _ {
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
         tls: args.cert.zip(args.key).map(|(cert, key)| rocket::config::TlsConfig::from_paths(cert, key)), // No unwraps.
         ..rocket::Config::default()
-    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner, get_host_parts]).manage(server_state)
+    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner, get_host_parts, get_host_and_parent_domains_parts]).manage(server_state)
 }
 
 /// The `/` route.
@@ -299,6 +300,32 @@ async fn get_max_json_size(state: &State<ServerState>) -> String {
 async fn get_host_parts(host: &str) -> (Status, Json<GetHostPartsResult>) {
     match HostParts::try_from(host).map_err(|_| CouldntParseHost) {
         x @ Ok (_) => (Status {code: 200}, Json(x)),
-        x @ Err(_) => (Status {code: 422}, Json(x))
+        e @ Err(_) => (Status {code: 422}, Json(e))
     }
+}
+
+/// The `/get-host-and-parent-domains-parts` route.
+#[post("/get-host-and-parent-domains-parts", data="<host>")]
+async fn get_host_and_parent_domains_parts(mut host: &str) -> (Status, Json<GetHostAndParentDomainsPartsResult>) {
+    let mut ret = HashMap::new();
+
+    loop {
+        match HostParts::try_from(host).map_err(|_| CouldntParseHost) {
+            Ok(x @ HostParts::Domain(_)) => {
+                ret.insert(host.to_string(), x);
+                if let Some((_, parent)) = host.split_once('.') {
+                    host = parent;
+                } else {
+                    break
+                }
+            },
+            Ok(x) => {
+                ret.insert(host.to_string(), x);
+                break
+            },
+            Err(e) => return (Status {code: 422}, Json(Err(e)))
+        }
+    }
+
+    (Status {code: 200}, Json(Ok(ret)))
 }

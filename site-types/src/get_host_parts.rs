@@ -1,6 +1,7 @@
 //! `/get-host-parts` stuff.
 
 use std::str::FromStr;
+use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -9,6 +10,9 @@ use url_cleaner_engine::types::*;
 
 /// The [`Result`] returned by the `/get-host-parts` route.
 pub type GetHostPartsResult = Result<HostParts, CouldntParseHost>;
+
+/// The [`Result`] returned by the `/get_host_and_parent_domains_parts_result` route.
+pub type GetHostAndParentDomainsPartsResult = Result<HashMap<String, HostParts>, CouldntParseHost>;
 
 /// The error returned by the `host-parts` route when given an invalid host.
 #[derive(Debug, Error, Serialize, Deserialize)]

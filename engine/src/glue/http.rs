@@ -292,10 +292,8 @@ impl ResponseHandler {
     pub fn handle(&self, response: reqwest::blocking::Response, task_state: &TaskStateView) -> Result<String, ResponseHandlerError> {
         Ok(match self {
             Self::Body => response.text()?,
-            Self::Header(StringSource::String(name)) => response.headers().get(name).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             Self::Header(name) => response.headers().get(get_str!(name, task_state, ResponseHandlerError)).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),
             Self::Url => response.url().as_str().to_string(),
-            Self::Cookie(StringSource::String(name)) => response.cookies().find(|cookie| cookie.name()==name).ok_or(ResponseHandlerError::CookieNotFound)?.value().to_string(),
             Self::Cookie(source) => {
                 let name = get_string!(source, task_state, ResponseHandlerError);
                 response.cookies().find(|cookie| cookie.name()==name).ok_or(ResponseHandlerError::CookieNotFound)?.value().to_string()

@@ -1050,7 +1050,7 @@ impl Action {
             // Error handling
 
             Self::IgnoreError(action) => {let _ = action.apply(task_state);},
-            Self::TryElse{ r#try, r#else } => match r#try.apply(task_state) {
+            Self::TryElse {r#try, r#else} => match r#try.apply(task_state) {
                 Ok(x) => x,
                 Err(try_error) => match r#else.apply(task_state) {
                     Ok(x) => x,
@@ -1107,114 +1107,58 @@ impl Action {
             Self::PartMap   {part , map} => if let Some(action) = map.get(part .get( task_state.url      ) ) {action.apply(task_state)?;},
             Self::StringMap {value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
 
-            Self::PartNamedPartitioning   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
-            Self::StringNamedPartitioning {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
-
-            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {action.apply(task_state)?;}
-            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {action.apply(task_state)?;}
+            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part.get(task_state.url).as_deref())) {action.apply(task_state)?;}
+            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
 
             // Whole
 
-            Self::SetWhole(StringSource::String(new)) => *task_state.url = BetterUrl::parse(new)?,
-            Self::SetWhole(new) => *task_state.url = BetterUrl::parse(&new.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?)?,
+            Self::SetWhole(new) => *task_state.url = BetterUrl::parse(get_new_str!(new, task_state, ActionError))?,
             Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, ActionError))?.into(),
 
             // Scheme
             
-            Self::SetScheme(StringSource::String(to)) => task_state.url.set_scheme(to)?,
-            Self::SetScheme(to) => task_state.url.set_scheme(&to.get(&task_state.to_view())?.map(Cow::into_owned).ok_or(ActionError::SchemeCannotBeNone)?)?,
+            Self::SetScheme(to) => task_state.url.set_scheme(get_new_str!(to, task_state, ActionError))?,
 
             // Domain
 
-            Self::SetHost           (StringSource::String(to)) => task_state.url.set_host             (Some(to))?,
-            Self::SetSubdomain      (StringSource::String(to)) => task_state.url.set_subdomain        (Some(to))?,
-            Self::SetRegDomain      (StringSource::String(to)) => task_state.url.set_reg_domain       (Some(to))?,
-            Self::SetDomain         (StringSource::String(to)) => task_state.url.set_domain           (Some(to))?,
-            Self::SetDomainMiddle   (StringSource::String(to)) => task_state.url.set_domain_middle    (Some(to))?,
-            Self::SetNotDomainSuffix(StringSource::String(to)) => task_state.url.set_not_domain_suffix(Some(to))?,
-            Self::SetDomainSuffix   (StringSource::String(to)) => task_state.url.set_domain_suffix    (Some(to))?,
+            Self::SetHost           (to) => task_state.url.set_host             (get_new_option_str!(to, task_state))?,
+            Self::SetSubdomain      (to) => task_state.url.set_subdomain        (get_new_option_str!(to, task_state))?,
+            Self::SetRegDomain      (to) => task_state.url.set_reg_domain       (get_new_option_str!(to, task_state))?,
+            Self::SetDomain         (to) => task_state.url.set_domain           (get_new_option_str!(to, task_state))?,
+            Self::SetDomainMiddle   (to) => task_state.url.set_domain_middle    (get_new_option_str!(to, task_state))?,
+            Self::SetNotDomainSuffix(to) => task_state.url.set_not_domain_suffix(get_new_option_str!(to, task_state))?,
+            Self::SetDomainSuffix   (to) => task_state.url.set_domain_suffix    (get_new_option_str!(to, task_state))?,
 
-            Self::SetHost           (StringSource::None) => task_state.url.set_host             (None)?,
-            Self::SetSubdomain      (StringSource::None) => task_state.url.set_subdomain        (None)?,
-            Self::SetRegDomain      (StringSource::None) => task_state.url.set_reg_domain       (None)?,
-            Self::SetDomain         (StringSource::None) => task_state.url.set_domain           (None)?,
-            Self::SetDomainMiddle   (StringSource::None) => task_state.url.set_domain_middle    (None)?,
-            Self::SetNotDomainSuffix(StringSource::None) => task_state.url.set_not_domain_suffix(None)?,
-            Self::SetDomainSuffix   (StringSource::None) => task_state.url.set_domain_suffix    (None)?,
-
-            Self::SetHost           (to) => task_state.url.set_host             (to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            Self::SetSubdomain      (to) => task_state.url.set_subdomain        (to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            Self::SetRegDomain      (to) => task_state.url.set_reg_domain       (to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            Self::SetDomain         (to) => task_state.url.set_domain           (to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            Self::SetDomainMiddle   (to) => task_state.url.set_domain_middle    (to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            Self::SetNotDomainSuffix(to) => task_state.url.set_not_domain_suffix(to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            Self::SetDomainSuffix   (to) => task_state.url.set_domain_suffix    (to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-
-            Self::SetDomainSegment               {index, value: StringSource::String(value)} => task_state.url.set_domain_segment                (*index, Some(value))?,
-            Self::SetSubdomainSegment            {index, value: StringSource::String(value)} => task_state.url.set_subdomain_segment             (*index, Some(value))?,
-            Self::SetDomainSuffixSegment         {index, value: StringSource::String(value)} => task_state.url.set_domain_suffix_segment         (*index, Some(value))?,
-            Self::SetDomainSegment               {index, value: StringSource::None         } => task_state.url.set_domain_segment                (*index, None)?,
-            Self::SetSubdomainSegment            {index, value: StringSource::None         } => task_state.url.set_subdomain_segment             (*index, None)?,
-            Self::SetDomainSuffixSegment         {index, value: StringSource::None         } => task_state.url.set_domain_suffix_segment         (*index, None)?,
-            Self::InsertDomainSegmentAt          {index, value: StringSource::String(value)} => task_state.url.insert_domain_segment_at          (*index, value)?,
-            Self::InsertSubdomainSegmentAt       {index, value: StringSource::String(value)} => task_state.url.insert_subdomain_segment_at       (*index, value)?,
-            Self::InsertDomainSuffixSegmentAt    {index, value: StringSource::String(value)} => task_state.url.insert_domain_suffix_segment_at   (*index, value)?,
-            Self::InsertDomainSegmentAfter       {index, value: StringSource::String(value)} => task_state.url.insert_domain_segment_after       (*index, value)?,
-            Self::InsertSubdomainSegmentAfter    {index, value: StringSource::String(value)} => task_state.url.insert_subdomain_segment_after    (*index, value)?,
-            Self::InsertDomainSuffixSegmentAfter {index, value: StringSource::String(value)} => task_state.url.insert_domain_suffix_segment_after(*index, value)?,
-
-                                                                                Self::SetDomainSegment               {index, value} => task_state.url.set_domain_segment                (*index,  value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-                                                                                Self::SetSubdomainSegment            {index, value} => task_state.url.set_subdomain_segment             (*index,  value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-                                                                                Self::SetDomainSuffixSegment         {index, value} => task_state.url.set_domain_suffix_segment         (*index,  value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")] Self::InsertDomainSegmentAt          {index, value} => task_state.url.insert_domain_segment_at          (*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.into_owned())?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")] Self::InsertSubdomainSegmentAt       {index, value} => task_state.url.insert_subdomain_segment_at       (*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.into_owned())?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")] Self::InsertDomainSuffixSegmentAt    {index, value} => task_state.url.insert_domain_suffix_segment_at   (*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.into_owned())?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")] Self::InsertDomainSegmentAfter       {index, value} => task_state.url.insert_domain_segment_after       (*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.into_owned())?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")] Self::InsertSubdomainSegmentAfter    {index, value} => task_state.url.insert_subdomain_segment_after    (*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.into_owned())?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")] Self::InsertDomainSuffixSegmentAfter {index, value} => task_state.url.insert_domain_suffix_segment_after(*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.into_owned())?,
+            Self::SetDomainSegment               {index, value} => task_state.url.set_domain_segment                (*index, get_new_option_str!(value, task_state))?,
+            Self::SetSubdomainSegment            {index, value} => task_state.url.set_subdomain_segment             (*index, get_new_option_str!(value, task_state))?,
+            Self::SetDomainSuffixSegment         {index, value} => task_state.url.set_domain_suffix_segment         (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertDomainSegmentAt          {index, value} => task_state.url.insert_domain_segment_at          (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertSubdomainSegmentAt       {index, value} => task_state.url.insert_subdomain_segment_at       (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainSuffixSegmentAt    {index, value} => task_state.url.insert_domain_suffix_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainSegmentAfter       {index, value} => task_state.url.insert_domain_segment_after       (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertSubdomainSegmentAfter    {index, value} => task_state.url.insert_subdomain_segment_after    (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainSuffixSegmentAfter {index, value} => task_state.url.insert_domain_suffix_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
 
             Self::EnsureFqdnPeriod => task_state.url.set_fqdn(true)?,
             Self::RemoveFqdnPeriod => task_state.url.set_fqdn(false)?,
 
             // Path
 
-            Self::SetPath(StringSource::String(to)) => task_state.url.set_path(to),
-            Self::SetPath(to) => task_state.url.set_path(&to.get(&task_state.to_view())?.map(Cow::into_owned).ok_or(ActionError::PathCannotBeNone)?),
+            Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
 
-            Self::SetPathSegment    {index, value: StringSource::String(value)} => task_state.url.set_path_segment(*index, Some(value))?,
-            Self::SetPathSegment    {index, value} => task_state.url.set_path_segment(*index, value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
-
-            Self::RemovePathSegment (index) => task_state.url.set_path_segment(*index, None)?,
-
-            Self::InsertPathSegmentAt {index, value: StringSource::String(value)} => task_state.url.insert_path_segment_at(*index, value)?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-            Self::InsertPathSegmentAt {index, value} => task_state.url.insert_path_segment_at(*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.to_string())?,
-
-            Self::InsertPathSegmentAfter {index, value: StringSource::String(value)} => task_state.url.insert_path_segment_after(*index, value)?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-            Self::InsertPathSegmentAfter {index, value} => task_state.url.insert_path_segment_after(*index, &value.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?.to_string())?,
+            Self::RemovePathSegment      (index) => task_state.url.set_path_segment(*index, None)?,
+            Self::SetPathSegment         {index, value} => task_state.url.set_path_segment         (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertPathSegmentAt    {index, value} => task_state.url.insert_path_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertPathSegmentAfter {index, value} => task_state.url.insert_path_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
 
             // Query
 
-            Self::SetQuery(StringSource::String(to)) => task_state.url.set_query(Some(to)),
-            Self::SetQuery(to) => task_state.url.set_query(to.get(&task_state.to_view())?.map(Cow::into_owned).as_deref()),
+            Self::SetQuery(to) => task_state.url.set_query(get_new_option_str!(to, task_state)),
             Self::RemoveQuery => task_state.url.set_query(None),
             Self::RemoveEmptyQuery => if task_state.url.query() == Some("") {task_state.url.set_query(None)},
-            Self::RemoveQueryParam(StringSource::String(name)) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                for param in query.split('&') {
-                    if peh(param.split('=').next().expect("The first segment to always exist.")) != *name {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
-            },
             Self::RemoveQueryParam(name) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
-                let name = get_string!(name, task_state, ActionError);
+                let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
                     if peh(param.split('=').next().expect("The first segment to always exist.")) != name {
                         if !new.is_empty() {new.push('&');}
@@ -1225,21 +1169,9 @@ impl Action {
                     task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
                 }
             },
-            Self::AllowQueryParam(StringSource::String(name)) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                for param in query.split('&') {
-                    if peh(param.split('=').next().expect("The first segment to always exist.")) == *name {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
-            },
             Self::AllowQueryParam(name) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
-                let name = get_string!(name, task_state, ActionError);
+                let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
                     if peh(param.split('=').next().expect("The first segment to always exist.")) == name {
                         if !new.is_empty() {new.push('&');}
@@ -1314,18 +1246,11 @@ impl Action {
                 }
             },
 
-            Self::GetUrlFromQueryParam(name) => {
-                let name = match name {
-                    StringSource::String(name) => Cow::Borrowed(&**name),
-                    _ => name.get(&task_state.to_view())?.ok_or(ActionError::StringSourceIsNone)?
-                };
-
-                match task_state.url.query_param(&name, 0) {
-                    Some(Some(Some(new_url))) => {*task_state.url = BetterUrl::parse(&new_url)?;},
-                    Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
-                    Some(None)                => Err(ActionError::QueryParamNotFound)?,
-                    None                      => Err(ActionError::NoQuery)?
-                }
+            Self::GetUrlFromQueryParam(name) => match task_state.url.query_param(get_str!(name, task_state, ActionError), 0) {
+                Some(Some(Some(new_url))) => {*task_state.url = BetterUrl::parse(&new_url)?;},
+                Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
+                Some(None)                => Err(ActionError::QueryParamNotFound)?,
+                None                      => Err(ActionError::NoQuery)?
             },
 
             // Fragment
@@ -1335,9 +1260,7 @@ impl Action {
 
             // General parts
 
-            Self::SetPart {part, value: StringSource::String(value)} => part.set(task_state.url, Some(value))?,
-            Self::SetPart {part, value: StringSource::None         } => part.set(task_state.url, None)?,
-            Self::SetPart {part, value                             } => part.set(task_state.url, value.get(&task_state.to_view())?.map(Cow::into_owned).as_deref())?,
+            Self::SetPart {part, value} => part.set(task_state.url, get_new_option_str!(value, task_state))?,
 
             Self::ModifyPart {part, modification} => {
                 let mut temp = part.get(task_state.url);
@@ -1398,16 +1321,16 @@ impl Action {
                     false => task_state.scratchpad.flags.remove(&name)
                 };
             },
-            Self::SetScratchpadVar {name, value} => match value.get(&task_state.to_view())?.map(Cow::into_owned) {
+            Self::SetScratchpadVar {name, value} => match get_option_string!(value, task_state) {
                 Some(value) => {let _ = task_state.scratchpad.vars.insert( get_string!(name, task_state, ActionError), value);}
                 None        => {let _ = task_state.scratchpad.vars.remove(&get_string!(name, task_state, ActionError));}
             },
             Self::ModifyScratchpadVar {name, modification} => {
-                let name = get_string!(name, task_state, ActionError).to_owned();
+                let name = get_string!(name, task_state, ActionError);
                 let mut value = task_state.scratchpad.vars.get(&name).map(|x| Cow::Borrowed(&**x));
                 modification.apply(&mut value, &task_state.to_view())?;
                 match value {
-                    Some(value) => {let _ = task_state.scratchpad.vars.insert(name, value.into_owned());},
+                    Some(value) => {let _ = task_state.scratchpad.vars.insert( name, value.into_owned());},
                     None        => {let _ = task_state.scratchpad.vars.remove(&name);}
                 }
             },
@@ -1448,8 +1371,7 @@ impl Action {
                     unthreader : task_state.unthreader
                 })?
             },
-            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(         name                          ).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,
-            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,
+            Self::CommonCallArg(name) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         };

@@ -227,14 +227,14 @@
 					"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "abc7.la", "abc7ne.ws", "abcnews.link", "ab.co", "a.co", "adobe.ly", "aje.io", "amzn.asia", "amzn.eu",
 					"amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly",
 					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "click.linksynergy.com",
-					"cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn", "fanga.me", "fb.me",
-					"fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com",
-					"goodsmile.link", "goo.gl", "goo.gle", "goo.su", "got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt", "is.gd",
-					"iwe.one", "jbgm.es", "j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.euronews.com", "line.ee", "link.animaapp.com", "linkr.it", "l.leparisien.fr",
-					"lnkd.in", "loom.ly", "lpc.ca", "mol.im", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "ninten.do", "n.opn.tl", "n.pr",
-					"ntdo.co.uk", "nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "onl.tw",
-					"on.msnbc.com", "on.nyc.gov", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me", "politi.co",
-					"prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it",
+					"cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cp2077.ly", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn",
+					"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov",
+					"go.nature.com", "goodsmile.link", "goo.gl", "goo.gle", "goo.su", "got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
+					"is.gd", "iwe.one", "jbgm.es", "j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.euronews.com", "line.ee", "link.animaapp.com", "linkr.it",
+					"l.leparisien.fr", "lnkd.in", "loom.ly", "lpc.ca", "mol.im", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "ninten.do",
+					"n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la",
+					"onl.sc", "onl.tw", "on.msnbc.com", "on.nyc.gov", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me",
+					"politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it",
 					"redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s76.co", "s.goodsmile.link", "share.firefox.dev", "shor.tf", "shorturl.at",
 					"sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm",
 					"thrn.co", "tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa",
@@ -1286,7 +1286,7 @@
 						"bell.ca": {"All": [
 							{"RemoveQueryParam": "INT"},
 							{"If": {
-								"if": {"TreatErrorAsFail": {"PartContains": {"part": "Fragment", "at": "Start", "value": "INT="}}},
+								"if": {"FragmentIsSomeAndStartsWith": "INT="},
 								"then": "RemoveFragment"
 							}}
 						]},

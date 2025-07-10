@@ -43,43 +43,76 @@ macro_rules! string_or_struct_magic {
     }
 }
 
+/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`String`].
+macro_rules! get_option_string {
+    ($value:expr, $task_state:expr) => {
+        get_option_cow!($value, $task_state).map(std::borrow::Cow::into_owned)
+    }
+}
+
+/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
+macro_rules! get_option_str {
+    ($value:expr, $task_state:expr) => {
+        get_option_cow!($value, $task_state).as_deref()
+    }
+}
+
+/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
+macro_rules! get_new_option_str {
+    ($value:expr, $task_state:expr) => {
+        get_option_string!($value, $task_state).as_deref()
+    }
+}
+
+/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`Cow`].
+macro_rules! get_option_cow {
+    ($value:expr, $task_state:expr) => {
+        match $value {
+            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
+            StringSource::None => None,
+            value => value.get(&$task_state.to_view())?
+        }
+    }
+}
+
 /// Helper macro to get a [`StringSource`]'s value as a [`String`] or return an error if it's [`None`].
 macro_rules! get_string {
     ($value:expr, $task_state:expr, $error:ty) => {
-        $value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?.into_owned()
+        get_cow!($value, $task_state, $error).into_owned()
     }
 }
 
 /// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
 macro_rules! get_str {
     ($value:expr, $task_state:expr, $error:ty) => {
-        &*$value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
+        &*get_cow!($value, $task_state, $error)
+    }
+}
+
+/// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
+macro_rules! get_new_str {
+    ($value:expr, $task_state:expr, $error:ty) => {
+        &*get_string!($value, $task_state, $error)
     }
 }
 
 /// Helper macro to get a [`StringSource`]'s value as a [`Cow`] or return an error if it's [`None`].
 macro_rules! get_cow {
     ($value:expr, $task_state:expr, $error:ty) => {
-        $value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
-    }
-}
-
-/// Helper macro to impl [`From`] for unit types like [`SetPortError`].
-macro_rules! from_units {
-    ($sum:ty, $($unit:tt),*) => {
-        $(impl From<$unit> for $sum {
-            #[doc = concat!("[`Self::", stringify!($unit), "`]")]
-            fn from(value: $unit) -> Self {
-                // Ensures the type is actually a unit.
-                match value {$unit => Self::$unit}
-            }
-        })*
+        match $value.get_self() {
+            StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
+            value => value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
+        }
     }
 }
 
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
+pub(crate) use get_new_str;
 pub(crate) use get_string;
 pub(crate) use get_cow;
-pub(crate) use from_units;
+pub(crate) use get_option_str;
+pub(crate) use get_new_option_str;
+pub(crate) use get_option_string;
+pub(crate) use get_option_cow;
 pub(crate) use url_cleaner_macros::edoc;

@@ -992,10 +992,10 @@ pub enum Condition {
     FragmentIsOneOf(Set<String>),
     /// Passes if the [`Url::fragment`] is in the specified [`Params::sets`] [`Set`].
     FragmentIsInSet(String),
-    /// Passes if the [`Url::fragment`] starts with the specified value.
+    /// Passes if the [`Url::fragment`] is [`Some`] and starts with the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
-    FragmentStartsWith(StringSource),
+    FragmentIsSomeAndStartsWith(StringSource),
 
     // General parts
 
@@ -1262,11 +1262,8 @@ impl Condition {
             Self::PartMap  {part , map} => if let Some(condition) = map.get(part .get(task_state.url) ) {condition.check(task_state)?} else {false},
             Self::StringMap{value, map} => if let Some(condition) = map.get(value.get(task_state    )?) {condition.check(task_state)?} else {false},
 
-            Self::PartNamedPartitioning   {named_partitioning: StringSource::String(named_partitioning), part , map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringNamedPartitioning {named_partitioning: StringSource::String(named_partitioning), value, map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(named_partitioning).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {condition.check(task_state)?} else {false},
-
-            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ConditionError::StringSourceIsNone)?).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part .get( task_state.url      ) .as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(&*named_partitioning.get(&task_state.to_view())?.ok_or(ConditionError::StringSourceIsNone)?).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(value.get(&task_state.to_view())?.as_deref())) {condition.check(task_state)?} else {false},
+            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ConditionError)).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part.get(task_state.url).as_deref())) {condition.check(task_state)?} else {false},
+            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ConditionError)).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(get_option_str!(value, task_state)) ) {condition.check(task_state)?} else {false},
 
             // Params
 
@@ -1280,11 +1277,10 @@ impl Condition {
 
             // String source
 
-            Self::StringIs {left, right: StringSource::String(right)} => left.get(task_state)?.as_deref() == Some(right),
-            Self::StringIs {left, right} => left.get(task_state)? == right.get(task_state)?,
+            Self::StringIs {left, right} => get_option_cow!(left, task_state) == get_option_cow!(right, task_state),
             Self::StringIsSome(value) => value.get(task_state)?.is_some(),
             Self::StringContains {value, substring, at} => at.check(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
-            Self::StringMatches {value, matcher} => matcher.check(value.get(task_state)?.as_deref(), task_state)?,
+            Self::StringMatches {value, matcher} => matcher.check(get_option_str!(value, task_state), task_state)?,
 
             // Whole
 
@@ -1292,49 +1288,24 @@ impl Condition {
 
             // Scheme
 
-            Self::SchemeIs(StringSource::String(value)) => task_state.url.scheme() == value,
-            Self::SchemeIs(value) => Some(task_state.url.scheme()) == value.get(task_state)?.as_deref(),
+            Self::SchemeIs(value) => task_state.url.scheme() == get_str!(value, task_state, ConditionError),
             Self::SchemeIsOneOf(values) => values.contains(Some(task_state.url.scheme())),
             Self::SchemeIsInSet(set) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.scheme())),
 
             // Host is
 
-            Self::HostIs           (StringSource::String(x)) => task_state.url.host_str         () == Some(x),
-            Self::NormalizedHostIs (StringSource::String(x)) => task_state.url.normalized_host  () == Some(x),
-            Self::SubdomainIs      (StringSource::String(x)) => task_state.url.subdomain        () == Some(x),
-            Self::RegDomainIs      (StringSource::String(x)) => task_state.url.reg_domain       () == Some(x),
-            Self::DomainIs         (StringSource::String(x)) => task_state.url.domain           () == Some(x),
-            Self::DomainMiddleIs   (StringSource::String(x)) => task_state.url.domain_middle    () == Some(x),
-            Self::NotDomainSuffixIs(StringSource::String(x)) => task_state.url.not_domain_suffix() == Some(x),
-            Self::DomainSuffixIs   (StringSource::String(x)) => task_state.url.domain_suffix    () == Some(x),
+            Self::HostIs           (x) => task_state.url.host_str         () == get_option_str!(x, task_state),
+            Self::NormalizedHostIs (x) => task_state.url.normalized_host  () == get_option_str!(x, task_state),
+            Self::SubdomainIs      (x) => task_state.url.subdomain        () == get_option_str!(x, task_state),
+            Self::RegDomainIs      (x) => task_state.url.reg_domain       () == get_option_str!(x, task_state),
+            Self::DomainIs         (x) => task_state.url.domain           () == get_option_str!(x, task_state),
+            Self::DomainMiddleIs   (x) => task_state.url.domain_middle    () == get_option_str!(x, task_state),
+            Self::NotDomainSuffixIs(x) => task_state.url.not_domain_suffix() == get_option_str!(x, task_state),
+            Self::DomainSuffixIs   (x) => task_state.url.domain_suffix    () == get_option_str!(x, task_state),
 
-            Self::HostIs           (StringSource::None) => task_state.url.host_str         ().is_none(),
-            Self::NormalizedHostIs (StringSource::None) => task_state.url.normalized_host  ().is_none(),
-            Self::SubdomainIs      (StringSource::None) => task_state.url.subdomain        ().is_none(),
-            Self::RegDomainIs      (StringSource::None) => task_state.url.reg_domain       ().is_none(),
-            Self::DomainIs         (StringSource::None) => task_state.url.domain           ().is_none(),
-            Self::DomainMiddleIs   (StringSource::None) => task_state.url.domain_middle    ().is_none(),
-            Self::NotDomainSuffixIs(StringSource::None) => task_state.url.not_domain_suffix().is_none(),
-            Self::DomainSuffixIs   (StringSource::None) => task_state.url.domain_suffix    ().is_none(),
-
-            Self::HostIs           (x) => task_state.url.host_str         () == x.get(task_state)?.as_deref(),
-            Self::NormalizedHostIs (x) => task_state.url.normalized_host  () == x.get(task_state)?.as_deref(),
-            Self::SubdomainIs      (x) => task_state.url.subdomain        () == x.get(task_state)?.as_deref(),
-            Self::RegDomainIs      (x) => task_state.url.reg_domain       () == x.get(task_state)?.as_deref(),
-            Self::DomainIs         (x) => task_state.url.domain           () == x.get(task_state)?.as_deref(),
-            Self::DomainMiddleIs   (x) => task_state.url.domain_middle    () == x.get(task_state)?.as_deref(),
-            Self::NotDomainSuffixIs(x) => task_state.url.not_domain_suffix() == x.get(task_state)?.as_deref(),
-            Self::DomainSuffixIs   (x) => task_state.url.domain_suffix    () == x.get(task_state)?.as_deref(),
-
-            Self::DomainSegmentIs       {index, value: StringSource::String(value)} => task_state.url.domain_segment       (*index) == Some(value),
-            Self::SubdomainSegmentIs    {index, value: StringSource::String(value)} => task_state.url.subdomain_segment    (*index) == Some(value),
-            Self::DomainSuffixSegmentIs {index, value: StringSource::String(value)} => task_state.url.domain_suffix_segment(*index) == Some(value),
-            Self::DomainSegmentIs       {index, value: StringSource::None         } => task_state.url.domain_segment       (*index).is_none(),
-            Self::SubdomainSegmentIs    {index, value: StringSource::None         } => task_state.url.subdomain_segment    (*index).is_none(),
-            Self::DomainSuffixSegmentIs {index, value: StringSource::None         } => task_state.url.domain_suffix_segment(*index).is_none(),
-            Self::DomainSegmentIs       {index, value                             } => task_state.url.domain_segment       (*index) == value.get(task_state)?.as_deref(),
-            Self::SubdomainSegmentIs    {index, value                             } => task_state.url.subdomain_segment    (*index) == value.get(task_state)?.as_deref(),
-            Self::DomainSuffixSegmentIs {index, value                             } => task_state.url.domain_suffix_segment(*index) == value.get(task_state)?.as_deref(),
+            Self::DomainSegmentIs       {index, value} => task_state.url.domain_segment       (*index) == get_option_str!(value, task_state),
+            Self::SubdomainSegmentIs    {index, value} => task_state.url.subdomain_segment    (*index) == get_option_str!(value, task_state),
+            Self::DomainSuffixSegmentIs {index, value} => task_state.url.domain_suffix_segment(*index) == get_option_str!(value, task_state),
 
             // Host is one of
 
@@ -1377,8 +1348,7 @@ impl Condition {
 
             // Path
 
-            Self::PathIs(StringSource::String(value)) => task_state.url.path() == value,
-            Self::PathIs(value                      ) => Some(task_state.url.path()) == value.get(task_state)?.as_deref(),
+            Self::PathIs(value) => task_state.url.path() == get_str!(value, task_state, ConditionError),
 
             Self::PathIsOneOf   (values) => values.contains(Some(task_state.url.path())),
             Self::PathIsInSet   (set   ) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
@@ -1386,49 +1356,37 @@ impl Condition {
 
             Self::PathHasSegments => task_state.url.path_has_segments(),
             Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_ok_and(|segment| segment.is_none()),
-            Self::PathSegmentIs {index, value: StringSource::String(value)} => task_state.url.path_segment(*index)? == Some(value),
-            Self::PathSegmentIs {index, value: StringSource::None         } => task_state.url.path_segment(*index)?.is_none(),
-            Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index)? == value.get(task_state)?.as_deref(),
+            Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index)? == get_option_str!(value, task_state),
 
             Self::PathSegmentIsOneOf {index, values} => values.contains(task_state.url.path_segment(*index)?),
             Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index)?),
 
             // Query
 
-            Self::QueryIs(StringSource::String(value)) => task_state.url.query() == Some(value),
-            Self::QueryIs(StringSource::None         ) => task_state.url.query().is_none(),
-            Self::QueryIs(value                      ) => task_state.url.query() == value.get(task_state)?.as_deref(),
+            Self::QueryIs(value) => task_state.url.query() == get_option_str!(value, task_state),
 
             Self::HasQueryParam(QueryParamSelector {name, index}) => task_state.url.has_query_param(name, *index),
 
-            Self::QueryParamIs {param: QueryParamSelector {name, index}, value: StringSource::String(value)} => task_state.url.query_param(name, *index).flatten().flatten().as_deref() == Some(value),
-            Self::QueryParamIs {param: QueryParamSelector {name, index}, value: StringSource::None         } => task_state.url.query_param(name, *index).flatten().flatten().is_none(),
-            Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten() == value.get(task_state)?,
+            Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten() == get_option_cow!(value, task_state),
 
             Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => values.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
             Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
 
             // Fragment
 
-            Self::FragmentIs(StringSource::String(value)) => task_state.url.fragment() == Some(value),
-            Self::FragmentIs(StringSource::None         ) => task_state.url.fragment().is_none(),
-            Self::FragmentIs(value                      ) => task_state.url.fragment() == value.get(task_state)?.as_deref(),
-
-            Self::FragmentIsOneOf(values) => values.contains(task_state.url.fragment()),
-
-            Self::FragmentIsInSet(set) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
-
-            Self::FragmentStartsWith(StringSource::String(value)) => task_state.url.fragment() == Some(value),
-            Self::FragmentStartsWith(value                      ) => task_state.url.fragment() == value.get(task_state)?.as_deref(),
+            Self::FragmentIs                 (value ) => task_state.url.fragment() == get_option_str!(value, task_state),
+            Self::FragmentIsOneOf            (values) => values.contains(task_state.url.fragment()),
+            Self::FragmentIsInSet            (set   ) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
+            Self::FragmentIsSomeAndStartsWith(value ) => match task_state.url.fragment() {
+                Some(fragment) => fragment.starts_with(get_str!(value, task_state, ConditionError)),
+                None => false
+            },
 
             // General parts
 
-            Self::PartIs {part, value: StringSource::String(value)} => part.get(task_state.url).as_deref() == Some(value),
-            Self::PartIs {part, value: StringSource::None         } => part.get(task_state.url).is_none(),
-            Self::PartIs {part, value                             } => part.get(task_state.url).as_deref() == value.get(task_state)?.as_deref(),
+            Self::PartIs {part, value} => part.get(task_state.url) == get_option_cow!(value, task_state),
 
-            Self::PartContains {part, value: StringSource::String(value), at} => at.check(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, value)?,
-            Self::PartContains {part, value                             , at} => at.check(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartContains {part, value, at} => at.check(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
 
             Self::PartMatches {part, matcher} => matcher.check   (part.get(task_state.url).as_deref(), task_state)?,
             Self::PartIsOneOf {part, values } => values .contains(part.get(task_state.url).as_deref()),
@@ -1450,8 +1408,7 @@ impl Condition {
                     unthreader : task_state.unthreader
                 })?
             },
-            Self::CommonCallArg(StringSource::String(name)) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(         name                             ).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
-            Self::CommonCallArg(name                      ) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
+            Self::CommonCallArg(name) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         })

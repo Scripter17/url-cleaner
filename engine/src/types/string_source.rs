@@ -794,13 +794,18 @@ impl From<StringMatcherError> for StringSourceError {
 }
 
 impl StringSource {
+    /// "Deref patterns at home" for internal macros.
+    pub(crate) fn get_self(&self) -> &Self {
+        self
+    }
+    
     /// Get the string.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
         debug!(StringSource::get, self);
         Ok(match self {
-            Self::String(string) => Some(Cow::Borrowed(string.as_str())),
+            Self::String(string) => Some(Cow::Borrowed(string)),
             Self::None => None,
             Self::Error(msg) => Err(StringSourceError::ExplicitError(msg.clone()))?,
             Self::ErrorToNone(value) => value.get(task_state).ok().flatten(),
@@ -927,10 +932,7 @@ impl StringSource {
                     unthreader : task_state.unthreader
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
-            Self::CommonCallArg(name) => match &**name {
-                StringSource::String(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(         name                                ).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,
-                _                          => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?
-            },
+            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,
             #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         })
