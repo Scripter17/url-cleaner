@@ -27,7 +27,7 @@ window.config = {
 			api_request_error: true,
 			api_response_info: false,
 			other_timing_info: false,
-			new_host_parts   : true,
+			new_suffix       : true,
 			href_mutations   : false,
 			max_json_size    : false
 		},
@@ -166,7 +166,7 @@ function element_to_task_config(element) {
 		// If this happens, just replace it with a dummy value and hope the unmangling works.
 		// In Rust this would be 0.5 lines (https://youtube.com/watch?v=kpk2tdsPh0A).
 		let url;
-		if URL.canParse(element.href) {
+		if (URL.canParse(element.href)) {
 			url = element.href;
 		} else {
 			url = "https://example.com/PARSE_URL_ERROR";
@@ -216,31 +216,38 @@ async function get_job_context() {
 		ret.vars.SOURCE_HOST = window.location.hostname;
 		ret.vars.SOURCE_NORMALIZED_HOST = ret.vars.SOURCE_HOST.replace(/^www\./g, "").replace(/\.$/g, "");
 
-		let domain_parts = (await get_host_parts(window.location.hostname))?.Ok?.Domain;
-		if (domain_parts) {
-			for (let part of ["reg_domain"]) {
-				if (domain_parts[part]) {
-					ret.vars["SOURCE_" + part.toUpperCase()] = domain_parts[part];
-				}
-			}
+		let reg_domain = await get_reg_domain(window.location.hostname);
+		if (reg_domain) {
+			ret.vars["SOURCE_REG_DOMAIN"] = reg_domain;
 		}
 	}
 
 	return ret;
 }
 
-// Get the details of a host.
-// Used by the default config to handle websites adding their own tracking parameters to links.
-async function get_host_parts(host) {
-	let cached = await GM.getValue(`host-parts-of-${host}`);
-	if (cached != null) {return JSON.parse(cached);}
+async function get_reg_domain(host) {
+	if ((suffix = await get_domain_suffix(host)) && suffix) {
+		if ((x = new RegExp(`([^.]+\.${suffix})\.?`, "g").exec(host)) && x) {
+			return x[1];
+		}
+	}
+}
 
-	if (window.config.debug.log.new_host_parts) {console.log(`[URLC] Host parts for "${host}" not found in the cache. Querying URL Cleaner Site...`)}
+async function get_domain_suffix(host) {
+	if (await GM.getValue(`is-suffix-${host}`) == "yes") {
+		return host;
+	} else if (host.indexOf(".") != -1) {
+		if ((ret = await get_domain_suffix(host.slice(host.indexOf(".") + 1))) && ret) {
+			return ret;
+		}
+	}
+
+	if (window.config.debug.log.new_suffix) {console.log(`[URLC] DomainSuffix for "${host}" not found in the cache. Querying URL Cleaner Site...`)}
 
 	let done;
 	let doneawaiter = new Promise(resolve => {done = resolve;});
 	await GM.xmlHttpRequest({
-		url: `${window.config.instance}/get-host-and-parent-domains-parts`,
+		url: `${window.config.instance}/get-domain-suffix`,
 		method: "POST",
 		data: window.location.hostname,
 		onload: function(response) {done(response.responseText);}
@@ -248,14 +255,10 @@ async function get_host_parts(host) {
 	let response = JSON.parse(await doneawaiter);
 
 	if (response.Ok) {
-		for (let x in response.Ok) {
-			await GM.setValue(`host-parts-of-${x}`, JSON.stringify(response.Ok[x]));
-		}
-
-		return response.Ok[host];
+		await GM.setValue(`is-suffix-${response.Ok}`, "yes");
+		return response.Ok;
 	} else {
 		console.error(`[URLC] Failed to get host parts of ${host} and its parent.`, response);
-		return {};
 	}
 }
 

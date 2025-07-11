@@ -4,9 +4,9 @@
 
 pub mod clean;
 pub use clean::*;
-pub mod get_host_parts;
-pub use get_host_parts::*;
+pub mod get_domain_suffix;
+pub use get_domain_suffix::*;
 pub(crate) mod util;
 
 pub use clean::{JobConfig, CleanResult};
-pub use get_host_parts::GetHostPartsResult;
+pub use get_domain_suffix::GetDomainSuffixResult;
