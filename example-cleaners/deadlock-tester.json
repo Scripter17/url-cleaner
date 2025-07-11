@@ -1,0 +1,15 @@
+{
+  "docs": {
+    "name": "Deadlock tester"
+  },
+  "actions": [
+    {"CacheUrl": {
+      "subject": {"Cache": {
+        "subject": "a",
+        "key": "a",
+        "value": "a"
+      }},
+      "action": "None"
+    }}
+  ]
+}

@@ -15,6 +15,8 @@ use crate::glue::*;
 use crate::util::*;
 
 /// Dynamically get strings from either literals or various parts of a [`TaskStateView`].
+///
+/// The order things call [`Self::get`] is not considered stable. If your [`Cleaner`] cares about the order [`Self::get`] is called, you are in the wrong.
 /// # Deserialization
 /// Deserializing from a string produces a [`Self::String`] with that string.
 ///
@@ -898,8 +900,9 @@ impl StringSource {
 
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
-                let subject = get_string!(subject, task_state, StringSourceError);
-                let key = get_string!(key, task_state, StringSourceError);
+                let _unthreader_lock = task_state.unthreader.unthread();
+                let subject = get_cow!(subject, task_state, StringSourceError);
+                let key = get_cow!(key, task_state, StringSourceError);
                 if task_state.params.read_cache {
                     if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
                         return Ok(entry.value.map(Cow::Owned));

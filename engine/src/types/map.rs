@@ -76,8 +76,23 @@ pub struct MapDiff<T> {
 
 impl<T: Debug> MapDiff<T> {
     /// Applies the diff.
-    pub fn apply(self, to: &mut Map<T>) {
+    ///
+    /// If you want to apply `self` mutliple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then usine [`Self::apply_once`] on each clone.
+    pub fn apply_once(self, to: &mut Map<T>) {
+        debug!(MapDiff::apply_once, &self, to);
         to.map.extend(self.insert);
         to.map.retain(|k, _| !self.remove.contains(k));
     }
+}
+
+impl<T: Debug + Clone> MapDiff<T> {
+    /// Applies the diff.
+    ///
+    /// If you only want to apply `self` once, use [`Self::apply_once`].
+    pub fn apply_multiple(&self, to: &mut Map<T>) {
+        debug!(MapDiff::apply_multiple, self, to);
+        to.map.extend(self.insert.iter().map(|(k, v)| (k.clone(), v.clone())));
+        to.map.retain(|k, _| !self.remove.contains(k));
+    }
+    
 }

@@ -147,7 +147,7 @@ impl<'a> TaskStateView<'a> {
 
         let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
 
-        if let Some(diff) = http_client_config_diff {diff.apply(http_client_config.to_mut());}
+        if let Some(diff) = http_client_config_diff {diff.apply_multiple(http_client_config.to_mut());}
 
         http_client_config.make()
     }

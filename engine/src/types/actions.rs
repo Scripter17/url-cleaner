@@ -10,7 +10,7 @@ use thiserror::Error;
 #[cfg(feature = "http")]
 use reqwest::header::HeaderMap;
 #[expect(unused_imports, reason = "Used in doc comment.")]
-use url::Url;
+use url::{Url, PathSegmentsMut};
 
 use crate::glue::*;
 use crate::types::*;
@@ -215,7 +215,7 @@ pub enum Action {
 
 
 
-    /// Repeat [`Self::Repeat::actions`] until either no changes happen or the rules were executed [`Self::Repeat::limit`] times.
+    /// Repeat [`Self::Repeat::actions`] until either the [`TaskState::url`] and [`TaskState::scratchpad`] end up in the same state or the rules were executed [`Self::Repeat::limit`] times.
     /// # Errors
     #[doc = edoc!(applyerr(Self, 3))]
     Repeat {
@@ -470,6 +470,14 @@ pub enum Action {
         /// The value to insert.
         value: StringSource
     },
+    /// [`PathSegmentsMut::pop_if_empty`].
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::path_segments_mut))]
+    RemoveEmptyLastPathSegment,
+    /// [`PathSegmentsMut::pop_if_empty`] and [`PathSegmentsMut::push`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::path_segments_mut))]
+    RemoveEmptyLastPathSegmentAndInsertNew(StringSource),
 
 
 
@@ -939,6 +947,9 @@ pub enum ActionError {
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
+    /// Returned when a [`UrlDoesNotHavePathSegments`] is encountered.
+    #[error(transparent)]
+    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
     /// Returned when a [`SetPathSegmentError`] is encountered.
     #[error(transparent)]
     SetPathSegmentError(#[from] SetPathSegmentError),
@@ -1103,7 +1114,7 @@ impl Action {
             },
 
             // Maps
-            
+
             Self::PartMap   {part , map} => if let Some(action) = map.get(part .get( task_state.url      ) ) {action.apply(task_state)?;},
             Self::StringMap {value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
 
@@ -1116,7 +1127,7 @@ impl Action {
             Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, ActionError))?.into(),
 
             // Scheme
-            
+
             Self::SetScheme(to) => task_state.url.set_scheme(get_new_str!(to, task_state, ActionError))?,
 
             // Domain
@@ -1150,6 +1161,13 @@ impl Action {
             Self::SetPathSegment         {index, value} => task_state.url.set_path_segment         (*index, get_new_option_str!(value, task_state))?,
             Self::InsertPathSegmentAt    {index, value} => task_state.url.insert_path_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
             Self::InsertPathSegmentAfter {index, value} => task_state.url.insert_path_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
+            Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut()?.pop_if_empty();},
+            Self::RemoveEmptyLastPathSegmentAndInsertNew(value) => {
+                let value = get_new_str!(value, task_state, ActionError);
+                let mut segments_mut = task_state.url.path_segments_mut()?;
+                segments_mut.pop_if_empty();
+                segments_mut.push(value);
+            },
 
             // Query
 

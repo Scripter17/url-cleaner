@@ -422,6 +422,34 @@ pub enum StringModification {
 
 
 
+    /// [`Self::KeepAfter`] but does nothing if the substring isn't found.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError))]
+    KeepMaybeBefore(StringSource),
+    /// [`Self::StripBefore`] but does nothing if the substring isn't found.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError))]
+    StripMaybeBefore(StringSource),
+    /// [`Self::KeepBetween`] but with [`Self::KeepAfter`] [`Self::KeepBefore`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 2), getnone(StringSource, StringModification, 2))]
+    KeepMaybeBetween {
+        /// The value to [`Self::KeepMaybeAfter`].
+        start: StringSource,
+        /// The value to [`Self::KeepMaybeBefore`].
+        end: StringSource
+    },
+    /// [`Self::StripAfter`] but does nothing if the substring isn't found.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError))]
+    StripMaybeAfter(StringSource),
+    /// [`Self::KeepAfter`] but does nothing if the substring isn't found.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError))]
+    KeepMaybeAfter(StringSource),
+
+
+
     /// Replace up to [`Self::Replacen::count`] instances of [`Self::Replacen::find`] with [`Self::Replacen::replace`].
     ///
     /// See [`str::replacen`] for details.
@@ -1063,8 +1091,8 @@ impl StringModification {
             Self::Set(value)     => *to = value.get(task_state)?.map(|x| Cow::Owned(x.into_owned())),
             Self::Append(value)  => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().push_str(get_str!(value, task_state, StringModificationError)),
             Self::Prepend(value) => {
-                let suffix = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let mut ret=get_string!(value, task_state, StringModificationError);
+                let suffix = to.as_deref().ok_or(StringModificationError::StringIsNone)?;
+                let mut ret = get_string!(value, task_state, StringModificationError);
                 ret.push_str(suffix);
                 *to=Some(Cow::Owned(ret));
             },
@@ -1173,6 +1201,68 @@ impl StringModification {
                 match to {
                     Cow::Owned(inner) => {inner.drain(..(inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()));},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()..])
+                }
+            },
+
+
+
+            Self::KeepMaybeBefore(s) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let s = get_str!(s, task_state, StringModificationError);
+                if let Some(i) = to.find(s) {
+                    match to {
+                        Cow::Owned(inner) => {inner.drain(i..);},
+                        Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..i])
+                    }
+                }
+            },
+            Self::StripMaybeBefore(s) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let s = get_str!(s, task_state, StringModificationError);
+                if let Some(i) = to.find(s) {
+                    match to {
+                        Cow::Owned(inner) => {inner.drain(..i);},
+                        Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[i..])
+                    }
+                }
+            },
+            Self::KeepMaybeBetween {start, end} => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                *to = match to {
+                    Cow::Borrowed(inner) => {
+                        let mut temp = &**inner;
+                        temp = temp.split_once(get_str!(start, task_state, StringSourceError)).map_or(temp, |(_, x)| x);
+                        temp = temp.split_once(get_str!(end  , task_state, StringSourceError)).map_or(temp, |(x, _)| x);
+                        Cow::Borrowed(temp)
+                    },
+                    Cow::Owned(inner) => {
+                        let mut temp = &**inner;
+                        temp = temp.split_once(get_str!(start, task_state, StringSourceError)).map_or(temp, |(_, x)| x);
+                        temp = temp.split_once(get_str!(end  , task_state, StringSourceError)).map_or(temp, |(x, _)| x);
+                        Cow::Owned(temp.to_string())
+                    }
+                }
+            },
+            Self::StripMaybeAfter(s) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let s = get_str!(s, task_state, StringModificationError);
+                if let Some(i) = to.find(s) {
+                    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+                    match to {
+                        Cow::Owned(inner) => {inner.drain((i + s.len())..);},
+                        Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..i + s.len()])
+                    }
+                }
+            },
+            Self::KeepMaybeAfter(s) => {
+                let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
+                let s = get_str!(s, task_state, StringModificationError);
+                if let Some(i) = to.find(s) {
+                    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+                    match to {
+                        Cow::Owned(inner) => {inner.drain(..(i + s.len()));},
+                        Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[i + s.len()..])
+                    }
                 }
             },
 

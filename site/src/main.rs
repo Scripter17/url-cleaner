@@ -138,7 +138,7 @@ async fn rocket() -> _ {
     let mut cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
     for params_diff in args.params_diff {
         serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.")
-            .apply(cleaner.params.to_mut());
+            .apply_once(cleaner.params.to_mut());
     }
     cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
@@ -209,7 +209,7 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
         Ok(job_config) => {
             let mut cleaner = state.config.cleaner.borrowed();
             if let Some(params_diff) = job_config.params_diff {
-                params_diff.apply(cleaner.params.to_mut());
+                params_diff.apply_once(cleaner.params.to_mut());
             }
 
             let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();

@@ -1750,44 +1750,41 @@
 				{"PartMap": {
 					"part": "DomainMiddle",
 					"map": {
-						"amazon": {"All": [
-							{"If": {
-								"if": {"PartContains": {"part": "Path", "value": "/dp/"}},
-								"then": {"All": [
-									{"If": {
-										"if": {"FlagIsSet": "keep_affiliate"},
-										"then": {"AllowQueryParams": ["aod", "tag"]},
-										"else": {"AllowQueryParam": "aod"}
-									}},
-									{"ModifyPart": {"part": "Path", "modification": {"StripBefore": "/dp/"}}}
-								]},
-								"else": {"PartMap": {
-									"part": "Path",
-									"map": {
-										"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn"]},
-										"/gp/buyagain": {"AllowQueryParam": "ats"},
-										"/gp/customer-reviews": "RemoveQuery",
-										"/amazonprime": "RemoveQuery"
-									},
-									"else": {"If": {
-										"if": {"PathStartsWith": "/gp/offer-listing/"},
-										"then": {"All": [
-											{"ModifyPart": {"part": "Path", "modification": {"Replacen": {"find": "gp/offer-listing", "replace": "dp", "count": 1}}}},
-											{"SetQuery": "aod=1"}
-										]},
-										"else": {"RemoveQueryParamsMatching": {"Any": [
-											{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref"]},
-											{"StartsWith": "pd_"},
-											{"StartsWith": "pf_"}
-										]}}
-									}}
+						"amazon": {"If": {
+							"if": {"PartContains": {"part": "Path", "value": "/dp/"}},
+							"then": {"All": [
+								{"If": {
+									"if": {"FlagIsSet": "keep_affiliate"},
+									"then": {"AllowQueryParams": ["aod", "tag"]},
+									"else": {"AllowQueryParam": "aod"}
+								}},
+								{"ModifyPart": {"part": "Path", "modification": {"All": [
+									{"StripMaybeBefore": "/dp/"},
+									{"KeepBefore": "/ref="}
+								]}}}
+							]},
+							"else": {"PartMap": {
+								"part": "Path",
+								"map": {
+									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn"]},
+									"/gp/buyagain": {"AllowQueryParam": "ats"},
+									"/gp/customer-reviews": "RemoveQuery",
+									"/amazonprime": "RemoveQuery"
+								},
+								"else": {"If": {
+									"if": {"PathStartsWith": "/gp/offer-listing/"},
+									"then": {"All": [
+										{"ModifyPart": {"part": "Path", "modification": {"Replacen": {"find": "gp/offer-listing", "replace": "dp", "count": 1}}}},
+										{"SetQuery": "aod=1"}
+									]},
+									"else": {"RemoveQueryParamsMatching": {"Any": [
+										{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref"]},
+										{"StartsWith": "pd_"},
+										{"StartsWith": "pf_"}
+									]}}
 								}}
-							}},
-							{"If": {
-								"if": {"PartContains": {"part": {"PathSegment": -1}, "at": "Start", "value": "ref="}},
-								"then": {"RemovePathSegment": -1}
 							}}
-						]},
+						}},
 						"bestbuy": {"RemoveQueryParam": "icmp"},
 						"ebay": {"If": {
 							"if": {"PathStartsWith": "/itm/"},

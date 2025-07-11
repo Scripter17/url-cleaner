@@ -162,9 +162,6 @@ pub struct CacheEntryValues {
 /// The enum of errors [`Cache::read`] and [`InnerCache::read`] can return.
 #[derive(Debug, Error)]
 pub enum ReadFromCacheError {
-    /// Returned when a call to [`Mutex::lock`] returns an error.
-    #[error("{0}")]
-    MutexPoisonError(String),
     /// Returned when a [`diesel::result::Error`] is encountered.
     #[error(transparent)]
     DieselError(#[from] diesel::result::Error),
@@ -176,9 +173,6 @@ pub enum ReadFromCacheError {
 /// The enum of errors [`Cache::read`] and [`InnerCache::read`] can return.
 #[derive(Debug, Error)]
 pub enum WriteToCacheError {
-    /// Returned when a call to [`Mutex::lock`] returns an error.
-    #[error("{0}")]
-    MutexPoisonError(String),
     /// Returned when a [`diesel::result::Error`] is encountered.
     #[error(transparent)]
     DieselError(#[from] diesel::result::Error),

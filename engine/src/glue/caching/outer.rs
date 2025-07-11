@@ -1,6 +1,7 @@
 //! The home of [`Cache`].
 
-use std::sync::{Mutex, LockResult, MutexGuard};
+use std::cell::RefCell;
+use parking_lot::ReentrantMutex;
 
 #[expect(unused_imports, reason = "Used in docs.")]
 use diesel::query_builder::SqlQuery;
@@ -22,7 +23,7 @@ use super::*;
 /// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
 /// ```
 #[derive(Debug, Default)]
-pub struct Cache(pub Mutex<InnerCache>);
+pub struct Cache(pub ReentrantMutex<RefCell<InnerCache>>);
 
 impl Cache {
     /// Create a new unconnected [`Self`].
@@ -34,7 +35,7 @@ impl Cache {
 
 impl From<InnerCache> for Cache {
     fn from(value: InnerCache) -> Self {
-        Self(Mutex::new(value))
+        Self(ReentrantMutex::new(RefCell::new(value)))
     }
 }
 
@@ -45,18 +46,11 @@ impl From<CachePath> for Cache {
 }
 
 impl Cache {
-    /// Get the contained [`InnerCache`].
-    /// # Errors
-    /// If the call to [`Mutex::lock`] returns an error, that error is returned.
-    pub fn get_inner(&self) -> LockResult<MutexGuard<'_, InnerCache>> {
-        self.0.lock()
-    }
-    
     /// Reads from the cache.
     /// # Errors
     /// If the call to [`InnerCache::read`] returns an error, that error is returned.
     pub fn read(&self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        self.0.lock().map_err(|e| ReadFromCacheError::MutexPoisonError(e.to_string()))?.read(keys)
+        self.0.lock().borrow_mut().read(keys)
     }
 
     /// Writes to the cache.
@@ -65,6 +59,6 @@ impl Cache {
     /// # Errors
     /// If the call to [`InnerCache::write`] returns an error, that error is returned.
     pub fn write(&self, entry: NewCacheEntry) -> Result<(), WriteToCacheError> {
-        self.0.lock().map_err(|e| WriteToCacheError::MutexPoisonError(e.to_string()))?.write(entry)
+        self.0.lock().borrow_mut().write(entry)
     }
 }

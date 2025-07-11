@@ -172,7 +172,7 @@ fn main() -> Result<ExitCode, CliError> {
 
     for params_diff in args.params_diff {
         serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile)?
-            .apply(cleaner.params.to_mut());
+            .apply_once(cleaner.params.to_mut());
     }
     cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {

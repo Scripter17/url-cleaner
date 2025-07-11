@@ -25,3 +25,12 @@ jobs:
       run: |
         set -o pipefail
         seq -f "https://%0.0f.com" 100 | cargo run | sort -Vc
+
+  deadlock:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: deadlock
+      run: |
+        cargo build
+        yes "https://example.com" | head -n 100 | timeout 1s cargo run -- --cleaner ../example-cleaners/deadlock-tester.json

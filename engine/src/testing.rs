@@ -54,7 +54,7 @@ impl TestSet {
         );
 
         if let Some(params_diff) = self.params_diff {
-            params_diff.apply(cleaner.params.to_mut());
+            params_diff.apply_once(cleaner.params.to_mut());
         }
 
         let (task_configs, expectations) = self.tests.clone().into_iter().map(|Test {task_config, expectation}| (task_config, expectation)).collect::<(Vec<_>, Vec<_>)>();

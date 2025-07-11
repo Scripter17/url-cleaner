@@ -3471,6 +3471,7 @@ dependencies = [
  "criterion",
  "diesel",
  "form_urlencoded",
+ "parking_lot",
  "percent-encoding",
  "psl",
  "rand 0.9.1",

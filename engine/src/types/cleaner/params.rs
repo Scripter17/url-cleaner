@@ -149,7 +149,10 @@ impl ParamsDiff {
     /// Applies the diff.
     ///
     /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
-    pub fn apply(self, to: &mut Params) {
+    ///
+    /// If you want to apply `self` mutliple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then usine [`Self::apply_once`] on each clone.
+    pub fn apply_once(self, to: &mut Params) {
+        debug!(Params::apply_once, &self, to);
         to.flags.extend(self.flags);
         for flag in self.unflags {to.flags.remove(&flag);}
 
@@ -177,7 +180,7 @@ impl ParamsDiff {
             to.maps.entry(k).or_default();
         }
         for (k, v) in self.map_diffs {
-            v.apply(to.maps.entry(k).or_default());
+            v.apply_once(to.maps.entry(k).or_default());
         }
         for k in self.delete_maps {
             to.maps.remove(&k);
@@ -186,6 +189,52 @@ impl ParamsDiff {
         #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
         #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
 
-        #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply(&mut to.http_client_config);}
+        #[cfg(feature = "http")] if let Some(http_client_config_diff) = self.http_client_config_diff {http_client_config_diff.apply_once(&mut to.http_client_config);}
+    }
+
+    /// Applies the diff.
+    ///
+    /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
+    ///
+    /// If you only want to apply `self` once, use [`Self::apply_once`].
+    pub fn apply_multiple(&self, to: &mut Params) {
+        debug!(Params::apply_multiple, self, to);
+        to.flags.extend(self.flags.iter().cloned());
+        for flag in &self.unflags {to.flags.remove(flag);}
+
+        to.vars.extend(self.vars.iter().map(|(k, v)| (k.clone(), v.clone())));
+        for var in &self.unvars {to.vars.remove(var);}
+
+        for k in &self.init_sets {
+            to.sets.entry(k.clone()).or_default();
+        }
+        for (k, v) in &self.insert_into_sets {
+            to.sets.entry(k.clone()).or_default().extend(v.iter().cloned());
+        }
+        for (k, vs) in &self.remove_from_sets {
+            if let Some(x) = to.sets.get_mut(k) {
+                for v in vs {
+                    x.remove(v.as_ref());
+                }
+            }
+        }
+        for k in &self.delete_sets {
+            to.sets.remove(k);
+        }
+
+        for k in &self.init_maps {
+            to.maps.entry(k.clone()).or_default();
+        }
+        for (k, v) in &self.map_diffs {
+            v.apply_multiple(to.maps.entry(k.clone()).or_default());
+        }
+        for k in &self.delete_maps {
+            to.maps.remove(k);
+        }
+
+        #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
+        #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
+
+        #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply_multiple(&mut to.http_client_config);}
     }
 }

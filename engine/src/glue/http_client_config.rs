@@ -140,7 +140,26 @@ pub struct HttpClientConfigDiff {
 
 impl HttpClientConfigDiff {
     /// Applies the diff.
-    pub fn apply(&self, to: &mut HttpClientConfig) {
+    ///
+    /// If you want to apply `self` mutliple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then usine [`Self::apply_once`] on each clone.
+    pub fn apply_once(self, to: &mut HttpClientConfig) {
+        debug!(HttpClientConfigDiff::apply_once, &self, to);
+        if let Some(new_redirect_policy) = self.redirect_policy {to.redirect_policy = new_redirect_policy;}
+        to.default_headers.extend(self.add_default_headers);
+        if let Some(https_only) = self.https_only {to.https_only = https_only;}
+        if let Some(set_proxies) = self.set_proxies {to.proxies = set_proxies;}
+        to.proxies.extend(self.add_proxies);
+        if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
+        if let Some(referer) = self.referer {to.no_proxy = referer;}
+        to.extra_root_certificates.extend(self.add_extra_root_certificates);
+        to.extra_root_certificates.retain(|extra_root_certificate| !self.remove_extra_root_certificates.contains(extra_root_certificate));
+    }
+
+    /// Applies the diff.
+    ///
+    /// If you only want to apply `self` once, use [`Self::apply_once`].
+    pub fn apply_multiple(&self, to: &mut HttpClientConfig) {
+        debug!(HttpClientConfigDiff::apply_multiple, self, to);
         if let Some(new_redirect_policy) = &self.redirect_policy {to.redirect_policy = new_redirect_policy.clone();}
         to.default_headers.extend(self.add_default_headers.clone());
         if let Some(https_only) = self.https_only {to.https_only = https_only;}

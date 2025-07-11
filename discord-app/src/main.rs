@@ -77,7 +77,7 @@ async fn main() {
     let mut cleaner = Cleaner::load_from_file(args.cleaner).expect("The cleaner to be valid.");
 
     if let Some(params_diff) = args.params_diff {
-        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.").apply(cleaner.params.to_mut());
+        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.").apply_once(cleaner.params.to_mut());
     }
 
     let state = State {
@@ -89,7 +89,7 @@ async fn main() {
     for [name, params_diff] in args.params_diff_profile.into_iter().map(|args| <[String; 2]>::try_from(args).expect("The clap parser to work")) {
         let mut params = state.cleaner.params.clone().into_owned();
 
-        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.").apply(&mut params);
+        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.").apply_once(&mut params);
 
         commands.push(poise::Command {
             name: Cow::Owned(format!("Clean URLs ({name})")),
