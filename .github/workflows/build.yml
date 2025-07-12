@@ -10,14 +10,14 @@ jobs:
     runs-on: ${{ matrix.a[0] }}
     strategy:
       matrix:
-        a: [[ubuntu-latest, ""], [windows-latest, ".exe"], [macos-latest, ".dmg"]]
+        a: [[ubuntu-latest, ""], [windows-latest, ".exe"], [macos-latest, ""]]
     steps:
     - uses: actions/checkout@v4
     - name: build
       run: cargo build -r
     - uses: actions/upload-artifact@v4
       with:
-        name: stuff
+        name: ${{ matrix.a[0] }}
         path: |
           target/release/url-cleaner${{ matrix.a[1] }}
           target/release/url-cleaner-site${{ matrix.a[1] }}
