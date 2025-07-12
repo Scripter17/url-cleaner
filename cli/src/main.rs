@@ -45,7 +45,7 @@ pub struct Args {
     /// The URLs to clean before STDIN.
     ///
     /// The following are all equivalent:
-    /// 
+    ///
     /// https://example.com
     /// "https://example.com"
     /// {"url": "https://example.com"}
@@ -53,18 +53,18 @@ pub struct Args {
     /// {"url": "https://example.com", "context": {"vars": []}}
     ///
     /// The following also sets the TaskContext var `a` to `2`.
-    /// 
+    ///
     /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
     pub urls: Vec<LazyTaskConfig<'static>>,
     /// The config file to use.
-    /// 
+    ///
     /// Omit to use the built in default cleaner.
     #[cfg(feature = "default-cleaner")]
     #[arg(short, long)]
     pub cleaner: Option<PathBuf>,
     /// The cleaner file to use.
-    /// 
+    ///
     /// Required as the `default-cleaner` feature is disabled.
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(short, long)]
@@ -72,14 +72,14 @@ pub struct Args {
     /// Output results as JSON.
     ///
     /// The format looks like this, but minified:
-    /// 
+    ///
     /// {"Ok": {
     ///   "urls": [
     ///     {"Ok": "https://example.com/success"},
     ///     {"Err": "Error message"}
     ///   ]
     /// }}
-    /// 
+    ///
     /// The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
     #[arg(short, long, verbatim_doc_comment)]
     pub json: bool,
@@ -117,7 +117,7 @@ pub struct Args {
     #[arg(long)]
     pub job_context: Option<String>,
     /// The number of worker threads to use.
-    /// 
+    ///
     /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     pub threads: usize,
@@ -128,7 +128,7 @@ pub struct Args {
     #[arg(long)]
     pub test_suitability: bool,
     /// Print the cleaner after all ParamsDiffs are applied.
-    /// 
+    ///
     /// Exact output isn't stable due to HashSets/HashMaps having a random order.
     #[arg(long)]
     pub export_cleaner: bool

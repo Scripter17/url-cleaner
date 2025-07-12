@@ -21,6 +21,8 @@ pub struct TaskState<'a> {
     pub context: &'a TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
     pub job_context: &'a JobContext,
+    /// The [`Unthreader`] to use.
+    pub unthreader: &'a Unthreader,
     /// The [`Params`] to use.
     pub params: &'a Params,
     /// The [`Commons`] that can be called.
@@ -28,10 +30,7 @@ pub struct TaskState<'a> {
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: &'a CacheHandle<'a>,
-    /// The [`Unthreader`] to use.
-    #[serde(skip)]
-    pub unthreader: &'a Unthreader
+    pub cache: &'a CacheHandle<'a>
 }
 
 impl<'a> TaskState<'a> {
@@ -47,11 +46,11 @@ impl<'a> TaskState<'a> {
             common_args: self.common_args,
             context    : self.context,
             job_context: self.job_context,
+            unthreader : self.unthreader,
             params     : self.params,
             commons    : self.commons,
             #[cfg(feature = "cache")]
-            cache      : self.cache,
-            unthreader : self.unthreader,
+            cache      : self.cache
         }
     }
 
@@ -98,14 +97,14 @@ macro_rules! task_state {
                 common_args: common_args.as_ref(),
                 context    : &context,
                 job_context: &job_context,
+                unthreader : &Default::default(),
                 params     : &params,
                 commons    : &commons,
                 #[cfg(feature = "cache")]
                 cache      : &CacheHandle {
                     cache: &Default::default(),
                     config: Default::default()
-                },
-                unthreader : &Default::default()
+                }
             }
         };
     };
@@ -124,6 +123,8 @@ pub struct TaskStateView<'a> {
     pub context: &'a TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
     pub job_context: &'a JobContext,
+    /// The [`Unthreader`] to use.
+    pub unthreader: &'a Unthreader,
     /// The [`Params`] to use.
     pub params: &'a Params,
     /// The [`Commons`] that can be called.
@@ -131,10 +132,7 @@ pub struct TaskStateView<'a> {
     /// The [`Cache`] being used.
     #[cfg(feature = "cache")]
     #[serde(skip)]
-    pub cache: &'a CacheHandle<'a>,
-    /// The [`Unthreader`] to use.
-    #[serde(skip)]
-    pub unthreader: &'a Unthreader
+    pub cache: &'a CacheHandle<'a>
 }
 
 impl<'a> TaskStateView<'a> {
@@ -153,9 +151,8 @@ impl<'a> TaskStateView<'a> {
     }
 
     /// No-op to make some internal macros more convenient.
-    #[allow(clippy::wrong_self_convention, reason = "Don't care.")]
-    pub(crate) const fn to_view(&'a self) -> TaskStateView<'a> {
-        *self
+    pub(crate) const fn to_view(self) -> Self {
+        self
     }
 
     /// Make a [`TaskStateDebugHelper`].
@@ -190,14 +187,14 @@ macro_rules! task_state_view {
                 common_args: common_args.as_ref(),
                 context    : &context,
                 job_context: &job_context,
+                unthreader : &Default::default(),
                 params     : &params,
                 commons    : &commons,
                 #[cfg(feature = "cache")]
                 cache      : &CacheHandle {
                     cache: &Default::default(),
                     config: Default::default()
-                },
-                unthreader : &Default::default()
+                }
             }
         };
     };

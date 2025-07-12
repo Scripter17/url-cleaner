@@ -59,7 +59,7 @@ struct Args {
     #[arg(long, default_missing_value = "true")]
     write_cache: Option<bool>,
     /// The max size of a POST request to the `/clean` endpoint.
-    /// 
+    ///
     /// The included userscript uses the `/get-max-json-size` endpoint to query this value and adjust its batch sizes accordingly.
     #[arg(long, default_value = DEFAULT_MAX_JSON_SIZE, value_parser = parse_byte_unit)]
     max_size: rocket::data::ByteUnit,
@@ -83,7 +83,7 @@ struct Args {
     #[arg(long, default_missing_value = "true")]
     hide_thread_count: bool,
     /// Amount of threads to process tasks in.
-    /// 
+    ///
     /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     threads: usize,

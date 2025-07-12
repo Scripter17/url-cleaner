@@ -395,9 +395,9 @@ pub enum StringLocationError {
     /// Returned when both [`StringLocation`]s in a [`StringLocation::TryElse`] return errors.
     #[error("Both StringLocations in a StringLocation::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`StringLocation::TryElse::try`]. 
+        /// The error returned by [`StringLocation::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`StringLocation::TryElse::else`]. 
+        /// The error returned by [`StringLocation::TryElse::else`].
         else_error: Box<Self>
     },
 

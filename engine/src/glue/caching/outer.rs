@@ -3,12 +3,9 @@
 use std::cell::RefCell;
 use parking_lot::ReentrantMutex;
 
-#[expect(unused_imports, reason = "Used in docs.")]
-use diesel::query_builder::SqlQuery;
-
 use super::*;
 
-/// A [`Mutex`]ed [`InnerCache`].
+/// A shareable [`InnerCache`].
 /// # Examples
 /// ```
 /// use url_cleaner_engine::glue::*;

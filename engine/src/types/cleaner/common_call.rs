@@ -23,13 +23,37 @@ pub struct CommonCall {
 }
 
 impl FromStr for CommonCall {
-    type Err = <StringSource as FromStr>::Err;
+    type Err = std::convert::Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            name: Box::new(FromStr::from_str(s)?),
+        Ok(s.into())
+    }
+}
+
+impl From<&str> for CommonCall {
+    fn from(value: &str) -> Self {
+        StringSource::from(value).into()
+    }
+}
+
+impl From<String> for CommonCall {
+    fn from(value: String) -> Self {
+        StringSource::from(value).into()
+    }
+}
+
+impl From<StringSource> for CommonCall {
+    fn from(value: StringSource) -> Self {
+        Box::new(value).into()
+    }
+}
+
+impl From<Box<StringSource>> for CommonCall {
+    fn from(value: Box<StringSource>) -> Self {
+        Self {
+            name: value,
             args: Default::default()
-        })
+        }
     }
 }
 

@@ -868,9 +868,9 @@ pub enum ActionError {
     /// Returned when both [`Action`]s in a [`Action::TryElse`] return errors.
     #[error("Both Actions in a Action::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`Action::TryElse::try`]. 
+        /// The error returned by [`Action::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`Action::TryElse::else`]. 
+        /// The error returned by [`Action::TryElse::else`].
         else_error: Box<Self>
     },
     /// Returned when all [`Action`]s in a [`Action::FirstNotError`] error.

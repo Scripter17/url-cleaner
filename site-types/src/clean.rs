@@ -7,7 +7,7 @@ use url_cleaner_engine::types::*;
 use crate::util::*;
 
 /// The payload of the `/clean` route.
-/// 
+///
 /// Used to construct a [`Job`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct JobConfig<'a> {

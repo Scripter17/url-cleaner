@@ -3,8 +3,6 @@
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
-#[expect(unused_imports, reason = "Used in docs.")]
-use diesel::query_builder::SqlQuery;
 
 use crate::util::*;
 

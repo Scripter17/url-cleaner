@@ -54,7 +54,7 @@ pub enum MakeTaskConfigError {
     UrlParseError(#[from] url::ParseError),
     /// Returned when a [`std::str::Utf8Error`] is encountered.
     #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),    
+    Utf8Error(#[from] std::str::Utf8Error),
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error)

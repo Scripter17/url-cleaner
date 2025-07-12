@@ -36,7 +36,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
             if_null: false
         }
     }
-    
+
     /// [`HashSet::contains`].
     /// # Examples
     /// ```

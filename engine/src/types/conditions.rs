@@ -18,7 +18,7 @@ use crate::util::*;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
 pub enum Condition {
     // Debug/constants
-    
+
     /// Always passes.
     /// # Examples
     /// ```
@@ -85,7 +85,7 @@ pub enum Condition {
     /// ```
     /// use url_cleaner_engine::types::*;
     /// url_cleaner_engine::task_state_view!(task_state, url = "https://example.com");
-    /// 
+    ///
     /// assert!( Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Always))}.check(&task_state).unwrap());
     /// assert!( Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Never ))}.check(&task_state).unwrap());
     /// assert!(!Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Always))}.check(&task_state).unwrap());
@@ -1139,9 +1139,9 @@ pub enum ConditionError {
     /// Returned when both [`Condition`]s in a [`Condition::TryElse`] return errors.
     #[error("Both Conditions in a Condition::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`Condition::TryElse::try`]. 
+        /// The error returned by [`Condition::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`Condition::TryElse::else`]. 
+        /// The error returned by [`Condition::TryElse::else`].
         else_error: Box<Self>
     },
 

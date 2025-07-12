@@ -12,8 +12,8 @@ See [`../default_cleaner.md`](../default_cleaner.md) for details about the inclu
 
 ## TLS/HTTPS
 
-TLS/HTTPS can be used with the `--key` and `--cert` arguments.  
-[Minica](https://github.com/jsha/minica) makes it easy to have stuff shut up about self signed certificates.  
+TLS/HTTPS can be used with the `--key` and `--cert` arguments.
+[Minica](https://github.com/jsha/minica) makes it easy to have stuff shut up about self signed certificates.
 For FireFox, where this is unreasonably difficult, simply opening `https://localhost:9149`, clicking "Advanced", then "Accept the Risk and Continue" seems to work.
 
 Please note that this requires changing `window.URL_CLEANER_SITE = "http://localhost:9149";` in the userscript to https.
@@ -88,7 +88,7 @@ And with TLS:
 }
 ```
 
-If you're using FireFox, you should know that Greasemonkey gives me much better performance of the userscript than Tampermonkey.  
+If you're using FireFox, you should know that Greasemonkey gives me much better performance of the userscript than Tampermonkey.
 
-As for the performance of the userscript itself... I honestly can't say. Nothing strikes me as particularly bad in terms of either CPU or memory usage, but I haven't seriously used javascript in years.  
+As for the performance of the userscript itself... I honestly can't say. Nothing strikes me as particularly bad in terms of either CPU or memory usage, but I haven't seriously used javascript in years.
 It probably has a very slow memory leak that would be a problem when on a long-running webpage session having billions of elements, but that's very unlikely to ever happen outside testing.

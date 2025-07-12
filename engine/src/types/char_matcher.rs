@@ -142,9 +142,9 @@ pub enum CharMatcherError {
     /// Returned when both [`CharMatcher`]s in a [`CharMatcher::TryElse`] return errors.
     #[error("Both CharMatchers in a CharMatcher::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`CharMatcher::TryElse::try`]. 
+        /// The error returned by [`CharMatcher::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`CharMatcher::TryElse::else`]. 
+        /// The error returned by [`CharMatcher::TryElse::else`].
         else_error: Box<Self>
     },
 

@@ -1,6 +1,6 @@
 //! Caching to allow for only expanding redirects the first time you encounter them.
 //!
-//! A cache is a Sqlite database composed of one table, "cache", with 4 columns:
+//! A cache is a Sqlite database containing one table, "cache", with 4 columns:
 //!
 //! - `subject` (`TEXT NOT NULL`): The subject of the cache entry. For example, redirects have their `subject` set to `redirect`.
 //!
@@ -9,16 +9,14 @@
 //! - `value` (`TEXT` (maybe null)): The value of the key/value pair. For example, redirects have their `value` set to the URL the starting redirect URL points to.
 //!
 //! - `duration` (`FLOAT`): The amount of time (in seconds) it took to do the thing being cached. For example, redirects have their `duration` set to about as long as it took to do the network request(s). This is used by [`CacheHandle`] to artifically delay cache reads if [`CacheHandleConfig::delay`] is [`true`] to reduce the ability of websites to tell if you've seen a certain URL before.
+//!
+//! Every pair of `subject` and `key` is unique.
 
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use std::sync::Mutex;
 use std::time::Duration;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
-#[expect(unused_imports, reason = "Used in docs.")]
-use diesel::query_builder::SqlQuery;
 use rand::TryRngCore;
 
 #[expect(unused_imports, reason = "Used in docs.")]

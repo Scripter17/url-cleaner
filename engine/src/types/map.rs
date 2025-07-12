@@ -32,7 +32,6 @@ impl<T: Debug> Map<T> {
             map    : HashMap::with_capacity(capacity),
             if_null: None,
             r#else : None
-            
         }
     }
 
@@ -94,5 +93,4 @@ impl<T: Debug + Clone> MapDiff<T> {
         to.map.extend(self.insert.iter().map(|(k, v)| (k.clone(), v.clone())));
         to.map.retain(|k, _| !self.remove.contains(k));
     }
-    
 }

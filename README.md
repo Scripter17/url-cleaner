@@ -1,13 +1,15 @@
 # URL Cleaner
 
+[CLI tool](cli) | [HTTP server and Userscipt](site) | [Discord app](discord-app)
+
 Explicit non-consent to URL spytext.
 
-Often when a website/app gives you a URL to share to a friend, that URL contains a unique identifier that, when your friend clicks on it, tells the website you sent them that URL.
-I call this "spytext", as it's text that allows spyware to do spyware things suhc as telling the united states federal government you associate with wrongthinkers.
+Often when a website/app gives you a URL to share to a friend, that URL contains a unique identifier that, when your friend clicks on it, tells the website that you were the one who sent them that URL.
+I call this "spytext", as it's text that allows spyware to do spyware things such as telling the united states federal government you associate with wrongthinkers.
 
 Because of the ongoing human rights catastrophes intentionally enabled by spytext, it is basic decency to remove it before you send a URL, and basic opsec to remove it when you recieve a URL.
 
-URL Cleaner is designed to make this as comprehensive, fast, and easy as possible, with the priorities mostly in that order.
+URL Cleaner is designed to make this as comprehensive, fast, and easy as possible. With the priorities mostly in that order.
 
 # Why specifically this URL cleaner?
 

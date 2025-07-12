@@ -299,9 +299,9 @@ pub enum StringMatcherError {
     /// Returned when both [`StringMatcher`]s in a [`StringMatcher::TryElse`] return errors.
     #[error("Both StringMatchers in a StringMatcher::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`StringMatcher::TryElse::try`]. 
+        /// The error returned by [`StringMatcher::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`StringMatcher::TryElse::else`]. 
+        /// The error returned by [`StringMatcher::TryElse::else`].
         else_error: Box<Self>
     },
     /// Returned when all [`StringMatcher`]s in a [`StringMatcher::FirstNotError`] error.

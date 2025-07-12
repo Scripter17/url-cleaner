@@ -164,45 +164,7 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(applyerr(Self))]
     IfSome(Box<Self>),
-    /// If the call to [`Self::If::condition`] passes, apply [`Self::If::then`].
-    ///
-    /// If the call to [`Self::If::condition`] fails and [`Self::If::else`] is [`Some`], apply [`Self::If::else`].
-    /// # Errors
-    #[doc = edoc!(checkerr(Condition), applyerr(Self))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    ///
-    /// url_cleaner_engine::task_state_view!(task_state_view);
-    ///
-    /// let mut to = Some("abc".into());
-    /// StringModification::If {
-    ///     condition: Box::new(Condition::Always),
-    ///     then     : Box::new(StringModification::Set("def".into())),
-    ///     r#else   : Some(Box::new(StringModification::None))
-    /// }.apply(&mut to, &task_state_view).unwrap();
-    /// assert_eq!(to, Some("def".into()));
-    ///
-    /// let mut to = Some("abc".into());
-    /// StringModification::If {
-    ///     condition: Box::new(Condition::Never),
-    ///     then     : Box::new(StringModification::Set("def".into())),
-    ///     r#else   : Some(Box::new(StringModification::None))
-    /// }.apply(&mut to, &task_state_view).unwrap();
-    /// assert_eq!(to, Some("abc".into()));
-    /// ```
-    If {
-        /// The [`Condition`] to decide between [`Self::If::then`] and [`Self::If::else`].
-        condition: Box<Condition>,
-        /// The [`Self`] to apply if [`Self::If::condition`] passes.
-        then: Box<Self>,
-        /// The [`Self`] to apply if [`Self::If::condition`] fails.
-        ///
-        /// Defaults to [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Option<Box<Self>>
-    },
-    /// If the string satisfies [`Self::IfMatches::matcher`], apply [`Self::If::then`].
+    /// If the string satisfies [`Self::IfMatches::matcher`], apply [`Self::IfMatches::then`].
     ///
     /// If the string does not satisfy [`Self::IfMatches::matcher`] and [`Self::IfMatches::else`] is [`Some`], apply [`Self::IfMatches::else`].
     /// # Errors
@@ -328,7 +290,7 @@ pub enum StringModification {
     /// See [`String::remove`] for details.
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification))]
-    /// 
+    ///
     /// If the specified index isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidIndex`].
     RemoveChar(isize),
 
@@ -491,7 +453,7 @@ pub enum StringModification {
     /// Removes everything outside the specified range.
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification))]
-    /// 
+    ///
     /// If either [`Self::KeepRange::start`] and/or [`Self::KeepRange::end`] isn't a [`str::is_char_boundary`], returns the error [`StringModificationError::InvalidSlice`].
     KeepRange {
         /// The start of the range to keep.
@@ -870,18 +832,15 @@ pub enum StringModificationError {
     /// Returned when both [`StringModification`]s in a [`StringModification::TryElse`] return errors.
     #[error("Both StringModifications in a StringModification::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`StringModification::TryElse::try`]. 
+        /// The error returned by [`StringModification::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`StringModification::TryElse::else`]. 
+        /// The error returned by [`StringModification::TryElse::else`].
         else_error: Box<Self>
     },
     /// Returned when all [`StringModification`]s in a [`StringModification::FirstNotError`] error.
     #[error("All StringModifications in a StringModification::FirstNotError errored.")]
     FirstNotErrorErrors(Vec<Self>),
 
-    /// Returned when a [`ConditionError`] is encountered.
-    #[error(transparent)]
-    ConditionError(#[from] Box<ConditionError>),
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
@@ -1012,12 +971,6 @@ impl From<StringMatcherError> for StringModificationError {
     }
 }
 
-impl From<ConditionError> for StringModificationError {
-    fn from(value: ConditionError) -> Self {
-        Self::ConditionError(Box::new(value))
-    }
-}
-
 impl StringModification {
     /// Modified a string.
     /// # Errors
@@ -1059,11 +1012,6 @@ impl StringModification {
                 Err(StringModificationError::FirstNotErrorErrors(errors))?
             },
             Self::IfSome(modification) => if to.is_some() {modification.apply(to, task_state)?;}
-            Self::If {condition, then, r#else} => if condition.check(task_state)? {
-                then.apply(to, task_state)?
-            } else if let Some(r#else) = r#else {
-                r#else.apply(to, task_state)?
-            },
             Self::IfMatches {matcher, then, r#else} => if matcher.check(to.as_deref(), task_state)? {
                 then.apply(to, task_state)?;
             } else if let Some(r#else) = r#else {

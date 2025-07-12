@@ -61,28 +61,6 @@ pub enum StringSource {
     /// StringSource::Error("Message".into()).get(&task_state).unwrap_err();
     /// ```
     Error(String),
-    /// If the call to [`Self::get`] returns an error, instead returns [`None`].
-    ///
-    /// Otherwise leaves the return value unchanged.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::ErrorToNone(Box::new(StringSource::Error("Message".into()))).get(&task_state).unwrap(), None);
-    /// ```
-    ErrorToNone(Box<Self>),
-    /// If the call to [`Self::get`] returns an error, instead returns an empty string.
-    ///
-    /// Otherwise leaves the return value unchanged.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::ErrorToEmptyString(Box::new(StringSource::Error("Message".into()))).get(&task_state).unwrap(), Some("".into()));
-    /// ```
-    ErrorToEmptyString(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::get`] returns an error, instead return the value of [`Self::TryElse::else`].
     /// # Errors
     #[doc = edoc!(geterrte(Self, StringSource))]
@@ -114,20 +92,7 @@ pub enum StringSource {
     /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
     Debug(Box<Self>),
-    /// If the call to [`Self::get`] returns [`None`], instead returns an empty string.
-    ///
-    /// Otherwise leaves the return value unchanged.
-    /// # Errors
-    #[doc = edoc!(geterr(Self))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::NoneToEmptyString(Box::new(StringSource::None)).get(&task_state).unwrap(), Some("".into()));
-    /// ```
-    NoneToEmptyString(Box<Self>),
-    /// If [`Self::NoneTo::value`]'s call to [`Self::get`] returns [`None`], returns the value of [`Self::NoneTo::if_none`].
+    /// If [`Self::NoneTo::value`] is [`Some`], return it. Otherwise return [`Self::NoneTo::if_none`].
     /// # Errors
     #[doc = edoc!(geterr(Self, 2))]
     /// # Examples
@@ -146,7 +111,7 @@ pub enum StringSource {
     /// }.get(&task_state).unwrap(), Some("not none".into()));
     /// ```
     NoneTo {
-        /// The value to get.
+        /// The value to return if it's [`Some`].
         value: Box<Self>,
         /// The value to return if [`Self::NoneTo::value`] is [`None`].
         if_none: Box<Self>
@@ -192,8 +157,8 @@ pub enum StringSource {
         /// The value to return if the flag is unset.
         r#else: Box<Self>
     },
-    /// If the value of [`Self::IfStringIsNone::value`] is [`None`], returns the value of [`Self::IfStringIsNone::then`].
-    /// If it's [`Some`], returns the value of [`Self::IfStringIsNone::else`].
+    /// If the value of [`Self::IfNone::value`] is [`None`], returns the value of [`Self::IfNone::then`].
+    /// If it's [`Some`], returns the value of [`Self::IfNone::else`].
     /// # Errors
     #[doc = edoc!(geterr(Self, 3))]
     /// # Examples
@@ -201,28 +166,27 @@ pub enum StringSource {
     /// use url_cleaner_engine::types::*;
     /// url_cleaner_engine::task_state_view!(task_state);
     ///
-    /// assert_eq!(StringSource::IfStringIsNone {
+    /// assert_eq!(StringSource::IfNone {
     ///     value : Box::new(StringSource::None),
     ///     then  : Box::new("none".into()),
     ///     r#else: Box::new("some".into())
     /// }.get(&task_state).unwrap(), Some("none".into()));
     ///
-    /// assert_eq!(StringSource::IfStringIsNone {
+    /// assert_eq!(StringSource::IfNone {
     ///     value : Box::new("some value. it's not returned".into()),
     ///     then  : Box::new("none".into()),
     ///     r#else: Box::new("some".into())
     /// }.get(&task_state).unwrap(), Some("some".into()));
     /// ```
-    IfStringIsNone {
+    IfNone {
         /// The value whose [`None`]ness to check.
         value: Box<Self>,
-        /// The value to return if [`Self::IfStringIsNone::value`] returns [`None`].
+        /// The value to return if [`Self::IfNone::value`] returns [`None`].
         then: Box<Self>,
-        /// The value to return if [`Self::IfStringIsNone::value`] returns [`Some`].
+        /// The value to return if [`Self::IfNone::value`] returns [`Some`].
         r#else: Box<Self>
     },
-    /// Gets the value of [`Self::IfStringMatches::value`] then, if it satisfies [`Self::IfStringMatches::matcher`], returns the value of [`Self::IfStringMatches::then`].
-    /// If it doesn't match, returns the value of [`Self::IfStringMatches::else`]
+    /// If [`Self::IfMatches::value`] satisfies [`Self::IfMatches::matcher`], returns the value of [`Self::IfMatches::then`], otherwise the value of [`Self::IfMatches::else`].
     /// # Errors
     #[doc = edoc!(geterr(Self, 3), checkerr(StringMatcher))]
     /// # Examples
@@ -230,28 +194,28 @@ pub enum StringSource {
     /// use url_cleaner_engine::types::*;
     /// url_cleaner_engine::task_state_view!(task_state);
     ///
-    /// assert_eq!(StringSource::IfStringMatches {
+    /// assert_eq!(StringSource::IfMatches {
     ///     value  : Box::new("abc".into()),
     ///     matcher: Box::new(StringMatcher::Is("abc".into())),
     ///     then   : Box::new("matches".into()),
     ///     r#else : Box::new("doesn't match".into())
     /// }.get(&task_state).unwrap(), Some("matches".into()));
     ///
-    /// assert_eq!(StringSource::IfStringMatches {
+    /// assert_eq!(StringSource::IfMatches {
     ///     value  : Box::new("def".into()),
     ///     matcher: Box::new(StringMatcher::Is("abc".into())),
     ///     then   : Box::new("matches".into()),
     ///     r#else : Box::new("doesn't match".into())
     /// }.get(&task_state).unwrap(), Some("doesn't match".into()));
     /// ```
-    IfStringMatches {
+    IfMatches {
         /// The value to match.
         value: Box<Self>,
-        /// The matcher to match [`Self::IfStringMatches::value`].
+        /// The matcher to match [`Self::IfMatches::value`].
         matcher: Box<StringMatcher>,
-        /// The value to return if [`Self::IfStringMatches::matcher`] passes.
+        /// The value to return if [`Self::IfMatches::matcher`] passes.
         then: Box<Self>,
-        /// The value to return if [`Self::IfStringMatches::matcher`] fails.
+        /// The value to return if [`Self::IfMatches::matcher`] fails.
         r#else: Box<Self>
     },
     /// Indexes [`Self::Map::map`] with [`Self::Map::value`] and, if a [`Self`] is found, get it.
@@ -473,33 +437,6 @@ pub enum StringSource {
 
 
 
-    /// Gets the value of [`Self::RegexFind::value`] and calls [`Regex::find`] on it.
-    ///
-    /// If the value of [`Self::RegexFind::value`] is [`None`], simply returns [`None`].
-    /// # Errors
-    #[doc = edoc!(geterr(Self), geterr(RegexWrapper))]
-    /// # Examples
-    /// ```
-    /// use std::str::FromStr;
-    /// use url_cleaner_engine::types::*;
-    /// use url_cleaner_engine::glue::*;
-    /// url_cleaner_engine::task_state_view!(task_state);
-    ///
-    /// assert_eq!(StringSource::RegexFind {
-    ///     value: Box::new("<a><b><c>".into()),
-    ///     regex: RegexWrapper::from_str("<[^aeiou]>").unwrap()
-    /// }.get(&task_state).unwrap(), Some("<b>".into()));
-    /// ```
-    #[cfg(feature = "regex")]
-    RegexFind {
-        /// The value to get a substring of.
-        value: Box<Self>,
-        /// The [`Regex`] to use to find the substring.
-        regex: RegexWrapper
-    },
-
-
-
     /// Calls [`RequestConfig::response`] and returns the value.
     /// # Errors
     #[doc = edoc!(callerr(RequestConfig::response))]
@@ -692,9 +629,9 @@ pub enum StringSourceError {
     /// Returned when both [`StringModification`]s in a [`StringModification::TryElse`] return errors.
     #[error("Both StringModifications in a StringModification::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`StringModification::TryElse::try`]. 
+        /// The error returned by [`StringModification::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`StringModification::TryElse::else`]. 
+        /// The error returned by [`StringModification::TryElse::else`].
         else_error: Box<Self>
     },
     /// Returned when all [`StringModification`]s in a [`StringModification::FirstNotError`] error.
@@ -800,7 +737,7 @@ impl StringSource {
     pub(crate) fn get_self(&self) -> &Self {
         self
     }
-    
+
     /// Get the string.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
@@ -810,9 +747,13 @@ impl StringSource {
             Self::String(string) => Some(Cow::Borrowed(string)),
             Self::None => None,
             Self::Error(msg) => Err(StringSourceError::ExplicitError(msg.clone()))?,
-            Self::ErrorToNone(value) => value.get(task_state).ok().flatten(),
-            Self::ErrorToEmptyString(value) => value.get(task_state).unwrap_or(Some(Cow::Borrowed(""))),
-            Self::TryElse{r#try, r#else} => r#try.get(task_state).or_else(|try_error| r#else.get(task_state).map_err(|else_error| StringSourceError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
+            Self::TryElse{r#try, r#else} => match r#try.get(task_state) {
+                Ok(x) => x,
+                Err(e1) => match r#else.get(task_state) {
+                    Ok(x) => x,
+                    Err(e2) => Err(StringSourceError::TryElseError {try_error: Box::new(e1), else_error: Box::new(e2)})?
+                }
+            },
             Self::FirstNotError(sources) => {
                 let mut errors = Vec::new();
                 for source in sources {
@@ -828,10 +769,9 @@ impl StringSource {
                 eprintln!("=== StringSource::Debug ===\nSource: {source:?}\ntask_state: {task_state:?}\nret: {ret:?}");
                 ret?
             },
-            Self::NoneToEmptyString(value) => value.get(task_state)?.or(Some(Cow::Borrowed(""))),
             Self::NoneTo {value, if_none} => match value.get(task_state)? {
                 Some(x) => Some(x),
-                None => if_none.get(task_state)?
+                None    => get_option_cow!(&**if_none, task_state)
             },
             Self::AssertMatches {value, matcher, message} => {
                 let ret = value.get(task_state)?;
@@ -841,9 +781,9 @@ impl StringSource {
                     Err(StringSourceError::AssertMatchesFailed(message.get(task_state)?.unwrap_or_default().into_owned()))?
                 }
             },
-            Self::IfFlag          {flag ,          then, r#else} => if               flag .get(task_state)?                          {then} else {r#else}.get(task_state)?,
-            Self::IfStringIsNone  {value,          then, r#else} => if               value.get(task_state)?.is_none()                {then} else {r#else}.get(task_state)?,
-            Self::IfStringMatches {value, matcher, then, r#else} => if matcher.check(value.get(task_state)?.as_deref(), task_state)? {then} else {r#else}.get(task_state)?,
+            Self::IfFlag    {flag ,          then, r#else} => if               flag .get(task_state)?                          {then} else {r#else}.get(task_state)?,
+            Self::IfNone    {value,          then, r#else} => if               value.get(task_state)?.is_none()                {then} else {r#else}.get(task_state)?,
+            Self::IfMatches {value, matcher, then, r#else} => if matcher.check(value.get(task_state)?.as_deref(), task_state)? {then} else {r#else}.get(task_state)?,
             Self::Map {value, map} => map.get(value.get(task_state)?).ok_or(StringSourceError::StringNotInMap)?.get(task_state)?,
 
 
@@ -872,15 +812,6 @@ impl StringSource {
                 let mut ret = value.get(task_state)?;
                 modification.apply(&mut ret, task_state)?;
                 ret
-            },
-
-
-
-            #[cfg(feature = "regex")]
-            Self::RegexFind {value, regex} => match value.get(task_state)? {
-                Some(Cow::Owned   (value)) => regex.get()?.find(&value).map(|x| Cow::Owned   (x.as_str().to_string())),
-                Some(Cow::Borrowed(value)) => regex.get()?.find( value).map(|x| Cow::Borrowed(x.as_str())),
-                None => None
             },
 
 

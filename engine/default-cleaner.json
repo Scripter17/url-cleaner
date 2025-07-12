@@ -549,7 +549,7 @@
 												"value": {"HttpRequest": {
 													"url": {"Join": {
 														"values": [
-															{"IfStringIsNone": {
+															{"IfNone": {
 																"value": {"NoneTo": {
 																	"value": {"Var": "bypass_vip_api_key"},
 																	"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
@@ -1304,9 +1304,9 @@
 						"cbc.ca": {"RemoveQueryParam": "__vfz"},
 						"cbsnews.com": {"RemoveQueryParams": ["ftag", "linkId"]},
 						"change.org": {"All": [
-							{"If": {
-								"if": {"PartContains": {"part": "Path", "value": "/exp/"}},
-								"then": {"ModifyPart": {"part": "Path", "modification": {"KeepBefore": "/exp/"}}}
+							{"ModifyPart": {
+								"part": "Path",
+								"modification": {"KeepMaybeBefore": "/exp/"}
 							}},
 							{"RemoveQueryParamsMatching": {"StartsWith": "recruit"}}
 						]},
