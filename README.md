@@ -1,6 +1,6 @@
 # URL Cleaner
 
-[CLI tool](cli) | [HTTP server and Userscipt](site) | [Discord app](discord-app)
+[CLI tool](cli) | [HTTP server and userscript](site) | [Discord app](discord-app)
 
 Explicit non-consent to URL spytext.
 

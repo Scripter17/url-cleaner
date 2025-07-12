@@ -109,7 +109,7 @@ async fn main() {
         });
     }
 
-    let token = std::env::var("URLCDA_KEY").expect("A discord bot token for URL Cleaner Discord App");
+    let token = std::env::var("URLCDA_KEY").expect("No discord login token found in the URLCDA_KEY environment variable.");
     let intents = serenity::GatewayIntents::non_privileged();
 
     let framework = poise::Framework::builder()
@@ -134,7 +134,8 @@ async fn main() {
 #[poise::command(
     context_menu_command = "Clean URLs",
     install_context = "User",
-    interaction_context = "Guild|BotDm|PrivateChannel")]
+    interaction_context = "Guild|BotDm|PrivateChannel"
+)]
 async fn clean_urls(
     ctx: Context<'_>,
     msg: serenity::Message
