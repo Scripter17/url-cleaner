@@ -25,6 +25,7 @@ reqwest = { optional = true, version = "0.12.22", features = ["blocking", "socks
 diesel  = { optional = true, version = "2.2.11" , features = ["sqlite"] }
 rand    = { optional = true, version = "0.9.1" }
 base64  = { optional = true, version = "0.22.1" }
+libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
 
 [dev-dependencies]
 criterion = "0.6.0"

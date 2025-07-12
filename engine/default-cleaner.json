@@ -1794,7 +1794,7 @@
 							{"PartMap": {
 								"part": "Path",
 								"map": {
-									"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs", "nfpr"]},
+									"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs", "nfpr", "start"]},
 									"/setprefs": {"RemoveQueryParams": ["sa", "ved", "sca_esv", "usp"]}
 								},
 								"else": {"RemoveQueryParams": ["sca_esv", "usp"]}
