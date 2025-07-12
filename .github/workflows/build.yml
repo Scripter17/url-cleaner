@@ -2,12 +2,15 @@ name: Build
 
 on: [push]
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.a[0] }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        a: [[ubuntu-latest, ""], [windows-latest, ".exe"], [macos-latest, ".dmg"]]
     steps:
     - uses: actions/checkout@v4
     - name: build
@@ -16,6 +19,6 @@ jobs:
       with:
         name: stuff
         path: |
-          target/release/url-cleaner
-          target/release/url-cleaner-site
-          target/release/url-cleaner-discord-app
+          target/release/url-cleaner${{ matrix.a[1] }}
+          target/release/url-cleaner-site${{ matrix.a[1] }}
+          target/release/url-cleaner-discord-app${{ matrix.a[1] }}
