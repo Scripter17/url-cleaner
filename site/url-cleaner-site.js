@@ -8,10 +8,6 @@
 // @match        http://*/*
 // @grant        GM.xmlHttpRequest
 // @connect      localhost
-// @grant        GM.setValue
-// @grant        GM.getValue
-// @grant        GM.listValues
-// @grant        GM.deleteValue
 // ==/UserScript==
 
 window.config = {
@@ -27,12 +23,9 @@ window.config = {
 			api_request_error: true,
 			api_response_info: false,
 			other_timing_info: false,
-			new_suffix       : true,
 			href_mutations   : false,
 			max_json_size    : false
-		},
-		log_cached_data : false,
-		wipe_cached_data: false
+		}
 	}
 };
 
@@ -206,78 +199,18 @@ function element_to_task_config(element) {
 }
 
 // Because the webpage's URL can change without reloading the script, this needs to be calculated per job config.
-// Don't worry, it's fast. I think.
 async function get_job_context() {
 	let ret = {};
 
 	if (window.config.send_host) {
-		if (ret.vars === undefined) {ret.vars = {};}
-
-		ret.vars.SOURCE_HOST = window.location.hostname;
-		ret.vars.SOURCE_NORMALIZED_HOST = ret.vars.SOURCE_HOST.replace(/^www\./g, "").replace(/\.$/g, "");
-
-		let reg_domain = await get_reg_domain(window.location.hostname);
-		if (reg_domain) {
-			ret.vars["SOURCE_REG_DOMAIN"] = reg_domain;
-		}
+		ret.source_host = window.location.hostname;
 	}
 
 	return ret;
 }
 
-async function get_reg_domain(host) {
-	if ((suffix = await get_domain_suffix(host)) && suffix) {
-		if ((x = new RegExp(`([^.]+\.${suffix})\.?`, "g").exec(host)) && x) {
-			return x[1];
-		}
-	}
-}
-
-async function get_domain_suffix(host) {
-	if (await GM.getValue(`is-suffix-${host}`) == "yes") {
-		return host;
-	} else if (host.indexOf(".") != -1) {
-		if ((ret = await get_domain_suffix(host.slice(host.indexOf(".") + 1))) && ret) {
-			return ret;
-		}
-	}
-
-	if (window.config.debug.log.new_suffix) {console.log(`[URLC] DomainSuffix for "${host}" not found in the cache. Querying URL Cleaner Site...`)}
-
-	let done;
-	let doneawaiter = new Promise(resolve => {done = resolve;});
-	await GM.xmlHttpRequest({
-		url: `${window.config.instance}/get-domain-suffix`,
-		method: "POST",
-		data: window.location.hostname,
-		onload: function(response) {done(response.responseText);}
-	});
-	let response = JSON.parse(await doneawaiter);
-
-	if (response.Ok) {
-		await GM.setValue(`is-suffix-${response.Ok}`, "yes");
-		return response.Ok;
-	} else {
-		console.error(`[URLC] Failed to get host parts of ${host} and its parent.`, response);
-	}
-}
-
 (async () => {
 	console.log("[URLC] URL Cleaner Site Userscript loaded. Please note that initial cleanings take a long time because there's a lot happening.");
-
-	if (window.config.debug.log_cached_data) {
-		for (let name of await GM.listValues()) {
-			console.log(`[URLC] Cached data "${name}": ${await GM.getValue(name)}`);
-		}
-	}
-
-	if (window.config.debug.wipe_cached_data) {
-		for (let name of await GM.listValues()) {
-			await GM.deleteValue(name);
-		}
-
-		console.log("[URLC] Deleted all cached data according to debug settings.");
-	}
 
 	// For reasons I don't understand, awaiting `GM.xmlHttpRequest` doesn't seem to, uh, await it.
 	// It might be me being stupid.

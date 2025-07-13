@@ -184,7 +184,7 @@ async fn rocket() -> _ {
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
         tls: args.cert.zip(args.key).map(|(cert, key)| rocket::config::TlsConfig::from_paths(cert, key)), // No unwraps.
         ..rocket::Config::default()
-    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner, get_domain_suffix]).manage(server_state)
+    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner]).manage(server_state)
 }
 
 /// The `/` route.
@@ -292,15 +292,4 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
 #[get("/get-max-json-size")]
 async fn get_max_json_size(state: &State<ServerState>) -> String {
     state.config.max_json_size.as_u64().to_string()
-}
-
-/// The `get-domain-suffix` route.
-#[post("/get-domain-suffix", data="<host>")]
-async fn get_domain_suffix(host: &str) -> (Status, Json<GetDomainSuffixResult<'_>>) {
-    let result = (|| Ok(host.get(HostDetails::parse(host)?.domain_details().ok_or(GetDomainSuffixError::HostIsNotDomain)?.domain_suffix_bounds().ok_or(GetDomainSuffixError::DomainDoesNotHaveSuffix)?).expect("DomainDetails::suffix_bounds to be correct.")))();
-
-    match result {
-        Ok (_) => (Status {code: 200}, Json(result)),
-        Err(_) => (Status {code: 422}, Json(result))
-    }
 }

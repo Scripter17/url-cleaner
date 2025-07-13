@@ -67,13 +67,6 @@
 			"nh_expand_mode": "How to handle redirect `NormalizedHost`s.",
 			"rd_expand_mode": "How to handle redirect `RegDomain`s,"
 		},
-		"job_context": {
-			"vars": {
-				"SOURCE_HOST"           : "The `Host` of the \"source\" of the job. Usually the webpage it came from.",
-				"SOURCE_NORMALIZED_HOST": "The `NormalizedHost` of the \"source\" of the job. Usually the webpage it came from.",
-				"SOURCE_REG_DOMAIN"     : "The `RegDomain` of the \"source\" of the job, Usually the webpage it came from."
-			}
-		},
 		"task_context": {
 			"vars": {
 				"handle"                : "The handle to replace the user ID with.",
@@ -293,7 +286,7 @@
 				"if": {"All": [
 					{"StringIsSome": {"Var": {"type": "TaskContext", "name": "redirect_shortcut"}}},
 					{"StringIs": {
-						"left" : {"Var": {"type": "JobContext", "name": "SOURCE_REG_DOMAIN"}},
+						"left" : {"JobSourceHostPart": "RegDomain"},
 						"right": {"Var": {"type": "CommonArg", "name": "expected_rd"}}
 					}},
 					{"FlagIsNotSet": {"type": "Scratchpad", "name": "redirect_shortcut_used"}}
@@ -387,7 +380,7 @@
 			"if": {"All": [
 				{"UrlIs": "javascript:void(0);"},
 				{"StringIs": {
-					"left": {"Var": {"type": "JobContext", "name": "SOURCE_REG_DOMAIN"}},
+					"left": {"JobSourceHostPart": "RegDomain"},
 					"right": "furaffinity.net"
 				}},
 				{"StringIs": {
@@ -1210,7 +1203,7 @@
 
 				{"StringNamedPartitioning": {
 					"named_partitioning": "nh_categories",
-					"value": {"Var": {"type": "JobContext", "name": "SOURCE_NORMALIZED_HOST"}},
+					"value": {"JobSourceHostPart": "NormalizedHost"},
 					"map": {
 						"alibaba": {"RemoveQueryParams": ["spm", "file"]},
 						"bluesky": {"If": {
@@ -1227,35 +1220,36 @@
 								"modification": {"Map": {
 									"value": {"Modified": {"value": {"Var": {"type": "TaskContext", "name": "contact_info_site_name"}}, "modification": "Lowercase"}},
 									"map": {
-										"ao3"           : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)archiveofourown\\.org/users/)?([^/]+)"         , "replace": "https://archiveofourown.org/users/$1"}},
-										"bluesky"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/profile/)?([^/]+)$"                , "replace": "https://bsky.app/profile/$1"         }},
-										"cara"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app/)?([^/]+)/?$"                      , "replace": "https://cara.app/$1"                 }},
-										"dealer's den"  : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/store/)?([^/]+)$"         , "replace": "https://thedealersden.com/store/$1"  }},
-										"deviantart"    : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:deviantart\\.com/?)?([^/]*)$"  , "replace": "https://deviantart.com/$1$2"         }},
-										"etsy"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/shop/)?([^/]+)$"                   , "replace": "https://etsy.com/shop/$1"            }},
-										"facebook"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com/)?([^/]+)$"                    , "replace": "https://facebook.com/$1"             }},
-										"fanfiction.net": {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?fanfiction\\.net)?/?(?:u/)?([^/]+)/?$"        , "replace": "https://fanfiction.net/u/$1"         }},
-										"furry network" : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com/)?([^/]+)$"                , "replace": "https://furrynetwork.com/$1"         }},
-										"inkbunny"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net/)?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"             }},
-										"itaku"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/profile/)?([^/]+)$"                , "replace": "https://itaku.ee/profile/$1"         }},
-										"ko-fi"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com/)?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"                }},
-										"patreon"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com/)?([^/]+)$"                     , "replace": "https://patreon.com/$1"              }},
-										"picarto"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?picarto\\.tv/)?([^/]+)$"                      , "replace": "https://picarto.tv/$1"               }},
-										"piczel"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/watch/)?([^/]+)$"                 , "replace": "https://piczel.tv/watch/$1"          }},
-										"pixiv"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/(?:[a-z-]+/)?users/)?([^/]+)/?$"  , "replace": "https://pixiv.net/en/users/$1"       }},
-										"reddit"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?reddit\\.com)?/?(?:u/)?([^/]+)/?$"            , "replace": "https://reddit.com/u/$1"             }},
-										"sofurry"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?([^.]+)(?:\\.sofurry\\.com/?)?$"                 , "replace": "https://$1.sofurry.com"              }},
-										"steam"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/id/)?([^/]+)$"           , "replace": "https://steamcommunity.com/id/$1"    }},
-										"tiktok"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?tiktok.com/)?@?([^/]+)/?$"                    , "replace": "https://tiktok.com/@$1"              }},
-										"toyhou.se"     : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?toyhou\\.se/)?([^/]+)/?$"                     , "replace": "https://toyhou.se/$1"                }},
-										"transfur"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com/)?(?:users/)?([^/]+)$"         , "replace": "https://transfur.com/users/$1"       }},
-										"tumblr"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:tumblr\\.com/?)?([^/]*)$"      , "replace": "https://$1$2.tumblr.com"             }},
-										"twitch"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv/)?([^/]+)$"                       , "replace": "https://twitch.tv/$1"                }},
-										"twitter"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
-										"wattpad"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)wattpad\\.com/users/)?([^/]+)/?$"              , "replace": "https://wattpad.com/user/$1"         }},
-										"weasyl"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com/)?~?([^/]+)$"                    , "replace": "https://weasyl.com/~$1"              }},
-										"x"             : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com/)?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
-										"youtube"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com/)?([^/]+)$"                     , "replace": "https://youtube.com/$1"              }}
+										"website"       : "None",
+										"ao3"           : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)archiveofourown\\.org)?/?(?:users/)?@?([^/]+)"  , "replace": "https://archiveofourown.org/users/$1"}},
+										"bluesky"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/profile)?/?@?([^/]+)$"              , "replace": "https://bsky.app/profile/$1"         }},
+										"cara"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app)?/?@?([^/]+)/?$"                    , "replace": "https://cara.app/$1"                 }},
+										"dealer's den"  : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/store)?/?@?([^/]+)$"       , "replace": "https://thedealersden.com/store/$1"  }},
+										"deviantart"    : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:deviantart\\.com)?/?@?([^/]*)$" , "replace": "https://deviantart.com/$1$2"         }},
+										"etsy"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/shop)?/?@?([^/]+)$"                 , "replace": "https://etsy.com/shop/$1"            }},
+										"facebook"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com)?/?@?([^/]+)$"                  , "replace": "https://facebook.com/$1"             }},
+										"fanfiction.net": {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?fanfiction\\.net)?/?(?:u?/)?@?([^/]+)/?$"      , "replace": "https://fanfiction.net/u/$1"         }},
+										"furry network" : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com)?/?@?([^/]+)$"              , "replace": "https://furrynetwork.com/$1"         }},
+										"inkbunny"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net)?/?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"             }},
+										"itaku"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/profile)?/?([^/]+)$"                , "replace": "https://itaku.ee/profile/$1"         }},
+										"ko-fi"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com)?/?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"                }},
+										"patreon"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com)?/?([^/]+)$"                     , "replace": "https://patreon.com/$1"              }},
+										"picarto"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?picarto\\.tv)?/?@?([^/]+)$"                    , "replace": "https://picarto.tv/$1"               }},
+										"piczel"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/watch)?/?@?([^/]+)$"               , "replace": "https://piczel.tv/watch/$1"          }},
+										"pixiv"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/(?:[a-z-]+/)?users)?/?@?([^/]+)/?$", "replace": "https://pixiv.net/en/users/$1"       }},
+										"reddit"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?reddit\\.com)?/?(?:u?/)?@?([^/]+)/?$"          , "replace": "https://reddit.com/u/$1"             }},
+										"sofurry"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?([^.]+)(?:\\.sofurry\\.com/?)?$"                  , "replace": "https://$1.sofurry.com"              }},
+										"steam"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/id)?/?@?([^/]+)$"         , "replace": "https://steamcommunity.com/id/$1"    }},
+										"tiktok"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?tiktok.com)?/?@?([^/]+)/?$"                    , "replace": "https://tiktok.com/@$1"              }},
+										"toyhou.se"     : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?toyhou\\.se)?/?@?([^/]+)/?$"                   , "replace": "https://toyhou.se/$1"                }},
+										"transfur"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com)?/?(?:(?:users)?/)?@?([^/]+)$"  , "replace": "https://transfur.com/users/$1"       }},
+										"tumblr"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:tumblr\\.com)?/?@?([^/]*)$"     , "replace": "https://$1$2.tumblr.com"             }},
+										"twitch"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv)?/?@?([^/]+)$"                     , "replace": "https://twitch.tv/$1"                }},
+										"twitter"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
+										"wattpad"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)wattpad\\.com/users)?/?@?([^/]+)/?$"            , "replace": "https://wattpad.com/user/$1"         }},
+										"weasyl"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com)?/?@?~?([^/]+)$"                  , "replace": "https://weasyl.com/~$1"              }},
+										"x"             : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
+										"youtube"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com)?/?@?([^/]+)$"                   , "replace": "https://youtube.com/$1"              }}
 									},
 									"else": {"Error": "Unknown Furaffinity contact info like field."}
 								}}

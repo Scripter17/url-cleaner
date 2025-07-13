@@ -89,14 +89,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `nh_expand_mode`: How to handle redirect `NormalizedHost`s.
 - `rd_expand_mode`: How to handle redirect `RegDomain`s,
 
-### Job Context
-
-#### Vars
-
-- `SOURCE_HOST`: The `Host` of the "source" of the job. Usually the webpage it came from.
-- `SOURCE_NORMALIZED_HOST`: The `NormalizedHost` of the "source" of the job. Usually the webpage it came from.
-- `SOURCE_REG_DOMAIN`: The `RegDomain` of the "source" of the job, Usually the webpage it came from.
-
 ### Task Context
 
 #### Vars

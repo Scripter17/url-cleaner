@@ -137,7 +137,7 @@
 		},
 		{
 			"params_diff": {"flags": ["no_network"]},
-			"job_context": {"vars": {"SOURCE_REG_DOMAIN": "allmylinks.com"}},
+			"job_context": {"source_host": "allmylinks.com"},
 			"tests": [
 				{
 					"task_config": {
@@ -154,7 +154,7 @@
 		},
 		{
 			"params_diff": {"flags": ["no_network"]},
-			"job_context": {"vars": {"SOURCE_REG_DOMAIN": "x.com"}},
+			"job_context": {"source_host": "x.com"},
 			"tests": [
 				{
 					"task_config": {
@@ -170,7 +170,7 @@
 			]
 		},
 		{
-			"job_context": {"vars": {"SOURCE_NORMALIZED_HOST": "furaffinity.net", "SOURCE_REG_DOMAIN": "furaffinity.net"}},
+			"job_context": {"source_host": "furaffinity.net"},
 			"tests": [
 				{
 					"task_config": {

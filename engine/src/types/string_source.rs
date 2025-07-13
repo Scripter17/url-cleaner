@@ -285,6 +285,8 @@ pub enum StringSource {
         /// The [`UrlPart`] to get from [`Self::ExtractPart::value`].
         part: UrlPart
     },
+    /// Gets the specified [`HostPart`] from the [`TaskStateView::job_context`]'s [`JobContext::source_host`].
+    JobSourceHostPart(HostPart),
 
 
 
@@ -790,6 +792,7 @@ impl StringSource {
 
             Self::Part(part) => part.get(task_state.url),
             Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| Cow::Owned(x.into_owned())),
+            Self::JobSourceHostPart(part) => task_state.job_context.source_host.as_ref().and_then(|host| part.get(host)).map(Cow::Borrowed),
 
 
 
