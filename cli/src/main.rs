@@ -15,6 +15,7 @@ use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
 use url_cleaner_engine::testing::*;
 
+#[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
@@ -40,8 +41,8 @@ use url_cleaner_engine::testing::*;
 #[cfg_attr(not(feature = "commands"       ), doc = "commands"       )]
 #[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
-#[derive(Debug, Clone, PartialEq, Eq, Parser)]
-pub struct Args {
+#[derive(Debug, Parser)]
+struct Args {
     /// The URLs to clean before STDIN.
     ///
     /// The following are all equivalent:
@@ -56,19 +57,22 @@ pub struct Args {
     ///
     /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
-    pub urls: Vec<LazyTaskConfig<'static>>,
+    urls: Vec<LazyTaskConfig<'static>>,
     /// The config file to use.
     ///
     /// Omit to use the built in default cleaner.
     #[cfg(feature = "default-cleaner")]
     #[arg(short, long)]
-    pub cleaner: Option<PathBuf>,
+    cleaner: Option<PathBuf>,
     /// The cleaner file to use.
     ///
     /// Required as the `default-cleaner` feature is disabled.
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(short, long)]
-    pub cleaner: PathBuf,
+    cleaner: PathBuf,
+    /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
+    #[arg(long)]
+    export_cleaner: bool,
     /// Output results as JSON.
     ///
     /// The format looks like this, but minified:
@@ -82,56 +86,51 @@ pub struct Args {
     ///
     /// The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
     #[arg(short, long, verbatim_doc_comment)]
-    pub json: bool,
+    json: bool,
     /// The ParamsDiff files to apply to the cleaner's Params.
     #[arg(long)]
-    pub params_diff: Vec<PathBuf>,
+    params_diff: Vec<PathBuf>,
     #[arg(short, long)]
     /// Flags to insert into the params.
-    pub flag: Vec<String>,
+    flag: Vec<String>,
     /// Vars to insert into the params.
     #[arg(short, long, num_args = 2)]
-    pub var: Vec<Vec<String>>,
+    var: Vec<Vec<String>>,
     /// The cache to use.
     ///
     /// Defaults to "url-cleaner-cache.sqlite"
     #[cfg(feature = "cache")]
     #[arg(long)]
-    pub cache: Option<CachePath>,
+    cache: Option<CachePath>,
     /// Artifically delay cache reads about as long as the initial run to defend against cache detection.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
-    pub cache_delay: bool,
+    cache_delay: bool,
     /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
     #[arg(long, default_missing_value = "true")]
-    pub hide_thread_count: bool,
+    hide_thread_count: bool,
     /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
-    pub read_cache: Option<bool>,
+    read_cache: Option<bool>,
     /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
-    pub write_cache: Option<bool>,
+    write_cache: Option<bool>,
     /// The context to share between all Tasks.
     #[arg(long)]
-    pub job_context: Option<String>,
+    job_context: Option<String>,
     /// The number of worker threads to use.
     ///
     /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
-    pub threads: usize,
+    threads: usize,
     /// Test files to run.
     #[arg(long)]
-    pub tests: Vec<PathBuf>,
+    tests: Vec<PathBuf>,
     /// Asserts the "suitability" of the loaded cleaner.
     #[arg(long)]
-    pub test_suitability: bool,
-    /// Print the cleaner after all ParamsDiffs are applied.
-    ///
-    /// Exact output isn't stable due to HashSets/HashMaps having a random order.
-    #[arg(long)]
-    pub export_cleaner: bool
+    test_suitability: bool
 }
 
 /// The enum of errors [`main`] can return.
@@ -148,16 +147,7 @@ pub enum CliError {
     /// Returned when unable to load a [`Tests`] file.
     #[error(transparent)] CantLoadTests(io::Error),
     /// Returned when unable to parse a [`Tests`] file.
-    #[error(transparent)] CantParseTests(serde_json::Error),
-    /// Returned when a [`Args::var`] invocation has 0 elements.
-    #[error("--var requires name")]
-    VarRequiresName,
-    /// Returned when a [`Args::var`] invocation has 1 element.
-    #[error("--var requires value")]
-    VarRequiresValue,
-    /// Returned when a [`Args::var`] invocation has 3 or more elements.
-    #[error("--var too many args")]
-    VarTooManyArgs
+    #[error(transparent)] CantParseTests(serde_json::Error)
 }
 
 fn main() -> Result<ExitCode, CliError> {
@@ -176,15 +166,8 @@ fn main() -> Result<ExitCode, CliError> {
     }
     cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
-        match <[String; 2]>::try_from(var) {
-            Ok([name, value]) => {cleaner.params.to_mut().vars.insert(name, value);}
-            Err(x) => match x.len() {
-                0 => Err(CliError::VarRequiresName)?,
-                1 => Err(CliError::VarRequiresValue)?,
-                2 => unreachable!(),
-                _ => Err(CliError::VarTooManyArgs)?
-            }
-        }
+        let [name, value] = var.try_into().expect("The clap parser to work");
+        cleaner.params.to_mut().vars.insert(name, value);
     }
     #[cfg(feature = "cache")]
     if let Some(read_cache) = args.read_cache {

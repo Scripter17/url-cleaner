@@ -7,18 +7,26 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.a[0] }}
+    runs-on: ${{ matrix.oses.name }}
     strategy:
       matrix:
-        a: [[ubuntu-latest, ""], [windows-latest, ".exe"], [macos-latest, ""]]
+        oses: [
+            {name: ubuntu-latest , extension: ""},
+            {name: windows-latest, extension: ".exe"},
+            {name: macos-latest  , extension: ""}
+          ]
     steps:
     - uses: actions/checkout@v4
     - name: build
-      run: cargo build -r
+      run: |
+        cargo build -r
+        mkdir out
+        cp target/release/url-cleaner${{ matrix.oses.extension }} out/
+        cp target/release/url-cleaner-site${{ matrix.oses.extension }} out/
+        cp target/release/url-cleaner-discord-app${{ matrix.oses.extension }} out/
+        cp engine/default-cleaner.json out/
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.a[0] }}
-        path: |
-          target/release/url-cleaner${{ matrix.a[1] }}
-          target/release/url-cleaner-site${{ matrix.a[1] }}
-          target/release/url-cleaner-discord-app${{ matrix.a[1] }}
+        name: ${{ matrix.oses.name }}
+        if-no-files-found: error
+        path: out

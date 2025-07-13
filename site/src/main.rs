@@ -30,7 +30,32 @@ fn parse_byte_unit(s: &str) -> Result<rocket::data::ByteUnit, String> {
     rocket::data::ByteUnit::from_str(s).map_err(|x| x.to_string())
 }
 
-/// The command line argument format.
+#[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
+/// A basic HTTP server and userscript to allow automatically applying URL Cleaner to every URL on every webpage you visit.
+///
+/// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
+///
+/// Source code available at https://github.com/Scripter17/url-cleaner
+///
+/// Enabled features:
+#[cfg_attr(feature = "default-cleaner", doc = "default-cleaner")]
+#[cfg_attr(feature = "regex"          , doc = "regex"          )]
+#[cfg_attr(feature = "http"           , doc = "http"           )]
+#[cfg_attr(feature = "cache"          , doc = "cache"          )]
+#[cfg_attr(feature = "base64"         , doc = "base64"         )]
+#[cfg_attr(feature = "commands"       , doc = "commands"       )]
+#[cfg_attr(feature = "custom"         , doc = "custom"         )]
+#[cfg_attr(feature = "debug"          , doc = "debug"          )]
+///
+/// Disabled features:
+#[cfg_attr(not(feature = "default-cleaner"), doc = "default-cleaner")]
+#[cfg_attr(not(feature = "regex"          ), doc = "regex"          )]
+#[cfg_attr(not(feature = "http"           ), doc = "http"           )]
+#[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
+#[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
+#[cfg_attr(not(feature = "commands"       ), doc = "commands"       )]
+#[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
+#[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
     /// A url_cleaner::types::Cleaner JSON file. If none is provided, uses URL Cleaner's default cleaner.
@@ -41,6 +66,9 @@ struct Args {
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(long, short)]
     cleaner: PathBuf,
+    /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
+    #[arg(long)]
+    export_cleaner: bool,
     /// A url_cleaner::types::ParamsDiff JSON file to apply to the cleaner by default.
     #[arg(long)]
     params_diff: Vec<PathBuf>,
@@ -141,15 +169,8 @@ async fn rocket() -> _ {
     }
     cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
-        match <[String; 2]>::try_from(var) {
-            Ok([name, value]) => {cleaner.params.to_mut().vars.insert(name, value);}
-            Err(x) => match x.len() {
-                0 => panic!("--var requires name"),
-                1 => panic!("--var requires value"),
-                2 => unreachable!(),
-                _ => panic!("--var too many args")
-            }
-        }
+        let [name, value] = var.try_into().expect("The clap parser to work");
+        cleaner.params.to_mut().vars.insert(name, value);
     }
     #[cfg(feature = "cache")]
     if let Some(read_cache) = args.read_cache {
@@ -158,6 +179,11 @@ async fn rocket() -> _ {
     #[cfg(feature = "cache")]
     if let Some(write_cache) = args.write_cache {
         cleaner.params.to_mut().write_cache = write_cache;
+    }
+
+    if args.export_cleaner {
+        println!("{}", serde_json::to_string(&cleaner).expect("Cleaners to always serialize to JSON."));
+        std::process::exit(0);
     }
 
     let server_state = ServerState {

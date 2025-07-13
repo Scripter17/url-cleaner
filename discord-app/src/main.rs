@@ -17,8 +17,33 @@ use url_cleaner_engine::glue::*;
 /// Does not account for code blocks, spoilers, etc.
 static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\])\s]+").expect("The URL parsing Regex to be valid."));
 
-/// URL Cleaner Site Discord App
-#[derive(Parser)]
+#[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
+/// A discord app for URL Cleaner.
+///
+/// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
+///
+/// Source code available at https://github.com/Scripter17/url-cleaner
+///
+/// Enabled features:
+#[cfg_attr(feature = "default-cleaner", doc = "default-cleaner")]
+#[cfg_attr(feature = "regex"          , doc = "regex"          )]
+#[cfg_attr(feature = "http"           , doc = "http"           )]
+#[cfg_attr(feature = "cache"          , doc = "cache"          )]
+#[cfg_attr(feature = "base64"         , doc = "base64"         )]
+#[cfg_attr(feature = "commands"       , doc = "commands"       )]
+#[cfg_attr(feature = "custom"         , doc = "custom"         )]
+#[cfg_attr(feature = "debug"          , doc = "debug"          )]
+///
+/// Disabled features:
+#[cfg_attr(not(feature = "default-cleaner"), doc = "default-cleaner")]
+#[cfg_attr(not(feature = "regex"          ), doc = "regex"          )]
+#[cfg_attr(not(feature = "http"           ), doc = "http"           )]
+#[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
+#[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
+#[cfg_attr(not(feature = "commands"       ), doc = "commands"       )]
+#[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
+#[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
+#[derive(Debug, Parser)]
 struct Args {
     /// The config file to use.
     ///
@@ -32,12 +57,30 @@ struct Args {
     #[arg(long)]
     #[cfg(not(feature = "default-cleaner"))]
     cleaner: PathBuf,
+    /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
+    #[arg(long)]
+    export_cleaner: bool,
     /// The cache to use.
     ///
     /// Defaults to "url-cleaner-discord-app-cache.sqlite"
     #[cfg(feature = "cache")]
     #[arg(long)]
     cache: Option<CachePath>,
+    /// Artifically delay cache reads about as long as the initial run to defend against cache detection.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    cache_delay: bool,
+    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
+    #[arg(long, default_missing_value = "true")]
+    hide_thread_count: bool,
+    /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    read_cache: Option<bool>,
+    /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_missing_value = "true")]
+    write_cache: Option<bool>,
     /// The ParamsDiff files to apply to the cleaner's Params.
     ///
     /// Applied before each --params-diff-profile.
@@ -57,7 +100,12 @@ struct State {
     cleaner: Cleaner<'static>,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
-    cache: Cache
+    cache: Cache,
+    /// [`CacheHandleConfig::delay`]
+    #[cfg(feature = "cache")]
+    cache_delay: bool,
+    /// [`Job::unthreader`] ([`Unthreader::if`]).
+    hide_thread_count: bool
 }
 
 /// The error type.
@@ -79,11 +127,27 @@ async fn main() {
     if let Some(params_diff) = args.params_diff {
         serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.").apply_once(cleaner.params.to_mut());
     }
+    #[cfg(feature = "cache")]
+    if let Some(read_cache) = args.read_cache {
+        cleaner.params.to_mut().read_cache = read_cache;
+    }
+    #[cfg(feature = "cache")]
+    if let Some(write_cache) = args.write_cache {
+        cleaner.params.to_mut().write_cache = write_cache;
+    }
+
+    if args.export_cleaner {
+        println!("{}", serde_json::to_string(&cleaner).expect("Cleaners to always serialize to JSON."));
+        std::process::exit(0);
+    }
 
     let state = State {
         cleaner,
         #[cfg(feature = "cache")]
-        cache: args.cache.unwrap_or("url-cleaner-discord-app-cache.sqlite".into()).into()
+        cache: args.cache.unwrap_or("url-cleaner-discord-app-cache.sqlite".into()).into(),
+        #[cfg(feature = "cache")]
+        cache_delay: args.cache_delay,
+        hide_thread_count: args.hide_thread_count
     };
 
     for [name, params_diff] in args.params_diff_profile.into_iter().map(|args| <[String; 2]>::try_from(args).expect("The clap parser to work")) {
@@ -93,7 +157,7 @@ async fn main() {
 
         commands.push(poise::Command {
             name: Cow::Owned(format!("Clean URLs ({name})")),
-            context_menu_action: Some(poise::structs::ContextMenuCommandAction::Message(move |ctx: poise::structs::ApplicationContext<'_, State, Error>, msg: serenity::Message| {
+            context_menu_action: Some(poise::structs::ContextMenuCommandAction::Message(|ctx: poise::structs::ApplicationContext<'_, State, Error>, msg: serenity::Message| {
                 Box::pin(async move {
                     clean_urls_with_params(
                         ctx.into(),
@@ -145,7 +209,8 @@ async fn clean_urls(
 
 /// Clean a messages's URLs with the specified [`Params`].
 async fn clean_urls_with_params(ctx: Context<'_>, msg: serenity::Message, params: Option<&Params>) -> Result<(), Error> {
-    let mut cleaner = ctx.data().cleaner.borrowed();
+    let data = ctx.data();
+    let mut cleaner = data.cleaner.borrowed();
 
     if let Some(params) = params {
         cleaner.params = Cow::Borrowed(params);
@@ -157,8 +222,10 @@ async fn clean_urls_with_params(ctx: Context<'_>, msg: serenity::Message, params
         #[cfg(feature = "cache")]
         cache: &ctx.data().cache,
         #[cfg(feature = "cache")]
-        cache_handle_config: Default::default(),
-        unthreader: &Default::default(),
+        cache_handle_config: CacheHandleConfig {
+            delay: data.cache_delay
+        },
+        unthreader: &Unthreader::r#if(data.hide_thread_count),
         lazy_task_configs: Box::new(GET_URLS.find_iter(&msg.content).map(|x| Ok(x.as_str().into())))
     };
 
