@@ -265,7 +265,7 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                         lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
                     };
                     for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {
-                        in_sender.send(maybe_task_source).expect("To successfuly send the LazyTask.");
+                        in_sender.send(maybe_task_source).expect("To successfully send the LazyTask.");
                     }
                 }).expect("Spawning a thread to work fine.");
 

@@ -144,7 +144,7 @@ pub struct HttpClientConfigDiff {
 impl HttpClientConfigDiff {
     /// Applies the diff.
     ///
-    /// If you want to apply `self` mutliple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then usine [`Self::apply_once`] on each clone.
+    /// If you want to apply `self` multiple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then using [`Self::apply_once`] on each clone.
     pub fn apply_once(self, to: &mut HttpClientConfig) {
         debug!(HttpClientConfigDiff::apply_once, &self, to);
         if let Some(new_redirect_policy) = self.redirect_policy {to.redirect_policy = new_redirect_policy;}

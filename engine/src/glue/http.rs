@@ -82,10 +82,10 @@ pub enum MakeHttpRequestError {
     ResponseHandlerError(#[from] ResponseHandlerError),
     /// Returned when a [`reqwest::header::InvalidHeaderName`] is encountered.
     #[error(transparent)]
-    InvalieHeaderName(#[from] reqwest::header::InvalidHeaderName),
+    InvalidHeaderName(#[from] reqwest::header::InvalidHeaderName),
     /// Returned when a [`reqwest::header::InvalidHeaderValue`] is encountered.
     #[error(transparent)]
-    InvalieHeaderValue(#[from] reqwest::header::InvalidHeaderValue)
+    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue)
 }
 
 /// The enum of errors [`RequestConfig::send`] can return.

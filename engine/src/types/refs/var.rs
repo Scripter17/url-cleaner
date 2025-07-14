@@ -37,7 +37,7 @@ pub enum VarType {
     Env
 }
 
-/// The enum of erros [`VarType::get`] and [`VarRef::get`] can return.
+/// The enum of errors [`VarType::get`] and [`VarRef::get`] can return.
 #[derive(Debug, Error)]
 pub enum GetVarError {
     /// Returned when a [`StringSourceError`] is encountered.

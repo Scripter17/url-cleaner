@@ -8,7 +8,7 @@
 //!
 //! - `value` (`TEXT` (maybe null)): The value of the key/value pair. For example, redirects have their `value` set to the URL the starting redirect URL points to.
 //!
-//! - `duration` (`FLOAT`): The amount of time (in seconds) it took to do the thing being cached. For example, redirects have their `duration` set to about as long as it took to do the network request(s). This is used by [`CacheHandle`] to artifically delay cache reads if [`CacheHandleConfig::delay`] is [`true`] to reduce the ability of websites to tell if you've seen a certain URL before.
+//! - `duration` (`FLOAT`): The amount of time (in seconds) it took to do the thing being cached. For example, redirects have their `duration` set to about as long as it took to do the network request(s). This is used by [`CacheHandle`] to artificially delay cache reads if [`CacheHandleConfig::delay`] is [`true`] to reduce the ability of websites to tell if you've seen a certain URL before.
 //!
 //! Every pair of `subject` and `key` is unique.
 
@@ -36,7 +36,7 @@ pub use glue::*;
 ///
 /// Unlike [`Cache`], which is intended to be shared between [`Job`]s, [`CacheHandle`]s are intended to be made on a per-[`Job`] basis using the [`CacheHandleConfig`] appropriate for each particular [`Job`].
 ///
-/// For example, a CLI program writing results to a file doesn't need to enable cache delay/unthreading, but a userscipt should.
+/// For example, a CLI program writing results to a file doesn't need to enable cache delay/unthreading, but a userscript should.
 /// # Examples
 /// ```
 /// use url_cleaner_engine::glue::*;
@@ -64,7 +64,7 @@ pub struct CacheHandle<'a> {
 /// Configuration for how a [`CacheHandle`] should behave.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CacheHandleConfig {
-    /// If [`true`], delay cache reads by about as long as the inital computation took.
+    /// If [`true`], delay cache reads by about as long as the initial computation took.
     ///
     /// Used by URL Cleaner Site Userscript to reduce the ability of websites to tell if you have a URL cached.
     ///

@@ -256,7 +256,7 @@ pub enum StringLocation {
     AtOrAfter(isize),
     /// Passes if the haystack contains the needle before or at the specified index.
     ///
-    /// If you want to only pass wehn the needle is strictly before the specified index, see [`Self::Before`].
+    /// If you want to only pass when the needle is strictly before the specified index, see [`Self::Before`].
     /// # Errors
     /// If the specified index is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples

@@ -55,7 +55,7 @@ impl BetterUrl {
 
     /// Sets the specified [`UrlPart::DomainSuffix`] segment.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`SetDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
+    /// If the URL doesn't have a domain, returns the error [`SetDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
     ///
     /// If the segment isn't found, returns the error [`SetDomainSuffixSegmentError::SegmentNotFound`].
     /// # Examples
@@ -94,7 +94,7 @@ impl BetterUrl {
 
     /// Inserts a new [`UrlPart::DomainSuffixSegment`] at the specified index.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
+    /// If the URL doesn't have a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
     ///
     /// If the segment isn't found, returns the error [`InsertDomainSuffixSegmentError::SegmentNotFound`].
     ///
@@ -109,7 +109,7 @@ impl BetterUrl {
 
     /// Inserts a new [`UrlPart::DomainSuffixSegment`] after the specified index.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
+    /// If the URL doesn't have a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
     ///
     /// If the segment isn't found, returns the error [`InsertDomainSuffixSegmentError::SegmentNotFound`].
     ///

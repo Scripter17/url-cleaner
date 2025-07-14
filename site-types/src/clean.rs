@@ -43,6 +43,6 @@ pub struct CleanSuccess {
 pub struct CleanError {
     /// The HTTP status code.
     pub status: u16,
-    /// The error meesage.
+    /// The error message.
     pub message: String
 }

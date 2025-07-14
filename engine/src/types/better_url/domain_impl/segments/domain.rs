@@ -61,7 +61,7 @@ impl BetterUrl {
 
     /// Sets the specified [`UrlPart::DomainSegment`].
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`SetDomainSegmentError::UrlDoesNotHaveDomain`].
+    /// If the URL doesn't have a domain, returns the error [`SetDomainSegmentError::UrlDoesNotHaveDomain`].
     ///
     /// If the segment isn't found, returns the error [`SetDomainSegmentError::SegmentNotFound`].
     /// # Examples
@@ -105,7 +105,7 @@ impl BetterUrl {
 
     /// Inserts a new [`UrlPart::DomainSegment`] at the specified index.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`InsertDomainSegmentError::UrlDoesNotHaveDomain`].
+    /// If the URL doesn't have a domain, returns the error [`InsertDomainSegmentError::UrlDoesNotHaveDomain`].
     ///
     /// If the segment isn't found, returns the error [`InsertDomainSegmentError::SegmentNotFound`].
     ///
@@ -120,7 +120,7 @@ impl BetterUrl {
 
     /// Inserts a new [`UrlPart::DomainSegment`] after the specified index.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`InsertDomainSegmentError::UrlDoesNotHaveDomain`].
+    /// If the URL doesn't have a domain, returns the error [`InsertDomainSegmentError::UrlDoesNotHaveDomain`].
     ///
     /// If the segment isn't found, returns the error [`InsertDomainSegmentError::SegmentNotFound`].
     ///

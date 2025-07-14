@@ -2,7 +2,7 @@
 //!
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
-#![allow(rustdoc::bare_urls, reason = "All useuless.")]
+#![allow(rustdoc::bare_urls, reason = "All useless.")]
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal, BufRead};
@@ -102,7 +102,7 @@ struct Args {
     #[cfg(feature = "cache")]
     #[arg(long)]
     cache: Option<CachePath>,
-    /// Artifically delay cache reads about as long as the initial run to defend against cache detection.
+    /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
     cache_delay: bool,

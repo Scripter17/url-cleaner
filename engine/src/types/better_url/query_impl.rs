@@ -50,7 +50,7 @@ impl BetterUrl {
             ))
     }
 
-    /// Get the selected query paremeter without percent decoding the value.
+    /// Get the selected query parameter without percent decoding the value.
     ///
     /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     /// # Examples
@@ -116,7 +116,7 @@ impl BetterUrl {
     ///
     /// First [`Option`] is if there's a query.
     ///
-    /// Second [`Option`] is if there's a query paraeter with the specified name.
+    /// Second [`Option`] is if there's a query parameter with the specified name.
     ///
     /// Third [`Option`] is if it has a value.
     /// # Examples
@@ -218,7 +218,7 @@ impl BetterUrl {
     ///
     /// For performance reasons, resulting empty queries are replaced with [`None`].
     ///
-    /// Useful in combination with [`Self::raw_query_param`] for transplanting values without decoding then reencoding them.
+    /// Useful in combination with [`Self::raw_query_param`] for transplanting values without decoding then re-encoding them.
     ///
     /// PLEASE note that if `name` and/or `value` contain special characters like `=`, `&`, etc. this will give incoherent results! ONLY use this for directly transplanting from and to query params.
     /// # Errors

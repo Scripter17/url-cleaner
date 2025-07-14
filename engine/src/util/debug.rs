@@ -3,7 +3,7 @@
 use std::sync::{Mutex, LazyLock};
 use std::collections::HashMap;
 
-/// The state of the debug printing stuffl
+/// The state of the debug printing stuff.
 #[derive(Debug, Default)]
 pub(crate) struct DebugState {
     /// The indentation to use.

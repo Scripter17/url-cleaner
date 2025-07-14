@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize, ser::Serializer, de::{Visitor, Deserializer,
 ///
 /// Unthreading means that long running operations can be forced to run sequentially, making N redirect URLs always take N times as long as 1, while keeping the benefits of parallelizing everything else.
 ///
-/// It's not a perfect defense, websites can probably give you extremely expensive but non-redirect URLs and use the previously mentioned schcme to figure out your thread count, but that is very unlikely to give useful results in the vast majority of situations.
+/// It's not a perfect defence, websites can probably give you extremely expensive but non-redirect URLs and use the previously mentioned scheme to figure out your thread count, but that is very unlikely to give useful results in the vast majority of situations.
 #[derive(Debug, Default)]
 pub enum Unthreader {
     /// Don't do any unthreading.

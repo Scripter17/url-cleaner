@@ -9,7 +9,7 @@ pub enum SetPathSegmentError {
     #[error(transparent)]
     UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
     /// Returned when the path segment isn't found.
-    #[error("The path segemnt wasn't found.")]
+    #[error("The path segment wasn't found.")]
     SegmentNotFound
 }
 
@@ -20,7 +20,7 @@ pub enum InsertPathSegmentError {
     #[error(transparent)]
     UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
     /// Returned when the path segment isn't found.
-    #[error("The path segemnt wasn't found.")]
+    #[error("The path segment wasn't found.")]
     SegmentNotFound
 }
 
@@ -49,7 +49,7 @@ impl BetterUrl {
         self.url.path_segments().ok_or(UrlDoesNotHavePathSegments)
     }
 
-    /// Gets the specifid path segment.
+    /// Gets the specified path segment.
     /// # Errors
     #[doc = edoc!(callerr(Self::path_segments))]
     /// # Examples
@@ -134,7 +134,7 @@ impl BetterUrl {
 
     /// Inserts a path segment at the specified path segment.
     ///
-    /// If the specified segment is one after the last, inserts a new segemnt at the end.
+    /// If the specified segment is one after the last, inserts a new segment at the end.
     /// # Errors
     #[doc = edoc!(callnone(Self::path_segments_str, UrlDoesNotHavePathSegments))]
     ///
@@ -149,7 +149,7 @@ impl BetterUrl {
 
     /// Inserts a path segment after the specified path segment.
     ///
-    /// If the specified segment is one after the last, inserts a new segemnt at the end.
+    /// If the specified segment is one after the last, inserts a new segment at the end.
     /// # Errors
     #[doc = edoc!(callnone(Self::path_segments_str, UrlDoesNotHavePathSegments))]
     ///

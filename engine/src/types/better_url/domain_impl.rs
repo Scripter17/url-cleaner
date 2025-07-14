@@ -12,7 +12,7 @@ pub enum SetDomainError {
     #[error(transparent)]
     SetHostError(#[from] SetHostError),
     /// One of the many other errors that can happen.
-    #[error("One of many possible issues I dont want to name.")]
+    #[error("One of many possible issues I don't want to name.")]
     Other
 }
 

@@ -440,7 +440,7 @@ pub enum Action {
 
     /// [`BetterUrl::set_path`].
     SetPath(StringSource),
-    /// Remoes the specified [`UrlPart::PathSegment`].
+    /// Removes the specified [`UrlPart::PathSegment`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::set_path_segment))]
     RemovePathSegment(isize),

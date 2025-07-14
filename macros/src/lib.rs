@@ -8,8 +8,8 @@ mod util;
 
 /// The derive macro for URL Cleaner's `Suitability` trait.
 #[proc_macro_derive(Suitability, attributes(suitable))]
-pub fn suitablility_derive(input: TokenStream) -> TokenStream {
-    suitability::suitablility_derive(input)
+pub fn suitability_derive(input: TokenStream) -> TokenStream {
+    suitability::suitability_derive(input)
 }
 
 /// Error doc generator.

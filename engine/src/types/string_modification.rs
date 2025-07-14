@@ -181,7 +181,7 @@ pub enum StringModification {
         #[serde(default, skip_serializing_if = "is_default")]
         r#else: Option<Box<Self>>
     },
-    /// If the string containes [`Self::IfContains::value`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
+    /// If the string contains [`Self::IfContains::value`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModificationError), checkerr(StringLocation), applyerr(Self))]
     IfContains {
@@ -194,7 +194,7 @@ pub enum StringModification {
         /// The [`Self`] to apply if [`Self::IfContains::value`] is not found at [`Self::IfContains::at`].
         r#else: Option<Box<Self>>
     },
-    /// If the string containes any value in [`Self::IfContainsAny::values`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
+    /// If the string contains any value in [`Self::IfContainsAny::values`] at [`Self::IfContains::at`], apply [`Self::IfContains::then`], otherwise apply [`Self::IfContains::else`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource, 3), getnone(StringSource, StringModificationError, 3), checkerr(StringLocation, 3), applyerr(Self, 3))]
     IfContainsAny {
@@ -690,7 +690,7 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), callerr(::percent_encoding::PercentDecode::decode_utf8))]
     PercentDecode,
-    /// [`Self::PercentDecode`] but replaces non-UTF-8 percent encoded byte equences with U+FFFD (�), the replacement character.
+    /// [`Self::PercentDecode`] but replaces non-UTF-8 percent encoded byte sequences with U+FFFD (�), the replacement character.
     ///
     /// Unfortunately doesn't allow specifying a [`PercentEncodeAlphabet`] to keep certain values encoded due to limitations with the [`::percent_encoding`] API.
     /// # Errors

@@ -102,7 +102,7 @@ pub(crate) fn peh(s: &str) -> Cow<'_, str> {
 
 /// Helper method.
 /// # Errors
-/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segemnt_not_found`.
+/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segment_not_found`.
 pub(crate) fn set_segment<'a, E>(part: &'a str, index: isize, value: Option<&'a str>, segment_not_found: E, split: char) -> Result<Vec<&'a str>, E> {
     let mut segments = part.split(split).collect::<Vec<_>>();
     let index = neg_index(index, segments.len()).ok_or(segment_not_found)?;
@@ -118,7 +118,7 @@ pub(crate) fn set_segment<'a, E>(part: &'a str, index: isize, value: Option<&'a 
 ///
 /// Assumes `split` is one byte but this is only called with `.` and `/` so who cares.
 /// # Errors
-/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segemnt_not_found`.
+/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segment_not_found`.
 pub(crate) fn insert_segment_at<E>(part: &str, index: isize, value: &str, segment_not_found: E, split: char, join: &str) -> Result<String, E> {
     use std::ops::Bound;
     #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
@@ -135,7 +135,7 @@ pub(crate) fn insert_segment_at<E>(part: &str, index: isize, value: &str, segmen
 
 /// Helper method.
 /// # Errors
-/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segemnt_not_found`.
+/// If the call to [`neg_index`] returns [`None`], returns the error provided in `segment_not_found`.
 pub(crate) fn insert_segment_after<E>(part: &str, index: isize, value: &str, segment_not_found: E, split: char, join: &str) -> Result<String, E> {
     let mut segments = part.split(split).collect::<Vec<_>>();
     #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]

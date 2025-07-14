@@ -151,7 +151,7 @@ impl ParamsDiff {
     ///
     /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
     ///
-    /// If you want to apply `self` mutliple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then usine [`Self::apply_once`] on each clone.
+    /// If you want to apply `self` multiple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then using [`Self::apply_once`] on each clone.
     pub fn apply_once(self, to: &mut Params) {
         debug!(Params::apply_once, &self, to);
         to.flags.extend(self.flags);

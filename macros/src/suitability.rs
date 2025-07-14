@@ -28,18 +28,18 @@ impl Parse for SuitabilityOverride {
             <Token![=]>::parse(input)?;
             Self::Assert(<LitStr as Parse>::parse(input)?.parse()?)
         } else {
-            Err(Error::new(input.span(), "Unknwon suitability override"))?
+            Err(Error::new(input.span(), "Unknown suitability override"))?
         })
     }
 }
 
-/// Getsa [`SuitabilityOverride`] from an item's attributes.
+/// Gets a [`SuitabilityOverride`] from an item's attributes.
 fn get_suitability_override(attrs: &[Attribute]) -> Result<Option<SuitabilityOverride>> {
     attrs.iter().find(|attr| attr.path().is_ident("suitable")).map(|attr| attr.parse_args()).transpose()
 }
 
 /// The derive macro for URL Cleaner's `Suitability` trait.
-pub(crate) fn suitablility_derive(input: TokenStream) -> TokenStream {
+pub(crate) fn suitability_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = &input.ident;

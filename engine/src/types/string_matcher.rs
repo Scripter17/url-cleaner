@@ -104,7 +104,7 @@ pub enum StringMatcher {
 
     // Containment
 
-    /// Passes if the sring starts with the specified string.
+    /// Passes if the string starts with the specified string.
     /// # Errors
     /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
     StartsWith(String),

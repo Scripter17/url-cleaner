@@ -55,7 +55,7 @@ impl BetterUrl {
 
     /// Sets the specified [`UrlPart::Subdomain`] segment.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`SetSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
+    /// If the URL doesn't have a domain, returns the error [`SetSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
     ///
     /// If the segment isn't found, returns the error [`SetSubdomainSegmentError::SegmentNotFound`].
     /// # Examples
@@ -93,7 +93,7 @@ impl BetterUrl {
 
     /// Inserts a new [`UrlPart::SubdomainSegment`] at the specified index.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
+    /// If the URL doesn't have a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
     ///
     /// If the segment isn't found, returns the error [`InsertSubdomainSegmentError::SegmentNotFound`].
     ///
@@ -108,7 +108,7 @@ impl BetterUrl {
 
     /// Inserts a new [`UrlPart::SubdomainSegment`] after the specified index.
     /// # Errors
-    /// If the URL doesn't havea a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
+    /// If the URL doesn't have a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
     ///
     /// If the segment isn't found, returns the error [`InsertSubdomainSegmentError::SegmentNotFound`].
     ///

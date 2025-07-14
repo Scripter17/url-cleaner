@@ -48,7 +48,7 @@ pub enum FlagType {
     CommonArg
 }
 
-/// The enum of erros [`FlagType::get`] and [`FlagRef::get`] can return.
+/// The enum of errors [`FlagType::get`] and [`FlagRef::get`] can return.
 #[derive(Debug, Error)]
 pub enum GetFlagError {
     /// Returned when a [`StringSourceError`] is encountered.

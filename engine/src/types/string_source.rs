@@ -644,7 +644,7 @@ pub enum StringSourceError {
     /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when a [`StringModificationError`] is encounterd.
+    /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
     /// Returned when a [`Box<StringMatcherError>`] is encountered.
@@ -822,7 +822,7 @@ impl StringSource {
 
             #[cfg(feature = "http")]
             Self::HttpRequest(config) => {
-                let _unthread_hanlde = task_state.unthreader.unthread();
+                let _unthread_handle = task_state.unthreader.unthread();
                 Some(Cow::Owned(config.response(task_state)?))
             },
 

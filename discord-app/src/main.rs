@@ -66,7 +66,7 @@ struct Args {
     #[cfg(feature = "cache")]
     #[arg(long)]
     cache: Option<CachePath>,
-    /// Artifically delay cache reads about as long as the initial run to defend against cache detection.
+    /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
     cache_delay: bool,
@@ -207,7 +207,7 @@ async fn clean_urls(
     clean_urls_with_params(ctx, msg, None).await
 }
 
-/// Clean a messages's URLs with the specified [`Params`].
+/// Clean a message's URLs with the specified [`Params`].
 async fn clean_urls_with_params(ctx: Context<'_>, msg: serenity::Message, params: Option<&Params>) -> Result<(), Error> {
     let data = ctx.data();
     let mut cleaner = data.cleaner.borrowed();
