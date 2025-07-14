@@ -14,6 +14,7 @@ use crate::util::*;
 ///
 /// Defaults to [`Self::Params`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum VarType {
     /// Get it from [`TaskStateView::params`]'s [`Params::vars`].
     #[default]
@@ -88,6 +89,7 @@ impl VarType {
 /// assert_eq!(serde_json::from_str::<VarRef>("\"name\"").unwrap(), VarRef {r#type: Default::default(), name: "name".into()});
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct VarRef {
     /// The type of the variable to get.

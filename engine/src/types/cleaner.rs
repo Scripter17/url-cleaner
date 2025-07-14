@@ -25,6 +25,7 @@ pub use commons::*;
 
 /// The config that determines all behavior of how URLs are cleaned.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct Cleaner<'a> {
     /// The documentation.
     ///

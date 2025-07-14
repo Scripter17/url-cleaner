@@ -21,6 +21,7 @@ use crate::types::*;
 
 /// The details of a [`BetterUrl`]'s host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum HostDetails {
     /// Details of a [`BetterUrl`]'s domain host.
     Domain(DomainDetails),

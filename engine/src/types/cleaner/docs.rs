@@ -14,6 +14,7 @@ use crate::util::*;
 /// Used for suitability tests to make sure I don't forget to document anything and also to generate the docs section of the README.
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct CleanerDocs {
     /// The name of the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]

@@ -17,6 +17,7 @@ use crate::util::*;
 
 /// Check if a [`str`] matches a certain pattern/rule.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum StringMatcher {
     /// Always passes.
     Always,

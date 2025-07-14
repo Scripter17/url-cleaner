@@ -15,6 +15,7 @@ use crate::glue::HttpClientConfig;
 
 /// Rules on how to make a [`reqwest::Proxy`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct ProxyConfig {
     /// The [`Url`] to proxy requests to.
@@ -61,6 +62,7 @@ impl From<Url> for ProxyConfig {
 ///
 /// Defaults to [`Self::All`].
 #[derive(Debug, Clone, Copy, PartialEq, Default, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum ProxyMode {
     /// Proxy only HTTP.
     ///
@@ -81,6 +83,7 @@ pub enum ProxyMode {
 ///
 /// Uses the [`Proxy-Authentication`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Proxy-Authorization) HTTP header.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum ProxyAuth {
     /// Uses the [`Basic`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Authentication#basic_authentication_scheme) mode.
     ///

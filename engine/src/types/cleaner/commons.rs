@@ -9,6 +9,7 @@ use crate::util::*;
 
 /// Common snippets of various tools that can be invoked like functions.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct Commons {
     /// Common [`Condition`]s.
     #[serde(default, skip_serializing_if = "is_default")]

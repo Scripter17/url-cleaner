@@ -16,6 +16,7 @@ use crate::util::*;
 ///
 /// - "*IsInSet" variants should alwasy be equivalent to moving the [`Set`] from [`Params::sets`] to the respective "*IsOneOf" variant.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum Condition {
     // Debug/constants
 

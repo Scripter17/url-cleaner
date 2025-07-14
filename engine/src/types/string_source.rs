@@ -24,6 +24,7 @@ use crate::util::*;
 /// # Terminology
 /// "The value of {x}" and "{x}'s call to [`Self::get`]" are used interchangeably.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub enum StringSource {
     /// Return a reference to the contained [`String`].

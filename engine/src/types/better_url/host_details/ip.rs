@@ -9,6 +9,7 @@ use serde::{Serialize, Deserialize};
 ///
 /// Currently empty and only exists for completeness.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Ipv4Details {}
 
 #[allow(unused_variables, reason = "API completeness.")]
@@ -24,6 +25,7 @@ impl Ipv4Details {
 ///
 /// Currently empty and only exists for completeness.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Ipv6Details {}
 
 #[allow(unused_variables, reason = "API completeness.")]

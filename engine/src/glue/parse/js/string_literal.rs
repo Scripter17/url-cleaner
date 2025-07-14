@@ -7,6 +7,7 @@ use crate::util::*;
 
 /// The last state of the state machine used to unescape javascript string literal prefixes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum StringLiteralPrefixLastState {
     /// Before the start of the string literal.
     Outside,

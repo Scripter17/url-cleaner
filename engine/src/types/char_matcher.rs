@@ -11,6 +11,7 @@ use crate::util::*;
 
 /// Check if a [`char`] is in a certain set of [`char`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum CharMatcher {
     /// Always passes.
     Always,

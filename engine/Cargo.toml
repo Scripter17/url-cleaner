@@ -20,12 +20,12 @@ form_urlencoded = "1.2.1"
 percent-encoding = "2.3.1"
 parking_lot = "0.12.4"
 url-cleaner-macros = { version = "0.11.0", path = "../macros" }
-regex   = { optional = true, version = "1.11.1" }
-reqwest = { optional = true, version = "0.12.22", features = ["blocking", "socks", "json", "cookies", "native-tls-alpn"] }
-diesel  = { optional = true, version = "2.2.11" , features = ["sqlite"] }
-rand    = { optional = true, version = "0.9.1" }
-base64  = { optional = true, version = "0.22.1" }
-libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
+regex          = { optional = true, version = "1.11.1"  }
+reqwest        = { optional = true, version = "0.12.22", features = ["blocking", "socks", "json", "cookies", "native-tls-alpn"] }
+diesel         = { optional = true, version = "2.2.12" , features = ["sqlite"] }
+libsqlite3-sys = { optional = true, version = "0.35.0" , features = ["bundled"] }
+rand           = { optional = true, version = "0.9.1"   }
+base64         = { optional = true, version = "0.22.1"  }
 
 [dev-dependencies]
 criterion = "0.6.0"
@@ -45,7 +45,7 @@ default         = ["default-cleaner"]
 default-cleaner = ["regex", "http", "cache", "base64"]
 regex           = ["dep:regex"]
 http            = ["dep:reqwest"]
-cache           = ["dep:diesel", "dep:rand"]
+cache           = ["dep:diesel", "dep:rand", "dep:libsqlite3-sys"]
 base64          = ["dep:base64"]
 commands        = []
 custom          = []

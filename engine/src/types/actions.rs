@@ -37,6 +37,7 @@ use crate::util::*;
 /// If you need to revert the task state when an error is returned, use [`Self::RevertOnError`] to revert the effects but still return the error, and optionally [`Self::IgnoreError`] to ignore the error.
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum Action {
     /// Does nothing.
     /// # Examples

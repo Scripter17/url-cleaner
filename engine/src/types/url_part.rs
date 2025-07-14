@@ -18,6 +18,7 @@ use crate::util::*;
 ///
 /// Exceptions include setting part segments to values containing the split, `After`/`Before`/`Next` variants always returning [`None`], and probably some other things. I'll fix this doc later.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum UrlPart {
     /// Print debug information about the contained [`Self`].
     #[suitable(never)]

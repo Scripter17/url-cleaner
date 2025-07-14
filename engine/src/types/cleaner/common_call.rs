@@ -11,6 +11,7 @@ use crate::util::*;
 
 /// Instructions on how to call a [`Commons`] thing.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct CommonCall {
     /// The name of the [`Commons`] thing to call.

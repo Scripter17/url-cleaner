@@ -19,6 +19,7 @@ use crate::util::*;
 /// Currently only capable of making blocking requests.
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct RequestConfig {
     /// The URL to send the request to.
     ///
@@ -168,6 +169,7 @@ impl RequestConfig {
 
 /// How a [`RequestConfig`] should construct its body.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum RequestBody {
     /// Send the specified text.
     /// # Errors
@@ -230,6 +232,7 @@ impl RequestBody {
 ///
 /// Defaults to [`Self::Body`].
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum ResponseHandler {
     /// Get the response body.
     /// # Errors

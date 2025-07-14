@@ -13,6 +13,7 @@ use crate::util::*;
 ///
 /// Defaults to [`Self::Anywhere`].
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum StringLocation {
     /// Always passes.
     /// # Examples

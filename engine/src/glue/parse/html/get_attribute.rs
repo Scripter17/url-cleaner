@@ -1,6 +1,7 @@
 //! Gets attributes from HTML elements.
 
 use thiserror::Error;
+use serde::{Serialize, Deserialize};
 
 use super::*;
 use crate::util::*;
@@ -59,7 +60,8 @@ pub enum GAVError {
 }
 
 /// The states the DFA in [`get_attribute_value`] can be in.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum GAVLastBite {
     /// The [Data](https://html.spec.whatwg.org/multipage/parsing.html#data-state) state.
     Data,

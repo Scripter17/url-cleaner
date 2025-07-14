@@ -23,6 +23,7 @@ use crate::util::*;
 /// No the default config does not and will never use this.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[suitable(never)]
+#[serde(deny_unknown_fields)]
 #[serde(remote="Self")]
 pub struct CommandConfig {
     /// The program.

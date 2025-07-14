@@ -14,6 +14,7 @@ use crate::types::*;
 
 /// The details of a domain host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DomainDetails {
     /// The start of the [`UrlPart::DomainMiddle`].
     pub middle_start: Option<usize>,

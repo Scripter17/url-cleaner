@@ -13,6 +13,7 @@ use crate::util::*;
 /// Also has [`Self::else`] to specify a return value when a key isn't otherwise found.
 #[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct Map<T: Debug> {
     /// The map from [`Some`] to `T`.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]

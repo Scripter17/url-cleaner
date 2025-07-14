@@ -12,6 +12,7 @@ use crate::util::*;
 
 /// Config on how to make a [`Regex`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct RegexParts {
     /// The regex pattern to use.
@@ -92,6 +93,7 @@ impl TryFrom<RegexParts> for Regex {
 
 /// Configuration given to [`RegexBuilder`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct RegexConfig {
     /// The value passed to [`RegexBuilder::case_insensitive`].
     ///

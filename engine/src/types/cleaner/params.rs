@@ -14,6 +14,7 @@ use crate::util::*;
 /// Bundles all the state that determines how the [`Cleaner`] works in one convenient area.
 #[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct Params {
     /// Flags allow enabling and disabling certain behavior.
     ///

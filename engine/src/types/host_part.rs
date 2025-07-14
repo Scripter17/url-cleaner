@@ -7,6 +7,7 @@ use crate::util::*;
 
 /// A common API for getting and setting various parts of [`BetterHost`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum HostPart {
     /// The host.
     Host,

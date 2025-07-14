@@ -8,6 +8,7 @@ use crate::util::*;
 
 /// The path of a cache database.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub enum CachePath {
     /// Stores the database in memory, wiping it on program exit.

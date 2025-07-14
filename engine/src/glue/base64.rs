@@ -22,6 +22,7 @@ use crate::util::*;
 /// assert_eq!(decoded, b"ab~d");
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct Base64Config {
     /// The alphabet to use.
     ///
@@ -73,6 +74,7 @@ impl Default for Base64Config {
 ///
 /// See [Wikipedia's Base64 alphabet summary table](https://en.wikipedia.org/wiki/Base64#Variants_summary_table) for details.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum Base64Alphabet {
     /// The standard alphabet, where characters 62 and 63 are `+` and `/`.
     Standard,
@@ -107,6 +109,7 @@ impl Base64Alphabet {
 ///
 /// Defaults to [`Self::Indifferent`].
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum Base64DecodePaddingMode {
     /// Don't care whether or not the canonical padding is present.
     ///

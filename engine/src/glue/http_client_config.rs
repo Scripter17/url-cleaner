@@ -13,6 +13,7 @@ use crate::util::*;
 
 /// Rules for how to make a [`reqwest::blocking::Client`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct HttpClientConfig {
     /// The headers to send by default.
     #[serde(default, skip_serializing_if = "is_default", with = "serde_headermap")]
@@ -59,6 +60,7 @@ pub struct HttpClientConfig {
 ///
 /// That has the added benefit of not sending a request to the final URL.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum RedirectPolicy {
     /// If a request encounters [`Self::Limited::0`] redirects, the entire request fails.
     ///
@@ -108,6 +110,7 @@ impl HttpClientConfig {
 
 /// Rules for updating a [`HttpClientConfig`].
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct HttpClientConfigDiff {
     /// If [`Some`], overwrites [`HttpClientConfig::redirect_policy`].
     #[serde(default, skip_serializing_if = "is_default")]

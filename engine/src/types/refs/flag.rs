@@ -12,6 +12,7 @@ use crate::util::*;
 ///
 /// Defaults to [`Self::Params`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum FlagType {
     /// Get it from [`TaskStateView::params`]'s [`Params::vars`].
     /// # Examples
@@ -89,6 +90,7 @@ impl FlagType {
 /// assert_eq!(serde_json::from_str::<FlagRef>("\"name\"").unwrap(), FlagRef {r#type: Default::default(), name: "name".into()});
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct FlagRef {
     /// The type of the flag to get.

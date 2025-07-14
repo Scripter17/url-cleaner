@@ -12,6 +12,7 @@ use crate::util::*;
 /// A scratchpad to allow storing state between [`Action`].
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Scratchpad {
     /// The flags.
     #[serde_as(as = "SetPreventDuplicates<_>")]

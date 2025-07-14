@@ -12,6 +12,7 @@ use crate::util::*;
 /// The context for a [`TaskConfig`].
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TaskContext {
     /// The vars.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]

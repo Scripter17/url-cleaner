@@ -13,6 +13,7 @@ use crate::util::*;
 ///
 /// In general, you should instead make [`LazyTaskConfig`]s, provide them to a [`Job`], get back [`LazyTask`]s, then [`LazyTask::make`] and [`Task::do`] them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct TaskConfig {
     /// The [`BetterUrl`] to modify.

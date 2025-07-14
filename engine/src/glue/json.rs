@@ -11,6 +11,7 @@ use crate::util::*;
 
 /// Rules for making a [`serde_json::Value`] using [`StringSource`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub enum StringSourceJsonValue {
     /// [`Value::Null`].

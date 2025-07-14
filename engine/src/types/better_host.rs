@@ -109,6 +109,12 @@ impl TryFrom<String> for BetterHost {
     }
 }
 
+impl From<BetterHost> for String {
+    fn from(value: BetterHost) -> String {
+        value.string
+    }
+}
+
 impl std::fmt::Display for BetterHost {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "{}", self.string)

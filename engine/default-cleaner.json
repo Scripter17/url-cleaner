@@ -1261,8 +1261,6 @@
 
 
 				{"PartMap": {
-					"comment_1": "If you can't get a certain domain to work here, it may be because Mozilla's Public Suffix List, therefore the psl crate, and therefore UrlPart consideres it a suffix.",
-					"comment_2": "There's a PartMap under this one for DomainSuffix. Try it there.",
 					"part": "RegDomain",
 					"map": {
 						"acer.com": {"RemoveQueryParamsMatching": {"StartsWith": "internal_"}},

@@ -18,6 +18,7 @@ use crate::util::*;
 
 /// Modify a string.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub enum StringModification {
     /// Doesn't do any modification.
