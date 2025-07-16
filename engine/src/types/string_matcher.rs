@@ -106,24 +106,24 @@ pub enum StringMatcher {
 
     /// Passes if the string starts with the specified string.
     /// # Errors
-    /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
-    StartsWith(String),
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
+    StartsWith(StringSource),
     /// Passes if the sring ends with the specified string.
     /// # Errors
-    /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
-    EndsWith(String),
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
+    EndsWith(StringSource),
     /// Passes if the string is a prefix of the specified string.
     /// # Errors
-    /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
-    IsPrefixOf(String),
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
+    IsPrefixOf(StringSource),
     /// Passes if the sring is a suffix of the specified string.
     /// # Errors
-    /// If the string is [`None`], returns the error [`StringMatcherError::StringIsNone`].
-    IsSuffixOf(String),
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
+    IsSuffixOf(StringSource),
 
     /// Passes if the string contains [`Self::Contains::value`] at [`Self::Contains::at`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), checkerr(StringLocation))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcher), checkerr(StringLocation))]
     Contains {
         /// The value to look for at [`Self::Contains::at`].
         value: StringSource,
@@ -135,7 +135,7 @@ pub enum StringMatcher {
     },
     /// Effectively [`Self::Contains`] for each value in [`Self::ContainsAny::values`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 3), getnone(StringSource, StringMatcher, 3), checkerr(StringLocation, 3))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource, 3), getnone(StringSource, StringMatcher, 3), checkerr(StringLocation, 3))]
     ContainsAny {
         /// The value to look for at [`Self::Contains::at`].
         values: Vec<StringSource>,
@@ -147,7 +147,7 @@ pub enum StringMatcher {
     },
     /// Effectively [`Self::ContainsAny`] for each value in the [`Params::lists`]s specified by [`Self::ContainsAnyInList::list`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcher))]
     ///
     /// If no list with the specified name is found, returns the error [`StringMatcherError::ListNotFound`].
     ///
@@ -165,27 +165,35 @@ pub enum StringMatcher {
     // Char matching
 
     /// Passes if all [`char`]s in the string are in the specified [`HashSet`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
     AllCharsAreOneOf(HashSet<char>),
     /// Passes if any of the [`char`]s in the string are in the specified [`HashSet`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
     AnyCharIsOneOf(HashSet<char>),
     /// Passes if none of the [`char`]s in the string are in the specified [`HashSet`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
     NoCharIsOneOf(HashSet<char>),
     /// Passes if all [`char`]s in the string satisfies the specified [`CharMatcher`].
     /// # Errors
-    #[doc = edoc!(checkerr(CharMatcher, 3))]
+    #[doc = edoc!(stringisnone(StringMatcher), checkerr(CharMatcher, 3))]
     AllCharsMatch(CharMatcher),
     /// Passes if any [`char`]s in the string satisfies the specified [`CharMatcher`].
     /// # Errors
-    #[doc = edoc!(checkerr(CharMatcher, 3))]
+    #[doc = edoc!(stringisnone(StringMatcher), checkerr(CharMatcher, 3))]
     AnyCharMatches(CharMatcher),
     /// Passes if [`str::is_ascii`] returns [`true`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
     IsAscii,
 
     // Segments
 
     /// Splits the string with [`Self::NthSegmentMatches::split`], gets the [`Self::NthSegmentMatches::n`]th segment, and returns the satisfaction of [`Self::NthSegmentMatches::matcher`] of it.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcher))]
     ///
     /// If the segment isn't found, returns the error [`StringMatcherError::SegmentNotFound`].
     ///
@@ -200,7 +208,7 @@ pub enum StringMatcher {
     },
     /// Splits the string with [`Self::NthSegmentMatches::split`] and passes if any segment satisfies [`Self::AnySegmentMatches::matcher`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, StringMatcher), checkerr(Self))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcher), checkerr(Self))]
     AnySegmentMatches {
         /// The value to split the string with.
         split: StringSource,
@@ -209,7 +217,7 @@ pub enum StringMatcher {
     },
     /// Splits the string with [`Self::SegmentsStartWith::split`] and passes if the list of segments starts with the list of segments from splitting [`Self::SegmentsStartWith::value`] with [`Self::SegmentsStartWith::split`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
     SegmentsStartWith {
         /// The value to split the strings with.
         split: Box<StringSource>,
@@ -218,7 +226,7 @@ pub enum StringMatcher {
     },
     /// Splits the string with [`Self::SegmentsEndWith::split`] and passes if the list of segments ends with the list of segments from splitting [`Self::SegmentsEndWith::value`] with [`Self::SegmentsEndWith::split`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource, 2), getnone(StringSource, StringMatcher, 2))]
     SegmentsEndWith {
         /// The value to split the strings with.
         split: Box<StringSource>,
@@ -229,6 +237,8 @@ pub enum StringMatcher {
     // Other
 
     /// Passes if the length of the string is the specified value.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
     LengthIs(usize),
 
     /// Applies [`Self::Modified::modification`] to a copy of the string, leaving the original unchanged, and returns the satisfaction of [`Self::Modified::matcher`] on that string.
@@ -258,7 +268,7 @@ pub enum StringMatcher {
 
     /// Passes if the call to [`Regex::is_match`] returns [`true`].
     /// # Errors
-    #[doc = edoc!(geterr(RegexWrapper))]
+    #[doc = edoc!(stringisnone(StringMatcher), geterr(RegexWrapper))]
     #[cfg(feature = "regex")]
     Regex(RegexWrapper),
 
@@ -424,10 +434,10 @@ impl StringMatcher {
 
             // Containment
 
-            Self::StartsWith(needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.starts_with(needle),
-            Self::EndsWith  (needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.ends_with  (needle),
-            Self::IsPrefixOf(needle) => needle.starts_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
-            Self::IsSuffixOf(needle) => needle.ends_with  (haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::StartsWith(needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.starts_with(get_str!(needle, task_state, StringMatcherError)),
+            Self::EndsWith  (needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.ends_with  (get_str!(needle, task_state, StringMatcherError)),
+            Self::IsPrefixOf(needle) => get_str!(needle, task_state, StringMatcherError).starts_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::IsSuffixOf(needle) => get_str!(needle, task_state, StringMatcherError).ends_with  (haystack.ok_or(StringMatcherError::StringIsNone)?),
 
             Self::Contains {at, value} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, get_str!(value, task_state, StringMatcherError))?,
             Self::ContainsAny {values, at} => {

@@ -117,6 +117,14 @@ pub enum StringSource {
         /// The value to return if [`Self::NoneTo::value`] is [`None`].
         if_none: Box<Self>
     },
+    /// If the value of the contained [`Self`] is [`None`], return the empty string.
+    /// # Errors
+    #[doc = edoc!(geterr(Self))]
+    NoneToEmpty(Box<Self>),
+    /// If the value of the contained [`Self`] is the empty string, return [`None`].
+    /// # Errors
+    #[doc = edoc!(geterr(Self))]
+    EmptyToNone(Box<Self>),
     /// If [`Self::AssertMatches::value`] satisfies [`Self::AssertMatches::matcher`], return it. Otherwise return the error [`StringSourceError::AssertMatchesFailed`].
     /// # Errors
     /// If [`Self::AssertMatches::value`] doesn't satisfy [`Self::AssertMatches::matcher`], returns the error [`StringSourceError::AssertMatchesFailed`].
@@ -776,6 +784,15 @@ impl StringSource {
                 Some(x) => Some(x),
                 None    => get_option_cow!(&**if_none, task_state)
             },
+            Self::EmptyToNone(value) => {
+                let x = value.get(task_state)?;
+                if x == Some("".into()) {
+                    None
+                } else {
+                    x
+                }
+            },
+            Self::NoneToEmpty(value) => Some(value.get(task_state)?.unwrap_or(Cow::Borrowed(""))),
             Self::AssertMatches {value, matcher, message} => {
                 let ret = value.get(task_state)?;
                 if matcher.check(ret.as_deref(), task_state)? {

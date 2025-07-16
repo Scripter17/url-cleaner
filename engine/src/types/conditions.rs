@@ -300,6 +300,8 @@ pub enum Condition {
     /// Passes if the URL is the specified string.
     ///
     /// Used for testing.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -307,7 +309,7 @@ pub enum Condition {
     ///
     /// assert!(Condition::UrlIs("https://example.com/".into()).check(&task_state).unwrap());
     /// ```
-    UrlIs(String),
+    UrlIs(StringSource),
 
     // Scheme
 
@@ -334,7 +336,9 @@ pub enum Condition {
     /// ```
     SchemeIsOneOf(Set<String>),
     /// Passes if the [`Url::scheme`] is in the specified [`Params::sets`] [`Set`].
-    SchemeIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    SchemeIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
 
     // Host is
 
@@ -739,44 +743,69 @@ pub enum Condition {
     // Host is in set
 
     /// Passes if the [`Url::host_str`] is in the specified [`Params::sets`] [`Set`].
-    HostIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    HostIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::normalized_host`] is in the specified [`Params::sets`] [`Set`].
-    NormalizedHostIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    NormalizedHostIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::subdomain`] is in the specified [`Params::sets`] [`Set`].
-    SubdomainIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    SubdomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::reg_domain`] is in the specified [`Params::sets`] [`Set`].
-    RegDomainIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    RegDomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::domain`] is in the specified [`Params::sets`] [`Set`].
-    DomainIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    DomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::domain_middle`] is in the specified [`Params::sets`] [`Set`].
-    DomainMiddleIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    DomainMiddleIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::not_domain_suffix`] is in the specified [`Params::sets`] [`Set`].
-    NotDomainSuffixIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    NotDomainSuffixIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`BetterUrl::domain_suffix`] is in the specified [`Params::sets`] [`Set`].
-    DomainSuffixIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    DomainSuffixIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
 
 
 
     /// Passes if the [`BetterUrl::subdomain_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     SubdomainSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
-        set: String
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
     },
     /// Passes if the [`BetterUrl::domain_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
-        set: String
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
     },
     /// Passes if the [`BetterUrl::domain_suffix_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainSuffixSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
-        set: String
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
     },
 
     // Misc. host
@@ -886,14 +915,16 @@ pub enum Condition {
     /// use url_cleaner_engine::types::*;
     ///
     /// url_cleaner_engine::task_state_view!(task_state, url = "https://example.com/a/b/c");
-    /// assert!( Condition::PathStartsWith("/a/b/c" .into()).check(&task_state).unwrap());
-    /// assert!(!Condition::PathStartsWith("/a/b/c/".into()).check(&task_state).unwrap());
+    /// assert!( Condition::PathIs("/a/b/c" .into()).check(&task_state).unwrap());
+    /// assert!(!Condition::PathIs("/a/b/c/".into()).check(&task_state).unwrap());
     /// ```
     PathIs(StringSource),
     /// Passes if the [`Url::path`] is in the specified [`Set`].
     PathIsOneOf(Set<String>),
     /// Passes if the [`Url::path`] is in the specified [`Params::sets`] [`Set`].
-    PathIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    PathIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`Url::path`] starts with the specified value.
     /// # Examples
     /// ```
@@ -910,7 +941,55 @@ pub enum Condition {
     /// assert!(!Condition::PathStartsWith("/a/b/c/" .into()).check(&task_state).unwrap());
     /// assert!(!Condition::PathStartsWith("/a/b/c/d".into()).check(&task_state).unwrap());
     /// ```
-    PathStartsWith(String),
+    PathStartsWith(StringSource),
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::first_n_path_segments), geterr(StringSource))]
+    FirstNPathSegmentsIs {
+        /// The number of path segments to get.
+        n: usize,
+        /// The value to check if it's equal to.
+        value: StringSource
+    },
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::first_n_path_segments))]
+    FirstNPathSegmentsIsOneOf {
+        /// The number of path segments to get.
+        n: usize,
+        /// The [`Set`] to check if it's in.
+        set: Set<String>
+    },
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::first_n_path_segments), geterr(StringSource), notfound(Set, Condition))]
+    FirstNPathSegmentsIsInSet {
+        /// The number of path segments to get.
+        n: usize,
+        /// The name of the [`Params::sets`] [`Set`] to check if it's in.
+        set: StringSource
+    },
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::last_n_path_segments), geterr(StringSource))]
+    LastNPathSegmentsIs {
+        /// The number of path segments to get.
+        n: usize,
+        /// The value to check if it's equal to.
+        value: StringSource
+    },
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::last_n_path_segments))]
+    LastNPathSegmentsIsOneOf {
+        /// The number of path segments to get.
+        n: usize,
+        /// The [`Set`] to check if it's in.
+        set: Set<String>
+    },
+    /// # Errors
+    #[doc = edoc!(callerr(BetterUrl::last_n_path_segments), geterr(StringSource), notfound(Set, Condition))]
+    LastNPathSegmentsIsInSet {
+        /// The number of path segments to get.
+        n: usize,
+        /// The name of the [`Params::sets`] [`Set`] to check if it's in.
+        set: StringSource
+    },
 
 
 
@@ -940,12 +1019,13 @@ pub enum Condition {
     },
     /// Passes if the [`BetterUrl::path_segment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::path_segment))]
+    #[doc = edoc!(callerr(BetterUrl::path_segment), geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PathSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
-        set: String
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
     },
 
     // Query
@@ -978,11 +1058,14 @@ pub enum Condition {
         values: Set<String>
     },
     /// Passes if the [`BetterUrl::query_param`] is in the specified [`Params::sets`] [`Set`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     QueryParamIsInSet {
         /// The query param to check.
         param: QueryParamSelector,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
-        set: String
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
     },
 
     // Fragment
@@ -992,7 +1075,9 @@ pub enum Condition {
     /// Passes if the [`Url::fragment`] is in the specified [`Set`].
     FragmentIsOneOf(Set<String>),
     /// Passes if the [`Url::fragment`] is in the specified [`Params::sets`] [`Set`].
-    FragmentIsInSet(String),
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    FragmentIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Passes if the [`Url::fragment`] is [`Some`] and starts with the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
@@ -1078,13 +1163,13 @@ pub enum Condition {
     },
     /// Passes if [`Self::PartIsInSet`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
-    #[doc = edoc!(notfound(Set, Condition))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PartIsInSet {
         /// The part to check the value of.
         part: UrlPart,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
-        #[suitable(assert = "lit_set_is_documented")]
-        set: String
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
     },
 
     // Misc.
@@ -1285,13 +1370,13 @@ impl Condition {
 
             // Whole
 
-            Self::UrlIs(value) => task_state.url == value,
+            Self::UrlIs(value) => task_state.url == get_str!(value, task_state, ConditionError),
 
             // Scheme
 
             Self::SchemeIs(value) => task_state.url.scheme() == get_str!(value, task_state, ConditionError),
             Self::SchemeIsOneOf(values) => values.contains(Some(task_state.url.scheme())),
-            Self::SchemeIsInSet(set) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.scheme())),
+            Self::SchemeIsInSet(set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.scheme())),
 
             // Host is
 
@@ -1325,18 +1410,18 @@ impl Condition {
 
             // Host is in set
 
-            Self::HostIsInSet           (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str         ()),
-            Self::NormalizedHostIsInSet (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normalized_host  ()),
-            Self::SubdomainIsInSet      (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain        ()),
-            Self::RegDomainIsInSet      (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.reg_domain       ()),
-            Self::DomainIsInSet         (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain           ()),
-            Self::DomainMiddleIsInSet   (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle    ()),
-            Self::NotDomainSuffixIsInSet(x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.not_domain_suffix()),
-            Self::DomainSuffixIsInSet   (x) => task_state.params.sets.get(x).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix    ()),
+            Self::HostIsInSet           (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str         ()),
+            Self::NormalizedHostIsInSet (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normalized_host  ()),
+            Self::SubdomainIsInSet      (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain        ()),
+            Self::RegDomainIsInSet      (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.reg_domain       ()),
+            Self::DomainIsInSet         (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain           ()),
+            Self::DomainMiddleIsInSet   (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle    ()),
+            Self::NotDomainSuffixIsInSet(set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.not_domain_suffix()),
+            Self::DomainSuffixIsInSet   (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix    ()),
 
-            Self::DomainSegmentIsInSet       {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
-            Self::SubdomainSegmentIsInSet    {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain_segment    (*index)),
-            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
+            Self::DomainSegmentIsInSet       {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
+            Self::SubdomainSegmentIsInSet    {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain_segment    (*index)),
+            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
 
             // Misc. host
 
@@ -1352,15 +1437,21 @@ impl Condition {
             Self::PathIs(value) => task_state.url.path() == get_str!(value, task_state, ConditionError),
 
             Self::PathIsOneOf   (values) => values.contains(Some(task_state.url.path())),
-            Self::PathIsInSet   (set   ) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
-            Self::PathStartsWith(value ) => task_state.url.path().starts_with(value),
+            Self::PathIsInSet   (set   ) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
+            Self::PathStartsWith(value ) => task_state.url.path().starts_with(get_str!(value, task_state, ConditionError)),
+            Self::FirstNPathSegmentsIs      {n, value} => task_state.url.first_n_path_segments(*n)? == get_option_str!(value, task_state),
+            Self::FirstNPathSegmentsIsOneOf {n, set  } => set.contains(task_state.url.first_n_path_segments(*n)?),
+            Self::FirstNPathSegmentsIsInSet {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.first_n_path_segments(*n)?),
+            Self::LastNPathSegmentsIs       {n, value} => task_state.url.last_n_path_segments(*n)? == get_option_str!(value, task_state),
+            Self::LastNPathSegmentsIsOneOf  {n, set  } => set.contains(task_state.url.last_n_path_segments(*n)?),
+            Self::LastNPathSegmentsIsInSet  {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.last_n_path_segments(*n)?),
 
             Self::PathHasSegments => task_state.url.path_has_segments(),
             Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_ok_and(|segment| segment.is_none()),
             Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index)? == get_option_str!(value, task_state),
 
             Self::PathSegmentIsOneOf {index, values} => values.contains(task_state.url.path_segment(*index)?),
-            Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index)?),
+            Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index)?),
 
             // Query
 
@@ -1371,13 +1462,13 @@ impl Condition {
             Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten() == get_option_cow!(value, task_state),
 
             Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => values.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
-            Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
+            Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
 
             // Fragment
 
             Self::FragmentIs                 (value ) => task_state.url.fragment() == get_option_str!(value, task_state),
             Self::FragmentIsOneOf            (values) => values.contains(task_state.url.fragment()),
-            Self::FragmentIsInSet            (set   ) => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
+            Self::FragmentIsInSet            (set   ) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
             Self::FragmentIsSomeAndStartsWith(value ) => match task_state.url.fragment() {
                 Some(fragment) => fragment.starts_with(get_str!(value, task_state, ConditionError)),
                 None => false
@@ -1391,7 +1482,7 @@ impl Condition {
 
             Self::PartMatches {part, matcher} => matcher.check   (part.get(task_state.url).as_deref(), task_state)?,
             Self::PartIsOneOf {part, values } => values .contains(part.get(task_state.url).as_deref()),
-            Self::PartIsInSet {part, set    } => task_state.params.sets.get(set).ok_or(ConditionError::SetNotFound)?.contains(part.get(task_state.url).as_deref()),
+            Self::PartIsInSet {part, set    } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(part.get(task_state.url).as_deref()),
 
             // Misc
 

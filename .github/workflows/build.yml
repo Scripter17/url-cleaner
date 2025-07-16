@@ -25,6 +25,7 @@ jobs:
         cp target/release/url-cleaner-site${{ matrix.oses.extension }} out/
         cp target/release/url-cleaner-discord-app${{ matrix.oses.extension }} out/
         cp engine/default-cleaner.json out/
+        cp site/url-cleaner-site-userscript.js out/
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.oses.name }}

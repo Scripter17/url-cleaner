@@ -223,7 +223,7 @@
 					"cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cp2077.ly", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", "dis.gd", "dlvr.it", "econ.st", "etsy.me", "fal.cn",
 					"fanga.me", "fb.me", "fdip.fr", "flip.it", "forms.gle", "g.co", "glo.bo", "go.forbes.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov",
 					"go.nature.com", "goodsmile.link", "goo.gl", "goo.gle", "goo.su", "got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "intel.ly", "interc.pt",
-					"is.gd", "iwe.one", "jbgm.es", "j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l.euronews.com", "line.ee", "link.animaapp.com", "linkr.it",
+					"is.gd", "iwe.one", "jbgm.es", "j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "linkr.it",
 					"l.leparisien.fr", "lnkd.in", "loom.ly", "lpc.ca", "mol.im", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "ninten.do",
 					"n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la",
 					"onl.sc", "onl.tw", "on.msnbc.com", "on.nyc.gov", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me",
@@ -232,7 +232,7 @@
 					"sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm",
 					"thrn.co", "tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa",
 					"uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "x.alibaba.com", "xbx.ly", "x.gd",
-					"xhslink.com", "yrp.ca"
+					"xhslink.com", "yrp.ca", "zurl.co"
 				],
 				"sometimes_redirect": [
 					"apexpartner.app", "api.pinterest.com", "facebook.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com", "sketchfab.com", "teepublic.com"
@@ -869,8 +869,7 @@
 											"if": {"PathStartsWith": "/pub/"},
 											"then": {"All": [
 												{"CopyPart": {"from": {"PathSegment": 1}, "to": "Subdomain"}},
-												{"RemovePathSegment": 0},
-												{"RemovePathSegment": 0}
+												{"RemoveFirstNPathSegments": 2}
 											]}
 										}},
 										"out.reddit.com": {"GetUrlFromQueryParam": "url"},
@@ -1149,7 +1148,21 @@
 								{"SetHost": {"Join": {
 									"values": [{"Part": {"PathSegment": 0}}, ".fandom.com"]
 								}}},
-								{"RemovePathSegment": 0}
+								{"PartMap": {
+									"part": {"PathSegment": 1},
+									"map": {
+										"search": {"All": [
+											{"SetPath": "/wiki/Special:Search"},
+											{"SetQuery": {"Join": {
+												"values": ["query=", {"Part": {"RawQueryParam": "q"}}]
+											}}}
+										]}
+									},
+									"else": {"TryElse": {
+										"try": {"RemovePathSegment": 0},
+										"else": {"SetPath": "/"}
+									}}
+								}}
 							]},
 							"else": {"SetHost": {"Var": "breezewiki_host"}}
 						}},
@@ -1335,20 +1348,29 @@
 							}},
 							{"If": {
 								"if": {"FlagIsSet": "breezewiki"},
-								"then": {"All": [
-									{"InsertPathSegmentAt": {"index": 0, "value": {"Part": "Subdomain"}}},
-									{"SetHost": {"Var": "breezewiki_host"}},
-									{"PartMap": {
-										"part": {"PathSegment": 2},
-										"map": {
-											"Special:Search": {"All": [
-												{"SetPathSegment": {"index": 1, "value": "search"}},
-												{"RemovePathSegment": 2},
-												{"MovePart": {"from": {"RawQueryParam": "query"}, "to": {"RawQueryParam": "q"}}}
-											]}
-										}
-									}}
-								]}
+								"then": {"PartMap": {
+									"part": {"PathSegment": 1},
+									"map": {
+										"Special:Search": {"All": [
+											{"SetPart": {
+												"part": {"QueryParam": "q"},
+												"value": {"NoneTo": {
+													"value": {"EmptyToNone": {"Part": {"PathSegmentsAfterFirstN": 2}}},
+													"if_none": {"Part": {"QueryParam": "query"}}
+												}}
+											}},
+											{"RemoveQueryParam": "query"},
+											{"SetPath": {"Join": {
+												"values": [{"Part": "Subdomain"}, "/search"]
+											}}},
+											{"SetHost": {"Var": "breezewiki_host"}}
+										]}
+									},
+									"else": {"All": [
+										{"InsertPathSegmentAt": {"index": 0, "value": {"Part": "Subdomain"}}},
+										{"SetHost": {"Var": "breezewiki_host"}}
+									]}
+								}}
 							}}
 						]},
 						"fori.io": {"SetHost": "www.foriio.com"},
@@ -1751,8 +1773,8 @@
 									"else": {"AllowQueryParam": "aod"}
 								}},
 								{"ModifyPart": {"part": "Path", "modification": {"All": [
-									{"StripMaybeBefore": "/dp/"},
-									{"KeepBefore": "/ref="}
+									{"StripBefore": "/dp/"},
+									{"KeepMaybeBefore": "/ref="}
 								]}}}
 							]},
 							"else": {"PartMap": {

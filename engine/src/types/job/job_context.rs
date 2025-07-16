@@ -14,6 +14,8 @@ use crate::util::*;
 #[serde(deny_unknown_fields)]
 pub struct JobContext {
     /// The [`BetterHost`] of the "source" of the [`Job`].
+    ///
+    /// Used with [`TaskContext`] by the default cleaner and the userscript to allow for per-site optimizations and unmangling.
     #[serde(default, skip_serializing_if = "is_default")]
     pub source_host: Option<BetterHost>,
     /// The vars.

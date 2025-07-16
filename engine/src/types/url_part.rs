@@ -107,6 +107,16 @@ pub enum UrlPart {
     Path,
     /// [`BetterUrl::path_segment`] and [`BetterUrl::set_path_segment`].
     PathSegment(isize),
+    /// [`BetterUrl::path_segments_str`] and [`BetterUrl::set_path_segments_str`]
+    PathSegments,
+    /// [`BetterUrl::first_n_path_segments`] and [`BetterUrl::set_first_n_path_segments`].
+    FirstNPathSegments(usize),
+    /// [`BetterUrl::path_segments_after_first_n`] and [`BetterUrl::set_path_segments_after_first_n`]
+    PathSegmentsAfterFirstN(usize),
+    /// [`BetterUrl::last_n_path_segments`] and [`BetterUrl::set_last_n_path_segments`].
+    LastNPathSegments(usize),
+    /// [`BetterUrl::path_segments_before_last_n`] and [`BetterUrl::set_path_segments_before_last_n`].
+    PathSegmentsBeforeLastN(usize),
 
 
 
@@ -225,6 +235,11 @@ impl UrlPart {
 
             Self::Path => Cow::Borrowed(url.path()),
             Self::PathSegment(index) => Cow::Borrowed(url.path_segment(*index).ok()??),
+            Self::PathSegments => Cow::Borrowed(url.path_segments_str()?),
+            Self::FirstNPathSegments(n) => Cow::Borrowed(url.first_n_path_segments(*n).ok()??),
+            Self::PathSegmentsAfterFirstN(n) => Cow::Borrowed(url.path_segments_after_first_n(*n).ok()??),
+            Self::LastNPathSegments(n) => Cow::Borrowed(url.last_n_path_segments(*n).ok()??),
+            Self::PathSegmentsBeforeLastN(n) => Cow::Borrowed(url.path_segments_before_last_n(*n).ok()??),
 
             Self::Query => Cow::Borrowed(url.query()?),
             Self::QueryParam   (QueryParamSelector {name, index}) => url.query_param(name, *index)???,
@@ -278,6 +293,12 @@ impl UrlPart {
             (Self::Path, Some(to)) => url.set_path(to),
             (Self::Path, None    ) => Err(SetUrlPartError::PathCannotBeNone)?,
             (Self::PathSegment(n), _) => url.set_path_segment(*n, to)?,
+            (Self::PathSegments, Some(to)) => url.set_path_segments_str(to)?,
+            (Self::PathSegments, None) => Err(SetUrlPartError::CannotSetPathSegmentsToNone)?,
+            (Self::FirstNPathSegments(n), _) => url.set_first_n_path_segments(*n, to)?,
+            (Self::PathSegmentsAfterFirstN(n), _) => url.set_path_segments_after_first_n(*n, to)?,
+            (Self::LastNPathSegments(n), _) => url.set_last_n_path_segments(*n, to)?,
+            (Self::PathSegmentsBeforeLastN(n), _) => url.set_path_segments_before_last_n(*n, to)?,
 
             (Self::Query, _) => url.set_query(to),
             (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.set_query_param(name, *index, to.map(Some))?,
@@ -358,6 +379,26 @@ pub enum SetUrlPartError {
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
+    /// Returned when attempting to set [`UrlPart::PathSegments`] to [`None`].
+    ///
+    /// URLs with no path segments still have a path, therefore the operation is incoherent.
+    #[error("Cannot set path segments to None, even for URLs with no path segments because they still have a path.")]
+    CannotSetPathSegmentsToNone,
+    /// Returned when a [`UrlDoesNotHavePathSegments`] is encountered.
+    #[error(transparent)]
+    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
+    /// Returned when a [`SetFirstNPathSegmentsError`] is encountered.
+    #[error(transparent)]
+    SetFirstNPathSegmentsError(#[from] SetFirstNPathSegmentsError),
+    /// Returned when a [`SetPathSegmentsAfterFirstNError`] is encountered.
+    #[error(transparent)]
+    SetPathSegmentsAfterFirstNError(#[from] SetPathSegmentsAfterFirstNError),
+    /// Returned when a [`SetLastNPathSegmentsError`] is encountered.
+    #[error(transparent)]
+    SetLastNPathSegmentsError(#[from] SetLastNPathSegmentsError),
+    /// Returned when a [`SetPathSegmentsBeforeLastNError`] is encountered.
+    #[error(transparent)]
+    SetPathSegmentsBeforeLastNError(#[from] SetPathSegmentsBeforeLastNError),
 
     /// Returned when a [`SetQueryParamError)`] is encountered.
     #[error(transparent)]

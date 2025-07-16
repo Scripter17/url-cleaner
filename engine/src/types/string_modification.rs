@@ -1039,12 +1039,7 @@ impl StringModification {
 
             Self::Set(value)     => *to = value.get(task_state)?.map(|x| Cow::Owned(x.into_owned())),
             Self::Append(value)  => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().push_str(get_str!(value, task_state, StringModificationError)),
-            Self::Prepend(value) => {
-                let suffix = to.as_deref().ok_or(StringModificationError::StringIsNone)?;
-                let mut ret = get_string!(value, task_state, StringModificationError);
-                ret.push_str(suffix);
-                *to=Some(Cow::Owned(ret));
-            },
+            Self::Prepend(value) => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().insert_str(0, get_str!(value, task_state, StringModificationError)),
             Self::Insert{index, value} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 let index = neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?;

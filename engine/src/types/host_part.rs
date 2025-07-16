@@ -9,21 +9,21 @@ use crate::util::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum HostPart {
-    /// The host.
+    /// [`BetterHost::host_str`].
     Host,
-    /// The normalized host.
+    /// [`BetterHost::normalized_host`].
     NormalizedHost,
-    /// The domain.
+    /// [`BetterHost::domain`].
     Domain,
-    /// The subdomain.
+    /// [`BetterHost::subdomain`].
     Subdomain,
-    /// The not domain suffix.
+    /// [`BetterHost::not_domain_suffix`].
     NotDomainSuffix,
-    /// The domain middle.
+    /// [`BetterHost::domain_middle`].
     DomainMiddle,
-    /// The reg domain.
+    /// [`BetterHost::reg_domain`].
     RegDomain,
-    /// The domain suffix.
+    /// [`BetterHost::domain_suffix`].
     DomainSuffix
 }
 
@@ -32,12 +32,7 @@ impl HostPart {
     pub fn get<'a>(&self, host: &'a BetterHost) -> Option<&'a str> {
         match self {
             Self::Host            => Some(host.host_str()),
-            Self::NormalizedHost  => {
-                let mut ret = host.host_str();
-                ret = ret.strip_prefix("www.").unwrap_or(ret);
-                ret = ret.strip_suffix(".").unwrap_or(ret);
-                Some(ret)
-            },
+            Self::NormalizedHost  => Some(host.normalized_host()),
             Self::Domain          => host.domain(),
             Self::Subdomain       => host.subdomain(),
             Self::NotDomainSuffix => host.not_domain_suffix(),

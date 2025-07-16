@@ -79,15 +79,10 @@ impl BetterUrl {
     /// ```
     #[doc = edoc!(callerr(Self::set_domain_suffix))]
     pub fn set_domain_suffix_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainSuffixSegmentError> {
-        let segments = set_segment(
+        self.set_domain_suffix(set_segment_str(
             self.domain_suffix().ok_or(SetDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
-            index, value, SetDomainSuffixSegmentError::SegmentNotFound, '.'
-        )?;
-        let new = match &*segments {
-            [] => None,
-            _ => Some(segments.join("."))
-        };
-        self.set_domain_suffix(new.as_deref())?;
+            index, value, SetDomainSuffixSegmentError::SegmentNotFound, '.', "."
+        )?.as_deref())?;
         Ok(())
     }
 

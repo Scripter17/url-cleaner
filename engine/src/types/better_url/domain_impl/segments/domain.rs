@@ -91,15 +91,10 @@ impl BetterUrl {
     /// ```
     #[doc = edoc!(callerr(Self::set_domain))]
     pub fn set_domain_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainSegmentError> {
-        let segments = set_segment(
+        self.set_domain(set_segment_str(
             self.domain().ok_or(SetDomainSegmentError::UrlDoesNotHaveDomain)?,
-            index, value, SetDomainSegmentError::SegmentNotFound, '.'
-        )?;
-        let new = match &*segments {
-            [] => None,
-            _ => Some(segments.join("."))
-        };
-        self.set_domain(new.as_deref())?;
+            index, value, SetDomainSegmentError::SegmentNotFound, '.', "."
+        )?.as_deref())?;
         Ok(())
     }
 

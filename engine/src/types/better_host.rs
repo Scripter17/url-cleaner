@@ -41,6 +41,14 @@ impl BetterHost {
         self.host_details().ipv6_details()
     }
 
+    /// The [`Self::host_str`] with any `www,` prefix and `.` suffix removed.
+    pub fn normalized_host(&self) -> &str {
+        let mut ret = self.host_str();
+        ret = ret.strip_prefix("www.").unwrap_or(ret);
+        ret = ret.strip_suffix(".").unwrap_or(ret);
+        ret
+    }
+
     /// The [`BetterUrl::domain`].
     pub fn domain(&self) -> Option<&str> {
         self.host_str().get(self.domain_details()?.domain_bounds())

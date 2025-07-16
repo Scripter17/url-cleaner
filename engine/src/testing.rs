@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
+use crate::glue::*;
 use crate::util::*;
 
 /// Tests.
@@ -48,7 +49,7 @@ impl TestSet {
         let mut cleaner = cleaner.borrowed();
 
         println!(
-            "Running test set:\nparams_diff: {}\njob_context: {}",
+            "TestSet\nparams_diff: {}\njob_context: {}",
             serde_json::to_string(&self.params_diff).expect("Serialization to never fail"),
             serde_json::to_string(&self.job_context).expect("Serialization to never fail")
         );
@@ -57,26 +58,38 @@ impl TestSet {
             params_diff.apply_once(cleaner.params.to_mut());
         }
 
-        let (task_configs, expectations) = self.tests.clone().into_iter().map(|Test {task_config, expectation}| (task_config, expectation)).collect::<(Vec<_>, Vec<_>)>();
+        for test in self.tests {
+            println!("  Test: {test:?}");
+            let task = Task {
+                config: test.task_config,
+                job_context: &self.job_context,
+                cleaner: &cleaner,
+                #[cfg(feature = "cache")]
+                cache: CacheHandle {
+                    cache: &Default::default(),
+                    config: Default::default()
+                },
+                unthreader: &Default::default()
+            };
+            let result1 = task.r#do().expect("The test to execute succesfully.");
+            assert_eq!(result1, test.result, "The test to return the expected value.");
+            if test.test_idempotence {
+                let task = Task {
+                    config: result1.clone().into(),
+                    job_context: &self.job_context,
+                    cleaner: &cleaner,
 
-        let job = Job {
-            context: &self.job_context,
-            cleaner: &cleaner,
-            #[cfg(feature = "cache")]
-            cache: &Default::default(),
-            #[cfg(feature = "cache")]
-            cache_handle_config: Default::default(),
-            unthreader: &Default::default(),
-            lazy_task_configs: Box::new(task_configs.into_iter().map(|task_config| Ok(task_config.into()))),
-        };
-
-        for (test, task_source, expectation) in self.tests.into_iter().zip(job).zip(expectations).map(|((x, y), z)| (x, y, z)) {
-            println!("Running test: {}", serde_json::to_string(&test).expect("Serialization to never fail"));
-            crate::task_state_view!(task_state, url = task_source.expect("Making TaskSource failed.").make().expect("Making Task failed.").r#do().expect("Task failed."));
-            assert!(expectation.check(&task_state).is_ok_and(|x| x), "The expectation failed.\nExpectation: {expectation:?}\ntask_state: {task_state:?}");
+                #[cfg(feature = "cache")]
+                    cache: CacheHandle {
+                        cache: &Default::default(),
+                        config: Default::default()
+                    },
+                    unthreader: &Default::default()
+                };
+                let result2 = task.r#do().expect("The idempotence test to be succeed.");
+                assert_eq!(result2, result1, "Idempotence to be upheld");
+            }
         }
-
-        println!();
     }
 }
 
@@ -86,5 +99,10 @@ pub struct Test {
     /// The [`TaskConfig`].
     pub task_config: TaskConfig,
     /// The expected result.
-    pub expectation: Condition
+    pub result: BetterUrl,
+    /// If [`true`], test idempotence.
+    ///
+    /// Defaults to [`true`].
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
+    pub test_idempotence: bool
 }

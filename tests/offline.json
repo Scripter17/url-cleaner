@@ -2,137 +2,147 @@
 	"sets": [
 		{
 			"tests": [
-				{"task_config": "https://x.com?t=a&s=b"                                                                    , "expectation": {"UrlIs": "https://x.com/"}},
-				{"task_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "http://example.com"                                                                       , "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://x.com?t=a&s=b"                                                                    , "result": "https://x.com/"},
+				{"task_config": "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id", "result": "https://example.com/"},
+				{"task_config": "http://example.com"                                                                       , "result": "https://example.com/"},
 				{
 					"task_config": "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8",
-					"expectation": {"UrlIs": "https://www.amazon.ca/dp/B0C6DX66TN"}
+					"result": "https://www.amazon.ca/dp/B0C6DX66TN"
 				},
 				{
 					"task_config": "https://amazon.com/gp/offer-listing/123",
-					"expectation": {"UrlIs": "https://www.amazon.com/dp/123?aod=1"}
+					"result": "https://www.amazon.com/dp/123?aod=1"
 				},
 
-				{"task_config": "https://bsky.app"        , "expectation": {"UrlIs": "https://bsky.app/"}},
-				{"task_config": "https://fxbsky.app"      , "expectation": {"UrlIs": "https://bsky.app/"}},
-				{"task_config": "https://user.bsky.social", "expectation": {"UrlIs": "https://bsky.app/profile/user.bsky.social"}},
+				{"task_config": "https://bsky.app"        , "result": "https://bsky.app/"},
+				{"task_config": "https://fxbsky.app"      , "result": "https://bsky.app/"},
+				{"task_config": "https://user.bsky.social", "result": "https://bsky.app/profile/user.bsky.social"},
 				{
 					"task_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
-					"expectation": {"UrlIs": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"}
+					"result": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true"
 				},
 
-				{"task_config": "https://127.0.0.1", "expectation": {"UrlIs": "https://127.0.0.1/"}},
-				{"task_config": "https://com"      , "expectation": {"UrlIs": "https://com/"}},
-				{"task_config": "ftp://127.0.0.1"  , "expectation": {"UrlIs": "ftp://127.0.0.1/"}},
-				{"task_config": "file://a/b/c"     , "expectation": {"UrlIs": "file://a/b/c"}},
-				{"task_config": "mailto:a@a.com"   , "expectation": {"UrlIs": "mailto:a@a.com"}},
+				{"task_config": "https://127.0.0.1", "result": "https://127.0.0.1/"},
+				{"task_config": "https://com"      , "result": "https://com/"},
+				{"task_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1/"},
+				{"task_config": "file://a/b/c"     , "result": "file://a/b/c"},
+				{"task_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"},
 
-				{"task_config": "https://bsky.app/profile/user"     , "expectation": {"UrlIs": "https://bsky.app/profile/user.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/user.bsky", "expectation": {"UrlIs": "https://bsky.app/profile/user.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/user.com" , "expectation": {"UrlIs": "https://bsky.app/profile/user.com"}},
+				{"task_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
+				{"task_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},
+				{"task_config": "https://bsky.app/profile/user.com" , "result": "https://bsky.app/profile/user.com"},
 
 				{
 					"task_config": "https://click.notification.elsevier.com/CL0/https:%2F%2Ffacebook.com%2FTheLancetMedicalJournal/1/0100017b6336ece0-e16eeb62-7506-49ae-9b9f-96c2e2caccc1-000000/XNF87Ruy8xfaatSlPiHGJWGJetPIroNvIDdfy0xkyW4=211",
-					"expectation": {"UrlIs": "https://www.facebook.com/TheLancetMedicalJournal"}
+					"result": "https://www.facebook.com/TheLancetMedicalJournal"
 				},
 
-				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "expectation": {"UrlIs": "https://example.com/?abc=123&def=456#1"}},
+				{"task_config": "https://href.li/?https://example.com/?abc=123&def=456#1", "result": "https://example.com/?abc=123&def=456#1"},
 
-				{"task_config": "https://example.com/"   , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com./"  , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com/?"  , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com./?" , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com/#"  , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com./#" , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com/?#" , "expectation": {"UrlIs": "https://example.com/"}},
-				{"task_config": "https://example.com./?#", "expectation": {"UrlIs": "https://example.com/"}},
+				{"task_config": "https://example.com/"   , "result": "https://example.com/"},
+				{"task_config": "https://example.com./"  , "result": "https://example.com/"},
+				{"task_config": "https://example.com/?"  , "result": "https://example.com/"},
+				{"task_config": "https://example.com./?" , "result": "https://example.com/"},
+				{"task_config": "https://example.com/#"  , "result": "https://example.com/"},
+				{"task_config": "https://example.com./#" , "result": "https://example.com/"},
+				{"task_config": "https://example.com/?#" , "result": "https://example.com/"},
+				{"task_config": "https://example.com./?#", "result": "https://example.com/"},
 
-				{"task_config": "https://127.0.0.1/"     , "expectation": {"UrlIs": "https://127.0.0.1/"}},
-				{"task_config": "https://127.0.0.1/?   " , "expectation": {"UrlIs": "https://127.0.0.1/"}},
-				{"task_config": "https://127.0.0.1/#   " , "expectation": {"UrlIs": "https://127.0.0.1/"}},
-				{"task_config": "https://127.0.0.1/?#"   , "expectation": {"UrlIs": "https://127.0.0.1/"}},
+				{"task_config": "https://127.0.0.1/"     , "result": "https://127.0.0.1/"},
+				{"task_config": "https://127.0.0.1/?   " , "result": "https://127.0.0.1/"},
+				{"task_config": "https://127.0.0.1/#   " , "result": "https://127.0.0.1/"},
+				{"task_config": "https://127.0.0.1/?#"   , "result": "https://127.0.0.1/"},
 
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example"  , "expectation": {"UrlIs": "https://www.tumblr.com/example" }},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example/" , "expectation": {"UrlIs": "https://www.tumblr.com/example/"}},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example" , "expectation": {"UrlIs": "https://www.tumblr.com/example" }},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example/", "expectation": {"UrlIs": "https://www.tumblr.com/example/"}},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com"  , "expectation": {"UrlIs": "https://example.tumblr.com/"}},
-				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com." , "expectation": {"UrlIs": "https://example.tumblr.com/"}},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example"  , "result": "https://www.tumblr.com/example" },
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com/example/" , "result": "https://www.tumblr.com/example/"},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example" , "result": "https://www.tumblr.com/example" },
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://tumblr.com./example/", "result": "https://www.tumblr.com/example/"},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com"  , "result": "https://example.tumblr.com/"},
+				{"task_config": "https://www.tumblr.com/safe-mode?url=https://example.tumblr.com." , "result": "https://example.tumblr.com/"},
 
-				{"task_config": "https://bsky.app/profile/abc"            , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc."           , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.b"          , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bs"         , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsk"        , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky"       , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky."      , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky.s"     , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky.so"    , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky.soc"   , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky.soci"  , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky.socia" , "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}},
-				{"task_config": "https://bsky.app/profile/abc.bsky.social", "expectation": {"UrlIs": "https://bsky.app/profile/abc.bsky.social"}}
+				{"task_config": "https://bsky.app/profile/abc"            , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc."           , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.b"          , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bs"         , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsk"        , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky"       , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky."      , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky.s"     , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky.so"    , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky.soc"   , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky.soci"  , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky.socia" , "result": "https://bsky.app/profile/abc.bsky.social"},
+				{"task_config": "https://bsky.app/profile/abc.bsky.social", "result": "https://bsky.app/profile/abc.bsky.social"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["no_network"]},
 			"tests": [
-				{"task_config": "https://facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}},
-				{"task_config": "https://www.facebook.com/share/abc", "expectation": {"UrlIs": "https://www.facebook.com/share/abc"}}
+				{"task_config": "https://facebook.com/share/abc", "result": "https://www.facebook.com/share/abc"},
+				{"task_config": "https://www.facebook.com/share/abc", "result": "https://www.facebook.com/share/abc"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["tor2web2tor"]},
 			"tests": [
-				{"task_config": "https://example.onion.com"  , "expectation": {"UrlIs": "https://example.onion/"}},
-				{"task_config": "https://example.onion.co.uk", "expectation": {"UrlIs": "https://example.onion/"}}
+				{"task_config": "https://example.onion.com"  , "result": "https://example.onion/"},
+				{"task_config": "https://example.onion.co.uk", "result": "https://example.onion/"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unbreezewiki"]},
-			"tests": [{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "expectation": {"UrlIs": "https://tardis.fandom.com/wiki/Genocide"}}]
+			"tests": [
+				{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://tardis.fandom.com/wiki/Genocide"},
+
+				{"task_config": "https://breezewiki.com/minecraft/search?q=abc", "result": "https://minecraft.fandom.com/wiki/Special:Search?query=abc"},
+				{"task_config": "https://breezewiki.com/minecraft/search?%71=abc", "result": "https://minecraft.fandom.com/wiki/Special:Search?query=abc"},
+				{"task_config": "https://breezewiki.com/minecraft", "result": "https://minecraft.fandom.com/"}
+			]
 		},
 		{
 			"params_diff": {"flags": ["breezewiki"]},
 			"tests": [
-				{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "expectation": {"UrlIs": "https://breezewiki.com/tardis/wiki/Genocide"}},
-				{"task_config": "https://tardis.fandom.com/wiki/Genocide"    , "expectation": {"UrlIs": "https://breezewiki.com/tardis/wiki/Genocide"}}
+				{"task_config": "https://antifandom.com/tardis/wiki/Genocide", "result": "https://breezewiki.com/tardis/wiki/Genocide"},
+				{"task_config": "https://tardis.fandom.com/wiki/Genocide"    , "result": "https://breezewiki.com/tardis/wiki/Genocide"},
+
+				{"task_config": "https://minecraft.fandom.com/wiki/Special:Search?scope=internal&navigationSearch=true&query=abc"  , "result": "https://breezewiki.com/minecraft/search?q=abc"},
+				{"task_config": "https://minecraft.fandom.com/wiki/Special:Search/?scope=internal&navigationSearch=true&query=abc" , "result": "https://breezewiki.com/minecraft/search?q=abc"},
+				{"task_config": "https://minecraft.fandom.com/wiki/Special:Search/a?scope=internal&navigationSearch=true&query=abc", "result": "https://breezewiki.com/minecraft/search?q=a"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["unmobile"]},
 			"tests": [
-				{"task_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "expectation": {"UrlIs": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"}},
-				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "expectation": {"UrlIs": "https://en.wikipedia.org/wiki/Gaza_genocide"}}
+				{"task_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["embed_compatibility"]},
 			"tests": [
-				{"task_config": "https://bsky.app/profile/abc.bsky.social/post/123"  , "expectation": {"UrlIs": "https://fxbsky.app/profile/abc.bsky.social/post/123"}},
-				{"task_config": "https://fxbsky.app/profile/abc.bsky.social/post/123", "expectation": {"UrlIs": "https://fxbsky.app/profile/abc.bsky.social/post/123"}}
+				{"task_config": "https://bsky.app/profile/abc.bsky.social/post/123"  , "result": "https://fxbsky.app/profile/abc.bsky.social/post/123"},
+				{"task_config": "https://fxbsky.app/profile/abc.bsky.social/post/123", "result": "https://fxbsky.app/profile/abc.bsky.social/post/123"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["invidious"]},
 			"tests": [
-				{"task_config": "https://youtube.com/watch?v=12345", "expectation": {"UrlIs": "https://yewtu.be/watch?v=12345"}},
-				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": {"UrlIs": "https://yewtu.be/watch?v=12345"}}
+				{"task_config": "https://youtube.com/watch?v=12345", "result": "https://yewtu.be/watch?v=12345"},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "result": "https://yewtu.be/watch?v=12345"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["uninvidious"]},
 			"tests": [
-				{"task_config": "https://youtube.com/watch?v=12345", "expectation": {"UrlIs": "https://www.youtube.com/watch?v=12345"}},
-				{"task_config": "https://yewtu.be/watch?v=12345"   , "expectation": {"UrlIs": "https://www.youtube.com/watch?v=12345"}}
+				{"task_config": "https://youtube.com/watch?v=12345", "result": "https://www.youtube.com/watch?v=12345"},
+				{"task_config": "https://yewtu.be/watch?v=12345"   , "result": "https://www.youtube.com/watch?v=12345"}
 			]
 		},
 		{
 			"params_diff": {"flags": ["tumblr_unsubdomain_blog"]},
 			"tests": [
-				{"task_config": "https://tumblr.com/username", "expectation": {"UrlIs": "https://www.tumblr.com/username"}},
-				{"task_config": "https://username.tumblr.com", "expectation": {"UrlIs": "https://www.tumblr.com/username/"}}
+				{"task_config": "https://tumblr.com/username", "result": "https://www.tumblr.com/username"},
+				{"task_config": "https://username.tumblr.com", "result": "https://www.tumblr.com/username/"}
 			]
 		},
 		{
@@ -148,7 +158,7 @@
 							}
 						}
 					},
-					"expectation": {"UrlIs": "https://example.com/"}
+					"result": "https://example.com/"
 				}
 			]
 		},
@@ -165,7 +175,7 @@
 							}
 						}
 					},
-					"expectation": {"UrlIs": "https://example.com/"}
+					"result": "https://example.com/"
 				}
 			]
 		},
@@ -182,7 +192,7 @@
 							}
 						}
 					},
-					"expectation": {"UrlIs": "https://x.com/example"}
+					"result": "https://x.com/example"
 				}
 			]
 		}

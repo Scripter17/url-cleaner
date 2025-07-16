@@ -36,11 +36,6 @@ pub(crate) fn set_is_documented(name: &StringSource, config: &Cleaner) {
         assert!(config.docs.sets.contains_key(name), "Undocumented Set: {name}");
     }
 }
-/// Suitability helper function to check that a set is documented.
-pub(crate) fn lit_set_is_documented(name: &String, config: &Cleaner) {
-    assert!(config.params.sets.contains_key(name), "Unset Set: {name}");
-    assert!(config.docs.sets.contains_key(name), "Undocumented Set: {name}")
-}
 /// Suitability helper function to check that a map is documented.
 pub(crate) fn map_is_documented(name: &StringSource, config: &Cleaner) {
     if let StringSource::String(name) = name {
