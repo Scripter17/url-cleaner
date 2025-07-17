@@ -49,9 +49,9 @@ impl TestSet {
         let mut cleaner = cleaner.borrowed();
 
         println!(
-            "TestSet\nparams_diff: {}\njob_context: {}",
-            serde_json::to_string(&self.params_diff).expect("Serialization to never fail"),
-            serde_json::to_string(&self.job_context).expect("Serialization to never fail")
+            "TestSet\n  params_diff: {}\n  job_context: {}",
+            serde_json::to_string(&self.params_diff).expect("Serialization to never fail."),
+            serde_json::to_string(&self.job_context).expect("Serialization to never fail.")
         );
 
         if let Some(params_diff) = self.params_diff {
@@ -59,7 +59,7 @@ impl TestSet {
         }
 
         for test in self.tests {
-            println!("  Test: {test:?}");
+            println!("    Test: {}", serde_json::to_string(&test).expect("Serialition to never fail."));
             let task = Task {
                 config: test.task_config,
                 job_context: &self.job_context,
@@ -87,7 +87,7 @@ impl TestSet {
                     unthreader: &Default::default()
                 };
                 let result2 = task.r#do().expect("The idempotence test to be succeed.");
-                assert_eq!(result2, result1, "Idempotence to be upheld");
+                assert_eq!(result2, result1, "Idempotence to be upheld.");
             }
         }
     }

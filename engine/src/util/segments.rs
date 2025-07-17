@@ -58,15 +58,14 @@ pub(crate) fn insert_segment_after<E>(part: &str, index: isize, value: &str, seg
     segments.insert(neg_index(index, segments.len()).ok_or(segment_not_found)? + 1, value);
     Ok(segments.join(join))
 }
-
 /// Remove the first `n` segments of `s` split by `split`.
-pub(crate) fn remove_first_n_segments<'a>(s: &'a str, split: &str, n: usize) -> Option<&'a str> {
+pub(crate) fn char_remove_first_n_segments(s: &str, split: char, n: usize) -> Option<&str> {
     #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
     s.get((s.split(split).nth(n)? as *const str).addr() - (s as *const str).addr() ..)
 }
 
 /// Keep the first `n` segments of `s` split by `split`.
-pub(crate) fn keep_first_n_segments<'a>(s: &'a str, split: &str, n: usize) -> Option<&'a str> {
+pub(crate) fn char_keep_first_n_segments(s: &str, split: char, n: usize) -> Option<&str> {
     if n == 0 {
         None
     } else {
@@ -78,13 +77,20 @@ pub(crate) fn keep_first_n_segments<'a>(s: &'a str, split: &str, n: usize) -> Op
 }
 
 /// Remove the last `n` segments of `s` split by `split`.
-pub(crate) fn remove_last_n_segments<'a>(s: &'a str, split: &str, n: usize) -> Option<&'a str> {
-    keep_first_n_segments(s, split, s.split(split).count().checked_sub(n)?)
+pub(crate) fn char_remove_last_n_segments(s: &str, split: char, n: usize) -> Option<&str> {
+    let seg = s.split(split).nth_back(n)?;
+    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+    s.get(.. (seg as *const str).addr() + seg.len() - (s as *const str).addr())
 }
 
 /// Keep the last `n` segments of `s` split by `split`.
-pub(crate) fn keep_last_n_segments<'a>(s: &'a str, split: &str, n: usize) -> Option<&'a str> {
-    remove_first_n_segments(s, split, s.split(split).count().checked_sub(n)?)
+pub(crate) fn char_keep_last_n_segments(s: &str, split: char, n: usize) -> Option<&str> {
+    if n == 0 {
+        None
+    } else {
+        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+        s.get((s.split(split).nth_back(n - 1)? as *const str).addr() - (s as *const str).addr()..)
+    }
 }
 
 /// Gets the range of elements form `iter`.
@@ -100,52 +106,52 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_remove_first_n_segments() {
-        let test = "aa--bb--cc--dd--ee";
+    fn test_char_remove_first_n_segments() {
+        let test = "aa-bb-cc-dd-ee";
 
-        assert_eq!(remove_first_n_segments(test, "--", 0), Some("aa--bb--cc--dd--ee"));
-        assert_eq!(remove_first_n_segments(test, "--", 1), Some("bb--cc--dd--ee"));
-        assert_eq!(remove_first_n_segments(test, "--", 2), Some("cc--dd--ee"));
-        assert_eq!(remove_first_n_segments(test, "--", 3), Some("dd--ee"));
-        assert_eq!(remove_first_n_segments(test, "--", 4), Some("ee"));
-        assert_eq!(remove_first_n_segments(test, "--", 5), None);
+        assert_eq!(char_remove_first_n_segments(test, '-', 0), Some("aa-bb-cc-dd-ee"));
+        assert_eq!(char_remove_first_n_segments(test, '-', 1), Some("bb-cc-dd-ee"));
+        assert_eq!(char_remove_first_n_segments(test, '-', 2), Some("cc-dd-ee"));
+        assert_eq!(char_remove_first_n_segments(test, '-', 3), Some("dd-ee"));
+        assert_eq!(char_remove_first_n_segments(test, '-', 4), Some("ee"));
+        assert_eq!(char_remove_first_n_segments(test, '-', 5), None);
     }
 
     #[test]
-    fn test_keep_first_n_segments() {
-        let test = "aa--bb--cc--dd--ee";
+    fn test_char_keep_first_n_segments() {
+        let test = "aa-bb-cc-dd-ee";
 
-        assert_eq!(keep_first_n_segments(test, "--", 0), None);
-        assert_eq!(keep_first_n_segments(test, "--", 1), Some("aa"));
-        assert_eq!(keep_first_n_segments(test, "--", 2), Some("aa--bb"));
-        assert_eq!(keep_first_n_segments(test, "--", 3), Some("aa--bb--cc"));
-        assert_eq!(keep_first_n_segments(test, "--", 4), Some("aa--bb--cc--dd"));
-        assert_eq!(keep_first_n_segments(test, "--", 5), Some("aa--bb--cc--dd--ee"));
-        assert_eq!(keep_first_n_segments(test, "--", 6), None);
+        assert_eq!(char_keep_first_n_segments(test, '-', 0), None);
+        assert_eq!(char_keep_first_n_segments(test, '-', 1), Some("aa"));
+        assert_eq!(char_keep_first_n_segments(test, '-', 2), Some("aa-bb"));
+        assert_eq!(char_keep_first_n_segments(test, '-', 3), Some("aa-bb-cc"));
+        assert_eq!(char_keep_first_n_segments(test, '-', 4), Some("aa-bb-cc-dd"));
+        assert_eq!(char_keep_first_n_segments(test, '-', 5), Some("aa-bb-cc-dd-ee"));
+        assert_eq!(char_keep_first_n_segments(test, '-', 6), None);
     }
 
     #[test]
-    fn test_remove_last_n_segments() {
-        let test = "aa--bb--cc--dd--ee";
+    fn test_char_remove_last_n_segments() {
+        let test = "aa-bb-cc-dd-ee";
 
-        assert_eq!(remove_last_n_segments(test, "--", 0), Some("aa--bb--cc--dd--ee"));
-        assert_eq!(remove_last_n_segments(test, "--", 1), Some("aa--bb--cc--dd"));
-        assert_eq!(remove_last_n_segments(test, "--", 2), Some("aa--bb--cc"));
-        assert_eq!(remove_last_n_segments(test, "--", 3), Some("aa--bb"));
-        assert_eq!(remove_last_n_segments(test, "--", 4), Some("aa"));
-        assert_eq!(remove_last_n_segments(test, "--", 5), None);
+        assert_eq!(char_remove_last_n_segments(test, '-', 0), Some("aa-bb-cc-dd-ee"));
+        assert_eq!(char_remove_last_n_segments(test, '-', 1), Some("aa-bb-cc-dd"));
+        assert_eq!(char_remove_last_n_segments(test, '-', 2), Some("aa-bb-cc"));
+        assert_eq!(char_remove_last_n_segments(test, '-', 3), Some("aa-bb"));
+        assert_eq!(char_remove_last_n_segments(test, '-', 4), Some("aa"));
+        assert_eq!(char_remove_last_n_segments(test, '-', 5), None);
     }
 
     #[test]
-    fn test_keep_last_n_segments() {
-        let test = "aa--bb--cc--dd--ee";
+    fn test_char_keep_last_n_segments() {
+        let test = "aa-bb-cc-dd-ee";
 
-        assert_eq!(keep_last_n_segments(test, "--", 0), None);
-        assert_eq!(keep_last_n_segments(test, "--", 1), Some("ee"));
-        assert_eq!(keep_last_n_segments(test, "--", 2), Some("dd--ee"));
-        assert_eq!(keep_last_n_segments(test, "--", 3), Some("cc--dd--ee"));
-        assert_eq!(keep_last_n_segments(test, "--", 4), Some("bb--cc--dd--ee"));
-        assert_eq!(keep_last_n_segments(test, "--", 5), Some("aa--bb--cc--dd--ee"));
-        assert_eq!(keep_last_n_segments(test, "--", 6), None);
+        assert_eq!(char_keep_last_n_segments(test, '-', 0), None);
+        assert_eq!(char_keep_last_n_segments(test, '-', 1), Some("ee"));
+        assert_eq!(char_keep_last_n_segments(test, '-', 2), Some("dd-ee"));
+        assert_eq!(char_keep_last_n_segments(test, '-', 3), Some("cc-dd-ee"));
+        assert_eq!(char_keep_last_n_segments(test, '-', 4), Some("bb-cc-dd-ee"));
+        assert_eq!(char_keep_last_n_segments(test, '-', 5), Some("aa-bb-cc-dd-ee"));
+        assert_eq!(char_keep_last_n_segments(test, '-', 6), None);
     }
 }

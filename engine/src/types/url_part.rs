@@ -107,6 +107,8 @@ pub enum UrlPart {
     Path,
     /// [`BetterUrl::path_segment`] and [`BetterUrl::set_path_segment`].
     PathSegment(isize),
+    /// [`BetterUrl::path_segment`] and [`BetterUrl::set_raw_path_segment`].
+    RawPathSegment(isize),
     /// [`BetterUrl::path_segments_str`] and [`BetterUrl::set_path_segments_str`]
     PathSegments,
     /// [`BetterUrl::first_n_path_segments`] and [`BetterUrl::set_first_n_path_segments`].
@@ -235,6 +237,7 @@ impl UrlPart {
 
             Self::Path => Cow::Borrowed(url.path()),
             Self::PathSegment(index) => Cow::Borrowed(url.path_segment(*index).ok()??),
+            Self::RawPathSegment(index) => Cow::Borrowed(url.path_segment(*index).ok()??),
             Self::PathSegments => Cow::Borrowed(url.path_segments_str()?),
             Self::FirstNPathSegments(n) => Cow::Borrowed(url.first_n_path_segments(*n).ok()??),
             Self::PathSegmentsAfterFirstN(n) => Cow::Borrowed(url.path_segments_after_first_n(*n).ok()??),
@@ -293,6 +296,7 @@ impl UrlPart {
             (Self::Path, Some(to)) => url.set_path(to),
             (Self::Path, None    ) => Err(SetUrlPartError::PathCannotBeNone)?,
             (Self::PathSegment(n), _) => url.set_path_segment(*n, to)?,
+            (Self::RawPathSegment(n), _) => url.set_raw_path_segment(*n, to)?,
             (Self::PathSegments, Some(to)) => url.set_path_segments_str(to)?,
             (Self::PathSegments, None) => Err(SetUrlPartError::CannotSetPathSegmentsToNone)?,
             (Self::FirstNPathSegments(n), _) => url.set_first_n_path_segments(*n, to)?,

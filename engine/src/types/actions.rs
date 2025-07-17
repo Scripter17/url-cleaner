@@ -471,6 +471,33 @@ pub enum Action {
         /// The value to insert.
         value: StringSource
     },
+    /// [`BetterUrl::set_path_segment`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_path_segment))]
+    SetRawPathSegment {
+        /// The [`UrlPart::PathSegment`] to set.
+        index: isize,
+        /// The value to set it to.
+        value: StringSource
+    },
+    /// [`BetterUrl::insert_path_segment_at`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment_at))]
+    InsertRawPathSegmentAt {
+        /// The index to insert it at.
+        index: isize,
+        /// The value to insert.
+        value: StringSource
+    },
+    /// [`BetterUrl::insert_path_segment_after`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment_after))]
+    InsertRawPathSegmentAfter {
+        /// The index to insert it at.
+        index: isize,
+        /// The value to insert.
+        value: StringSource
+    },
     /// [`PathSegmentsMut::pop_if_empty`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::path_segments_mut))]
@@ -1299,10 +1326,13 @@ impl Action {
 
             Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
 
-            Self::RemovePathSegment      (index) => task_state.url.set_path_segment(*index, None)?,
-            Self::SetPathSegment         {index, value} => task_state.url.set_path_segment         (*index, get_new_option_str!(value, task_state))?,
-            Self::InsertPathSegmentAt    {index, value} => task_state.url.insert_path_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertPathSegmentAfter {index, value} => task_state.url.insert_path_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
+            Self::RemovePathSegment         (index) => task_state.url.set_path_segment(*index, None)?,
+            Self::SetPathSegment            {index, value} => task_state.url.set_path_segment             (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertPathSegmentAt       {index, value} => task_state.url.insert_path_segment_at       (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertPathSegmentAfter    {index, value} => task_state.url.insert_path_segment_after    (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment         (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertRawPathSegmentAt    {index, value} => task_state.url.insert_raw_path_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertRawPathSegmentAfter {index, value} => task_state.url.insert_raw_path_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
             Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut()?.pop_if_empty();},
             Self::RemoveEmptyLastPathSegmentAndInsertNew(value) => {
                 let value = get_new_str!(value, task_state, ActionError);
