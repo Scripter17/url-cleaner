@@ -577,11 +577,39 @@ impl BetterUrl {
     /// If the URL doesn't have path segments, returns the error [`SetFirstNPathSegmentsError::UrlDoesNotHavePathSegments`].
     ///
     /// If there aren't enough path segments, returns the error [`SetFirstNPathSegmentsError::NotEnoughPathSegments`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
+    ///
+    /// url.set_first_n_path_segments(0, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/3/4/5");
+    /// url.set_first_n_path_segments(0, None).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/3/4/5");
+    ///
+    /// url.set_first_n_path_segments(1, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a/1/2/3/4/5");
+    /// url.set_first_n_path_segments(1, None).unwrap();
+    /// assert_eq!(url.path(), "/1/2/3/4/5");
+    ///
+    /// url.set_first_n_path_segments(2, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a/3/4/5");
+    /// url.set_first_n_path_segments(2, None).unwrap();
+    /// assert_eq!(url.path(), "/4/5");
+    ///
+    /// url.set_first_n_path_segments(3, Some("a")).unwrap_err();
+    /// assert_eq!(url.path(), "/4/5");
+    /// url.set_first_n_path_segments(3, None).unwrap_err();
+    /// assert_eq!(url.path(), "/4/5");
+    /// ```
     pub fn set_first_n_path_segments(&mut self, n: usize, to: Option<&str>) -> Result<(), SetFirstNPathSegmentsError> {
-        match to {
-            Some(to) => self.set_path_segments_str(&format!("{to}/{}", char_remove_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetFirstNPathSegmentsError::NotEnoughPathSegments)?))?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-            None     => self.set_path_segments_str(&                   char_remove_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetFirstNPathSegmentsError::NotEnoughPathSegments)?.to_string())?,
+        if n > 0 {
+            match to {
+                Some(to) => self.set_path_segments_str(&format!("{to}/{}", char_remove_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetFirstNPathSegmentsError::NotEnoughPathSegments)?))?,
+                #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
+                None     => self.set_path_segments_str(&                   char_remove_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetFirstNPathSegmentsError::NotEnoughPathSegments)?.to_string())?,
+            }
         }
         Ok(())
     }
@@ -593,11 +621,38 @@ impl BetterUrl {
     /// If the URL doesn't have path segments, returns the error [`SetFirstNPathSegmentsError::UrlDoesNotHavePathSegments`].
     ///
     /// If there aren't enough path segments, returns the error [`SetFirstNPathSegmentsError::NotEnoughPathSegments`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
+    ///
+    /// url.set_path_segments_after_first_n(3, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/a");
+    /// url.set_path_segments_after_first_n(3, None).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2");
+    ///
+    /// url.set_path_segments_after_first_n(2, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/a");
+    /// url.set_path_segments_after_first_n(2, None).unwrap();
+    /// assert_eq!(url.path(), "/0/1");
+    ///
+    /// url.set_path_segments_after_first_n(1, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/a");
+    /// url.set_path_segments_after_first_n(1, None).unwrap();
+    /// assert_eq!(url.path(), "/0");
+    ///
+    /// url.set_path_segments_after_first_n(0, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a");
+    /// url.set_path_segments_after_first_n(0, None).unwrap_err();
+    /// assert_eq!(url.path(), "/a");
+    /// ```
     pub fn set_path_segments_after_first_n(&mut self, n: usize, to: Option<&str>) -> Result<(), SetPathSegmentsAfterFirstNError> {
-        match to {
-            Some(to) => self.set_path_segments_str(&format!("{}/{to}", char_keep_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsAfterFirstNError::NotEnoughPathSegments)?))?,
+        match (n, to) {
+            (0, Some(to)) => self.set_path_segments_str(to)?,
+            (_, Some(to)) => self.set_path_segments_str(&format!("{}/{to}", char_keep_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsAfterFirstNError::NotEnoughPathSegments)?))?,
             #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-            None     => self.set_path_segments_str(&                   char_keep_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsAfterFirstNError::NotEnoughPathSegments)?.to_string())?,
+            (_, None    ) => self.set_path_segments_str(&                   char_keep_first_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsAfterFirstNError::NotEnoughPathSegments)?.to_string())?,
         }
         Ok(())
     }
@@ -609,11 +664,39 @@ impl BetterUrl {
     /// If the URL doesn't have path segments, returns the error [`SetLastNPathSegmentsError::UrlDoesNotHavePathSegments`].
     ///
     /// If there aren't enough path segments, returns the error [`SetLastNPathSegmentsError::NotEnoughPathSegments`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
+    ///
+    /// url.set_last_n_path_segments(0, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/3/4/5");
+    /// url.set_last_n_path_segments(0, None).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/3/4/5");
+    ///
+    /// url.set_last_n_path_segments(1, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/3/4/a");
+    /// url.set_last_n_path_segments(1, None).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/3/4");
+    ///
+    /// url.set_last_n_path_segments(2, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/0/1/2/a");
+    /// url.set_last_n_path_segments(2, None).unwrap();
+    /// assert_eq!(url.path(), "/0/1");
+    ///
+    /// url.set_last_n_path_segments(3, Some("a")).unwrap_err();
+    /// assert_eq!(url.path(), "/0/1");
+    /// url.set_last_n_path_segments(3, None).unwrap_err();
+    /// assert_eq!(url.path(), "/0/1");
+    /// ```
     pub fn set_last_n_path_segments(&mut self, n: usize, to: Option<&str>) -> Result<(), SetLastNPathSegmentsError> {
-        match to {
-            Some(to) => self.set_path_segments_str(&format!("{to}/{}", char_keep_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetLastNPathSegmentsError::NotEnoughPathSegments)?))?,
-            #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-            None     => self.set_path_segments_str(&                   char_keep_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetLastNPathSegmentsError::NotEnoughPathSegments)?.to_string())?,
+        if n > 0 {
+            match to {
+                Some(to) => self.set_path_segments_str(&format!("{}/{to}", char_remove_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetLastNPathSegmentsError::NotEnoughPathSegments)?))?,
+                #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
+                None     => self.set_path_segments_str(&                   char_remove_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetLastNPathSegmentsError::NotEnoughPathSegments)?.to_string())?,
+            }
         }
         Ok(())
     }
@@ -625,11 +708,38 @@ impl BetterUrl {
     /// If the URL doesn't have path segments, returns the error [`SetLastNPathSegmentsError::UrlDoesNotHavePathSegments`].
     ///
     /// If there aren't enough path segments, returns the error [`SetLastNPathSegmentsError::NotEnoughPathSegments`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
+    ///
+    /// url.set_path_segments_before_last_n(3, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a/3/4/5");
+    /// url.set_path_segments_before_last_n(3, None).unwrap();
+    /// assert_eq!(url.path(), "/3/4/5");
+    ///
+    /// url.set_path_segments_before_last_n(2, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a/4/5");
+    /// url.set_path_segments_before_last_n(2, None).unwrap();
+    /// assert_eq!(url.path(), "/4/5");
+    ///
+    /// url.set_path_segments_before_last_n(1, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a/5");
+    /// url.set_path_segments_before_last_n(1, None).unwrap();
+    /// assert_eq!(url.path(), "/5");
+    ///
+    /// url.set_path_segments_before_last_n(0, Some("a")).unwrap();
+    /// assert_eq!(url.path(), "/a");
+    /// url.set_path_segments_before_last_n(0, None).unwrap_err();
+    /// assert_eq!(url.path(), "/a");
+    /// ```
     pub fn set_path_segments_before_last_n(&mut self, n: usize, to: Option<&str>) -> Result<(), SetPathSegmentsBeforeLastNError> {
-        match to {
-            Some(to) => self.set_path_segments_str(&format!("{}/{to}", char_remove_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsBeforeLastNError::NotEnoughPathSegments)?))?,
+        match (n, to) {
+            (0, Some(to)) => self.set_path_segments_str(to)?,
+            (_, Some(to)) => self.set_path_segments_str(&format!("{to}/{}", char_keep_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsBeforeLastNError::NotEnoughPathSegments)?))?,
             #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
-            None     => self.set_path_segments_str(&                   char_remove_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsBeforeLastNError::NotEnoughPathSegments)?.to_string())?,
+            (_, None    ) => self.set_path_segments_str(&                   char_keep_last_n_segments(self.path_segments_str().ok_or(UrlDoesNotHavePathSegments)?, '/', n).ok_or(SetPathSegmentsBeforeLastNError::NotEnoughPathSegments)?.to_string())?,
         }
         Ok(())
     }
