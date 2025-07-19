@@ -656,87 +656,8 @@ pub enum Action {
     },
     /// Rename the specified query parameter to the specified name.
     /// # Errors
-    /// If the URL doesn't have a query, returns the error [`ActionError::NoQuery`].
-    ///
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError))]
-    ///
-    /// If the specified query param isn't found, returns the error [`ActionError::QueryParamNotFound`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    ///
-    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=1&%61=2&a=3");
-    ///
-    /// Action::RenameQueryParam {
-    ///     from: QueryParamSelector {
-    ///         name: "a".into(),
-    ///         index: 1
-    ///     },
-    ///     to: "b".into()
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// assert_eq!(task_state.url.query(), Some("a=1&b=2&a=3"));
-    ///
-    /// Action::RenameQueryParam {
-    ///     from: QueryParamSelector {
-    ///         name: "a".into(),
-    ///         index: 1
-    ///     },
-    ///     to: "b".into()
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// assert_eq!(task_state.url.query(), Some("a=1&b=2&b=3"));
-    ///
-    /// Action::RenameQueryParam {
-    ///     from: QueryParamSelector {
-    ///         name: "a".into(),
-    ///         index: 1
-    ///     },
-    ///     to: "b".into()
-    /// }.apply(&mut task_state).unwrap_err();
-    ///
-    /// assert_eq!(task_state.url.query(), Some("a=1&b=2&b=3"));
-    /// ```
+    #[doc = edoc!(callerr(BetterUrl::rename_query_param))]
     RenameQueryParam {
-        /// The query parameter to rename.
-        from: QueryParamSelector,
-        /// The name to rename it to.
-        to: StringSource
-    },
-    /// Rename the specified query parameter to the specified name.
-    /// # Errors
-    /// If the URL doesn't have a query, returns the error [`ActionError::NoQuery`].
-    ///
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError))]
-    ///
-    /// If the specified query param isn't found, returns the error [`ActionError::QueryParamNotFound`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::types::*;
-    ///
-    /// url_cleaner_engine::task_state!(task_state, url = "https://example.com?a=1&%61=2&a=3");
-    ///
-    /// Action::RenameRawQueryParam {
-    ///     from: QueryParamSelector {
-    ///         name: "a".into(),
-    ///         index: 1
-    ///     },
-    ///     to: "b".into()
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// assert_eq!(task_state.url.query(), Some("a=1&%61=2&b=3"));
-    ///
-    /// Action::RenameRawQueryParam {
-    ///     from: QueryParamSelector {
-    ///         name: "a".into(),
-    ///         index: 1
-    ///     },
-    ///     to: "b".into()
-    /// }.apply(&mut task_state).unwrap_err();
-    ///
-    /// assert_eq!(task_state.url.query(), Some("a=1&%61=2&b=3"));
-    /// ```
-    RenameRawQueryParam {
         /// The query parameter to rename.
         from: QueryParamSelector,
         /// The name to rename it to.
@@ -1101,9 +1022,9 @@ pub enum ActionError {
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
-    /// Returned when a [`UrlDoesNotHavePathSegments`] is encountered.
-    #[error(transparent)]
-    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
+    /// Returned when attempting to get the path segments of a URL with no path segments.
+    #[error("Attempted to get the path segments of a URL with no path segments.")]
+    UrlDoesNotHavePathSegments,
     /// Returned when a [`SetPathSegmentError`] is encountered.
     #[error(transparent)]
     SetPathSegmentError(#[from] SetPathSegmentError),
@@ -1135,6 +1056,9 @@ pub enum ActionError {
     /// Returned when attempting to get the value of a query param that didn't have a value.
     #[error("Attempted to get the value of a query param that didn't have a value.")]
     QueryParamNoValue,
+    /// Returned when a [`RenameQueryParamError`] is encountered.
+    #[error(transparent)]
+    RenameQueryParamError(#[from] RenameQueryParamError),
 
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
@@ -1333,10 +1257,10 @@ impl Action {
             Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment         (*index, get_new_option_str!(value, task_state))?,
             Self::InsertRawPathSegmentAt    {index, value} => task_state.url.insert_raw_path_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
             Self::InsertRawPathSegmentAfter {index, value} => task_state.url.insert_raw_path_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
-            Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut()?.pop_if_empty();},
+            Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut().ok_or(ActionError::UrlDoesNotHavePathSegments)?.pop_if_empty();},
             Self::RemoveEmptyLastPathSegmentAndInsertNew(value) => {
                 let value = get_new_str!(value, task_state, ActionError);
-                let mut segments_mut = task_state.url.path_segments_mut()?;
+                let mut segments_mut = task_state.url.path_segments_mut().ok_or(ActionError::UrlDoesNotHavePathSegments)?;
                 segments_mut.pop_if_empty();
                 segments_mut.push(value);
             },
@@ -1439,72 +1363,7 @@ impl Action {
                     task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
                 }
             },
-            Self::RenameQueryParam {from, to} => match task_state.url.query() {
-                Some(query) => {
-                    let mut new = String::with_capacity(query.len());
-                    let mut found = 0;
-                    for param in query.split('&') {
-                        if !new.is_empty() {new.push('&');}
-                        let (name, value) = match param.split_once('=') {
-                            Some((name, value)) => (name, Some(value)),
-                            None => (param, None)
-                        };
-                        if peh(name) == from.name {
-                            if found == from.index {
-                                new.push_str(get_str!(to, task_state, ActionError));
-                                if let Some(value) = value {
-                                    new.push('=');
-                                    new.push_str(value);
-                                }
-                            } else {
-                                new.push_str(param);
-                            }
-                            #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-                            {found += 1;}
-                        } else {
-                            new.push_str(param);
-                        }
-                    }
-                    if found <= from.index {
-                        Err(ActionError::QueryParamNotFound)?;
-                    }
-                    task_state.url.set_query(Some(&new));
-                },
-                None => Err(ActionError::NoQuery)?
-            },
-            Self::RenameRawQueryParam {from, to} => match task_state.url.query() {
-                Some(query) => {
-                    let mut new = String::with_capacity(query.len());
-                    let mut found = 0;
-                    for param in query.split('&') {
-                        if !new.is_empty() {new.push('&');}
-                        let (name, value) = match param.split_once('=') {
-                            Some((name, value)) => (name, Some(value)),
-                            None => (param, None)
-                        };
-                        if name == from.name {
-                            if found == from.index {
-                                new.push_str(get_str!(to, task_state, ActionError));
-                                if let Some(value) = value {
-                                    new.push('=');
-                                    new.push_str(value);
-                                }
-                            } else {
-                                new.push_str(param);
-                            }
-                            #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-                            {found += 1;}
-                        } else {
-                            new.push_str(param);
-                        }
-                    }
-                    if found <= from.index {
-                        Err(ActionError::QueryParamNotFound)?;
-                    }
-                    task_state.url.set_query(Some(&new));
-                },
-                None => Err(ActionError::NoQuery)?
-            },
+            Self::RenameQueryParam {from, to} => task_state.url.rename_query_param(&from.name, from.index, get_new_str!(to, task_state, ActionError))?,
 
             Self::GetUrlFromQueryParam(name) => match task_state.url.query_param(get_str!(name, task_state, ActionError), 0) {
                 Some(Some(Some(new_url))) => {*task_state.url = BetterUrl::parse(&new_url)?;},

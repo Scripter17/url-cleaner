@@ -22,7 +22,7 @@ pub enum SetSubdomainError {
     /// Returned when the [`BetterUrl`]'s host isn't a domain.
     #[error("The host was not a domain.")]
     HostIsNotADomain,
-    /// Returned when trying to set the [`UrlPart::Subdomain`] on a domain without a [`UrlPart::RegDomain`].
+    /// Returned when trying to set the subdomain on a domain without a reg domain.
     #[error("Tried to set the subdomain on a domain without a reg domain.")]
     MissingRegDomain,
     /// Returned when the resulting value isn't parsable as a domain.
@@ -36,7 +36,7 @@ pub enum SetNotDomainSuffixError {
     /// Returned when the [`BetterUrl`]'s host isn't a domain.
     #[error("The host was not a domain.")]
     HostIsNotADomain,
-    /// Returned when trying to set the [`UrlPart::NotDomainSuffix`] on a domain without a [`UrlPart::DomainSuffix`].
+    /// Returned when trying to set the not domain suffix on a domain without a domain suffix.
     #[error("Tried to set the not domain suffix on a domain without a domain suffix.")]
     MissingDomainSuffix,
     /// Returned when the resulting value isn't parsable as a domain.
@@ -50,7 +50,7 @@ pub enum SetDomainMiddleError {
     /// Returned when the [`BetterUrl`]'s host isn't a domain.
     #[error("The host was not a domain.")]
     HostIsNotADomain,
-    /// Returned when trying to set the [`UrlPart::DomainMiddle`] on a domain without a [`UrlPart::DomainSuffix`].
+    /// Returned when trying to set the domain middle on a domain without a domain suffix.
     #[error("Tried to set the domain middle on a domain without a domain suffix.")]
     MissingDomainSuffix,
     /// Returned when the resulting value isn't parsable as a domain.
@@ -97,7 +97,7 @@ impl BetterUrl {
     /// Specifically, if [`Self::host_details`] is [`HostDetails::Domain`], return the substring of [`Url::host_str`] specified by [`DomainDetails::domain_bounds`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain(), Some("example.com"      ));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain(), Some("example.co.uk"    ));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain(), Some("www.example.com"  ));
@@ -114,7 +114,7 @@ impl BetterUrl {
     /// Specifically, if [`Self::host_details`] is [`HostDetails::Domain`], return the substring of [`Url::host_str`] specified by [`DomainDetails::subdomain_bounds`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().subdomain(), None);
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().subdomain(), None);
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().subdomain(), Some("www"));
@@ -131,7 +131,7 @@ impl BetterUrl {
     /// Specifically, if [`Self::host_details`] is [`HostDetails::Domain`], return the substring of [`Url::host_str`] specified by [`DomainDetails::not_domain_suffix_bounds`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().not_domain_suffix(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().not_domain_suffix(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().not_domain_suffix(), Some("www.example"));
@@ -148,7 +148,7 @@ impl BetterUrl {
     /// Specifically, if [`Self::host_details`] is [`HostDetails::Domain`], return the substring of [`Url::host_str`] specified by [`DomainDetails::domain_middle_bounds`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain_middle(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain_middle(), Some("example"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain_middle(), Some("example"));
@@ -165,7 +165,7 @@ impl BetterUrl {
     /// Specifically, if [`Self::host_details`] is [`HostDetails::Domain`], return the substring of [`Url::host_str`] specified by [`DomainDetails::reg_domain_bounds`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().reg_domain(), Some("example.com"  ));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().reg_domain(), Some("example.co.uk"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().reg_domain(), Some("example.com"  ));
@@ -182,7 +182,7 @@ impl BetterUrl {
     /// Specifically, if [`Self::host_details`] is [`HostDetails::Domain`], return the substring of [`Url::host_str`] specified by [`DomainDetails::domain_suffix_bounds`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// assert_eq!(BetterUrl::parse("https://example.com"       ).unwrap().domain_suffix(), Some("com"  ));
     /// assert_eq!(BetterUrl::parse("https://example.co.uk"     ).unwrap().domain_suffix(), Some("co.uk"));
     /// assert_eq!(BetterUrl::parse("https://www.example.com"   ).unwrap().domain_suffix(), Some("com"  ));
@@ -203,7 +203,7 @@ impl BetterUrl {
     /// If the URL doesn't have a domain host, `to` isn't a domain, and/or `to` is a fully qualified domain, returns the error [`SetDomainError::Other`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com" ));
     /// let mut url = BetterUrl::parse("https://www.example.com"   ).unwrap(); url.set_domain(Some("example.com")).unwrap(); assert_eq!(url.host_str(), Some("example.com" ));
@@ -234,10 +234,10 @@ impl BetterUrl {
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
-    /// If [`Self`] doesn't have a [`UrlPart::RegDomain`], returns the error [`SetSubdomainError::MissingRegDomain`].
+    /// If [`Self`] doesn't have a reg domain, returns the error [`SetSubdomainError::MissingRegDomain`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_subdomain(None       ).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   )); assert_eq!(url.host_details(), Some(&HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8 ), fqdn_period: None})));
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_subdomain(Some("www")).unwrap(); assert_eq!(url.host_str(), Some("www.example.com"   )); assert_eq!(url.host_details(), Some(&HostDetails::Domain(DomainDetails {middle_start: Some(4), suffix_start: Some(12), fqdn_period: None})));
@@ -290,10 +290,10 @@ impl BetterUrl {
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
-    /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetNotDomainSuffixError::MissingDomainSuffix`].
+    /// If [`Self`] doesn't have a domain suffix, returns the error [`SetNotDomainSuffixError::MissingDomainSuffix`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_not_domain_suffix(None               ).unwrap(); assert_eq!(url.host_str(), Some(            "com"   ));
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_not_domain_suffix(Some(    "example")).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
@@ -346,10 +346,10 @@ impl BetterUrl {
     /// # Errors
     /// If [`Self`]'s host isn't a domain, returns the error [`SetSubdomainError::HostIsNotADomain`].
     ///
-    /// If [`Self`] doesn't have a [`UrlPart::DomainSuffix`], returns the error [`SetDomainMiddleError::MissingDomainSuffix`].
+    /// If [`Self`] doesn't have a domain suffix, returns the error [`SetDomainMiddleError::MissingDomainSuffix`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_middle(None            ).unwrap(); assert_eq!(url.host_str(), Some(             "com"   ));
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_middle(Some("example2")).unwrap(); assert_eq!(url.host_str(), Some(    "example2.com"   ));
@@ -401,7 +401,7 @@ impl BetterUrl {
     /// If [`Self`]'s host isn't a domain, returns the error [`SetRegDomainError::HostIsNotADomain`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(None                 ).unwrap_err();
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_reg_domain(Some(        "com"  )).unwrap(); assert_eq!(url.host_str(), Some(            "com"   ));
@@ -471,7 +471,7 @@ impl BetterUrl {
     /// If [`Self`]'s host isn't a domain, returns the error [`SetDomainSuffixError::HostIsNotADomain`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_suffix(None         ).unwrap(); assert_eq!(url.host_str(), Some(    "example"       ));
     /// let mut url = BetterUrl::parse(    "https://example.com"   ).unwrap(); url.set_domain_suffix(Some("com"  )).unwrap(); assert_eq!(url.host_str(), Some(    "example.com"   ));
@@ -525,7 +525,7 @@ impl BetterUrl {
     /// If the host isn't a domain, returns the error [`SetFqdnError::HostIsNotADomain`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// url.set_fqdn(false).unwrap();

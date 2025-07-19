@@ -1,6 +1,14 @@
 //! Implementing query stuff for [`BetterUrl`].
 
-use super::*;
+use std::borrow::Cow;
+
+use form_urlencoded::Serializer;
+use thiserror::Error;
+use url::UrlQuery;
+#[expect(unused_imports, reason = "Used in doc comments.")]
+use url::Url;
+
+use crate::*;
 
 /// The enum of errors [`BetterUrl::set_query_param`] can return.
 #[derive(Debug, Error)]
@@ -10,23 +18,35 @@ pub enum SetQueryParamError {
     QueryParamIndexNotFound
 }
 
+/// The enum of errors [`BetterUrl::rename_query_param`] can return.
+#[derive(Debug, Error)]
+pub enum RenameQueryParamError {
+    /// Returned when attempting to rename a query param to a name containing a `&`, `=`, or `#`.
+    #[error("Attempted to rename a query param to a name containing a &, =, or #.")]
+    InvalidName,
+    /// Returned when attempting to rename a query param in a URL with no query.
+    #[error("Attempted to rename a query param in a URL with no query.")]
+    NoQuery,
+    /// Returned when the specified query param isn't found.
+    #[error("The specified query param was not found.")]
+    QueryParamNotFound
+}
+
 impl BetterUrl {
     /// [`Url::set_query`].
     pub fn set_query(&mut self, query: Option<&str>) {
-        debug!(BetterUrl::set_query, self, query);
         self.url.set_query(query)
     }
 
     /// [`Url::query_pairs_mut`].
     pub fn query_pairs_mut(&mut self) -> Serializer<'_, UrlQuery<'_>> {
-        debug!(BetterUrl::query_pairs_mut, self);
         self.url.query_pairs_mut()
     }
 
     /// An iterator over query parameters without percent decoding anything.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
     ///
@@ -55,7 +75,7 @@ impl BetterUrl {
     /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
     ///
@@ -75,7 +95,7 @@ impl BetterUrl {
     /// Please note that this returns [`true`] even if the query param has no value.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a&%61=4").unwrap();
     ///
@@ -96,7 +116,7 @@ impl BetterUrl {
     /// Please note that this returns [`true`] even if the query param has no value.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a&%61=4").unwrap();
     ///
@@ -121,7 +141,7 @@ impl BetterUrl {
     /// Third [`Option`] is if it has a value.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4&c").unwrap();
     ///
@@ -164,7 +184,7 @@ impl BetterUrl {
     /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
@@ -225,7 +245,7 @@ impl BetterUrl {
     /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
@@ -269,8 +289,6 @@ impl BetterUrl {
     /// assert_eq!(url.query(), None);
     /// ```
     pub fn set_raw_query_param(&mut self, name: &str, index: usize, to: Option<Option<&str>>) -> Result<(), SetQueryParamError> {
-        debug!(QueryParamSelector::set, self, name,to);
-
         let mut ret = String::with_capacity(self.query().map_or(0, str::len));
         let mut found = 0;
 
@@ -313,6 +331,65 @@ impl BetterUrl {
 
         self.set_query(Some(&*ret).filter(|x| !x.is_empty()));
 
+        Ok(())
+    }
+
+    /// Rename the specified query parameter to the specified name.
+    /// # Errors
+    /// If `to` contains a `&`, `=`, or `#`, returns the error [`RenameQueryParamError::InvalidName`].
+    ///
+    /// If [`Url::query`] is [`None`], returns the error [`RenameQueryParamError::NoQuery`].
+    ///
+    /// If the specified query param isn't found, returns the error [`RenameQueryParamError::QueryParamNotFound`].
+    /// # Examples
+    /// ```
+    /// use better_url::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3").unwrap();
+    ///
+    /// url.rename_query_param("a", 1, "b").unwrap();
+    /// assert_eq!(url.query(), Some("a=1&b=2&a=3"));
+    ///
+    /// url.rename_query_param("a", 1, "b").unwrap();
+    /// assert_eq!(url.query(), Some("a=1&b=2&b=3"));
+    ///
+    /// url.rename_query_param("a", 1, "b").unwrap_err();
+    /// assert_eq!(url.query(), Some("a=1&b=2&b=3"));
+    /// ```
+    pub fn rename_query_param(&mut self, name: &str, index: usize, to: &str) -> Result<(), RenameQueryParamError> {
+        if to.contains(['&', '=', '#']) {
+            Err(RenameQueryParamError::InvalidName)?
+        }
+        let query = self.query().ok_or(RenameQueryParamError::NoQuery)?;
+        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+        let mut new = String::with_capacity(query.len() + to.len());
+        let mut found = 0;
+        for param in query.split('&') {
+            if !new.is_empty() {new.push('&');}
+            let (k, v) = match param.split_once('=') {
+                Some((k, v)) => (k, Some(v)),
+                None => (param, None)
+            };
+            if peh(k) == name {
+                if found == index {
+                    new.push_str(to);
+                    if let Some(v) = v {
+                        new.push('=');
+                        new.push_str(v);
+                    }
+                } else {
+                    new.push_str(param);
+                }
+                #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+                {found += 1;}
+            } else {
+                new.push_str(param);
+            }
+        }
+        if found <= index {
+            Err(RenameQueryParamError::QueryParamNotFound)?;
+        }
+        self.set_query(Some(&new));
         Ok(())
     }
 }

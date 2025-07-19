@@ -19,6 +19,7 @@ psl = "2.1.124"
 form_urlencoded = "1.2.1"
 percent-encoding = "2.3.1"
 parking_lot = "0.12.4"
+better-url = { version = "0.11.0", path = "../better-url", features = ["serde"]}
 url-cleaner-macros = { version = "0.11.0", path = "../macros" }
 regex          = { optional = true, version = "1.11.1"  }
 reqwest        = { optional = true, version = "0.12.22", features = ["blocking", "socks", "json", "cookies", "native-tls-alpn"] }

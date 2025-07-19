@@ -1241,6 +1241,12 @@ pub enum ConditionError {
     /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
     #[error("A part of the URL is None where it had to be Some.")]
     UrlPartIsNone,
+    /// Returned when attempting to get more path segments than are available.
+    #[error("Attempted to get more path segments than were available.")]
+    NotEnoughPathSegments,
+    /// Returned when attempting to get a path segment not in a URL.
+    #[error("Attempted to get a path segment not in the URL.")]
+    PathSegmentNotFound,
 
     /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
@@ -1262,10 +1268,6 @@ pub enum ConditionError {
     /// Returned when a [`NamedPartitioning`] with the specified name isn't found.
     #[error("A NamedPartitioning with the specified name wasn't found.")]
     NamedPartitioningNotFound,
-
-    /// Returned when a [`UrlDoesNotHavePathSegments`] is returned.
-    #[error(transparent)]
-    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
 
     /// Returned when a [`Condition`] with the specified name isn't found in the [`Commons::conditions`].
     #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
@@ -1439,19 +1441,19 @@ impl Condition {
             Self::PathIsOneOf   (values) => values.contains(Some(task_state.url.path())),
             Self::PathIsInSet   (set   ) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
             Self::PathStartsWith(value ) => task_state.url.path().starts_with(get_str!(value, task_state, ConditionError)),
-            Self::FirstNPathSegmentsIs      {n, value} => task_state.url.first_n_path_segments(*n)? == get_option_str!(value, task_state),
-            Self::FirstNPathSegmentsIsOneOf {n, set  } => set.contains(task_state.url.first_n_path_segments(*n)?),
-            Self::FirstNPathSegmentsIsInSet {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.first_n_path_segments(*n)?),
-            Self::LastNPathSegmentsIs       {n, value} => task_state.url.last_n_path_segments(*n)? == get_option_str!(value, task_state),
-            Self::LastNPathSegmentsIsOneOf  {n, set  } => set.contains(task_state.url.last_n_path_segments(*n)?),
-            Self::LastNPathSegmentsIsInSet  {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.last_n_path_segments(*n)?),
+            Self::FirstNPathSegmentsIs      {n, value} => task_state.url.first_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)? == get_option_str!(value, task_state),
+            Self::FirstNPathSegmentsIsOneOf {n, set  } => set.contains(task_state.url.first_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
+            Self::FirstNPathSegmentsIsInSet {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.first_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
+            Self::LastNPathSegmentsIs       {n, value} => task_state.url.last_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)? == get_option_str!(value, task_state),
+            Self::LastNPathSegmentsIsOneOf  {n, set  } => set.contains(task_state.url.last_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
+            Self::LastNPathSegmentsIsInSet  {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.last_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
 
             Self::PathHasSegments => task_state.url.path_has_segments(),
-            Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_ok_and(|segment| segment.is_none()),
-            Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index)? == get_option_str!(value, task_state),
+            Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_some_and(|segment| segment.is_none()),
+            Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)? == get_option_str!(value, task_state),
 
-            Self::PathSegmentIsOneOf {index, values} => values.contains(task_state.url.path_segment(*index)?),
-            Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index)?),
+            Self::PathSegmentIsOneOf {index, values} => values.contains(task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?),
+            Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?),
 
             // Query
 

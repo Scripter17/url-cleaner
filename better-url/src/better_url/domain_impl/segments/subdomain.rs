@@ -33,7 +33,7 @@ pub enum InsertSubdomainSegmentError {
 impl BetterUrl {
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
@@ -53,14 +53,16 @@ impl BetterUrl {
         }
     }
 
-    /// Sets the specified [`UrlPart::Subdomain`] segment.
+    /// Sets the specified subdomain segment.
     /// # Errors
     /// If the URL doesn't have a domain, returns the error [`SetSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
     ///
     /// If the segment isn't found, returns the error [`SetSubdomainSegmentError::SegmentNotFound`].
+    ///
+    /// If the call to [`Self::set_subdomain`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
@@ -77,7 +79,6 @@ impl BetterUrl {
     /// url.set_subdomain_segment( 0, None).unwrap(); assert_eq!(url.host_str(), Some("p1.example.co.uk"));
     /// url.set_subdomain_segment(-1, None).unwrap(); assert_eq!(url.host_str(), Some("example.co.uk"));
     /// ```
-    #[doc = edoc!(callerr(Self::set_subdomain))]
     pub fn set_subdomain_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetSubdomainSegmentError> {
         self.set_subdomain(set_segment_str(
             self.subdomain().ok_or(SetSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,
@@ -86,13 +87,13 @@ impl BetterUrl {
         Ok(())
     }
 
-    /// Inserts a new [`UrlPart::SubdomainSegment`] at the specified index.
+    /// Inserts a new subdomain segment at the specified index.
     /// # Errors
     /// If the URL doesn't have a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
     ///
     /// If the segment isn't found, returns the error [`InsertSubdomainSegmentError::SegmentNotFound`].
     ///
-    #[doc = edoc!(callerr(Self::set_subdomain))]
+    /// If the call to [`Self::set_subdomain`] returns an error, that error is returned.
     pub fn insert_subdomain_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertSubdomainSegmentError> {
         self.set_subdomain(Some(&insert_segment_at(
             self.subdomain().ok_or(InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,
@@ -101,13 +102,13 @@ impl BetterUrl {
         Ok(())
     }
 
-    /// Inserts a new [`UrlPart::SubdomainSegment`] after the specified index.
+    /// Inserts a new subdomain segment after the specified index.
     /// # Errors
     /// If the URL doesn't have a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
     ///
     /// If the segment isn't found, returns the error [`InsertSubdomainSegmentError::SegmentNotFound`].
     ///
-    #[doc = edoc!(callerr(Self::set_subdomain))]
+    /// If the call to [`Self::set_subdomain`] returns an error, that error is returned.
     pub fn insert_subdomain_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertSubdomainSegmentError> {
         self.set_subdomain(Some(&insert_segment_after(
             self.subdomain().ok_or(InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,

@@ -194,6 +194,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "better-url"
+version = "0.11.0"
+dependencies = [
+ "form_urlencoded",
+ "percent-encoding",
+ "psl",
+ "serde",
+ "thiserror 2.0.12",
+ "url",
+]
+
+[[package]]
 name = "binascii"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1971,9 +1983,9 @@ dependencies = [
 
 [[package]]
 name = "psl"
-version = "2.1.124"
+version = "2.1.125"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "281f96193296bf4916d7a112df4cc578aaf7a4d71f1570667779bb07364ed837"
+checksum = "d383d9ac7a313614b301470d29947f2ff24227f92d57523cd1a7d746f4d3b70c"
 dependencies = [
  "psl-types",
 ]
@@ -2616,9 +2628,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.140"
+version = "1.0.141"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
+checksum = "30b9eff21ebe718216c6ec64e1d9ac57087aad11efc64e32002bce4a0d4c03d3"
 dependencies = [
  "itoa",
  "memchr",
@@ -3469,6 +3481,7 @@ name = "url-cleaner-engine"
 version = "0.11.0"
 dependencies = [
  "base64 0.22.1",
+ "better-url",
  "criterion",
  "diesel",
  "form_urlencoded",

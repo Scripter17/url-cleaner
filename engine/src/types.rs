@@ -1,11 +1,9 @@
 //! Foundational types containing the bulk of a [`Cleaner`]'s logic.
 
-pub mod better_url;
 pub use better_url::*;
+
 pub mod url_part;
 pub use url_part::*;
-pub mod better_host;
-pub use better_host::*;
 pub mod host_part;
 pub use host_part::*;
 pub mod cleaner;

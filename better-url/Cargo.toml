@@ -1,0 +1,24 @@
+[package]
+name = "better-url"
+version = "0.11.0"
+edition = "2024"
+description = "A better URL crate."
+repository = "https://github.com/Scripter17/url-cleaner"
+keywords = ["url"]
+categories = []
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+[dependencies]
+url = { version = "2.5.4", features = ["serde"] }
+psl = "2.1.125"
+thiserror = "2.0.12"
+form_urlencoded = "1.2.1"
+percent-encoding = "2.3.1"
+serde = { optional = true, version = "1.0.219", features = ["derive"] }
+
+[lints]
+workspace = true
+
+[features]
+serde = ["dep:serde"]

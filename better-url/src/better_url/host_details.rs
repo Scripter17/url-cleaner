@@ -3,25 +3,24 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-#[expect(unused_imports, reason = "Doc links.")]
 use url::Url;
-#[expect(unused_imports, reason = "Doc links.")]
-use crate::types::*;
+
+#[expect(unused_imports, reason = "Used in doc comments.")]
+use crate::*;
 
 pub mod domain;
 pub use domain::*;
 pub mod ip;
 pub use ip::*;
 
-#[expect(unused_imports, reason = "Doc links.")]
-use crate::types::*;
-
 /// The details of a [`BetterUrl`]'s host.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum HostDetails {
     /// Details of a [`BetterUrl`]'s domain host.
     Domain(DomainDetails),
@@ -111,7 +110,7 @@ impl HostDetails {
     /// If the call to [`url::Host::parse`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap(), HostDetails::Domain(_)));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap(), HostDetails::Ipv4  (_)));
@@ -124,7 +123,7 @@ impl HostDetails {
     /// Gets the details of an [`Ipv4Addr`] host.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::from_ip_addr("127.0.0.1".parse().unwrap()), HostDetails::Ipv4(_)));
     /// ```
@@ -135,7 +134,7 @@ impl HostDetails {
     /// Gets the details of an [`Ipv6Addr`] host.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::from_ip_addr("::1".parse().unwrap()), HostDetails::Ipv6(_)));
     /// ```
@@ -146,7 +145,7 @@ impl HostDetails {
     /// Gets the details of an [`IpAddr`] host.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::from_ip_addr("127.0.0.1".parse().unwrap()), HostDetails::Ipv4(_)));
     /// assert!(matches!(HostDetails::from_ip_addr("::1"      .parse().unwrap()), HostDetails::Ipv6(_)));
@@ -164,7 +163,7 @@ impl HostDetails {
     /// # Examples
     /// ```
     /// use url::Host;
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::from_host(&Host::parse("example.com").unwrap()), HostDetails::Domain(_)));
     /// assert!(matches!(HostDetails::from_host(&Host::parse("127.0.0.1"  ).unwrap()), HostDetails::Ipv4  (_)));
@@ -179,14 +178,14 @@ impl HostDetails {
     }
 
     /// Gets the details of a [`url::Url`].
-    pub fn from_url(url: &url::Url) -> Option<Self> {
+    pub fn from_url(url: &Url) -> Option<Self> {
         url.host().map(|host| Self::from_host(&host))
     }
 
     /// If `self` is [`Self::Domain`], return it.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap().domain_details(), Some(_)));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().domain_details(), None   ));
@@ -202,7 +201,7 @@ impl HostDetails {
     /// If `self` is [`Self::Ipv4`], return it.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap().ipv4_details(), None   ));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv4_details(), Some(_)));
@@ -218,7 +217,7 @@ impl HostDetails {
     /// If `self` is [`Self::Ipv6`], return it.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap().ipv6_details(), None   ));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv6_details(), None   ));

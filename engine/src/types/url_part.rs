@@ -236,13 +236,13 @@ impl UrlPart {
             Self::Port => Cow::Owned(url.port()?.to_string()),
 
             Self::Path => Cow::Borrowed(url.path()),
-            Self::PathSegment(index) => Cow::Borrowed(url.path_segment(*index).ok()??),
-            Self::RawPathSegment(index) => Cow::Borrowed(url.path_segment(*index).ok()??),
+            Self::PathSegment(index) => Cow::Borrowed(url.path_segment(*index)??),
+            Self::RawPathSegment(index) => Cow::Borrowed(url.path_segment(*index)??),
             Self::PathSegments => Cow::Borrowed(url.path_segments_str()?),
-            Self::FirstNPathSegments(n) => Cow::Borrowed(url.first_n_path_segments(*n).ok()??),
-            Self::PathSegmentsAfterFirstN(n) => Cow::Borrowed(url.path_segments_after_first_n(*n).ok()??),
-            Self::LastNPathSegments(n) => Cow::Borrowed(url.last_n_path_segments(*n).ok()??),
-            Self::PathSegmentsBeforeLastN(n) => Cow::Borrowed(url.path_segments_before_last_n(*n).ok()??),
+            Self::FirstNPathSegments(n) => Cow::Borrowed(url.first_n_path_segments(*n)??),
+            Self::PathSegmentsAfterFirstN(n) => Cow::Borrowed(url.path_segments_after_first_n(*n)??),
+            Self::LastNPathSegments(n) => Cow::Borrowed(url.last_n_path_segments(*n)??),
+            Self::PathSegmentsBeforeLastN(n) => Cow::Borrowed(url.path_segments_before_last_n(*n)??),
 
             Self::Query => Cow::Borrowed(url.query()?),
             Self::QueryParam   (QueryParamSelector {name, index}) => url.query_param(name, *index)???,
@@ -377,9 +377,12 @@ pub enum SetUrlPartError {
     #[error(transparent)]
     SetPortError(#[from] SetPortError),
 
-    /// Returned when a [`SetPathSegmentError)`] is encountered.
+    /// Returned when a [`SetPathSegmentError`] is encountered.
     #[error(transparent)]
     SetPathSegmentError(#[from] SetPathSegmentError),
+    /// Returned when a [`SetPathSegmentsStrError`] is encountered.
+    #[error(transparent)]
+    SetPathSegmentsStrError(#[from] SetPathSegmentsStrError),
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
@@ -388,9 +391,6 @@ pub enum SetUrlPartError {
     /// URLs with no path segments still have a path, therefore the operation is incoherent.
     #[error("Cannot set path segments to None, even for URLs with no path segments because they still have a path.")]
     CannotSetPathSegmentsToNone,
-    /// Returned when a [`UrlDoesNotHavePathSegments`] is encountered.
-    #[error(transparent)]
-    UrlDoesNotHavePathSegments(#[from] UrlDoesNotHavePathSegments),
     /// Returned when a [`SetFirstNPathSegmentsError`] is encountered.
     #[error(transparent)]
     SetFirstNPathSegmentsError(#[from] SetFirstNPathSegmentsError),

@@ -33,7 +33,7 @@ pub enum InsertDomainSuffixSegmentError {
 impl BetterUrl {
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
@@ -53,14 +53,16 @@ impl BetterUrl {
         }
     }
 
-    /// Sets the specified [`UrlPart::DomainSuffix`] segment.
+    /// Sets the specified domain suffix segment.
     /// # Errors
     /// If the URL doesn't have a domain, returns the error [`SetDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
     ///
     /// If the segment isn't found, returns the error [`SetDomainSuffixSegmentError::SegmentNotFound`].
+    ///
+    /// If the call to [`Self::set_domain_suffix`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::types::*;
+    /// use better_url::*;
     ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
@@ -77,7 +79,6 @@ impl BetterUrl {
     /// url.set_domain_suffix_segment( 0, None).unwrap(); assert_eq!(url.host_str(), Some("abc.def.example.n2"));
     /// url.set_domain_suffix_segment(-1, None).unwrap(); assert_eq!(url.host_str(), Some("abc.def.example"));
     /// ```
-    #[doc = edoc!(callerr(Self::set_domain_suffix))]
     pub fn set_domain_suffix_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainSuffixSegmentError> {
         self.set_domain_suffix(set_segment_str(
             self.domain_suffix().ok_or(SetDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
@@ -87,13 +88,13 @@ impl BetterUrl {
     }
 
 
-    /// Inserts a new [`UrlPart::DomainSuffixSegment`] at the specified index.
+    /// Inserts a new domain suffix segment at the specified index.
     /// # Errors
     /// If the URL doesn't have a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
     ///
     /// If the segment isn't found, returns the error [`InsertDomainSuffixSegmentError::SegmentNotFound`].
     ///
-    #[doc = edoc!(callerr(Self::set_domain_suffix))]
+    /// If the call to [`Self::set_domain_suffix`] returns an error, that error is returned.
     pub fn insert_domain_suffix_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSuffixSegmentError> {
         self.set_domain_suffix(Some(&insert_segment_at(
             self.domain_suffix().ok_or(InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
@@ -102,13 +103,13 @@ impl BetterUrl {
         Ok(())
     }
 
-    /// Inserts a new [`UrlPart::DomainSuffixSegment`] after the specified index.
+    /// Inserts a new domain suffix segment after the specified index.
     /// # Errors
     /// If the URL doesn't have a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
     ///
     /// If the segment isn't found, returns the error [`InsertDomainSuffixSegmentError::SegmentNotFound`].
     ///
-    #[doc = edoc!(callerr(Self::set_domain_suffix))]
+    /// If the call to [`Self::set_domain_suffix`] returns an error, that error is returned.
     pub fn insert_domain_suffix_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSuffixSegmentError> {
         self.set_domain_suffix(Some(&insert_segment_after(
             self.domain_suffix().ok_or(InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,

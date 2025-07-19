@@ -2,9 +2,10 @@
 
 use std::str::FromStr;
 
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize, ser::Serializer, de::{Visitor, Deserializer, Error}};
 
-use crate::types::*;
+use crate::*;
 
 /// A URL host and its details.
 #[derive(Debug, Clone)]
@@ -130,8 +131,10 @@ impl std::fmt::Display for BetterHost {
 }
 
 /// Serde helper for deserializing [`BetterHost`].
+#[cfg(feature = "serde")]
 struct BetterHostVisitor;
 
+#[cfg(feature = "serde")]
 impl<'de> Visitor<'de> for BetterHostVisitor {
     type Value = BetterHost;
 
@@ -148,12 +151,14 @@ impl<'de> Visitor<'de> for BetterHostVisitor {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for BetterHost {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         deserializer.deserialize_any(BetterHostVisitor)
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for BetterHost {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&self.string)
