@@ -22,7 +22,7 @@ use crate::util::*;
 ///
 /// Deserializing from a null/[`None`] produces a [`Self::None`].
 /// # Terminology
-/// "The value of {x}" and "{x}'s call to [`Self::get`]" are used interchangeably.
+/// "The value of {x}", "{x}'s call to [`Self::get`]", and sometimes just "{x}" are used interchangeably.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]

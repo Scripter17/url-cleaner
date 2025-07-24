@@ -31,6 +31,14 @@ jobs:
         scripts/fill-mds.sh
         test "$old" == "$(cat *.md */*.md)"
 
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: msrv
+      run: |
+        [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")\d+\.\d+\.\d+' | sort -u)" == "$(cargo --version | grep -oP '\d+\.\d+\.\d+')" ]]
+
   build_bench:
     runs-on: ubuntu-latest
     steps:

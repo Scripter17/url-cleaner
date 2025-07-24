@@ -8,10 +8,11 @@ keywords = ["url"]
 categories = []
 license = "AGPL-3.0-or-later"
 readme = "README.md"
+rust-version = "1.88.0"
 
 [dependencies]
 url = { version = "2.5.4", features = ["serde"] }
-psl = "2.1.125"
+psl = "2.1.126"
 thiserror = "2.0.12"
 form_urlencoded = "1.2.1"
 percent-encoding = "2.3.1"

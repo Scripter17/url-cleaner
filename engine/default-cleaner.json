@@ -232,7 +232,7 @@
 					"sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "theatln.tc", "thecut.io", "thef.pub", "thr.cm",
 					"thrn.co", "tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa",
 					"uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "x.alibaba.com", "xbx.ly", "x.gd",
-					"xhslink.com", "yrp.ca", "zurl.co"
+					"xhslink.com", "yrp.ca", "zurl.co", "ind.pd"
 				],
 				"sometimes_redirect": [
 					"apexpartner.app", "api.pinterest.com", "facebook.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com", "sketchfab.com", "teepublic.com"
@@ -240,9 +240,9 @@
 				"special": [
 					"1link.club", "affiliate.xp-pen.com", "allmylinks.com", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", "bit.ly", "bugzil.la",
 					"buymeacoff.ee", "cach.me", "cj.dotomi.com", "click.notification.elsevier.com", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
-					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "fansly.com", "go.bsky.app", "goodreads.com",
-					"gprivate.com", "href.li", "instagr.am", "lego.com", "linkprotect.cudasvc.com", "l.instagram.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "l.threads.com",
-					"mfy.gg", "o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
+					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "fans.ly", "fansly.com", "go.bsky.app",
+					"goodreads.com", "gprivate.com", "href.li", "instagr.am", "lego.com", "linkprotect.cudasvc.com", "l.instagram.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio",
+					"l.threads.com", "mfy.gg", "o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
 					"rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "spotify.link",
 					"ss3.shipstation.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.co", "tee.pub", "tinyurl.com", "toyhou.se", "t.umblr.com", "twpf.jp",
 					"urldefense.com", "youtube.com"
@@ -767,6 +767,7 @@
 												]}
 											}}
 										]},
+										"fans.ly": {"SetHost": "fansly.com"},
 										"fansly.com": {"If": {
 											"if": {"PathIs": "/redirect/external"},
 											"then": {"GetUrlFromQueryParam": "url"}

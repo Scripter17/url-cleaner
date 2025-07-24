@@ -4,6 +4,10 @@
 
 The CLI interface for URL Cleaner.
 
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+
+https://www.gnu.org/licenses/agpl-3.0.html
+
 ## Default cleaner
 
 See [`../default_cleaner.md`](../default_cleaner.md) for details about the included default cleaner.

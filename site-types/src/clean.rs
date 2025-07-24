@@ -5,12 +5,16 @@ use serde::{Serialize, Deserialize};
 use url_cleaner_engine::types::*;
 
 use crate::util::*;
+use crate::auth::*;
 
 /// The payload of the `/clean` route.
 ///
 /// Used to construct a [`Job`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct JobConfig<'a> {
+    /// The authentication to use.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub auth: Option<Auth>,
     /// The [`LazyTaskConfig`]s to use.
     pub tasks: Vec<LazyTaskConfig<'a>>,
     /// The [`JobContext`] to use.

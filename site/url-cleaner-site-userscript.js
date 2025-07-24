@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         URL Cleaner Site Userscript
-// @copyright    AGPL-3.0-or-later
-// @version      0.11.0
 // @description  The userscript that comes with URL Cleaner Site.
 // @author       Scripter17@Github.com
+// @homepageURL  https://github.com/Scripter17/url-cleaner
+// @copyright    AGPL-3.0-or-later
+// @version      0.11.0
 // @match        https://*/*
 // @match        http://*/*
 // @grant        GM.xmlHttpRequest
@@ -12,6 +13,7 @@
 
 window.config = {
 	instance         : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
+	auth             : null, // Either null for guest mode or `{"username": "...", "password": "..."}` for a user.
 	params_diff      : null, // Should be set server side. But if you can't, this works.
 	send_host        : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
 	cache_delay      : true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
@@ -124,6 +126,9 @@ async function elements_to_job_config(elements) {
 		cache_delay: window.config.cache_delay,
 		cache_unthread: window.config.cache_unthread
 	};
+	if (window.config.auth) {
+		ret.auth = window.config.auth;
+	}
 	if (window.config.params_diff) {
 		ret.params_diff = window.config.params_diff;
 	}
@@ -210,7 +215,11 @@ async function get_job_context() {
 }
 
 (async () => {
-	console.log("[URLC] URL Cleaner Site Userscript loaded. Please note that initial cleanings take a long time because there's a lot happening.");
+	console.log(`[URLC] URL Cleaner Site Userscript loaded.
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+https://www.gnu.org/licenses/agpl-3.0.html
+https://github.com/Scripter17/url-cleaner
+`);
 
 	// For reasons I don't understand, awaiting `GM.xmlHttpRequest` doesn't seem to, uh, await it.
 	// It might be me being stupid.
@@ -219,6 +228,7 @@ async function get_job_context() {
 	await GM.xmlHttpRequest({
 		url: `${window.config.instance}/get-max-json-size`,
 		method: "GET",
+		onerror: (e) => {console.error("[URLC] Error in getting the max JSON size:", e);},
 		onload: function(response) {
 			window.MAX_JSON_SIZE = parseInt(response.responseText);
 			done();
@@ -235,12 +245,14 @@ async function get_job_context() {
 				window.errored_elements.delete(mutation.target);
 				if (mutation.target.matches(":hover, :active, :focus, :focus-visible, :focus-within")) {
 					mutation.target.addEventListener("click", async function(e) {
-						if (window.cleaned_elements.has(e.target) || window.too_big_elements.has(e.target) || window.errored_elements.has(e.target)) {return;}
+						if (window.cleaned_elements.has(e.target) || window.too_big_elements.has(e.target) || window.errored_elements.has(e.target)) {
+							return;
+						}
 						e.preventDefault();
 						try {
 							await clean_elements([e.target]);
 						} catch (err) {
-							console.error("[URLC] an error ocurred while handling an uncleaning clickjack (better term pending):", e, err);
+							console.error("[URLC] Error with handling an uncleaning clickjack:", e, err);
 							e.target.click();
 							throw err;
 						}

@@ -11,6 +11,7 @@ use thiserror::Error;
 use reqwest::header::HeaderMap;
 #[expect(unused_imports, reason = "Used in doc comment.")]
 use url::{Url, PathSegmentsMut};
+use ::percent_encoding::percent_decode_str as pds;
 
 use crate::glue::*;
 use crate::types::*;
@@ -1278,7 +1279,7 @@ impl Action {
                 let mut new = String::with_capacity(query.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if peh(param.split('=').next().expect("The first segment to always exist.")) != name {
+                    if pds(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1291,7 +1292,7 @@ impl Action {
                 let mut new = String::with_capacity(query.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if peh(param.split('=').next().expect("The first segment to always exist.")) == name {
+                    if pds(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1303,7 +1304,7 @@ impl Action {
             Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if !names.contains(&*peh(param.split('=').next().expect("The first segment to always exist."))) {
+                    if !names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1315,7 +1316,7 @@ impl Action {
             Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if names.contains(&*peh(param.split('=').next().expect("The first segment to always exist."))) {
+                    if names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1327,7 +1328,7 @@ impl Action {
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if !matcher.check(Some(&*peh(param.split('=').next().expect("The first segment to always exist."))), &task_state.to_view())? {
+                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1339,7 +1340,7 @@ impl Action {
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if matcher.check(Some(&*peh(param.split('=').next().expect("The first segment to always exist."))), &task_state.to_view())? {
+                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1353,7 +1354,7 @@ impl Action {
                 let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
                 let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
                 for param in query.split('&') {
-                    let name = peh(param.split('=').next().expect("The first segment to always exist."));
+                    let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
                     if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);

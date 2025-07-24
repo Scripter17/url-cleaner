@@ -8,6 +8,7 @@ keywords = ["url-cleaner"]
 categories = []
 license = "AGPL-3.0-or-later"
 readme = "README.md"
+rust-version = "1.88.0"
 
 [lib]
 proc-macro = true

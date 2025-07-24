@@ -3,11 +3,14 @@
 use std::sync::LazyLock;
 use std::path::PathBuf;
 use std::borrow::Cow;
+use std::pin::Pin;
 
 use clap::Parser;
 use ::regex::Regex;
 use poise::serenity_prelude as serenity;
 use poise::reply::CreateReply;
+use serenity::Ready;
+use serenity::EventHandler;
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
@@ -173,7 +176,7 @@ async fn main() {
         });
     }
 
-    let token = std::env::var("URLCDA_KEY").expect("No discord login token found in the URLCDA_KEY environment variable.");
+    let token = std::env::var("URLCDA_KEY").expect("No discord app token found in the URLCDA_KEY environment variable.");
     let intents = serenity::GatewayIntents::non_privileged();
 
     let framework = poise::Framework::builder()
@@ -190,9 +193,27 @@ async fn main() {
         .build();
 
     serenity::ClientBuilder::new(token, intents)
+        .event_handler(ReadyHandler)
         .framework(framework)
-        .await.expect("Building the client to work")
-        .start().await.expect("The client to exit successfully");
+        .await.expect("Making the client failed.")
+        .start().await.expect("Starting the app failed. Maybe the app token in the URLCDA_KEY environment variable was invalid?");
+}
+
+/// An [`EventHandler`] that prints license info and the app's authorization URL on [`EventHandler::ready`].
+struct ReadyHandler;
+
+impl EventHandler for ReadyHandler {
+    fn ready<'life0, 'async_trait>(&'life0 self, _: serenity::Context, data_about_bot: Ready) -> Pin<Box<dyn Future<Output = ()> + Send + 'async_trait>>
+        where 'life0: 'async_trait, Self: 'async_trait {
+        println!(r#"URL Cleaner Discord App
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+https://www.gnu.org/licenses/agpl-3.0.html
+https://github.com/Scripter17/url-cleaner
+
+https://discord.com/oauth2/authorize?client_id={}"#, data_about_bot.application.id);
+
+        Box::pin(async move {})
+    }
 }
 
 #[poise::command(

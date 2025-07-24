@@ -62,13 +62,13 @@ struct Args {
     ///
     /// Omit to use the built in default cleaner.
     #[cfg(feature = "default-cleaner")]
-    #[arg(short, long)]
+    #[arg(long)]
     cleaner: Option<PathBuf>,
     /// The cleaner file to use.
     ///
     /// Required as the `default-cleaner` feature is disabled.
     #[cfg(not(feature = "default-cleaner"))]
-    #[arg(short, long)]
+    #[arg(long)]
     cleaner: PathBuf,
     /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
     #[arg(long)]

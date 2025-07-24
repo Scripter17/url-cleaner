@@ -109,18 +109,36 @@ struct Args {
     cache_delay_default: bool,
     /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
     #[arg(long, default_missing_value = "true")]
-    hide_thread_count: bool,
+    hide_thread_count_default: bool,
     /// Amount of threads to process tasks in.
     ///
     /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     threads: usize,
-    /// The (optional) TLS/HTTPS cert. If specified, requires `--key`.
+    /// The accounts file to use.
+    ///
+    /// An accounts file looks like this:
+    ///
+    /// {
+    ///   "users": {
+    ///     "username1": "password1",
+    ///     "username2": "password2"
+    ///   },
+    ///   "allow_guests": true
+    /// }
+    #[arg(long)]
+    accounts: Option<PathBuf>,
+    /// The TLS/HTTPS cert. If specified, requires `--key`.
     #[arg(long, requires = "key")]
     cert: Option<PathBuf>,
-    /// The (optional) TLS/HTTPS key. If specified, requires `--cert`.
+    /// The TLS/HTTPS key. If specified, requires `--cert`.
     #[arg(long, requires = "cert")]
-    key: Option<PathBuf>
+    key: Option<PathBuf>,
+    /// The mTLS client's certificate.
+    ///
+    /// Good luck getting ANYTHING to work with it though.
+    #[arg(long, requires = "key", requires = "cert")]
+    mtls_cert: Option<PathBuf>
 }
 
 /// The config for the server.
@@ -141,7 +159,9 @@ struct ServerConfig {
     /// The default value for if [`Job::unthreader`] is [`Unthreader::No`] or [`Unthreader::Yes`].
     hide_thread_count_default: bool,
     /// The max size for a [`JobConfig`]'s JSON representation.
-    max_json_size: rocket::data::ByteUnit
+    max_json_size: rocket::data::ByteUnit,
+    /// The [`Accounts`] to use.
+    accounts: Accounts
 }
 
 /// The state of the server.
@@ -198,17 +218,32 @@ async fn rocket() -> _ {
                 0 => std::thread::available_parallelism().expect("To be able to get the available parallelism."),
                 1.. => NonZero::new(args.threads).expect("The 1.. pattern to mean \"not zero\"")
             },
-            hide_thread_count_default: args.hide_thread_count,
-            max_json_size: args.max_size
+            hide_thread_count_default: args.hide_thread_count_default,
+            max_json_size: args.max_size,
+            accounts: match args.accounts {
+                Some(accounts) => serde_json::from_str(&std::fs::read_to_string(accounts).expect("The accounts file to be readable.")).expect("The accounts file to be valid."),
+                None => Default::default()
+            }
         },
         job_count: Mutex::new(0)
+    };
+
+    let tls = match (args.key, args.cert) {
+        (Some(key), Some(cert)) => {
+            let mut tls = rocket::config::TlsConfig::from_paths(cert, key);
+            if let Some(mtls_cert) = args.mtls_cert {
+                tls = tls.with_mutual(rocket::config::MutualTls::from_path(mtls_cert).mandatory(true));
+            }
+            Some(tls)
+        },
+        _ => None
     };
 
     rocket::custom(rocket::Config {
         address: args.bind,
         port: args.port,
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
-        tls: args.cert.zip(args.key).map(|(cert, key)| rocket::config::TlsConfig::from_paths(cert, key)), // No unwraps.
+        tls,
         ..rocket::Config::default()
     }).mount("/", routes![index, clean, get_max_json_size, get_cleaner]).manage(server_state)
 }
@@ -216,7 +251,8 @@ async fn rocket() -> _ {
 /// The `/` route.
 #[get("/")]
 async fn index() -> &'static str {
-    r#"URL Cleaner Site is licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later).
+    r#"URL Cleaner Site
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
 https://github.com/Scripter17/url-cleaner"#
 }
@@ -232,6 +268,10 @@ async fn get_cleaner(state: &State<ServerState>) -> &str {
 async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<CleanResult>) {
     match serde_json::from_str::<JobConfig>(job_config) {
         Ok(job_config) => {
+            if !state.config.accounts.auth(job_config.auth.as_ref()) {
+                return (Status {code: 401}, Json(Err(CleanError {status: 401, message: "Unauthorized".into()})));
+            }
+
             let mut cleaner = state.config.cleaner.borrowed();
             if let Some(params_diff) = job_config.params_diff {
                 params_diff.apply_once(cleaner.params.to_mut());

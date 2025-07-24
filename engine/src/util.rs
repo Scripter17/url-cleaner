@@ -1,7 +1,5 @@
 //! General utility functions.
 
-use std::borrow::Cow;
-
 mod macros;
 pub(crate) use macros::*;
 mod suitability;
@@ -21,8 +19,3 @@ mod indexing;
 pub(crate) use indexing::*;
 mod segments;
 pub(crate) use segments::*;
-
-/// Percent encoding helper.
-pub(crate) fn peh(s: &str) -> Cow<'_, str> {
-    percent_encoding::percent_decode_str(s).decode_utf8_lossy()
-}
