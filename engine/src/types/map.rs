@@ -20,7 +20,7 @@ pub struct Map<T: Debug> {
     pub map: HashMap<String, T>,
     /// The map from [`None`] to `T`.
     #[serde(default = "Option::default", skip_serializing_if = "Option::is_none")]
-    pub if_null: Option<Box<T>>,
+    pub if_none: Option<Box<T>>,
     /// The value to return when a value is otherwise not found.
     #[serde(default = "Option::default", skip_serializing_if = "Option::is_none")]
     pub r#else: Option<Box<T>>
@@ -31,21 +31,21 @@ impl<T: Debug> Map<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Map {
             map    : HashMap::with_capacity(capacity),
-            if_null: None,
+            if_none: None,
             r#else : None
         }
     }
 
     /// If [`Some`], returns the corresponding value from [`Self::map`].
     ///
-    /// If [`None`], returns the value of [`Self::if_null`].
+    /// If [`None`], returns the value of [`Self::if_none`].
     ///
     /// If either of the above return [`None`], returns the value of [`Self::else`].
     pub fn get<U: Debug + AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
         debug!(Map::get, self, key);
         match key {
             Some(key) => self.map.get(key.as_ref()),
-            None => self.if_null.as_deref()
+            None => self.if_none.as_deref()
         }.or(self.r#else.as_deref())
     }
 }
@@ -54,7 +54,7 @@ impl<T: Debug> Default for Map<T> {
     fn default() -> Self {
         Self {
             map    : Default::default(),
-            if_null: Default::default(),
+            if_none: Default::default(),
             r#else : Default::default()
         }
     }

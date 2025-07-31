@@ -17,15 +17,15 @@ use crate::util::*;
 /// use serde_json::from_str;
 /// use url_cleaner_engine::types::*;
 ///
-/// assert_eq!(serde_json::from_str::<Set<String>>(r#"["abc"]"#      ).unwrap(), Set {set: ["abc".into()].into(), if_null: false});
-/// assert_eq!(serde_json::from_str::<Set<String>>(r#"["abc", null]"#).unwrap(), Set {set: ["abc".into()].into(), if_null: true });
+/// assert_eq!(serde_json::from_str::<Set<String>>(r#"["abc"]"#      ).unwrap(), Set {set: ["abc".into()].into(), if_none: false});
+/// assert_eq!(serde_json::from_str::<Set<String>>(r#"["abc", null]"#).unwrap(), Set {set: ["abc".into()].into(), if_none: true });
 /// ```
 #[derive(Debug, Clone, Suitability)]
 pub struct Set<T: Debug> {
     /// The set of `T`.
     pub set: HashSet<T>,
     /// If [`true`], act like [`None`] is in [`Self::set`].
-    pub if_null: bool
+    pub if_none: bool
 }
 
 impl<T: Debug + Hash + Eq> Set<T> {
@@ -33,7 +33,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             set: HashSet::with_capacity(capacity),
-            if_null: false
+            if_none: false
         }
     }
 
@@ -42,19 +42,19 @@ impl<T: Debug + Hash + Eq> Set<T> {
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// let no_null = Set {set: ["abc"].into(), if_null: false};
-    /// assert!( no_null.contains(Some("abc")));
-    /// assert!(!no_null.contains(None::<&str>));
+    /// let no_none = Set {set: ["abc"].into(), if_none: false};
+    /// assert!( no_none.contains(Some("abc")));
+    /// assert!(!no_none.contains(None::<&str>));
     ///
-    /// let yes_null = Set {set: ["abc"].into(), if_null: true};
-    /// assert!(yes_null.contains(Some("abc")));
-    /// assert!(yes_null.contains(None::<&str>));
+    /// let yes_none = Set {set: ["abc"].into(), if_none: true};
+    /// assert!(yes_none.contains(Some("abc")));
+    /// assert!(yes_none.contains(None::<&str>));
     /// ```
     pub fn contains<Q>(&self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Debug + Hash + Eq + ?Sized {
         debug!(Set::contains, self, value);
         match value {
             Some(x) => self.set.contains(x),
-            None => self.if_null
+            None => self.if_none
         }
     }
 
@@ -62,7 +62,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
     pub fn insert(&mut self, value: Option<T>) -> bool {
         match value {
             Some(value) => self.set.insert(value),
-            None => {let ret = !self.if_null; self.if_null = true; ret}
+            None => {let ret = !self.if_none; self.if_none = true; ret}
         }
     }
 
@@ -77,7 +77,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
     pub fn remove<Q>(&mut self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Debug + Hash + Eq + ?Sized {
         match value {
             Some(value) => self.set.remove(value),
-            None => {let ret = self.if_null; self.if_null = false; ret}
+            None => {let ret = self.if_none; self.if_none = false; ret}
         }
     }
 }
@@ -87,14 +87,14 @@ impl<T: Debug> Default for Set<T> {
     fn default() -> Self {
         Self {
             set: Default::default(),
-            if_null: Default::default()
+            if_none: Default::default()
         }
     }
 }
 
 impl<T: Debug + Hash + Eq> PartialEq for Set<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.set == other.set && self.if_null == other.if_null
+        self.set == other.set && self.if_none == other.if_none
     }
 }
 impl<T: Debug + Hash + Eq> Eq for Set<T> {}
@@ -145,7 +145,7 @@ impl<T: Debug + Hash + Eq> From<HashSet<Option<T>>> for Set<T> {
         for x in value {
             match x {
                 Some(x) => {ret.set.insert(x);},
-                None => ret.if_null = true
+                None => ret.if_none = true
             }
         }
         ret
@@ -158,7 +158,7 @@ impl<T: Debug + Hash + Eq> From<Set<T>> for HashSet<Option<T>> {
         for x in value.set {
             ret.insert(Some(x));
         }
-        if value.if_null {ret.insert(None);}
+        if value.if_none {ret.insert(None);}
         ret
     }
 }
@@ -166,8 +166,8 @@ impl<T: Debug + Hash + Eq> From<Set<T>> for HashSet<Option<T>> {
 impl<T: Debug + Serialize> Serialize for Set<T> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-        let mut seq = serializer.serialize_seq(Some(self.set.len() + (self.if_null as usize)))?;
-        if self.if_null {seq.serialize_element(&None::<T>)?;}
+        let mut seq = serializer.serialize_seq(Some(self.set.len() + (self.if_none as usize)))?;
+        if self.if_none {seq.serialize_element(&None::<T>)?;}
         for element in &self.set {
             seq.serialize_element(element)?;
         }

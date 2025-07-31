@@ -1,6 +1,6 @@
 //! Logic for how a [`TaskState`] should be modified.
 
-use std::str::Utf8Error;
+use std::str::{FromStr, Utf8Error};
 use std::collections::HashSet;
 use std::borrow::Cow;
 
@@ -27,18 +27,19 @@ use crate::util::*;
 /// Action::All(vec![
 ///     Action::SetPath("/change".into()),
 ///     Action::Error("This won't revert the above".into()),
-///     Action::SetPath("/wont-happen".into())
+///     Action::SetPath("/this-wont-happen".into())
 /// ]).apply(&mut task_state).unwrap_err();
 ///
 /// assert_eq!(task_state.url, "https://example.com/change");
 /// ```
 ///
-/// This is because reverting on an error requires keeping a copy of the input state, which is very expensive compared to the benefit.
+/// This is because reverting on an error requires keeping a copy of the input state, which is very expensive and, if the error is just going to be returned as the result of the [`Task`], not useful.
 ///
-/// If you need to revert the task state when an error is returned, use [`Self::RevertOnError`] to revert the effects but still return the error, and optionally [`Self::IgnoreError`] to ignore the error.
+/// If you need to revert the [`TaskState`] when an error is returned, use [`Self::RevertOnError`] to revert the effects but still return the error, and optionally [`Self::IgnoreError`] to ignore the error.
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
+#[serde(remote = "Self")]
 pub enum Action {
     /// Does nothing.
     /// # Examples
@@ -150,7 +151,7 @@ pub enum Action {
     ///         map: [
     ///             ("example.com".into(), Action::Error("...".into()))
     ///         ].into(),
-    ///         if_null: None,
+    ///         if_none: None,
     ///         r#else: None
     ///     }
     /// }.apply(&mut task_state).unwrap_err();
@@ -178,7 +179,7 @@ pub enum Action {
     ///         map: [
     ///             ("a".into(), Action::Error("...".into()))
     ///         ].into(),
-    ///         if_null: None,
+    ///         if_none: None,
     ///         r#else: None
     ///     }
     /// }.apply(&mut task_state).unwrap_err();
@@ -546,6 +547,15 @@ pub enum Action {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_query))]
     SetQuery(StringSource),
+    /// [`BetterUrl::set_query_param`]
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_query_param))]
+    SetQueryParam {
+        /// The query param to set.
+        query_param: QueryParamSelector,
+        /// The value to set it to.
+        value: StringSource
+    },
     /// Remove the entire [`UrlPart::Query`].
     /// # Examples
     /// ```
@@ -932,6 +942,45 @@ pub enum Action {
     Custom(fn(&mut TaskState) -> Result<(), ActionError>)
 }
 
+string_or_struct_magic!(Action);
+
+/// The error returned when trying to deserialize a [`StringModification`] variant with fields that aren't all defaultable.
+#[derive(Debug, Error)]
+#[error("Tried deserializing undefaultable or Action unknown variant {0}.")]
+pub struct NonDefaultableActionVariant(String);
+
+impl From<&str> for NonDefaultableActionVariant {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for NonDefaultableActionVariant {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
+
+impl FromStr for Action {
+    type Err = NonDefaultableActionVariant;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "None"                       => Action::None,
+            "EnsureFqdnPeriod"           => Action::EnsureFqdnPeriod,
+            "RemoveFqdnPeriod"           => Action::RemoveFqdnPeriod,
+            "RemoveEmptyLastPathSegment" => Action::RemoveEmptyLastPathSegment,
+            "RemoveQuery"                => Action::RemoveQuery,
+            "RemoveEmptyQuery"           => Action::RemoveEmptyQuery,
+            "RemoveFragment"             => Action::RemoveFragment,
+            "RemoveEmptyFragment"        => Action::RemoveEmptyFragment,
+            #[cfg(feature = "http")]
+            "ExpandRedirect"             => Action::ExpandRedirect {headers: Default::default(), http_client_config_diff: Default::default()},
+            _                            => return Err(s.into())
+        })
+    }
+}
+
 /// Helper function to get the default [`Action::Repeat::limit`].
 const fn get_10_u64() -> u64 {10}
 
@@ -1060,6 +1109,9 @@ pub enum ActionError {
     /// Returned when a [`RenameQueryParamError`] is encountered.
     #[error(transparent)]
     RenameQueryParamError(#[from] RenameQueryParamError),
+    /// Returned when a [`SetQueryParamError`] is encountered.
+    #[error(transparent)]
+    SetQueryParamError(#[from] SetQueryParamError),
 
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
@@ -1273,6 +1325,7 @@ impl Action {
             // Query
 
             Self::SetQuery(to) => task_state.url.set_query(get_new_option_str!(to, task_state)),
+            Self::SetQueryParam {query_param: QueryParamSelector {name, index}, value} => task_state.url.set_query_param(name, *index, get_new_option_str!(value, task_state).map(Some))?,
             Self::RemoveQuery => task_state.url.set_query(None),
             Self::RemoveEmptyQuery => if task_state.url.query() == Some("") {task_state.url.set_query(None)},
             Self::RemoveQueryParam(name) => if let Some(query) = task_state.url.query() {

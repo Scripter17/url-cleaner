@@ -116,33 +116,33 @@ Due to the overhead of using HTTP, the lack of streaming tasks and results, and 
 
 On the same laptop used in URL Cleaner's example benchmarks and without TLS, hyperfine (using CURL) gave me the following benchmarks:
 
-Last updated 2025-07-16.
+Last updated 2025-07-26.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  8.951,
-    "1"    :  8.937,
-    "10"   :  8.791,
-    "100"  :  8.961,
-    "1000" : 11.217,
-    "10000": 30.811
+    "0"    :  8.982,
+    "1"    :  8.828,
+    "10"   :  8.916,
+    "100"  :  9.009,
+    "1000" : 11.334,
+    "10000": 31.007
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  8.739,
-    "1"    :  8.799,
-    "10"   :  8.757,
+    "0"    :  8.779,
+    "1"    :  8.788,
+    "10"   :  8.799,
     "100"  :  9.109,
-    "1000" : 12.395,
-    "10000": 44.265
+    "1000" : 12.332,
+    "10000": 43.898
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  8.770,
-    "1"    :  8.761,
-    "10"   :  8.820,
-    "100"  :  9.296,
-    "1000" : 13.798,
-    "10000": 59.673
+    "0"    :  8.719,
+    "1"    :  8.741,
+    "10"   :  8.842,
+    "100"  :  9.277,
+    "1000" : 14.284,
+    "10000": 58.170
   }
 }
 ```
@@ -152,28 +152,28 @@ And with TLS:
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    : 24.138,
-    "1"    : 24.091,
-    "10"   : 24.131,
-    "100"  : 24.319,
-    "1000" : 26.939,
-    "10000": 49.458
+    "0"    : 24.341,
+    "1"    : 24.135,
+    "10"   : 24.588,
+    "100"  : 24.324,
+    "1000" : 27.245,
+    "10000": 50.623
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    : 24.156,
-    "1"    : 24.118,
-    "10"   : 24.414,
-    "100"  : 24.517,
-    "1000" : 27.989,
-    "10000": 64.597
+    "0"    : 24.526,
+    "1"    : 24.622,
+    "10"   : 24.739,
+    "100"  : 24.540,
+    "1000" : 28.543,
+    "10000": 65.777
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    : 24.171,
-    "1"    : 24.201,
-    "10"   : 24.151,
-    "100"  : 24.738,
-    "1000" : 29.894,
-    "10000": 84.621
+    "0"    : 24.352,
+    "1"    : 24.643,
+    "10"   : 24.577,
+    "100"  : 24.684,
+    "1000" : 30.326,
+    "10000": 82.949
   }
 }
 ```

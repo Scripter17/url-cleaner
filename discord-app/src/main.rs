@@ -18,7 +18,7 @@ use url_cleaner_engine::glue::*;
 /// Basic URL getting regex.
 ///
 /// Does not account for code blocks, spoilers, etc.
-static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\])\s]+").expect("The URL parsing Regex to be valid."));
+static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<URL1>[^)]+)\)|(?<URL2>\w+:\/\/\S+)").expect("The URL parsing Regex to be valid."));
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// A discord app for URL Cleaner.
@@ -73,9 +73,6 @@ struct Args {
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
     cache_delay: bool,
-    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
-    #[arg(long, default_missing_value = "true")]
-    hide_thread_count: bool,
     /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
     #[cfg(feature = "cache")]
     #[arg(long, default_missing_value = "true")]
@@ -106,9 +103,7 @@ struct State {
     cache: Cache,
     /// [`CacheHandleConfig::delay`]
     #[cfg(feature = "cache")]
-    cache_delay: bool,
-    /// [`Job::unthreader`] ([`Unthreader::if`]).
-    hide_thread_count: bool
+    cache_delay: bool
 }
 
 /// The error type.
@@ -149,8 +144,7 @@ async fn main() {
         #[cfg(feature = "cache")]
         cache: args.cache.unwrap_or("url-cleaner-discord-app-cache.sqlite".into()).into(),
         #[cfg(feature = "cache")]
-        cache_delay: args.cache_delay,
-        hide_thread_count: args.hide_thread_count
+        cache_delay: args.cache_delay
     };
 
     for [name, params_diff] in args.params_diff_profile.into_iter().map(|args| <[String; 2]>::try_from(args).expect("The clap parser to work")) {
@@ -246,8 +240,8 @@ async fn clean_urls_with_params(ctx: Context<'_>, msg: serenity::Message, params
         cache_handle_config: CacheHandleConfig {
             delay: data.cache_delay
         },
-        unthreader: &Unthreader::r#if(data.hide_thread_count),
-        lazy_task_configs: Box::new(GET_URLS.find_iter(&msg.content).map(|x| Ok(x.as_str().into())))
+        unthreader: &Default::default(),
+        lazy_task_configs: Box::new(GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into())))
     };
 
     let mut responses = Vec::new();

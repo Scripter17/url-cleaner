@@ -237,7 +237,7 @@ pub enum StringSource {
     ///
     /// let map = Map {
     ///     map    : [("abc".into(), "def".into())].into(),
-    ///     if_null: Some(Box::new("was none".into())),
+    ///     if_none: Some(Box::new("was none".into())),
     ///     r#else : Some(Box::new("wasn't abc or none".into()))
     /// };
     ///
@@ -359,7 +359,7 @@ pub enum StringSource {
     /// url_cleaner_engine::task_state_view!(task_state, params = Params {
     ///     maps: [("map_name".into(), Map {
     ///         map    : [("abc".into(), "def".into())].into(),
-    ///         if_null: Some(Box::new("was none".into())),
+    ///         if_none: Some(Box::new("was none".into())),
     ///         r#else : Some(Box::new("wasn't abc or none".into()))
     ///     })].into(),
     ///     ..Default::default()

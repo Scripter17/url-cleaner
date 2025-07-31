@@ -9,6 +9,10 @@ Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-
 
 https://www.gnu.org/licenses/agpl-3.0.html
 
+## Tutorial
+
+For a tutorial, see the `tutorial` module.
+
 ## Default cleaner
 
 See [`../default_cleaner.md`](../default_cleaner.md) for details about the included default cleaner.

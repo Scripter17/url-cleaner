@@ -11,7 +11,7 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.41", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.42", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls", "mtls"] }
 serde = "1.0.219"
@@ -32,13 +32,13 @@ default-cleaner = [
   "base64"
 ]
 
-regex    = ["url-cleaner-engine/regex"]
-http     = ["url-cleaner-engine/http"]
-cache    = ["url-cleaner-engine/cache", "url-cleaner-site-types/cache"]
-base64   = ["url-cleaner-engine/base64"]
-custom   = ["url-cleaner-engine/custom"]
-commands = ["url-cleaner-engine/commands"]
-debug    = ["url-cleaner-engine/debug"]
+regex    = ["url-cleaner-engine/regex"   , "url-cleaner-site-types/regex"   ]
+http     = ["url-cleaner-engine/http"    , "url-cleaner-site-types/http"    ]
+cache    = ["url-cleaner-engine/cache"   , "url-cleaner-site-types/cache"   ]
+base64   = ["url-cleaner-engine/base64"  , "url-cleaner-site-types/base64"  ]
+custom   = ["url-cleaner-engine/custom"  , "url-cleaner-site-types/custom"  ]
+commands = ["url-cleaner-engine/commands", "url-cleaner-site-types/commands"]
+debug    = ["url-cleaner-engine/debug"   , "url-cleaner-site-types/debug"   ]
 
 [lints]
 workspace = true

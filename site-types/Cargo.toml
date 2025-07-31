@@ -20,4 +20,19 @@ url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features 
 workspace = true
 
 [features]
-cache = []
+default = ["default-cleaner"]
+
+default-cleaner = [
+  "regex",
+  "http",
+  "cache",
+  "base64"
+]
+
+regex    = []
+http     = []
+cache    = []
+base64   = []
+custom   = []
+commands = []
+debug    = []

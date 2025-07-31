@@ -37,7 +37,7 @@ pub struct NamedPartitioning {
     /// The map from values to their partitions.
     map: HashMap<String, Arc<str>>,
     /// The partition to put [`None`] into.
-    if_null: Option<Arc<str>>
+    if_none: Option<Arc<str>>
 }
 
 /// The enum of errors that can happen when making a [`NamedPartitioning`].
@@ -70,7 +70,7 @@ impl NamedPartitioning {
     pub fn try_from_iter<I: IntoIterator<Item = (String, Vec<Option<String>>)>>(iter: I) -> Result<Self, MakeNamedPartitioningError> {
         let mut ret = NamedPartitioning {
             map: HashMap::new(),
-            if_null: None
+            if_none: None
         };
 
         let mut partition_names = HashSet::<Arc<str>>::new();
@@ -91,14 +91,14 @@ impl NamedPartitioning {
                                 })?
                             }
                         },
-                        None => if let Some(ref first_partition) = ret.if_null {
+                        None => if let Some(ref first_partition) = ret.if_none {
                             Err(MakeNamedPartitioningError::DuplicateElement {
                                 first_partition: first_partition.to_string(),
                                 second_partition: partition_name.to_string(),
                                 element: None
                             })?
                         } else {
-                            ret.if_null = Some(partition_name.clone());
+                            ret.if_none = Some(partition_name.clone());
                         }
                     }
                 }
@@ -115,7 +115,7 @@ impl NamedPartitioning {
         debug!(NamedPartitioning::contains, self, element);
         match element {
             Some(element) => self.map.contains_key(element),
-            None => self.if_null.is_some()
+            None => self.if_none.is_some()
         }
     }
 
@@ -124,7 +124,7 @@ impl NamedPartitioning {
         debug!(NamedPartitioning::get_partition_of, self, element);
         match element {
             Some(element) => self.map.get(element).map(|x| &**x),
-            None => self.if_null.as_deref()
+            None => self.if_none.as_deref()
         }
     }
 }
@@ -158,7 +158,7 @@ impl Serialize for NamedPartitioning {
             x.entry(partition_name).or_default().push(Some(element));
         }
 
-        if let Some(ref partition_name) = self.if_null {
+        if let Some(ref partition_name) = self.if_none {
             x.entry(partition_name).or_default().push(None);
         }
 

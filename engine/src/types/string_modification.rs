@@ -802,11 +802,23 @@ string_or_struct_magic!(StringModification);
 
 /// The error returned when trying to deserialize a [`StringModification`] variant with fields that aren't all defaultable.
 #[derive(Debug, Error)]
-#[error("Tried deserializing undefaultable or unknown variant {0}.")]
-pub struct NonDefaultableVariant(String);
+#[error("Tried deserializing undefaultable or unknown StringModification variant {0}.")]
+pub struct NonDefaultableStringModificationVariant(pub String);
+
+impl From<&str> for NonDefaultableStringModificationVariant {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+impl From<String> for NonDefaultableStringModificationVariant {
+    fn from(value: String) -> Self {
+        Self(value)
+    }
+}
 
 impl FromStr for StringModification {
-    type Err = NonDefaultableVariant;
+    type Err = NonDefaultableStringModificationVariant;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
@@ -820,7 +832,7 @@ impl FromStr for StringModification {
             "Uppercase"                => StringModification::Uppercase,
             "GetJsStringLiteralPrefix" => StringModification::GetJsStringLiteralPrefix,
             "UnescapeHtmlText"         => StringModification::UnescapeHtmlText,
-            _                          => Err(NonDefaultableVariant(s.into()))?
+            _                          => return Err(s.into())
         })
     }
 }

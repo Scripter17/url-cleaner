@@ -1,6 +1,6 @@
 # URL Cleaner
 
-[CLI tool](cli) | [HTTP server and userscript](site) | [Discord app](discord-app)
+[Engine](engine) | [CLI tool](cli) | [HTTP server and userscript](site) | [Discord app](discord-app)
 
 Explicit non-consent to URL spytext.
 
@@ -45,6 +45,10 @@ If you want to sidestep the entire headache and replace it with a worse one just
 # Default cleaner
 
 See [`default_cleaner.md`](default_cleaner.md) for details about the included default cleaner.
+
+# Custom cleaners
+
+See [`custom_cleaners.md`] for an intro to making custom cleaners.
 
 # Performance
 
