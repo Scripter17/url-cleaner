@@ -1,4 +1,4 @@
-//! # Named partitioning
+//! # [`NamedPartitioning`]
 //!
 //! Named partitionings are conceptually and literally implemented as a map where most keys have one of a few values.
 //!

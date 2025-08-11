@@ -1,4 +1,4 @@
-//! # [`StringModification`]s
+//! # [`StringModification`]
 //!
 //! Often, you want to modify a string before using it.
 //!

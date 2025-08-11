@@ -1,4 +1,4 @@
-//! # Maps
+//! # [`Map`]
 //!
 //! [`Map`]s are key-value pairs with two extra properies:
 //!

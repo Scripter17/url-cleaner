@@ -10,8 +10,6 @@ use crate::util::*;
 
 /// Conditions that decide if and when to apply an [`Action`].
 ///
-/// - "Pass" means [`Condition::check`] returns `Ok(true)` and "fail" means it returns `Ok(false)`.
-///
 /// - "*IsOneOf" variants should always be equivalent to a [`Self::Any`] with a respective "*Is" variant for each value in the [`Set`].
 ///
 /// - "*IsInSet" variants should always be equivalent to moving the [`Set`] from [`Params::sets`] to the respective "*IsOneOf" variant.
@@ -20,7 +18,7 @@ use crate::util::*;
 pub enum Condition {
     // Debug/constants
 
-    /// Always passes.
+    /// Always satisfied.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -29,7 +27,7 @@ pub enum Condition {
     /// assert!(Condition::Always.check(&task_state).unwrap());
     /// ```
     Always,
-    /// Always fails.
+    /// Never satisfied.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -55,31 +53,11 @@ pub enum Condition {
     #[suitable(never)]
     Debug(Box<Self>),
 
-    // Error handling
-
-    /// If the call to [`Self::check`] returns an error, passes.
-    ///
-    /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsPass(Box<Self>),
-    /// If the call to [`Self::check`] returns an error, fails.
-    ///
-    /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsFail(Box<Self>),
-    /// If [`Self::TryElse::try`]'s call to [`Self::check`] returns an error, return the value of [`Self::TryElse::else`].
-    /// # Errors
-    #[doc = edoc!(checkerrte(Self, Condition))]
-    TryElse {
-        /// The [`Self`] to try first.
-        r#try: Box<Self>,
-        /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
-        r#else: Box<Self>
-    },
-
     // Logic
 
-    /// If the call to [`Self::If::if`] passes, return the value of [`Self::If::then`].
+    /// If [`Self::If::if`] is satisfied, return the value of [`Self::If::then`].
     ///
-    /// If the call to [`Self::If::if`] fails, return the value of [`Self::If::else`].
+    /// If [`Self::If::if`] is unsatisfied, return the value of [`Self::If::else`].
     /// # Errors
     #[doc = edoc!(checkerr(Self, 2))]
     /// # Examples
@@ -99,13 +77,13 @@ pub enum Condition {
     If {
         /// The [`Self`] to decide between [`Self::If::then`] and [`Self::If::else`].
         r#if: Box<Self>,
-        /// The [`Self`] to use if [`Self::If::if`] passes.
+        /// The [`Self`] to use if [`Self::If::if`] is satisfied.
         then: Box<Self>,
-        /// The [`Self`] to use if [`Self::If::if`] fails.
+        /// The [`Self`] to use if [`Self::If::if`] is unsatisfied.
         #[serde(default, skip_serializing_if = "is_default")]
         r#else: Option<Box<Self>>
     },
-    /// If the call to [`Self::check`] passes or fails, invert it into failing or passing.
+    /// Inverts the satisfaction of the contained [`Self`].
     /// # Errors
     #[doc = edoc!(checkerr(Self))]
     /// # Examples
@@ -117,9 +95,7 @@ pub enum Condition {
     /// assert!( Condition::Not(Box::new(Condition::Never )).check(&task_state).unwrap());
     /// ```
     Not(Box<Self>),
-    /// If all contained [`Self`]s pass, passes.
-    ///
-    /// If any contained [`Self`] fails, fails.
+    /// Satisfied if all contained [`Self`]s are satisfied.
     /// # Errors
     #[doc = edoc!(checkerr(Self, 3))]
     /// # Examples
@@ -133,9 +109,7 @@ pub enum Condition {
     /// assert!( Condition::All(vec![Condition::Always, Condition::Always]).check(&task_state).unwrap());
     /// ```
     All(Vec<Self>),
-    /// If any contained [`Self`] passes, passes.
-    ///
-    /// If all contained [`Self`]s fail, fails.
+    /// Satisfied if any contained [`Self`] is satisfied.
     /// # Errors
     #[doc = edoc!(checkerr(Self, 3))]
     /// # Examples
@@ -149,6 +123,24 @@ pub enum Condition {
     /// assert!( Condition::Any(vec![Condition::Always, Condition::Always]).check(&task_state).unwrap());
     /// ```
     Any(Vec<Self>),
+
+    // Error handling
+
+    /// Satisfied if the contained [`Self`] is satisfied or errors.
+    ErrorToSatisfied(Box<Self>),
+    /// Satisfied if the contained [`Self`] is satisfied.
+    ///
+    /// Unsatisfied if the contained [`Self`] errors.
+    ErrorToUnsatisfied(Box<Self>),
+    /// If [`Self::TryElse::try`]'s call to [`Self::check`] returns an error, return the value of [`Self::TryElse::else`].
+    /// # Errors
+    #[doc = edoc!(checkerrte(Self, Condition))]
+    TryElse {
+        /// The [`Self`] to try first.
+        r#try: Box<Self>,
+        /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
+        r#else: Box<Self>
+    },
 
     // Maps
 
@@ -203,15 +195,15 @@ pub enum Condition {
 
     // Params
 
-    /// Passes if the specified flag is set.
+    /// Satisfied if the specified flag is set.
     /// # Errors
     #[doc = edoc!(geterr(FlagRef))]
     FlagIsSet(FlagRef),
-    /// Passes if the specified flag is not set.
+    /// Satisfied if the specified flag is not set.
     /// # Errors
     #[doc = edoc!(geterr(FlagRef))]
     FlagIsNotSet(FlagRef),
-    /// Passes if [`Self::VarIs::var`] is [`Self::VarIs::value`].
+    /// Satisfied if [`Self::VarIs::var`] is [`Self::VarIs::value`].
     /// # Errors
     #[doc = edoc!(geterr(VarRef), geterr(StringSource))]
     VarIs {
@@ -224,7 +216,7 @@ pub enum Condition {
 
     // String source
 
-    /// Passes if [`Self::StringIs::left`] is [`Self::StringIs::right`].
+    /// Satisfied if [`Self::StringIs::left`] is [`Self::StringIs::right`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource, 2))]
     /// # Examples
@@ -242,7 +234,7 @@ pub enum Condition {
         /// The right hand side of the equality check.
         right: StringSource
     },
-    /// Passes if the specified [`StringSource`] is [`Some`].
+    /// Satisfied if the specified [`StringSource`] is [`Some`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -255,7 +247,7 @@ pub enum Condition {
     /// assert!(!Condition::StringIsSome(None::<&str>.into()).check(&task_state).unwrap());
     /// ```
     StringIsSome(StringSource),
-    /// Passes if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::value`].
+    /// Satisfied if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::value`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), checkerr(StringLocation))]
     /// # Examples
@@ -277,7 +269,7 @@ pub enum Condition {
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-    /// Passes if [`Self::StringMatches::value`] satisfies [`Self::StringMatches::matcher`].
+    /// Satisfied if [`Self::StringMatches::value`] satisfies [`Self::StringMatches::matcher`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), checkerr(StringMatcher))]
     /// # Examples
@@ -297,9 +289,7 @@ pub enum Condition {
 
     // Whole
 
-    /// Passes if the URL is the specified string.
-    ///
-    /// Used for testing.
+    /// Satisfied if the URL is the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError))]
     /// # Examples
@@ -313,11 +303,11 @@ pub enum Condition {
 
     // Scheme
 
-    /// Passes if the value of [`Url::scheme`] is equal to the specified string.
+    /// Satisfied if the value of [`Url::scheme`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     SchemeIs(StringSource),
-    /// Passes if the [`Url::scheme`] is in the specified [`Set`].
+    /// Satisfied if the [`Url::scheme`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -335,14 +325,14 @@ pub enum Condition {
     /// tsv!(ts, url = "other://example.com"); assert!(!condition.check(&ts).unwrap());
     /// ```
     SchemeIsOneOf(Set<String>),
-    /// Passes if the [`Url::scheme`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`Url::scheme`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     SchemeIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
 
     // Host is
 
-    /// Passes if the value of [`Url::host`] is equal to the specified string.
+    /// Satisfied if the value of [`Url::host`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -362,7 +352,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     HostIs(StringSource),
-    /// Passes if the [`BetterUrl::normalized_host`] is equal to the specified string.
+    /// Satisfied if the [`BetterUrl::normalized_host`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -382,7 +372,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     NormalizedHostIs(StringSource),
-    /// Passes if the value of [`BetterUrl::subdomain`] is equal to the specified string.
+    /// Satisfied if the value of [`BetterUrl::subdomain`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -402,7 +392,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     SubdomainIs(StringSource),
-    /// Passes if the value of [`BetterUrl::reg_domain`] is equal to the specified string.
+    /// Satisfied if the value of [`BetterUrl::reg_domain`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -422,7 +412,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     RegDomainIs(StringSource),
-    /// Passes if the value of [`BetterUrl::domain`] is equal to the specified string.
+    /// Satisfied if the value of [`BetterUrl::domain`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -442,7 +432,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     DomainIs(StringSource),
-    /// Passes if the value of [`BetterUrl::domain_middle`] is equal to the specified string.
+    /// Satisfied if the value of [`BetterUrl::domain_middle`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -462,7 +452,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     DomainMiddleIs(StringSource),
-    /// Passes if the value of [`BetterUrl::not_domain_suffix`] is equal to the specified string.
+    /// Satisfied if the value of [`BetterUrl::not_domain_suffix`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -482,7 +472,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     NotDomainSuffixIs(StringSource),
-    /// Passes if the value of [`BetterUrl::domain_suffix`] is equal to the specified string.
+    /// Satisfied if the value of [`BetterUrl::domain_suffix`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -505,7 +495,7 @@ pub enum Condition {
 
 
 
-    /// Passes if the [`BetterUrl::subdomain_segment`] is the specified value.
+    /// Satisfied if the [`BetterUrl::subdomain_segment`] is the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     SubdomainSegmentIs {
@@ -514,7 +504,7 @@ pub enum Condition {
         /// The value to compare it to.
         value: StringSource
     },
-    /// Passes if the [`BetterUrl::domain_segment`] is the specified value.
+    /// Satisfied if the [`BetterUrl::domain_segment`] is the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainSegmentIs {
@@ -523,7 +513,7 @@ pub enum Condition {
         /// The value to compare it to.
         value: StringSource
     },
-    /// Passes if the [`BetterUrl::domain_suffix_segment`] is the specified value.
+    /// Satisfied if the [`BetterUrl::domain_suffix_segment`] is the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainSuffixSegmentIs {
@@ -535,7 +525,7 @@ pub enum Condition {
 
     // Host is one of
 
-    /// Passes if the [`Url::host`] is contained in the specified [`Set`].
+    /// Satisfied if the [`Url::host`] is contained in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -558,7 +548,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     HostIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::normalized_host`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::normalized_host`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -580,7 +570,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     NormalizedHostIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::subdomain`] is contained in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::subdomain`] is contained in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -603,7 +593,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     SubdomainIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::reg_domain`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::reg_domain`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -625,7 +615,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     RegDomainIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::domain`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::domain`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -648,7 +638,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     DomainIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::domain_middle`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_middle`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -670,7 +660,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     DomainMiddleIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::not_domain_suffix`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::not_domain_suffix`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -693,7 +683,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
     /// ```
     NotDomainSuffixIsOneOf(Set<String>),
-    /// Passes if the [`BetterUrl::domain_suffix`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_suffix`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -718,21 +708,21 @@ pub enum Condition {
 
 
 
-    /// Passes if the [`BetterUrl::subdomain_segment`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::subdomain_segment`] is in the specified [`Set`].
     SubdomainSegmentIsOneOf {
         /// The segment to check.
         index: isize,
         /// The set to check it with.
         values: Set<String>
     },
-    /// Passes if the [`BetterUrl::domain_segment`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_segment`] is in the specified [`Set`].
     DomainSegmentIsOneOf {
         /// The segment to check.
         index: isize,
         /// The set to check it with.
         values: Set<String>
     },
-    /// Passes if the [`BetterUrl::domain_suffix_segment`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_suffix_segment`] is in the specified [`Set`].
     DomainSuffixSegmentIsOneOf {
         /// The segment to check.
         index: isize,
@@ -742,42 +732,42 @@ pub enum Condition {
 
     // Host is in set
 
-    /// Passes if the [`Url::host_str`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`Url::host_str`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     HostIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::normalized_host`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::normalized_host`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     NormalizedHostIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::subdomain`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::subdomain`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     SubdomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::reg_domain`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::reg_domain`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     RegDomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::domain`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::domain`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::domain_middle`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_middle`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainMiddleIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::not_domain_suffix`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::not_domain_suffix`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     NotDomainSuffixIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`BetterUrl::domain_suffix`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_suffix`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainSuffixIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
 
 
 
-    /// Passes if the [`BetterUrl::subdomain_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::subdomain_segment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     SubdomainSegmentIsInSet {
@@ -787,7 +777,7 @@ pub enum Condition {
         #[suitable(assert = "set_is_documented")]
         set: StringSource
     },
-    /// Passes if the [`BetterUrl::domain_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_segment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainSegmentIsInSet {
@@ -797,7 +787,7 @@ pub enum Condition {
         #[suitable(assert = "set_is_documented")]
         set: StringSource
     },
-    /// Passes if the [`BetterUrl::domain_suffix_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_suffix_segment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainSuffixSegmentIsInSet {
@@ -810,7 +800,7 @@ pub enum Condition {
 
     // Misc. host
 
-    /// Passes if the [`Url::host`] is [`Some`].
+    /// Satisfied if the [`Url::host`] is [`Some`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -826,7 +816,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
     /// ```
     UrlHasHost,
-    /// Passes if the URL's host is a fully qualified domain name.
+    /// Satisfied if the URL's host is a fully qualified domain name.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -842,7 +832,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!Condition::HostIsFqdn.check(&ts).unwrap());
     /// ```
     HostIsFqdn,
-    /// Passes if the URL's host is a domain.
+    /// Satisfied if the URL's host is a domain.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -858,7 +848,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!Condition::HostIsDomain.check(&ts).unwrap());
     /// ```
     HostIsDomain,
-    /// Passes if the URL's host is an IP address.
+    /// Satisfied if the URL's host is an IP address.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -874,7 +864,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!( Condition::HostIsIp.check(&ts).unwrap());
     /// ```
     HostIsIp,
-    /// Passes if the URL's host is an IPv4 address.
+    /// Satisfied if the URL's host is an IPv4 address.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -890,7 +880,7 @@ pub enum Condition {
     /// tsv!(ts, url = "https://[::1]"           ); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
     /// ```
     HostIsIpv4,
-    /// Passes if the URL's host is an IPv6 address.
+    /// Satisfied if the URL's host is an IPv6 address.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -909,7 +899,7 @@ pub enum Condition {
 
     // Path
 
-    /// Passes if the [`Url::path`] is the specified value.
+    /// Satisfied if the [`Url::path`] is the specified value.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -919,13 +909,13 @@ pub enum Condition {
     /// assert!(!Condition::PathIs("/a/b/c/".into()).check(&task_state).unwrap());
     /// ```
     PathIs(StringSource),
-    /// Passes if the [`Url::path`] is in the specified [`Set`].
+    /// Satisfied if the [`Url::path`] is in the specified [`Set`].
     PathIsOneOf(Set<String>),
-    /// Passes if the [`Url::path`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`Url::path`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PathIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`Url::path`] starts with the specified value.
+    /// Satisfied if the [`Url::path`] starts with the specified value.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -993,13 +983,13 @@ pub enum Condition {
 
 
 
-    /// Passes if the [`Url::path`] has segments.
+    /// Satisfied if the [`Url::path`] has segments.
     PathHasSegments,
-    /// Passes if the call to [`BetterUrl::path_segment`] returns [`Ok`] of [`Some`].
+    /// Satisfied if the call to [`BetterUrl::path_segment`] returns [`Ok`] of [`Some`].
     ///
-    /// Fails instead of erroring when the call to [`BetterUrl::path_segment`] returns [`Err`] because not having path segments means it doesn't have the specified path segment.
+    /// Unsatisfied if [`BetterUrl::path_segment`] returns [`Err`] because not having path segments means it doesn't have the specified path segment.
     HasPathSegment(isize),
-    /// Passes if the [`BetterUrl::path_segment`] is the specified value.
+    /// Satisfied if the [`BetterUrl::path_segment`] is the specified value.
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::path_segment))]
     PathSegmentIs {
@@ -1008,7 +998,7 @@ pub enum Condition {
         /// The value to compare it to.
         value: StringSource
     },
-    /// Passes if the [`BetterUrl::path_segment`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::path_segment`] is in the specified [`Set`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::path_segment))]
     PathSegmentIsOneOf {
@@ -1017,7 +1007,7 @@ pub enum Condition {
         /// The set to check it with.
         values: Set<String>
     },
-    /// Passes if the [`BetterUrl::path_segment`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::path_segment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::path_segment), geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PathSegmentIsInSet {
@@ -1030,9 +1020,9 @@ pub enum Condition {
 
     // Query
 
-    /// Passes if the [`Url::query`] is the specified value.
+    /// Satisfied if the [`Url::query`] is the specified value.
     QueryIs(StringSource),
-    /// Passes if the URL' has a query query and has a matching query parameter.
+    /// Satisfied if the URL' has a query query and has a matching query parameter.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -1043,21 +1033,21 @@ pub enum Condition {
     /// assert!(!Condition::HasQueryParam("c".into()).check(&task_state).unwrap());
     /// ```
     HasQueryParam(QueryParamSelector),
-    /// Passes if the [`BetterUrl::query_param`] is the specified value.
+    /// Satisfied if the [`BetterUrl::query_param`] is the specified value.
     QueryParamIs {
         /// The query param to check.
         param: QueryParamSelector,
         /// The value to compare it to.
         value: StringSource
     },
-    /// Passes if the [`BetterUrl::query_param`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::query_param`] is in the specified [`Set`].
     QueryParamIsOneOf {
         /// The query param to check.
         param: QueryParamSelector,
         /// The set to check it with.
         values: Set<String>
     },
-    /// Passes if the [`BetterUrl::query_param`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::query_param`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     QueryParamIsInSet {
@@ -1070,22 +1060,22 @@ pub enum Condition {
 
     // Fragment
 
-    /// Passes if the [`Url::fragment`] is the specified value.
+    /// Satisfied if the [`Url::fragment`] is the specified value.
     FragmentIs(StringSource),
-    /// Passes if the [`Url::fragment`] is in the specified [`Set`].
+    /// Satisfied if the [`Url::fragment`] is in the specified [`Set`].
     FragmentIsOneOf(Set<String>),
-    /// Passes if the [`Url::fragment`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`Url::fragment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     FragmentIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Passes if the [`Url::fragment`] is [`Some`] and starts with the specified value.
+    /// Satisfied if the [`Url::fragment`] is [`Some`] and starts with the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     FragmentIsSomeAndStartsWith(StringSource),
 
     // General parts
 
-    /// Passes if the value of [`Self::PartIs::part`] is the same as the value of [`Self::PartIs::value`].
+    /// Satisfied if the value of [`Self::PartIs::part`] is the same as the value of [`Self::PartIs::value`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -1104,7 +1094,7 @@ pub enum Condition {
         /// The [`StringSource`] to compare [`Self::PartIs::value`] with.
         value: StringSource
     },
-    /// Passes if [`Self::PartContains::part`] contains [`Self::PartContains::value`] at [`Self::PartContains::at`].
+    /// Satisfied if [`Self::PartContains::part`] contains [`Self::PartContains::value`] at [`Self::PartContains::at`].
     /// # Errors
     #[doc = edoc!(getnone(UrlPart, Condition), getnone(StringSource, Condition), checkerr(StringLocation))]
     /// # Examples
@@ -1127,7 +1117,7 @@ pub enum Condition {
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-    /// Passes if [`Self::PartMatches::part`] satisfies [`Self::PartMatches::matcher`].
+    /// Satisfied if [`Self::PartMatches::part`] satisfies [`Self::PartMatches::matcher`].
     /// # Errors
     #[doc = edoc!(getnone(UrlPart, Condition), checkerr(StringMatcher))]
     /// # Examples
@@ -1145,7 +1135,7 @@ pub enum Condition {
         /// The matcher to test [`Self::PartMatches::part`] with.
         matcher: StringMatcher
     },
-    /// Passes if [`Self::PartIsOneOf::part`] is in [`Self::PartIsOneOf::values`].
+    /// Satisfied if [`Self::PartIsOneOf::part`] is in [`Self::PartIsOneOf::values`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -1161,7 +1151,7 @@ pub enum Condition {
         /// The set of values to check if [`Self::PartIsOneOf::part`] is one of.
         values: Set<String>
     },
-    /// Passes if [`Self::PartIsInSet`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if [`Self::PartIsInSet`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PartIsInSet {
@@ -1174,7 +1164,7 @@ pub enum Condition {
 
     // Misc.
 
-    /// Get a [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] and pass if it's satisfied.
+    /// Satisfied if the specified [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] is.
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), commonnotfound(Self, Condition), callerr(CommonCallArgsSource::build), checkerr(Self))]
     /// # Examples
@@ -1196,6 +1186,8 @@ pub enum Condition {
     #[doc = edoc!(commoncallargnotfound(Self, Condition), checkerr(Self))]
     CommonCallArg(StringSource),
     /// Calls the specified function and returns its value.
+    ///
+    /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
     /// # Examples
@@ -1289,7 +1281,9 @@ pub enum ConditionError {
 }
 
 impl Condition {
-    /// If the specified variant of [`Self`] passes, return [`true`], otherwise return [`false`].
+    /// If the specified variant of [`Self`] is satisfied, return [`true`].
+    ///
+    /// If the specified variant of [`Self`] is unsatisfied, return [`false`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check(&self, task_state: &TaskStateView) -> Result<bool, ConditionError> {
@@ -1304,18 +1298,6 @@ impl Condition {
                 let is_satisfied = condition.check(task_state);
                 eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
-            },
-
-            // Error handling
-
-            Self::TreatErrorAsPass(condition) => condition.check(task_state).unwrap_or(true),
-            Self::TreatErrorAsFail(condition) => condition.check(task_state).unwrap_or(false),
-            Self::TryElse{ r#try, r#else } => match r#try.check(task_state) {
-                Ok(x) => x,
-                Err(try_error) => match r#else.check(task_state) {
-                    Ok(x) => x,
-                    Err(else_error) => Err(ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
-                }
             },
 
             // Logic
@@ -1343,6 +1325,18 @@ impl Condition {
                     }
                 }
                 false
+            },
+
+            // Error handling
+
+            Self::ErrorToSatisfied  (condition) => condition.check(task_state).unwrap_or(true),
+            Self::ErrorToUnsatisfied(condition) => condition.check(task_state).unwrap_or(false),
+            Self::TryElse{ r#try, r#else } => match r#try.check(task_state) {
+                Ok(x) => x,
+                Err(try_error) => match r#else.check(task_state) {
+                    Ok(x) => x,
+                    Err(else_error) => Err(ConditionError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)})?
+                }
             },
 
             // Maps

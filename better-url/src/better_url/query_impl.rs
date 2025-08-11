@@ -271,8 +271,7 @@ impl BetterUrl {
     /// url.set_raw_query_param("a", 0, Some(Some("2&b=3"))).unwrap();
     /// assert_eq!(url.query(), Some("a=2&b=3"));
     ///
-    /// // Setting the fragment
-    /// // Exact behavior, while currently identical to [`Self::set_query_param`], is unspecified.
+    /// // Failing to set the fragment because [`Url::set_query`] refuses to.
     /// url.set_raw_query_param("a", 0, Some(Some("2#123"))).unwrap();
     /// assert_eq!(url.query(), Some("a=2%23123&b=3"));
     /// assert_eq!(url.fragment(), None);
@@ -289,7 +288,8 @@ impl BetterUrl {
     /// assert_eq!(url.query(), None);
     /// ```
     pub fn set_raw_query_param(&mut self, name: &str, index: usize, to: Option<Option<&str>>) -> Result<(), SetQueryParamError> {
-        let mut ret = String::with_capacity(self.query().map_or(0, str::len));
+        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
+        let mut ret = String::with_capacity(self.query().map_or(0, str::len) + name.len() + 1 + to.flatten().map_or(0, str::len));
         let mut found = 0;
 
         if let Some(query) = self.query() {

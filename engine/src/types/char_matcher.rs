@@ -13,9 +13,9 @@ use crate::util::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum CharMatcher {
-    /// Always passes.
+    /// Always satisfied.
     Always,
-    /// Always fails.
+    /// Never satisfied.
     Never,
     /// Always returns the error [`CharMatcherError::ExplicitError`] with the included message.
     /// # Errors
@@ -27,42 +27,38 @@ pub enum CharMatcher {
     #[suitable(never)]
     Debug(Box<Self>),
 
-    /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
+    /// If [`Self::If::if`] is satisfied, return the value of [`Self::If::then`].
+    ///
+    /// If [`Self::If::if`] is unsatisfied, return the value of [`Self::If::else`].
     /// # Errors
     /// If the call to [`Self::check`] returns an error, that error is returned after the debug info is printed.
     If {
         /// The [`Self`] to decide between [`Self::If::then`] and [`Self::If::else`].
         r#if: Box<Self>,
-        /// The [`Self`] to use if [`Self::If::if`] passes.
+        /// The [`Self`] to use if [`Self::If::if`] is satisfied.
         then: Box<Self>,
-        /// The [`Self`] to use if [`Self::If::if`] fails.
+        /// The [`Self`] to use if [`Self::If::if`] is unsatisfied.
         r#else: Box<Self>
     },
-    /// If the call to [`Self::check`] passes or fails, invert it into failing or passing.
+    /// Inverts the satisfaction of the contained [`Self`].
     /// # Errors
     /// If the call to [`Self::check`] returns an error, that error is returned.
     Not(Box<Self>),
-    /// If all contained [`Self`]s pass, passes.
-    ///
-    /// If any contained [`Self`] fails, fails.
+    /// Satisfied if all contained [`Self`]s are satisfied.
     /// # Errors
     /// If any call to [`Self::check`] returns an error, that error is returned.
     All(Vec<Self>),
-    /// If any contained [`Self`] passes, passes.
-    ///
-    /// If all contained [`Self`]s fail, fails.
+    /// Satisfied if any contained [`Self`] is satisfied.
     /// # Errors
     /// If any call to [`Self::check`] returns an error, that error is returned.
     Any(Vec<Self>),
 
-    /// If the call to [`Self::check`] returns an error, passes.
+    /// Satisfied if the contained [`Self`] is satisfied or errors.
+    ErrorToSatisfied(Box<Self>),
+    /// Satisfied if the contained [`Self`] is satisfied.
     ///
-    /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsPass(Box<Self>),
-    /// If the call to [`Self::check`] returns an error, fails.
-    ///
-    /// Otherwise returns the value of the contained [`Self`].
-    TreatErrorAsFail(Box<Self>),
+    /// Unsatisfied if the contained [`Self`] errors.
+    ErrorToUnsatisfied(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::check`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
     /// If both calls to [`Self::check`] return errors, both errors are returned.
@@ -77,16 +73,16 @@ pub enum CharMatcher {
     /// If all calls to [`Self::check`] return errors, the last error is returned. In the future this should be changed to return all errors.
     FirstNotError(Vec<Self>),
 
-    /// Passes if the [`char`] is the specified [`char`].
+    /// Satisfied if the [`char`] is the specified [`char`].
     Is(char),
-    /// Passes if the [`char`] is between [`Self::Between::min`] and [`Self::Between::max`] (inclusive).
+    /// Satisfied if the [`char`] is between [`Self::Between::min`] and [`Self::Between::max`] (inclusive).
     Between {
         /// The lower bound of [`char`]s to pass for.
         min: char,
         /// The upper bound of [`char`]s to pass for.
         max: char
     },
-    /// Passes if the [`char`] is in the specified [`HashSet`].
+    /// Satisfied if the [`char`] is in the specified [`HashSet`].
     IsOneOf(HashSet<char>),
     /// [`char::is_alphabetic`].
     IsAlphabetic,
@@ -108,8 +104,8 @@ pub enum CharMatcher {
     IsAsciiHexdigit,
     /// [`char::is_ascii_lowercase`].
     IsAsciiLowercase,
-    // /// [`char::is_ascii_oct_digit`].
-    // IsAsciiOctdigit,
+    /// [`char::is_ascii_octdigit`].
+    IsAsciiOctdigit,
     /// [`char::is_ascii_punctuation`].
     IsAsciiPunctuation,
     /// [`char::is_ascii_uppercase`].
@@ -193,8 +189,8 @@ impl CharMatcher {
 
             // Error handling.
 
-            Self::TreatErrorAsPass(matcher) => matcher.check(c).unwrap_or(true),
-            Self::TreatErrorAsFail(matcher) => matcher.check(c).unwrap_or(false),
+            Self::ErrorToSatisfied  (matcher) => matcher.check(c).unwrap_or(true),
+            Self::ErrorToUnsatisfied(matcher) => matcher.check(c).unwrap_or(false),
             Self::TryElse{r#try, r#else} => r#try.check(c).or_else(|try_error| r#else.check(c).map_err(|else_error| CharMatcherError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(matchers) => {
                 let mut result = Ok(false); // The initial value doesn't mean anything.
@@ -222,7 +218,7 @@ impl CharMatcher {
             Self::IsAsciiGraphic      => c.is_ascii_graphic(),
             Self::IsAsciiHexdigit     => c.is_ascii_hexdigit(),
             Self::IsAsciiLowercase    => c.is_ascii_lowercase(),
-            // Self::IsAsciiOctdigit     => c.is_ascii_octdigit(),
+            Self::IsAsciiOctdigit     => matches!(c, '0'..='7'),
             Self::IsAsciiPunctuation  => c.is_ascii_punctuation(),
             Self::IsAsciiUppercase    => c.is_ascii_uppercase(),
             Self::IsAsciiWhitespace   => c.is_ascii_whitespace(),

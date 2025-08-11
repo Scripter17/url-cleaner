@@ -30,9 +30,9 @@
 //!
 //! The "[docs](Cleaner::docs)" field contains the [`CleanerDocs`]. It's optional but polite to add.
 //!
-//! The "[actions](Cleaner::actions)" field contains a list of [`Action`]s to do. The first action, written as `{"RemoveQueryParam": "utm_source"}` removes any "utm_source" query param found in the URL.
+//! The "[actions](Cleaner::actions)" field contains a list of [`Action`]s to do. The first action, written as [`RemoveQueryParam`](Action::RemoveQueryParam) removes any "utm_source" query param found in the URL.
 //!
-//! The second action, the "[If](Action::If)" action, applies the action in its "[then](Action::If::then)" field if and only if the condition in its "[if](Action::If::if)" field is "satisfied".
+//! The second action, the [`If`](Action::If) action, applies the action in its [`then`](Action::If::then) field if and only if the condition in its [`if`](Action::If::if) field is "satisfied".
 //! In this case, the condition is satisfied if the "https_upgrade" flag is set and the URL's scheme is "http".
 //!
 //! Unlike AdGuard/uBlock Origin filters, URL Cleaner actions are applied in order of declaration.
@@ -42,7 +42,9 @@ pub(crate) use super::*;
 
 pub mod params;
 pub(crate) use params::*;
+#[cfg(feature = "default-cleaner")]
 pub mod default_cleaner;
+#[cfg(feature = "default-cleaner")]
 pub(crate) use default_cleaner::*;
 pub mod commons;
 pub(crate) use commons::*;

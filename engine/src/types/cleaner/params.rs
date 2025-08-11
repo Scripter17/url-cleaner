@@ -13,7 +13,7 @@ use crate::util::*;
 ///
 /// Bundles all the state that determines how the [`Cleaner`] works in one convenient area.
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct Params {
     /// Flags allow enabling and disabling certain behavior.
@@ -56,42 +56,12 @@ pub struct Params {
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub named_partitionings: HashMap<String, NamedPartitioning>,
-    /// If [`true`], things that interact with the cache will read from the cache.
-    ///
-    /// Defaults to true.
-    #[cfg(feature = "cache")]
-    #[serde(default = "get_true", skip_serializing_if = "is_true")]
-    pub read_cache: bool,
-    /// If [`true`], things that interact with the cache will write to the cache.
-    ///
-    /// Defaults to [`true`].
-    #[cfg(feature = "cache")]
-    #[serde(default = "get_true", skip_serializing_if = "is_true")]
-    pub write_cache: bool,
     /// The default [`HttpClientConfig`], prior to relevant [`HttpClientConfigDiff`]s.
     ///
     /// Defaults to [`HttpClientConfig::default`].
     #[cfg(feature = "http")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub http_client_config: HttpClientConfig
-}
-
-#[allow(clippy::derivable_impls, reason = "When the `cache` feature is enabled, this can't be derived.")]
-impl Default for Params {
-    fn default() -> Self {
-        Self {
-            flags: HashSet::default(),
-            vars : HashMap::default(),
-            sets : HashMap::default(),
-            lists: HashMap::default(),
-            maps : HashMap::default(),
-            named_partitionings: HashMap::default(),
-            #[cfg(feature = "cache")] read_cache: true,
-            #[cfg(feature = "cache")] write_cache: true,
-            #[cfg(feature = "http")]
-            http_client_config: HttpClientConfig::default()
-        }
-    }
 }
 
 /// Rules for updating a [`Params`].
@@ -135,12 +105,6 @@ pub struct ParamsDiff {
     #[serde(default, skip_serializing_if = "is_default")] pub map_diffs: HashMap<String, MapDiff<String>>,
     /// [`Params::maps`] to delete.
     #[serde(default, skip_serializing_if = "is_default")] pub delete_maps: Vec<String>,
-    /// If [`Some`], sets, [`Params::read_cache`].
-    #[cfg(feature = "cache")]
-    #[serde(default, skip_serializing_if = "is_default")] pub read_cache : Option<bool>,
-    /// If [`Some`], sets [`Params::write_cache`].
-    #[cfg(feature = "cache")]
-    #[serde(default, skip_serializing_if = "is_default")] pub write_cache: Option<bool>,
     /// If [`Some`], applies the [`HttpClientConfigDiff`] to [`Params::http_client_config`].
     #[cfg(feature = "http")]
     #[serde(default, skip_serializing_if = "is_default")] pub http_client_config_diff: Option<HttpClientConfigDiff>
@@ -187,9 +151,6 @@ impl ParamsDiff {
             to.maps.remove(&k);
         }
 
-        #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
-        #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
-
         #[cfg(feature = "http")] if let Some(http_client_config_diff) = self.http_client_config_diff {http_client_config_diff.apply_once(&mut to.http_client_config);}
     }
 
@@ -232,9 +193,6 @@ impl ParamsDiff {
         for k in &self.delete_maps {
             to.maps.remove(k);
         }
-
-        #[cfg(feature = "cache")] if let Some(read_cache ) = self.read_cache  {to.read_cache  = read_cache ;}
-        #[cfg(feature = "cache")] if let Some(write_cache) = self.write_cache {to.write_cache = write_cache;}
 
         #[cfg(feature = "http")] if let Some(http_client_config_diff) = &self.http_client_config_diff {http_client_config_diff.apply_multiple(&mut to.http_client_config);}
     }

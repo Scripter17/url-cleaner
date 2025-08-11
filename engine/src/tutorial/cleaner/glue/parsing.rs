@@ -28,6 +28,6 @@
 //!
 //! ## [JSON pointer](StringModification::JsonPointer)
 //!
-//! While not in the [`glue::parse`] module, [`StringModification::JsonPointer`] is relevant because it "parses" a JSON string and extracts a string value.
+//! While not in the [`glue::parse`] module, [`StringModification::JsonPointer`] is relevant because it parses JSON and extracts a string value.
 
 pub(crate) use super::*;

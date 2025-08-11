@@ -35,3 +35,27 @@ jobs:
       run: |
         cargo build
         yes "https://example.com" | head -n 100 | timeout 1s cargo run -- --cleaner ../example-cleaners/deadlock-tester.json
+
+  profiles:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: profiles
+      run: |
+        set -e
+
+        PROFILES='{"default":{"params_diff":{"flags":["unmobile"]}},"profiles":{"embed_compatibility":{"params_diff":{"flags":["embed_compatibility"]}}}}'
+        PARAMS_DIFF='{"unflags":["unmobile"]}'
+
+        cargo build
+
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                    'https://mobile.example.com'    ) <(echo 'https://example.com/')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                    'https://x.com/example/status/1') <(echo 'https://x.com/example/status/1')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                               --params-diff <(echo "$PARAMS_DIFF") 'https://mobile.example.com'    ) <(echo 'https://mobile.example.com/')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                               --params-diff <(echo "$PARAMS_DIFF") 'https://x.com/example/status/1') <(echo 'https://x.com/example/status/1')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility                                      'https://mobile.example.com'    ) <(echo 'https://example.com/')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility                                      'https://x.com/example/status/1') <(echo 'https://vxtwitter.com/example/status/1')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility --params-diff <(echo "$PARAMS_DIFF") 'https://mobile.example.com'    ) <(echo 'https://mobile.example.com/')
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility --params-diff <(echo "$PARAMS_DIFF") 'https://x.com/example/status/1') <(echo 'https://vxtwitter.com/example/status/1')
+
+        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')

@@ -29,3 +29,35 @@ jobs:
           fi
         done
         ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 100; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc
+
+  profiles:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: profiles
+      run: |
+        set -e
+
+        PROFILES='{"default":{"params_diff":{"flags":["unmobile"]}},"profiles":{"embed_compatibility":{"params_diff":{"flags":["embed_compatibility"]}}}}'
+        PARAMS_DIFF='{"unflags":["unmobile"]}'
+
+        cargo run -- --profiles <(echo "$PROFILES") |& tee site-run.log &
+        site=$!
+        while true; do
+          sleep 0.1
+          if ! kill -0 "$site"; then
+            exit 1
+          fi
+          if grep "Rocket has launched" site-run.log; then
+            break
+          fi
+        done
+
+        diff <(curl http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://example.com/"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://x.com/example/status/1"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{                                "params_diff":'"$PARAMS_DIFF"',"tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://mobile.example.com/"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{                                "params_diff":'"$PARAMS_DIFF"',"tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://x.com/example/status/1"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility",                               "tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://example.com/"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility",                               "tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://vxtwitter.com/example/status/1"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility","params_diff":'"$PARAMS_DIFF"',"tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://mobile.example.com/"}]}}')
+        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility","params_diff":'"$PARAMS_DIFF"',"tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://vxtwitter.com/example/status/1"}]}}')

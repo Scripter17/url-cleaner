@@ -7,6 +7,7 @@
 pub mod glue;
 pub mod types;
 pub mod testing;
+pub mod helpers;
 pub mod tutorial;
 pub(crate) mod util;
 

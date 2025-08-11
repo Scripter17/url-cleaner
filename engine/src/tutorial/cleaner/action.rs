@@ -1,4 +1,4 @@
-//! # [`Action`]s
+//! # [`Action`]
 //!
 //! Actions take a task state and modify it. For most actions this is modifying part of the task's URL, sometimes with a logic to decide if and when to do so.
 //!

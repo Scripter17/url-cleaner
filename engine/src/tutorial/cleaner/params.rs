@@ -4,11 +4,7 @@
 //!
 //! Params can be modified with [`ParamsDiff`]s for either the lifetime of a URL Cleaner Engine provider or for specific jobs.
 //!
-//! For example, URL Cleaner Site can
-//!
-//! - Be invoked with `--params-diff my_params_diff.json` to apply the params diff in the specified file to all jobs.
-//!
-//! - Be given another params diff by a user to adjust how a single job is handled, for example by enabling the `unmobile` flag for the default cleaner.
+//! For example, URL Cleaner Site can be invoked with `--params-diff my_params_diff.json` to apply it to all jobs and accept job configs with their own [`ParamsDiff`] to apply on top of it.
 //!
 //! Part of the params diff on my personal URL Cleaner Site instance is
 //!
@@ -20,7 +16,7 @@
 //!
 //! which makes all jobs have the `unmobile` and `breezewiki` flags enabled by default.
 //!
-//! In addition, my phone as a shortcut to send a clean request to my URL Cleaner Site instance in the form of
+//! In addition, my phone has a shortcut to send a job config to my URL Cleaner Site instance in the form of
 //!
 //! ```Json
 //! {

@@ -89,11 +89,9 @@ impl InnerCache {
         debug!(InnerCache::connect, self);
         if self.connection.get().is_none() {
             let mut needs_init = self.path == CachePath::Memory;
-            if let CachePath::Path(path) = &self.path {
-                if !std::fs::exists(path)? {
-                    needs_init = true;
-                    std::fs::File::create_new(path)?;
-                }
+            if let CachePath::Path(path) = &self.path && !std::fs::exists(path)? {
+                needs_init = true;
+                std::fs::File::create_new(path)?;
             }
             let mut connection = SqliteConnection::establish(self.path.as_str())?;
             if needs_init {

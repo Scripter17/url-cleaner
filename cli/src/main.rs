@@ -7,12 +7,14 @@
 use std::path::PathBuf;
 use std::io::{self, IsTerminal, BufRead};
 use std::process::ExitCode;
+use std::borrow::Cow;
 
 use clap::Parser;
 use thiserror::Error;
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
+use url_cleaner_engine::helpers::*;
 use url_cleaner_engine::testing::*;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
@@ -87,13 +89,27 @@ struct Args {
     /// The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
     #[arg(short, long, verbatim_doc_comment)]
     json: bool,
-    /// The ParamsDiff files to apply to the cleaner's Params.
+    /// The Profiles file.
     #[arg(long)]
-    params_diff: Vec<PathBuf>,
+    profiles: Option<PathBuf>,
+    /// The Profile to use.
+    ///
+    /// Applied before --params-diff and --flag/--var.
+    #[arg(long, requires = "profiles")]
+    profile: Option<String>,
+    /// A standalone ParamsDiff.
+    ///
+    /// Applied after --profiles/--profile and before --flag/--var.
+    #[arg(long)]
+    params_diff: Option<PathBuf>,
     #[arg(short, long)]
     /// Flags to insert into the params.
+    ///
+    /// Applied after --profiles/--profile and --params-diff.
     flag: Vec<String>,
     /// Vars to insert into the params.
+    ///
+    /// Applied after --profiles/--profile and --params-diff.
     #[arg(short, long, num_args = 2)]
     var: Vec<Vec<String>>,
     /// The cache to use.
@@ -109,13 +125,13 @@ struct Args {
     /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
     #[arg(long, default_missing_value = "true")]
     hide_thread_count: bool,
-    /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
+    /// Whether or not to read from the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_missing_value = "true")]
+    #[arg(long, default_value = "true")]
     read_cache: Option<bool>,
-    /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
+    /// Whether or not to write to the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_missing_value = "true")]
+    #[arg(long, default_value = "true")]
     write_cache: Option<bool>,
     /// The context to share between all Tasks.
     #[arg(long)]
@@ -139,6 +155,10 @@ pub enum CliError {
     /// Returned when a [`GetCleanerError`] is encountered.
     #[error(transparent)] GetCleanerError(#[from] GetCleanerError),
     /// Returned when unable to load a [`ParamsDiff`] file.
+    #[error(transparent)] CantLoadProfilesConfigFile(std::io::Error),
+    /// Returned when unable to parse a [`ParamsDiff`] file.
+    #[error(transparent)] CantParseProfilesConfigFile(serde_json::Error),
+    /// Returned when unable to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
@@ -147,7 +167,10 @@ pub enum CliError {
     /// Returned when unable to load a [`Tests`] file.
     #[error(transparent)] CantLoadTests(io::Error),
     /// Returned when unable to parse a [`Tests`] file.
-    #[error(transparent)] CantParseTests(serde_json::Error)
+    #[error(transparent)] CantParseTests(serde_json::Error),
+    /// Returned when the requested [`Profile`] isn't found.
+    #[error("The requested Profile wasn't found.")]
+    ProfileNotFound
 }
 
 fn main() -> Result<ExitCode, CliError> {
@@ -160,22 +183,23 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Get and apply [`ParamsDiff`]s.
 
-    for params_diff in args.params_diff {
-        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile)?
+    if let Some(profiles) = args.profiles {
+        cleaner.params = Cow::Owned(serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(profiles).map_err(CliError::CantLoadProfilesConfigFile)?)
+            .map_err(CliError::CantParseProfilesConfigFile)?
+            .into_params(args.profile.as_deref(), cleaner.params.into_owned())
+            .ok_or(CliError::ProfileNotFound)?);
+    }
+
+    if let Some(params_diff) = args.params_diff {
+        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).map_err(CliError::CantLoadParamsDiffFile)?)
+            .map_err(CliError::CantParseParamsDiffFile)?
             .apply_once(cleaner.params.to_mut());
     }
+
     cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
         let [name, value] = var.try_into().expect("The clap parser to work");
         cleaner.params.to_mut().vars.insert(name, value);
-    }
-    #[cfg(feature = "cache")]
-    if let Some(read_cache) = args.read_cache {
-        cleaner.params.to_mut().read_cache = read_cache;
-    }
-    #[cfg(feature = "cache")]
-    if let Some(write_cache) = args.write_cache {
-        cleaner.params.to_mut().write_cache = write_cache;
     }
 
     // Get the [`JobContext`].
@@ -211,7 +235,9 @@ fn main() -> Result<ExitCode, CliError> {
     let cache = args.cache.unwrap_or("url-cleaner-cache.sqlite".into()).into();
     #[cfg(feature = "cache")]
     let cache_handle_config = CacheHandleConfig {
-        delay: args.cache_delay
+        delay: args.cache_delay,
+        read : args.read_cache .unwrap_or(true),
+        write: args.write_cache.unwrap_or(true)
     };
     let unthreader = Unthreader::r#if(args.hide_thread_count);
 

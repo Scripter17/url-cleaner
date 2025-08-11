@@ -812,6 +812,11 @@ pub enum Action {
     #[cfg_attr(feature = "cache", doc = edoc!(callerr(Cache::write)))]
     #[cfg(feature = "http")]
     ExpandRedirect {
+        /// If [`Some`], expand this URL instead.
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        url: Option<StringSource>,
         /// The extra headers to send.
         ///
         /// Defaults to an empty [`HeaderMap`].
@@ -922,6 +927,8 @@ pub enum Action {
     #[doc = edoc!(commoncallargnotfound(Self, Action), applyerr(Self))]
     CommonCallArg(StringSource),
     /// Calls the specified function and returns its value.
+    ///
+    /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
     /// # Examples
@@ -975,7 +982,7 @@ impl FromStr for Action {
             "RemoveFragment"             => Action::RemoveFragment,
             "RemoveEmptyFragment"        => Action::RemoveEmptyFragment,
             #[cfg(feature = "http")]
-            "ExpandRedirect"             => Action::ExpandRedirect {headers: Default::default(), http_client_config_diff: Default::default()},
+            "ExpandRedirect"             => Action::ExpandRedirect {url: Default::default(), headers: Default::default(), http_client_config_diff: Default::default()},
             _                            => return Err(s.into())
         })
     }
@@ -1456,18 +1463,20 @@ impl Action {
             // Misc.
 
             #[cfg(feature = "http")]
-            Self::ExpandRedirect {headers, http_client_config_diff} => {
+            Self::ExpandRedirect {url, headers, http_client_config_diff} => {
+                let url = match url {
+                    Some(url) => Cow::Owned(get_string!(url, task_state, ActionError)),
+                    None => Cow::Borrowed(task_state.url.as_str())
+                };
                 let _unthread_handle = task_state.unthreader.unthread();
                 #[cfg(feature = "cache")]
-                if task_state.params.read_cache {
-                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: task_state.url.as_str()})? {
-                        *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
-                        return Ok(());
-                    }
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: &url})? {
+                    *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
+                    return Ok(());
                 }
                 #[cfg(feature = "cache")]
                 let start = std::time::Instant::now();
-                let response = task_state.to_view().http_client(http_client_config_diff.as_deref())?.get(task_state.url.as_str()).headers(headers.clone()).send()?;
+                let response = task_state.to_view().http_client(http_client_config_diff.as_deref())?.get(&*url).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
                     BetterUrl::parse(std::str::from_utf8(response.headers().get("location").ok_or(ActionError::LocationHeaderNotFound)?.as_bytes())?)?
                 } else {
@@ -1476,14 +1485,12 @@ impl Action {
                 #[cfg(feature = "cache")]
                 let duration = start.elapsed();
                 #[cfg(feature = "cache")]
-                if task_state.params.write_cache {
-                    task_state.cache.write(NewCacheEntry {
-                        subject: "redirect",
-                        key: task_state.url.as_str(),
-                        value: Some(new_url.as_str()),
-                        duration
-                    })?;
-                }
+                task_state.cache.write(NewCacheEntry {
+                    subject: "redirect",
+                    key: &url,
+                    value: Some(new_url.as_str()),
+                    duration
+                })?;
                 *task_state.url=new_url;
             },
 
@@ -1511,24 +1518,20 @@ impl Action {
             Self::CacheUrl {subject, action} => {
                 let _unthread_handle = task_state.unthreader.unthread();
                 let subject = get_string!(subject, task_state, ActionError);
-                if task_state.params.read_cache {
-                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
-                        *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
-                        return Ok(());
-                    }
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
+                    *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
+                    return Ok(());
                 }
                 let old_url = task_state.url.to_string();
                 let start = std::time::Instant::now();
                 action.apply(task_state)?;
                 let duration = start.elapsed();
-                if task_state.params.write_cache {
-                    task_state.cache.write(NewCacheEntry {
-                        subject: &subject,
-                        key: &old_url,
-                        value: Some(task_state.url.as_str()),
-                        duration
-                    })?;
-                }
+                task_state.cache.write(NewCacheEntry {
+                    subject: &subject,
+                    key: &old_url,
+                    value: Some(task_state.url.as_str()),
+                    duration
+                })?;
             },
             Self::Common(common_call) => {
                 task_state.commons.actions.get(get_str!(common_call.name, task_state, ActionError)).ok_or(ActionError::CommonActionNotFound)?.apply(&mut TaskState {

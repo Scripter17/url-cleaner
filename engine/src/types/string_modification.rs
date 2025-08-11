@@ -477,7 +477,11 @@ pub enum StringModification {
         /// The index of the segment to set.
         index: isize,
         /// The value to set the segment to.
-        value: StringSource
+        value: StringSource,
+        /// If [`Some`], the value to join with.
+        ///
+        /// If [`None`], joins with [`Self::KeepSegments::split`].
+        join: Option<StringSource>
     },
     /// Split the string with [`Self::InsertSegment::split`] and inserts [`Self::InsertSegment::value`] before the [`Self::InsertSegment::index`] segment.
     ///
@@ -492,18 +496,25 @@ pub enum StringModification {
         /// The location to insert the value at.
         index: isize,
         /// The value to insert.
-        value: StringSource
+        value: StringSource,
+        /// If [`Some`], the value to join with.
+        ///
+        /// If [`None`], joins with [`Self::KeepSegments::split`].
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        join: Option<StringSource>
     },
-    /// Split the string with [`Self::KeepNthSegment::split`] and keep only the [`Self::KeepNthSegment::index`] segment.
+    /// Split the string with [`Self::KeepSegment::split`] and keep only the [`Self::KeepSegment::index`] segment.
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
     /// If the segment isn't found, returns the error [`StringModificationError::SegmentNotFound`].
-    KeepNthSegment {
+    KeepSegment {
         /// The value to split the string on.
         split: StringSource,
         /// The index of the segment to keep.
-        index: isize
+        index: isize,
     },
     /// Split the string with [`Self::KeepSegmentRange`] and keep only the segments between [`Self::KeepSegmentRange::start`] (inclusive) and [`Self::KeepSegmentRange::end`] (exclusive).
     /// # Errors
@@ -520,19 +531,29 @@ pub enum StringModification {
     /// StringModification::KeepSegmentRange {
     ///     split: "/".into(),
     ///     start: 1,
-    ///     end: Some(4)
+    ///     end: Some(4),
+    ///     join: None
     /// }.apply(&mut to, &task_state_view).unwrap();
     ///
     /// assert_eq!(to, Some("b/c/d".into()));
     ///
+    /// StringModification::KeepSegmentRange {
+    ///     split: "/".into(),
+    ///     start: 0,
+    ///     end: Some(-1),
+    ///     join: None
+    /// }.apply(&mut to, &task_state_view).unwrap();
+    ///
+    /// assert_eq!(to, Some("b/c".into()));
     ///
     /// StringModification::KeepSegmentRange {
     ///     split: "/".into(),
     ///     start: 0,
-    ///     end: Some(-1)
+    ///     end: None,
+    ///     join: Some("-".into())
     /// }.apply(&mut to, &task_state_view).unwrap();
     ///
-    /// assert_eq!(to, Some("b/c".into()));
+    /// assert_eq!(to, Some("b-c".into()));
     /// ```
     KeepSegmentRange {
         /// The value to split the string with.
@@ -548,7 +569,70 @@ pub enum StringModification {
         ///
         /// Defaults to [`None`].
         #[serde(default, skip_serializing_if = "is_default")]
-        end: Option<isize>
+        end: Option<isize>,
+        /// If [`Some`], the value to join with.
+        ///
+        /// If [`None`], joins with [`Self::KeepSegments::split`].
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        join: Option<StringSource>
+    },
+    /// If [`Self::KeepSegments::join`] is [`None`], joins on the same value as [`Self::KeepSegments::split`].
+    KeepSegments {
+        /// The value to split the string with.
+        split: StringSource,
+        /// The list of segments to keep.
+        indices: Vec<isize>,
+        /// If [`Some`], the value to join with.
+        ///
+        /// If [`None`], joins with [`Self::KeepSegments::split`].
+        ///
+        /// Defaults to [`None`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        join: Option<StringSource>
+    },
+    /// If [`Self::KeepModifiedSegments::join`] is [`None`], joins on the same value as [`Self::KeepModifiedSegments::split`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// url_cleaner_engine::task_state_view!(task_state);
+    ///
+    /// let mut to = Some("a/b/c".into());
+    ///
+    /// StringModification::KeepModifiedSegments {
+    ///   split: "/".into(),
+    ///   indices: vec![-1, 0],
+    ///   modification: Box::new(StringModification::Uppercase),
+    ///   join: None
+    /// }.apply(&mut to, &task_state).unwrap();
+    ///
+    /// assert_eq!(to, Some("A/C".into()));
+    ///
+    /// let mut to = Some("a/b/c".into());
+    ///
+    /// StringModification::KeepModifiedSegments {
+    ///   split: "/".into(),
+    ///   indices: vec![-1, 0],
+    ///   modification: Box::new(StringModification::Lowercase),
+    ///   join: Some("-".into())
+    /// }.apply(&mut to, &task_state).unwrap();
+    ///
+    /// assert_eq!(to, Some("a-c".into()));
+    /// ```
+    KeepModifiedSegments {
+        /// The value to split the string with.
+        split: StringSource,
+        /// The list of segments to keep.
+        indices: Vec<isize>,
+        /// The [`Self`] to apply.
+        modification: Box<Self>,
+        /// If [`Some`], the value to join with.
+        ///
+        /// If [`None`], joins with [`Self::KeepModifiedSegments::split`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        join: Option<StringSource>
     },
 
 
@@ -790,6 +874,8 @@ pub enum StringModification {
     #[doc = edoc!(commoncallargnotfound(Self, StringModification), applyerr(Self))]
     CommonCallArg(StringSource),
     /// Calls the contained function.
+    ///
+    /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
     #[cfg(feature = "custom")]
@@ -890,6 +976,10 @@ pub enum StringModificationError {
     /// Returned when a segment range isn't found
     #[error("The requested segment range wasn't found.")]
     SegmentRangeNotFound,
+
+    /// Returned when a StringModification set a string to None when it had to keep/set it to Some.
+    #[error("A StringModification set a string to None when it had to keep/set it to Some.")]
+    StringModificationSetStringToNone,
 
     /// Returned when the string being modified doesn't start with the specified prefix.
     #[error("The string being modified didn't start with the provided prefix. Maybe try `StringModification::StripMaybePrefix`?")]
@@ -1249,38 +1339,99 @@ impl StringModification {
 
 
 
-            Self::SetSegment {split, index, value} => {
-                let split = get_cow!(split, task_state, StringModificationError);
-                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
+            Self::SetSegment {split, index, value, join} => {
+                let split = get_str!(split, task_state, StringModificationError);
+                let join = match join {
+                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    None => split
+                };
+                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
                 let fixed_index = neg_index(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 match value.get(task_state)? {
                     Some(value) => *segments.get_mut(fixed_index).expect("StringModification::SetSegment to be implemented correctly") = value,
                     None => {segments.remove(fixed_index);}
                 }
-                *to = Some(Cow::Owned(segments.join(&*split)));
+                *to = Some(Cow::Owned(segments.join(join)));
             },
-            Self::InsertSegment {split, index, value} => {
-                let split = get_cow!(split, task_state, StringModificationError);
-                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(&*split).map(Cow::Borrowed).collect::<Vec<_>>();
+            Self::InsertSegment {split, index, value, join} => {
+                let split = get_str!(split, task_state, StringModificationError);
+                let join = match join {
+                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    None => split
+                };
+                let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
                 let fixed_index = neg_range_boundary(*index, segments.len()).ok_or(StringModificationError::SegmentNotFound)?;
                 if let Some(value) = value.get(task_state)? {
                     segments.insert(fixed_index, value);
                 }
-                *to = Some(Cow::Owned(segments.join(&*split)));
+                *to = Some(Cow::Owned(segments.join(join)));
             },
-            Self::KeepNthSegment {split, index} => {
+            Self::KeepSegment {split, index} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 *to = match to {
                     Cow::Owned(inner) => Cow::Owned(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string()),
                     Cow::Borrowed(inner) => Cow::Borrowed(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?),
                 }
             },
-            Self::KeepSegmentRange {split, start, end} => {
+            Self::KeepSegmentRange {split, start, end, join} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 let split = get_str!(split, task_state, StringModificationError);
-                *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(split);
+                let join = match join {
+                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    None => split
+                };
+                *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(join);
             },
-
+            Self::KeepSegments {split, indices, join} => {
+                let temp = to.as_ref().ok_or(StringModificationError::StringIsNone)?;
+                let split = get_str!(split, task_state, StringModificationError);
+                let join = match join {
+                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    None => split
+                };
+                let segments = temp.split(split).collect::<Vec<_>>();
+                let segment_count = segments.len();
+                let mut ret = String::with_capacity(temp.len());
+                let mut first = true;
+                for (i, segment) in segments.into_iter().enumerate() {
+                    for index in indices.iter().copied() {
+                        if neg_index(index, segment_count).ok_or(StringModificationError::SegmentNotFound)? == i {
+                            if !first {
+                                ret.push_str(join);
+                            }
+                            first = false;
+                            ret.push_str(segment);
+                        }
+                    }
+                }
+                *to = Some(Cow::Owned(ret));
+            },
+            Self::KeepModifiedSegments {split, indices, modification, join} => {
+                let temp = to.as_ref().ok_or(StringModificationError::StringIsNone)?;
+                let split = get_str!(split, task_state, StringModificationError);
+                let join = match join {
+                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    None => split
+                };
+                let segments = temp.split(split).collect::<Vec<_>>();
+                let segment_count = segments.len();
+                let mut ret = String::with_capacity(temp.len());
+                let mut first = true;
+                for (i, segment) in segments.into_iter().enumerate() {
+                    for index in indices.iter().copied() {
+                        if neg_index(index, segment_count).ok_or(StringModificationError::SegmentNotFound)? == i {
+                            if !first {
+                                ret.push_str(join);
+                            }
+                            first = false;
+                            let mut temp = Some(Cow::Borrowed(segment));
+                            modification.apply(&mut temp, task_state)?;
+                            ret.push_str(&temp.ok_or(StringModificationError::StringModificationSetStringToNone)?);
+                        }
+                    }
+                }
+                *to = Some(Cow::Owned(ret));
+            }
 
 
             Self::GetJsStringLiteralPrefix => {

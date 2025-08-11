@@ -45,7 +45,7 @@ impl Unthreader {
     ///
     /// Assign this to variable and drop it when you want to rethread.
     #[must_use]
-    pub fn unthread(&self) -> Option<ReentrantMutexGuard<()>> {
+    pub fn unthread(&self) -> Option<ReentrantMutexGuard<'_, ()>> {
         match self {
             Self::No => None,
             Self::Yes(x) => Some(x.lock())

@@ -29,8 +29,6 @@ URL Cleaner and co. will never contain any telemetry. If I ever add it, you are 
 
 However, using URL Cleaner Site and its included userscript to clean every URL on every webpage you visit naturally raises a few issues, the majority of which are due to expanding redirect URLs by sending HTTP requests.
 
-If you want to sidestep the entire headache and replace it with a worse one just set the `no_network` flag.
-
 1. Websites can tell you're using URL Cleaner Site and its userscript. It's not hard to tell.
 
 2. Websites can possibly figure out which version of the default cleaner you're using, and pretty easily figure out what params diff you're using.
@@ -42,13 +40,15 @@ If you want to sidestep the entire headache and replace it with a worse one just
 
 5. Caching at all means the website you're on and the website whose redirect URL you're getting from the cache can check the redirect website's logs to see whether or not you actually sent an HTTP request.
 
+If you want to sidestep the entire headache and replace it with a worse one just set the `no_network` flag.
+
 # Default cleaner
 
 See [`default_cleaner.md`](default_cleaner.md) for details about the included default cleaner.
 
 # Custom cleaners
 
-See [`custom_cleaners.md`] for an intro to making custom cleaners.
+See the [tutorial](https://docs.rs/url-cleaner-engine/latest/url_cleaner_engine/tutorial/index.html) for information on making your own cleaners.
 
 # Performance
 

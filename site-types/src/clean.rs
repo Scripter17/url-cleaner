@@ -3,6 +3,8 @@
 use serde::{Serialize, Deserialize};
 
 use url_cleaner_engine::types::*;
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use url_cleaner_engine::helpers::*;
 
 use crate::util::*;
 use crate::auth::*;
@@ -20,7 +22,13 @@ pub struct JobConfig<'a> {
     /// The [`JobContext`] to use.
     #[serde(default, skip_serializing_if = "is_default")]
     pub context: JobContext,
+    /// The [`Profile`] to use.
+    ///
+    /// Applied before [`Self::params_diff`].
+    pub profile: Option<String>,
     /// The [`ParamsDiff`] to use.
+    ///
+    /// Applied after [`Self::profile`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
     #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]

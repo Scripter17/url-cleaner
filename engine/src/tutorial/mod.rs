@@ -19,7 +19,12 @@
 //! - A "task" is a URL to clean as well as optional context, such as the text of the link it came from.
 //!
 //! - "Component" is a generic term for URL Cleaner Engine types like [`Action`], [`Condition`], [`StringSource`], [`UrlPart`], and so on.
-//!   In general, if it shows up inside a [`Cleaner::actions`], it's a component.
+//!
+//! - Some components like [`Condition`] and [`StringMatcher`] can be "satisfied". A component is satisfied with the input to its `check` method when it returns `Ok(true)` and unsatisfied when it returns `Ok(false)`.
+//!
+//! - Some components like [`Action`] and [`StringModification`] can be "applied" to stuff. This means it takes in some value and changes that value.
+//!
+//! - Some components are said to have a "value". This refers to the return value of their main/geting method, such as [`Condition::check`], [`StringSource::get`], [`StringMatcher::check`], and [`UrlPart::get`].
 
 use std::collections::{HashSet, HashMap};
 

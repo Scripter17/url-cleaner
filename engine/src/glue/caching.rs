@@ -62,7 +62,7 @@ pub struct CacheHandle<'a> {
 }
 
 /// Configuration for how a [`CacheHandle`] should behave.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CacheHandleConfig {
     /// If [`true`], delay cache reads by about as long as the initial computation took.
     ///
@@ -70,7 +70,27 @@ pub struct CacheHandleConfig {
     ///
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub delay: bool
+    pub delay: bool,
+    /// If [`false`], make [`CacheHandle::read`] always return [`None`].
+    ///
+    /// Defaults to [`true`].
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
+    pub read: bool,
+    /// If [`false`], make [`CacheHandle::write`] do nothing.
+    ///
+    /// Defaults to [`true`].
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
+    pub write: bool
+}
+
+impl Default for CacheHandleConfig {
+    fn default() -> Self {
+        Self {
+            delay: false,
+            read : true,
+            write: true
+        }
+    }
 }
 
 impl CacheHandle<'_> {
@@ -80,12 +100,16 @@ impl CacheHandle<'_> {
     /// # Panics
     /// If, somehow, [`rand::rngs::OsRng`] doesn't work, this panics when [`Self::config`]'s [`CacheHandleConfig::delay`] is [`true`].
     pub fn read(&self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        let ret = self.cache.read(keys)?;
-        if self.config.delay && let Some(CacheEntryValues {duration, ..}) = ret {
-            let between_neg_1_and_1 = rand::rngs::OsRng.try_next_u32().expect("Os RNG to be available") as f32 / f32::MAX * 2.0 - 1.0;
-            std::thread::sleep(duration.mul_f32(1.0 + between_neg_1_and_1 / 8.0));
+        if self.config.read {
+            let ret = self.cache.read(keys)?;
+            if self.config.delay && let Some(CacheEntryValues {duration, ..}) = ret {
+                let between_neg_1_and_1 = rand::rngs::OsRng.try_next_u32().expect("Os RNG to be available") as f32 / f32::MAX * 2.0 - 1.0;
+                std::thread::sleep(duration.mul_f32(1.0 + between_neg_1_and_1 / 8.0));
+            }
+            Ok(ret)
+        } else {
+            Ok(None)
         }
-        Ok(ret)
     }
 
     /// Writes to the cache.
@@ -94,7 +118,11 @@ impl CacheHandle<'_> {
     /// # Errors
     /// If the call to [`InnerCache::write`] returns an error, that error is returned.
     pub fn write(&self, entry: NewCacheEntry) -> Result<(), WriteToCacheError> {
-        self.cache.write(entry)
+        if self.config.write {
+            self.cache.write(entry)
+        } else {
+            Ok(())
+        }
     }
 }
 

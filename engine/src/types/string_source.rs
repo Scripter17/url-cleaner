@@ -21,8 +21,6 @@ use crate::util::*;
 /// Deserializing from a string produces a [`Self::String`] with that string.
 ///
 /// Deserializing from a null/[`None`] produces a [`Self::None`].
-/// # Terminology
-/// "The value of {x}", "{x}'s call to [`Self::get`]", and sometimes just "{x}" are used interchangeably.
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
@@ -521,6 +519,8 @@ pub enum StringSource {
     #[doc = edoc!(commoncallargnotfound(Self, StringSource), geterr(Self))]
     CommonCallArg(Box<Self>),
     /// Calls the contained function and returns what it does.
+    ///
+    /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
     /// # Examples
@@ -855,22 +855,18 @@ impl StringSource {
                 let _unthreader_lock = task_state.unthreader.unthread();
                 let subject = get_cow!(subject, task_state, StringSourceError);
                 let key = get_cow!(key, task_state, StringSourceError);
-                if task_state.params.read_cache {
-                    if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
-                        return Ok(entry.value.map(Cow::Owned));
-                    }
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
+                    return Ok(entry.value.map(Cow::Owned));
                 }
                 let start = std::time::Instant::now();
                 let ret = value.get(task_state)?;
                 let duration = start.elapsed();
-                if task_state.params.write_cache {
-                    task_state.cache.write(NewCacheEntry {
-                        subject: &subject,
-                        key: &key,
-                        value: ret.as_deref(),
-                        duration
-                    })?;
-                }
+                task_state.cache.write(NewCacheEntry {
+                    subject: &subject,
+                    key: &key,
+                    value: ret.as_deref(),
+                    duration
+                })?;
                 ret
             },
             Self::Common(common_call) => {

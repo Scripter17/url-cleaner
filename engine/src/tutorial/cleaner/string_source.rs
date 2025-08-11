@@ -1,4 +1,4 @@
-//! # [`StringSource`]s
+//! # [`StringSource`]
 //!
 //! When setting a URL part, you sometimes want to choose the value based on another part of the URL.
 //!

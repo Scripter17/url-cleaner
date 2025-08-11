@@ -8,14 +8,19 @@ use std::sync::Mutex;
 use std::num::NonZero;
 
 #[macro_use] extern crate rocket;
-use rocket::serde::json::Json;
-use rocket::http::Status;
-use rocket::data::Limits;
-use rocket::State;
+use rocket::{
+    serde::json::Json,
+    http::Status,
+    data::Limits,
+    State,
+    response::Responder,
+    http::{ContentType, MediaType}
+};
 use clap::Parser;
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
+use url_cleaner_engine::helpers::*;
 use url_cleaner_site_types::*;
 
 /// The default max size of a payload to the [`clean`] route.
@@ -69,22 +74,22 @@ struct Args {
     /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
     #[arg(long)]
     export_cleaner: bool,
-    /// A url_cleaner::types::ParamsDiff JSON file to apply to the cleaner by default.
+    /// The ParamsDiffAndProfiles.
     #[arg(long)]
-    params_diff: Vec<PathBuf>,
+    profiles: Option<PathBuf>,
     /// Flags to insert into the params.
     #[arg(short, long)]
     flag: Vec<String>,
     /// Vars to insert into the params.
     #[arg(short, long, num_args = 2)]
     var: Vec<Vec<String>>,
-    /// Whether or not to read from the cache. If the argument is omitted, defaults to true.
+    /// Whether or not to read from the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_missing_value = "true")]
+    #[arg(long, default_value = "true")]
     read_cache: Option<bool>,
-    /// Whether or not to write to the cache. If the argument is omitted, defaults to true.
+    /// Whether or not to write to the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_missing_value = "true")]
+    #[arg(long, default_value = "true")]
     write_cache: Option<bool>,
     /// The max size of a POST request to the `/clean` endpoint.
     ///
@@ -145,15 +150,23 @@ struct Args {
 #[derive(Debug)]
 struct ServerConfig {
     /// The [`Cleaner`] to use.
-    cleaner: Cleaner<'static>,
+    cleaner: ProfiledCleaner<'static>,
+    /// A [`String`] version of [`Self::cleaner`].
+    cleaner_string: String,
+    /// A [`String`] version of the [`ProfilesConfig`]..
+    profiles_config_string: String,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
     /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
     #[cfg(feature = "cache")]
     cache_delay_default: bool,
-    /// A [`String`] version of [`Self::cleaner`].
-    cleaner_string: String,
+    /// [`CacheHandleConfig::read`].
+    #[cfg(feature = "cache")]
+    read_cache: bool,
+    /// [`CacheHandleConfig::write`].
+    #[cfg(feature = "cache")]
+    write_cache: bool,
     /// The number of threads to spawn for each [`JobConfig`].
     threads: NonZero<usize>,
     /// The default value for if [`Job::unthreader`] is [`Unthreader::No`] or [`Unthreader::Yes`].
@@ -183,22 +196,11 @@ async fn rocket() -> _ {
     #[cfg(not(feature = "default-cleaner"))]
     let cleaner_string = read_to_string(&args.cleaner).expect("The cleaner file to be readable.");
     let mut cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
-    for params_diff in args.params_diff {
-        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).expect("Reading the ParamsDiff file to a string to not error.")).expect("The read ParamsDiff file to be a valid ParamsDiff.")
-            .apply_once(cleaner.params.to_mut());
-    }
+
     cleaner.params.to_mut().flags.extend(args.flag);
     for var in args.var {
         let [name, value] = var.try_into().expect("The clap parser to work");
         cleaner.params.to_mut().vars.insert(name, value);
-    }
-    #[cfg(feature = "cache")]
-    if let Some(read_cache) = args.read_cache {
-        cleaner.params.to_mut().read_cache = read_cache;
-    }
-    #[cfg(feature = "cache")]
-    if let Some(write_cache) = args.write_cache {
-        cleaner.params.to_mut().write_cache = write_cache;
     }
 
     if args.export_cleaner {
@@ -206,18 +208,27 @@ async fn rocket() -> _ {
         std::process::exit(0);
     }
 
+    let profiles_config_string = match args.profiles {
+        Some(file) => std::fs::read_to_string(file).expect("Reading the ProfilesConfig file to a string to not error."),
+        None => "{}".into()
+    };
+    let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig string to be a valid ProfilesConfig.");
+    let cleaner = cleaner.with_profiles(profiles_config);
+
     let server_state = ServerState {
         config: ServerConfig {
+            cleaner,
+            cleaner_string,
+            profiles_config_string,
             #[cfg(feature = "cache")]
             cache: args.cache.unwrap_or("url-cleaner-site-cache.sqlite".into()).into(),
             #[cfg(feature = "cache")]
             cache_delay_default: args.cache_delay_default,
-            cleaner,
-            cleaner_string,
-            threads: match args.threads {
-                0 => std::thread::available_parallelism().expect("To be able to get the available parallelism."),
-                1.. => NonZero::new(args.threads).expect("The 1.. pattern to mean \"not zero\"")
-            },
+            #[cfg(feature = "cache")]
+            read_cache : args.read_cache .unwrap_or(true),
+            #[cfg(feature = "cache")]
+            write_cache: args.write_cache.unwrap_or(true),
+            threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
             hide_thread_count_default: args.hide_thread_count_default,
             max_json_size: args.max_size,
             accounts: match args.accounts {
@@ -245,7 +256,7 @@ async fn rocket() -> _ {
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
         tls,
         ..rocket::Config::default()
-    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner]).manage(server_state)
+    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner, get_profiles]).manage(server_state)
 }
 
 /// The `/` route.
@@ -254,13 +265,35 @@ async fn index() -> &'static str {
     r#"URL Cleaner Site
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
-https://github.com/Scripter17/url-cleaner"#
+https://github.com/Scripter17/url-cleaner
+
+See /get-cleaner       to get the loaded Cleaner
+See /get-profiles      to get the list of params diff profiles
+See /get-max-json-size to get the max size of a JobConfig's JSON"#
 }
 
 /// The `/get-cleaner` route.
 #[get("/get-cleaner")]
-async fn get_cleaner(state: &State<ServerState>) -> &str {
-    &state.config.cleaner_string
+async fn get_cleaner(state: &State<ServerState>) -> impl Responder<'_, '_> {
+    (
+        ContentType(MediaType::JSON),
+        &*state.config.cleaner_string
+    )
+}
+
+/// The `/get-profiles` route.
+#[get("/get-profiles")]
+async fn get_profiles(state: &State<ServerState>) -> impl Responder<'_, '_> {
+    (
+        ContentType(MediaType::JSON),
+        &*state.config.profiles_config_string
+    )
+}
+
+/// The `get-max-json-size` route.
+#[get("/get-max-json-size")]
+async fn get_max_json_size(state: &State<ServerState>) -> String {
+    state.config.max_json_size.as_u64().to_string()
 }
 
 /// The `/clean` route.
@@ -272,7 +305,15 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                 return (Status {code: 401}, Json(Err(CleanError {status: 401, message: "Unauthorized".into()})));
             }
 
-            let mut cleaner = state.config.cleaner.borrowed();
+            let Some(mut cleaner) = state.config.cleaner.with_profile(job_config.profile.as_deref()) else {
+                return (
+                    Status {code: 422},
+                    Json(Err(CleanError {
+                        status: 422,
+                        message: format!("Unknown profile: {:?}", job_config.profile)
+                    }))
+                );
+            };
             if let Some(params_diff) = job_config.params_diff {
                 params_diff.apply_once(cleaner.params.to_mut());
             }
@@ -299,7 +340,9 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                         cache: &state.config.cache,
                         #[cfg(feature = "cache")]
                         cache_handle_config: CacheHandleConfig {
-                            delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default)
+                            delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default),
+                            read : state.config.read_cache,
+                            write: state.config.write_cache
                         },
                         unthreader: &unthreader,
                         lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
@@ -352,10 +395,4 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
             }))
         )
     }
-}
-
-/// The `get-max-json-size` route.
-#[get("/get-max-json-size")]
-async fn get_max_json_size(state: &State<ServerState>) -> String {
-    state.config.max_json_size.as_u64().to_string()
 }

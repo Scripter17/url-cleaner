@@ -8,15 +8,16 @@ keywords = ["url", "url-tracking", "privacy", "url-cleaner"]
 categories = []
 license = "AGPL-3.0-or-later"
 readme = "README.md"
-rust-version = "1.88.0"
+rust-version = "1.89.0"
 
 [dependencies]
-clap = { version = "4.5.42", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.43", features = ["derive", "unstable-v5"] }
 poise = { git = "https://github.com/serenity-rs/poise", branch = "next" }
 regex = "1.11.1"
-serde_json = "1.0.141"
+serde_json = "1.0.142"
 serenity = "0.12.4"
-tokio = { version = "1.47.0", features = ["rt-multi-thread"] }
+thiserror = "2.0.12"
+tokio = { version = "1.47.1", features = ["rt-multi-thread"] }
 url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
 
 [features]

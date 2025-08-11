@@ -15,7 +15,7 @@ use crate::util::*;
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum StringLocation {
-    /// Always passes.
+    /// Always satisfied.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -23,7 +23,7 @@ pub enum StringLocation {
     /// assert!(StringLocation::Always.check("a", "b").unwrap());
     /// ```
     Always,
-    /// Always fails.
+    /// Never satisfied.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -54,11 +54,11 @@ pub enum StringLocation {
     #[doc = edoc!(checkerr(Self))]
     Swap(Box<Self>),
 
+    // Logic
 
-
-    /// If [`Self::IfContains::at`]'s call to [`Self::check`] passes, return the value of [`Self::IfContains::then`].
+    /// If [`Self::IfContains::at`] is satisfied, return the value of [`Self::IfContains::then`].
     ///
-    /// If [`Self::IfContains::at`]'s call to [`Self::check`] fails, return the value of [`Self::IfContains::else`].
+    /// If [`Self::IfContains::at`] is unsatisfied, return the value of [`Self::IfContains::else`].
     /// # Errors
     /// If any call to [`Self::check`] returns an error, that error is returned.
     /// # Examples
@@ -80,12 +80,12 @@ pub enum StringLocation {
     IfContains {
         /// The [`Self`] to decide between [`Self::IfContains::then`] and [`Self::IfContains::else`].
         at: Box<Self>,
-        /// The [`Self`] to use if [`Self::IfContains::at`] passes.
+        /// The [`Self`] to use if [`Self::IfContains::at`] is satisfied.
         then: Box<Self>,
-        /// The [`Self`] to use if [`Self::IfContains::at`] fails.
+        /// The [`Self`] to use if [`Self::IfContains::at`] is unsatisfied.
         r#else: Box<Self>
     },
-    /// If the call to [`Self::check`] passes or fails, invert it into failing or passing.
+    /// Inverts the satisfaction of the contained [`Self`].
     /// # Errors
     /// If the call to [`Self::check`] returns an error, that error is returned.
     /// # Examples
@@ -95,9 +95,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::Not(Box::new(StringLocation::Anywhere)).check("abc", "a").unwrap());
     /// ```
     Not(Box<Self>),
-    /// If all contained [`Self`]s pass, passes.
-    ///
-    /// If any contained [`Self`] fails, fails.
+    /// Satisfied if all contained [`Self`]s are satisfied.
     /// # Errors
     /// If any call to [`Self::check`] returns an error, that error is returned.
     /// # Examples
@@ -110,9 +108,7 @@ pub enum StringLocation {
     /// ]).check("abcba", "a").unwrap());
     /// ```
     All(Vec<Self>),
-    /// If any contained [`Self`] passes, passes.
-    ///
-    /// If all contained [`Self`]s fail, fails.
+    /// Satisfied if any contained [`Self`] is satisfied.
     /// # Errors
     /// If any call to [`Self::check`] returns an error, that error is returned.
     /// # Examples
@@ -126,26 +122,26 @@ pub enum StringLocation {
     /// ```
     Any(Vec<Self>),
 
-    /// If the call to [`Self::check`] returns an error, passes.
-    ///
-    /// Otherwise returns the value of the contained [`Self`].
+    // Error handling
+
+    /// Satisfied if the contained [`Self`] is satisfied or errors.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert!(StringLocation::TreatErrorAsPass(Box::new(StringLocation::Error("".to_string()))).check("a", "a").unwrap());
+    /// assert!(StringLocation::ErrorToSatisfied(Box::new(StringLocation::Error("".to_string()))).check("a", "a").unwrap());
     /// ```
-    TreatErrorAsPass(Box<Self>),
-    /// If the call to [`Self::check`] returns an error, fails.
+    ErrorToSatisfied(Box<Self>),
+    /// Satisfied if the contained [`Self`] is satisfied.
     ///
-    /// Otherwise returns the value of the contained [`Self`].
+    /// Unsatisfied if the contained [`Self`] errors.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
     ///
-    /// assert!(!StringLocation::TreatErrorAsFail(Box::new(StringLocation::Error("".to_string()))).check("a", "a").unwrap());
+    /// assert!(!StringLocation::ErrorToUnsatisfied(Box::new(StringLocation::Error("".to_string()))).check("a", "a").unwrap());
     /// ```
-    TreatErrorAsFail(Box<Self>),
+    ErrorToUnsatisfied(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::check`] returns an error, return the value of [`Self::TryElse::else`].
     /// # Errors
     /// If both calls to [`Self::check`] return errors, both errors are returned.
@@ -179,7 +175,9 @@ pub enum StringLocation {
     /// ```
     FirstNotError(Vec<Self>),
 
-    /// Passes if the needle exists anywhere in the haystack.
+    // Other
+
+    /// Satisfied if the needle exists anywhere in the haystack.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -190,7 +188,7 @@ pub enum StringLocation {
     /// ```
     #[default]
     Anywhere,
-    /// Passes if the haystack begins with the needle.
+    /// Satisfied if the haystack begins with the needle.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -200,7 +198,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::Start.check("bca", "a").unwrap());
     /// ```
     Start,
-    /// Passes if the haystack ends with the needle.
+    /// Satisfied if the haystack ends with the needle.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -210,7 +208,7 @@ pub enum StringLocation {
     /// assert!( StringLocation::End.check("bca", "a").unwrap());
     /// ```
     End,
-    /// Passes if the needle starts at the specified location in the haystack.
+    /// Satisfied if the needle starts at the specified location in the haystack.
     /// # Errors
     /// If the specified index is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples
@@ -224,7 +222,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::StartsAt(4).check("#abc#", "abc").unwrap());
     /// ```
     StartsAt(isize),
-    /// Passes if the needle ends at the specified location in the haystack.
+    /// Satisfied if the needle ends at the specified location in the haystack.
     /// # Errors
     /// If the specified index is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples
@@ -238,9 +236,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::EndsAt(4).check("#abc#", "abc").unwrap());
     /// ```
     EndsAt(isize),
-    /// Passes if the haystack contains the needle at or after the specified index.
-    ///
-    /// If you want to only pass when the needle is strictly after the specified index, see [`Self::After`].
+    /// Satisfied if the haystack contains the needle at or after the specified index.
     /// # Errors
     /// If the specified index is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples
@@ -254,9 +250,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::AtOrAfter(4).check("#abc#", "abc").unwrap());
     /// ```
     AtOrAfter(isize),
-    /// Passes if the haystack contains the needle before or at the specified index.
-    ///
-    /// If you want to only pass when the needle is strictly before the specified index, see [`Self::Before`].
+    /// Satisfied if the haystack contains the needle before or at the specified index.
     /// # Errors
     /// If the specified index is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples
@@ -270,9 +264,7 @@ pub enum StringLocation {
     /// assert!( StringLocation::BeforeOrAt(4).check("#abc#", "abc").unwrap());
     /// ```
     BeforeOrAt(isize),
-    /// Passes if the haystack contains the needle after the specified index.
-    ///
-    /// If you want to also pass when the needle is at the specified index, see [`Self::AtOrAfter`].
+    /// Satisfied if the haystack contains the needle after the specified index.
     /// # Errors
     /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples
@@ -286,9 +278,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::After(4).check("#abc#", "abc").unwrap());
     /// ```
     After(isize),
-    /// Passes if the haystack contains the needle before the specified index.
-    ///
-    /// If you want to also pass when the needle is at the specified index, see [`Self::BeforeOrAt`].
+    /// Satisfied if the haystack contains the needle before the specified index.
     /// # Errors
     /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidIndex`].
     /// # Examples
@@ -302,7 +292,7 @@ pub enum StringLocation {
     /// assert!( StringLocation::Before(4).check("#abc#", "abc").unwrap());
     /// ```
     Before(isize),
-    /// Passes if the haystack is equal to the needle.
+    /// Satisfied if the haystack is equal to the needle.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -313,7 +303,7 @@ pub enum StringLocation {
     /// assert!(!StringLocation::Equals.check("#abc#", "abc").unwrap());
     /// ```
     Equals,
-    /// Passes if the haystack contains the needle in the specified range at [`Self::InRange::at`].
+    /// Satisfied if the haystack contains the needle in the specified range at [`Self::InRange::at`].
     /// # Errors
     /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidSlice`].
     ///
@@ -338,7 +328,7 @@ pub enum StringLocation {
         /// The [`Self`] to search for the needle in the range.
         at: Box<Self>
     },
-    /// Passes if any segment of the haystack, split by [`Self::AnySegment::split`], contains the needle at [`Self::AnySegment::at`].
+    /// Satisfied if any segment of the haystack, split by [`Self::AnySegment::split`], contains the needle at [`Self::AnySegment::at`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -354,7 +344,7 @@ pub enum StringLocation {
         /// The [`Self`] to search for the needle in each segment.
         at: Box<Self>
     },
-    /// Passes if the [`Self::NthSegment::n`]th segment of the haystack, split by [`Self::NthSegment::split`], contains the needle at [`Self::NthSegment::at`].
+    /// Satisfied if the [`Self::NthSegment::n`]th segment of the haystack, split by [`Self::NthSegment::split`], contains the needle at [`Self::NthSegment::at`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -454,8 +444,8 @@ impl StringLocation {
 
             // Error handling.
 
-            Self::TreatErrorAsPass(location) => location.check(haystack, needle).unwrap_or(true),
-            Self::TreatErrorAsFail(location) => location.check(haystack, needle).unwrap_or(false),
+            Self::ErrorToSatisfied  (location) => location.check(haystack, needle).unwrap_or(true),
+            Self::ErrorToUnsatisfied(location) => location.check(haystack, needle).unwrap_or(false),
             Self::TryElse{r#try, r#else} => r#try.check(haystack, needle).or_else(|try_error| r#else.check(haystack, needle).map_err(|else_error| StringLocationError::TryElseError {try_error: Box::new(try_error), else_error: Box::new(else_error)}))?,
             Self::FirstNotError(locations) => {
                 let mut result = Ok(false); // Initial value doesn't mean anything.
