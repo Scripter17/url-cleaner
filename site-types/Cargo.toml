@@ -8,7 +8,7 @@ keywords = ["url-cleaner"]
 categories = []
 license = "AGPL-3.0-or-later"
 readme = "README.md"
-rust-version = "1.89.0"
+rust-version = "1.88.0"
 
 [dependencies]
 serde = { version = "1.0.219", features = ["derive"] }

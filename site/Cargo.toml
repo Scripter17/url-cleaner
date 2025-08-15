@@ -8,7 +8,7 @@ keywords = ["url", "url-tracking", "privacy", "url-cleaner"]
 categories = ["web-programming::http-server"]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
-rust-version = "1.89.0"
+rust-version = "1.88.0"
 
 [dependencies]
 clap = { version = "4.5.43", features = ["derive", "unstable-v5"] }

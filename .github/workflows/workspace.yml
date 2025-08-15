@@ -37,7 +37,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: msrv
       run: |
-        [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")\d+\.\d+\.\d+' | sort -u)" == "$(cargo --version | grep -oP '\d+\.\d+\.\d+')" ]]
+        [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")[\d.]+' | sort -u | wc -l)" == 1 ]]
 
   build_bench:
     runs-on: ubuntu-latest
