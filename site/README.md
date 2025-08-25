@@ -79,7 +79,7 @@ Please note that HTTPS requires changing `window.URL_CLEANER_SITE = "http://loca
 
 1. Get the `url-cleaner-site.crt` file onto your iphone and open it such that you get a popup with "Profile Downloaded".
 
-2. Open settings. Either tap the "Profile Downloaded" button at the top or, if it's not there, tap "General", scroll all thw way down, then tap "VPN & Device Management"
+2. Open settings. Either tap the "Profile Downloaded" button at the top or, if it's not there, tap "General", scroll all the way down, then tap "VPN & Device Management"
 
 3. Tap "URL Cleaner Site" under "Downloaded Profile".
 
@@ -116,64 +116,64 @@ Due to the overhead of using HTTP, the lack of streaming tasks and results, and 
 
 On the same laptop used in URL Cleaner's example benchmarks and without TLS, hyperfine (using CURL) gave me the following benchmarks:
 
-Last updated 2025-08-11.
+Last updated 2025-08-25.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  8.952,
-    "1"    :  8.738,
-    "10"   :  8.761,
-    "100"  :  9.005,
-    "1000" : 11.273,
-    "10000": 32.214
+    "0"    :  9.037,
+    "1"    :  8.904,
+    "10"   :  8.901,
+    "100"  :  9.108,
+    "1000" : 11.253,
+    "10000": 30.380
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  8.703,
-    "1"    :  8.732,
-    "10"   :  8.753,
-    "100"  :  9.153,
-    "1000" : 12.499,
-    "10000": 44.713
+    "0"    :  8.796,
+    "1"    :  8.911,
+    "10"   :  8.898,
+    "100"  :  9.137,
+    "1000" : 12.183,
+    "10000": 44.096
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  8.717,
-    "1"    :  8.714,
-    "10"   :  8.804,
-    "100"  :  9.298,
-    "1000" : 13.644,
-    "10000": 58.535
+    "0"    :  8.985,
+    "1"    :  9.087,
+    "10"   :  9.010,
+    "100"  :  9.277,
+    "1000" : 12.665,
+    "10000": 48.327
   }
 }
-```
+Benc```
 
 And with TLS:
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    : 24.222,
-    "1"    : 24.265,
-    "10"   : 24.711,
-    "100"  : 24.803,
-    "1000" : 27.506,
-    "10000": 50.172
+    "0"    : 24.318,
+    "1"    : 24.667,
+    "10"   : 24.735,
+    "100"  : 24.351,
+    "1000" : 27.344,
+    "10000": 49.809
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    : 24.062,
-    "1"    : 24.165,
-    "10"   : 24.343,
-    "100"  : 25.046,
-    "1000" : 28.569,
-    "10000": 64.987
+    "0"    : 24.686,
+    "1"    : 24.529,
+    "10"   : 24.789,
+    "100"  : 25.033,
+    "1000" : 28.354,
+    "10000": 62.230
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    : 24.679,
-    "1"    : 24.524,
-    "10"   : 24.422,
-    "100"  : 24.728,
-    "1000" : 30.189,
-    "10000": 83.290
+    "0"    : 24.792,
+    "1"    : 24.597,
+    "10"   : 24.798,
+    "100"  : 24.829,
+    "1000" : 29.592,
+    "10000": 72.686
   }
 }
 ```

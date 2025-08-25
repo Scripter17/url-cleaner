@@ -24,7 +24,7 @@ pub struct TaskState<'a> {
     /// The [`Unthreader`] to use.
     pub unthreader: &'a Unthreader,
     /// The [`Params`] to use.
-    pub params: &'a Params,
+    pub params: &'a Params<'a>,
     /// The [`Commons`] that can be called.
     pub commons: &'a Commons,
     /// The [`Cache`] being used.
@@ -126,7 +126,7 @@ pub struct TaskStateView<'a> {
     /// The [`Unthreader`] to use.
     pub unthreader: &'a Unthreader,
     /// The [`Params`] to use.
-    pub params: &'a Params,
+    pub params: &'a Params<'a>,
     /// The [`Commons`] that can be called.
     pub commons: &'a Commons,
     /// The [`Cache`] being used.
@@ -145,7 +145,7 @@ impl<'a> TaskStateView<'a> {
 
         let mut http_client_config = Cow::Borrowed(&self.params.http_client_config);
 
-        if let Some(diff) = http_client_config_diff {diff.apply_multiple(http_client_config.to_mut());}
+        if let Some(diff) = http_client_config_diff {diff.apply_multiple(http_client_config.to_mut().to_mut());}
 
         http_client_config.make()
     }

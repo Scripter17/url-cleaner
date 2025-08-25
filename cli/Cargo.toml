@@ -11,11 +11,11 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.43", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.45", features = ["derive", "unstable-v5"] }
 serde = "1.0.219"
-serde_json = "1.0.142"
-thiserror = "2.0.12"
-url = { version = "2.5.4", features = ["serde"] }
+serde_json = "1.0.143"
+thiserror = "2.0.16"
+url = { version = "2.5.7", features = ["serde"] }
 url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
 
 [features]

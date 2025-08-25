@@ -7,7 +7,6 @@
 use std::path::PathBuf;
 use std::io::{self, IsTerminal, BufRead};
 use std::process::ExitCode;
-use std::borrow::Cow;
 
 use clap::Parser;
 use thiserror::Error;
@@ -184,22 +183,22 @@ fn main() -> Result<ExitCode, CliError> {
     // Get and apply [`ParamsDiff`]s.
 
     if let Some(profiles) = args.profiles {
-        cleaner.params = Cow::Owned(serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(profiles).map_err(CliError::CantLoadProfilesConfigFile)?)
+        cleaner.params = serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(profiles).map_err(CliError::CantLoadProfilesConfigFile)?)
             .map_err(CliError::CantParseProfilesConfigFile)?
-            .into_params(args.profile.as_deref(), cleaner.params.into_owned())
-            .ok_or(CliError::ProfileNotFound)?);
+            .into_params(args.profile.as_deref(), cleaner.params)
+            .ok_or(CliError::ProfileNotFound)?;
     }
 
     if let Some(params_diff) = args.params_diff {
         serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).map_err(CliError::CantLoadParamsDiffFile)?)
             .map_err(CliError::CantParseParamsDiffFile)?
-            .apply_once(cleaner.params.to_mut());
+            .apply_once(&mut cleaner.params);
     }
 
-    cleaner.params.to_mut().flags.extend(args.flag);
+    cleaner.params.flags.to_mut().extend(args.flag);
     for var in args.var {
         let [name, value] = var.try_into().expect("The clap parser to work");
-        cleaner.params.to_mut().vars.insert(name, value);
+        cleaner.params.vars.to_mut().insert(name, value);
     }
 
     // Get the [`JobContext`].

@@ -36,7 +36,7 @@ pub struct Cleaner<'a> {
     ///
     /// Defaults to an empty [`Params`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub params: Cow<'a, Params>,
+    pub params: Params<'a>,
     /// Basically functions.
     ///
     /// Defaults to an empty [`Commons`].
@@ -56,7 +56,7 @@ impl<'a> Cleaner<'a> {
     pub fn borrowed(&'a self) -> Self {
         Self {
             docs   : Cow::Borrowed(&*self.docs),
-            params : Cow::Borrowed(&*self.params),
+            params : self.params.borrowed(),
             commons: Cow::Borrowed(&*self.commons),
             actions: Cow::Borrowed(&*self.actions)
         }

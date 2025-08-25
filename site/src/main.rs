@@ -197,10 +197,10 @@ async fn rocket() -> _ {
     let cleaner_string = read_to_string(&args.cleaner).expect("The cleaner file to be readable.");
     let mut cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
 
-    cleaner.params.to_mut().flags.extend(args.flag);
+    cleaner.params.flags.to_mut().extend(args.flag);
     for var in args.var {
         let [name, value] = var.try_into().expect("The clap parser to work");
-        cleaner.params.to_mut().vars.insert(name, value);
+        cleaner.params.vars.to_mut().insert(name, value);
     }
 
     if args.export_cleaner {
@@ -315,7 +315,7 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                 );
             };
             if let Some(params_diff) = job_config.params_diff {
-                params_diff.apply_once(cleaner.params.to_mut());
+                params_diff.apply_once(&mut cleaner.params);
             }
 
             let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();

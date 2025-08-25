@@ -12,7 +12,7 @@ impl<'a> Cleaner<'a> {
     /// Convert the [`Cleaner`] into a [`ProfiledCleaner`] using the specified [`ProfilesConfig`].
     pub fn with_profiles(self, profiles: ProfilesConfig) -> ProfiledCleaner<'a> {
         ProfiledCleaner {
-            profiles: profiles.make(self.params.into_owned()),
+            profiles: profiles.make(self.params),
             cleaner: UnprofiledCleaner {
                 docs   : self.docs,
                 commons: self.commons,
@@ -28,7 +28,7 @@ pub struct ProfiledCleaner<'a> {
     /// The [`UnprofiledCleaner`].
     cleaner: UnprofiledCleaner<'a>,
     /// The [`Profiles`].
-    profiles: Profiles
+    profiles: Profiles<'a>
 }
 
 impl<'a> ProfiledCleaner<'a> {
@@ -38,7 +38,7 @@ impl<'a> ProfiledCleaner<'a> {
     }
 
     /// Get the [`Profiles`].
-    pub fn profiles(&self) -> &Profiles {
+    pub fn profiles(&self) -> &Profiles<'a> {
         &self.profiles
     }
 
@@ -46,7 +46,7 @@ impl<'a> ProfiledCleaner<'a> {
     pub fn with_profile(&'a self, name: Option<&str>) -> Option<Cleaner<'a>> {
         Some(Cleaner {
             docs   : Cow::Borrowed(&*self.cleaner.docs),
-            params : Cow::Borrowed(self.profiles.get(name)?.params()),
+            params : self.profiles.get(name)?.params().borrowed(),
             commons: Cow::Borrowed(&*self.cleaner.commons),
             actions: Cow::Borrowed(&*self.cleaner.actions)
         })
@@ -88,7 +88,7 @@ impl<'a> UnprofiledCleaner<'a> {
     pub fn with_profile(&'a self, profile: &'a Profile) -> Cleaner<'a> {
         Cleaner {
             docs   : Cow::Borrowed(&*self.docs),
-            params : Cow::Borrowed(&profile.params),
+            params : profile.params.borrowed(),
             commons: Cow::Borrowed(&*self.commons),
             actions: Cow::Borrowed(&*self.actions)
         }
@@ -97,44 +97,33 @@ impl<'a> UnprofiledCleaner<'a> {
 
 /// A default [`ParamsDiff`] and [`Profiles`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct Profiles {
-    /// The default [`Profile`].
+pub struct Profiles<'a> {
+    /// The base [`Profile`].
     #[serde(flatten)]
-    default: Profile,
+    base: Profile<'a>,
     /// The [`Profile`]s.
-    profiles: HashMap<String, Profile>
+    profiles: HashMap<String, Profile<'a>>
 }
 
-impl Profiles {
+impl<'a> Profiles<'a> {
     /// Get an iterator over the names of the [`Profile`]s.
     pub fn names(&self) -> impl Iterator<Item = &str> {
         self.profiles.keys().map(String::as_str)
     }
 
     /// Get the specified [`Profile`].
-    pub fn get_profile<'a>(&'a self, name: Option<&str>) -> Option<&'a Profile> {
+    pub fn get(&'a self, name: Option<&str>) -> Option<&'a Profile<'a>> {
         match name {
-            None => Some(&self.default),
+            None => Some(&self.base),
             Some(name) => self.profiles.get(name)
         }
     }
 
-    /// [`Self::get_profile`] but consumes `self` and discards everything else.
-    pub fn into_profile(mut self, name: Option<&str>) -> Option<Profile> {
+    /// [`Self::get`] but consumes `self` and discards everything else.
+    pub fn into_profile(mut self, name: Option<&str>) -> Option<Profile<'a>> {
         match name {
-            None => Some(self.default),
+            None => Some(self.base),
             Some(name) => self.profiles.remove(name)
-        }
-    }
-}
-
-impl Profiles {
-    /// Get the [`HashMap`] of [`Profile`]s.
-    /// Get a [`Profile`] by name.
-    pub fn get<'a>(&'a self, name: Option<&str>) -> Option<&'a Profile> {
-        match name {
-            None => Some(&self.default),
-            Some(name) => self.profiles.get(name)
         }
     }
 }
@@ -143,17 +132,17 @@ impl Profiles {
 ///
 /// Constructed by giving [`ProfilesConfig::make`] a [`Params`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct Profile {
+pub struct Profile<'a> {
     /// The [`ParamsDiff`].
     params_diff: ParamsDiff,
     /// The [`Params`].
     #[serde(skip)]
-    params: Params
+    params: Params<'a>
 }
 
-impl Profile {
+impl<'a> Profile<'a> {
     /// Get the [`Params`].
-    pub fn params(&self) -> &Params {
+    pub fn params(&self) -> &Params<'a> {
         &self.params
     }
 
@@ -163,14 +152,14 @@ impl Profile {
     }
 }
 
-impl From<Profile> for ParamsDiff {
+impl From<Profile<'_>> for ParamsDiff {
     fn from(value: Profile) -> Self {
         value.params_diff
     }
 }
 
-impl From<Profile> for Params {
-    fn from(value: Profile) -> Self {
+impl<'a> From<Profile<'a>> for Params<'a> {
+    fn from(value: Profile<'a>) -> Self {
         value.params
     }
 }
@@ -189,7 +178,7 @@ impl<'a> ProfiledCleanerConfig<'a> {
     /// Make the [`ProfiledCleaner`].
     pub fn make(self) -> ProfiledCleaner<'a> {
         ProfiledCleaner {
-            profiles: self.profiles.make(self.cleaner.params.into_owned()),
+            profiles: self.profiles.make(self.cleaner.params),
             cleaner: UnprofiledCleaner {
                 docs   : self.cleaner.docs,
                 commons: self.cleaner.commons,
@@ -199,30 +188,34 @@ impl<'a> ProfiledCleanerConfig<'a> {
     }
 }
 
-/// A default [`ProfileConfig`] and [`ProfileConfig`]s to apply on top of [`Self::default`].
+/// The configuration for a [`Profile`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct ProfilesConfig {
-    /// The default [`ParamsDiff`].
+    /// The base [`ProfileConfig`].
+    ///
+    /// Defaults to the default [`ProfileConfig`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub default: ProfileConfig,
+    pub base: ProfileConfig,
     /// The [`Profile`]s.
+    ///
+    /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub profiles: HashMap<String, ProfileConfig>
 }
 
 impl ProfilesConfig {
     /// Get the specified [`ProfileConfig`].
-    pub fn get_profile_config<'a>(&'a self, name: Option<&str>) -> Option<&'a ProfileConfig> {
+    pub fn get<'a>(&'a self, name: Option<&str>) -> Option<&'a ProfileConfig> {
         match name {
-            None => Some(&self.default),
+            None => Some(&self.base),
             Some(name) => self.profiles.get(name)
         }
     }
 
     /// Create and return only the [`Params`] for the specified profile.
-    pub fn into_params(mut self, name: Option<&str>, mut params: Params) -> Option<Params> {
-        self.default.params_diff.apply_once(&mut params);
+    pub fn into_params<'a>(mut self, name: Option<&str>, mut params: Params<'a>) -> Option<Params<'a>> {
+        self.base.params_diff.apply_once(&mut params);
         match name {
             None => Some(params),
             Some(name) => {
@@ -231,13 +224,13 @@ impl ProfilesConfig {
             }
         }
     }
-    
+
     /// Make a [`Profiles`] with the provided [`Params`].
     pub fn make(self, params: Params) -> Profiles {
-        let default = self.default.make(params);
+        let base = self.base.make(params);
         Profiles {
-            profiles: self.profiles.into_iter().map(|(name, profile)| (name, profile.make(default.params().clone()))).collect(),
-            default
+            profiles: self.profiles.into_iter().map(|(name, profile)| (name, profile.make(base.params().clone()))).collect(),
+            base
         }
     }
 }
@@ -247,6 +240,8 @@ impl ProfilesConfig {
 #[serde(deny_unknown_fields)]
 pub struct ProfileConfig {
     /// The [`ParamsDiff`].
+    ///
+    /// Defaults to the default [`ParamsDiff`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: ParamsDiff
 }

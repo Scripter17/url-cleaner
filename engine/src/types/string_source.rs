@@ -140,8 +140,10 @@ pub enum StringSource {
     #[doc = edoc!(geterr(FlagRef), geterr(Self))]
     /// # Examples
     /// ```
+    /// use std::borrow::Cow;
     /// use url_cleaner_engine::types::*;
-    /// url_cleaner_engine::task_state_view!(task_state, params = Params {flags: ["abc".into()].into(), ..Default::default()});
+    ///
+    /// url_cleaner_engine::task_state_view!(task_state, params = Params {flags: Cow::Owned(["abc".into()].into()), ..Default::default()});
     ///
     /// assert_eq!(StringSource::IfFlag {
     ///     flag: Box::new(FlagRef {r#type: FlagType::Params, name: "abc".into()}),
@@ -336,9 +338,11 @@ pub enum StringSource {
     #[doc = edoc!(callerr(VarRef::get))]
     /// # Examples
     /// ```
+    /// use std::borrow::Cow;
     /// use url_cleaner_engine::types::*;
+    ///
     /// url_cleaner_engine::task_state_view!(task_state, params = Params {
-    ///     vars: [("abc".into(), "def".into())].into(),
+    ///     vars: Cow::Owned([("abc".into(), "def".into())].into()),
     ///     ..Default::default()
     /// });
     ///
@@ -353,13 +357,15 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self, 2), notfound(Map, StringSource))]
     /// # Examples
     /// ```
+    /// use std::borrow::Cow;
     /// use url_cleaner_engine::types::*;
+    ///
     /// url_cleaner_engine::task_state_view!(task_state, params = Params {
-    ///     maps: [("map_name".into(), Map {
+    ///     maps: Cow::Owned([("map_name".into(), Map {
     ///         map    : [("abc".into(), "def".into())].into(),
     ///         if_none: Some(Box::new("was none".into())),
     ///         r#else : Some(Box::new("wasn't abc or none".into()))
-    ///     })].into(),
+    ///     })].into()),
     ///     ..Default::default()
     /// });
     ///
@@ -390,9 +396,11 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self, 2), getnone(Self, StringSource, 2), notfound(NamedPartitioning, StringSource))]
     /// # Examples
     /// ```
+    /// use std::borrow::Cow;
     /// use url_cleaner_engine::types::*;
+    ///
     /// url_cleaner_engine::task_state_view!(task_state, params = Params {
-    ///     named_partitionings: [
+    ///     named_partitionings: Cow::Owned([
     ///         (
     ///             "thing".into(),
     ///             NamedPartitioning::try_from_iter([
@@ -400,7 +408,7 @@ pub enum StringSource {
     ///                 ("def".into(), vec![Some("d".into()), Some("e".into()), Some("f".into())])
     ///             ]).unwrap()
     ///         )
-    ///     ].into(),
+    ///     ].into()),
     ///     ..Default::default()
     /// });
     ///

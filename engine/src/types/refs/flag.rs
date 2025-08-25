@@ -17,10 +17,11 @@ pub enum FlagType {
     /// Get it from [`TaskStateView::params`]'s [`Params::vars`].
     /// # Examples
     /// ```
+    /// use std::borrow::Cow;
     /// use url_cleaner_engine::types::*;
     ///
     /// url_cleaner_engine::task_state_view!(task_state, params = Params {
-    ///     flags: ["abc".into()].into(),
+    ///     flags: Cow::Owned(["abc".into()].into()),
     ///     ..Default::default()
     /// });
     ///
@@ -32,6 +33,7 @@ pub enum FlagType {
     /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
     /// # Examples
     /// ```
+    /// use std::borrow::Cow;
     /// use url_cleaner_engine::types::*;
     ///
     /// url_cleaner_engine::task_state_view!(task_state, scratchpad = Scratchpad {

@@ -38,7 +38,7 @@ jobs:
       run: |
         set -e
 
-        PROFILES='{"default":{"params_diff":{"flags":["unmobile"]}},"profiles":{"embed_compatibility":{"params_diff":{"flags":["embed_compatibility"]}}}}'
+        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"embed_compatibility":{"params_diff":{"flags":["embed_compatibility"]}}}}'
         PARAMS_DIFF='{"unflags":["unmobile"]}'
 
         cargo run -- --profiles <(echo "$PROFILES") |& tee site-run.log &

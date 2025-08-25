@@ -55,7 +55,7 @@ impl TestSet {
         );
 
         if let Some(params_diff) = self.params_diff {
-            params_diff.apply_once(cleaner.params.to_mut());
+            params_diff.apply_once(&mut cleaner.params);
         }
 
         for test in self.tests {
