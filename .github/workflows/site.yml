@@ -37,6 +37,7 @@ jobs:
     - name: logging
       run: |
         set -o pipefail
+        cargo build
         cargo run -- --log |& tee site-run.log &
         site=$(ps eo pid,comm | grep cargo | grep -oP '\d+')
         echo 1
