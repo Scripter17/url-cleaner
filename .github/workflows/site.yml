@@ -30,6 +30,46 @@ jobs:
         done
         ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 100; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc
 
+  logging:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: logging
+      run: |
+        set -o pipefail
+        cargo run -- --log |& tee site-run.log &
+        site=$(ps eo pid,comm | grep cargo | grep -oP '\d+')
+        echo 1
+        while true; do
+          sleep 0.1
+          if ! kill -0 "$site"; then
+            exit 1
+          fi
+          if grep "Rocket has launched" site-run.log; then
+            break
+          fi
+        done
+        rm -rf logs
+        curl http://localhost:9149/clean -d '{"tasks":[]}'
+        [[ "$(du logs | wc -l)" == 3 ]]
+
+        kill "$site"
+
+        cargo run -- --log --log-dir logs2 |& tee site-run.log &
+        site=$(ps eo pid,comm | grep cargo | grep -oP '\d+')
+        while true; do
+          sleep 0.1
+          if ! kill -0 "$site"; then
+            exit 1
+          fi
+          if grep "Rocket has launched" site-run.log; then
+            break
+          fi
+        done
+        rm -rf logs2
+        curl http://localhost:9149/clean -d '{"tasks":[]}'
+        [[ "$(du logs2 | wc -l)" == 3 ]]
+
   profiles:
     runs-on: ubuntu-latest
     steps:
@@ -38,8 +78,9 @@ jobs:
       run: |
         set -e
 
-        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"embed_compatibility":{"params_diff":{"flags":["embed_compatibility"]}}}}'
-        PARAMS_DIFF='{"unflags":["unmobile"]}'
+        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
+        PARAMS_DIFF1='{"unflags":["unmobile"]}'
+        PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
         cargo run -- --profiles <(echo "$PROFILES") |& tee site-run.log &
         site=$!
@@ -53,11 +94,26 @@ jobs:
           fi
         done
 
-        diff <(curl http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://example.com/"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://x.com/example/status/1"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{                                "params_diff":'"$PARAMS_DIFF"',"tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://mobile.example.com/"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{                                "params_diff":'"$PARAMS_DIFF"',"tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://x.com/example/status/1"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility",                               "tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://example.com/"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility",                               "tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://vxtwitter.com/example/status/1"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility","params_diff":'"$PARAMS_DIFF"',"tasks":["https://mobile.example.com"    ]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://mobile.example.com/"}]}}')
-        diff <(curl http://127.0.0.1:9149/clean -d '{"profile":"embed_compatibility","params_diff":'"$PARAMS_DIFF"',"tasks":["https://x.com/example/status/1"]}') <(echo -n '{"Ok":{"urls":[{"Ok":"https://vxtwitter.com/example/status/1"}]}}')
+        cargo build
+
+        diff -y <(
+          curl -s http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://m.youtube.com/shorts/abc"]}'; echo
+          curl -s http://127.0.0.1:9149/clean -d '{                             "params_diff":'"$PARAMS_DIFF1"',  "tasks":["https://m.youtube.com/shorts/abc"]}'; echo
+          curl -s http://127.0.0.1:9149/clean -d '{"profile":"youtube_unshort"                                 ,  "tasks":["https://m.youtube.com/shorts/abc"]}'; echo
+          curl -s http://127.0.0.1:9149/clean -d '{"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF1"',  "tasks":["https://m.youtube.com/shorts/abc"]}'; echo
+
+          curl -s http://127.0.0.1:9149/clean -d '{                                                              "tasks":["https://youtube.com/shorts/abc"]}'; echo
+          curl -s http://127.0.0.1:9149/clean -d '{                             "params_diff":'"$PARAMS_DIFF2"', "tasks":["https://youtube.com/shorts/abc"]}'; echo
+          curl -s http://127.0.0.1:9149/clean -d '{"profile":"youtube_unshort"                                 , "tasks":["https://youtube.com/shorts/abc"]}'; echo
+          curl -s http://127.0.0.1:9149/clean -d '{"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF2"', "tasks":["https://youtube.com/shorts/abc"]}'; echo
+        ) <(
+          echo '{"Ok":{"urls":[{"Ok":"https://www.youtube.com/shorts/abc"}]}}'
+          echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/shorts/abc"}]}}'
+          echo '{"Ok":{"urls":[{"Ok":"https://www.youtube.com/watch?v=abc"}]}}'
+          echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/watch?v=abc"}]}}'
+
+          echo '{"Ok":{"urls":[{"Ok":"https://www.youtube.com/shorts/abc"}]}}'
+          echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/shorts/abc"}]}}'
+          echo '{"Ok":{"urls":[{"Ok":"https://www.youtube.com/watch?v=abc"}]}}'
+          echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/watch?v=abc"}]}}'
+        )

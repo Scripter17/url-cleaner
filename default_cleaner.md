@@ -39,7 +39,8 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `expand_dangerous_redirects`: Expand redirects known to always leak sender info.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
-- `unmobile`: Remove `m` and `mobile` segments from the subdomain. Should be expanded to query params.
+- `unmobile`: Remove parts of URLs that tell websites to expect you to be on a mobile device.
+- `mobile`: The inverse of the `unmobile` flag. Sets parts of URLs that tell websites to expect you to be on a mobile device.
 - `breezewiki`: Change fandom/known Breezewiki hosts to the `breezewiki_host` var.
 - `unbreezewiki`: Change known Breezewiki hosts to `fandom.com`.
 - `invidious`: Change youtube/known Invidious hosts to the `invidious_host` var.
@@ -75,7 +76,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
 - `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
-- `rd_keep_mobile`: The `RegDomain`s to not apply the `unmobile` flag to.
 
 ### Lists
 
@@ -89,6 +89,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
 - `nh_expand_mode`: How to handle redirect `NormalizedHost`s.
 - `rd_expand_mode`: How to handle redirect `RegDomain`s,
+- `mobilizer`: Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL.
 
 ### Task Context
 

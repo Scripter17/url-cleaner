@@ -203,6 +203,45 @@ pub enum Action {
         #[serde(flatten)]
         map: Map<Self>
     },
+    /// [`Self::PartNamedPartitioning`] but uses each [`UrlPart`] in [`Self::FirstMatchingPartNamedPartitioning`] until a match is found.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Action, 2), notfound(NamedPartitioning, Action), applyerr(Self))]
+    /// # Examples
+    /// ```
+    /// use std::borrow::Cow;
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// url_cleaner_engine::task_state!(task_state, url = "https://abc.example.com", params = Params {
+    ///     named_partitionings: Cow::Owned([
+    ///         (
+    ///             "a".into(),
+    ///             NamedPartitioning::try_from_iter([
+    ///                 ("b".into(), vec![Some("example.com".into())])
+    ///             ]).unwrap(),
+    ///         )
+    ///     ].into()),
+    ///     ..Default::default()
+    /// });
+    ///
+    /// Action::FirstMatchingPartNamedPartitioning {
+    ///     named_partitioning: "a".into(),
+    ///     parts: vec![UrlPart::NormalizedHost, UrlPart::RegDomain],
+    ///     map: [
+    ///         ("b".to_string(), Action::SetPath("/123".into()))
+    ///     ].into(),
+    /// }.apply(&mut task_state).unwrap();
+    ///
+    /// assert_eq!(task_state.url.path(), "/123");
+    /// ```
+    FirstMatchingPartNamedPartitioning {
+        /// The [`NamedPartitioning`] to search in.
+        named_partitioning: StringSource,
+        /// The [`UrlPart`]s whoses value to find in the [`NamedPartitioning`].
+        parts: Vec<UrlPart>,
+        /// The [`Map`] to index.
+        #[serde(flatten)]
+        map: Map<Self>
+    },
     /// Gets the name of the partition [`Self::StringNamedPartitioning::value`] is in in the specified [`NamedPartitioning`], indexes [`Self::StringNamedPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), notfound(NamedPartitioning, Action), applyerr(Self))]
@@ -211,6 +250,45 @@ pub enum Action {
         named_partitioning: StringSource,
         /// The [`StringSource`] whose value to find in the [`NamedPartitioning`].
         value: StringSource,
+        /// The [`Map`] to index.
+        #[serde(flatten)]
+        map: Map<Self>
+    },
+    /// [`Self::StringNamedPartitioning`] but uses each [`StringSource`] in [`Self::FirstMatchingStringNamedPartitioning`] until a match is found.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), notfound(NamedPartitioning, Action), applyerr(Self))]
+    /// # Examples
+    /// ```
+    /// use std::borrow::Cow;
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// url_cleaner_engine::task_state!(task_state, url = "https://abc.example.com", params = Params {
+    ///     named_partitionings: Cow::Owned([
+    ///         (
+    ///             "a".into(),
+    ///             NamedPartitioning::try_from_iter([
+    ///                 ("b".into(), vec![Some("example.com".into())])
+    ///             ]).unwrap(),
+    ///         )
+    ///     ].into()),
+    ///     ..Default::default()
+    /// });
+    ///
+    /// Action::FirstMatchingStringNamedPartitioning {
+    ///     named_partitioning: "a".into(),
+    ///     values: vec![StringSource::Part(UrlPart::NormalizedHost), StringSource::Part(UrlPart::RegDomain)],
+    ///     map: [
+    ///         ("b".to_string(), Action::SetPath("/123".into()))
+    ///     ].into(),
+    /// }.apply(&mut task_state).unwrap();
+    ///
+    /// assert_eq!(task_state.url.path(), "/123");
+    /// ```
+    FirstMatchingStringNamedPartitioning {
+        /// The [`NamedPartitioning`] to search in.
+        named_partitioning: StringSource,
+        /// The [`StringSource`] whose value to find in the [`NamedPartitioning`].
+        values: Vec<StringSource>,
         /// The [`Map`] to index.
         #[serde(flatten)]
         map: Map<Self>
@@ -552,7 +630,7 @@ pub enum Action {
     #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_query_param))]
     SetQueryParam {
         /// The query param to set.
-        query_param: QueryParamSelector,
+        param: QueryParamSelector,
         /// The value to set it to.
         value: StringSource
     },
@@ -1272,7 +1350,23 @@ impl Action {
             Self::StringMap {value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
 
             Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part.get(task_state.url).as_deref())) {action.apply(task_state)?;}
+            Self::FirstMatchingPartNamedPartitioning {named_partitioning, parts, map} => {
+                let named_partitioning = task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?;
+                for part in parts.iter() {
+                    if let Some(action) = map.get(named_partitioning.get_partition_of(part.get(task_state.url).as_deref())) {
+                        return action.apply(task_state);
+                    }
+                }
+            }
             Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
+            Self::FirstMatchingStringNamedPartitioning {named_partitioning, values, map} => {
+                let named_partitioning = task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?;
+                for value in values.iter() {
+                    if let Some(action) = map.get(named_partitioning.get_partition_of(get_option_str!(value, task_state))) {
+                        return action.apply(task_state);
+                    }
+                }
+            }
 
             // Whole
 
@@ -1332,7 +1426,7 @@ impl Action {
             // Query
 
             Self::SetQuery(to) => task_state.url.set_query(get_new_option_str!(to, task_state)),
-            Self::SetQueryParam {query_param: QueryParamSelector {name, index}, value} => task_state.url.set_query_param(name, *index, get_new_option_str!(value, task_state).map(Some))?,
+            Self::SetQueryParam {param: QueryParamSelector {name, index}, value} => task_state.url.set_query_param(name, *index, get_new_option_str!(value, task_state).map(Some))?,
             Self::RemoveQuery => task_state.url.set_query(None),
             Self::RemoveEmptyQuery => if task_state.url.query() == Some("") {task_state.url.set_query(None)},
             Self::RemoveQueryParam(name) => if let Some(query) = task_state.url.query() {

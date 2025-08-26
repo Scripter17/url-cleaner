@@ -44,18 +44,30 @@ jobs:
       run: |
         set -e
 
-        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"embed_compatibility":{"params_diff":{"flags":["embed_compatibility"]}}}}'
-        PARAMS_DIFF='{"unflags":["unmobile"]}'
+        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
+        PARAMS_DIFF1='{"unflags":["unmobile"]}'
+        PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
         cargo build
 
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                    'https://mobile.example.com'    ) <(echo 'https://example.com/')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                    'https://x.com/example/status/1') <(echo 'https://x.com/example/status/1')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                               --params-diff <(echo "$PARAMS_DIFF") 'https://mobile.example.com'    ) <(echo 'https://mobile.example.com/')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES")                               --params-diff <(echo "$PARAMS_DIFF") 'https://x.com/example/status/1') <(echo 'https://x.com/example/status/1')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility                                      'https://mobile.example.com'    ) <(echo 'https://example.com/')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility                                      'https://x.com/example/status/1') <(echo 'https://vxtwitter.com/example/status/1')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility --params-diff <(echo "$PARAMS_DIFF") 'https://mobile.example.com'    ) <(echo 'https://mobile.example.com/')
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile embed_compatibility --params-diff <(echo "$PARAMS_DIFF") 'https://x.com/example/status/1') <(echo 'https://vxtwitter.com/example/status/1')
+        diff -y <(
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                 'https://m.youtube.com/shorts/abc'
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://m.youtube.com/shorts/abc'
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
 
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                 'https://youtube.com/shorts/abc'
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://youtube.com/shorts/abc'
+          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
+        ) <(
+          echo 'https://www.youtube.com/shorts/abc'
+          echo 'https://m.youtube.com/shorts/abc'
+          echo 'https://www.youtube.com/watch?v=abc'
+          echo 'https://m.youtube.com/watch?v=abc'
+          echo 'https://www.youtube.com/shorts/abc'
+          echo 'https://m.youtube.com/shorts/abc'
+          echo 'https://www.youtube.com/watch?v=abc'
+          echo 'https://m.youtube.com/watch?v=abc'
+        )
         diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')

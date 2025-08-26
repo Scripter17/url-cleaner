@@ -95,3 +95,90 @@ impl<T: Debug + Clone> MapDiff<T> {
         to.map.retain(|k, _| !self.remove.contains(k));
     }
 }
+
+impl<T: Debug, const N: usize> From<[(String, T); N]> for Map<T> {
+    fn from(value: [(String, T); N]) -> Self {
+        Self {
+            map: value.into(),
+            if_none: None,
+            r#else: None
+        }
+    }
+}
+
+impl<T: Debug, const N: usize> From<[(Option<String>, T); N]> for Map<T> {
+    fn from(value: [(Option<String>, T); N]) -> Self {
+        let mut ret = Self {
+            map: HashMap::with_capacity(N),
+            if_none: None,
+            r#else: None
+        };
+
+        for (k, v) in value {
+            match k {
+                Some(k) => {ret.map.insert(k, v);},
+                None => ret.if_none = Some(Box::new(v))
+            }
+        }
+
+        ret
+    }
+}
+
+impl<T: Debug> From<HashMap<String, T>> for Map<T> {
+    fn from(value: HashMap<String, T>) -> Self {
+        Self {
+            map: value,
+            if_none: None,
+            r#else: None
+        }
+    }
+}
+
+impl<T: Debug> From<HashMap<Option<String>, T>> for Map<T> {
+    fn from(value: HashMap<Option<String>, T>) -> Self {
+        let mut ret = Self {
+            map: HashMap::with_capacity(value.len()),
+            if_none: None,
+            r#else: None
+        };
+
+        for (k, v) in value {
+            match k {
+                Some(k) => {ret.map.insert(k, v);},
+                None => ret.if_none = Some(Box::new(v))
+            }
+        }
+
+        ret
+    }
+}
+
+impl<T: Debug> FromIterator<(String, T)> for Map<T> {
+    fn from_iter<I: IntoIterator<Item = (String, T)>>(iter: I) -> Self {
+        Self {
+            map: iter.into_iter().collect(),
+            if_none: None,
+            r#else: None
+        }
+    }
+}
+
+impl<T: Debug> FromIterator<(Option<String>, T)> for Map<T> {
+    fn from_iter<I: IntoIterator<Item = (Option<String>, T)>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let size_hint = iter.size_hint();
+        let mut ret = Self {
+            map: HashMap::with_capacity(size_hint.1.unwrap_or(size_hint.0)),
+            if_none: None,
+            r#else: None
+        };
+        for (k, v) in iter {
+            match k {
+                Some(k) => {ret.map.insert(k, v);},
+                None => ret.if_none = Some(Box::new(v))
+            }
+        }
+        ret
+    }
+}

@@ -6,6 +6,9 @@ use std::fs::read_to_string;
 use std::str::FromStr;
 use std::sync::Mutex;
 use std::num::NonZero;
+use std::io::Write;
+use std::sync::{OnceLock, LazyLock};
+use std::borrow::Cow;
 
 #[macro_use] extern crate rocket;
 use rocket::{
@@ -29,6 +32,28 @@ const DEFAULT_MAX_JSON_SIZE: &str = "25MiB";
 const DEFAULT_BIND_IP      : &str = "127.0.0.1";
 /// The default port to listen to.
 const DEFAULT_PORT         : u16  = 9149;
+
+/// The root directory to put logs into.
+static LOGGING_DIR_ROOT: OnceLock<time::format_description::OwnedFormatItem> = OnceLock::new();
+
+/// The string format of the directories to write logs to.
+const LOGGING_DIR_PATH_FORMAT_STR : &str = "/[year]-[month]-[day]/[hour]";
+/// The string format of the files to wrtie logs to.
+const LOGGING_FILE_PATH_FORMAT_STR: &str = "/[year]-[month]-[day]/[hour]/[minute]-[second]-[subsecond].json";
+
+/// The parsed format of the directories to write logs to.
+static LOGGING_DIR_PATH_FORMAT : LazyLock<Vec<time::format_description::OwnedFormatItem>> = LazyLock::new(|| {
+    let mut ret = vec![LOGGING_DIR_ROOT.get().expect("LOGGING_DIR_ROOT to always be set before getting LOGGING_DIR_PATH_FORMAT").clone()];
+    ret.push(time::format_description::parse_owned::<2>(LOGGING_DIR_PATH_FORMAT_STR ).expect("The logging directory format to be valid."));
+    ret
+});
+
+/// The parsed format of the files to wrtie logs to.
+static LOGGING_FILE_PATH_FORMAT: LazyLock<Vec<time::format_description::OwnedFormatItem>> = LazyLock::new(|| {
+    let mut ret = vec![LOGGING_DIR_ROOT.get().expect("LOGGING_DIR_ROOT to always be set before getting LOGGING_FILE_PATH_FORMAT").clone()];
+    ret.push(time::format_description::parse_owned::<2>(LOGGING_FILE_PATH_FORMAT_STR).expect("The logging file format to be valid."));
+    ret
+});
 
 /// Clap doesn't like `<rocket::data::ByteUnit as FromStr>::Error`.
 fn parse_byte_unit(s: &str) -> Result<rocket::data::ByteUnit, String> {
@@ -143,7 +168,15 @@ struct Args {
     ///
     /// Good luck getting ANYTHING to work with it though.
     #[arg(long, requires = "key", requires = "cert")]
-    mtls_cert: Option<PathBuf>
+    mtls_cert: Option<PathBuf>,
+    /// Log all jobs and their results.
+    #[arg(long)]
+    log: bool,
+    /// The directory to write logs to.
+    ///
+    /// Defaults to `logs`
+    #[arg(long, default_value = "logs")]
+    log_dir: String
 }
 
 /// The config for the server.
@@ -174,7 +207,9 @@ struct ServerConfig {
     /// The max size for a [`JobConfig`]'s JSON representation.
     max_json_size: rocket::data::ByteUnit,
     /// The [`Accounts`] to use.
-    accounts: Accounts
+    accounts: Accounts,
+    /// If [`true`], log all jobs and their results.
+    log: bool
 }
 
 /// The state of the server.
@@ -199,7 +234,7 @@ async fn rocket() -> _ {
 
     cleaner.params.flags.to_mut().extend(args.flag);
     for var in args.var {
-        let [name, value] = var.try_into().expect("The clap parser to work");
+        let [name, value] = var.try_into().expect("The clap parser to work.");
         cleaner.params.vars.to_mut().insert(name, value);
     }
 
@@ -214,6 +249,8 @@ async fn rocket() -> _ {
     };
     let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig string to be a valid ProfilesConfig.");
     let cleaner = cleaner.with_profiles(profiles_config);
+
+    LOGGING_DIR_ROOT.set(time::format_description::OwnedFormatItem::Literal(args.log_dir.into_bytes().into_boxed_slice())).expect("LOGGING_DIR_ROOT to only be set once.");
 
     let server_state = ServerState {
         config: ServerConfig {
@@ -234,7 +271,8 @@ async fn rocket() -> _ {
             accounts: match args.accounts {
                 Some(accounts) => serde_json::from_str(&std::fs::read_to_string(accounts).expect("The accounts file to be readable.")).expect("The accounts file to be valid."),
                 None => Default::default()
-            }
+            },
+            log: args.log
         },
         job_count: Mutex::new(0)
     };
@@ -267,9 +305,9 @@ Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-
 https://www.gnu.org/licenses/agpl-3.0.html
 https://github.com/Scripter17/url-cleaner
 
-See /get-cleaner       to get the loaded Cleaner
-See /get-profiles      to get the list of params diff profiles
-See /get-max-json-size to get the max size of a JobConfig's JSON"#
+See /get-cleaner       to get the loaded Cleaner.
+See /get-profiles      to get the loaded Profiles.
+See /get-max-json-size to get the max size of a JobConfig's JSON."#
 }
 
 /// The `/get-cleaner` route.
@@ -301,6 +339,8 @@ async fn get_max_json_size(state: &State<ServerState>) -> String {
 async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<CleanResult>) {
     match serde_json::from_str::<JobConfig>(job_config) {
         Ok(job_config) => {
+            let job_config_for_logging = state.config.log.then(|| job_config.clone());
+
             if !state.config.accounts.auth(job_config.auth.as_ref()) {
                 return (Status {code: 401}, Json(Err(CleanError {status: 401, message: "Unauthorized".into()})));
             }
@@ -380,19 +420,49 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                 }).expect("Spawning a thread to work fine.");
             });
 
+            let result = CleanSuccess {
+                urls: ret_urls.into_inner().expect("No panics.")
+            };
+
+            if state.config.log {
+                let now = time::UtcDateTime::now();
+                std::fs::create_dir_all(now.format(&LOGGING_DIR_PATH_FORMAT).expect("Formatting the time to work")).expect("Creating the logging directory to work.");
+                std::fs::OpenOptions::new().create_new(true).write(true).open(now.format(&LOGGING_FILE_PATH_FORMAT).expect("Formatting the time to work."))
+                    .expect("Creating the log file to work.")
+                    .write_all(serde_json::to_string(&JobLog::Ok {
+                        job_config: Box::new(job_config_for_logging.expect("???")),
+                        result: Cow::Borrowed(&result)
+                    }).expect("Serializing the JobLog to always work.").as_bytes())
+                    .expect("Writing the log to work.");
+            }
+
             (
                 Status {code: 200},
-                Json(Ok(CleanSuccess {
-                    urls: ret_urls.into_inner().expect("No panics.")
-                }))
+                Json(Ok(result))
             )
         },
-        Err(e) => (
-            Status {code: 422},
-            Json(Err(CleanError {
+        Err(e) => {
+            let result = CleanError {
                 status: 422,
                 message: e.to_string()
-            }))
-        )
+            };
+            
+            if state.config.log {
+                let now = time::UtcDateTime::now();
+                std::fs::create_dir_all(now.format(&LOGGING_DIR_PATH_FORMAT).expect("Formatting the time to work.")).expect("Creating the logging directory to work.");
+                std::fs::OpenOptions::new().create_new(true).write(true).open(now.format(&LOGGING_FILE_PATH_FORMAT).expect("Formatting the time to work."))
+                    .expect("Creating the log file to work.")
+                    .write_all(serde_json::to_string(&JobLog::Err {
+                        job_config: Cow::Borrowed(job_config),
+                        result: Cow::Borrowed(&result)
+                    }).expect("Serializing the JobLog to always work.").as_bytes())
+                    .expect("Writing the log to work.");
+            }
+
+            (
+                Status {code: 422},
+                Json(Err(result))
+            )
+        }
     }
 }

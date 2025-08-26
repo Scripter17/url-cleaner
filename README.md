@@ -21,7 +21,30 @@ constructing strings from both the cleaner's params and the URL, setting arbitra
 Despite how complex it is, URL Cleaner is very fast! On my Lenovo Thinkpad T460S from 2016, ten thousand amazon product listing URLs can be cleaned in under 50 milliseconds using the included default cleaner.
 And that's the CLI program reading from STDIN and writing the cleaned URLs to STDOUT.
 
-URL Cleaner also comes with an HTTP server and a browser userscript for integration with any browser that has a Greasemonkey/Tampermonkey type browser extension.
+## Frontends
+
+URL Cleaner currently has 3 official frontends:
+
+- [A CLI tool](cli)
+- [An HTTP server and userscript](site)
+- [A Discord app](discord-app)
+
+You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
+
+## Default cleaner
+
+URL Cleaner Engine comes with a cleaner currently called the default cleaner (better name pending). The default cleaner is meant for general purpose cleaning of URLs you would typically click on and send to/get from friends.
+
+The default cleaner also has a variety of optional flags you can set such as changing `x.com` URLs to `vxtwitter.com`, making URLs for the mobile version of websites into the desktop version, and so on.
+
+For more information, see the [default cleaner's documentation](default_cleaner.md).
+
+# Performance
+
+URL Cleaner is reasonably fast. See [`cli/README.md#performance`](cli/README.md#performance) and [`site/README.md#performance`](site/README.md#performance) for detials.
+
+TL;DR: On a decade old thinkpad running nothing else, URL Cleaner's CLI tool can do 10000 amazon product URLs in under 40ms.
+The HTTP server can do the same job in about 50ms without TLS and about 70ms with TLS.
 
 # Privacy
 
@@ -41,20 +64,6 @@ However, using URL Cleaner Site and its included userscript to clean every URL o
 5. Caching at all means the website you're on and the website whose redirect URL you're getting from the cache can check the redirect website's logs to see whether or not you actually sent an HTTP request.
 
 If you want to sidestep the entire headache and replace it with a worse one just set the `no_network` flag.
-
-# Default cleaner
-
-See [`default_cleaner.md`](default_cleaner.md) for details about the included default cleaner.
-
-# Custom cleaners
-
-See the [tutorial](https://docs.rs/url-cleaner-engine/latest/url_cleaner_engine/tutorial/index.html) for information on making your own cleaners.
-
-# Performance
-
-URL Cleaner is reasonably fast. See [`cli/README.md#performance`](cli/README.md#performance) and [`site/README.md#performance`](site/README.md#performance) for detials.
-
-TL;DR: On a decade old thinkpad running nothing else, URL Cleaner can do 10000 amazon product URLs in about 50ms.
 
 # Credits
 
