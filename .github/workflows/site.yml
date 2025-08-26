@@ -50,8 +50,11 @@ jobs:
             break
           fi
         done
+        echo 1
         rm -rf logs
+        echo 2
         curl http://localhost:9149/clean -d '{"tasks":[]}'
+        echo 3
         [[ "$(du logs | wc -l)" == 3 ]]
 
         kill "$site"
