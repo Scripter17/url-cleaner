@@ -38,38 +38,18 @@ jobs:
       run: |
         set -o pipefail
         cargo build
-        cargo run -- --log |& tee site-run.log &
-        site=$(ps eo pid,comm | grep cargo | grep -oP '\d+')
-        echo 1
-        while true; do
-          sleep 0.1
-          if ! kill -0 "$site"; then
-            exit 1
-          fi
-          if grep "Rocket has launched" site-run.log; then
-            break
-          fi
-        done
-        echo 1
+
+        cargo run -- --log &
+        sleep 1
+        site=$!
         rm -rf logs
-        echo 2
         curl http://localhost:9149/clean -d '{"tasks":[]}'
-        echo 3
         [[ "$(du logs | wc -l)" == 3 ]]
 
         kill "$site"
 
-        cargo run -- --log --log-dir logs2 |& tee site-run.log &
-        site=$(ps eo pid,comm | grep cargo | grep -oP '\d+')
-        while true; do
-          sleep 0.1
-          if ! kill -0 "$site"; then
-            exit 1
-          fi
-          if grep "Rocket has launched" site-run.log; then
-            break
-          fi
-        done
+        cargo run -- --log --log-dir logs2 &
+        sleep 1
         rm -rf logs2
         curl http://localhost:9149/clean -d '{"tasks":[]}'
         [[ "$(du logs2 | wc -l)" == 3 ]]
