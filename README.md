@@ -18,8 +18,8 @@ URL Cleaner, not to be confused with the many other projects called URL Cleaner 
 With if-then-else, switch case, and loop-until-no-change control flow, [PSL](https://publicsuffix.org) powered subdomain/domain middle/domain suffix parts,
 constructing strings from both the cleaner's params and the URL, setting arbitrary parts of the URL to those strings, regex, base64, and HTTP requests, basically every URL you could ever want to clean is cleanable.
 
-Despite how complex it is, URL Cleaner is very fast! On my Lenovo Thinkpad T460S from 2016, ten thousand amazon product listing URLs can be cleaned in under 50 milliseconds using the included default cleaner.
-And that's the CLI program reading from STDIN and writing the cleaned URLs to STDOUT.
+Despite how complex it is, URL Cleaner is very fast! On my Lenovo Thinkpad T460S from 2016, ten thousand amazon product listing URLs can be cleaned in under 40 milliseconds using the included default cleaner.
+And that's the CLI program reading from a file and writing the cleaned URLs to `/dev/null`.
 
 ## Frontends
 

@@ -104,6 +104,8 @@ sudo update-ca-certificates
 
 For some reason, at least on my computer, Firefox ignores the above Linux setup. Simply opening `https://localhost:9149`, clicking "Advanced...", then clicking "Accept the Risk and Continue" seems to work fine.
 
+Please note that due to a bug in Greasemonkey, setting `about:config`'s `privacy.firstparty.isolate` to `true` (as is default in forks like Mullvad Browser) breaks the userscript.
+
 ### mTLS
 
 mTLS is an addition to HTTPS that lets servers require clients to have their own public/private key pair to prove their identity.

@@ -15,7 +15,7 @@
 				},
 
 				{"task_config": "https://bsky.app"        , "result": "https://bsky.app/"},
-				{"task_config": "https://fxbsky.app"      , "result": "https://bsky.app/"},
+				{"task_config": "https://fxbsky.app"      , "result": "https://bsky.app/profile/fxbsky.app"},
 				{"task_config": "https://user.bsky.social", "result": "https://bsky.app/profile/user.bsky.social"},
 				{
 					"task_config": "https://live.browserstack.com/#os=Windows&os_version=8.1&browser=IE&browser_version=11.0&start=true&ref=caniuse-source&source=landing_page&utm_source=caniuse&utm_medium=partnered&utm_campaigncode=701OW000008y9C1YAI",
@@ -27,6 +27,9 @@
 				{"task_config": "ftp://127.0.0.1"  , "result": "ftp://127.0.0.1/"},
 				{"task_config": "file://a/b/c"     , "result": "file://a/b/c"},
 				{"task_config": "mailto:a@a.com"   , "result": "mailto:a@a.com"},
+
+				{"task_config": "https://twitter.com"  , "result": "https://x.com/"},
+				{"task_config": "https://vxtwitter.com", "result": "https://github.com/dylanpdx/BetterTwitFix"},
 
 				{"task_config": "https://bsky.app/profile/user"     , "result": "https://bsky.app/profile/user.bsky.social"},
 				{"task_config": "https://bsky.app/profile/user.bsky", "result": "https://bsky.app/profile/user.bsky.social"},

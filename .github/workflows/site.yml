@@ -39,20 +39,29 @@ jobs:
         set -o pipefail
         cargo build
 
-        cargo run -- --log &
+        cargo run &
         sleep 1
-        site=$!
         rm -rf logs
         curl http://localhost:9149/clean -d '{"tasks":[]}'
-        [[ "$(du logs | wc -l)" == 3 ]]
+        ! ls logs
 
-        kill "$site"
+        kill "$!"
+
+        cargo run -- --log &
+        sleep 1
+        rm -rf logs
+        curl http://localhost:9149/clean -d '{"tasks":[]}'
+        ls logs
+
+        kill "$!"
 
         cargo run -- --log --log-dir logs2 &
         sleep 1
         rm -rf logs2
         curl http://localhost:9149/clean -d '{"tasks":[]}'
-        [[ "$(du logs2 | wc -l)" == 3 ]]
+        ls logs2
+
+        kill "$!"
 
   profiles:
     runs-on: ubuntu-latest

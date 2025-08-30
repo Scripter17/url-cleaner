@@ -1,9 +1,8 @@
 //! A discord app for URL Cleaner
 
-use std::sync::LazyLock;
+use std::sync::{OnceLock, LazyLock};
 use std::path::PathBuf;
 use std::borrow::Cow;
-use std::pin::Pin;
 
 use clap::Parser;
 use ::regex::Regex;
@@ -17,10 +16,15 @@ use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
 use url_cleaner_engine::helpers::*;
 
+/// The source code of this instance of the bot.
+static SOURCE_CODE_URL: &str = "https://github.com/Scripter17/url-cleaner";
+
 /// Basic URL getting regex.
 ///
 /// Does not account for code blocks, spoilers, etc.
 static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<URL1>[^)]+)\)|(?<URL2>\w+:\/\/\S+)").expect("The URL parsing Regex to be valid."));
+/// The help message.
+static HELP_MESSAGE: OnceLock<String> = OnceLock::new();
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// A discord app for URL Cleaner.
@@ -110,7 +114,7 @@ type Context<'a> = poise::Context<'a, State, Error>;
 async fn main() {
     let args = Args::parse();
 
-    let mut commands = vec![clean_urls()];
+    let mut commands = vec![help(), clean_urls()];
 
     #[cfg(feature = "default-cleaner")]
     let cleaner = Cleaner::load_or_get_default_no_cache(args.cleaner.as_deref()).expect("The cleaner to be valid.");
@@ -129,7 +133,10 @@ async fn main() {
     };
     let cleaner = cleaner.with_profiles(profiles_config);
 
-    for profile in cleaner.profiles().names().map(String::from) {
+    let mut profile_names = cleaner.profiles().names().map(String::from).collect::<Vec<_>>();
+    profile_names.sort();
+
+    for profile in profile_names {
         commands.push(poise::Command {
             name: Cow::Owned(format!("Clean URLs ({profile})")),
             context_menu_action: Some(poise::structs::ContextMenuCommandAction::Message(|ctx: poise::structs::ApplicationContext<'_, State, Error>, msg: serenity::Message| {
@@ -142,7 +149,7 @@ async fn main() {
                 })
             })),
             custom_data: Box::new(profile),
-            install_context: Some(vec![serenity::InstallationContext::User]),
+            install_context: Some(vec![serenity::InstallationContext::User, serenity::InstallationContext::Guild]),
             interaction_context: Some(vec![serenity::InteractionContext::Guild, serenity::InteractionContext::BotDm, serenity::InteractionContext::PrivateChannel]),
             ..Default::default()
         });
@@ -186,23 +193,53 @@ async fn main() {
 /// An [`EventHandler`] that prints license info and the app's authorization URL on [`EventHandler::ready`].
 struct ReadyHandler;
 
+#[serenity::async_trait]
 impl EventHandler for ReadyHandler {
-    fn ready<'life0, 'async_trait>(&'life0 self, _: serenity::Context, data_about_bot: Ready) -> Pin<Box<dyn Future<Output = ()> + Send + 'async_trait>>
-        where 'life0: 'async_trait, Self: 'async_trait {
+    async fn ready(&self, ctx: serenity::Context, data_about_bot: Ready) {
+        let install_info = if ctx.http.get_current_application_info().await.expect("Getting the current application info to work").bot_public {
+            format!(r#"Install to your account: https://discord.com/oauth2/authorize?client_id={0}
+Install to a server: https://discord.com/oauth2/authorize?client_id={0}&scope=bot"#, data_about_bot.application.id)
+        } else {
+            "This instance is private, but you can host your own using the above link".to_string()
+        };
+
+        HELP_MESSAGE.set(format!(r#"URL Cleaner Discord App
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+https://www.gnu.org/licenses/agpl-3.0.html
+{SOURCE_CODE_URL}
+
+{install_info}
+
+To clean the URLs in a message, right click a message, go to the apps, and click any of the available \"Clean URLs\" actions"#)).expect("HELP_MESSAGE to only be set once.");
+
+        ctx.set_activity(Some(serenity::gateway::ActivityData {
+            name: SOURCE_CODE_URL.to_string(),
+            kind: serenity::model::gateway::ActivityType::Custom,
+            state: None,
+            url: None
+        }));
+
         println!(r#"URL Cleaner Discord App
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
-https://github.com/Scripter17/url-cleaner
+{SOURCE_CODE_URL}
 
-https://discord.com/oauth2/authorize?client_id={}"#, data_about_bot.application.id);
+Install to your account: https://discord.com/oauth2/authorize?client_id={0}
+Install to a server    : https://discord.com/oauth2/authorize?client_id={0}&scope=bot
 
-        Box::pin(async move {})
+To clean the URLs in a message, right click a message, go to the apps, and click any of the available \"Clean URLs\" actions"#, data_about_bot.application.id);
     }
+}
+
+#[poise::command(slash_command)]
+async fn help(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.say(HELP_MESSAGE.get().expect("HELP_MESSAGE to have been set.")).await?;
+    Ok(())
 }
 
 #[poise::command(
     context_menu_command = "Clean URLs",
-    install_context = "User",
+    install_context = "User|Guild",
     interaction_context = "Guild|BotDm|PrivateChannel"
 )]
 async fn clean_urls(

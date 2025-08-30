@@ -37,9 +37,9 @@ const DEFAULT_PORT         : u16  = 9149;
 static LOGGING_DIR_ROOT: OnceLock<time::format_description::OwnedFormatItem> = OnceLock::new();
 
 /// The string format of the directories to write logs to.
-const LOGGING_DIR_PATH_FORMAT_STR : &str = "/[year]-[month]-[day]/[hour]";
+const LOGGING_DIR_PATH_FORMAT_STR : &str = "/[year]/[month]/[day]/[hour]";
 /// The string format of the files to wrtie logs to.
-const LOGGING_FILE_PATH_FORMAT_STR: &str = "/[year]-[month]-[day]/[hour]/[minute]-[second]-[subsecond].json";
+const LOGGING_FILE_PATH_FORMAT_STR: &str = "/[year]/[month]/[day]/[hour]/[minute]-[second]-[subsecond].json";
 
 /// The parsed format of the directories to write logs to.
 static LOGGING_DIR_PATH_FORMAT : LazyLock<Vec<time::format_description::OwnedFormatItem>> = LazyLock::new(|| {
