@@ -16,7 +16,7 @@ pub enum SetDomainSuffixSegmentError {
     SetDomainSuffixError(#[from] SetDomainSuffixError)
 }
 
-/// The enum of errors [`BetterUrl::insert_domain_suffix_segment_at`] and [`BetterUrl::insert_domain_suffix_segment_after`] can return.
+/// The enum of errors [`BetterUrl::insert_domain_suffix_segment`] can return.
 #[derive(Debug, Error)]
 pub enum InsertDomainSuffixSegmentError {
     /// Returned when the URL doesn't have a domain suffix.
@@ -95,23 +95,8 @@ impl BetterUrl {
     /// If the segment isn't found, returns the error [`InsertDomainSuffixSegmentError::SegmentNotFound`].
     ///
     /// If the call to [`Self::set_domain_suffix`] returns an error, that error is returned.
-    pub fn insert_domain_suffix_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSuffixSegmentError> {
-        self.set_domain_suffix(Some(&insert_segment_at(
-            self.domain_suffix().ok_or(InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
-            index, value, InsertDomainSuffixSegmentError::SegmentNotFound, '.', "."
-        )?))?;
-        Ok(())
-    }
-
-    /// Inserts a new domain suffix segment after the specified index.
-    /// # Errors
-    /// If the URL doesn't have a domain, returns the error [`InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix`].
-    ///
-    /// If the segment isn't found, returns the error [`InsertDomainSuffixSegmentError::SegmentNotFound`].
-    ///
-    /// If the call to [`Self::set_domain_suffix`] returns an error, that error is returned.
-    pub fn insert_domain_suffix_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSuffixSegmentError> {
-        self.set_domain_suffix(Some(&insert_segment_after(
+    pub fn insert_domain_suffix_segment(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSuffixSegmentError> {
+        self.set_domain_suffix(Some(&insert_segment(
             self.domain_suffix().ok_or(InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
             index, value, InsertDomainSuffixSegmentError::SegmentNotFound, '.', "."
         )?))?;

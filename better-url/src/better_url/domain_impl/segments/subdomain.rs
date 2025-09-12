@@ -16,7 +16,7 @@ pub enum SetSubdomainSegmentError {
     SetSubdomainError(#[from] SetSubdomainError)
 }
 
-/// The enum of errors [`BetterUrl::insert_subdomain_segment_at`] and [`BetterUrl::insert_subdomain_segment_after`] can return.
+/// The enum of errors [`BetterUrl::insert_subdomain_segment`] can return.
 #[derive(Debug, Error)]
 pub enum InsertSubdomainSegmentError {
     /// Returned when the URL doesn't have a subdomain.
@@ -94,23 +94,8 @@ impl BetterUrl {
     /// If the segment isn't found, returns the error [`InsertSubdomainSegmentError::SegmentNotFound`].
     ///
     /// If the call to [`Self::set_subdomain`] returns an error, that error is returned.
-    pub fn insert_subdomain_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertSubdomainSegmentError> {
-        self.set_subdomain(Some(&insert_segment_at(
-            self.subdomain().ok_or(InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,
-            index, value, InsertSubdomainSegmentError::SegmentNotFound, '.', "."
-        )?))?;
-        Ok(())
-    }
-
-    /// Inserts a new subdomain segment after the specified index.
-    /// # Errors
-    /// If the URL doesn't have a domain, returns the error [`InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain`].
-    ///
-    /// If the segment isn't found, returns the error [`InsertSubdomainSegmentError::SegmentNotFound`].
-    ///
-    /// If the call to [`Self::set_subdomain`] returns an error, that error is returned.
-    pub fn insert_subdomain_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertSubdomainSegmentError> {
-        self.set_subdomain(Some(&insert_segment_after(
+    pub fn insert_subdomain_segment(&mut self, index: isize, value: &str) -> Result<(), InsertSubdomainSegmentError> {
+        self.set_subdomain(Some(&insert_segment(
             self.subdomain().ok_or(InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,
             index, value, InsertSubdomainSegmentError::SegmentNotFound, '.', "."
         )?))?;

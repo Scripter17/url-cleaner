@@ -11,13 +11,13 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.46", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.47", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls", "mtls"] }
 serde = "1.0.219"
 serde_json = "1.0.143"
 thiserror = "2.0.16"
-time = { version = "0.3.41", features = ["formatting"] }
+time = { version = "0.3.43", features = ["formatting"] }
 url = { version = "2.5.7", features = ["serde"] }
 url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
 url-cleaner-site-types = { path = "../site-types", version = "0.11.0" }

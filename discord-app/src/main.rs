@@ -233,7 +233,7 @@ To clean the URLs in a message, right click a message, go to the apps, and click
 
 #[poise::command(slash_command)]
 async fn help(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say(HELP_MESSAGE.get().expect("HELP_MESSAGE to have been set.")).await?;
+    ctx.send(CreateReply::default().ephemeral(true).content(HELP_MESSAGE.get().expect("HELP_MESSAGE to have been set."))).await?;
     Ok(())
 }
 

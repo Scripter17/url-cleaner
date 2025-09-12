@@ -41,7 +41,7 @@ pub enum SetPathSegmentsError {
     PathSegmentCannotContainSlash
 }
 
-/// The enum of errors [`BetterUrl::insert_path_segment_at`] and [`BetterUrl::insert_path_segment_after`] can return.
+/// The enum of errors [`BetterUrl::insert_path_segment`] can return.
 #[derive(Debug, Error)]
 pub enum InsertPathSegmentError {
     /// Returned when the URL doesn't have path segments.
@@ -383,26 +383,26 @@ impl BetterUrl {
     ///
     /// let mut url = BetterUrl::parse("https://example.com/").unwrap();
     ///
-    /// url.insert_path_segment_at(0, "abc").unwrap();
+    /// url.insert_path_segment(0, "abc").unwrap();
     /// assert_eq!(url.path(), "/abc/");
     ///
-    /// url.insert_path_segment_at(0, "def").unwrap();
+    /// url.insert_path_segment(0, "def").unwrap();
     /// assert_eq!(url.path(), "/def/abc/");
     ///
-    /// url.insert_path_segment_at(3, "ghi").unwrap();
+    /// url.insert_path_segment(3, "ghi").unwrap();
     /// assert_eq!(url.path(), "/def/abc//ghi");
     ///
-    /// url.insert_path_segment_at(6, "err").unwrap_err();
+    /// url.insert_path_segment(6, "err").unwrap_err();
     /// assert_eq!(url.path(), "/def/abc//ghi");
     ///
-    /// url.insert_path_segment_at(0, "a/b").unwrap_err();
+    /// url.insert_path_segment(0, "a/b").unwrap_err();
     /// assert_eq!(url.path(), "/def/abc//ghi");
     /// ```
-    pub fn insert_path_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
+    pub fn insert_path_segment(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
         if value.contains('/') {
             Err(InsertPathSegmentError::PathSegmentCannotContainSlash)?;
         }
-        self.insert_raw_path_segment_at(index, value)
+        self.insert_raw_path_segment(index, value)
     }
 
     /// Inserts a path segment at the specified path segment without checking if a segment contains a `/`.
@@ -418,106 +418,24 @@ impl BetterUrl {
     ///
     /// let mut url = BetterUrl::parse("https://example.com/").unwrap();
     ///
-    /// url.insert_raw_path_segment_at(0, "abc").unwrap();
+    /// url.insert_raw_path_segment(0, "abc").unwrap();
     /// assert_eq!(url.path(), "/abc/");
     ///
-    /// url.insert_raw_path_segment_at(0, "def").unwrap();
+    /// url.insert_raw_path_segment(0, "def").unwrap();
     /// assert_eq!(url.path(), "/def/abc/");
     ///
-    /// url.insert_raw_path_segment_at(3, "ghi").unwrap();
+    /// url.insert_raw_path_segment(3, "ghi").unwrap();
     /// assert_eq!(url.path(), "/def/abc//ghi");
     ///
-    /// url.insert_raw_path_segment_at(6, "err").unwrap_err();
+    /// url.insert_raw_path_segment(6, "err").unwrap_err();
     /// assert_eq!(url.path(), "/def/abc//ghi");
     ///
-    /// url.insert_raw_path_segment_at(0, "a/b").unwrap();
+    /// url.insert_raw_path_segment(0, "a/b").unwrap();
     /// assert_eq!(url.path(), "/a/b/def/abc//ghi");
     /// ```
-    pub fn insert_raw_path_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
+    pub fn insert_raw_path_segment(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
         let mut segments = self.path_segments().ok_or(InsertPathSegmentError::UrlDoesNotHavePathSegments)?.collect::<Vec<_>>();
         let index = neg_range_boundary(index, segments.len()).ok_or(InsertPathSegmentError::SegmentNotFound)?;
-        segments.insert(index, value);
-        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-        let mut new = String::with_capacity(self.path().len() + value.len() + 1);
-        for segment in segments {
-            new.push('/');
-            new.push_str(segment);
-        }
-        self.set_path(&new);
-        Ok(())
-    }
-
-    /// Inserts a path segment after the specified path segment.
-    ///
-    /// If the specified segment is one after the last, inserts a new segment at the end.
-    /// # Errors
-    /// If the call to [`Self::path_segments_str`] returns [`None`], returns the error [`InsertPathSegmentError::UrlDoesNotHavePathSegments`].
-    ///
-    /// If the specified path segment isn't found, returns the error [`InsertPathSegmentError::SegmentNotFound`].
-    ///
-    /// If a segment contains a `/`, returns the error [`SetPathSegmentsError::PathSegmentCannotContainSlash`].
-    /// # Examples
-    /// ```
-    /// use better_url::*;
-    ///
-    /// let mut url = BetterUrl::parse("https://example.com/").unwrap();
-    ///
-    /// url.insert_path_segment_after(0, "abc").unwrap();
-    /// assert_eq!(url.path(), "//abc");
-    ///
-    /// url.insert_path_segment_after(0, "def").unwrap();
-    /// assert_eq!(url.path(), "//def/abc");
-    ///
-    /// url.insert_path_segment_after(2, "ghi").unwrap();
-    /// assert_eq!(url.path(), "//def/abc/ghi");
-    ///
-    /// url.insert_path_segment_after(4, "err").unwrap_err();
-    /// assert_eq!(url.path(), "//def/abc/ghi");
-    ///
-    /// url.insert_path_segment_after(0, "a/b").unwrap_err();
-    /// assert_eq!(url.path(), "//def/abc/ghi");
-    /// ```
-    pub fn insert_path_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
-        if value.contains('/') {
-            Err(InsertPathSegmentError::PathSegmentCannotContainSlash)?;
-        }
-        self.insert_raw_path_segment_after(index, value)
-    }
-
-    /// Inserts a path segment after the specified path segment without checking if a segment contains a `/`.
-    ///
-    /// If the specified segment is one after the last, inserts a new segment at the end.
-    /// # Errors
-    /// If the call to [`Self::path_segments_str`] returns [`None`], returns the error [`InsertPathSegmentError::UrlDoesNotHavePathSegments`].
-    ///
-    /// If the specified path segment isn't found, returns the error [`InsertPathSegmentError::SegmentNotFound`].
-    ///
-    /// If a segment contains a `/`, returns the error [`SetPathSegmentsError::PathSegmentCannotContainSlash`].
-    /// # Examples
-    /// ```
-    /// use better_url::*;
-    ///
-    /// let mut url = BetterUrl::parse("https://example.com/").unwrap();
-    ///
-    /// url.insert_raw_path_segment_after(0, "abc").unwrap();
-    /// assert_eq!(url.path(), "//abc");
-    ///
-    /// url.insert_raw_path_segment_after(0, "def").unwrap();
-    /// assert_eq!(url.path(), "//def/abc");
-    ///
-    /// url.insert_raw_path_segment_after(2, "ghi").unwrap();
-    /// assert_eq!(url.path(), "//def/abc/ghi");
-    ///
-    /// url.insert_raw_path_segment_after(4, "err").unwrap_err();
-    /// assert_eq!(url.path(), "//def/abc/ghi");
-    ///
-    /// url.insert_raw_path_segment_after(0, "a/b").unwrap();
-    /// assert_eq!(url.path(), "//a/b/def/abc/ghi");
-    /// ```
-    pub fn insert_raw_path_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
-        let mut segments = self.path_segments().ok_or(InsertPathSegmentError::UrlDoesNotHavePathSegments)?.collect::<Vec<_>>();
-        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-        let index = neg_index(index, segments.len()).ok_or(InsertPathSegmentError::SegmentNotFound)? + 1;
         segments.insert(index, value);
         #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         let mut new = String::with_capacity(self.path().len() + value.len() + 1);

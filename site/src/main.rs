@@ -26,6 +26,16 @@ use url_cleaner_engine::glue::*;
 use url_cleaner_engine::helpers::*;
 use url_cleaner_site_types::*;
 
+/// The base info to return when getting `/`.
+const INFO: &str = r#"URL Cleaner Site
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+https://www.gnu.org/licenses/agpl-3.0.html
+https://github.com/Scripter17/url-cleaner
+
+See /get-cleaner       to get the loaded Cleaner.
+See /get-profiles      to get the loaded Profiles.
+See /get-max-json-size to get the max size of a JobConfig's JSON."#;
+
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_JSON_SIZE: &str = "25MiB";
 /// The default IP to listen to.
@@ -299,15 +309,12 @@ async fn rocket() -> _ {
 
 /// The `/` route.
 #[get("/")]
-async fn index() -> &'static str {
-    r#"URL Cleaner Site
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
-https://www.gnu.org/licenses/agpl-3.0.html
-https://github.com/Scripter17/url-cleaner
-
-See /get-cleaner       to get the loaded Cleaner.
-See /get-profiles      to get the loaded Profiles.
-See /get-max-json-size to get the max size of a JobConfig's JSON."#
+async fn index(state: &State<ServerState>) -> String {
+    if state.config.log {
+        format!("{INFO}\n\nThis instance has logging enabled.")
+    } else {
+        format!("{INFO}\n\nThis instance has logging disabled.")
+    }
 }
 
 /// The `/get-cleaner` route.

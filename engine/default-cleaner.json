@@ -227,14 +227,14 @@
 					"gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "goodsmile.link", "goo.gl", "goo.gle", "goo.su", "got.cr", "go.undp.org",
 					"gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "is.gd", "iwe.one", "jbgm.es", "j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe",
 					"l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "link.chtbl.com", "linkr.it", "l.leparisien.fr", "lnkd.in", "loom.ly", "lpc.ca", "mol.im",
-					"mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "nine.social", "ninten.do", "n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws",
-					"nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "onl.tw", "on.msnbc.com",
-					"on.nyc.gov", "on.wsj.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me", "politi.co", "prn.to",
-					"propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it",
+					"mondly.app", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "nine.social", "ninten.do", "n.opn.tl", "n.pr", "ntdo.co.uk",
+					"nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com", "onl.bz", "onl.la", "onl.sc", "onl.tw",
+					"on.msnbc.com", "on.nyc.gov", "on.wsj.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me",
+					"politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it",
 					"redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s76.co", "scim.ag", "s.click.aliexpress.com", "s.goodsmile.link",
 					"share.firefox.dev", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io",
 					"theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "tmz.me", "to.pbs.org", "tps.to", "tr.ee", "trib.al",
-					"u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki",
+					"u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "ja.ma",
 					"x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca", "zurl.co"
 				],
 				"sometimes_redirect": [
@@ -250,28 +250,31 @@
 					"o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "p.liadm.com", "preview.tinyurl.com", "proxy.notsobot.com",
 					"rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly",
 					"smarturl.it", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.co", "tee.pub",
-					"tinyurl.com", "toyhou.se", "t.umblr.com", "twpf.jp", "urldefense.com", "youtube.com"
+					"tinyurl.com", "toyhou.se", "t.umblr.com", "twpf.jp", "urldefense.com", "youtube.com", "u.afp.com"
 				]
 			},
 			"rd_expand_mode": {
 				"redirect": ["a9yw.net", "adj.st", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "visitlink.me"],
-				"sometimes_redirect": ["sendgrid.net"],
-				"special": ["alibaba.com", "app.link", "carleton.ca", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "onelink.me", "pulse.ly", "smartadserver.com", "vk.com", "awstrack.me"]
+				"sometimes_redirect": ["cmail20.com", "sendgrid.net"],
+				"special": [
+					"alibaba.com", "app.link", "awstrack.me", "carleton.ca", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "onelink.me", "pulse.ly", "smartadserver.com",
+					"vk.com"
+				]
 			},
 
 
 
 			"mobilizer": {
-				"sd_m"       : ["twitch.tv", "vk.com", "youtube.com", "facebook.com"],
+				"sd_m"       : ["facebook.com", "twitch.tv", "vk.com", "youtube.com"],
 				"sd_mobile"  : [],
-				"dm_0_m"      : [],
-				"dm_0_mobile" : [],
-				"dm_1_m"      : ["wikipedia.org"],
-				"dm_1_mobile" : [],
+				"if_sd_sds_0_m"     : [],
+				"if_sd_sds_0_mobile": [],
+				"if_sd_sds_1_m"     : ["wikipedia.org"],
+				"if_sd_sds_1_mobile": [],
 				"qp_m_1"     : [],
 				"qp_mobile_1": [],
-				"ps_0_mobile" : [],
-				"ps_1_mobile" : ["drive.google.com"],
+				"ps_0_mobile": [],
+				"ps_1_mobile": ["drive.google.com"],
 
 				"special_1688": ["detail.1688.com", "m.1688.com"]
 			}
@@ -364,21 +367,21 @@
 								"if"  : {"SubdomainIs" : "mobile"},
 								"then": {"SetSubdomain": null}
 							}},
-							"dm_0_m": {"If": {
-								"if"  : {"DomainSegmentIs" : {"index": 0, "value": "m"}},
-								"then": {"SetDomainSegment": {"index": 0, "value": null}}
+							"if_sd_sds_0_m": {"If": {
+								"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "m"}},
+								"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
 							}},
-							"dm_0_mobile": {"If": {
-								"if"  : {"DomainSegmentIs" : {"index": 0, "value": "mobile"}},
-								"then": {"SetDomainSegment": {"index": 0, "value": null}}
+							"if_sd_sds_0_mobile": {"If": {
+								"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "mobile"}},
+								"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
 							}},
-							"dm_1_m": {"If": {
-								"if"  : {"DomainSegmentIs" : {"index": 1, "value": "m"}},
-								"then": {"SetDomainSegment": {"index": 1, "value": null}}
+							"if_sd_sds_1_m": {"If": {
+								"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "m"}},
+								"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
 							}},
-							"dm_1_mobile": {"If": {
-								"if"  : {"DomainSegmentIs" : {"index": 1, "value": "mobile"}},
-								"then": {"SetDomainSegment": {"index": 1, "value": null}}
+							"if_sd_sds_1_mobile": {"If": {
+								"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "mobile"}},
+								"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
 							}},
 							"qp_m_1"     : {"SetQueryParam": {"param": "m"     , "value": null}},
 							"qp_mobile_1": {"SetQueryParam": {"param": "mobile", "value": null}},
@@ -409,21 +412,33 @@
 								"if": {"SubdomainIsOneOf": ["www", null]},
 								"then": {"SetSubdomain": "mobile"}
 							}},
-							"dm_0_m": {"If": {
-								"if": {"Not": {"DomainSegmentIs": {"index": 0, "value": "m"}}},
-								"then": {"InsertDomainSegmentAt": {"index": 0, "value": "m"}}
+							"if_sd_sds_0_m": {"If": {
+								"if": {"All": [
+									{"Not": {"SubdomainIs": null}},
+									{"Not": {"SubdomainSegmentIs": {"index": 0, "value": "m"}}}
+								]},
+								"then": {"InsertSubdomainSegment": {"index": 0, "value": "m"}}
 							}},
-							"dm_0_mobile": {"If": {
-								"if": {"Not": {"DomainSegmentIs": {"index": 0, "value": "mobile"}}},
-								"then": {"InsertDomainSegmentAt": {"index": 0, "value": "mobile"}}
+							"if_sd_sds_0_mobile": {"If": {
+								"if": {"All": [
+									{"Not": {"SubdomainIs": null}},
+									{"Not": {"SubdomainSegmentIs": {"index": 0, "value": "mobile"}}}
+								]},
+								"then": {"InsertSubdomainSegment": {"index": 0, "value": "mobile"}}
 							}},
-							"dm_1_m": {"If": {
-								"if": {"Not": {"DomainSegmentIs": {"index": 1, "value": "m"}}},
-								"then": {"InsertDomainSegmentAt": {"index": 1, "value": "m"}}
+							"if_sd_sds_1_m": {"If": {
+								"if": {"All": [
+									{"Not": {"SubdomainIs": null}},
+									{"Not": {"SubdomainSegmentIs": {"index": 1, "value": "m"}}}
+								]},
+								"then": {"InsertSubdomainSegment": {"index": 1, "value": "m"}}
 							}},
-							"dm_1_mobile": {"If": {
-								"if": {"Not": {"DomainSegmentIs": {"index": 1, "value": "mobile"}}},
-								"then": {"InsertDomainSegmentAt": {"index": 1, "value": "mobile"}}
+							"if_sd_sds_1_mobile": {"If": {
+								"if": {"All": [
+									{"Not": {"SubdomainIs": null}},
+									{"Not": {"SubdomainSegmentIs": {"index": 1, "value": "mobile"}}}
+								]},
+								"then": {"InsertSubdomainSegment": {"index": 1, "value": "mobile"}}
 							}},
 							"qp_m_1": {"If": {
 								"if"  : {"QueryParamIs" : {"param": "m", "value": null}},
@@ -435,11 +450,11 @@
 							}},
 							"ps_0_mobile": {"If": {
 								"if": {"Not": {"PathSegmentIs": {"index": 0, "value": "mobile"}}},
-								"then": {"InsertPathSegmentAt": {"index": 0, "value": "mobile"}}
+								"then": {"InsertPathSegment": {"index": 0, "value": "mobile"}}
 							}},
 							"ps_1_mobile": {"If": {
 								"if": {"Not": {"PathSegmentIs": {"index": 1, "value": "mobile"}}},
-								"then": {"InsertPathSegmentAt": {"index": 1, "value": "mobile"}}
+								"then": {"InsertPathSegment": {"index": 1, "value": "mobile"}}
 							}},
 
 							"special_1688": {"SetSubdomain": "m"}
@@ -558,6 +573,7 @@
 										{"PartMap": {
 											"part": "RegDomain",
 											"map": {
+												"cmail20.com": {"PathStartsWith": "/t/"},
 												"sendgrid.net": {"PathIs": "/ls/click"}
 											}
 										}}
@@ -1215,7 +1231,7 @@
 										}},
 										"skfb.ly": {"All": [
 											{"SetHost": "sketchfab.com"},
-											{"InsertPathSegmentAt": {"index": 0, "value": "s"}}
+											{"InsertPathSegment": {"index": 0, "value": "s"}}
 										]},
 										"smarturl.it": {"Common": {
 											"name": "extract_from_page",
@@ -1307,7 +1323,7 @@
 													"preview": "None",
 													"app": {"SetPathSegment": {"index": 0, "value": "preview"}}
 												},
-												"else": {"InsertPathSegmentAt": {"index": 0, "value": "preview"}}
+												"else": {"InsertPathSegment": {"index": 0, "value": "preview"}}
 											}},
 											{"Common": {
 												"name": "extract_from_page",
@@ -1331,6 +1347,15 @@
 												"value": {"Part": {"QueryParam": "p"}},
 												"modification": "PercentDecode"
 											}}}
+										}},
+										"u.afp.com": {"ExpandRedirect": {
+											"headers": {
+												"user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+												"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+												"accept-language": "en-US,en;q=0.5",
+												"accept-encoding": "gzip, deflate, br, zstd",
+												"cookie": "AKA_A2=A"
+											}
 										}},
 										"urldefense.com": {"If": {
 											"if": {"PathStartsWith": "/v3/"},
@@ -1532,7 +1557,7 @@
 										"x"             : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
 										"youtube"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com)?/?@?([^/]+)$"                   , "replace": "https://youtube.com/$1"              }}
 									},
-									"else": {"Error": "Unknown Furaffinity contact info like field."}
+									"else": {"Error": "Unknown Furaffinity contact info field."}
 								}}
 							}}}
 						}}
@@ -1594,7 +1619,7 @@
 						"deviantart.com": {"If": {
 							"if": {"Not": {"SubdomainIsOneOf": ["www", null]}},
 							"then": {"All": [
-								{"InsertPathSegmentAt": {"index": 0, "value": {"Part": "Subdomain"}}},
+								{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
 								{"SetSubdomain": null}
 							]}
 						}},
@@ -1634,7 +1659,7 @@
 										]}
 									},
 									"else": {"All": [
-										{"InsertPathSegmentAt": {"index": 0, "value": {"Part": "Subdomain"}}},
+										{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
 										{"SetHost": {"Var": "breezewiki_host"}}
 									]}
 								}}
@@ -1837,7 +1862,7 @@
 										"if": {"PathStartsWith": "/post/"},
 										"then": {"RemovePathSegment": 0}
 									}},
-									{"InsertPathSegmentAt": {"index": 0, "value": {"Part": "Subdomain"}}},
+									{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
 									{"SetSubdomain": null}
 								]}
 							}}
@@ -1949,6 +1974,7 @@
 						}},
 						"in.blissy.com": "RemoveQuery",
 						"info.blissy.com": "RemoveQuery",
+						"jamanetwork.com": {"RemoveQueryParams": ["guestAccessKey", "linkId"]},
 						"l.mlive.com": {"Common": {
 							"name": "extract_from_page",
 							"args": {
@@ -1962,6 +1988,13 @@
 							}
 						}},
 						"media.igram.world": {"GetUrlFromQueryParam": "uri"},
+						"mondly.com": {"If": {
+							"if": {"All": [
+								{"PathStartsWith": "/offer/"},
+								{"FlagIsNotSet": "keep_affiliate"}
+							]},
+							"then": {"RemoveQueryParam": "avangate_src"}
+						}},
 						"of.com": {"SetHost": "onlyfans.com"},
 						"overview.mail.yahoo.com": "RemoveQuery",
 						"play.google.com": {"All": [

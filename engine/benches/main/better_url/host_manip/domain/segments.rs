@@ -42,7 +42,7 @@ macro_rules! thing {
     }
 }
 
-thing!(subdomain    , (insert_subdomain_segment_at    , INSERTS), (insert_subdomain_segment_after    , INSERTS), (set_subdomain_segment    , SETS));
-thing!(domain       , (insert_domain_segment_at       , INSERTS), (insert_domain_segment_after       , INSERTS), (set_domain_segment       , SETS));
-thing!(domain_suffix, (insert_domain_suffix_segment_at, INSERTS), (insert_domain_suffix_segment_after, INSERTS), (set_domain_suffix_segment, SETS));
+thing!(subdomain    , (insert_subdomain_segment    , INSERTS), (set_subdomain_segment    , SETS));
+thing!(domain       , (insert_domain_segment       , INSERTS), (set_domain_segment       , SETS));
+thing!(domain_suffix, (insert_domain_suffix_segment, INSERTS), (set_domain_suffix_segment, SETS));
 group!(segments, domain, subdomain, domain_suffix);

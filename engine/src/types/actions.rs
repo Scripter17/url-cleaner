@@ -454,55 +454,28 @@ pub enum Action {
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::insert_domain_segment_after`].
+    /// [`BetterUrl::insert_domain_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_segment_after))]
-    InsertDomainSegmentAfter {
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_segment))]
+    InsertDomainSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::insert_subdomain_segment_after`].
+    /// [`BetterUrl::insert_subdomain_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_subdomain_segment_after))]
-    InsertSubdomainSegmentAfter {
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_subdomain_segment))]
+    InsertSubdomainSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::insert_domain_suffix_segment_after`].
+    /// [`BetterUrl::insert_domain_suffix_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_suffix_segment_after))]
-    InsertDomainSuffixSegmentAfter {
-        /// The index to insert the segment at.
-        index: isize,
-        /// The value to insert.
-        value: StringSource
-    },
-    /// [`BetterUrl::insert_domain_segment_at`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_segment_at))]
-    InsertDomainSegmentAt {
-        /// The index to insert the segment at.
-        index: isize,
-        /// The value to insert.
-        value: StringSource
-    },
-    /// [`BetterUrl::insert_subdomain_segment_at`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_subdomain_segment_at))]
-    InsertSubdomainSegmentAt {
-        /// The index to insert the segment at.
-        index: isize,
-        /// The value to insert.
-        value: StringSource
-    },
-    /// [`BetterUrl::insert_domain_suffix_segment_at`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_suffix_segment_at))]
-    InsertDomainSuffixSegmentAt {
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_suffix_segment))]
+    InsertDomainSuffixSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The value to insert.
@@ -533,19 +506,10 @@ pub enum Action {
         /// The value to set it to.
         value: StringSource
     },
-    /// [`BetterUrl::insert_path_segment_at`].
+    /// [`BetterUrl::insert_path_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment_at))]
-    InsertPathSegmentAt {
-        /// The index to insert it at.
-        index: isize,
-        /// The value to insert.
-        value: StringSource
-    },
-    /// [`BetterUrl::insert_path_segment_after`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment_after))]
-    InsertPathSegmentAfter {
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment))]
+    InsertPathSegment {
         /// The index to insert it at.
         index: isize,
         /// The value to insert.
@@ -560,19 +524,10 @@ pub enum Action {
         /// The value to set it to.
         value: StringSource
     },
-    /// [`BetterUrl::insert_path_segment_at`].
+    /// [`BetterUrl::insert_path_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment_at))]
-    InsertRawPathSegmentAt {
-        /// The index to insert it at.
-        index: isize,
-        /// The value to insert.
-        value: StringSource
-    },
-    /// [`BetterUrl::insert_path_segment_after`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment_after))]
-    InsertRawPathSegmentAfter {
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment))]
+    InsertRawPathSegment {
         /// The index to insert it at.
         index: isize,
         /// The value to insert.
@@ -1387,15 +1342,12 @@ impl Action {
             Self::SetNotDomainSuffix(to) => task_state.url.set_not_domain_suffix(get_new_option_str!(to, task_state))?,
             Self::SetDomainSuffix   (to) => task_state.url.set_domain_suffix    (get_new_option_str!(to, task_state))?,
 
-            Self::SetDomainSegment               {index, value} => task_state.url.set_domain_segment                (*index, get_new_option_str!(value, task_state))?,
-            Self::SetSubdomainSegment            {index, value} => task_state.url.set_subdomain_segment             (*index, get_new_option_str!(value, task_state))?,
-            Self::SetDomainSuffixSegment         {index, value} => task_state.url.set_domain_suffix_segment         (*index, get_new_option_str!(value, task_state))?,
-            Self::InsertDomainSegmentAt          {index, value} => task_state.url.insert_domain_segment_at          (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertSubdomainSegmentAt       {index, value} => task_state.url.insert_subdomain_segment_at       (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertDomainSuffixSegmentAt    {index, value} => task_state.url.insert_domain_suffix_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertDomainSegmentAfter       {index, value} => task_state.url.insert_domain_segment_after       (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertSubdomainSegmentAfter    {index, value} => task_state.url.insert_subdomain_segment_after    (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertDomainSuffixSegmentAfter {index, value} => task_state.url.insert_domain_suffix_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
+            Self::SetDomainSegment               {index, value} => task_state.url.set_domain_segment          (*index, get_new_option_str!(value, task_state))?,
+            Self::SetSubdomainSegment            {index, value} => task_state.url.set_subdomain_segment       (*index, get_new_option_str!(value, task_state))?,
+            Self::SetDomainSuffixSegment         {index, value} => task_state.url.set_domain_suffix_segment   (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertDomainSegment            {index, value} => task_state.url.insert_domain_segment       (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertSubdomainSegment         {index, value} => task_state.url.insert_subdomain_segment    (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainSuffixSegment      {index, value} => task_state.url.insert_domain_suffix_segment(*index, get_new_str!(value, task_state, ActionError))?,
 
             Self::EnsureFqdnPeriod => task_state.url.set_fqdn(true)?,
             Self::RemoveFqdnPeriod => task_state.url.set_fqdn(false)?,
@@ -1405,12 +1357,10 @@ impl Action {
             Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
 
             Self::RemovePathSegment         (index) => task_state.url.set_path_segment(*index, None)?,
-            Self::SetPathSegment            {index, value} => task_state.url.set_path_segment             (*index, get_new_option_str!(value, task_state))?,
-            Self::InsertPathSegmentAt       {index, value} => task_state.url.insert_path_segment_at       (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertPathSegmentAfter    {index, value} => task_state.url.insert_path_segment_after    (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment         (*index, get_new_option_str!(value, task_state))?,
-            Self::InsertRawPathSegmentAt    {index, value} => task_state.url.insert_raw_path_segment_at   (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertRawPathSegmentAfter {index, value} => task_state.url.insert_raw_path_segment_after(*index, get_new_str!(value, task_state, ActionError))?,
+            Self::SetPathSegment            {index, value} => task_state.url.set_path_segment       (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertPathSegment         {index, value} => task_state.url.insert_path_segment    (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment   (*index, get_new_option_str!(value, task_state))?,
+            Self::InsertRawPathSegment      {index, value} => task_state.url.insert_raw_path_segment(*index, get_new_str!(value, task_state, ActionError))?,
             Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut().ok_or(ActionError::UrlDoesNotHavePathSegments)?.pop_if_empty();},
             Self::RemoveEmptyLastPathSegmentAndInsertNew(value) => {
                 let value = get_new_str!(value, task_state, ActionError);

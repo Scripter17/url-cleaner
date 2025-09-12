@@ -121,6 +121,13 @@
 			]
 		},
 		{
+			"params_diff": {"flags": ["mobile"]},
+			"tests": [
+				{"task_config": "https://wikipedia.org", "result": "https://wikipedia.org"},
+				{"task_config": "https://en.wikipedia.org", "result": "https://en.m.wikipedia.org"}
+			]
+		},
+		{
 			"params_diff": {"flags": ["embed_compatibility"]},
 			"tests": [
 				{"task_config": "https://bsky.app/profile/abc.bsky.social/post/123"  , "result": "https://fxbsky.app/profile/abc.bsky.social/post/123"},

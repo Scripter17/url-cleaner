@@ -16,7 +16,7 @@ pub enum SetDomainSegmentError {
     SetDomainError(#[from] SetDomainError)
 }
 
-/// The enum of errors [`BetterUrl::insert_domain_segment_at`] and [`BetterUrl::insert_domain_segment_after`] can return.
+/// The enum of errors [`BetterUrl::insert_domain_segment`] can return.
 #[derive(Debug, Error)]
 pub enum InsertDomainSegmentError {
     /// Returned when the URL doesn't have a domain.
@@ -106,23 +106,8 @@ impl BetterUrl {
     /// If the segment isn't found, returns the error [`InsertDomainSegmentError::SegmentNotFound`].
     ///
     /// If the call to [`Self::set_domain`] returns an error, that error is returned.
-    pub fn insert_domain_segment_at(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSegmentError> {
-        self.set_domain(Some(&insert_segment_at(
-            self.domain().ok_or(InsertDomainSegmentError::UrlDoesNotHaveDomain)?,
-            index, value, InsertDomainSegmentError::SegmentNotFound, '.', "."
-        )?))?;
-        Ok(())
-    }
-
-    /// Inserts a new domain segment after the specified index.
-    /// # Errors
-    /// If the URL doesn't have a domain, returns the error [`InsertDomainSegmentError::UrlDoesNotHaveDomain`].
-    ///
-    /// If the segment isn't found, returns the error [`InsertDomainSegmentError::SegmentNotFound`].
-    ///
-    /// If the call to [`Self::set_domain`] returns an error, that error is returned.
-    pub fn insert_domain_segment_after(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSegmentError> {
-        self.set_domain(Some(&insert_segment_after(
+    pub fn insert_domain_segment(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSegmentError> {
+        self.set_domain(Some(&insert_segment(
             self.domain().ok_or(InsertDomainSegmentError::UrlDoesNotHaveDomain)?,
             index, value, InsertDomainSegmentError::SegmentNotFound, '.', "."
         )?))?;
