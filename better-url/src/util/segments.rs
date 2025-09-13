@@ -69,7 +69,6 @@ impl<T: Clone, I: Iterator<Item = T>> Iterator for Intersperse<T, I> {
 ///
 /// Assumes `split` is one byte but this is only called with `.` and `/` so who cares.
 pub(crate) fn insert_segment<E>(part: &str, index: isize, value: &str, segment_not_found: E, split: char, join: &str) -> Result<String, E> {
-    println!("{part} {index}");
     let x = part.split(split);
     let len = x.clone().count();
     let index = match index {
