@@ -63,13 +63,11 @@ struct Args {
     ///
     /// Omit to use the built in default cleaner.
     #[cfg(feature = "default-cleaner")]
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     cleaner: Option<PathBuf>,
     /// The cleaner file to use.
-    ///
-    /// Required as the `default-cleaner` feature is disabled.
     #[cfg(not(feature = "default-cleaner"))]
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     cleaner: PathBuf,
     /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
     #[arg(long)]
@@ -88,60 +86,81 @@ struct Args {
     /// The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
     #[arg(short, long, verbatim_doc_comment)]
     json: bool,
-    /// The Profiles file.
-    #[arg(long)]
+    /// The ProfilesConfig file.
+    ///
+    /// Cannot be used with --profiles-string.
+    #[arg(long, value_name = "PATH")]
     profiles: Option<PathBuf>,
+    /// The ProfilesConfig string.
+    ///
+    /// Cannot be used with --profiles.
+    #[arg(long, value_name = "JSON STRING")]
+    profiles_string: Option<String>,
     /// The Profile to use.
     ///
-    /// Applied before --params-diff and --flag/--var.
+    /// Applied before ParamsDiffs and --flag/--var.
     #[arg(long, requires = "profiles")]
     profile: Option<String>,
-    /// A standalone ParamsDiff.
+    /// A standalone ParamsDiff file.
     ///
-    /// Applied after --profiles/--profile and before --flag/--var.
-    #[arg(long)]
+    /// Applied after Profiles and before --flag/--var.
+    ///
+    /// Cannot be used with --params-diff-string.
+    #[arg(long, value_name = "PATH")]
     params_diff: Option<PathBuf>,
-    #[arg(short, long)]
+    /// A standalone ParamsDiff string.
+    ///
+    /// Applied after Profiles and before --flag/--var.
+    ///
+    /// Cannot be used with --params-diff.
+    #[arg(long, value_name = "JSON STRING")]
+    params_diff_string: Option<String>,
     /// Flags to insert into the params.
     ///
-    /// Applied after --profiles/--profile and --params-diff.
+    /// Applied after Profiles ParamsDiff.
+    #[arg(short, long)]
     flag: Vec<String>,
     /// Vars to insert into the params.
     ///
-    /// Applied after --profiles/--profile and --params-diff.
-    #[arg(short, long, num_args = 2)]
+    /// Applied after Profiles ParamsDiff.
+    #[arg(short, long, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
-    /// The cache to use.
+    /// The JobContext file to use.
     ///
-    /// Defaults to "url-cleaner-cache.sqlite"
+    /// Cannot be used with --job-context-string.
+    #[arg(long, value_name = "PATH")]
+    job_context: Option<PathBuf>,
+    /// The JobContext string to use.
+    ///
+    /// Cannot be used with --job-context.
+    #[arg(long, value_name = "JSON STRING")]
+    job_context_string: Option<String>,
+    /// The path of the cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long)]
-    cache: Option<CachePath>,
-    /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
-    #[cfg(feature = "cache")]
-    #[arg(long, default_missing_value = "true")]
-    cache_delay: bool,
-    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
-    #[arg(long, default_missing_value = "true")]
-    hide_thread_count: bool,
+    #[arg(long, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
+    cache: CachePath,
     /// Whether or not to read from the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true")]
-    read_cache: Option<bool>,
+    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    read_cache: bool,
     /// Whether or not to write to the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true")]
-    write_cache: Option<bool>,
-    /// The context to share between all Tasks.
-    #[arg(long)]
-    job_context: Option<String>,
+    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    write_cache: bool,
+    /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_value = "false", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    cache_delay: bool,
+    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
+    #[arg(long, default_value = "false", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    hide_thread_count: bool,
     /// The number of worker threads to use.
     ///
     /// Zero uses the CPU's thread count.
     #[arg(long, default_value_t = 0)]
     threads: usize,
     /// Test files to run.
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     tests: Vec<PathBuf>,
     /// Asserts the "suitability" of the loaded cleaner.
     #[arg(long)]
@@ -154,15 +173,32 @@ pub enum CliError {
     /// Returned when a [`GetCleanerError`] is encountered.
     #[error(transparent)] GetCleanerError(#[from] GetCleanerError),
     /// Returned when unable to load a [`ParamsDiff`] file.
-    #[error(transparent)] CantLoadProfilesConfigFile(std::io::Error),
+    #[error(transparent)] CantLoadProfilesFile(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
-    #[error(transparent)] CantParseProfilesConfigFile(serde_json::Error),
+    #[error(transparent)] CantParseProfilesFile(serde_json::Error),
+    /// Returned when unable to parse a [`ParamsDiff`] string.
+    #[error(transparent)] CantParseProfilesString(serde_json::Error),
+    /// Returned when both `--profiles-config` and `--profiles-config-string` are specified.
+    #[error("Can't have both --profiles-config and --profiles-config-string")]
+    CantHaveBothProfilesAndProfilesString,
     /// Returned when unable to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
-    /// Returned when unable to parse the [`Args::job_context`] parameter.
-    #[error(transparent)] CantParseJobContext(serde_json::Error),
+    /// Returned when unable to parse a [`ParamsDiff`] string.
+    #[error(transparent)] CantParseParamsDiffString(serde_json::Error),
+    /// Returned when both `--params-diff` and `--params-diff-string` are specified.
+    #[error("Can't have both --params-diff and --params-diff-string")]
+    CantHaveBothParamsDiffAndParamsDiffString,
+    /// Returned when unable to load a [`JobContext`] file.
+    #[error(transparent)] CantLoadJobContextFile(std::io::Error),
+    /// Returned when unable to parse a [`JobContext`] file.
+    #[error(transparent)] CantParseJobContextFile(serde_json::Error),
+    /// Returned when unable to parse a [`JobContext`] string.
+    #[error(transparent)] CantParseJobContextString(serde_json::Error),
+    /// Returned when both `--job-context` and `--job-context-string` are specified.
+    #[error("Can't have both --job-context and --job-context-string")]
+    CantHaveBothJobContextAndJobContextString,
     /// Returned when unable to load a [`Tests`] file.
     #[error(transparent)] CantLoadTests(io::Error),
     /// Returned when unable to parse a [`Tests`] file.
@@ -182,17 +218,26 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Get and apply [`ParamsDiff`]s.
 
-    if let Some(profiles) = args.profiles {
-        cleaner.params = serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(profiles).map_err(CliError::CantLoadProfilesConfigFile)?)
-            .map_err(CliError::CantParseProfilesConfigFile)?
-            .into_params(args.profile.as_deref(), cleaner.params)
-            .ok_or(CliError::ProfileNotFound)?;
+    let profiles_config = match (args.profiles, args.profiles_string) {
+        (None      , None        ) => None,
+        (Some(path), None        ) => Some(serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfilesFile)?).map_err(CliError::CantParseProfilesFile)?),
+        (None      , Some(string)) => Some(serde_json::from_str::<ProfilesConfig>(&string).map_err(CliError::CantParseProfilesString)?),
+        (Some(_)   , Some(_)     ) => Err(CliError::CantHaveBothProfilesAndProfilesString)?
+    };
+
+    if let Some(profiles_config) = profiles_config {
+        cleaner.params = profiles_config.into_params(args.profile.as_deref(), cleaner.params).ok_or(CliError::ProfileNotFound)?;
     }
 
-    if let Some(params_diff) = args.params_diff {
-        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(params_diff).map_err(CliError::CantLoadParamsDiffFile)?)
-            .map_err(CliError::CantParseParamsDiffFile)?
-            .apply_once(&mut cleaner.params);
+    let params_diff = match (args.params_diff, args.params_diff_string) {
+        (None      , None        ) => None,
+        (Some(path), None        ) => Some(serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile)?),
+        (None      , Some(string)) => Some(serde_json::from_str::<ParamsDiff>(&string).map_err(CliError::CantParseParamsDiffString)?),
+        (Some(_)   , Some(_)     ) => Err(CliError::CantHaveBothParamsDiffAndParamsDiffString)?
+    };
+
+    if let Some(params_diff) = params_diff {
+        params_diff.apply_once(&mut cleaner.params);
     }
 
     cleaner.params.flags.to_mut().extend(args.flag);
@@ -203,9 +248,11 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Get the [`JobContext`].
 
-    let job_context = match args.job_context {
-        Some(job_context_string) => serde_json::from_str(&job_context_string).map_err(CliError::CantParseJobContext)?,
-        None => Default::default()
+    let job_context = match (args.job_context, args.job_context_string) {
+        (None      , None        ) => Default::default(),
+        (Some(path), None        ) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadJobContextFile)?).map_err(CliError::CantParseJobContextFile)?,
+        (None      , Some(string)) => serde_json::from_str(&string).map_err(CliError::CantParseJobContextString)?,
+        (Some(_)   , Some(_)     ) => Err(CliError::CantHaveBothJobContextAndJobContextString)?
     };
 
     // Testing and stuff.
@@ -231,12 +278,12 @@ fn main() -> Result<ExitCode, CliError> {
     // Do the job.
 
     #[cfg(feature = "cache")]
-    let cache = args.cache.unwrap_or("url-cleaner-cache.sqlite".into()).into();
+    let cache = args.cache.into();
     #[cfg(feature = "cache")]
     let cache_handle_config = CacheHandleConfig {
         delay: args.cache_delay,
-        read : args.read_cache .unwrap_or(true),
-        write: args.write_cache.unwrap_or(true)
+        read : args.read_cache,
+        write: args.write_cache
     };
     let unthreader = Unthreader::r#if(args.hide_thread_count);
 

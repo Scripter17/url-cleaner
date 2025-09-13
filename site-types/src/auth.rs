@@ -10,23 +10,23 @@ use crate::util::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Accounts {
-    /// A map of usernames to passwords.
-    ///
-    /// Defaults to an empty [`HashMap`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub users: HashMap<String, String>,
     /// If [`true`], allow "guest" users.
     ///
     /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
-    pub allow_guest: bool
+    pub allow_guest: bool,
+    /// A map of usernames to passwords.
+    ///
+    /// Defaults to an empty [`HashMap`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub users: HashMap<String, String>
 }
 
 impl Default for Accounts {
     fn default() -> Self {
         Self {
-            users: Default::default(),
-            allow_guest: true
+            allow_guest: true,
+            users: Default::default()
         }
     }
 }

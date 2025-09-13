@@ -57,39 +57,45 @@ struct Args {
     /// The config file to use.
     ///
     /// Omit to use the built in default cleaner.
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     #[cfg(feature = "default-cleaner")]
     cleaner: Option<PathBuf>,
     /// The config file to use.
-    ///
-    /// Omit to use the built in default cleaner.
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     #[cfg(not(feature = "default-cleaner"))]
     cleaner: PathBuf,
     /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
     #[arg(long)]
     export_cleaner: bool,
-    /// The ParamsDiff profiles.
-    #[arg(long)]
-    profiles: Option<PathBuf>,
-    /// The cache to use.
+    /// The ProfilesConfig file.
     ///
-    /// Defaults to "url-cleaner-discord-app-cache.sqlite"
+    /// Cannot be used with --profiles-string.
+    #[arg(long, value_name = "PATH")]
+    profiles: Option<PathBuf>,
+    /// The ProfilesConfig string.
+    ///
+    /// Cannot be used with --profiles.
+    #[arg(long, value_name = "JSON STRING")]
+    profiles_string: Option<String>,
+    /// The path cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long)]
-    cache: Option<CachePath>,
-    /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
+    #[arg(long, value_name = "PATH", default_value = "url-cleaner-discord-app-cache.sqlite")]
+    cache: CachePath,
+    /// If true, read from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, default_missing_value = "true")]
+    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    read_cache: bool,
+    /// If true, write to the cache.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    write_cache: bool,
+    /// If true, artificially delay cache reads.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
     cache_delay: bool,
-    /// Whether or not to read from the cache. If unspecified, defaults to true.
-    #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true")]
-    read_cache: Option<bool>,
-    /// Whether or not to write to the cache. If unspecified, defaults to true.
-    #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true")]
-    write_cache: Option<bool>
+    /// If true, make network requests and cache reads effectively single-threaded.
+    #[arg(long, default_value = "false", default_missing_value = "true", action = clap::ArgAction::Set)]
+    hide_thread_count: bool
 }
 
 /// The bot's state.
@@ -97,6 +103,8 @@ struct Args {
 struct State {
     /// The [`Cleaner`] to use.
     cleaner: ProfiledCleaner<'static>,
+    /// The value to pass to [`Unthreader::if`].
+    hide_thread_count: bool,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
@@ -126,10 +134,11 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let profiles_config = match args.profiles {
-        Some(file) => serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(file).expect("Reading the ProfilesConfig file to a string to not error."))
-            .expect("The read ProfilesConfig file to be a valid ParamsDiff."),
-        None => Default::default()
+    let profiles_config = match (args.profiles, args.profiles_string) {
+        (None      , None        ) => Default::default(),
+        (Some(path), None        ) => serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable.")).expect("The ProfilesConfig file to be valid."),
+        (None      , Some(string)) => serde_json::from_str::<ProfilesConfig>(&string).expect("The ProfilesConfig string to be valid."),
+        (Some(_)   , Some(_)     ) => panic!("Can't have both --profiles and --profiles-string")
     };
     let cleaner = cleaner.with_profiles(profiles_config);
 
@@ -157,13 +166,14 @@ async fn main() {
 
     let state = State {
         cleaner,
+        hide_thread_count: args.hide_thread_count,
         #[cfg(feature = "cache")]
-        cache: args.cache.unwrap_or("url-cleaner-discord-app-cache.sqlite".into()).into(),
+        cache: args.cache.into(),
         #[cfg(feature = "cache")]
         cache_handle_config: CacheHandleConfig {
             delay: args.cache_delay,
-            read : args.read_cache .unwrap_or(true),
-            write: args.write_cache.unwrap_or(true)
+            read : args.read_cache,
+            write: args.write_cache
         }
     };
 
@@ -272,7 +282,7 @@ async fn clean_urls_with_profile(ctx: Context<'_>, msg: serenity::Message, profi
         cache: &ctx.data().cache,
         #[cfg(feature = "cache")]
         cache_handle_config: data.cache_handle_config,
-        unthreader: &Default::default(),
+        unthreader: &Unthreader::r#if(data.hide_thread_count),
         lazy_task_configs: Box::new(GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into())))
     };
 

@@ -1,9 +1,6 @@
 target
-stdin
-*.out*
-*.tar.gz
 *.sqlite
 bacon.toml
-/reddit*
-/*-result*
 logs
+**/benchmarking/*
+!**/benchmarking/*.sh

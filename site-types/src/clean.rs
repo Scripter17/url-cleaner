@@ -42,6 +42,20 @@ pub struct JobConfig<'a> {
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
     #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
+    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::read`].
+    ///
+    /// Defaults to [`None`].
+    #[cfg(feature = "cache")]
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub read_cache: Option<bool>,
+    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
+    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::write`].
+    ///
+    /// Defaults to [`None`].
+    #[cfg(feature = "cache")]
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub write_cache: Option<bool>,
+    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
     /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
     ///
     /// Defaults to [`None`].

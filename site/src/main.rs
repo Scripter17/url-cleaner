@@ -39,7 +39,7 @@ See /get-max-json-size to get the max size of a JobConfig's JSON."#;
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_JSON_SIZE: &str = "25MiB";
 /// The default IP to listen to.
-const DEFAULT_BIND_IP      : &str = "127.0.0.1";
+const DEFAULT_IP           : &str = "127.0.0.1";
 /// The default port to listen to.
 const DEFAULT_PORT         : u16  = 9149;
 
@@ -98,57 +98,56 @@ fn parse_byte_unit(s: &str) -> Result<rocket::data::ByteUnit, String> {
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
-    /// A url_cleaner::types::Cleaner JSON file. If none is provided, uses URL Cleaner's default cleaner.
+    /// The config file to use.
+    ///
+    /// Omit to use the built in default cleaner.
     #[cfg(feature = "default-cleaner")]
-    #[arg(long, short)]
+    #[arg(long, value_name = "PATH")]
     cleaner: Option<PathBuf>,
-    /// A url_cleaner::types::Cleaner JSON file. Has to be set because this instance of URL Cleaner Site was compiled without a default cleaner.
+    /// The cleaner file to use.
     #[cfg(not(feature = "default-cleaner"))]
-    #[arg(long, short)]
+    #[arg(long, value_name = "PATH")]
     cleaner: PathBuf,
     /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
     #[arg(long)]
     export_cleaner: bool,
-    /// The ParamsDiffAndProfiles.
-    #[arg(long)]
-    profiles: Option<PathBuf>,
-    /// Flags to insert into the params.
-    #[arg(short, long)]
-    flag: Vec<String>,
-    /// Vars to insert into the params.
-    #[arg(short, long, num_args = 2)]
-    var: Vec<Vec<String>>,
-    /// Whether or not to read from the cache. If unspecified, defaults to true.
-    #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true")]
-    read_cache: Option<bool>,
-    /// Whether or not to write to the cache. If unspecified, defaults to true.
-    #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true")]
-    write_cache: Option<bool>,
-    /// The max size of a POST request to the `/clean` endpoint.
+    /// The ProfilesConfig file.
     ///
-    /// The included userscript uses the `/get-max-json-size` endpoint to query this value and adjust its batch sizes accordingly.
+    /// Cannot be used with --profiles-string.
+    #[arg(long, value_name = "PATH")]
+    profiles: Option<PathBuf>,
+    /// The ProfilesConfig string.
+    ///
+    /// Cannot be used with --profiles.
+    #[arg(long, value_name = "JSON STRING")]
+    profiles_string: Option<String>,
+    /// The max size of a POST request to the `/clean` endpoint.
     #[arg(long, default_value = DEFAULT_MAX_JSON_SIZE, value_parser = parse_byte_unit)]
     max_size: rocket::data::ByteUnit,
     /// The IP to listen to.
-    #[arg(long, default_value = DEFAULT_BIND_IP, aliases = ["ip", "address"])]
-    bind: IpAddr,
+    #[arg(long, default_value = DEFAULT_IP)]
+    ip: IpAddr,
     /// The port to listen to.
     #[arg(long, default_value_t = DEFAULT_PORT)]
     port: u16,
     /// The cache to use.
-    ///
-    /// Defaults to "url-cleaner-site-cache.sqlite"
-    #[arg(long)]
     #[cfg(feature = "cache")]
-    cache: Option<CachePath>,
+    #[arg(long, default_value = "url-cleaner-site-cache.sqlite", value_name = "PATH")]
+    cache: CachePath,
+    /// Whether or not to read from the cache.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    read_cache_default: bool,
+    /// Whether or not to write to the cache.
+    #[cfg(feature = "cache")]
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    write_cache_default: bool,
     /// Defaults whether or not to use cache delay in jobs that don't specify otherwise.
-    #[arg(long, default_value_t = false)]
     #[cfg(feature = "cache")]
+    #[arg(long, default_value = "false", action = clap::ArgAction::Set, value_name = "BOOL")]
     cache_delay_default: bool,
     /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
-    #[arg(long, default_missing_value = "true")]
+    #[arg(long, default_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
     hide_thread_count_default: bool,
     /// Amount of threads to process tasks in.
     ///
@@ -157,34 +156,28 @@ struct Args {
     threads: usize,
     /// The accounts file to use.
     ///
-    /// An accounts file looks like this:
-    ///
-    /// {
+    /// The format is {
+    ///   "allow_guests": true,
     ///   "users": {
     ///     "username1": "password1",
     ///     "username2": "password2"
-    ///   },
-    ///   "allow_guests": true
+    ///   }
     /// }
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     accounts: Option<PathBuf>,
     /// The TLS/HTTPS cert. If specified, requires `--key`.
-    #[arg(long, requires = "key")]
+    #[arg(long, requires = "key", value_name = "PATH")]
     cert: Option<PathBuf>,
     /// The TLS/HTTPS key. If specified, requires `--cert`.
-    #[arg(long, requires = "cert")]
+    #[arg(long, requires = "cert", value_name = "PATH")]
     key: Option<PathBuf>,
     /// The mTLS client's certificate.
-    ///
-    /// Good luck getting ANYTHING to work with it though.
-    #[arg(long, requires = "key", requires = "cert")]
+    #[arg(long, requires = "key", requires = "cert", value_name = "PATH")]
     mtls_cert: Option<PathBuf>,
     /// Log all jobs and their results.
     #[arg(long)]
     log: bool,
     /// The directory to write logs to.
-    ///
-    /// Defaults to `logs`
     #[arg(long, default_value = "logs")]
     log_dir: String
 }
@@ -206,10 +199,10 @@ struct ServerConfig {
     cache_delay_default: bool,
     /// [`CacheHandleConfig::read`].
     #[cfg(feature = "cache")]
-    read_cache: bool,
+    read_cache_default: bool,
     /// [`CacheHandleConfig::write`].
     #[cfg(feature = "cache")]
-    write_cache: bool,
+    write_cache_default: bool,
     /// The number of threads to spawn for each [`JobConfig`].
     threads: NonZero<usize>,
     /// The default value for if [`Job::unthreader`] is [`Unthreader::No`] or [`Unthreader::Yes`].
@@ -240,24 +233,20 @@ async fn rocket() -> _ {
     let cleaner_string = args.cleaner.as_deref().map(|path| read_to_string(path).expect("The cleaner file to be readable.")).unwrap_or(DEFAULT_CLEANER_STR.to_string());
     #[cfg(not(feature = "default-cleaner"))]
     let cleaner_string = read_to_string(&args.cleaner).expect("The cleaner file to be readable.");
-    let mut cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
-
-    cleaner.params.flags.to_mut().extend(args.flag);
-    for var in args.var {
-        let [name, value] = var.try_into().expect("The clap parser to work.");
-        cleaner.params.vars.to_mut().insert(name, value);
-    }
+    let cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
 
     if args.export_cleaner {
         println!("{}", serde_json::to_string(&cleaner).expect("Cleaners to always serialize to JSON."));
         std::process::exit(0);
     }
 
-    let profiles_config_string = match args.profiles {
-        Some(file) => std::fs::read_to_string(file).expect("Reading the ProfilesConfig file to a string to not error."),
-        None => "{}".into()
+    let profiles_config_string = match (args.profiles, args.profiles_string) {
+        (None      , None        ) => "{}".into(),
+        (Some(path), None        ) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
+        (None      , Some(string)) => string,
+        (Some(_)   , Some(_)     ) => panic!("Cannot have both --profiles and --profiles-string.")
     };
-    let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig string to be a valid ProfilesConfig.");
+    let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig to be a valid ProfilesConfig.");
     let cleaner = cleaner.with_profiles(profiles_config);
 
     LOGGING_DIR_ROOT.set(time::format_description::OwnedFormatItem::Literal(args.log_dir.into_bytes().into_boxed_slice())).expect("LOGGING_DIR_ROOT to only be set once.");
@@ -268,13 +257,13 @@ async fn rocket() -> _ {
             cleaner_string,
             profiles_config_string,
             #[cfg(feature = "cache")]
-            cache: args.cache.unwrap_or("url-cleaner-site-cache.sqlite".into()).into(),
+            cache: args.cache.into(),
             #[cfg(feature = "cache")]
             cache_delay_default: args.cache_delay_default,
             #[cfg(feature = "cache")]
-            read_cache : args.read_cache .unwrap_or(true),
+            read_cache_default : args.read_cache_default,
             #[cfg(feature = "cache")]
-            write_cache: args.write_cache.unwrap_or(true),
+            write_cache_default: args.write_cache_default,
             threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
             hide_thread_count_default: args.hide_thread_count_default,
             max_json_size: args.max_size,
@@ -299,7 +288,7 @@ async fn rocket() -> _ {
     };
 
     rocket::custom(rocket::Config {
-        address: args.bind,
+        address: args.ip,
         port: args.port,
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
         tls,
@@ -388,8 +377,8 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                         #[cfg(feature = "cache")]
                         cache_handle_config: CacheHandleConfig {
                             delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default),
-                            read : state.config.read_cache,
-                            write: state.config.write_cache
+                            read : job_config.read_cache .unwrap_or(state.config.read_cache_default ),
+                            write: job_config.write_cache.unwrap_or(state.config.write_cache_default)
                         },
                         unthreader: &unthreader,
                         lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
