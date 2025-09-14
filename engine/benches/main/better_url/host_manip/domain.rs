@@ -5,8 +5,6 @@ use crate::*;
 
 use url_cleaner_engine::types::*;
 
-mod segments;
-
 macro_rules! thing {
     ($group:ident, $get:ident, $set:ident, $sets:expr) => {
         group!($group, $group::$get, $group::$set);
@@ -49,4 +47,4 @@ thing!(domain_part  , domain       , set_domain       , [None, Some("example.com
 thing!(subdomain    , subdomain    , set_subdomain    , [None, Some("www"    ), Some("abc.def" )]);
 thing!(domain_middle, domain_middle, set_domain_middle, [None, Some("example"), Some("example2")]);
 thing!(domain_suffix, domain_suffix, set_domain_suffix, [None, Some("com"    ), Some("co.uk"   )]);
-group!(domain, domain_part, subdomain, domain_middle, domain_suffix, segments::segments);
+group!(domain, domain_part, subdomain, domain_middle, domain_suffix);
