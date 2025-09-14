@@ -80,9 +80,9 @@ impl BetterUrl {
     /// url.set_domain_suffix_segment(-1, None).unwrap(); assert_eq!(url.host_str(), Some("abc.def.example"));
     /// ```
     pub fn set_domain_suffix_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainSuffixSegmentError> {
-        self.set_domain_suffix(set_segment_str(
+        self.set_domain_suffix(set_segment(
             self.domain_suffix().ok_or(SetDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
-            index, value, SetDomainSuffixSegmentError::SegmentNotFound, '.', "."
+            ".", index, value, SetDomainSuffixSegmentError::SegmentNotFound
         )?.as_deref())?;
         Ok(())
     }
@@ -98,7 +98,7 @@ impl BetterUrl {
     pub fn insert_domain_suffix_segment(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSuffixSegmentError> {
         self.set_domain_suffix(Some(&insert_segment(
             self.domain_suffix().ok_or(InsertDomainSuffixSegmentError::UrlDoesNotHaveDomainSuffix)?,
-            index, value, InsertDomainSuffixSegmentError::SegmentNotFound, '.', "."
+            ".", index, value, InsertDomainSuffixSegmentError::SegmentNotFound
         )?))?;
         Ok(())
     }

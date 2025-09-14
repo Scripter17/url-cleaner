@@ -246,11 +246,11 @@
 					"buymeacoff.ee", "cach.me", "cj.dotomi.com", "click.notification.elsevier.com", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com",
 					"fiverr.com", "go.bsky.app", "goodreads.com", "go.shopyourlikes.com", "go.skimresources.com", "gprivate.com", "gznmedia.go2cloud.org", "href.li", "instagr.am",
-					"lego.com", "li.cnn.com", "link.blissy.com", "linkprotect.cudasvc.com", "l.instagram.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "l.threads.com", "mfy.gg",
-					"o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "p.liadm.com", "preview.tinyurl.com", "proxy.notsobot.com",
-					"rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly",
-					"smarturl.it", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.co", "tee.pub",
-					"tinyurl.com", "toyhou.se", "t.umblr.com", "twpf.jp", "urldefense.com", "youtube.com", "u.afp.com"
+					"lego.com", "li.cnn.com", "link.blissy.com", "linkprotect.cudasvc.com", "link.sfchronicle.com", "l.instagram.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio",
+					"l.threads.com", "mfy.gg", "o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "p.liadm.com", "preview.tinyurl.com",
+					"proxy.notsobot.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com",
+					"skfb.ly", "smarturl.it", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.co",
+					"tee.pub", "tinyurl.com", "toyhou.se", "t.umblr.com", "twpf.jp", "u.afp.com", "urldefense.com", "youtube.com"
 				]
 			},
 			"rd_expand_mode": {
@@ -1069,6 +1069,18 @@
 											}}
 										]},
 										"link.blissy.com": {"SetHost": "gznmedia.go2cloud.org"},
+										"link.sfchronicle.com": {"All": [
+											{"If": {
+												"if": {"PathStartsWith": "/external/"},
+												"then": {"SetWhole": {"Modified": {
+													"value": {"Part": {"PathSegment": 2}},
+													"modification": {"Base64Decode": {
+														"alphabet": "UrlSafe"
+													}}
+												}}}
+											}},
+											{"RemoveQueryParams": ["sid", "ss", "st_rid"]}
+										]},
 										"linkprotect.cudasvc.com": {"GetUrlFromQueryParam": "a"},
 										"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
 										"lmgtfy2.com": {"If": {

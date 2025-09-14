@@ -156,14 +156,16 @@ struct Args {
     threads: usize,
     /// The accounts file to use.
     ///
-    /// The format is {
+    /// The format looks like this:
+    ///
+    /// {
     ///   "allow_guests": true,
     ///   "users": {
     ///     "username1": "password1",
     ///     "username2": "password2"
     ///   }
     /// }
-    #[arg(long, value_name = "PATH")]
+    #[arg(verbatim_doc_comment, long, value_name = "PATH")]
     accounts: Option<PathBuf>,
     /// The TLS/HTTPS cert. If specified, requires `--key`.
     #[arg(long, requires = "key", value_name = "PATH")]

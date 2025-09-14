@@ -11,8 +11,8 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.143"
+serde = { version = "1.0.221", features = ["derive"] }
+serde_json = "1.0.144"
 serde_with = "3.14.0"
 thiserror = "2.0.16"
 url = { version = "2.5.7", features = ["serde"] }
@@ -38,7 +38,7 @@ name = "main"
 harness = false
 
 [build-dependencies]
-serde_json = "1.0.143"
+serde_json = "1.0.144"
 
 [features]
 default         = ["default-cleaner"]

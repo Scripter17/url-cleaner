@@ -4,9 +4,9 @@ use std::ops::Bound;
 use std::borrow::Cow;
 
 mod segments;
-pub(crate) use segments::*;
+pub use segments::*;
 mod indexing;
-pub(crate) use indexing::*;
+pub use indexing::*;
 
 /// Converts an `end` bound to a [`Bound`].
 ///

@@ -54,12 +54,13 @@ However, using URL Cleaner Site and its included userscript to clean every URL o
 
 1. Websites can tell you're using URL Cleaner Site and its userscript. It's not hard to tell.
 
-2. Websites can possibly figure out which version of the default cleaner you're using, and pretty easily figure out what params diff you're using.
+2. Websites can possibly figure out which version of the default cleaner you're using, and pretty easily figure out what ParamsDiff you're using.
 
 3. Redirects are cached to reduce information leaks. URL Cleaner also caches how long the redirect took and lets you optionally wait about that long (plus or minus up to 12.5%) when reading from the cache to stop websites from noticing if you have a redirect cached.
 
 4. Even with cache delays, websites can figure out how many threads your instance of URL Cleaner Site is using by measuring how long various amounts of the same redirect takes.
   To defend against this, URL Cleaner has an optional "unthreading" functionality that lets requests, cache reads, etc. be effectively single threaded.
+  The userscript enbales unthreading by default.
 
 5. Caching at all means the website you're on and the website whose redirect URL you're getting from the cache can check the redirect website's logs to see whether or not you actually sent an HTTP request.
 

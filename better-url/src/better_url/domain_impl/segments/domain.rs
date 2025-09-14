@@ -92,9 +92,9 @@ impl BetterUrl {
     /// url.set_domain_segment(-1, None).unwrap(); assert_eq!(url.host_str(), Some("p1.p2.p3"));
     /// ```
     pub fn set_domain_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainSegmentError> {
-        self.set_domain(set_segment_str(
+        self.set_domain(set_segment(
             self.domain().ok_or(SetDomainSegmentError::UrlDoesNotHaveDomain)?,
-            index, value, SetDomainSegmentError::SegmentNotFound, '.', "."
+            ".", index, value, SetDomainSegmentError::SegmentNotFound
         )?.as_deref())?;
         Ok(())
     }
@@ -109,7 +109,7 @@ impl BetterUrl {
     pub fn insert_domain_segment(&mut self, index: isize, value: &str) -> Result<(), InsertDomainSegmentError> {
         self.set_domain(Some(&insert_segment(
             self.domain().ok_or(InsertDomainSegmentError::UrlDoesNotHaveDomain)?,
-            index, value, InsertDomainSegmentError::SegmentNotFound, '.', "."
+            ".", index, value, InsertDomainSegmentError::SegmentNotFound
         )?))?;
         Ok(())
     }

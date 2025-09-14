@@ -16,10 +16,20 @@ psl = "2.1.141"
 thiserror = "2.0.16"
 form_urlencoded = "1.2.2"
 percent-encoding = "2.3.2"
-serde = { optional = true, version = "1.0.219", features = ["derive"] }
+serde = { optional = true, version = "1.0.221", features = ["derive"] }
 
 [lints]
 workspace = true
 
 [features]
 serde = ["dep:serde"]
+
+[dev-dependencies]
+criterion = "0.6.0"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "main"
+harness = false

@@ -360,9 +360,9 @@ impl BetterUrl {
             ( 0, None)  => self.set_path(&self.path_segments_str().ok_or(SetPathSegmentError::UrlDoesNotHavePathSegments)?. split_once('/').ok_or(SetPathSegmentError::CannotRemoveLastPathSegment)?.1.to_string()),
             #[expect(clippy::unnecessary_to_owned, reason = "False positive.")]
             (-1, None)  => self.set_path(&self.path_segments_str().ok_or(SetPathSegmentError::UrlDoesNotHavePathSegments)?.rsplit_once('/').ok_or(SetPathSegmentError::CannotRemoveLastPathSegment)?.0.to_string()),
-            _ => self.set_path(&set_segment_str(
+            _ => self.set_path(&set_segment(
                 self.path_segments_str().ok_or(SetPathSegmentError::UrlDoesNotHavePathSegments)?,
-                index, value, SetPathSegmentError::SegmentNotFound, '/', "/"
+                "/", index, value, SetPathSegmentError::SegmentNotFound
             )?.ok_or(SetPathSegmentError::CannotRemoveLastPathSegment)?)
         }
         Ok(())
@@ -434,16 +434,11 @@ impl BetterUrl {
     /// assert_eq!(url.path(), "/a/b/def/abc//ghi");
     /// ```
     pub fn insert_raw_path_segment(&mut self, index: isize, value: &str) -> Result<(), InsertPathSegmentError> {
-        let mut segments = self.path_segments().ok_or(InsertPathSegmentError::UrlDoesNotHavePathSegments)?.collect::<Vec<_>>();
-        let index = neg_range_boundary(index, segments.len()).ok_or(InsertPathSegmentError::SegmentNotFound)?;
-        segments.insert(index, value);
-        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-        let mut new = String::with_capacity(self.path().len() + value.len() + 1);
-        for segment in segments {
-            new.push('/');
-            new.push_str(segment);
-        }
-        self.set_path(&new);
+        self.set_path(&insert_segment(
+            self.path_segments_str().ok_or(InsertPathSegmentError::UrlDoesNotHavePathSegments)?,
+            "/", index, value, InsertPathSegmentError::SegmentNotFound
+        )?);
+
         Ok(())
     }
 

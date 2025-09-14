@@ -80,9 +80,9 @@ impl BetterUrl {
     /// url.set_subdomain_segment(-1, None).unwrap(); assert_eq!(url.host_str(), Some("example.co.uk"));
     /// ```
     pub fn set_subdomain_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetSubdomainSegmentError> {
-        self.set_subdomain(set_segment_str(
+        self.set_subdomain(set_segment(
             self.subdomain().ok_or(SetSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,
-            index, value, SetSubdomainSegmentError::SegmentNotFound, '.', "."
+            ".", index, value, SetSubdomainSegmentError::SegmentNotFound
         )?.as_deref())?;
         Ok(())
     }
@@ -97,7 +97,7 @@ impl BetterUrl {
     pub fn insert_subdomain_segment(&mut self, index: isize, value: &str) -> Result<(), InsertSubdomainSegmentError> {
         self.set_subdomain(Some(&insert_segment(
             self.subdomain().ok_or(InsertSubdomainSegmentError::UrlDoesNotHaveSubdomain)?,
-            index, value, InsertSubdomainSegmentError::SegmentNotFound, '.', "."
+            ".", index, value, InsertSubdomainSegmentError::SegmentNotFound
         )?))?;
         Ok(())
     }
