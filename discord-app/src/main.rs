@@ -10,21 +10,28 @@ use poise::serenity_prelude as serenity;
 use poise::reply::CreateReply;
 use serenity::Ready;
 use serenity::EventHandler;
+use serenity::CreateAttachment;
 use thiserror::Error;
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
 use url_cleaner_engine::helpers::*;
 
-/// The source code of this instance of the bot.
-static SOURCE_CODE_URL: &str = "https://github.com/Scripter17/url-cleaner";
+/// The introduction to the /help message.
+const INTRO: &str = r#"URL Cleaner Discord App
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+https://www.gnu.org/licenses/agpl-3.0.html"#;
+/// The link to the source code of the bot.
+const SOURCE_CODE_URL: &str = "https://github.com/Scripter17/url-cleaner";
+/// The info to install the bot to your account/sever.
+static INSTALL_INFO: OnceLock<String> = OnceLock::new();
+/// The tutorial for using the bot.
+const TUTORIAL: &str = r#"To clean the URLs in a message, right click/long press a message, go to the apps, and click any of the available \"Clean URLs\" actions"#;
 
 /// Basic URL getting regex.
 ///
 /// Does not account for code blocks, spoilers, etc.
 static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<URL1>[^)]+)\)|(?<URL2>\w+:\/\/\S+)").expect("The URL parsing Regex to be valid."));
-/// The help message.
-static HELP_MESSAGE: OnceLock<String> = OnceLock::new();
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// A discord app for URL Cleaner.
@@ -103,6 +110,10 @@ struct Args {
 struct State {
     /// The [`Cleaner`] to use.
     cleaner: ProfiledCleaner<'static>,
+    /// The [`Cleaner`] used to make [`Self::cleaner`] as a string.
+    cleaner_string: String,
+    /// The [`ProfilesConfig`] used to make [`Self::cleaner`] as a string.
+    profiles_string: String,
     /// The value to pass to [`Unthreader::if`].
     hide_thread_count: bool,
     /// The [`Cache`] to use.
@@ -125,22 +136,27 @@ async fn main() {
     let mut commands = vec![help(), clean_urls()];
 
     #[cfg(feature = "default-cleaner")]
-    let cleaner = Cleaner::load_or_get_default_no_cache(args.cleaner.as_deref()).expect("The cleaner to be valid.");
+    let cleaner_string = match args.cleaner {
+        Some(path) => std::fs::read_to_string(path).expect("The Cleaner file to be readable."),
+        None       => url_cleaner_engine::types::DEFAULT_CLEANER_STR.into()
+    };
     #[cfg(not(feature = "default-cleaner"))]
-    let cleaner = Cleaner::load_from_file(args.cleaner).expect("The cleaner to be valid.");
+    let cleaner_string = std::fs::read_to_string(args.cleaner).expect("The Cleaner file to be readable.");
+
+    let cleaner = serde_json::from_str::<Cleaner>(&cleaner_string).expect("The Cleaner string to be valid.");
 
     if args.export_cleaner {
-        println!("{}", serde_json::to_string(&cleaner).expect("Cleaners to always serialize to JSON."));
+        println!("{cleaner_string}");
         std::process::exit(0);
     }
 
-    let profiles_config = match (args.profiles, args.profiles_string) {
-        (None      , None        ) => Default::default(),
-        (Some(path), None        ) => serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable.")).expect("The ProfilesConfig file to be valid."),
-        (None      , Some(string)) => serde_json::from_str::<ProfilesConfig>(&string).expect("The ProfilesConfig string to be valid."),
+    let profiles_string = match (args.profiles, args.profiles_string) {
+        (None      , None        ) => "{}".to_string(),
+        (Some(path), None        ) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
+        (None      , Some(string)) => string,
         (Some(_)   , Some(_)     ) => panic!("Can't have both --profiles and --profiles-string")
     };
-    let cleaner = cleaner.with_profiles(profiles_config);
+    let cleaner = cleaner.with_profiles(serde_json::from_str(&profiles_string).expect("The ProfilesConfig to be valid."));
 
     let mut profile_names = cleaner.profiles().names().map(String::from).collect::<Vec<_>>();
     profile_names.sort();
@@ -166,6 +182,8 @@ async fn main() {
 
     let state = State {
         cleaner,
+        cleaner_string,
+        profiles_string,
         hide_thread_count: args.hide_thread_count,
         #[cfg(feature = "cache")]
         cache: args.cache.into(),
@@ -206,44 +224,34 @@ struct ReadyHandler;
 #[serenity::async_trait]
 impl EventHandler for ReadyHandler {
     async fn ready(&self, ctx: serenity::Context, data_about_bot: Ready) {
-        let install_info = if ctx.http.get_current_application_info().await.expect("Getting the current application info to work").bot_public {
-            format!(r#"Install to your account: https://discord.com/oauth2/authorize?client_id={0}
-Install to a server: https://discord.com/oauth2/authorize?client_id={0}&scope=bot"#, data_about_bot.application.id)
-        } else {
-            "This instance is private, but you can host your own using the above link".to_string()
-        };
+        let install_info = format!(
+            r#"Install to your account: https://discord.com/oauth2/authorize?client_id={0}
+Install to a server: https://discord.com/oauth2/authorize?client_id={0}&scope=bot"#,
+            data_about_bot.application.id
+        );
 
-        HELP_MESSAGE.set(format!(r#"URL Cleaner Discord App
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
-https://www.gnu.org/licenses/agpl-3.0.html
-{SOURCE_CODE_URL}
+        println!("{INTRO}\n{SOURCE_CODE_URL}\n\n{install_info}\n\n{TUTORIAL}");
 
-{install_info}
+        INSTALL_INFO.set(install_info).expect("INSTALL_INFO to only be set once.");
 
-To clean the URLs in a message, right click a message, go to the apps, and click any of the available \"Clean URLs\" actions"#)).expect("HELP_MESSAGE to only be set once.");
-
-        ctx.set_activity(Some(serenity::gateway::ActivityData {
-            name: SOURCE_CODE_URL.to_string(),
-            kind: serenity::model::gateway::ActivityType::Custom,
-            state: None,
-            url: None
-        }));
-
-        println!(r#"URL Cleaner Discord App
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
-https://www.gnu.org/licenses/agpl-3.0.html
-{SOURCE_CODE_URL}
-
-Install to your account: https://discord.com/oauth2/authorize?client_id={0}
-Install to a server    : https://discord.com/oauth2/authorize?client_id={0}&scope=bot
-
-To clean the URLs in a message, right click a message, go to the apps, and click any of the available \"Clean URLs\" actions"#, data_about_bot.application.id);
+        ctx.set_activity(Some(serenity::gateway::ActivityData::custom(SOURCE_CODE_URL)));
     }
 }
 
 #[poise::command(slash_command)]
 async fn help(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.send(CreateReply::default().ephemeral(true).content(HELP_MESSAGE.get().expect("HELP_MESSAGE to have been set."))).await?;
+    let message = if ctx.http().get_current_application_info().await.expect("Getting the current application info to work.").bot_public {
+        format!("{INTRO}\n{SOURCE_CODE_URL}\n\n{}\n\n{TUTORIAL}", INSTALL_INFO.get().expect("INSTALL_INFO to have been set."))
+    } else {
+        format!("{INTRO}\n{SOURCE_CODE_URL}\n\n{TUTORIAL}")
+    };
+
+    ctx.send(CreateReply::default()
+        .ephemeral(true)
+        .content(message)
+        .attachment(CreateAttachment::bytes(ctx.data().cleaner_string .clone(), "cleaner.json" ).description("The Cleaner this bot is using."))
+        .attachment(CreateAttachment::bytes(ctx.data().profiles_string.clone(), "profiles.json").description("The ProfilesConfig this bot is using."))
+    ).await?;
     Ok(())
 }
 

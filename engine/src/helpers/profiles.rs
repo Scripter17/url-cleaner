@@ -95,11 +95,10 @@ impl<'a> UnprofiledCleaner<'a> {
     }
 }
 
-/// A default [`ParamsDiff`] and [`Profiles`].
+/// A default and named [`Profile`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Profiles<'a> {
     /// The base [`Profile`].
-    #[serde(flatten)]
     base: Profile<'a>,
     /// The [`Profile`]s.
     profiles: HashMap<String, Profile<'a>>

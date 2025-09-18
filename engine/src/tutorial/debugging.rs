@@ -1,6 +1,27 @@
 //! # Debugging
 //!
-//! To check our intuition, it's useful to compile URL Cleaner Engine with the `debug` feature enabled.
+//! ## Local
+//!
+//! Most components have a variant called `Debug` that takes one of itself.
+//!
+//! `Debug` variants print information about the current state, the component's inputs (if any), the resulting value of what it modified (if any), and its return value.
+//!
+//! `Debug` variants are one of the few states a component will be in that will cause [`Cleaner::assert_suitability`] to panic. This is to ensure `Debug` variants aren't accidentally committed to the default cleaner.
+//!
+//! For example, the action `{"Debug": "None"}` will print the following to STDERR
+//!
+//! ```Text
+//! === Action::Debug ===
+//! Old task_state: TaskStateDebugHelper { url: "https://example.com/", scratchpad: Scratchpad { flags: {}, vars: {} }, common_args: None }
+//! Return value: Ok(())
+//! New task_state: TaskStateDebugHelper { url: "https://example.com/", scratchpad: Scratchpad { flags: {}, vars: {} }, common_args: None }
+//! ```
+//!
+//! As with most debugging features, the exact format is not stable or intended to be machine parsable.
+//!
+//! ## Global
+//!
+//! To check our intuition for the [reverted changes example of repeating](repeat#reverted-changes), it's useful to compile URL Cleaner Engine with the `debug` feature enabled to print debug info to STDERR.
 //!
 //! For example, here is the output of using the cleaner from the [reverted changes](repeat#reverted-changes) example cleaner with `https://example.com` as the input.
 //!
@@ -41,11 +62,11 @@
 //!
 //! Entries 0, 1, and 2 are the same as before.
 //!
-//! Entry 3 is the same action as entry 1, but with a different [task state] (the URL being cleaned and some other details).
+//! Entry 3 is the same action as entry 1, but with a different [task state](task_state) (the URL being cleaned and some other details).
 //!
 //! Entry 4 is the same as entry 2 and is being applied to an identical task state. The `1` column means "this action and state combo has been repeated once" and the `2` column is the last entry that combo was found in.
 //!
-//! In general, you should try to write cleaners such that "repeat count" and "repeating" (better name pending) columns are always empty. If they are, then you aren't ever entering the same state twice for (usually) no reason.
+//! In general, you should try to write cleaners such that "repeat count" and "repeat of" columns are always empty. If they are, then you aren't ever entering the same state twice for (usually) no reason.
 //!
 //! The exact format isn't stable, but I'm reasonably happy with how it is now.
 

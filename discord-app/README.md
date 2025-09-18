@@ -18,7 +18,26 @@ Please note that currently spoiler tags are not preserved and code blocks are no
 
 Because context menu actions can't take arguments, URL Cleaner Discord App has "profiles" that let you add additional "Clean URLs" buttons with different ParamsDiffs.
 
-To add a profile, start the app with `--params-diff-profile "Name of the profile" path/to/params-diff.json`. You can specify as many `--params-diff-profile`s as you want.
+The ProfileConfig is a JSON file like this:
+
+```Json
+{
+  "base": {
+    "params_diff": {
+      "flags": ["flag you always want"]
+    }
+  },
+  "profiles": {
+    "profile name 1": {
+      "params_diff": {
+        "flags": ["flag you only sometimes want"]
+      }
+    }
+  }
+}
+```
+
+Using the base profile will enable the `flag you always want` flag, while using `profile name 1` will also enable the `flag you only sometimes want` flag.
 
 ## Default cleaner
 

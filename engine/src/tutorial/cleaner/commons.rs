@@ -30,7 +30,7 @@
 //!
 //! The not stupid way for a website to do redirects is to return an HTTP 301 status code with a header saying "go to `https://example.com/whatever`".
 //!
-//! Some websites instead do stupid things like using the `meta` HTML element or javascript to do redirects.
+//! Some websites instead do stupid things like using the [`meta`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/http-equiv) HTML element or javascript to do redirects.
 //!
 //! The default cleaner handles this stupidity by having a common action called `extract_from_page` that
 //!
@@ -73,7 +73,7 @@
 //! }
 //! ```
 //!
-//! While here the benefit of using a common is small, the actual code in the default cleaner includes caching, applies the `universal` common action, and accounts for the `no_network` flag, making it much more benefitial.
+//! While here the benefit of using a common is small, the actual code in the default cleaner includes caching, applies the `universal` common action, and accounts for the `no_network` flag, making it much more beneficial.
 //!
 //! A common can take flags, vars, conditions, actions, string sources, string modifications, and string matchers. These go in the `common_args` section seen in the [debugging](#Debugging) section.
 //!

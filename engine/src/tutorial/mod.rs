@@ -1,3 +1,4 @@
+#![allow(rustdoc::broken_intra_doc_links, reason = "It's fine.")]
 #![allow(unused_imports, reason = "They're for docs.")]
 
 //! # Tutorial
@@ -10,13 +11,14 @@
 //!
 //! If you think politics shouldn't be involved in privacy tools, you are not prepared for what's coming.
 //!
-//! If you think swearing shouldn't be in docmuentation, try to get my hatred accross without swearing and see where that gets you.
+//! If you think swearing shouldn't be in documentation, try to get my hatred across without swearing and see where that gets you.
 //!
 //! ## Terminology
 //!
-//! - A "job" is a sequence of "tasks" and configuration like the cleaner, cache, etc. to use for those tasks.
+#![cfg_attr(    feature = "cache" , doc = "- A \"[job]\" is a sequence of \"[tasks](task)\", configuration like the [cleaner], [cache], etc. to use for those tasks, and optionally some [context](job_context), such as the website the tasks came from.")]
+#![cfg_attr(not(feature = "cache"), doc = "- A \"[job]\" is a sequence of \"[tasks](task)\", configuration like the [cleaner], cache, etc. to use for those tasks, and optionally some [context](job_context), such as the website the tasks came from.")]
 //!
-//! - A "task" is a URL to clean as well as optional context, such as the text of the link it came from.
+//! - A "[task]" is a URL to clean as well as optional [context](task_context), such as the text of the link it came from.
 //!
 //! - "Component" is a generic term for URL Cleaner Engine types like [`Action`], [`Condition`], [`StringSource`], [`UrlPart`], and so on.
 //!
@@ -24,7 +26,7 @@
 //!
 //! - Some components like [`Action`] and [`StringModification`] can be "applied" to stuff. This means it takes in some value and changes that value.
 //!
-//! - Some components are said to have a "value". This refers to the return value of their main/geting method, such as [`Condition::check`], [`StringSource::get`], [`StringMatcher::check`], and [`UrlPart::get`].
+//! - Some components are said to have a "value". This refers to the return value of their main/getting method, such as [`Condition::check`], [`StringSource::get`], [`UrlPart::get`], etc..
 
 use std::collections::{HashSet, HashMap};
 

@@ -38,6 +38,31 @@ By default URL Cleaner Site will only accept traffic from the computer it's runn
 
 Once you've done that, your phone should be using URL Cleaner Site as long as it can see the server. If you want to use your instance globally you should use accounts and HTTPS.
 
+### Profiles
+
+To unify behavior across many clients, you can use profiles.
+
+The ProfileConfig is a JSON file like this:
+
+```Json
+{
+  "base": {
+    "params_diff": {
+      "flags": ["flag you always want"]
+    }
+  },
+  "profiles": {
+    "profile name 1": {
+      "params_diff": {
+        "flags": ["flag you only sometimes want"]
+      }
+    }
+  }
+}
+```
+
+Using the base profile will enable the `flag you always want` flag, while using `profile name 1` will also enable the `flag you only sometimes want` flag.
+
 ### Accounts
 
 If you want to use URL Cleaner Site everywhere, it should be safe to host a public instance using [HTTPS](#https) accounts.
@@ -143,7 +168,7 @@ The only required field is `tasks`, but a fully filled `JobConfig` looks like th
       "some info about this job": "xyz"
     }
   },
-  "profile": "a named ParamsDiff you often want to use",
+  "profile": "the name of the profile you want to use",
   "params_diff": {
     "flags": [
       "a flag you don't often want to change",

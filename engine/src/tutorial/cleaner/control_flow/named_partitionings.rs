@@ -21,7 +21,7 @@
 //! }}
 //! ```
 //!
-//! you can instead defined a [`NamedPartitioning`] like
+//! you can instead define a [`NamedPartitioning`] in a [`Cleaner::params`]'s [`Params::named_partitionings`] like
 //!
 //! ```Json
 //! "normalized_host_categories": {
@@ -40,7 +40,5 @@
 //!   }
 //! }}
 //! ```
-//!
-//! .
 
 pub(crate) use super::*;

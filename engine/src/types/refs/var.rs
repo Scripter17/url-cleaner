@@ -23,7 +23,7 @@ pub enum VarType {
     JobContext,
     /// Get it from [`TaskStateView::context`]'s [`TaskContext::vars`].
     TaskContext,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
+    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`].
     Scratchpad,
     /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
     /// # Errors
@@ -33,7 +33,7 @@ pub enum VarType {
     ///
     /// Even though [`std::env::var`] returns an [`Err`] when the environment variable isn't present, this instead returns [`None`].
     /// # Errors
-    /// If the environment variable exists but isn't valid UTF-8, returns the error [`GetVarError::EnvVarIsNotUtf8`]
+    /// If the environment variable exists but isn't valid UTF-8, returns the error [`GetVarError::EnvVarIsNotUtf8`].
     Env
 }
 

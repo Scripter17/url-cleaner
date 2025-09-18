@@ -8,7 +8,7 @@
 //!
 //! 2. Remove the first character.
 //!
-//! 3. Base64 decode it.
+//! 3. Base64 decode it using the default URL safe alphabet.
 //!
 //! 4. Split it on `,` and keep only the last segment.
 //!
@@ -16,7 +16,7 @@
 //!
 //! While this seems like and is a bizarre example, this exact process is used to clean the links cnn sends you in emails.
 //!
-//! To express the above operations, we would write a `Modified` string source as follows:
+//! To express the above operations, we would write a [`StringSource::Modified`] as follows:
 //!
 //! ```Json
 //! {"SetWhole": {"Modified": {

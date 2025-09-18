@@ -97,25 +97,25 @@ impl TryFrom<RegexParts> for Regex {
 pub struct RegexConfig {
     /// The value passed to [`RegexBuilder::case_insensitive`].
     ///
-    /// The character for this flag is `i`
+    /// The character for this flag is `i`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub case_insensitive    : bool,
     /// The value passed to [`RegexBuilder::crlf`].
     ///
-    /// The character for this flag is `R`
+    /// The character for this flag is `R`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub crlf                : bool,
     /// The value passed to [`RegexBuilder::dot_matches_new_line`].
     ///
-    /// The character for this flag is `s`
+    /// The character for this flag is `s`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub dot_matches_new_line: bool,
     /// The value passed to [`RegexBuilder::ignore_whitespace`].
     ///
-    /// The character for this flag is `x`
+    /// The character for this flag is `x`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub ignore_whitespace   : bool,
@@ -125,25 +125,25 @@ pub struct RegexConfig {
     #[serde(default = "newline_u8", skip_serializing_if = "is_nlu8" )] pub line_terminator     : u8,
     /// The value passed to [`RegexBuilder::multi_line`].
     ///
-    /// The character for this flag is `m`
+    /// The character for this flag is `m`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub multi_line          : bool,
     /// The value passed to [`RegexBuilder::octal`].
     ///
-    /// The character for this flag is `o`
+    /// The character for this flag is `o`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub octal               : bool,
     /// The value passed to [`RegexBuilder::swap_greed`].
     ///
-    /// The character for this flag is `U`
+    /// The character for this flag is `U`.
     ///
     /// Defaults to [`false`].
     #[serde(default               , skip_serializing_if = "is_false")] pub swap_greed          : bool,
     /// The value passed to [`RegexBuilder::unicode`].
     ///
-    /// The character for this flag is `u`
+    /// The character for this flag is `u`.
     ///
     /// Defaults to [`true`].
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode             : bool

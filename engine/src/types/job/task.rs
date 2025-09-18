@@ -43,7 +43,7 @@ impl Task<'_> {
     }
 }
 
-/// The enums of errors that [`Task::do`] can return.
+/// The enum of errors that [`Task::do`] can return.
 #[derive(Debug, Error)]
 pub enum DoTaskError {
     /// Returned when an [`MakeTaskError`] is encountered.

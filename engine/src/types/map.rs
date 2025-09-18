@@ -1,6 +1,7 @@
-//! Faster `HashMap<Option<String>, _>` with fallbacks.
+//! `HashMap<Option<String>, T>` you can index with `Option<&T>`.
+//!
+//! Also has an optional fallback value for keys not otherwise in the map.
 
-use std::fmt::Debug;
 use std::collections::{HashMap, HashSet};
 
 use serde::{Serialize, Deserialize};
@@ -14,7 +15,7 @@ use crate::util::*;
 #[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
-pub struct Map<T: Debug> {
+pub struct Map<T> {
     /// The map from [`Some`] to `T`.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]
     pub map: HashMap<String, T>,
@@ -26,7 +27,7 @@ pub struct Map<T: Debug> {
     pub r#else: Option<Box<T>>
 }
 
-impl<T: Debug> Map<T> {
+impl<T> Map<T> {
     /// [`HashMap::with_capacity`].
     pub fn with_capacity(capacity: usize) -> Self {
         Map {
@@ -41,8 +42,7 @@ impl<T: Debug> Map<T> {
     /// If [`None`], returns the value of [`Self::if_none`].
     ///
     /// If either of the above return [`None`], returns the value of [`Self::else`].
-    pub fn get<U: Debug + AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
-        debug!(Map::get, self, key);
+    pub fn get<U: AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
         match key {
             Some(key) => self.map.get(key.as_ref()),
             None => self.if_none.as_deref()
@@ -50,7 +50,7 @@ impl<T: Debug> Map<T> {
     }
 }
 
-impl<T: Debug> Default for Map<T> {
+impl<T> Default for Map<T> {
     fn default() -> Self {
         Self {
             map    : Default::default(),
@@ -74,29 +74,27 @@ pub struct MapDiff<T> {
     pub remove: HashSet<String>
 }
 
-impl<T: Debug> MapDiff<T> {
+impl<T> MapDiff<T> {
     /// Applies the diff.
     ///
     /// If you want to apply `self` multiple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then using [`Self::apply_once`] on each clone.
     pub fn apply_once(self, to: &mut Map<T>) {
-        debug!(MapDiff::apply_once, &self, to);
         to.map.extend(self.insert);
         to.map.retain(|k, _| !self.remove.contains(k));
     }
 }
 
-impl<T: Debug + Clone> MapDiff<T> {
+impl<T: Clone> MapDiff<T> {
     /// Applies the diff.
     ///
     /// If you only want to apply `self` once, use [`Self::apply_once`].
     pub fn apply_multiple(&self, to: &mut Map<T>) {
-        debug!(MapDiff::apply_multiple, self, to);
         to.map.extend(self.insert.iter().map(|(k, v)| (k.clone(), v.clone())));
         to.map.retain(|k, _| !self.remove.contains(k));
     }
 }
 
-impl<T: Debug, const N: usize> From<[(String, T); N]> for Map<T> {
+impl<T, const N: usize> From<[(String, T); N]> for Map<T> {
     fn from(value: [(String, T); N]) -> Self {
         Self {
             map: value.into(),
@@ -106,7 +104,7 @@ impl<T: Debug, const N: usize> From<[(String, T); N]> for Map<T> {
     }
 }
 
-impl<T: Debug, const N: usize> From<[(Option<String>, T); N]> for Map<T> {
+impl<T, const N: usize> From<[(Option<String>, T); N]> for Map<T> {
     fn from(value: [(Option<String>, T); N]) -> Self {
         let mut ret = Self {
             map: HashMap::with_capacity(N),
@@ -125,7 +123,7 @@ impl<T: Debug, const N: usize> From<[(Option<String>, T); N]> for Map<T> {
     }
 }
 
-impl<T: Debug> From<HashMap<String, T>> for Map<T> {
+impl<T> From<HashMap<String, T>> for Map<T> {
     fn from(value: HashMap<String, T>) -> Self {
         Self {
             map: value,
@@ -135,7 +133,7 @@ impl<T: Debug> From<HashMap<String, T>> for Map<T> {
     }
 }
 
-impl<T: Debug> From<HashMap<Option<String>, T>> for Map<T> {
+impl<T> From<HashMap<Option<String>, T>> for Map<T> {
     fn from(value: HashMap<Option<String>, T>) -> Self {
         let mut ret = Self {
             map: HashMap::with_capacity(value.len()),
@@ -154,7 +152,7 @@ impl<T: Debug> From<HashMap<Option<String>, T>> for Map<T> {
     }
 }
 
-impl<T: Debug> FromIterator<(String, T)> for Map<T> {
+impl<T> FromIterator<(String, T)> for Map<T> {
     fn from_iter<I: IntoIterator<Item = (String, T)>>(iter: I) -> Self {
         Self {
             map: iter.into_iter().collect(),
@@ -164,7 +162,7 @@ impl<T: Debug> FromIterator<(String, T)> for Map<T> {
     }
 }
 
-impl<T: Debug> FromIterator<(Option<String>, T)> for Map<T> {
+impl<T> FromIterator<(Option<String>, T)> for Map<T> {
     fn from_iter<I: IntoIterator<Item = (Option<String>, T)>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let size_hint = iter.size_hint();

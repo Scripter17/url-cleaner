@@ -6,8 +6,8 @@
 //!
 //! ```Json
 //! {"TryElse": {
-//!   "try": {"Error": "Something that returns an error"},
-//!   "else": ...
+//!   "try": "Something that may or may not return an error.",
+//!   "else": "Something to do if the try thing returned an error."
 //! }}
 //! ```
 

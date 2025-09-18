@@ -56,7 +56,7 @@ pub(crate) mod serde_headermap {
 
     /// Deserializes a [`HeaderMap`].
     /// # Errors
-    /// If the value isn't a map or isn't a valid [`HeaderMap`], returns an error
+    /// If the value isn't a map or isn't a valid [`HeaderMap`], returns an error.
     pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<HeaderMap, D::Error> {
         let temp: HashMap<String, String> = Deserialize::deserialize(d)?;
         (&temp).try_into().map_err(D::Error::custom)

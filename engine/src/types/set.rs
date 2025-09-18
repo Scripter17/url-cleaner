@@ -1,4 +1,4 @@
-//! Faster `HashSet<Option<String>>`.
+//! `HashSet<Option<T>>` but you can check inclusivity with `Option<&T>`.
 
 use std::collections::HashSet;
 use std::hash::Hash;

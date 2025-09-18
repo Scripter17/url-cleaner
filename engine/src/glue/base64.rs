@@ -31,12 +31,12 @@ pub struct Base64Config {
     pub alphabet: Base64Alphabet,
     /// If [`true`], encodes the `=` padding at the end.
     ///
-    /// Defaults to [`true`]
+    /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub encode_padding: bool,
     /// Whether or not to require, refuse, or not care about padding when decoding.
     ///
-    /// Defaults to [`DecodePaddingMode::Indifferent`]
+    /// Defaults to [`DecodePaddingMode::Indifferent`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub decode_padding: Base64DecodePaddingMode,
     /// [`GeneralPurposeConfig::with_decode_allow_trailing_bits`].

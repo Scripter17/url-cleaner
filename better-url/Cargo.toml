@@ -16,7 +16,7 @@ psl = "2.1.141"
 thiserror = "2.0.16"
 form_urlencoded = "1.2.2"
 percent-encoding = "2.3.2"
-serde = { optional = true, version = "1.0.221", features = ["derive"] }
+serde = { optional = true, version = "1.0.225", features = ["derive"] }
 
 [lints]
 workspace = true

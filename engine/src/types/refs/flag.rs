@@ -30,7 +30,7 @@ pub enum FlagType {
     /// ```
     #[default]
     Params,
-    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`]
+    /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`].
     /// # Examples
     /// ```
     /// use std::borrow::Cow;

@@ -62,7 +62,7 @@ pub struct CleanerDocs {
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct JobContextDocs {
-    /// Documentation for the vars in [`JobContext::vars`]
+    /// Documentation for the vars in [`JobContext::vars`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>

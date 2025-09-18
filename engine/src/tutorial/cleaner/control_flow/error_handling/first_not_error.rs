@@ -25,5 +25,7 @@
 //!   "Thing4"
 //! ]}
 //! ```
+//!
+//! The main difference is that when all attempted things return an error, the error variant is named `FirstNotErrorErrors` with a [`Vec`] of all the errors instead of `TryElseErrors` with an equivalently nested chain of errors.
 
 pub(crate) use super::*;

@@ -42,7 +42,7 @@ pub enum StringModification {
     ///
     /// The exact info printed is unspecified and subject to change at any time for any reason.
     /// # Suitability
-    /// Always unsuiable to be in the default config.
+    /// Always unsuitable to be in the default config.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
@@ -302,7 +302,7 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
-    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -321,7 +321,7 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
-    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -351,7 +351,7 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
-    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -370,7 +370,7 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification))]
     ///
-    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`]
+    /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
@@ -973,7 +973,7 @@ pub enum StringModificationError {
     /// Returned when a segment isn't found.
     #[error("The requested segment wasn't found.")]
     SegmentNotFound,
-    /// Returned when a segment range isn't found
+    /// Returned when a segment range isn't found.
     #[error("The requested segment range wasn't found.")]
     SegmentRangeNotFound,
 

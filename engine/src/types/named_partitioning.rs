@@ -1,4 +1,4 @@
-//! Effectively a way to query multiple [`HashSet`]s at once.
+//! Effectively a way to query multiple disjoint [`HashSet`]s at once.
 
 use std::collections::{HashMap, hash_map::Entry};
 use std::sync::Arc;

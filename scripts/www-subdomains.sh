@@ -21,12 +21,15 @@ if [ "$get_list" -eq 1 ]; then
   echo "Getting redirects for $(echo "$domains" | wc -l) domains." > /dev/stderr
 
   for domain in $domains; do
+    echo -n "$domain"
     headers=$(curl -m 5 -s "https://$domain" -o /dev/null -D -)
     redirect=$(echo "$headers" | grep -i '^location' | sed -E 's/^[^:]+:\s*//')
     if [ "$redirect" ]; then
-      echo "$domain -> $redirect"
+      echo " -> $redirect"
+    else
+      echo " (nothing)"
     fi
-  done > www-subdomains-result.txt
+  done | tee www-subdomains-result.txt
 fi
 
 echo     '{'

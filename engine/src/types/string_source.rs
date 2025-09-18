@@ -73,7 +73,7 @@ pub enum StringSource {
     TryElse {
         /// The value to try to get.
         ///
-        /// If it's an error, return the value of [`Self::TryElse::else`]
+        /// If it's an error, return the value of [`Self::TryElse::else`].
         r#try: Box<Self>,
         /// The value to return if [`Self::TryElse::try`] is an error.
         r#else: Box<Self>
@@ -86,7 +86,7 @@ pub enum StringSource {
     ///
     /// The exact info printed is unspecified and subject to change at any time for any reason.
     /// # Suitability
-    /// Always unsuiable to be in the default config.
+    /// Always unsuitable to be in the default config.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
@@ -676,7 +676,7 @@ pub enum StringSourceError {
     /// Returned when the requested [`Map`] isn't found.
     #[error("The requested map was not found.")]
     MapNotFound,
-    /// Returned when the requested [`Params::named_partitionings`] isn't found
+    /// Returned when the requested [`Params::named_partitionings`] isn't found.
     #[error("The requested Params NamedPartitioning was not found.")]
     NamedPartitioningNotFound,
     /// Returned when a [`GetFlagError`] is encountered.

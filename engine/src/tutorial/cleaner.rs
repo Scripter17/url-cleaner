@@ -28,9 +28,13 @@
 //! }
 //! ```
 //!
-//! The "[docs](Cleaner::docs)" field contains the [`CleanerDocs`]. It's optional but polite to add.
+//! The `docs` field contains the [`CleanerDocs`]. It's optional but polite to add.
 //!
-//! The "[actions](Cleaner::actions)" field contains a list of [`Action`]s to do. The first action, written as [`RemoveQueryParam`](Action::RemoveQueryParam) removes any "utm_source" query param found in the URL.
+//! The omitted [`params`] field contains the [`Params`] used to store configuration data.
+//!
+//! The omitted [`commons`] field contains the [`Commons`] used to store components used in multiple places.
+//!
+//! The [`actions`] field contains a list of [`Action`]s to do. The first action, written as [`RemoveQueryParam`](Action::RemoveQueryParam) removes any "utm_source" query param found in the URL.
 //!
 //! The second action, the [`If`](Action::If) action, applies the action in its [`then`](Action::If::then) field if and only if the condition in its [`if`](Action::If::if) field is "satisfied".
 //! In this case, the condition is satisfied if the "https_upgrade" flag is set and the URL's scheme is "http".

@@ -39,7 +39,7 @@ pub enum StringSourceJsonValue {
 impl FromStr for StringSourceJsonValue {
     type Err = std::convert::Infallible;
 
-    /// Makes a [`Self::String`]
+    /// Makes a [`Self::String`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(s.into())
     }

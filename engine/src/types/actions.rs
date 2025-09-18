@@ -236,7 +236,7 @@ pub enum Action {
     FirstMatchingPartNamedPartitioning {
         /// The [`NamedPartitioning`] to search in.
         named_partitioning: StringSource,
-        /// The [`UrlPart`]s whoses value to find in the [`NamedPartitioning`].
+        /// The [`UrlPart`]s whose value to find in the [`NamedPartitioning`].
         parts: Vec<UrlPart>,
         /// The [`Map`] to index.
         #[serde(flatten)]
@@ -1237,11 +1237,10 @@ impl Action {
             Self::None => {},
             Self::Error(msg) => Err(ActionError::ExplicitError(msg.clone()))?,
             Self::Debug(action) => {
-                let old_url = task_state.url.clone();
-                let old_scratchpad = task_state.scratchpad.clone();
-                let action_result=action.apply(task_state);
-                eprintln!("=== Action::Debug ===\nAction: {action:?}\nOld URL: {old_url:?}\nOld scratchpad: {old_scratchpad:?}\nAction return value: {action_result:?}\nNew task_state: {task_state:?}");
-                action_result?;
+                let old_task_state = format!("{:?}", task_state.debug_helper());
+                let return_value=action.apply(task_state);
+                eprintln!("=== Action::Debug ===\nOld task_state: {old_task_state}\nReturn value: {return_value:?}\nNew task_state: {:?}", task_state.debug_helper());
+                return_value?
             },
 
             // Error handling
@@ -1508,9 +1507,9 @@ impl Action {
 
             #[cfg(feature = "http")]
             Self::ExpandRedirect {url, headers, http_client_config_diff} => {
-                let url = match url {
-                    Some(url) => Cow::Owned(get_string!(url, task_state, ActionError)),
-                    None => Cow::Borrowed(task_state.url.as_str())
+                let (url, use_task) = match url {
+                    Some(url) => (get_cow!(url, task_state, ActionError), false),
+                    None => (Cow::Borrowed(task_state.url.as_str()), true)
                 };
                 let _unthread_handle = task_state.unthreader.unthread();
                 #[cfg(feature = "cache")]
@@ -1522,7 +1521,8 @@ impl Action {
                 let start = std::time::Instant::now();
                 let response = task_state.to_view().http_client(http_client_config_diff.as_deref())?.get(&*url).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
-                    BetterUrl::parse(std::str::from_utf8(response.headers().get("location").ok_or(ActionError::LocationHeaderNotFound)?.as_bytes())?)?
+                    BetterParseOptions::default().base_url(Some(&*if use_task {Cow::Borrowed(&**task_state.url)} else {Cow::Owned(Url::parse(&url)?)}))
+                        .parse(std::str::from_utf8(response.headers().get("location").ok_or(ActionError::LocationHeaderNotFound)?.as_bytes())?)?
                 } else {
                     response.url().clone().into()
                 };

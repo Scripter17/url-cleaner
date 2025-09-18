@@ -104,7 +104,7 @@ pub enum StringMatcher {
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
     StartsWith(StringSource),
-    /// Satisfied if the sring ends with the specified string.
+    /// Satisfied if the string ends with the specified string.
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
     EndsWith(StringSource),
@@ -112,7 +112,7 @@ pub enum StringMatcher {
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
     IsPrefixOf(StringSource),
-    /// Satisfied if the sring is a suffix of the specified string.
+    /// Satisfied if the string is a suffix of the specified string.
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher), geterr(StringSource), getnone(StringSource, StringMatcherError))]
     IsSuffixOf(StringSource),

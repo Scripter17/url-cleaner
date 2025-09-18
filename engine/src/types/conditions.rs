@@ -1264,7 +1264,7 @@ pub enum ConditionError {
     /// Returned when a [`Condition`] with the specified name isn't found in the [`Commons::conditions`].
     #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
     CommonConditionNotFound,
-    /// Returned when a [`CommonCallArgsError`] is encountered/
+    /// Returned when a [`CommonCallArgsError`] is encountered.
     #[error(transparent)]
     CommonCallArgsError(#[from] CommonCallArgsError),
 

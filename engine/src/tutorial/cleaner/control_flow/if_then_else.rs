@@ -22,5 +22,7 @@
 //!   "else": "RemoveQuery"
 //! }}
 //! ```
+//!
+//! Sometimes, handling every case can get very verbose. For methods to briefly express common situations, see [maps] and [named partitionings](named_partitionings).
 
 pub(crate) use super::*;
