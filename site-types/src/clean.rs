@@ -3,8 +3,6 @@
 use serde::{Serialize, Deserialize};
 
 use url_cleaner_engine::types::*;
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use url_cleaner_engine::helpers::*;
 
 use crate::util::*;
 use crate::auth::*;
@@ -14,9 +12,20 @@ use crate::auth::*;
 /// Used to construct a [`Job`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct JobConfig<'a> {
+pub struct CleanPayload<'a> {
     /// The [`LazyTaskConfig`]s to use.
     pub tasks: Vec<LazyTaskConfig<'a>>,
+    /// The [`JobConfig`] to use.
+    ///
+    /// Flattened in serialization.
+    #[serde(flatten)]
+    pub config: JobConfig
+}
+
+/// The config or a [`CleanPayload`].
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct JobConfig {
     /// The authentication to use.
     ///
     /// Defaults to [`None`].
@@ -62,11 +71,13 @@ pub struct JobConfig<'a> {
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_delay: Option<bool>,
-    /// If [`Some`], overwrite the [`Job`]'s [`Job::unthreader`].
+    /// If [`Some`], enables/disables unthreading.
+    ///
+    /// If [`None`], uses the default value set by the server.
     ///
     /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub hide_thread_count: Option<bool>
+    pub unthread: Option<bool>
 }
 
 /// The [`Result`] returned by the `/clean` route.

@@ -21,20 +21,25 @@ use rocket::{
 };
 use clap::Parser;
 
+use better_url::BetterUrl;
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
-use url_cleaner_engine::helpers::*;
 use url_cleaner_site_types::*;
 
+/// The source code of this instance.
+static SOURCE_CODE: LazyLock<BetterUrl> = LazyLock::new(|| env!("CARGO_PKG_REPOSITORY").parse().expect("The CARGO_PKG_REPOSITORY enviroment vairable to be a valid BetterUrl."));
+/// The version of this instance.
+const VERSION     : &str = env!("CARGO_PKG_VERSION");
+
 /// The base info to return when getting `/`.
-const INFO: &str = r#"URL Cleaner Site
+const INFO: &str = concat!("URL Cleaner Site ", env!("CARGO_PKG_VERSION"), r#"
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
-https://github.com/Scripter17/url-cleaner
+"#, env!("CARGO_PKG_REPOSITORY"), r#"
 
-See /get-cleaner       to get the loaded Cleaner.
-See /get-profiles      to get the loaded Profiles.
-See /get-max-json-size to get the max size of a JobConfig's JSON."#;
+See /info     to get the ServerInfo.
+See /cleaner  to get the Cleaner.
+See /profiles to get the ProfilesConfig."#);
 
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_JSON_SIZE: &str = "25MiB";
@@ -65,13 +70,18 @@ static LOGGING_FILE_PATH_FORMAT: LazyLock<Vec<time::format_description::OwnedFor
     ret
 });
 
+/// An [`Unthreader`] that doesn't do any unthreading.
+///
+/// Used when unthrading is defaulted to or set to off.
+static NO_UNTHREADER: LazyLock<Unthreader> = LazyLock::new(|| UnthreaderMode::Multithread.into());
+
 /// Clap doesn't like `<rocket::data::ByteUnit as FromStr>::Error`.
 fn parse_byte_unit(s: &str) -> Result<rocket::data::ByteUnit, String> {
     rocket::data::ByteUnit::from_str(s).map_err(|x| x.to_string())
 }
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
-/// A basic HTTP server and userscript to allow automatically applying URL Cleaner to every URL on every webpage you visit.
+/// URL Cleaner Site - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
 ///
@@ -108,9 +118,6 @@ struct Args {
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(long, value_name = "PATH")]
     cleaner: PathBuf,
-    /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
-    #[arg(long)]
-    export_cleaner: bool,
     /// The ProfilesConfig file.
     ///
     /// Cannot be used with --profiles-string.
@@ -136,19 +143,22 @@ struct Args {
     cache: CachePath,
     /// Whether or not to read from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    read_cache_default: bool,
+    #[arg(long)]
+    default_no_read_cache: bool,
     /// Whether or not to write to the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    write_cache_default: bool,
+    #[arg(long)]
+    default_no_write_cache: bool,
     /// Defaults whether or not to use cache delay in jobs that don't specify otherwise.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "false", action = clap::ArgAction::Set, value_name = "BOOL")]
-    cache_delay_default: bool,
-    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
-    #[arg(long, default_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    hide_thread_count_default: bool,
+    #[arg(long)]
+    default_cache_delay: bool,
+    /// Makes network requests, cache reads, etc. effectively single threaded while keeping most of the speed boost from multithreading.
+    #[arg(long)]
+    default_unthread: bool,
+    /// When unthreading, also ratelimit unthreaded things.
+    #[arg(long, value_name = "SECONDS")]
+    unthread_ratelimit: Option<f64>,
     /// Amount of threads to process tasks in.
     ///
     /// Zero uses the CPU's thread count.
@@ -187,29 +197,31 @@ struct Args {
 /// The config for the server.
 #[derive(Debug)]
 struct ServerConfig {
-    /// The [`Cleaner`] to use.
-    cleaner: ProfiledCleaner<'static>,
     /// A [`String`] version of [`Self::cleaner`].
     cleaner_string: String,
-    /// A [`String`] version of the [`ProfilesConfig`]..
+    /// The [`ProfiledCleaner`] to use.
+    cleaner: ProfiledCleaner<'static>,
+    /// The string [`ProfilesConfig`] used.
     profiles_config_string: String,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
     /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
     #[cfg(feature = "cache")]
-    cache_delay_default: bool,
+    default_cache_delay: bool,
     /// [`CacheHandleConfig::read`].
     #[cfg(feature = "cache")]
-    read_cache_default: bool,
+    default_read_cache: bool,
     /// [`CacheHandleConfig::write`].
     #[cfg(feature = "cache")]
-    write_cache_default: bool,
-    /// The number of threads to spawn for each [`JobConfig`].
+    default_write_cache: bool,
+    /// The number of threads to spawn for each [`CleanPayload`].
     threads: NonZero<usize>,
-    /// The default value for if [`Job::unthreader`] is [`Unthreader::No`] or [`Unthreader::Yes`].
-    hide_thread_count_default: bool,
-    /// The max size for a [`JobConfig`]'s JSON representation.
+    /// If [`true`], defaults unthreading to use [`ServerState::unthreader`].
+    ///
+    /// If [`false`], defaults unthreading to use [`NO_UNTHREADER`].
+    default_unthread: bool,
+    /// The max size for a [`CleanPayload`]'s JSON representation.
     max_json_size: rocket::data::ByteUnit,
     /// The [`Accounts`] to use.
     accounts: Accounts,
@@ -222,7 +234,9 @@ struct ServerConfig {
 struct ServerState {
     /// The [`ServerConfig`] to use.
     config: ServerConfig,
-    /// The number of [`JobConfig`]s handled. Used for naming threads.
+    /// The default [`UnthreaderMode`].
+    unthreader: Unthreader,
+    /// The number of [`CleanPayload`]s handled. Used for naming threads.
     job_count: Mutex<usize>,
 }
 
@@ -237,11 +251,6 @@ async fn rocket() -> _ {
     let cleaner_string = read_to_string(&args.cleaner).expect("The cleaner file to be readable.");
     let cleaner: Cleaner = serde_json::from_str(&cleaner_string).expect("The cleaner file to contain a valid Cleaner.");
 
-    if args.export_cleaner {
-        println!("{}", serde_json::to_string(&cleaner).expect("Cleaners to always serialize to JSON."));
-        std::process::exit(0);
-    }
-
     let profiles_config_string = match (args.profiles, args.profiles_string) {
         (None      , None        ) => "{}".into(),
         (Some(path), None        ) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
@@ -249,25 +258,26 @@ async fn rocket() -> _ {
         (Some(_)   , Some(_)     ) => panic!("Cannot have both --profiles and --profiles-string.")
     };
     let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig to be a valid ProfilesConfig.");
-    let cleaner = cleaner.with_profiles(profiles_config);
+    // For my personal server, the leaking and borrowed()ing saves about half a megabyte of RAM.
+    let cleaner = Box::leak(Box::new(cleaner)).borrowed().with_profiles(profiles_config.clone());
 
     LOGGING_DIR_ROOT.set(time::format_description::OwnedFormatItem::Literal(args.log_dir.into_bytes().into_boxed_slice())).expect("LOGGING_DIR_ROOT to only be set once.");
 
     let server_state = ServerState {
         config: ServerConfig {
-            cleaner,
             cleaner_string,
+            cleaner,
             profiles_config_string,
             #[cfg(feature = "cache")]
             cache: args.cache.into(),
             #[cfg(feature = "cache")]
-            cache_delay_default: args.cache_delay_default,
+            default_cache_delay: args.default_cache_delay,
             #[cfg(feature = "cache")]
-            read_cache_default : args.read_cache_default,
+            default_read_cache : !args.default_no_read_cache,
             #[cfg(feature = "cache")]
-            write_cache_default: args.write_cache_default,
+            default_write_cache: !args.default_no_write_cache,
             threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
-            hide_thread_count_default: args.hide_thread_count_default,
+            default_unthread: args.default_unthread,
             max_json_size: args.max_size,
             accounts: match args.accounts {
                 Some(accounts) => serde_json::from_str(&std::fs::read_to_string(accounts).expect("The accounts file to be readable.")).expect("The accounts file to be valid."),
@@ -275,6 +285,10 @@ async fn rocket() -> _ {
             },
             log: args.log
         },
+        unthreader: match args.unthread_ratelimit {
+            None    => UnthreaderMode::Unthread,
+            Some(d) => UnthreaderMode::UnthreadAndRatelimit(std::time::Duration::from_secs_f64(d))
+        }.into(),
         job_count: Mutex::new(0)
     };
 
@@ -295,7 +309,7 @@ async fn rocket() -> _ {
         limits: Limits::default().limit("json", args.max_size).limit("string", args.max_size),
         tls,
         ..rocket::Config::default()
-    }).mount("/", routes![index, clean, get_max_json_size, get_cleaner, get_profiles]).manage(server_state)
+    }).mount("/", routes![index, info, clean, cleaner, profiles]).manage(server_state)
 }
 
 /// The `/` route.
@@ -308,58 +322,71 @@ async fn index(state: &State<ServerState>) -> String {
     }
 }
 
-/// The `/get-cleaner` route.
-#[get("/get-cleaner")]
-async fn get_cleaner(state: &State<ServerState>) -> impl Responder<'_, '_> {
+/// The `/info` endpoint.
+#[get("/info")]
+async fn info(state: &State<ServerState>) -> Json<ServerInfo<'_>> {
+    Json(ServerInfo {
+        source_code        : Cow::Borrowed(&SOURCE_CODE),
+        version            : Cow::Borrowed(VERSION),
+        logging_enabled    : state.config.log,
+        max_json_size      : state.config.max_json_size.as_u64(),
+        #[cfg(feature = "cache")]
+        default_read_cache : state.config.default_read_cache,
+        #[cfg(feature = "cache")]
+        default_write_cache: state.config.default_write_cache,
+        #[cfg(feature = "cache")]
+        default_cache_delay: state.config.default_cache_delay,
+        default_unthread   : state.config.default_unthread,
+        unthreader_mode    : state.unthreader.mode
+    })
+}
+
+/// The `/cleaner` route.
+#[get("/cleaner")]
+async fn cleaner(state: &State<ServerState>) -> impl Responder<'_, '_> {
     (
         ContentType(MediaType::JSON),
         &*state.config.cleaner_string
     )
 }
 
-/// The `/get-profiles` route.
-#[get("/get-profiles")]
-async fn get_profiles(state: &State<ServerState>) -> impl Responder<'_, '_> {
+/// The `/profiles` route.
+#[get("/profiles")]
+async fn profiles(state: &State<ServerState>) -> impl Responder<'_, '_> {
     (
         ContentType(MediaType::JSON),
         &*state.config.profiles_config_string
     )
 }
 
-/// The `get-max-json-size` route.
-#[get("/get-max-json-size")]
-async fn get_max_json_size(state: &State<ServerState>) -> String {
-    state.config.max_json_size.as_u64().to_string()
-}
-
 /// The `/clean` route.
-#[post("/clean", data="<job_config>")]
-async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<CleanResult>) {
-    match serde_json::from_str::<JobConfig>(job_config) {
-        Ok(job_config) => {
-            let job_config_for_logging = state.config.log.then(|| job_config.clone());
+#[post("/clean", data="<clean_payload>")]
+async fn clean(state: &State<ServerState>, clean_payload: &str) -> (Status, Json<CleanResult>) {
+    match serde_json::from_str::<CleanPayload>(clean_payload) {
+        Ok(clean_payload) => {
+            let clean_payload_for_logging = state.config.log.then(|| clean_payload.clone());
 
-            if !state.config.accounts.auth(job_config.auth.as_ref()) {
+            if !state.config.accounts.auth(clean_payload.config.auth.as_ref()) {
                 return (Status {code: 401}, Json(Err(CleanError {status: 401, message: "Unauthorized".into()})));
             }
 
-            let Some(mut cleaner) = state.config.cleaner.with_profile(job_config.profile.as_deref()) else {
+            let Some(mut cleaner) = state.config.cleaner.profile(clean_payload.config.profile.as_deref()) else {
                 return (
                     Status {code: 422},
                     Json(Err(CleanError {
                         status: 422,
-                        message: format!("Unknown profile: {:?}", job_config.profile)
+                        message: format!("Unknown profile: {:?}", clean_payload.config.profile)
                     }))
                 );
             };
-            if let Some(params_diff) = job_config.params_diff {
+            if let Some(params_diff) = clean_payload.config.params_diff {
                 params_diff.apply_once(&mut cleaner.params);
             }
 
             let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
             let (out_senders, out_recievers) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
-            let ret_urls = std::sync::Mutex::new(Vec::with_capacity(job_config.tasks.len()));
+            let ret_urls = std::sync::Mutex::new(Vec::with_capacity(clean_payload.tasks.len()));
 
             let mut temp = state.job_count.lock().expect("No panics.");
             let id = *temp;
@@ -367,23 +394,26 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
             {*temp += 1;}
             drop(temp);
 
-            let unthreader = Unthreader::r#if(job_config.hide_thread_count.unwrap_or(state.config.hide_thread_count_default));
+            let unthreader = match (clean_payload.config.unthread, state.config.default_unthread) {
+                (None, false) | (Some(false), _) => &NO_UNTHREADER,
+                (None, true ) | (Some(true ), _) => &state.unthreader
+            };
 
             std::thread::scope(|s| {
                 std::thread::Builder::new().name(format!("({id}) Task collector")).spawn_scoped(s, || {
                     let job = Job {
-                        context: &job_config.context,
+                        context: &clean_payload.config.context,
                         cleaner: &cleaner,
                         #[cfg(feature = "cache")]
                         cache: &state.config.cache,
                         #[cfg(feature = "cache")]
                         cache_handle_config: CacheHandleConfig {
-                            delay: job_config.cache_delay.unwrap_or(state.config.cache_delay_default),
-                            read : job_config.read_cache .unwrap_or(state.config.read_cache_default ),
-                            write: job_config.write_cache.unwrap_or(state.config.write_cache_default)
+                            delay: clean_payload.config.cache_delay.unwrap_or(state.config.default_cache_delay),
+                            read : clean_payload.config.read_cache .unwrap_or(state.config.default_read_cache ),
+                            write: clean_payload.config.write_cache.unwrap_or(state.config.default_write_cache)
                         },
-                        unthreader: &unthreader,
-                        lazy_task_configs: Box::new(job_config.tasks.into_iter().map(Ok))
+                        unthreader,
+                        lazy_task_configs: Box::new(clean_payload.tasks.into_iter().map(Ok))
                     };
                     for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {
                         in_sender.send(maybe_task_source).expect("To successfully send the LazyTask.");
@@ -428,7 +458,7 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                 std::fs::OpenOptions::new().create_new(true).write(true).open(now.format(&LOGGING_FILE_PATH_FORMAT).expect("Formatting the time to work."))
                     .expect("Creating the log file to work.")
                     .write_all(serde_json::to_string(&JobLog::Ok {
-                        job_config: Box::new(job_config_for_logging.expect("???")),
+                        clean_payload: Box::new(clean_payload_for_logging.expect("???")),
                         result: Cow::Borrowed(&result)
                     }).expect("Serializing the JobLog to always work.").as_bytes())
                     .expect("Writing the log to work.");
@@ -451,7 +481,7 @@ async fn clean(state: &State<ServerState>, job_config: &str) -> (Status, Json<Cl
                 std::fs::OpenOptions::new().create_new(true).write(true).open(now.format(&LOGGING_FILE_PATH_FORMAT).expect("Formatting the time to work."))
                     .expect("Creating the log file to work.")
                     .write_all(serde_json::to_string(&JobLog::Err {
-                        job_config: Cow::Borrowed(job_config),
+                        clean_payload: Cow::Borrowed(clean_payload),
                         result: Cow::Borrowed(&result)
                     }).expect("Serializing the JobLog to always work.").as_bytes())
                     .expect("Writing the log to work.");

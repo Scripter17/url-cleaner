@@ -36,6 +36,29 @@ jobs:
         cargo build
         yes "https://example.com" | head -n 100 | timeout 1s cargo run -- --cleaner ../example-cleaners/deadlock-tester.json
 
+  ratelimit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: ratelimit
+      run: |
+        cargo build
+        
+        start=$(date +%s)
+        yes http://127.0.0.1 | head -n 10                       | ../target/debug/url-cleaner --cleaner ../example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 1
+        end=$(date +%s)
+        [[ 9 -le $(($end-$start)) && $(($end-$start)) -le 10 ]]
+
+        start=$(date +%s)
+        echo http://127.0.0.1                                   | ../target/debug/url-cleaner --cleaner ../example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 3
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 1 ]]
+
+        start=$(date +%s)
+        (echo http://127.0.0.1; sleep 5; echo http://127.0.0.1) | ../target/debug/url-cleaner --cleaner ../example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 3
+        end=$(date +%s)
+        [[ 5 -le $(($end-$start)) && $(($end-$start)) -le 6 ]]
+
   profiles:
     runs-on: ubuntu-latest
     steps:
@@ -44,7 +67,7 @@ jobs:
       run: |
         set -e
 
-        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
+        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 

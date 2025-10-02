@@ -13,7 +13,6 @@ use thiserror::Error;
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
-use url_cleaner_engine::helpers::*;
 use url_cleaner_engine::testing::*;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
@@ -69,9 +68,6 @@ struct Args {
     #[cfg(not(feature = "default-cleaner"))]
     #[arg(long, value_name = "PATH")]
     cleaner: PathBuf,
-    /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
-    #[arg(long)]
-    export_cleaner: bool,
     /// Output results as JSON.
     ///
     /// The format looks like this, but minified:
@@ -141,19 +137,22 @@ struct Args {
     cache: CachePath,
     /// Whether or not to read from the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    read_cache: bool,
+    #[arg(long)]
+    no_read_cache: bool,
     /// Whether or not to write to the cache. If unspecified, defaults to true.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    write_cache: bool,
+    #[arg(long)]
+    no_write_cache: bool,
     /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "false", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
+    #[arg(long)]
     cache_delay: bool,
-    /// If true, makes requests, cache reads, etc. effectively single threaded to hide thread count.
-    #[arg(long, default_value = "false", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    hide_thread_count: bool,
+    /// Makes network requests, cache reads, etc. effectively single threaded while keeping most of the speed boost from multithreading.
+    #[arg(long)]
+    unthread: bool,
+    /// When used with --unthread, also ratelimit unthreaded things.
+    #[arg(long, requires = "unthread", value_name = "SECONDS")]
+    unthread_ratelimit: Option<f64>,
     /// The number of worker threads to use.
     ///
     /// Zero uses the CPU's thread count.
@@ -257,7 +256,7 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Testing and stuff.
 
-    let no_cleaning = args.test_suitability || !args.tests.is_empty() || args.export_cleaner;
+    let no_cleaning = args.test_suitability || !args.tests.is_empty();
 
     if args.test_suitability {
         cleaner.assert_suitability();
@@ -271,8 +270,6 @@ fn main() -> Result<ExitCode, CliError> {
         println!("\nAll tests passed!");
     }
 
-    if args.export_cleaner {println!("{}", serde_json::to_string(&cleaner).expect("Serializing the cleaner to always work."));}
-
     if no_cleaning {std::process::exit(0);}
 
     // Do the job.
@@ -282,10 +279,15 @@ fn main() -> Result<ExitCode, CliError> {
     #[cfg(feature = "cache")]
     let cache_handle_config = CacheHandleConfig {
         delay: args.cache_delay,
-        read : args.read_cache,
-        write: args.write_cache
+        read : !args.no_read_cache,
+        write: !args.no_write_cache
     };
-    let unthreader = Unthreader::r#if(args.hide_thread_count);
+    let unthreader = match (args.unthread, args.unthread_ratelimit) {
+        (false, None   ) => UnthreaderMode::Multithread,
+        (false, Some(_)) => unreachable!(),
+        (true , None   ) => UnthreaderMode::Unthread,
+        (true , Some(d)) => UnthreaderMode::UnthreadAndRatelimit(std::time::Duration::from_secs_f64(d))
+    }.into();
 
     let threads = match args.threads {
         0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),

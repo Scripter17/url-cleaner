@@ -4,6 +4,8 @@ mod better_url;
 pub use better_url::*;
 mod better_host;
 pub use better_host::*;
+mod host_details;
+pub use host_details::*;
 mod parse;
 pub use parse::*;
 #[doc(hidden)]

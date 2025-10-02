@@ -9,9 +9,6 @@ use serde::{Serialize, Deserialize, ser::Serializer, de::{Visitor, Deserializer,
 use url::{Url, PathSegmentsMut, ParseError};
 use thiserror::Error;
 
-pub mod host_details;
-pub use host_details::*;
-
 use crate::*;
 
 mod path_impl;
@@ -75,24 +72,32 @@ impl BetterUrl {
         Self::from_str(value)
     }
 
+    /// Get a borrowing [`BetterHost`].
+    pub fn host(&self) -> Option<BetterHost<&str>> {
+        match (self.host_str(), self.host_details()) {
+            (Some(string), Some(details)) => Some(BetterHost {string, details}),
+            _ => None
+        }
+    }
+
     /// Get the contained [`HostDetails`].
     /// # Examples
     /// ```
     /// use better_url::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
-    /// assert_eq!(url.host_details(), Some(&HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
+    /// assert!(matches!(url.host_details(), Some(HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}))));
     ///
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
-    /// assert_eq!(url.host_details(), Some(&HostDetails::Ipv4(Ipv4Details {})));
+    /// assert!(matches!(url.host_details(), Some(HostDetails::Ipv4(Ipv4Details {parsed: _}))));
     ///
     /// let url = BetterUrl::parse("https://[::1]").unwrap();
     ///
-    /// assert_eq!(url.host_details(), Some(&HostDetails::Ipv6(Ipv6Details {})));
+    /// assert!(matches!(url.host_details(), Some(HostDetails::Ipv6(Ipv6Details {parsed: _}))));
     /// ```
-    pub fn host_details(&self) -> Option<&HostDetails> {
-        self.host_details.as_ref()
+    pub fn host_details(&self) -> Option<HostDetails> {
+        self.host_details
     }
 
     /// If [`Self::host_details`] returns [`HostDetails::Domain`], return it.
@@ -100,12 +105,17 @@ impl BetterUrl {
     /// use better_url::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
-    /// assert_eq!(url.domain_details(), Some(&DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}));
-    /// assert_eq!(url.ipv4_details  (), None);
-    /// assert_eq!(url.ipv6_details  (), None);
+    /// assert!(matches!(url.domain_details(), Some(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
+    /// assert!(matches!(url.ipv4_details  (), None));
+    /// assert!(matches!(url.ipv6_details  (), None));
     /// ```
-    pub fn domain_details(&self) -> Option<&DomainDetails> {
+    pub fn domain_details(&self) -> Option<DomainDetails> {
         self.host_details()?.domain_details()
+    }
+
+    /// If [`Self::host_details`] is [`HostDetails::Ipv4`] or [`HostDetails::Ipv6`], reutrn the equivalent [`IpDetails`].
+    pub fn ip_details(&self) -> Option<IpDetails> {
+        self.host_details()?.ip_details()
     }
 
     /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
@@ -113,11 +123,11 @@ impl BetterUrl {
     /// use better_url::*;
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
-    /// assert_eq!(url.domain_details(), None);
-    /// assert_eq!(url.ipv4_details  (), Some(&Ipv4Details {}));
-    /// assert_eq!(url.ipv6_details  (), None);
+    /// assert!(matches!(url.domain_details(), None));
+    /// assert!(matches!(url.ipv4_details  (), Some(Ipv4Details {parsed: _})));
+    /// assert!(matches!(url.ipv6_details  (), None));
     /// ```
-    pub fn ipv4_details(&self) -> Option<&Ipv4Details> {
+    pub fn ipv4_details(&self) -> Option<Ipv4Details> {
         self.host_details()?.ipv4_details()
     }
 
@@ -126,11 +136,11 @@ impl BetterUrl {
     /// use better_url::*;
     /// let url = BetterUrl::parse("https://[::1]").unwrap();
     ///
-    /// assert_eq!(url.domain_details(), None);
-    /// assert_eq!(url.ipv4_details  (), None);
-    /// assert_eq!(url.ipv6_details  (), Some(&Ipv6Details {}));
+    /// assert!(matches!(url.domain_details(), None));
+    /// assert!(matches!(url.ipv4_details  (), None));
+    /// assert!(matches!(url.ipv6_details  (), Some(Ipv6Details {parsed: _})));
     /// ```
-    pub fn ipv6_details(&self) -> Option<&Ipv6Details> {
+    pub fn ipv6_details(&self) -> Option<Ipv6Details> {
         self.host_details()?.ipv6_details()
     }
 
@@ -183,7 +193,7 @@ impl BetterUrl {
     /// If the call to [`Url::set_ip_host`] returns an error, returns the error [`SetIpHostError`].
     pub fn set_ip_host(&mut self, address: IpAddr) -> Result<(), SetIpHostError> {
         self.url.set_ip_host(address).map_err(|()| SetIpHostError)?;
-        self.host_details = Some(HostDetails::from_ip_addr(address));
+        self.host_details = Some(address.into());
         Ok(())
     }
 

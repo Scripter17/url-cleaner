@@ -1507,35 +1507,34 @@ impl Action {
 
             #[cfg(feature = "http")]
             Self::ExpandRedirect {url, headers, http_client_config_diff} => {
-                let (url, use_task) = match url {
-                    Some(url) => (get_cow!(url, task_state, ActionError), false),
-                    None => (Cow::Borrowed(task_state.url.as_str()), true)
+                let url = match url {
+                    Some(url) => Cow::Owned(Url::parse(get_str!(url, task_state, ActionError))?),
+                    None => Cow::Borrowed(&**task_state.url)
                 };
                 let _unthread_handle = task_state.unthreader.unthread();
                 #[cfg(feature = "cache")]
-                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: &url})? {
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: url.as_str()})? {
                     *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                     return Ok(());
                 }
                 #[cfg(feature = "cache")]
                 let start = std::time::Instant::now();
-                let response = task_state.to_view().http_client(http_client_config_diff.as_deref())?.get(&*url).headers(headers.clone()).send()?;
+                let response = task_state.to_view().http_client(http_client_config_diff.as_deref())?.get(url.clone().into_owned()).headers(headers.clone()).send()?;
                 let new_url = if response.status().is_redirection() {
-                    BetterParseOptions::default().base_url(Some(&*if use_task {Cow::Borrowed(&**task_state.url)} else {Cow::Owned(Url::parse(&url)?)}))
-                        .parse(std::str::from_utf8(response.headers().get("location").ok_or(ActionError::LocationHeaderNotFound)?.as_bytes())?)?
+                    url.join(std::str::from_utf8(response.headers().get("location").ok_or(ActionError::LocationHeaderNotFound)?.as_bytes())?)?
                 } else {
-                    response.url().clone().into()
+                    response.url().clone()
                 };
                 #[cfg(feature = "cache")]
                 let duration = start.elapsed();
                 #[cfg(feature = "cache")]
                 task_state.cache.write(NewCacheEntry {
                     subject: "redirect",
-                    key: &url,
+                    key: url.as_str(),
                     value: Some(new_url.as_str()),
                     duration
                 })?;
-                *task_state.url=new_url;
+                *task_state.url = new_url.into();
             },
 
             Self::SetScratchpadFlag {name, value} => {

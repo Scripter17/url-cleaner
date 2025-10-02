@@ -1,0 +1,11 @@
+{
+	"docs": {
+		"name": "Ratelimit tester"
+	},
+	"actions": [
+		{"CacheUrl": {
+			"subject": "ratelimit-test",
+			"action": "None"
+		}}
+	]
+}

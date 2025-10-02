@@ -2,9 +2,9 @@
 // @name         URL Cleaner Site Userscript
 // @description  The userscript that comes with URL Cleaner Site.
 // @author       Scripter17@Github.com
-// @homepageURL  https://github.com/Scripter17/url-cleaner
+// @namespace    https://github.com/Scripter17/url-cleaner
 // @copyright    AGPL-3.0-or-later
-// @version      0.11.0
+// @version      0.12.0-beta
 // @match        https://*/*
 // @match        http://*/*
 // @grant        GM.xmlHttpRequest
@@ -12,24 +12,27 @@
 // ==/UserScript==
 
 window.config = {
-	instance         : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
-	auth             : null, // Either null for guest mode or `{"username": "...", "password": "..."}` for a user.
-	params_diff      : null, // Should be set server side. But if you can't, this works.
-	send_host        : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
-	cache_delay      : true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
-	hide_thread_count: true, // Makes requests, cache reads, etc. effectively single threaded to hide thread count.
+	instance   : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
+	auth       : null, // Either null for guest mode or `{"username": "...", "password": "..."}` for a user.
+	profile    : null, // Either null for the default profile or a string for a named profile.
+	params_diff: null, // The ParamsDiff to apply on top of the chosen profile. Should only be used as a last resort.
+	send_host  : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
+	cache_delay: true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
+	unthread   : true, // Makes requests, cache reads, etc. effectively single threaded to hide thread count.
 	debug: {
 		log: {
-			new_job_config   : false,
+			new_clean_payload: false,
 			api_request_info : false,
 			api_request_error: true,
 			api_response_info: false,
 			other_timing_info: false,
 			href_mutations   : false,
-			max_json_size    : false
+			server_info      : false
 		}
 	}
 };
+
+window.SERVER_INFO = null;
 
 window.cleaned_elements = new WeakMap(); // A map from elements to the last value this userscript set its href to. Used to check if a mutation is relevant.
 window.too_big_elements = new WeakSet(); // Set of elements whose hrefs were bigger than URL Cleaner Site's max size.
@@ -46,15 +49,16 @@ async function main_loop() {
 	setTimeout(main_loop, 100); // Is this a good interval? No idea. Is an interval even the right approach? Also no idea.
 }
 
-// The `job_config`s parameter is used to make breaking big jobs into parts faster. I think.
-async function clean_elements(elements, job_config) {
+// The `clean_payload`s parameter is used to make breaking big jobs into parts faster. I think.
+async function clean_elements(elements, clean_payload) {
 
 	if (elements.length == 0) {return;}
 
-	job_config ??= await elements_to_job_config(elements);
+	clean_payload ??= await elements_to_clean_payload(elements);
 
-	// If the `job_config` is too big, break it into parts.
-	if (JSON.stringify(job_config).length > window.MAX_JSON_SIZE) {
+	// If the `clean_payload` is too big, break it into parts.
+	let data = JSON.stringify(clean_payload);
+	if (data.length > window.SERVER_INFO.max_json_size) {
 		if (elements.length == 1) {
 			// If, somehow, there's a URL that's over the server's size limit, this stops it from getting stuck in an infinite loop.
 			console.error(`[URLC] URL Cleaner element too big error: ${elements[0]}`);
@@ -62,9 +66,10 @@ async function clean_elements(elements, job_config) {
 			return;
 		} else {
 			// Cut the list in half and do them separately.
-			await clean_elements(elements.slice(0, elements.length/2), {...job_config, tasks: job_config.tasks.slice(0, job_config.tasks.length/2)});
+			await clean_elements(elements.slice(0, elements.length/2), {...clean_payload, tasks: clean_payload.tasks.slice(0, clean_payload.tasks.length/2)});
 			elements = elements.slice(elements.length/2);
-			job_config.tasks = job_config.tasks.slice(job_config.tasks.length/2);
+			clean_payload.tasks = clean_payload.tasks.slice(clean_payload.tasks.length/2);
+			data = JSON.stringify(clean_payload);
 		}
 	}
 
@@ -73,10 +78,9 @@ async function clean_elements(elements, job_config) {
 	let id_pad = " ".repeat(8-id.toString().length)
 	let last_time = start_time;
 	let now;
-	let data = JSON.stringify(job_config);
 	let done;
 	let doneawaiter = new Promise(resolve => {done = resolve;});
-	if (window.config.debug.log.new_job_config) {console.log("[URLC]"+id_pad, id, elements.length, "elements in", data.length, "bytes (", job_config, ")");}
+	if (window.config.debug.log.new_clean_payload) {console.log("[URLC]"+id_pad, id, elements.length, "elements in", data.length, "bytes (", clean_payload, ")");}
 	// This returns `undefined` in GreaseMonkey, so the weird "await for callback" pattern is required.
 	await GM.xmlHttpRequest({
 		url: `${window.config.instance}/clean`,
@@ -100,7 +104,7 @@ async function clean_elements(elements, job_config) {
 						}
 						window.cleaned_elements.set(elements[index], cleaning_result.Ok);
 					} else {
-						console.error("[URLC]"+id_pad, id, "DoTaskError:", cleaning_result.Err, "Element indesx:", index, "Element:", elements[index], "Task:", job_config.tasks[index]);
+						console.error("[URLC]"+id_pad, id, "DoTaskError:", cleaning_result.Err, "Element indesx:", index, "Element:", elements[index], "Task:", clean_payload.tasks[index]);
 						window.errored_elements.add(elements[index])
 					}
 				});
@@ -119,19 +123,17 @@ async function clean_elements(elements, job_config) {
 	await doneawaiter;
 }
 
-async function elements_to_job_config(elements) {
+async function elements_to_clean_payload(elements) {
 	let ret = {
 		tasks: elements.map(x => element_to_task_config(x)),
-		context: await get_job_context(),
-		cache_delay: window.config.cache_delay,
-		cache_unthread: window.config.cache_unthread
 	};
-	if (window.config.auth) {
-		ret.auth = window.config.auth;
-	}
-	if (window.config.params_diff) {
-		ret.params_diff = window.config.params_diff;
-	}
+	let job_context = await get_job_context();
+	if (job_context                       ) {ret.context     = job_context;}
+	if (window.config.auth                ) {ret.auth        = window.config.auth;}
+	if (window.config.profile     !== null) {ret.profile     = window.config.profile;}
+	if (window.config.params_diff         ) {ret.params_diff = window.config.params_diff;}
+	if (window.config.cache_delay !== null) {ret.cache_delay = window.config.cache_delay;}
+	if (window.config.unthread    !== null) {ret.unthread    = window.config.unthread;}
 	return ret;
 }
 
@@ -139,65 +141,34 @@ function element_to_task_config(element) {
 	if (/(^|\.)x\.com$/.test(window.location.hostname) && element.href.startsWith("https://t.co/") && element.innerText.startsWith("http")) {
 		// On twitter, links in tweets/bios/whatever show the entire URL when you hover over them for a moemnt.
 		// This lets us skip the HTTP request to t.co for the vast majority of links on twitter.
-		return {
-			url: element.href,
-			context: {
-				vars: {
-					redirect_shortcut: element.childNodes[0].innerText + element.childNodes[1].textContent + (element.childNodes[2]?.innerText ?? "")
-				}
-			}
-		};
+		return element.childNodes[0].innerText + element.childNodes[1].textContent + (element.childNodes[2]?.innerText ?? "");
 	} else if (/(^|\.)allmylinks\.com$/.test(window.location.hostname) && element.pathname=="/link/out" && element.title.startsWith("http")) {
 		// Same shortcut thing as the twitter stuff above.
-		return {
-			url: element.href,
-			context: {
-				vars: {
-					redirect_shortcut: element.title
-				}
-			}
-		};
+		return element.title;
 	} else if (/(^|\.)furaffinity\.net$/.test(window.location.hostname) && element.matches(".user-contact-user-info a")) {
 		// Allows unmangling contact info links.
 
-		// Some contact info fields let invalid inputs result in invalid URLs, which URL Cleaner can't accept.
-		// If this happens, just replace it with a dummy value and hope the unmangling works.
-		// In Rust this would be 0.5 lines (https://youtube.com/watch?v=kpk2tdsPh0A).
-		let url;
-		if (URL.canParse(element.href)) {
-			url = element.href;
+		if (element.href == "javascript:void(0);") {
+			return "https://" + element.innerText;
 		} else {
-			url = "https://example.com/PARSE_URL_ERROR";
-		}
-		return {
-			url: url,
-			context: {
-				vars: {
-					contact_info_site_name: element.parentElement.querySelector("strong").innerHTML,
-					link_text: element.innerText
+			// Some contact info fields let invalid inputs result in invalid URLs, which URL Cleaner can't accept.
+			// Since the unmangling for this doesn't touch the actual URL, just replace it with a dummy.
+			return {
+				url: "https://example.com/fa_ci_dummy",
+				context: {
+					vars: {
+						contact_info_site_name: element.parentElement.querySelector("strong").innerHTML,
+						link_text: element.innerText
+					}
 				}
-			}
-		};
+			};
+		}
 	} else if (/(^|\.)bsky\.app$/.test(window.location.hostname) && element.getAttribute("href").startsWith("/profile/did:plc:") && element.innerText.startsWith("@")) {
 		// Allows replacing `/profile/did:plc:` URLs with the `/profile/example.com`, as it should be.
-		return {
-			url: element.href,
-			context: {
-				vars: {
-					bsky_handle: element.innerText.replace("@", "")
-				}
-			}
-		};
+		return eleement.href.replace(/did:plc:[^/]+/g, element.innerText.replace("@", ""))
 	} else if (/(^|\.)saucenao\.com$/.test(window.location.hostname) && /^https:\/\/(www\.)?(x|twitter)\.com\//.test(element.href)) {
 		// Fixes twitter URLs returned by SauceNAO.
-		return {
-			url: element.href,
-			context: {
-				vars: {
-					twitter_user_handle: element.parentElement.querySelector("[href*='/i/user/']").innerHTML.replace("@", "")
-				}
-			}
-		}
+		return element.href.replace(/i\/web|i\/user\/\d+/g, element.parentElement.querySelector("[href*='/i/user/']").innerHTML.replace("@", ""));
 	} else {
 		return element.href;
 	}
@@ -215,22 +186,24 @@ async function get_job_context() {
 }
 
 (async () => {
-	console.log(`[URLC] URL Cleaner Site Userscript loaded.
+	console.log(`[URLC] URL Cleaner Site Userscript ${GM.info.script.version} loaded.
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
-https://github.com/Scripter17/url-cleaner
-`);
+${GM.info.script.namespace}`);
 
 	// For reasons I don't understand, awaiting `GM.xmlHttpRequest` doesn't seem to, uh, await it.
 	// It might be me being stupid.
 	let done;
 	let doneawaiter = new Promise(resolve => {done = resolve;});
 	await GM.xmlHttpRequest({
-		url: `${window.config.instance}/get-max-json-size`,
+		url: `${window.config.instance}/info`,
 		method: "GET",
-		onerror: (e) => {console.error("[URLC] Error in getting the max JSON size:", e);},
+		onerror: (e) => {console.error("[URLC] Failed to get server info:", e);},
 		onload: function(response) {
-			window.MAX_JSON_SIZE = parseInt(response.responseText);
+			window.SERVER_INFO = JSON.parse(response.responseText);
+			if (window.config.debug.log.server_info) {
+				console.log("[URLC] Server info:", window.SERVER_INFO);
+			}
 			done();
 		}
 	});
@@ -267,6 +240,5 @@ https://github.com/Scripter17/url-cleaner
 		subtree: true
 	});
 
-	if (window.config.debug.log.max_json_size) {console.log("[URLC] max job config size is", window.MAX_JSON_SIZE, "bytes");}
 	await main_loop();
 })();

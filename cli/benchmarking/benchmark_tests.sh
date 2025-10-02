@@ -2,12 +2,14 @@
 
 cd $(dirname "$0")
 
-cat ../../tests/offline.json | jq -c '.sets[] | [{task_config: .tests[].task_config, params_diff: .params_diff, job_context: .job_context}][]' > benchmarks.jsonl
+cat "$1" | jq -c '.sets[] | [{task_config: .tests[].task_config, params_diff: .params_diff, job_context: .job_context}][]' > benchmarks.jsonl
 
 count=$(cat benchmarks.jsonl | wc -l)
 
 # TASK_CONFIGS=$(cat thing.json | jq -cr '[.[].task_config | tojson | gsub(","; "COMMA")] | join(",")')
 # EXTRA_ARGS=$(  cat thing.json | jq -cr '[.[] | if .params_diff then "--params-diff-str " + (.params_diff | tojson) else "" end + if .job_context then "--job_context-diff-str " + (.job_context | tojson) else "" end] | join(",")')
+
+echo "Doing $count benchmarks"
 
 touch stdin.txt command.txt
 hyperfine \
@@ -32,6 +34,6 @@ hyperfine \
   '$(cat command.txt)'
 rm stdin.txt command.txt
 
-paste <(cat hyperfine.out.json | jq '.results[].mean * 1000000 | floor / 1000') benchmarks.jsonl | sort -V
+paste <(cat hyperfine.out.json | jq '.results[].mean * 1000000 | floor / 1000') benchmarks.jsonl | sort -V | tee tests-summary.txt
 
 rm benchmarks.jsonl

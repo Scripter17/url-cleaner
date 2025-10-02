@@ -15,14 +15,13 @@ use thiserror::Error;
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
-use url_cleaner_engine::helpers::*;
 
 /// The introduction to the /help message.
 const INTRO: &str = r#"URL Cleaner Discord App
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html"#;
 /// The link to the source code of the bot.
-const SOURCE_CODE_URL: &str = "https://github.com/Scripter17/url-cleaner";
+const SOURCE_CODE_URL: &str = env!("CARGO_PKG_REPOSITORY");
 /// The info to install the bot to your account/sever.
 static INSTALL_INFO: OnceLock<String> = OnceLock::new();
 /// The tutorial for using the bot.
@@ -34,7 +33,7 @@ const TUTORIAL: &str = r#"To clean the URLs in a message, right click/long press
 static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<URL1>[^)]+)\)|(?<URL2>\w+:\/\/\S+)").expect("The URL parsing Regex to be valid."));
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
-/// A discord app for URL Cleaner.
+/// URL Cleaner Discord App - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
 ///
@@ -71,9 +70,6 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     #[cfg(not(feature = "default-cleaner"))]
     cleaner: PathBuf,
-    /// Export the cleaner after --params-diff, --flag, etc., if specified, are applied, then exit.
-    #[arg(long)]
-    export_cleaner: bool,
     /// The ProfilesConfig file.
     ///
     /// Cannot be used with --profiles-string.
@@ -90,19 +86,16 @@ struct Args {
     cache: CachePath,
     /// If true, read from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    read_cache: bool,
+    #[arg(long)]
+    no_read_cache: bool,
     /// If true, write to the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    write_cache: bool,
+    #[arg(long)]
+    no_write_cache: bool,
     /// If true, artificially delay cache reads.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "true", default_missing_value = "true", action = clap::ArgAction::Set, value_name = "BOOL")]
-    cache_delay: bool,
-    /// If true, make network requests and cache reads effectively single-threaded.
-    #[arg(long, default_value = "false", default_missing_value = "true", action = clap::ArgAction::Set)]
-    hide_thread_count: bool
+    #[arg(long)]
+    cache_delay: bool
 }
 
 /// The bot's state.
@@ -113,9 +106,7 @@ struct State {
     /// The [`Cleaner`] used to make [`Self::cleaner`] as a string.
     cleaner_string: String,
     /// The [`ProfilesConfig`] used to make [`Self::cleaner`] as a string.
-    profiles_string: String,
-    /// The value to pass to [`Unthreader::if`].
-    hide_thread_count: bool,
+    profiles_config_string: String,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
@@ -145,18 +136,13 @@ async fn main() {
 
     let cleaner = serde_json::from_str::<Cleaner>(&cleaner_string).expect("The Cleaner string to be valid.");
 
-    if args.export_cleaner {
-        println!("{cleaner_string}");
-        std::process::exit(0);
-    }
-
-    let profiles_string = match (args.profiles, args.profiles_string) {
+    let profiles_config_string = match (args.profiles, args.profiles_string) {
         (None      , None        ) => "{}".to_string(),
         (Some(path), None        ) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
         (None      , Some(string)) => string,
         (Some(_)   , Some(_)     ) => panic!("Can't have both --profiles and --profiles-string")
     };
-    let cleaner = cleaner.with_profiles(serde_json::from_str(&profiles_string).expect("The ProfilesConfig to be valid."));
+    let cleaner = cleaner.with_profiles(serde_json::from_str(&profiles_config_string).expect("The ProfilesConfig to be valid."));
 
     let mut profile_names = cleaner.profiles().names().map(String::from).collect::<Vec<_>>();
     profile_names.sort();
@@ -183,15 +169,14 @@ async fn main() {
     let state = State {
         cleaner,
         cleaner_string,
-        profiles_string,
-        hide_thread_count: args.hide_thread_count,
+        profiles_config_string,
         #[cfg(feature = "cache")]
         cache: args.cache.into(),
         #[cfg(feature = "cache")]
         cache_handle_config: CacheHandleConfig {
             delay: args.cache_delay,
-            read : args.read_cache,
-            write: args.write_cache
+            read : !args.no_read_cache,
+            write: !args.no_write_cache
         }
     };
 
@@ -243,14 +228,14 @@ async fn help(ctx: Context<'_>) -> Result<(), Error> {
     let message = if ctx.http().get_current_application_info().await.expect("Getting the current application info to work.").bot_public {
         format!("{INTRO}\n{SOURCE_CODE_URL}\n\n{}\n\n{TUTORIAL}", INSTALL_INFO.get().expect("INSTALL_INFO to have been set."))
     } else {
-        format!("{INTRO}\n{SOURCE_CODE_URL}\n\n{TUTORIAL}")
+        format!("{INTRO}\n{SOURCE_CODE_URL}\n\nThis specific instance of URL Cleaner Discord App is private.\n\n{TUTORIAL}")
     };
 
     ctx.send(CreateReply::default()
         .ephemeral(true)
         .content(message)
-        .attachment(CreateAttachment::bytes(ctx.data().cleaner_string .clone(), "cleaner.json" ).description("The Cleaner this bot is using."))
-        .attachment(CreateAttachment::bytes(ctx.data().profiles_string.clone(), "profiles.json").description("The ProfilesConfig this bot is using."))
+        .attachment(CreateAttachment::bytes(ctx.data().cleaner_string        .clone(), "cleaner.json" ).description("The Cleaner this bot is using."))
+        .attachment(CreateAttachment::bytes(ctx.data().profiles_config_string.clone(), "profiles.json").description("The ProfilesConfig this bot is using."))
     ).await?;
     Ok(())
 }
@@ -281,7 +266,7 @@ pub enum CleanUrlsError {
 /// Clean a message's URLs with the specified [`Params`].
 async fn clean_urls_with_profile(ctx: Context<'_>, msg: serenity::Message, profile: Option<&str>) -> Result<(), CleanUrlsError> {
     let data = ctx.data();
-    let cleaner = data.cleaner.with_profile(profile).ok_or(CleanUrlsError::UnknownProfile)?;
+    let cleaner = data.cleaner.profile(profile).ok_or(CleanUrlsError::UnknownProfile)?;
 
     let job = Job {
         context: &Default::default(),
@@ -290,7 +275,7 @@ async fn clean_urls_with_profile(ctx: Context<'_>, msg: serenity::Message, profi
         cache: &ctx.data().cache,
         #[cfg(feature = "cache")]
         cache_handle_config: data.cache_handle_config,
-        unthreader: &Unthreader::r#if(data.hide_thread_count),
+        unthreader: &Unthreader::default(),
         lazy_task_configs: Box::new(GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into())))
     };
 

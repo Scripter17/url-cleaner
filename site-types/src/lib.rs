@@ -8,6 +8,8 @@ pub mod auth;
 pub use auth::*;
 pub mod logging;
 pub use logging::*;
+pub mod info;
+pub use info::*;
 pub(crate) mod util;
 
 pub use clean::{JobConfig, CleanResult};

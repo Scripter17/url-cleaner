@@ -9,7 +9,7 @@ use crate::util::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum HostPart {
-    /// [`BetterHost::host_str`].
+    /// [`BetterHost::as_str`].
     Host,
     /// [`BetterHost::normalized_host`].
     NormalizedHost,
@@ -29,9 +29,9 @@ pub enum HostPart {
 
 impl HostPart {
     /// Get the part.
-    pub fn get<'a>(&self, host: &'a BetterHost) -> Option<&'a str> {
+    pub fn get<'a, T: AsRef<str>>(&self, host: &'a BetterHost<T>) -> Option<&'a str> {
         match self {
-            Self::Host            => Some(host.host_str()),
+            Self::Host            => Some(host.as_str()),
             Self::NormalizedHost  => Some(host.normalized_host()),
             Self::Domain          => host.domain(),
             Self::Subdomain       => host.subdomain(),

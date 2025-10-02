@@ -13,7 +13,7 @@ jobs:
     - name: versions
       run: |
         version_lines=$(grep -PI '^(// @version|url-cleaner.+version|^version)' */Cargo.toml site/url-cleaner-site-userscript.js)
-        versions=$(echo "$version_lines" | grep -oP '\d[\d.]+')
+        versions=$(echo "$version_lines" | grep -oP '\d[\d.]+(-beta)?')
         if [ $(echo "$versions" | uniq | wc -l) -ne 1 ]; then
           pad_to=$(echo "$version_lines" | grep -oP '^.+?:' | wc -L)
           echo "Version mismatch!"

@@ -63,6 +63,92 @@ jobs:
 
         kill "$!"
 
+  unthreader:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: unthreader
+      run: |
+        set -o pipefail
+        cargo build
+
+        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json &
+        sleep 1
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        kill $!
+        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json --unthread-ratelimit 1 &
+        sleep 1
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
+        end=$(date +%s)
+        [[ 3 -le $(($end-$start)) && $(($end-$start)) -le 5 ]]
+
+        kill $!
+        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json --default-unthread &
+        sleep 1
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        kill $!
+        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json --default-unthread --unthread-ratelimit 1 &
+        sleep 1
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
+        end=$(date +%s)
+        [[ 3 -le $(($end-$start)) && $(($end-$start)) -le 5 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
+        end=$(date +%s)
+        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
+
+        start=$(date +%s)
+        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
+        end=$(date +%s)
+        [[ 3 -le $(($end-$start)) && $(($end-$start)) -le 5 ]]
+
+        kill $!
+
   profiles:
     runs-on: ubuntu-latest
     steps:
@@ -71,7 +157,7 @@ jobs:
       run: |
         set -e
 
-        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"profiles":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
+        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 

@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner-discord-app"
-version = "0.11.0"
+version = "0.12.0-beta"
 edition = "2024"
 description = "A discord bot to use URL Cleaner."
 repository = "https://github.com/Scripter17/url-cleaner"
@@ -11,14 +11,14 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.47", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.48", features = ["derive", "unstable-v5"] }
 poise = { git = "https://github.com/serenity-rs/poise", branch = "next" }
-regex = "1.11.2"
+regex = "1.11.3"
 serde_json = "1.0.145"
 serenity = "0.12.4"
-thiserror = "2.0.16"
+thiserror = "2.0.17"
 tokio = { version = "1.47.1", features = ["rt-multi-thread"] }
-url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
+url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 
 [features]
 default = ["default-cleaner"]

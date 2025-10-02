@@ -1,6 +1,6 @@
 [package]
 name = "url-cleaner-site-types"
-version = "0.11.0"
+version = "0.12.0-beta"
 edition = "2024"
 description = "Types for URL Cleaner Site."
 repository = "https://github.com/Scripter17/url-cleaner"
@@ -11,10 +11,10 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-serde = { version = "1.0.225", features = ["derive"] }
-thiserror = "2.0.16"
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.17"
 url = "2.5.7"
-url-cleaner-engine = { path = "../engine", version = "0.11.0", default-features = false }
+url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 
 [lints]
 workspace = true

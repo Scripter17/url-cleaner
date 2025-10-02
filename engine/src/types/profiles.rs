@@ -32,9 +32,19 @@ pub struct ProfiledCleaner<'a> {
 }
 
 impl<'a> ProfiledCleaner<'a> {
+    /// Reconstructs a cheap copy of the original [`Cleaner`].
+    pub fn original(&'a self) -> Cleaner<'a> {
+        Cleaner {
+            docs   : Cow::Borrowed(&*self.cleaner.docs),
+            params : self.profiles().original_params().borrowed(),
+            commons: Cow::Borrowed(&*self.cleaner.commons),
+            actions: Cow::Borrowed(&*self.cleaner.actions)
+        }
+    }
+    
     /// Get the [`UnprofiledCleaner`].
-    pub fn cleaner(&self) -> &UnprofiledCleaner<'a> {
-        &self.cleaner
+    pub fn unprofiled(&'a self) -> UnprofiledCleaner<'a> {
+        self.cleaner.borrowed()
     }
 
     /// Get the [`Profiles`].
@@ -43,7 +53,7 @@ impl<'a> ProfiledCleaner<'a> {
     }
 
     /// Make a [`Cleaner`] borrowing each field of `self` and using the specified profile.
-    pub fn with_profile(&'a self, name: Option<&str>) -> Option<Cleaner<'a>> {
+    pub fn profile(&'a self, name: Option<&str>) -> Option<Cleaner<'a>> {
         Some(Cleaner {
             docs   : Cow::Borrowed(&*self.cleaner.docs),
             params : self.profiles.get(name)?.params().borrowed(),
@@ -98,23 +108,30 @@ impl<'a> UnprofiledCleaner<'a> {
 /// A default and named [`Profile`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Profiles<'a> {
+    /// The original [`Params`].
+    original: Params<'a>,
     /// The base [`Profile`].
     base: Profile<'a>,
-    /// The [`Profile`]s.
-    profiles: HashMap<String, Profile<'a>>
+    /// The named [`Profile`]s.
+    named: HashMap<String, Profile<'a>>
 }
 
 impl<'a> Profiles<'a> {
     /// Get an iterator over the names of the [`Profile`]s.
     pub fn names(&self) -> impl Iterator<Item = &str> {
-        self.profiles.keys().map(String::as_str)
+        self.named.keys().map(String::as_str)
+    }
+
+    /// Returns the original [`Params`] used.
+    pub fn original_params(&self) -> &Params<'a> {
+        &self.original
     }
 
     /// Get the specified [`Profile`].
     pub fn get(&'a self, name: Option<&str>) -> Option<&'a Profile<'a>> {
         match name {
             None => Some(&self.base),
-            Some(name) => self.profiles.get(name)
+            Some(name) => self.named.get(name)
         }
     }
 
@@ -122,7 +139,7 @@ impl<'a> Profiles<'a> {
     pub fn into_profile(mut self, name: Option<&str>) -> Option<Profile<'a>> {
         match name {
             None => Some(self.base),
-            Some(name) => self.profiles.remove(name)
+            Some(name) => self.named.remove(name)
         }
     }
 }
@@ -200,7 +217,7 @@ pub struct ProfilesConfig {
     ///
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub profiles: HashMap<String, ProfileConfig>
+    pub named: HashMap<String, ProfileConfig>
 }
 
 impl ProfilesConfig {
@@ -208,7 +225,7 @@ impl ProfilesConfig {
     pub fn get<'a>(&'a self, name: Option<&str>) -> Option<&'a ProfileConfig> {
         match name {
             None => Some(&self.base),
-            Some(name) => self.profiles.get(name)
+            Some(name) => self.named.get(name)
         }
     }
 
@@ -218,7 +235,7 @@ impl ProfilesConfig {
         match name {
             None => Some(params),
             Some(name) => {
-                self.profiles.remove(name)?.params_diff.apply_once(&mut params);
+                self.named.remove(name)?.params_diff.apply_once(&mut params);
                 Some(params)
             }
         }
@@ -226,9 +243,11 @@ impl ProfilesConfig {
 
     /// Make a [`Profiles`] with the provided [`Params`].
     pub fn make(self, params: Params) -> Profiles {
+        let original = params.clone();
         let base = self.base.make(params);
         Profiles {
-            profiles: self.profiles.into_iter().map(|(name, profile)| (name, profile.make(base.params().clone()))).collect(),
+            original,
+            named: self.named.into_iter().map(|(name, profile)| (name, profile.make(base.params().clone()))).collect(),
             base
         }
     }

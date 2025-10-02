@@ -1,84 +1,163 @@
 //! Allows making requests, cache reads, etc. effectively single threaded to hide thread count.
 
+use std::time::{Instant, Duration};
+use std::cell::Cell;
+
+use serde::{Serialize, Deserialize};
+use serde_with::{serde_as, DurationSeconds};
 use parking_lot::{ReentrantMutex, ReentrantMutexGuard};
 
-use serde::{Serialize, Deserialize, ser::Serializer, de::{Visitor, Deserializer, Error}};
+use crate::util::*;
 
-/// Allows making requests, cache reads, etc. effectively single threaded to hide thread count.
+/// Allows optionally unthreading and rate-limiting network, cache, etc. operations to avoid leaking the thread count.
 ///
-/// In URL Cleaner Site Userscript, it's possible for a website to give you 1 redirect URL, then 2 of that same URL, then 3, then 4, and so on and so on until the time your instance takes to clean them suddenly doubles.
+/// Yes this does work multiple times at once in the same thread. Under the hood it uses a [`ReentrantMutex`].
+#[derive(Debug, Default, Serialize)]
+#[serde(transparent)]
+pub struct Unthreader {
+    /// The [`UnthreaderMode`] to use.
+    pub mode: UnthreaderMode,
+    /// The actual unthrading handler.
+    #[serde(skip_serializing)]
+    inner: UnthreaderInner
+}
+
+/// The mode for how an [`Unthreader`] should behave.
 ///
-/// Unthreading means that long running operations can be forced to run sequentially, making N redirect URLs always take N times as long as 1, while keeping the benefits of parallelizing everything else.
-///
-/// It's not a perfect defence, websites can probably give you extremely expensive but non-redirect URLs and use the previously mentioned scheme to figure out your thread count, but that is very unlikely to give useful results in the vast majority of situations.
-#[derive(Debug, Default)]
-pub enum Unthreader {
+/// Defaults to [`Self::Multithread`].
+#[serde_as]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum UnthreaderMode {
     /// Don't do any unthreading.
     ///
-    /// The default variant.
+    /// The default.
+    /// # Examples
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let unthreader = Unthreader::from(UnthreaderMode::Multithread);
+    ///
+    /// let start = Instant::now();
+    ///
+    /// std::thread::scope(|s| {
+    ///   s.spawn(|| {
+    ///     let x = unthreader.unthread();
+    ///     sleep(Duration::from_secs(1));
+    ///   });
+    ///  
+    ///   s.spawn(|| {
+    ///     let x = unthreader.unthread();
+    ///     sleep(Duration::from_secs(1));
+    ///   });
+    /// });
+    ///
+    /// assert_eq!(start.elapsed().as_secs(), 1);
+    /// ```
     #[default]
-    No,
-    /// Do unthreading.
-    Yes(ReentrantMutex<()>)
+    Multithread,
+    /// Unthread.
+    /// # Examples
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let unthreader = Unthreader::from(UnthreaderMode::Unthread);
+    ///
+    /// let start = Instant::now();
+    ///
+    /// std::thread::scope(|s| {
+    ///   s.spawn(|| {
+    ///     let x = unthreader.unthread();
+    ///     sleep(Duration::from_secs(1));
+    ///   });
+    ///  
+    ///   s.spawn(|| {
+    ///     let x = unthreader.unthread();
+    ///     sleep(Duration::from_secs(1));
+    ///   });
+    /// });
+    ///
+    /// assert_eq!(start.elapsed().as_secs(), 2);
+    /// ```
+    Unthread,
+    /// [`Self::Unthread`] but if the last unthread started less than [`Self::UnthreadAndRatelimit::0`] ago, waits the remaining duration between starting the new unthread and returning the [`UnthreadHandle`].
+    ///
+    /// Currently has difficult to predict and probably bad effects in async code due to using [`std::thread::sleep`].
+    ///
+    /// If you know of an equivalent to [`std::thread::sleep`] that doesn't mess up async please let me know so I can switch to that.
+    /// # Examples
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// let unthreader = Unthreader::from(UnthreaderMode::UnthreadAndRatelimit(Duration::from_secs(5)));
+    ///
+    /// let start = Instant::now();
+    ///
+    /// std::thread::scope(|s| {
+    ///   s.spawn(|| {
+    ///     let x = unthreader.unthread();
+    ///     sleep(Duration::from_secs(1));
+    ///   });
+    ///  
+    ///   s.spawn(|| {
+    ///     let x = unthreader.unthread();
+    ///     sleep(Duration::from_secs(1));
+    ///   });
+    /// });
+    ///
+    /// assert_eq!(start.elapsed().as_secs(), 6);
+    /// ```
+    UnthreadAndRatelimit(#[serde_as(as = "DurationSeconds<f64>")] Duration)
 }
+
+impl From<UnthreaderMode> for Unthreader {
+    fn from(mode: UnthreaderMode) -> Self {
+        Self {
+            mode,
+            ..Default::default()
+        }
+    }
+}
+
+/// The actual unthreading handler.
+#[derive(Debug, Default)]
+pub struct UnthreaderInner(pub ReentrantMutex<Cell<Option<Instant>>>);
+
+/// A handle for an [`UnthreaderInner`]/[`Unthreader`].
+///
+/// Should be assigned to a variable that goes out of scope when the thing being unthrode is over.
+#[allow(dead_code, reason = "Used for its drop glue.")]
+#[derive(Debug)]
+pub struct UnthreadHandle<'a>(Option<ReentrantMutexGuard<'a, Cell<Option<Instant>>>>);
 
 impl Unthreader {
-    /// [`Self::No`].
-    pub fn no() -> Self {
-        Self::No
-    }
-
-    /// [`Self::yes`].
-    pub fn yes() -> Self {
-        Self::Yes(Default::default())
-    }
-
-    /// If `x` is [`true`], [`Self::Yes`], otherwise [`Self::No`].
-    pub fn r#if(x: bool) -> Self {
-        match x {
-            false => Self::no(),
-            true  => Self::yes()
-        }
-    }
-
-    /// If `self` is [`Self::Yes`], return a [`ReentrantMutexGuard`].
+    /// Gets an [`UnthreadHandle`] that should be kept in scope until the thing you want to unthread is over.
     ///
-    /// Assign this to variable and drop it when you want to rethread.
+    /// See each variant of [`UnthreaderMode`] to see what each does.
     #[must_use]
-    pub fn unthread(&self) -> Option<ReentrantMutexGuard<'_, ()>> {
-        match self {
-            Self::No => None,
-            Self::Yes(x) => Some(x.lock())
-        }
-    }
-}
-
-/// Serde helper for deserializing [`Unthreader`].
-struct UnthreaderVisitor;
-
-impl<'de> Visitor<'de> for UnthreaderVisitor {
-    type Value = Unthreader;
-
-    fn visit_bool<E: Error>(self, v: bool) -> Result<Self::Value, E> {
-        Ok(Unthreader::r#if(v))
-    }
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "Expected a bool")
-    }
-}
-
-impl<'de> Deserialize<'de> for Unthreader {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(UnthreaderVisitor)
-    }
-}
-
-impl Serialize for Unthreader {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_bool(match self {
-            Self::No => false,
-            Self::Yes(_) => true
-        })
+    pub fn unthread(&self) -> UnthreadHandle<'_> {
+        debug!(Unthreader::unthread, self);
+        UnthreadHandle (
+            match self.mode {
+                UnthreaderMode::Multithread => None,
+                UnthreaderMode::Unthread    => Some(self.inner.0.lock()),
+                UnthreaderMode::UnthreadAndRatelimit(d) => {
+                    let lock = self.inner.0.lock();
+                    if let Some(last) = lock.get() && let Some(sleep) = d.checked_sub(last.elapsed()) {
+                        std::thread::sleep(sleep);
+                    }
+                    lock.set(Some(Instant::now()));
+                    Some(lock)
+                }
+            }
+        )
     }
 }

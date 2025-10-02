@@ -121,7 +121,8 @@
 			"params_diff": {"flags": ["unmobile"]},
 			"tests": [
 				{"task_config": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "result": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
-				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide", "result": "https://en.wikipedia.org/wiki/Gaza_genocide"}
+				{"task_config": "https://en.m.wikipedia.org/wiki/Gaza_genocide"                    , "result": "https://en.wikipedia.org/wiki/Gaza_genocide"},
+				{"task_config": "https://en.m.wikipedia.org/wiki/Zionism"                          , "result": "https://en.wikipedia.org/wiki/Zionism"}
 			]
 		},
 		{
@@ -157,40 +158,6 @@
 			"tests": [
 				{"task_config": "https://tumblr.com/username", "result": "https://www.tumblr.com/username"},
 				{"task_config": "https://username.tumblr.com", "result": "https://www.tumblr.com/username/"}
-			]
-		},
-		{
-			"params_diff": {"flags": ["no_network"]},
-			"job_context": {"source_host": "allmylinks.com"},
-			"tests": [
-				{
-					"task_config": {
-						"url": "https://allmylinks.com/link/out?invalid",
-						"context": {
-							"vars": {
-								"redirect_shortcut": "https://example.com"
-							}
-						}
-					},
-					"result": "https://example.com/"
-				}
-			]
-		},
-		{
-			"params_diff": {"flags": ["no_network"]},
-			"job_context": {"source_host": "x.com"},
-			"tests": [
-				{
-					"task_config": {
-						"url": "https://t.co/invalid",
-						"context": {
-							"vars": {
-								"redirect_shortcut": "https://example.com"
-							}
-						}
-					},
-					"result": "https://example.com/"
-				}
 			]
 		},
 		{

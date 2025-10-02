@@ -36,7 +36,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `embed_compatibility`: Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.
 - `keep_http`: Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
-- `expand_dangerous_redirects`: Expand redirects known to always leak sender info.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
 - `unmobile`: Remove parts of URLs that tell websites to expect you to be on a mobile device.
@@ -95,8 +94,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 #### Vars
 
-- `handle`: The handle to replace the user ID with.
 - `contact_info_site_name`: The name oe the website this URL is contact info for.
 - `link_text`: The text of the link the job came from.
-- `redirect_shortcut`: The destination of a redirect as specified by some part of the source. For example, the link's text.
 <!--/cmd-->

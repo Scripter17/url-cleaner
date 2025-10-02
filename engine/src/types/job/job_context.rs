@@ -17,7 +17,7 @@ pub struct JobContext {
     ///
     /// Used with [`TaskContext`] by the default cleaner and the userscript to allow for per-site optimizations and unmangling.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub source_host: Option<BetterHost>,
+    pub source_host: Option<BetterHost<String>>,
     /// The vars.
     #[serde_as(as = "MapPreventDuplicates<_, _>")]
     #[serde(default, skip_serializing_if = "is_default")]

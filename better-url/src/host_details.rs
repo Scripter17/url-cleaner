@@ -12,9 +12,9 @@ use url::Url;
 #[expect(unused_imports, reason = "Used in doc comments.")]
 use crate::*;
 
-pub mod domain;
+mod domain;
 pub use domain::*;
-pub mod ip;
+mod ip;
 pub use ip::*;
 
 /// The details of a [`BetterUrl`]'s host.
@@ -120,43 +120,6 @@ impl HostDetails {
         url::Host::parse(host).map(|host| Self::from_host(&host))
     }
 
-    /// Gets the details of an [`Ipv4Addr`] host.
-    /// # Examples
-    /// ```
-    /// use better_url::*;
-    ///
-    /// assert!(matches!(HostDetails::from_ip_addr("127.0.0.1".parse().unwrap()), HostDetails::Ipv4(_)));
-    /// ```
-    pub fn from_ipv4_addr(addr: Ipv4Addr) -> Self {
-        Self::Ipv4(Ipv4Details::from_addr(addr))
-    }
-
-    /// Gets the details of an [`Ipv6Addr`] host.
-    /// # Examples
-    /// ```
-    /// use better_url::*;
-    ///
-    /// assert!(matches!(HostDetails::from_ip_addr("::1".parse().unwrap()), HostDetails::Ipv6(_)));
-    /// ```
-    pub fn from_ipv6_addr(addr: Ipv6Addr) -> Self {
-        Self::Ipv6(Ipv6Details::from_addr(addr))
-    }
-
-    /// Gets the details of an [`IpAddr`] host.
-    /// # Examples
-    /// ```
-    /// use better_url::*;
-    ///
-    /// assert!(matches!(HostDetails::from_ip_addr("127.0.0.1".parse().unwrap()), HostDetails::Ipv4(_)));
-    /// assert!(matches!(HostDetails::from_ip_addr("::1"      .parse().unwrap()), HostDetails::Ipv6(_)));
-    /// ```
-    pub fn from_ip_addr(addr: IpAddr) -> Self {
-        match addr {
-            IpAddr::V4(addr) => Self::from_ipv4_addr(addr),
-            IpAddr::V6(addr) => Self::from_ipv6_addr(addr)
-        }
-    }
-
     /// Gets the details of a [`url::Host`].
     ///
     /// Assumes [`url::Host::Domain`] always contains valid domains, which isn't true, but is true enough to work.
@@ -172,8 +135,8 @@ impl HostDetails {
     pub fn from_host<T: AsRef<str>>(host: &url::Host<T>) -> Self {
         match host {
             url::Host::Domain(domain) => Self::Domain(DomainDetails::parse_unchecked(domain.as_ref())),
-            url::Host::Ipv4  (addr  ) => Self::from_ipv4_addr(*addr),
-            url::Host::Ipv6  (addr  ) => Self::from_ipv6_addr(*addr)
+            url::Host::Ipv4  (addr  ) => (*addr).into(),
+            url::Host::Ipv6  (addr  ) => (*addr).into()
         }
     }
 
@@ -191,9 +154,18 @@ impl HostDetails {
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().domain_details(), None   ));
     /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap().domain_details(), None   ));
     /// ```
-    pub fn domain_details(&self) -> Option<&DomainDetails> {
+    pub fn domain_details(&self) -> Option<DomainDetails> {
         match self {
-            Self::Domain(domain_details) => Some(domain_details),
+            Self::Domain(details) => Some(*details),
+            _ => None
+        }
+    }
+
+    /// If `self` is an IP, return the corresponding [`IpDetails`].
+    pub fn ip_details(&self) -> Option<IpDetails> {
+        match self {
+            Self::Ipv4(details) => Some(IpDetails::V4(*details)),
+            Self::Ipv6(details) => Some(IpDetails::V6(*details)),
             _ => None
         }
     }
@@ -207,9 +179,9 @@ impl HostDetails {
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv4_details(), Some(_)));
     /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap().ipv4_details(), None   ));
     /// ```
-    pub fn ipv4_details(&self) -> Option<&Ipv4Details> {
+    pub fn ipv4_details(&self) -> Option<Ipv4Details> {
         match self {
-            Self::Ipv4(ipv4_details) => Some(ipv4_details),
+            Self::Ipv4(details) => Some(*details),
             _ => None
         }
     }
@@ -223,10 +195,32 @@ impl HostDetails {
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv6_details(), None   ));
     /// assert!(matches!(HostDetails::parse("[::1]"      ).unwrap().ipv6_details(), Some(_)));
     /// ```
-    pub fn ipv6_details(&self) -> Option<&Ipv6Details> {
+    pub fn ipv6_details(&self) -> Option<Ipv6Details> {
         match self {
-            Self::Ipv6(ipv6_details) => Some(ipv6_details),
+            Self::Ipv6(details) => Some(*details),
             _ => None
+        }
+    }
+}
+
+
+impl From<Ipv4Addr> for HostDetails {
+    fn from(addr: Ipv4Addr) -> Self {
+        Self::Ipv4(Ipv4Details::from(addr))
+    }
+}
+
+impl From<Ipv6Addr> for HostDetails {
+    fn from(addr: Ipv6Addr) -> Self {
+        Self::Ipv6(Ipv6Details::from(addr))
+    }
+}
+
+impl From<IpAddr> for HostDetails {
+    fn from(addr: IpAddr) -> Self {
+        match addr {
+            IpAddr::V4(addr) => addr.into(),
+            IpAddr::V6(addr) => addr.into()
         }
     }
 }

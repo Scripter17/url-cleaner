@@ -897,6 +897,35 @@ pub enum Condition {
     /// ```
     HostIsIpv6,
 
+    /// [`IpDetails::is_loopback`].
+    HostIsLoopbackIp,
+    /// [`IpDetails::is_multicast`].
+    HostIsMulticastIp,
+    /// [`IpDetails::is_unspecified`].
+    HostIsUnspecifiedIp,
+
+    /// [`Ipv4Details::is_broadcast`].
+    HostIsBroadcastIpv4,
+    /// [`Ipv4Details::is_documentation`].
+    HostIsDocumentationIpv4,
+    /// [`Ipv4Details::is_link_local`].
+    HostIsLinkLocalIpv4,
+    /// [`Ipv4Details::is_loopback`].
+    HostIsLoopbackIpv4,
+    /// [`Ipv4Details::is_multicast`].
+    HostIsMulticastIpv4,
+    /// [`Ipv4Details::is_private`].
+    HostIsPrivateIpv4,
+    /// [`Ipv4Details::is_unspecified`].
+    HostIsUnspecifiedIpv4,
+
+    /// [`Ipv6Details::is_loopback`].
+    HostIsLoopbackIpv6,
+    /// [`Ipv6Details::is_multicast`].
+    HostIsMulticastIpv6,
+    /// [`Ipv6Details::is_unspecified`].
+    HostIsUnspecifiedIpv6,
+
     // Path
 
     /// Satisfied if the [`Url::path`] is the specified value.
@@ -1427,6 +1456,22 @@ impl Condition {
             Self::HostIsIp     => matches!(task_state.url.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_))),
             Self::HostIsIpv4   => matches!(task_state.url.host_details(), Some(HostDetails::Ipv4(_))),
             Self::HostIsIpv6   => matches!(task_state.url.host_details(), Some(HostDetails::Ipv6(_))),
+
+            Self::HostIsLoopbackIp        => task_state.url.ip_details  ().is_some_and(|details| details.is_loopback     ()),
+            Self::HostIsMulticastIp       => task_state.url.ip_details  ().is_some_and(|details| details.is_multicast    ()),
+            Self::HostIsUnspecifiedIp     => task_state.url.ip_details  ().is_some_and(|details| details.is_unspecified  ()),
+
+            Self::HostIsBroadcastIpv4     => task_state.url.ipv4_details().is_some_and(|details| details.is_broadcast    ()),
+            Self::HostIsDocumentationIpv4 => task_state.url.ipv4_details().is_some_and(|details| details.is_documentation()),
+            Self::HostIsLinkLocalIpv4     => task_state.url.ipv4_details().is_some_and(|details| details.is_link_local   ()),
+            Self::HostIsLoopbackIpv4      => task_state.url.ipv4_details().is_some_and(|details| details.is_loopback     ()),
+            Self::HostIsMulticastIpv4     => task_state.url.ipv4_details().is_some_and(|details| details.is_multicast    ()),
+            Self::HostIsPrivateIpv4       => task_state.url.ipv4_details().is_some_and(|details| details.is_private      ()),
+            Self::HostIsUnspecifiedIpv4   => task_state.url.ipv4_details().is_some_and(|details| details.is_unspecified  ()),
+
+            Self::HostIsLoopbackIpv6      => task_state.url.ipv4_details().is_some_and(|details| details.is_loopback     ()),
+            Self::HostIsMulticastIpv6     => task_state.url.ipv4_details().is_some_and(|details| details.is_multicast    ()),
+            Self::HostIsUnspecifiedIpv6   => task_state.url.ipv4_details().is_some_and(|details| details.is_unspecified  ()),
 
             // Path
 
