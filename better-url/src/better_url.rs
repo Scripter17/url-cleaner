@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::ops::Deref;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize, ser::Serializer, de::{Visitor, Deserializer, Error}};
+use serde::{Serialize, Deserialize, ser::Serializer, de::Deserializer};
 use url::{Url, PathSegmentsMut, ParseError};
 use thiserror::Error;
 
@@ -314,27 +314,10 @@ impl From<BetterUrl> for String {
     }
 }
 
-/// Serde helper for deserializing [`BetterUrl`].
-#[cfg(feature = "serde")]
-struct BetterUrlVisitor;
-
-#[cfg(feature = "serde")]
-impl<'de> Visitor<'de> for BetterUrlVisitor {
-    type Value = BetterUrl;
-
-    fn visit_str<E: Error>(self, s: &str) -> Result<Self::Value, E> {
-        s.try_into().map_err(E::custom)
-    }
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "Expected a string")
-    }
-}
-
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for BetterUrl {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(BetterUrlVisitor)
+        Url::deserialize(deserializer).map(Into::into)
     }
 }
 

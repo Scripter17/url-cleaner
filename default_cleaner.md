@@ -50,6 +50,8 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 - `furaffinity_sfw`: Change `furaffinity.net` to `sfw.furaffinity.net`.
 - `furaffinity_unsfw`: Change `sfw.furaffinity.net` to `furaffinity.net`.
 - `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
+- `reddit_new`: Change `old.reddit.com` to `www.reddit.com`.
+- `reddit_old`: Change `www.reddit.com` and `new.reddit.com` to `old.reddit.com`
 - `tumblr_unsubdomain_blog`: Change `blog.tumblr.com` to `tumblr.com/blog`.
 - `youtube_remove_sub_confirmation`: Remove the `sub_confirmation` query paramerer in `youtube.com` URLs.
 - `youtube_unembed`: Change `youtube.com/embed/abc` to `youtube.com/watch?v=abc`.

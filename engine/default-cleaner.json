@@ -28,6 +28,8 @@
 			"furaffinity_sfw"                : "Change `furaffinity.net` to `sfw.furaffinity.net`.",
 			"furaffinity_unsfw"              : "Change `sfw.furaffinity.net` to `furaffinity.net`.",
 			"instagram_unprofilecard"        : "Change `instagram.com/username/profilecard` to `instagram.com/username`.",
+			"reddit_new"                     : "Change `old.reddit.com` to `www.reddit.com`.",
+			"reddit_old"                     : "Change `www.reddit.com` and `new.reddit.com` to `old.reddit.com`",
 			"tumblr_unsubdomain_blog"        : "Change `blog.tumblr.com` to `tumblr.com/blog`.",
 			"youtube_remove_sub_confirmation": "Remove the `sub_confirmation` query paramerer in `youtube.com` URLs.",
 			"youtube_unembed"                : "Change `youtube.com/embed/abc` to `youtube.com/watch?v=abc`.",
@@ -222,21 +224,21 @@
 					"click.fan", "click.linksynergy.com", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cp2077.ly", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", "dis.gd", "dlvr.it",
 					"econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co", "glo.bo", "go.forbes.com",
 					"go.france24.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "goodsmile.link", "goo.gl", "goo.gle", "goo.su",
-					"got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "is.gd", "iwe.one", "ja.ma", "jbgm.es", "j.mp",
-					"k00.fr", "katy.to", "kck.st", "kre.pe", "l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "link.chtbl.com", "linkr.it", "l.leparisien.fr",
+					"got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hov.to", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "is.gd", "iwe.one", "ja.ma", "jbgm.es",
+					"j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "link.chtbl.com", "linkr.it", "l.leparisien.fr",
 					"lnkd.in", "loom.ly", "lpc.ca", "mol.im", "mondly.app", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "nine.social",
 					"ninten.do", "n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com",
-					"onl.bz", "onl.la", "onl.sc", "onl.tw", "on.msnbc.com", "on.nyc.gov", "on.wsj.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it",
-					"pixiv.me", "play.st", "pl.go-ga.me", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "rb.gy", "rblx.co", "rdbl.co",
-					"rdcu.be", "rebrand.ly", "redd.it", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s76.co", "scim.ag", "s.click.aliexpress.com",
-					"s.goodsmile.link", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "spoti.fi", "spr.ly", "sqex.to",
-					"square.link", "sta.sh", "s.team", "t2m.io", "t.co", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "t.ly", "tmblr.co",
-					"to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com",
-					"wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca", "zurl.co"
+					"on.kff.org", "onl.bz", "onl.la", "onl.sc", "onl.tw", "on.msnbc.com", "on.nyc.gov", "on.wsj.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml",
+					"pin.it", "pixiv.me", "play.st", "pl.go-ga.me", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "qrto.org", "rb.gy",
+					"rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s76.co", "sbuxjoin.com",
+					"scim.ag", "s.click.aliexpress.com", "s.goodsmile.link", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co",
+					"spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "t.co", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc",
+					"tinylf.com", "t.ly", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf", "visitlink.me",
+					"vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca", "zurl.co"
 				],
 				"sometimes_redirect": [
-					"allmylinks.com", "apexpartner.app", "api.pinterest.com", "facebook.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com", "sketchfab.com",
-					"snapchat.com", "teepublic.com", "thangs.com"
+					"allmylinks.com", "apexpartner.app", "api.pinterest.com", "facebook.com", "hisubway.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com",
+					"sketchfab.com", "snapchat.com", "teepublic.com", "thangs.com"
 				],
 				"special": [
 					"1link.club", "affiliate.xp-pen.com", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", "bit.ly", "bugzil.la", "buymeacoff.ee",
@@ -256,7 +258,7 @@
 				"sometimes_redirect": ["cmail20.com", "sendgrid.net"],
 				"special": [
 					"alibaba.com", "app.link", "awstrack.me", "carleton.ca", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "onelink.me", "pulse.ly", "smartadserver.com",
-					"vk.com"
+					"sng.link", "vk.com"
 				]
 			},
 
@@ -646,6 +648,18 @@
 											"if": {"PathIs": "/click"},
 											"then": {"GetUrlFromQueryParam": "go"}
 										}},
+										"sng.link": {"All": [
+											"RemoveQuery",
+											{"SetPathSegment": {"index": 0, "value": "a"}},
+											{"Common": "universal"},
+											{"If": {
+												"if": {"FlagIsNotSet": "no_network"},
+												"then": {"All": [
+													"ExpandRedirect",
+													{"RemoveQueryParam": "referrer"}
+												]}
+											}}
+										]},
 										"vk.com": {"If": {
 											"if": {"PathIs": "/away.php"},
 											"then": {"GetUrlFromQueryParam": "to"}
@@ -715,6 +729,7 @@
 												"apexpartner.app"  : {"PathStartsWith": "/redirect/"},
 												"api.pinterest.com": {"PathStartsWith": "/url_shortener/"},
 												"facebook.com"     : {"PathStartsWith": "/share/"},
+												"hisubway.com"     : {"HasQueryParam": "link"},
 												"old.reddit.com"   : {"PartContains": {"part": "Path", "value": "/s/", "at": {"After": 0}}},
 												"pawoo.net"        : {"PathStartsWith": "/oauth_authentications/"},
 												"qudsnen.co"       : {"HasQueryParam": "p"},
@@ -1718,14 +1733,37 @@
 							]}}}
 						}},
 						"razer.com": {"RemoveQueryParam": "cid"},
-						"reddit.com": {"PartMap": {
-							"part": {"PathSegment": 0},
-							"map": {
-								"search": {"RemoveQueryParams": ["cid", "share_id"]},
-								"domain": {"AllowQueryParams": ["count", "after"]}
-							},
-							"else": {"AllowQueryParam": "f"}
-						}},
+						"reddit.com": {"All": [
+							{"PartMap": {
+								"part": {"PathSegment": 0},
+								"map": {
+									"search": {"RemoveQueryParams": ["cid", "share_id"]},
+									"domain": {"AllowQueryParams": ["count", "after"]}
+								},
+								"else": {"AllowQueryParam": "f"}
+							}},
+							{"PartMap": {
+								"part": "Subdomain",
+								"map": {
+									"www": {"If": {
+										"if": {"FlagIsSet": "reddit_old"},
+										"then": {"SetSubdomain": "old"}
+									}},
+									"new": {"If": {
+										"if": {"FlagIsSet": "reddit_old"},
+										"then": {"SetSubdomain": "old"}
+									}},
+									"old": {"If": {
+										"if": {"FlagIsSet": "reddit_new"},
+										"then": {"SetSubdomain": "www"}
+									}}
+								},
+								"else": {"If": {
+									"if": {"FlagIsSet": "reddit_old"},
+									"then": {"SetSubdomain": "old"}
+								}}
+							}}
+						]},
 						"rule34.xxx": {"If": {
 							"if": {"All": [
 								{"FlagIsSet": "remove_unused_search_query"},
@@ -1958,6 +1996,7 @@
 						}},
 						"of.com": {"SetHost": "onlyfans.com"},
 						"overview.mail.yahoo.com": "RemoveQuery",
+						"people.com": {"RemoveQueryParam": "_gl"},
 						"play.google.com": {"All": [
 							{"RemoveQueryParam": "referrer"},
 							{"If": {
@@ -2029,32 +2068,44 @@
 									"then": {"AllowQueryParams": ["aod", "tag"]},
 									"else": {"AllowQueryParam": "aod"}
 								}},
-								{"ModifyPart": {"part": "Path", "modification": {"All": [
-									{"StripBefore": "/dp/"},
-									{"KeepMaybeBefore": "/ref="}
-								]}}}
-							]},
-							"else": {"PartMap": {
-								"part": "Path",
-								"map": {
-									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn", "me"]},
-									"/gp/buyagain": {"AllowQueryParam": "ats"},
-									"/gp/customer-reviews": "RemoveQuery",
-									"/amazonprime": "RemoveQuery"
-								},
-								"else": {"If": {
-									"if": {"PathStartsWith": "/gp/offer-listing/"},
-									"then": {"All": [
-										{"ModifyPart": {"part": "Path", "modification": {"Replacen": {"find": "gp/offer-listing", "replace": "dp", "count": 1}}}},
-										{"SetQuery": "aod=1"}
-									]},
-									"else": {"RemoveQueryParamsMatching": {"Any": [
-										{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref", "lp_context_asin"]},
-										{"StartsWith": "pd_"},
-										{"StartsWith": "pf_"}
-									]}}
+								{"ModifyPart": {
+									"part": "Path",
+									"modification": {"All": [
+										{"StripBefore": "/dp/"},
+										{"KeepMaybeBefore": "/ref="}
+									]}
 								}}
-							}}
+							]},
+							"else": {"All": [
+								{"If": {
+									"if": {"PathSegmentStartsWith": {
+										"index": -1,
+										"value": "ref="
+									}},
+									"then": {"RemovePathSegment": -1}
+								}},
+								{"PartMap": {
+									"part": "Path",
+									"map": {
+										"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn", "me"]},
+										"/gp/buyagain": {"AllowQueryParam": "ats"},
+										"/gp/customer-reviews": "RemoveQuery",
+										"/amazonprime": "RemoveQuery"
+									},
+									"else": {"If": {
+										"if": {"PathStartsWith": "/gp/offer-listing/"},
+										"then": {"All": [
+											{"ModifyPart": {"part": "Path", "modification": {"Replacen": {"find": "gp/offer-listing", "replace": "dp", "count": 1}}}},
+											{"SetQuery": "aod=1"}
+										]},
+										"else": {"RemoveQueryParamsMatching": {"Any": [
+											{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref", "lp_context_asin"]},
+											{"StartsWith": "pd_"},
+											{"StartsWith": "pf_"}
+										]}}
+									}}
+								}}
+							]}
 						}},
 						"bestbuy": {"RemoveQueryParam": "icmp"},
 						"ebay": {"If": {

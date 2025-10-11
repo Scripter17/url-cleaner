@@ -24,8 +24,13 @@ jobs:
     - name: order
       run: |
         set -o pipefail
-        in=$(seq -f "https://%0.0f.com/" 100)
-        [[ "$(echo "$in" | cargo run)" == "$in" && "$(echo "$in" | cargo run -- --json | grep -oP 'https://[^"]+')" == "$in" ]]
+        in=$(seq -f "https://%0.0f.com/" 127)
+        [[ "$(echo "$in" | cargo run)" == "$in" ]]
+        [[ "$(echo "$in" | cargo run -- --json | grep -oP 'https://[^"]+')" == "$in" ]]
+        [[ "$(cargo run -- $in)" == "$in" ]]
+        [[ "$(cargo run -- $in --json | grep -oP 'https://[^"]+')" == "$in" ]]
+        [[ "$(echo "$in" | cargo run -- $in)" == "$(echo -ne "$in\n$in")" ]]
+        [[ "$(echo "$in" | cargo run -- $in --json | grep -oP 'https://[^"]+')" == "$(echo -ne "$in\n$in")" ]]
 
   deadlock:
     runs-on: ubuntu-latest

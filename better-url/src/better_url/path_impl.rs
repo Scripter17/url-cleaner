@@ -289,7 +289,6 @@ impl BetterUrl {
     pub fn path_segment(&self, index: isize) -> Option<Option<&str>> {
         match index {
             0.. => self.path_segments().map(|mut x| x.nth(index as usize)),
-            #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
             ..0 => self.path_segments().map(|mut x| x.nth_back((-index - 1) as usize))
         }
     }

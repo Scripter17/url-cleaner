@@ -13,7 +13,6 @@ pub fn set_segment<E>(segments: &str, split: &str, index: isize, value: Option<&
         None
     } else {
         let replace = x.nth(index).expect("The index to be in-bounds.");
-        #[expect(clippy::arithmetic_side_effects, reason = "Should always be in-bounds for the string, and therefore usize.")]
         match (index, value) {
             (0, None) => segments.get(replace.len() + split.len() ..).map(Into::into),
             (_, None) => Some(format!(
@@ -38,11 +37,9 @@ pub fn insert_segment<E>(segments: &str, split: &str, index: isize, value: &str,
     let len = x.clone().count();
     let index = match index {
         0.. if index as usize <= len => index as usize,
-        #[expect(clippy::arithmetic_side_effects, reason = "A negative number plus one never overflows.")]
         ..0 => len.checked_add_signed(index + 1).ok_or(segment_not_found)?,
         _ => Err(segment_not_found)?
     };
-    #[expect(clippy::arithmetic_side_effects, reason = "Should always be in-bounds for the string, and therefore usize.")]
     Ok(if index == 0 {
         format!("{value}{split}{segments}")
     } else if index == len {
@@ -59,7 +56,6 @@ pub fn insert_segment<E>(segments: &str, split: &str, index: isize, value: &str,
 
 /// Remove the first `n` segments of `s` split by `split`.
 pub fn char_remove_first_n_segments(s: &str, split: char, n: usize) -> Option<&str> {
-    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
     s.get((s.split(split).nth(n)? as *const str).addr() - (s as *const str).addr() ..)
 }
 
@@ -68,9 +64,7 @@ pub fn char_keep_first_n_segments(s: &str, split: char, n: usize) -> Option<&str
     if n == 0 {
         None
     } else {
-        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         let seg = s.split(split).nth(n-1)?;
-        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         s.get(.. (seg as *const str).addr() + seg.len() - (s as *const str).addr())
     }
 }
@@ -78,7 +72,6 @@ pub fn char_keep_first_n_segments(s: &str, split: char, n: usize) -> Option<&str
 /// Remove the last `n` segments of `s` split by `split`.
 pub fn char_remove_last_n_segments(s: &str, split: char, n: usize) -> Option<&str> {
     let seg = s.split(split).nth_back(n)?;
-    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
     s.get(.. (seg as *const str).addr() + seg.len() - (s as *const str).addr())
 }
 
@@ -87,7 +80,6 @@ pub fn char_keep_last_n_segments(s: &str, split: char, n: usize) -> Option<&str>
     if n == 0 {
         None
     } else {
-        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         s.get((s.split(split).nth_back(n - 1)? as *const str).addr() - (s as *const str).addr()..)
     }
 }

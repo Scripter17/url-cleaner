@@ -288,7 +288,6 @@ impl BetterUrl {
     /// assert_eq!(url.query(), None);
     /// ```
     pub fn set_raw_query_param(&mut self, name: &str, index: usize, to: Option<Option<&str>>) -> Result<(), SetQueryParamError> {
-        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         let mut ret = String::with_capacity(self.query().map_or(0, str::len) + name.len() + 1 + to.flatten().map_or(0, str::len));
         let mut found = 0;
 
@@ -308,8 +307,7 @@ impl BetterUrl {
                         if !ret.is_empty() {ret.push('&');}
                         ret.push_str(param);
                     }
-                    #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-                    {found += 1;}
+                    found += 1;
                 } else {
                     if !ret.is_empty() {ret.push('&');}
                     ret.push_str(param);
@@ -361,7 +359,6 @@ impl BetterUrl {
             Err(RenameQueryParamError::InvalidName)?
         }
         let query = self.query().ok_or(RenameQueryParamError::NoQuery)?;
-        #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         let mut new = String::with_capacity(query.len() + to.len());
         let mut found = 0;
         for param in query.split('&') {
@@ -380,8 +377,7 @@ impl BetterUrl {
                 } else {
                     new.push_str(param);
                 }
-                #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
-                {found += 1;}
+                found += 1;
             } else {
                 new.push_str(param);
             }

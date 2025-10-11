@@ -30,39 +30,6 @@ jobs:
         done
         ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 100; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc
 
-  logging:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: logging
-      run: |
-        set -o pipefail
-        cargo build
-
-        cargo run &
-        sleep 1
-        rm -rf logs
-        curl http://localhost:9149/clean -d '{"tasks":[]}'
-        ! ls logs
-
-        kill "$!"
-
-        cargo run -- --log &
-        sleep 1
-        rm -rf logs
-        curl http://localhost:9149/clean -d '{"tasks":[]}'
-        ls logs
-
-        kill "$!"
-
-        cargo run -- --log --log-dir logs2 &
-        sleep 1
-        rm -rf logs2
-        curl http://localhost:9149/clean -d '{"tasks":[]}'
-        ls logs2
-
-        kill "$!"
-
   unthreader:
     runs-on: ubuntu-latest
     steps:

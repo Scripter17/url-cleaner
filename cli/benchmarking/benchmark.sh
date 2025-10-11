@@ -37,28 +37,28 @@ out="benchmarks-$(date +%s).tar.gz"
 for arg in "$@"; do
   shift
   case "$arg" in
-    --no-compile)      mode=        ; compile=0                          ;;
-    --only-compile)    mode=        ; hyperfine=0; callgrind=0; massif=0 ;;
-    --features)        mode=features                                     ;;
+    --no-compile)       mode=                ; compile=0                          ;;
+    --only-compile)     mode=                ; hyperfine=0; callgrind=0; massif=0 ;;
+    --features)         mode=features                                             ;;
 
-    --cleaner)         mode=cleaner                                      ;;
+    --cleaner)          mode=cleaner                                              ;;
 
-    --all)             mode=        ; hyperfine=1; callgrind=1; massif=1 ;;
-    --no-hyperfine)    mode=        ; hyperfine=0                        ;;
-    --warmup)          mode=warmup                                       ;;
-    --runs)            mode=runs                                         ;;
-    --ignore-failure)  mode=        ; ignore_failure=--ignore-failure    ;;
+    --all)              mode=                ; hyperfine=1; callgrind=1; massif=1 ;;
+    --no-hyperfine)     mode=                ; hyperfine=0                        ;;
+    --warmup)           mode=warmup                                               ;;
+    --runs)             mode=runs                                                 ;;
+    --ignore-failure)   mode=                ; ignore_failure=--ignore-failure    ;;
 
-    --callgrind)       mode=        ; callgrind=1                        ;;
-    --massif)          mode=        ; massif=1                           ;;
+    --callgrind)        mode=                ; callgrind=1                        ;;
+    --massif)           mode=                ; massif=1                           ;;
 
-    --urls)            mode=urls    ; URLS=( )                           ;;
-    --nums)            mode=nums    ; NUMS=( )                           ;;
+    --urls)             mode=urls            ; URLS=( )                           ;;
+    --nums)             mode=nums            ; NUMS=( )                           ;;
 
-    --out)             mode=out                                          ;;
+    --out)              mode=out                                                  ;;
 
-    --)                break ;;
-    --*)               echo Unknown option \"$arg\"; exit 1 ;;
+    --)                 break ;;
+    --*)                echo Unknown option \"$arg\"; exit 1 ;;
 
     *) case "$mode" in
       features) features=(--features "$arg") ;;
@@ -108,9 +108,9 @@ if [ $hyperfine -eq 1 ]; then
     --runs $runs \
     -N \
     --input stdin \
-    "$COMMAND"\
-    $ignore_failure\
-    --style color\
+    "$COMMAND" \
+    $ignore_failure \
+    --style color \
     --sort command \
     --export-json "hyperfine.out.json"
   rm stdin
@@ -132,8 +132,8 @@ fi
 for url in "${URLS[@]}"; do
   file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
   for num in "${NUMS[@]}"; do
-    if [ $callgrind -eq 1 ]; then echo "Callgrind - $num - $url"; yes "$url" | head -n $num | valgrind --tool=callgrind --separate-threads=yes --callgrind-out-file="callgrind.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null; fi
-    if [ $massif    -eq 1 ]; then echo "Massif    - $num - $url"; yes "$url" | head -n $num | valgrind --tool=massif                           --massif-out-file="massif.out-$file_safe_url-$num-%p"       $COMMAND &> /dev/null; fi
+    if [ $callgrind -eq 1 ]; then echo "Callgrind - $num - $url"; yes "$url" | head -n $num | valgrind --tool=callgrind --separate-threads=yes     --callgrind-out-file="callgrind.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null; fi
+    if [ $massif    -eq 1 ]; then echo "Massif    - $num - $url"; yes "$url" | head -n $num | valgrind --tool=massif    --scheduling-quantum=10000 --massif-out-file="massif.out-$file_safe_url-$num-%p"       $COMMAND &> /dev/null; fi
   done
 done
 

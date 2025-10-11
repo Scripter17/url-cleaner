@@ -103,7 +103,6 @@ pub fn string_literal_prefix(s: &str) -> Result<String, StringLiteralPrefixError
 
     for (i, c) in s.chars().enumerate() {
         debug!(prefix::js::string_literal_prefix, &(), i, c, last_state, scratchspace, quote, ret);
-        #[allow(clippy::arithmetic_side_effects, reason = "Shouldn't ever happen.")]
         match (last_state, c) {
             (StringLiteralPrefixLastState::Outside         , '"' | '\''                       ) => {last_state = StringLiteralPrefixLastState::Inside          ; quote = c;},
             (StringLiteralPrefixLastState::Inside          , '\\'                             ) => {last_state = StringLiteralPrefixLastState::Start           ;},

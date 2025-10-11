@@ -243,9 +243,7 @@ fn munch(state: &mut GAVState, i: usize, c: char) -> Result<(), GAVSyntaxErrorKi
 
 
         (LB::BeforeAttributeValue, '\t' | '\r' | '\n' | ' ') => {},
-        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         (LB::BeforeAttributeValue, '"'                     ) => {state.last_bite = LB::AttributeValueDoubleQuoted; state.attr_value_start = i+1;},
-        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         (LB::BeforeAttributeValue, '\''                    ) => {state.last_bite = LB::AttributeValueSingleQuoted; state.attr_value_start = i+1;},
         (LB::BeforeAttributeValue, '>'                     ) => Err(EK::MissingAttributeValue)?,
         (LB::BeforeAttributeValue, _                       ) => {state.last_bite = LB::AttributeValueUnquoted; state.attr_value_start = i; munch(state, i, c)?;},

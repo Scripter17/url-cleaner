@@ -5,11 +5,15 @@
 #![allow(rustdoc::bare_urls, reason = "All useless.")]
 
 use std::path::PathBuf;
-use std::io::{self, IsTerminal, BufRead};
+use std::io::{self, IsTerminal, BufRead, Write, BufWriter};
 use std::process::ExitCode;
+use std::fmt::Debug;
+use std::time::Duration;
+use std::sync::mpsc::RecvTimeoutError;
 
 use clap::Parser;
 use thiserror::Error;
+use serde::{Serialize, ser::Serializer};
 
 use url_cleaner_engine::types::*;
 use url_cleaner_engine::glue::*;
@@ -57,7 +61,7 @@ struct Args {
     ///
     /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
-    urls: Vec<LazyTaskConfig<'static>>,
+    urls: Vec<String>,
     /// The config file to use.
     ///
     /// Omit to use the built in default cleaner.
@@ -82,6 +86,16 @@ struct Args {
     /// The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
     #[arg(short, long, verbatim_doc_comment)]
     json: bool,
+    /// Always buffer output.
+    ///
+    /// By default, output is flushed after each line if and only if STDOUT is a tty.
+    #[arg(long, conflicts_with = "unbuffer_output")]
+    buffer_output: bool,
+    /// Never buffer output.
+    ///
+    /// By default, output is flushed after each line if and only if STDOUT is a tty.
+    #[arg(long, conflicts_with = "buffer_output")]
+    unbuffer_output: bool,
     /// The ProfilesConfig file.
     ///
     /// Cannot be used with --profiles-string.
@@ -207,6 +221,15 @@ pub enum CliError {
     ProfileNotFound
 }
 
+/// Helper type to print task errors to JSON output.
+struct ErrorToSerdeString<E: Debug>(E);
+
+impl<E: Debug> Serialize for ErrorToSerdeString<E> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        format!("{:?}", self.0).serialize(serializer)
+    }
+}
+
 fn main() -> Result<ExitCode, CliError> {
     let args = Args::parse();
 
@@ -286,64 +309,109 @@ fn main() -> Result<ExitCode, CliError> {
         (false, None   ) => UnthreaderMode::Multithread,
         (false, Some(_)) => unreachable!(),
         (true , None   ) => UnthreaderMode::Unthread,
-        (true , Some(d)) => UnthreaderMode::UnthreadAndRatelimit(std::time::Duration::from_secs_f64(d))
+        (true , Some(d)) => UnthreaderMode::UnthreadAndRatelimit(Duration::from_secs_f64(d))
     }.into();
 
     let threads = match args.threads {
         0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
         1.. => args.threads
     };
-    let (in_senders , in_recievers ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
+
+    // The general idea is:
+    // 1. The getter thread, if needed, make a new buffer.
+    // 2. Write a line of STDIN to that buffer.
+    // 3. Send that buffer to a worker thread.
+    // 4. The worker thread makes a Task.
+    // 5. The worker thread returns the buffer to the task getter thread.
+    // 6. *Then* the worker thread does the Task.
+    // 7. The worker thread sends the Task's result to the output thread.
+
+    let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<(Vec<u8>, Option<GetLazyTaskConfigError>)>()).collect::<(Vec<_>, Vec<_>)>();
+    let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
-    let some_ok  = std::sync::Mutex::new(false);
-    let some_err = std::sync::Mutex::new(false);
+    let mut some_ok  = false;
+    let mut some_err = false;
+
+    let job_config = &JobConfig {
+        cleaner: &cleaner,
+        context: &job_context,
+        #[cfg(feature = "cache")]
+        cache  : &cache,
+        #[cfg(feature = "cache")]
+        cache_handle_config,
+        unthreader: &unthreader
+    };
+
+    let mut buffers = args.urls.len() as u64;
 
     std::thread::scope(|s| {
 
         // Task getter thread.
 
         std::thread::Builder::new().name("Task Getter".to_string()).spawn_scoped(s, || {
-            let job = Job {
-                cleaner: &cleaner,
-                context: &job_context,
-                #[cfg(feature = "cache")]
-                cache  : &cache,
-                #[cfg(feature = "cache")]
-                cache_handle_config,
-                unthreader: &unthreader,
-                lazy_task_configs: {
-                    let ret = args.urls.into_iter().map(Ok);
-                    if !io::stdin().is_terminal() {
-                        Box::new(ret.chain(io::stdin().lock().split(b'\n').map(|x| match x {
-                            Ok(mut line) => {line.pop_if(|last| *last == b'\r'); Ok(line.into())},
-                            Err(e) => Err(e.into())
-                        })))
-                    } else {
-                        Box::new(ret)
+            let buf_ret_reciever = buf_ret_reciever;
+            let buf_in_senders   = buf_in_senders  ;
+            let mut biss = buf_in_senders.iter().cycle();
+
+            for (url, bis) in args.urls.into_iter().zip(&mut biss) {
+                bis.send((url.into(), None)).expect("The current buffer in reciever to stay open while needed.");
+            }
+
+            let stdin = std::io::stdin();
+
+            if !stdin.is_terminal() {
+                let mut stdin = stdin.lock();
+
+                for bis in biss {
+                    // If there are no buffers available within the ratelimit, makea a new one.
+                    // The ratelimit can reduce memory usage by up to 10x with, if properly tuned, minimal performance impact.
+                    
+                    let mut buf = match buf_ret_reciever.recv_timeout(Duration::from_nanos(buffers / 8)) {
+                        Ok(mut buf) => {buf.clear(); buf},
+                        Err(RecvTimeoutError::Timeout) => {
+                            buffers += 1;
+                            Vec::new()
+                        },
+                        Err(RecvTimeoutError::Disconnected) => panic!("Expected buffer return senders to stay open while needed.")
+                    };
+
+                    match stdin.read_until(b'\n', &mut buf) {
+                        Ok(0) => break,
+                        Ok(_) => {
+                            if buf.ends_with(b"\r\n") {
+                                buf.truncate(buf.len() - 2);
+                            } else {
+                                buf.truncate(buf.len() - 1);
+                            }
+                            bis.send((buf, None)).expect("The current buffer in reciever to stay open while needed.");
+                        },
+                        Err(e) => bis.send((buf, Some(e.into()))).expect("The current buffer in reciever to stay open while needed.")
                     }
                 }
-            };
-
-            for (in_sender, task_config_string) in {in_senders}.iter().cycle().zip(job) {
-                in_sender.send(task_config_string).expect("The in receiver to still exist.");
             }
         }).expect("Making threads to work fine.");
 
         // Worker threads.
 
-        in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
+        buf_in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (bir, os))| {
+            let brs = buf_ret_sender.clone();
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
-                while let Ok(maybe_task_source) = ir.recv() {
-                    let ret = match maybe_task_source {
-                        Ok(task_source) => match task_source.make() {
-                            Ok(task) => task.r#do(),
-                            Err(e) => Err(e.into())
+                while let Ok((buf, err)) = bir.recv() {
+                    let ret = match err {
+                        None => {
+                            let maybe_task = job_config.make_lazy_task(LazyTaskConfig::ByteSlice(&buf)).make();
+                            // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
+                            let _ = brs.send(buf);
+                            match maybe_task {
+                                Ok(task) => task.r#do(),
+                                Err(e) => Err(e.into())
+                            }
                         },
-                        Err(e) => Err(DoTaskError::MakeTaskError(e.into()))
+                        Some(e) => Err(DoTaskError::from(MakeTaskError::from(MakeLazyTaskError::from(e))))
                     };
 
-                    os.send(ret).expect("The out receiver to still exist.");
+                    os.send(ret).expect("The result out reciever to stay open while needed.");
                 }
             }).expect("Making threads to work fine.");
         }).for_each(drop);
@@ -351,43 +419,62 @@ fn main() -> Result<ExitCode, CliError> {
         // Stdout thread.
 
         std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, || {
-            let mut some_ok_lock  = some_ok .lock().expect("No panics.");
-            let mut some_err_lock = some_err.lock().expect("No panics.");
+            let mut stdout = std::io::stdout().lock();
 
             if args.json {
                 let mut first_job = true;
 
-                print!("{{\"Ok\":{{\"urls\":[");
+                stdout.write_all(b"{\"Ok\":{\"urls\":[").expect("Writing JSON prelude to STDOUT to work.");
 
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
                         Ok(Ok(url)) => {
-                            if !first_job {print!(",");}
-                            print!("{{\"Ok\":{}}}", serde_json::to_string(url.as_str()).expect("Serializing a string to never fail."));
-                            *some_ok_lock = true;
+                            if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
+                            serde_json::to_writer(&mut stdout, &Ok::<_, ()>(url)).expect("Writing task results to STDOUT to work.");
+                            some_ok = true;
                         },
                         Ok(Err(e)) => {
-                            if !first_job {print!(",");}
-                            print!("{{\"Err\":{}}}", serde_json::to_string(&format!("{e:?}")).expect("Serializing a string to never fail."));
-                            *some_err_lock = true;
+                            if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
+                            serde_json::to_writer(&mut stdout, &Err::<(), _>(ErrorToSerdeString(e))).expect("Writing task results to STDOUT to work.");
+                            some_err = true;
                         },
                         Err(_) => break
                     }
                     first_job = false;
                 }
 
-                print!("]}}}}");
-            } else {
+                stdout.write_all(b"]}}").expect("Writing JSON epilogue to STDOUT to work.");
+            } else if (stdout.is_terminal() || args.unbuffer_output) && !args.buffer_output {
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
                         Ok(Ok(url)) => {
-                            println!("{url}");
-                            *some_ok_lock = true;
+                            stdout.write_all(url.as_str().as_bytes()).expect("Writing task results to STDOUT to work.");
+                            stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
+                            some_ok = true;
                         },
                         Ok(Err(e)) => {
-                            println!();
+                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
                             eprintln!("{e:?}");
-                            *some_err_lock = true;
+                            some_err = true;
+                        }
+                        Err(_) => break
+                    }
+                }
+            } else {
+                let mut stdout = BufWriter::with_capacity(8192, stdout);
+
+                for or in {out_recievers}.iter().cycle() {
+                    match or.recv() {
+                        Ok(Ok(url)) => {
+                            stdout.write_all(url.as_str().as_bytes()).expect("Writing task results to STDOUT to work.");
+                            stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
+                            some_ok = true;
+                        },
+                        Ok(Err(e)) => {
+                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
+                            stdout.flush().expect("Flushing STDOUT to work.");
+                            eprintln!("{e:?}");
+                            some_err = true;
                         }
                         Err(_) => break
                     }
@@ -396,7 +483,7 @@ fn main() -> Result<ExitCode, CliError> {
         }).expect("Making threads to work fine.");
     });
 
-    Ok(match (*some_ok.lock().expect("No panics."), *some_err.lock().expect("No panics.")) {
+    Ok(match (some_ok, some_err) {
         (false, false) => 0,
         (false, true ) => 1,
         (true , false) => 0,

@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use url_cleaner_engine::types::*;
 
 #[expect(unused_imports, reason = "Used in doc comments.")]
-use crate::JobConfig;
+use crate::CleanPayloadConfig;
 
 /// Info about a URL Cleaner Site server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,20 +16,18 @@ pub struct ServerInfo<'a> {
     pub source_code: Cow<'a, BetterUrl>,
     /// The version.
     pub version: Cow<'a, str>,
-    /// If logging is enabled.
-    pub logging_enabled: bool,
     /// The max JSON size.
     pub max_json_size: u64,
-    /// The default value for [`JobConfig::read_cache`].
+    /// The default value for [`CleanPayloadConfig::read_cache`].
     #[cfg(feature = "cache")]
     pub default_read_cache: bool,
-    /// The default value for [`JobConfig::write_cache`].
+    /// The default value for [`CleanPayloadConfig::write_cache`].
     #[cfg(feature = "cache")]
     pub default_write_cache: bool,
-    /// The default value for [`JobConfig::cache_delay`].
+    /// The default value for [`CleanPayloadConfig::cache_delay`].
     #[cfg(feature = "cache")]
     pub default_cache_delay: bool,
-    /// The default value for [`JobConfig::unthread`].
+    /// The default value for [`CleanPayloadConfig::unthread`].
     pub default_unthread: bool,
     /// The [`UnthreaderMode`] used when unthreading.
     pub unthreader_mode: UnthreaderMode

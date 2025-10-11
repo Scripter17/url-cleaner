@@ -1176,7 +1176,6 @@ impl StringModification {
             Self::StripSuffix(suffix) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let suffix = get_str!(suffix, task_state, StringModificationError);
-                #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
                 match to {
                     Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_suffix(suffix).ok_or(StringModificationError::SuffixNotFound)?)
@@ -1185,7 +1184,6 @@ impl StringModification {
             Self::StripMaybeSuffix(suffix) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let suffix = get_str!(suffix, task_state, StringModificationError);
-                #[expect(clippy::arithmetic_side_effects, reason = "`suffix.len()>=to.len()` is guaranteed by `to.ends_with(suffix)`.")]
                 match to {
                     Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len() - suffix.len());},
                     Cow::Borrowed(inner) => if let Some(x) = inner.strip_suffix(suffix) {*to = Cow::Borrowed(x);}
@@ -1235,7 +1233,6 @@ impl StringModification {
             Self::StripAfter(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let s = get_str!(s, task_state, StringModificationError);
-                #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
                 match to {
                     Cow::Owned(inner) => {inner.drain((inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len())..);},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()])
@@ -1244,7 +1241,6 @@ impl StringModification {
             Self::KeepAfter(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let s = get_str!(s, task_state, StringModificationError);
-                #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
                 match to {
                     Cow::Owned(inner) => {inner.drain(..(inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()));},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()..])
@@ -1294,7 +1290,6 @@ impl StringModification {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let s = get_str!(s, task_state, StringModificationError);
                 if let Some(i) = to.find(s) {
-                    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
                     match to {
                         Cow::Owned(inner) => {inner.drain((i + s.len())..);},
                         Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..i + s.len()])
@@ -1305,7 +1300,6 @@ impl StringModification {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 let s = get_str!(s, task_state, StringModificationError);
                 if let Some(i) = to.find(s) {
-                    #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
                     match to {
                         Cow::Owned(inner) => {inner.drain(..(i + s.len()));},
                         Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[i + s.len()..])

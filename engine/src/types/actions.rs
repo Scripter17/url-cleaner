@@ -1289,7 +1289,7 @@ impl Action {
                 let mut previous_url;
                 let mut previous_scratchpad;
                 for _ in 0..*limit {
-                    previous_url = task_state.url.to_string();
+                    previous_url = task_state.url.clone();
                     previous_scratchpad = task_state.scratchpad.clone();
                     for action in actions {
                         action.apply(task_state)?;

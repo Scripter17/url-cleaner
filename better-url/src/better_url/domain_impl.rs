@@ -272,7 +272,6 @@ impl BetterUrl {
                     (None    , None    , false) => format!(""),
                     (None    , None    , true ) => format!(".")
                 };
-                #[expect(clippy::arithmetic_side_effects, reason = "Can't happen.")]
                 let new_middle_start = to.map_or(0, |subdomain| subdomain.len() + 1);
                 let len_diff = new_middle_start.wrapping_sub(domain_details.middle_start.expect(""));
                 domain_details.middle_start = Some(new_middle_start);

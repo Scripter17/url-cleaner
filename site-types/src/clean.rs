@@ -12,20 +12,22 @@ use crate::auth::*;
 /// Used to construct a [`Job`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[serde(bound(deserialize = "'a: 'de, 'de: 'a"))]
 pub struct CleanPayload<'a> {
     /// The [`LazyTaskConfig`]s to use.
+    #[serde(borrow)]
     pub tasks: Vec<LazyTaskConfig<'a>>,
-    /// The [`JobConfig`] to use.
+    /// The [`CleanPayloadConfig`] to use.
     ///
     /// Flattened in serialization.
     #[serde(flatten)]
-    pub config: JobConfig
+    pub config: CleanPayloadConfig
 }
 
 /// The config or a [`CleanPayload`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct JobConfig {
+pub struct CleanPayloadConfig {
     /// The authentication to use.
     ///
     /// Defaults to [`None`].

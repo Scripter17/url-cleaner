@@ -38,7 +38,6 @@ pub(crate) static DEBUG_STATE: LazyLock<Mutex<DebugState>> = LazyLock::new(Defau
 pub(crate) struct Deindenter;
 
 impl std::ops::Drop for Deindenter {
-    #[allow(clippy::arithmetic_side_effects, reason = "INDENT gets decremented exactly once per increment and always after.")]
     fn drop(&mut self) {
         crate::util::DEBUG_STATE.lock().expect("").indent -= 1;
     }
@@ -47,7 +46,6 @@ impl std::ops::Drop for Deindenter {
 /// When the debug feature is enabled, print debug info.
 macro_rules! debug {
     ($func:pat, $self:expr $(, $arg:expr)*) => {
-        #[allow(clippy::arithmetic_side_effects, reason = "God help you if your config gets [`usize::MAX`] layers deep.")]
         let _deindenter = {
             let mut dsl = crate::util::DEBUG_STATE.lock().unwrap();
             let indent = dsl.indent;

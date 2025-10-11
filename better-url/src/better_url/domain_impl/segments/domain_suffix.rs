@@ -48,7 +48,6 @@ impl BetterUrl {
     pub fn domain_suffix_segment(&self, index: isize) -> Option<&str> {
         match index {
             0.. => self.domain_suffix()?.split('.').nth(index as usize),
-            #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
             ..0 => self.domain_suffix()?.split('.').nth_back((-index - 1) as usize)
         }
     }

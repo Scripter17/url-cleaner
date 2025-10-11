@@ -2,6 +2,7 @@
 
 use std::ops::Bound;
 use std::str::FromStr;
+use std::borrow::Cow;
 
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
@@ -25,12 +26,18 @@ pub struct DomainDetails {
 /// The enum of errors [`DomainDetails::parse`] can return.
 #[derive(Debug, Error)]
 pub enum GetDomainDetailsError {
-    /// Returned when a [`url::ParseError`] is encountered.
+    /// Returned when the provided host might be IPv6.
+    #[error("The provided host might be IPv6.")]
+    HostIsMaybeIpv6,
+    /// Returned when the provided host might be IPv4.
+    #[error("The provided host might be IPv4.")]
+    HostIsMaybeIpv4,
+    /// Returned when the provided host is empty.
+    #[error("The provided host is empty.")]
+    EmptyHost,
+    /// Returned when an [`idna::Errors`] is encountered.
     #[error(transparent)]
-    ParseError(#[from] url::ParseError),
-    /// Returned when the provided host isn't a domain.
-    #[error("The provided host wasn't a domain.")]
-    NotADomain
+    IdnaErrors(#[from] idna::Errors)
 }
 
 impl DomainDetails {
@@ -38,9 +45,13 @@ impl DomainDetails {
     ///
     /// If you're absolutely certain the value you're using is a valid domain, you can use [`Self::parse_unchecked`].
     /// # Errors
-    /// If the call to [`url::Host::parse`] returns an error, that error is returned.
+    /// If the host might be IPv6, returns the error [`GetDomainDetailsError::HostIsMaybeIpv6`].
     ///
-    /// If the call to [`url::Host::parse`] doesn't return [`url::Host::Domain`], returns the error [`GetDomainDetailsError::NotADomain`].
+    /// If the host might be IPv4, returns the error [`GetDomainDetailsError::HostIsMaybeIpv4`].
+    ///
+    /// If the host is empty, returns the error [`GetDomainDetailsError::EmptyHost`].
+    ///
+    /// If the call to [`idna::domain_to_ascii_from_cow`] reutrns an error, that error is returned.
     /// # Examples
     /// ```
     /// use better_url::*;
@@ -57,10 +68,16 @@ impl DomainDetails {
     /// DomainDetails::parse("127.0.0.1").unwrap_err();
     /// DomainDetails::parse("[::1]").unwrap_err();
     /// ```
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn parse(domain: &str) -> Result<Self, GetDomainDetailsError> {
-        if !matches!(url::Host::parse(domain)?, url::Host::Domain(_)) {return Err(GetDomainDetailsError::NotADomain);}
+        if domain.starts_with('[') {Err(GetDomainDetailsError::HostIsMaybeIpv6)?;}
+        let domain: Cow<'_, [u8]> = percent_encoding::percent_decode(domain.as_bytes()).into();
+        let domain = idna::domain_to_ascii_from_cow(domain, idna::AsciiDenyList::URL)?;
+        if domain.is_empty() {Err(GetDomainDetailsError::EmptyHost)?;}
+        let last = domain.strip_suffix('.').unwrap_or(&domain).rsplit('.').next().expect("The last segment to always exist.");
+        if last.as_bytes().iter().all(|c| c.is_ascii_digit()) {Err(GetDomainDetailsError::HostIsMaybeIpv4)?;}
 
-        Ok(Self::parse_unchecked(domain))
+        Ok(Self::parse_unchecked(&domain))
     }
 
     /// Gets the details of a domain without checking it's actually a domain first.
@@ -79,7 +96,6 @@ impl DomainDetails {
     /// assert_eq!(DomainDetails::parse_unchecked(    "example.co.uk."), DomainDetails {middle_start: Some(0), suffix_start: Some( 8), fqdn_period: Some(13)});
     /// assert_eq!(DomainDetails::parse_unchecked("www.example.co.uk."), DomainDetails {middle_start: Some(4), suffix_start: Some(12), fqdn_period: Some(17)});
     /// ```
-    #[allow(clippy::arithmetic_side_effects, reason = "Shouldn't be possible.")]
     pub fn parse_unchecked(domain: &str) -> Self {
         let suffix_start = psl::suffix(domain.as_bytes()).map(|suffix| (suffix.as_bytes().as_ptr() as usize) - (domain.as_ptr() as usize));
         Self {

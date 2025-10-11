@@ -1038,13 +1038,55 @@ pub enum Condition {
     },
     /// Satisfied if the [`BetterUrl::path_segment`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::path_segment), geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
+    /// If the call to [`BetterUrl::path_segment`] returns [`None`], returns the error [`ConditionError::PathDoesNotHaveSegments`].
+    ///
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PathSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The name of the [`Params::sets`] [`Set`] to check it with.
         #[suitable(assert = "set_is_documented")]
         set: StringSource
+    },
+    /// Satisfied if the [`BetterUrl::path_segment`] starts with [`Self::PathSegmentStartsWith::value`].
+    /// # Errors
+    #[doc = edoc!(callnone(BetterUrl::path_segment, ConditionError), geterr(StringSource), checkerr(StringLocation))]
+    PathSegmentStartsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to check for.
+        value: StringSource
+    },
+    /// Passes if the [`BetterUrl::path_segment`] contains [`Self::PathSegmentContains::value`] at [`Self::PathSegmentContains::at`].
+    /// # Errors
+    /// If the call to [`BetterUrl::path_segment`] returns [`None`], returns the error [`ConditionError::PathDoesNotHaveSegments`].
+    ///
+    /// If the call to [`BetterUrl::path_segment`] returns [`Some`] of [`None`], returns the error [`ConditionError::PathSegmentNotFound`].
+    ///
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), checkerr(StringLocation))]
+    PathSegmentContains {
+        /// The segment to check.
+        index: isize,
+        /// Where to look in the path segment for [`Self::PathSegmentContains::value`].
+        ///
+        /// Defaults to [`StringLocation::Anywhere`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        at: StringLocation,
+        /// The value to search for [`Self::PathSegmentContains::value`].
+        value: StringSource
+    },
+    /// Passes if the [`BetterUrl::path_segment`] matches [`Self::PathSegmentMatches::matcher`].
+    /// # Errors
+    /// If the call to [`BetterUrl::path_segment`] returns [`None`], returns the error [`ConditionError::PathDoesNotHaveSegments`].
+    ///
+    /// If the call to [`BetterUrl::path_segment`] returns [`Some`] of [`None`], returns the error [`ConditionError::PathSegmentNotFound`].
+    ///
+    #[doc = edoc!(geterr(StringSource), checkerr(StringMatcher))]
+    PathSegmentMatches {
+        /// The segment to check.
+        index: isize,
+        /// The matcher to check if the path segment satisfies.
+        matcher: StringMatcher
     },
 
     // Query
@@ -1262,6 +1304,9 @@ pub enum ConditionError {
     /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
     #[error("A part of the URL is None where it had to be Some.")]
     UrlPartIsNone,
+    /// Returned when attempting to get a segment/segments from a path with no segments.
+    #[error("Attempted to get a segment/segments from a path with no segments.")]
+    PathDoesNotHaveSegments,
     /// Returned when attempting to get more path segments than are available.
     #[error("Attempted to get more path segments than were available.")]
     NotEnoughPathSegments,
@@ -1488,8 +1533,11 @@ impl Condition {
             Self::LastNPathSegmentsIsInSet  {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.last_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
 
             Self::PathHasSegments => task_state.url.path_has_segments(),
-            Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_some_and(|segment| segment.is_none()),
-            Self::PathSegmentIs {index, value                             } => task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)? == get_option_str!(value, task_state),
+            Self::HasPathSegment        (index           ) => task_state.url.path_segment(*index).is_some_and(|segment| segment.is_none()),
+            Self::PathSegmentIs         {index, value    } => task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)? == get_option_str!(value, task_state),
+            Self::PathSegmentStartsWith {index, value    } => task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?.ok_or(ConditionError::PathSegmentNotFound)?.starts_with(get_str!(value, task_state, ConditionError)),
+            Self::PathSegmentContains   {index, at, value} => at     .check(task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?.ok_or(ConditionError::PathSegmentNotFound)?, get_str!(value, task_state, ConditionError))?,
+            Self::PathSegmentMatches    {index, matcher  } => matcher.check(task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?, task_state)?,
 
             Self::PathSegmentIsOneOf {index, values} => values.contains(task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?),
             Self::PathSegmentIsInSet {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?),

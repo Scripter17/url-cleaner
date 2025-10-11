@@ -9,10 +9,12 @@ use crate::util::*;
 /// Allows lazily making a [`Task`].
 ///
 /// Returned by [`Job`]s to allow doing the expensive conversion into [`Task`]s in parallel worker threads.
+///
+/// [`Self::config`] is bound to lifetime `'c` to allow reusing buffers used in [`LazyTaskConfig::ByteSlice`] between [`Self::make`] and [`Task::do`].
 #[derive(Debug, Clone)]
-pub struct LazyTask<'a> {
+pub struct LazyTask<'c, 'a> {
     /// The [`LazyTaskConfig`].
-    pub config: LazyTaskConfig<'a>,
+    pub config: LazyTaskConfig<'c>,
     /// The [`JobContext`].
     pub job_context: &'a JobContext,
     /// The [`Cleaner`].
@@ -35,13 +37,13 @@ pub enum MakeTaskError {
     MakeTaskConfigError(#[from] MakeTaskConfigError)
 }
 
-impl<'a> TryFrom<LazyTask<'a>> for Task<'a> {
+impl<'a> TryFrom<LazyTask<'_, 'a>> for Task<'a> {
     type Error = MakeTaskError;
 
     /// Makes the [`Task`].
     /// # Errors
     #[doc = edoc!(callerr(LazyTaskConfig::make))]
-    fn try_from(value: LazyTask<'a>) -> Result<Self, Self::Error> {
+    fn try_from(value: LazyTask<'_, 'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             config: value.config.make()?,
             job_context: value.job_context,
@@ -53,7 +55,7 @@ impl<'a> TryFrom<LazyTask<'a>> for Task<'a> {
     }
 }
 
-impl<'a> LazyTask<'a> {
+impl<'a> LazyTask<'_, 'a> {
     /// Makes the [`Task`].
     /// # Errors
     #[doc = edoc!(callerr(LazyTaskConfig::make))]
@@ -62,7 +64,7 @@ impl<'a> LazyTask<'a> {
     }
 }
 
-impl<'a> From<Task<'a>> for LazyTask<'a> {
+impl<'a> From<Task<'a>> for LazyTask<'_, 'a> {
     fn from(value: Task<'a>) -> Self {
         Self {
             config: value.config.into(),

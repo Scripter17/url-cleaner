@@ -15,7 +15,6 @@ missing_errors_doc = "deny"
 missing_panics_doc = "deny"
 missing_safety_doc = "deny"
 perf = { level = "warn", priority = -1 }
-arithmetic_side_effects = "warn"
 todo = "warn"
 enum_variant_names = "allow"
 missing_docs_in_private_items = "warn"

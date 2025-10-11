@@ -27,6 +27,7 @@ confirm_restart=1
 server=http://localhost:9149
 
 hyperfine=1
+oha=0
 warmup=100
 runs=100
 ignore_failure=
@@ -46,6 +47,7 @@ for arg in "$@"; do
 
     --all)                mode=         ; hyperfine=1                      ;;
     --no-hyperfine)       mode=         ; hyperfine=0                      ;;
+    --oha)                                 oha=1                           ;;
     --warmup)             mode=warmup                                      ;;
     --runs)               mode=runs                                        ;;
     --ignore-failure)     mode=         ; ignore_failure=--ignore-failure  ;;
@@ -101,13 +103,12 @@ fi
 
 for server in "${SERVERS[@]}"; do
   echo "Benchmarking $server"
+  file_safe_server=$(echo $server | head -c 50 | sed "s/\//-/g")
   if [ $hyperfine -eq 1 ]; then
-    COMMAND="curl --json @- $server/clean -f"
-
     curl $server &> /dev/null
     case $? in
       0) ;;
-      1) echo 'Server protocol mismatch. Perhaps you forgot to specify `--https`?'      ; exit 4 ;;
+      1) echo 'Server protocol mismatch.'                                               ; exit 4 ;;
       7) echo 'Server not found. Perhaps it failed to start because of a broken config?'; exit 4 ;;
       *) echo "Unknown error when accessing server."                                    ; exit 4 ;;
     esac
@@ -119,21 +120,21 @@ for server in "${SERVERS[@]}"; do
       --command-name ""\
       -L num $(IFS=, ; echo "${NUMS[*]}") \
       -L url $(IFS=, ; echo "${URLS[*]}") \
-      --prepare "bash -c \"yes '\\\"{url}\\\"' | head -n {num} | jq -sc '{tasks: .}' > stdin\"" \
+      --prepare "bash -c \"yes '{url}' | head -n {num} | jq -Rsc '{tasks: split(\\\"\n\\\")[:-1]}' > stdin\"" \
       --warmup $warmup \
       --runs $runs \
       -N \
       --input stdin \
-      "$COMMAND" \
+      "curl --json @- $server/clean -f" \
       $ignore_failure \
       --style color \
       --sort command \
-      --export-json "hyperfine.out.json"
+      --export-json "hyperfine-$file_safe_server.out.json"
     rm stdin
 
-    ql=$(cat hyperfine.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
-    pl=$(cat hyperfine.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
-    cat hyperfine.out.json |\
+    ql=$(cat hyperfine-$file_safe_server.out.json | grep -oP '(?<="num": ")\d+' | wc -L)
+    pl=$(cat hyperfine-$file_safe_server.out.json | jq '.results[].mean * 1000 | floor' | wc -L)
+    cat hyperfine-$file_safe_server.out.json |\
       jq 'reduce .results[] as $result ({}; .[$result.parameters.url][$result.parameters.num] = ($result.mean * 1000000 | floor / 1000 | tonumber))' |\
       sed -E "/^    / {\
         /\./! s/(,?)$/.\1/;\
@@ -141,8 +142,30 @@ for server in "${SERVERS[@]}"; do
         :b s/( \".{0,$ql}):/\1 :/; tb\
         :c s/:(.{0,$pl}\.)/: \1/; tc\
       }" |\
-      tee hyperfine.out-summary.json |\
+      tee "hyperfine-$file_safe_server.out-summary.json" |\
       bat -ppl json
+  fi
+
+  if [ $oha -eq 1 ]; then
+    echo " Oha"
+    out_summary='{}'
+    for url in "${URLS[@]}"; do
+      echo "  $url"
+      file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
+      echo -n "   "
+      for num in "${NUMS[@]}"; do
+        echo -n "$num,"
+        yes "$url" | head -n $num | jq -Rsc '{tasks: split("\n")[:-1]}' > stdin
+        out_summary=$(
+          oha "$server" -m POST -D stdin --no-tui --output-format json --insecure |
+          tee "oha-$file_safe_server-$file_safe_url-$num.out.json" |
+          jq --argjson out_summary "$out_summary"  "\$out_summary * {\"$url\": {\"$num\": .rps.mean}}"
+        )
+        rm stdin
+      done
+      echo
+    done
+    echo "$out_summary" | tee "oha-$file_safe_server-summary.out.json"
   fi
 done
 

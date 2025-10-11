@@ -165,7 +165,6 @@ impl<T: Debug + Hash + Eq> From<Set<T>> for HashSet<Option<T>> {
 
 impl<T: Debug + Serialize> Serialize for Set<T> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        #[allow(clippy::arithmetic_side_effects, reason = "Can't happen.")]
         let mut seq = serializer.serialize_seq(Some(self.set.len() + (self.if_none as usize)))?;
         if self.if_none {seq.serialize_element(&None::<T>)?;}
         for element in &self.set {

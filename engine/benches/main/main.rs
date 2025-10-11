@@ -1,9 +1,5 @@
 //! Benchmarking stuff.
 
-mod better_url;
-mod default_cleaner;
-mod host_details;
-
 const DOMAIN_HOSTS: [&'static str; 12] = [
     "example.com",
     "example.com.",
@@ -28,7 +24,7 @@ const IP_HOSTS: [&'static str; 4] = [
 
 macro_rules! group {
     ($name:ident, $($targets:path),+) => {
-        pub(super) fn $name(c: &mut criterion::Criterion) {
+        pub fn $name(c: &mut criterion::Criterion) {
             $($targets(c);)+
         }
     }
@@ -42,15 +38,11 @@ macro_rules! group_mods {
 }
 pub(crate) use group_mods;
 
-macro_rules! main {
-    ($($groups:path),+) => {
-        fn main() {
-            let mut c = criterion::Criterion::default()
-                .configure_from_args();
-            $($groups(&mut c);)+
-            c.final_summary();
-        }
-    }
-}
+group_mods!(all, better_url, default_cleaner, host_details, caching);
 
-main!(better_url::better_url, default_cleaner::default_cleaner, host_details::host_details);
+fn main() {
+    let mut c = criterion::Criterion::default()
+        .configure_from_args();
+    all(&mut c);
+    c.final_summary();
+}

@@ -17,16 +17,18 @@ use crate::glue::*;
 /// use url_cleaner_engine::types::*;
 ///
 /// let job = Job {
-///     context: &Default::default(),
-///     cleaner: &Cleaner {
-///         actions: Cow::Owned(vec![
-///             Action::RemoveQueryParams(["utm_source".into()].into())
-///         ]),
-///         ..Default::default()
+///     config: &JobConfig {
+///         context: &Default::default(),
+///         cleaner: &Cleaner {
+///             actions: Cow::Owned(vec![
+///                 Action::RemoveQueryParams(["utm_source".into()].into())
+///             ]),
+///             ..Default::default()
+///         },
+#[cfg_attr(feature = "cache", doc = "        cache: &Default::default(),")]
+#[cfg_attr(feature = "cache", doc = "        cache_handle_config: Default::default(),")]
+///         unthreader: &Default::default()
 ///     },
-#[cfg_attr(feature = "cache", doc = "    cache: &Default::default(),")]
-#[cfg_attr(feature = "cache", doc = "    cache_handle_config: Default::default(),")]
-///     unthreader: &Default::default(),
 ///     lazy_task_configs: Box::new([Ok("https://example.com?utm_source=url_cleaner".into())].into_iter())
 /// };
 ///
@@ -36,7 +38,20 @@ use crate::glue::*;
 ///     assert_eq!(task.unwrap().make().unwrap().r#do().unwrap().as_str(), expectation);
 /// }
 /// ```
-pub struct Job<'a> {
+pub struct Job<'c, 'a> {
+    /// The [`JobConfig`] to use.
+    pub config: &'c JobConfig<'a>,
+    /// Source of [`LazyTaskConfig`]s.
+    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig<'a>, GetLazyTaskConfigError>> + 'a>
+}
+
+/// The config for a [`Job`].
+///
+/// Sometimes useful directly to allow for more efficient [`Task`] making than [`Job::lazy_task_configs`] by using [`Self::make_lazy_task`].
+///
+/// For example, URL Cleaner's CLI frontend uses this for its buffer system that lets it avoid allocating every STDIN line to a new [`Vec`].
+#[derive(Debug)]
+pub struct JobConfig<'a> {
     /// The context shared by this [`Job`].
     pub context: &'a JobContext,
     /// The [`Cleaner`] to use.
@@ -49,41 +64,40 @@ pub struct Job<'a> {
     pub cache_handle_config: CacheHandleConfig,
     /// The [`Unthreader`] to use.
     pub unthreader: &'a Unthreader,
-    /// Source of [`LazyTaskConfig`]s.
-    pub lazy_task_configs: Box<dyn Iterator<Item = Result<LazyTaskConfig<'a>, GetLazyTaskConfigError>> + 'a>
 }
 
-impl ::core::fmt::Debug for Job<'_> {
+impl<'a> JobConfig<'a> {
+    /// Make a [`LazyTask`] using the provided [`LazyTaskConfig`].
+    pub fn make_lazy_task<'c>(&self, config: LazyTaskConfig<'c>) -> LazyTask<'c, 'a> {
+        LazyTask {
+            config,
+            job_context: self.context,
+            cleaner: self.cleaner,
+            #[cfg(feature = "cache")]
+            cache: CacheHandle {
+                cache: self.cache,
+                config: self.cache_handle_config
+            },
+            unthreader: self.unthreader
+        }
+    }
+}
+
+impl ::core::fmt::Debug for Job<'_, '_> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         let mut x = f.debug_struct("Job");
-        x.field("context", &self.context);
-        x.field("cleaner" , &self.cleaner);
-        #[cfg(feature = "cache")]
-        x.field("cache"  , &self.cache);
-        #[cfg(feature = "cache")]
-        x.field("cache_handle_config", &self.cache_handle_config);
-        x.field("unthreader", &self.unthreader);
+        x.field("config", &self.config);
         x.field("lazy_task_configs", &"...");
         x.finish()
     }
 }
 
-impl<'a> Iterator for Job<'a> {
-    type Item = Result<LazyTask<'a>, MakeLazyTaskError>;
+impl<'a> Iterator for Job<'_, 'a> {
+    type Item = Result<LazyTask<'a, 'a>, MakeLazyTaskError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         Some(match self.lazy_task_configs.next()? {
-            Ok(config) => Ok(LazyTask {
-                config,
-                job_context: self.context,
-                cleaner: self.cleaner,
-                #[cfg(feature = "cache")]
-                cache: CacheHandle {
-                    cache: self.cache,
-                    config: self.cache_handle_config
-                },
-                unthreader: self.unthreader
-            }),
+            Ok(config) => Ok(self.config.make_lazy_task(config)),
             Err(e) => Err(e.into())
         })
     }

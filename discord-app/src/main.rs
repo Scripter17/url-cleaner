@@ -269,13 +269,15 @@ async fn clean_urls_with_profile(ctx: Context<'_>, msg: serenity::Message, profi
     let cleaner = data.cleaner.profile(profile).ok_or(CleanUrlsError::UnknownProfile)?;
 
     let job = Job {
-        context: &Default::default(),
-        cleaner: &cleaner,
-        #[cfg(feature = "cache")]
-        cache: &ctx.data().cache,
-        #[cfg(feature = "cache")]
-        cache_handle_config: data.cache_handle_config,
-        unthreader: &Unthreader::default(),
+        config: &JobConfig {
+            context: &Default::default(),
+            cleaner: &cleaner,
+            #[cfg(feature = "cache")]
+            cache: &ctx.data().cache,
+            #[cfg(feature = "cache")]
+            cache_handle_config: data.cache_handle_config,
+            unthreader: &Unthreader::default()
+        },
         lazy_task_configs: Box::new(GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into())))
     };
 

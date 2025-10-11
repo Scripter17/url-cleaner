@@ -6,8 +6,7 @@ use std::fs::read_to_string;
 use std::str::FromStr;
 use std::sync::Mutex;
 use std::num::NonZero;
-use std::io::Write;
-use std::sync::{OnceLock, LazyLock};
+use std::sync::LazyLock;
 use std::borrow::Cow;
 
 #[macro_use] extern crate rocket;
@@ -47,28 +46,6 @@ const DEFAULT_MAX_JSON_SIZE: &str = "25MiB";
 const DEFAULT_IP           : &str = "127.0.0.1";
 /// The default port to listen to.
 const DEFAULT_PORT         : u16  = 9149;
-
-/// The root directory to put logs into.
-static LOGGING_DIR_ROOT: OnceLock<time::format_description::OwnedFormatItem> = OnceLock::new();
-
-/// The string format of the directories to write logs to.
-const LOGGING_DIR_PATH_FORMAT_STR : &str = "/[year]/[month]/[day]/[hour]";
-/// The string format of the files to wrtie logs to.
-const LOGGING_FILE_PATH_FORMAT_STR: &str = "/[year]/[month]/[day]/[hour]/[minute]-[second]-[subsecond].json";
-
-/// The parsed format of the directories to write logs to.
-static LOGGING_DIR_PATH_FORMAT : LazyLock<Vec<time::format_description::OwnedFormatItem>> = LazyLock::new(|| {
-    let mut ret = vec![LOGGING_DIR_ROOT.get().expect("LOGGING_DIR_ROOT to always be set before getting LOGGING_DIR_PATH_FORMAT").clone()];
-    ret.push(time::format_description::parse_owned::<2>(LOGGING_DIR_PATH_FORMAT_STR ).expect("The logging directory format to be valid."));
-    ret
-});
-
-/// The parsed format of the files to wrtie logs to.
-static LOGGING_FILE_PATH_FORMAT: LazyLock<Vec<time::format_description::OwnedFormatItem>> = LazyLock::new(|| {
-    let mut ret = vec![LOGGING_DIR_ROOT.get().expect("LOGGING_DIR_ROOT to always be set before getting LOGGING_FILE_PATH_FORMAT").clone()];
-    ret.push(time::format_description::parse_owned::<2>(LOGGING_FILE_PATH_FORMAT_STR).expect("The logging file format to be valid."));
-    ret
-});
 
 /// An [`Unthreader`] that doesn't do any unthreading.
 ///
@@ -185,13 +162,7 @@ struct Args {
     key: Option<PathBuf>,
     /// The mTLS client's certificate.
     #[arg(long, requires = "key", requires = "cert", value_name = "PATH")]
-    mtls_cert: Option<PathBuf>,
-    /// Log all jobs and their results.
-    #[arg(long)]
-    log: bool,
-    /// The directory to write logs to.
-    #[arg(long, default_value = "logs")]
-    log_dir: String
+    mtls_cert: Option<PathBuf>
 }
 
 /// The config for the server.
@@ -206,7 +177,7 @@ struct ServerConfig {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
-    /// The default value for [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
+    /// The default value for [`JobConfig::cache_handle_config`]'s [`CacheHandleConfig::delay`].
     #[cfg(feature = "cache")]
     default_cache_delay: bool,
     /// [`CacheHandleConfig::read`].
@@ -224,9 +195,7 @@ struct ServerConfig {
     /// The max size for a [`CleanPayload`]'s JSON representation.
     max_json_size: rocket::data::ByteUnit,
     /// The [`Accounts`] to use.
-    accounts: Accounts,
-    /// If [`true`], log all jobs and their results.
-    log: bool
+    accounts: Accounts
 }
 
 /// The state of the server.
@@ -261,8 +230,6 @@ async fn rocket() -> _ {
     // For my personal server, the leaking and borrowed()ing saves about half a megabyte of RAM.
     let cleaner = Box::leak(Box::new(cleaner)).borrowed().with_profiles(profiles_config.clone());
 
-    LOGGING_DIR_ROOT.set(time::format_description::OwnedFormatItem::Literal(args.log_dir.into_bytes().into_boxed_slice())).expect("LOGGING_DIR_ROOT to only be set once.");
-
     let server_state = ServerState {
         config: ServerConfig {
             cleaner_string,
@@ -282,8 +249,7 @@ async fn rocket() -> _ {
             accounts: match args.accounts {
                 Some(accounts) => serde_json::from_str(&std::fs::read_to_string(accounts).expect("The accounts file to be readable.")).expect("The accounts file to be valid."),
                 None => Default::default()
-            },
-            log: args.log
+            }
         },
         unthreader: match args.unthread_ratelimit {
             None    => UnthreaderMode::Unthread,
@@ -314,12 +280,8 @@ async fn rocket() -> _ {
 
 /// The `/` route.
 #[get("/")]
-async fn index(state: &State<ServerState>) -> String {
-    if state.config.log {
-        format!("{INFO}\n\nThis instance has logging enabled.")
-    } else {
-        format!("{INFO}\n\nThis instance has logging disabled.")
-    }
+async fn index() -> &'static str {
+    &INFO
 }
 
 /// The `/info` endpoint.
@@ -328,7 +290,6 @@ async fn info(state: &State<ServerState>) -> Json<ServerInfo<'_>> {
     Json(ServerInfo {
         source_code        : Cow::Borrowed(&SOURCE_CODE),
         version            : Cow::Borrowed(VERSION),
-        logging_enabled    : state.config.log,
         max_json_size      : state.config.max_json_size.as_u64(),
         #[cfg(feature = "cache")]
         default_read_cache : state.config.default_read_cache,
@@ -364,8 +325,6 @@ async fn profiles(state: &State<ServerState>) -> impl Responder<'_, '_> {
 async fn clean(state: &State<ServerState>, clean_payload: &str) -> (Status, Json<CleanResult>) {
     match serde_json::from_str::<CleanPayload>(clean_payload) {
         Ok(clean_payload) => {
-            let clean_payload_for_logging = state.config.log.then(|| clean_payload.clone());
-
             if !state.config.accounts.auth(clean_payload.config.auth.as_ref()) {
                 return (Status {code: 401}, Json(Err(CleanError {status: 401, message: "Unauthorized".into()})));
             }
@@ -383,15 +342,14 @@ async fn clean(state: &State<ServerState>, clean_payload: &str) -> (Status, Json
                 params_diff.apply_once(&mut cleaner.params);
             }
 
-            let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
+            let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_, '_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
             let (out_senders, out_recievers) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
-            let ret_urls = std::sync::Mutex::new(Vec::with_capacity(clean_payload.tasks.len()));
+            let mut ret_urls = Vec::with_capacity(clean_payload.tasks.len());
 
             let mut temp = state.job_count.lock().expect("No panics.");
             let id = *temp;
-            #[allow(clippy::arithmetic_side_effects, reason = "Not gonna happen.")]
-            {*temp += 1;}
+            *temp += 1;
             drop(temp);
 
             let unthreader = match (clean_payload.config.unthread, state.config.default_unthread) {
@@ -402,17 +360,19 @@ async fn clean(state: &State<ServerState>, clean_payload: &str) -> (Status, Json
             std::thread::scope(|s| {
                 std::thread::Builder::new().name(format!("({id}) Task collector")).spawn_scoped(s, || {
                     let job = Job {
-                        context: &clean_payload.config.context,
-                        cleaner: &cleaner,
-                        #[cfg(feature = "cache")]
-                        cache: &state.config.cache,
-                        #[cfg(feature = "cache")]
-                        cache_handle_config: CacheHandleConfig {
-                            delay: clean_payload.config.cache_delay.unwrap_or(state.config.default_cache_delay),
-                            read : clean_payload.config.read_cache .unwrap_or(state.config.default_read_cache ),
-                            write: clean_payload.config.write_cache.unwrap_or(state.config.default_write_cache)
+                        config: &JobConfig {
+                            context: &clean_payload.config.context,
+                            cleaner: &cleaner,
+                            #[cfg(feature = "cache")]
+                            cache: &state.config.cache,
+                            #[cfg(feature = "cache")]
+                            cache_handle_config: CacheHandleConfig {
+                                delay: clean_payload.config.cache_delay.unwrap_or(state.config.default_cache_delay),
+                                read : clean_payload.config.read_cache .unwrap_or(state.config.default_read_cache ),
+                                write: clean_payload.config.write_cache.unwrap_or(state.config.default_write_cache)
+                            },
+                            unthreader
                         },
-                        unthreader,
                         lazy_task_configs: Box::new(clean_payload.tasks.into_iter().map(Ok))
                     };
                     for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {
@@ -437,60 +397,28 @@ async fn clean(state: &State<ServerState>, clean_payload: &str) -> (Status, Json
                 }).for_each(drop);
 
                 std::thread::Builder::new().name(format!("({id}) Task returner")).spawn_scoped(s, || {
-                    let mut ret_urls_lock = ret_urls.lock().expect("No panics.");
-
                     for or in {out_recievers}.iter().cycle() {
                         match or.recv() {
-                            Ok(x) => ret_urls_lock.push(x.map_err(|e| e.to_string())),
+                            Ok(x) => ret_urls.push(x.map_err(|e| e.to_string())),
                             Err(_) => break
                         }
                     }
                 }).expect("Spawning a thread to work fine.");
             });
 
-            let result = CleanSuccess {
-                urls: ret_urls.into_inner().expect("No panics.")
-            };
-
-            if state.config.log {
-                let now = time::UtcDateTime::now();
-                std::fs::create_dir_all(now.format(&LOGGING_DIR_PATH_FORMAT).expect("Formatting the time to work")).expect("Creating the logging directory to work.");
-                std::fs::OpenOptions::new().create_new(true).write(true).open(now.format(&LOGGING_FILE_PATH_FORMAT).expect("Formatting the time to work."))
-                    .expect("Creating the log file to work.")
-                    .write_all(serde_json::to_string(&JobLog::Ok {
-                        clean_payload: Box::new(clean_payload_for_logging.expect("???")),
-                        result: Cow::Borrowed(&result)
-                    }).expect("Serializing the JobLog to always work.").as_bytes())
-                    .expect("Writing the log to work.");
-            }
-
             (
                 Status {code: 200},
-                Json(Ok(result))
+                Json(Ok(CleanSuccess {
+                    urls: ret_urls
+                }))
             )
         },
-        Err(e) => {
-            let result = CleanError {
+        Err(e) => (
+            Status {code: 422},
+            Json(Err(CleanError {
                 status: 422,
                 message: e.to_string()
-            };
-            
-            if state.config.log {
-                let now = time::UtcDateTime::now();
-                std::fs::create_dir_all(now.format(&LOGGING_DIR_PATH_FORMAT).expect("Formatting the time to work.")).expect("Creating the logging directory to work.");
-                std::fs::OpenOptions::new().create_new(true).write(true).open(now.format(&LOGGING_FILE_PATH_FORMAT).expect("Formatting the time to work."))
-                    .expect("Creating the log file to work.")
-                    .write_all(serde_json::to_string(&JobLog::Err {
-                        clean_payload: Cow::Borrowed(clean_payload),
-                        result: Cow::Borrowed(&result)
-                    }).expect("Serializing the JobLog to always work.").as_bytes())
-                    .expect("Writing the log to work.");
-            }
-
-            (
-                Status {code: 422},
-                Json(Err(result))
-            )
-        }
+            }))
+        )
     }
 }

@@ -4,7 +4,7 @@
 use std::str::FromStr;
 use std::borrow::Cow;
 
-use serde::{Serialize, Deserialize, ser::Serializer, de::Deserializer};
+use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Visitor, MapAccess}};
 use url::Url;
 
 use crate::types::*;
@@ -12,6 +12,12 @@ use crate::types::*;
 /// Allows lazily making a [`TaskConfig`].
 ///
 /// Given to [`Job`]s to allow doing the expensive conversion into [`TaskConfig`]s in parallel worker threads.
+///
+/// When deserializing a string value (JSON `"abc"`/Rust `"\"abc\""`), borrows the input when possible.
+///
+/// For example, the JSON `"abc"` will become a [`Self::Str`], but a JSON `"\u0041BC"` will become a [`Self::String`] containing `ABC`.
+///
+/// The same is true for [`Self::ByteSlice`] and [`Self::Bytes`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LazyTaskConfig<'a> {
     /// An already made [`TaskConfig`].
@@ -25,6 +31,12 @@ pub enum LazyTaskConfig<'a> {
     /// Please note that if the string starts with a `{` or a `"` it is deserialized as JSON using [`serde_json::from_str`].
     ///
     /// You don't need to manually special case those into [`Self::JsonValue`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::types::*;
+    ///
+    /// assert!(matches!(serde_json::from_str(r#""https://example.com""#), Ok(LazyTaskConfig::Str(_))))
+    /// ```
     Str(&'a str),
     /// A [`String`] for use in [`TaskConfig::from_str`].
     ///
@@ -41,6 +53,13 @@ pub enum LazyTaskConfig<'a> {
     /// assert_eq!(LazyTaskConfig::from(          "https://example.com"   ).make().unwrap(), target);
     /// assert_eq!(LazyTaskConfig::from(       r#""https://example.com""# ).make().unwrap(), target);
     /// assert_eq!(LazyTaskConfig::from(r#"{"url":"https://example.com"}"#).make().unwrap(), target);
+    ///
+    /// // Guard patterns when?
+    /// // https://github.com/rust-lang/rust/issues/129967
+    /// match serde_json::from_str(r#""https://example.com/\u0041""#) {
+    ///   Ok(LazyTaskConfig::String(x)) if x == "https://example.com/A" => {},
+    ///   x => panic!("{x:?}")
+    /// }
     /// ```
     String(String),
     /// A UTF-8 byte sequence that is turned into a [`str`] and passed to [`TaskConfig::from_str`].
@@ -65,7 +84,7 @@ pub enum LazyTaskConfig<'a> {
     JsonValue(serde_json::Value)
 }
 
-impl LazyTaskConfig<'_> {
+impl<'a> LazyTaskConfig<'a> {
     /// Makes the [`TaskConfig`].
     /// # Errors
     /// If `self` is [`Self::String`] and the call to [`TaskConfig::from_str`] returns an error, that error is returned.
@@ -73,6 +92,20 @@ impl LazyTaskConfig<'_> {
     /// If `self` is [`Self::JsonValue`] and the call to [`serde_json::from_value`] returns an error, that error is returned.
     pub fn make(self) -> Result<TaskConfig, MakeTaskConfigError> {
         self.try_into()
+    }
+
+    /// Convert [`Self::Str`] to [`Self::String`] and [`Self::ByteSlice`] to [`Self::Bytes`].
+    pub fn into_owned(self) -> LazyTaskConfig<'static> {
+        match self {
+            Self::Made     (x) => LazyTaskConfig::Made     (x),
+            Self::Url      (x) => LazyTaskConfig::Url      (x),
+            Self::BetterUrl(x) => LazyTaskConfig::BetterUrl(x),
+            Self::Str      (x) => LazyTaskConfig::String   (x.into()),
+            Self::String   (x) => LazyTaskConfig::String   (x),
+            Self::ByteSlice(x) => LazyTaskConfig::Bytes    (x.into()),
+            Self::Bytes    (x) => LazyTaskConfig::Bytes    (x),
+            Self::JsonValue(x) => LazyTaskConfig::JsonValue(x)
+        }
     }
 }
 
@@ -91,9 +124,54 @@ impl Serialize for LazyTaskConfig<'_> {
     }
 }
 
-impl<'de> Deserialize<'de> for LazyTaskConfig<'_> {
+/// [`Visitor`] for [`LazyTaskConfig`].
+struct LazyTaskConfigVisitor;
+
+impl<'de> Visitor<'de> for LazyTaskConfigVisitor {
+    type Value = LazyTaskConfig<'de>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "Expected a string or struct")
+    }
+
+    fn visit_borrowed_str<E: serde::de::Error>(self, v: &'de str) -> Result<Self::Value, E> {
+        Ok(Self::Value::Str(v))
+    }
+
+    fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+        Ok(Self::Value::String(v.into()))
+    }
+
+    fn visit_string<E: serde::de::Error>(self, v: String) -> Result<Self::Value, E> {
+        Ok(Self::Value::String(v))
+    }
+
+    fn visit_borrowed_bytes<E: serde::de::Error>(self, v: &'de [u8]) -> Result<Self::Value, E> {
+        Ok(Self::Value::ByteSlice(v))
+    }
+
+    fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
+        Ok(Self::Value::Bytes(v.into()))
+    }
+
+    fn visit_byte_buf<E: serde::de::Error>(self, v: Vec<u8>) -> Result<Self::Value, E> {
+        Ok(Self::Value::Bytes(v))
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        let mut ret = serde_json::Map::new();
+
+        while let Some((k, v)) = map.next_entry()? {
+            ret.insert(k, v);
+        }
+
+        Ok(Self::Value::JsonValue(ret.into()))
+    }
+}
+
+impl<'de> Deserialize<'de> for LazyTaskConfig<'de> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        Ok(Self::JsonValue(serde_json::Value::deserialize(deserializer)?))
+        deserializer.deserialize_any(LazyTaskConfigVisitor)
     }
 }
 
