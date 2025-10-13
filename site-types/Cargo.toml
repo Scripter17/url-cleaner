@@ -29,10 +29,10 @@ default-cleaner = [
   "base64"
 ]
 
-regex    = []
-http     = []
-cache    = []
-base64   = []
-custom   = []
-commands = []
-debug    = []
+regex   = []
+http    = []
+cache   = []
+base64  = []
+custom  = []
+command = []
+debug   = []

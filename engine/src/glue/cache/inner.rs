@@ -6,13 +6,13 @@ use diesel::prelude::*;
 #[expect(unused_imports, reason = "Used in docs.")]
 use diesel::query_builder::SqlQuery;
 
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// A lazily connected connection to a Sqlite database.
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::*;
+/// use url_cleaner_engine::glue::prelude::*;
 /// use std::time::Duration;
 ///
 /// // Note the mutability.

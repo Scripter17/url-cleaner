@@ -4,7 +4,7 @@ use criterion::Criterion;
 use crate::*;
 
 use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::*;
+use url_cleaner_engine::glue::prelude::*;
 
 const TASK_URLS: [&'static str; 3] = [
     "https://x.com?a=2",
@@ -31,7 +31,7 @@ fn make(c: &mut Criterion) {
                     config: job_config,
                     lazy_task_configs: Box::new(std::iter::repeat_n(black_box(url), black_box(10_000)).map(|url| black_box(Ok(black_box(url).into()))))
                 },
-                |job| black_box(job).for_each(|x| {black_box(x.expect("Ok").make());}),
+                |job| black_box(job).for_each(|x| {let _ = black_box(x.expect("Ok").make());}),
                 criterion::BatchSize::SmallInput
             )
         );
@@ -45,7 +45,7 @@ fn make(c: &mut Criterion) {
                     config: job_config,
                     lazy_task_configs: Box::new(std::iter::repeat_n(black_box(url), black_box(10_000)).map(|url| black_box(Ok(black_box(url).as_bytes().into()))))
                 },
-                |job| black_box(job).for_each(|x| {black_box(x.expect("Ok").make());}),
+                |job| black_box(job).for_each(|x| {let _ = black_box(x.expect("Ok").make());}),
                 criterion::BatchSize::SmallInput
             )
         );
@@ -70,7 +70,7 @@ fn r#do(c: &mut Criterion) {
             &format!("Do 10k Tasks: {url}"),
             |b| b.iter_batched(
                 || std::iter::repeat_n(task.clone(), 10_000),
-                |tasks| black_box(tasks).for_each(|x| {black_box(black_box(x).r#do());}),
+                |tasks| black_box(tasks).for_each(|x| {let _ = black_box(black_box(x).r#do());}),
                 criterion::BatchSize::SmallInput
             )
         );

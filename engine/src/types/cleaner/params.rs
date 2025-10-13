@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 use serde_with::serde_as;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Flags, variables, etc. that adjust the exact behavior of a config.

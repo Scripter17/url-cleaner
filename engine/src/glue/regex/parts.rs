@@ -176,7 +176,7 @@ impl RegexConfig {
     /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let mut config = RegexConfig::default();
     ///
@@ -201,7 +201,7 @@ impl RegexConfig {
     /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let mut config = RegexConfig::default();
     ///
@@ -226,7 +226,7 @@ impl RegexConfig {
     /// Flags do not have to be "in order", as returned by [`Self::get_flags`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let mut config = RegexConfig::default();
     ///
@@ -252,7 +252,7 @@ impl RegexConfig {
     /// Exact order is not officially stable, but is unlikely to ever be changed from `iRsxmoUu` and VERY unlikely to ever be changed after that.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let mut config = RegexConfig::default();
     ///

@@ -9,5 +9,3 @@ pub mod types;
 pub mod testing;
 pub mod tutorial;
 pub(crate) mod util;
-
-pub use types::{Cleaner, Job, LazyTaskConfig};

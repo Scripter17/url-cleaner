@@ -6,7 +6,7 @@ use std::error::Error;
 use thiserror::Error;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 
 /// A transformer from [`LazyTaskConfig`]s to [`LazyTask`]s.
 ///

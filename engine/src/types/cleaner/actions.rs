@@ -11,10 +11,10 @@ use thiserror::Error;
 use reqwest::header::HeaderMap;
 #[expect(unused_imports, reason = "Used in doc comment.")]
 use url::{Url, PathSegmentsMut};
-use ::percent_encoding::percent_decode_str as pds;
+use percent_encoding::percent_decode_str as pds;
 
-use crate::glue::*;
 use crate::types::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Actions are how [`TaskState`]s get manipulated to clean URLs.
@@ -853,7 +853,7 @@ pub enum Action {
         /// The extra headers to send.
         ///
         /// Defaults to an empty [`HeaderMap`].
-        #[serde(default, skip_serializing_if = "is_default", with = "serde_headermap")]
+        #[serde(default, skip_serializing_if = "is_default", with = "serde_glue::header_map")]
         headers: HeaderMap,
         /// The [`HttpClientConfigDiff`] to apply.
         ///

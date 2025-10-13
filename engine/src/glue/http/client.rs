@@ -8,7 +8,7 @@ use reqwest::header::HeaderMap;
 
 #[expect(unused_imports, reason = "Used in docs.")]
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Rules for how to make a [`reqwest::blocking::Client`].
@@ -16,7 +16,7 @@ use crate::util::*;
 #[serde(deny_unknown_fields)]
 pub struct HttpClientConfig {
     /// The headers to send by default.
-    #[serde(default, skip_serializing_if = "is_default", with = "serde_headermap")]
+    #[serde(default, skip_serializing_if = "is_default", with = "serde_glue::header_map")]
     pub default_headers: HeaderMap,
     /// The redirect policy.
     ///
@@ -116,7 +116,7 @@ pub struct HttpClientConfigDiff {
     #[serde(default, skip_serializing_if = "is_default")]
     pub redirect_policy: Option<RedirectPolicy>,
     /// Appends each header into [`HttpClientConfig::default_headers`].
-    #[serde(default, skip_serializing_if = "is_default", with = "serde_headermap")]
+    #[serde(default, skip_serializing_if = "is_default", with = "serde_glue::header_map")]
     pub add_default_headers: HeaderMap,
     /// If [`Some`], overwrites [`HttpClientConfig::https_only`].
     #[serde(default, skip_serializing_if = "is_default")]

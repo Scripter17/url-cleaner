@@ -7,11 +7,8 @@ use url::Url;
 use reqwest::header::HeaderValue;
 use reqwest::Proxy;
 
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
-
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use crate::glue::HttpClientConfig;
 
 /// Rules on how to make a [`reqwest::Proxy`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
@@ -97,7 +94,7 @@ pub enum ProxyAuth {
     /// Uses a custom value.
     ///
     /// Corresponds to [`Proxy::custom_http_auth`].
-    Custom(#[serde(with = "serde_headervalue")] HeaderValue)
+    Custom(#[serde(with = "serde_glue::header_value")] HeaderValue)
 }
 
 impl TryFrom<ProxyConfig> for reqwest::Proxy {

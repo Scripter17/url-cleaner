@@ -4,13 +4,17 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_PROFILE_dev_DEBUG: 0
 
 jobs:
-  versions:
+  workspace:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v3
-    - name: versions
+    - uses: taiki-e/install-action@cargo-hack
+
+    - name: Versions
       run: |
         version_lines=$(grep -PI '^(// @version|url-cleaner.+version|^version)' */Cargo.toml site/url-cleaner-site-userscript.js)
         versions=$(echo "$version_lines" | grep -oP '\d[\d.]+(-beta)?')
@@ -21,59 +25,69 @@ jobs:
           exit 1
         fi
 
-  mds:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: mds
+    - name: 'Check MDs'
       run: |
         old=$(cat *.md */*.md)
         scripts/fill-mds.sh
         test "$old" == "$(cat *.md */*.md)"
 
-  msrv:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: msrv
+    - name: 'Check MSRV consistency'
       run: |
         [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")[\d.]+' | sort -u | wc -l)" == 1 ]]
 
-  build_bench:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: build_bench
-      run: cargo bench --no-run
+    - name: 'Resore cache'
+      if: runner.environment == null
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ runner.os }}-debug
+        path: target
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: test
+    - name: 'Build benchmarkers'
+      run: cargo build --benches
+
+    - name: 'Save cache'
+      if: runner.environment == null
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ runner.os }}-debug
+        path: target
+
+    - name: 'Test each feature'
       run: cargo hack test --each-feature
 
-  doc:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: doc
+    - name: 'Save cache'
+      if: runner.environment == null
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ runner.os }}-debug
+        path: target
+
+    - name: 'Document each feature'
       run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --each-feature --no-deps --document-private-items
 
-  clippy_powerset_with_default:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: clippy_powerset_with_default
+    - name: 'Save cache'
+      if: runner.environment == null
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ runner.os }}-debug
+        path: target
+
+    - name: 'Clippy powerset with default'
       run: cargo hack clippy --feature-powerset --at-least-one-of default,default --exclude url-cleaner-site-types --exclude url-cleaner-macros -- -D warnings
 
-  clippy_other:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: clippy_other
+    - name: 'Save cache'
+      if: runner.environment == null
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ runner.os }}-debug
+        path: target
+
+    - name: 'Clippy each feature'
       run: cargo hack clippy --each-feature -- -D warnings -A unused_imports -A dead_code
+
+    - name: 'Save cache'
+      if: runner.environment == null
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ runner.os }}-debug
+        path: target

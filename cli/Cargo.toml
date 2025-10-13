@@ -30,13 +30,13 @@ default-cleaner = [
   "base64"
 ]
 
-regex    = ["url-cleaner-engine/regex"]
-http     = ["url-cleaner-engine/http"]
-cache    = ["url-cleaner-engine/cache"]
-base64   = ["url-cleaner-engine/base64"]
-custom   = ["url-cleaner-engine/custom"]
-commands = ["url-cleaner-engine/commands"]
-debug    = ["url-cleaner-engine/debug"]
+regex   = ["url-cleaner-engine/regex"]
+http    = ["url-cleaner-engine/http"]
+cache   = ["url-cleaner-engine/cache"]
+base64  = ["url-cleaner-engine/base64"]
+custom  = ["url-cleaner-engine/custom"]
+command = ["url-cleaner-engine/command"]
+debug   = ["url-cleaner-engine/debug"]
 
 [lints]
 workspace = true

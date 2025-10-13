@@ -8,7 +8,7 @@ use super::*;
 /// A shareable [`InnerCache`].
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::*;
+/// use url_cleaner_engine::glue::prelude::*;
 ///
 /// // Note the immutability.
 /// let cache = Cache::new(CachePath::Memory);

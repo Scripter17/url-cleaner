@@ -22,6 +22,12 @@ pub mod common_call;
 pub use common_call::*;
 pub mod commons;
 pub use commons::*;
+pub mod profiles;
+pub use profiles::*;
+pub mod conditions;
+pub use conditions::*;
+pub mod actions;
+pub use actions::*;
 
 /// The config that determines all behavior of how URLs are cleaned.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
@@ -209,7 +215,7 @@ pub enum ApplyCleanerError {
 pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-cleaner.json.minified"));
 /// The JSON text of the default config.
 #[cfg(all(feature = "default-cleaner", test))]
-pub const DEFAULT_CLEANER_STR: &str = include_str!("../../default-cleaner.json");
+pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default-cleaner.json"));
 /// The cached deserialization of the default config.
 #[cfg(feature = "default-cleaner")]
 static DEFAULT_CLEANER: OnceLock<Cleaner> = OnceLock::new();

@@ -5,16 +5,16 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-use ::percent_encoding::{percent_decode_str, utf8_percent_encode};
+use percent_encoding::{percent_decode_str, utf8_percent_encode};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 #[cfg(feature = "regex")]
-use ::regex::Regex;
+use regex::Regex;
 #[cfg(feature = "base64")]
-use ::base64::prelude::*;
-use ::percent_encoding::percent_decode_str as pds;
+use base64::prelude::*;
+use percent_encoding::percent_decode_str as pds;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Modify a string.

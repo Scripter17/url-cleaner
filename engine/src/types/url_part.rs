@@ -9,7 +9,7 @@ use serde::{Serialize, Deserialize};
 use url::Url;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// A common API for getting and setting various parts of [`BetterUrl`]s.
@@ -142,7 +142,7 @@ pub enum UrlPart {
     /// # Examples
     /// ```
     /// use url_cleaner_engine::types::*;
-    /// use url_cleaner_engine::glue::BetterUrlPosition;
+    /// use url_cleaner_engine::glue::prelude::BetterUrlPosition;
     ///
     /// // Note that the `#1` at the end is the fragment, so just getting the query gives the wrong answer.
     /// let url = BetterUrl::parse("https://href.li/?https://example.com/?abc=123&def=456#1").unwrap();

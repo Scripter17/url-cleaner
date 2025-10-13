@@ -8,13 +8,13 @@ use regex::Regex;
 
 use crate::util::*;
 
-pub mod regex_parts;
-pub use regex_parts::*;
+pub mod parts;
+pub use parts::*;
 
 /// A lazily compiled [`Regex`].
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::*;
+/// use url_cleaner_engine::glue::prelude::*;
 ///
 /// let regex = RegexWrapper::from("abc");
 /// assert!(regex.get().unwrap().is_match("abc"));
@@ -36,7 +36,7 @@ impl RegexWrapper {
     /// Gets the [`RegexParts`] this uses to compile its [`Regex`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let regex = RegexWrapper::from(".*=.*");
     /// assert_eq!(regex.parts(), &RegexParts {pattern: ".*=.*".into(), config: Default::default()});
@@ -48,7 +48,7 @@ impl RegexWrapper {
     /// Get the compiled [`Regex`] if it's been compiled.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let regex = RegexWrapper::from(".*=.*");
     /// assert!(regex.get_no_compile().is_none());
@@ -68,7 +68,7 @@ impl RegexWrapper {
     /// If the cache is unset and the call to [`RegexParts::build`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// let regex = RegexWrapper::from(".*=.*");
     /// assert!(regex.get_no_compile().is_none());

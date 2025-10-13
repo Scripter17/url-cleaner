@@ -3,7 +3,7 @@
 use thiserror::Error;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Allows lazily making a [`Task`].

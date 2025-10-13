@@ -16,8 +16,8 @@ pub struct ServerInfo<'a> {
     pub source_code: Cow<'a, BetterUrl>,
     /// The version.
     pub version: Cow<'a, str>,
-    /// The max JSON size.
-    pub max_json_size: u64,
+    /// The max payload size.
+    pub max_payload: u64,
     /// The default value for [`CleanPayloadConfig::read_cache`].
     #[cfg(feature = "cache")]
     pub default_read_cache: bool,

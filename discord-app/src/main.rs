@@ -14,7 +14,7 @@ use serenity::CreateAttachment;
 use thiserror::Error;
 
 use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::*;
+use url_cleaner_engine::glue::prelude::*;
 
 /// The introduction to the /help message.
 const INTRO: &str = r#"URL Cleaner Discord App
@@ -45,7 +45,7 @@ static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
 #[cfg_attr(feature = "base64"         , doc = "base64"         )]
-#[cfg_attr(feature = "commands"       , doc = "commands"       )]
+#[cfg_attr(feature = "command"        , doc = "command"        )]
 #[cfg_attr(feature = "custom"         , doc = "custom"         )]
 #[cfg_attr(feature = "debug"          , doc = "debug"          )]
 ///
@@ -55,7 +55,7 @@ static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
-#[cfg_attr(not(feature = "commands"       ), doc = "commands"       )]
+#[cfg_attr(not(feature = "command"        ), doc = "command"        )]
 #[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
@@ -101,11 +101,9 @@ struct Args {
 /// The bot's state.
 #[derive(Debug)]
 struct State {
-    /// The [`Cleaner`] to use.
-    cleaner: ProfiledCleaner<'static>,
-    /// The [`Cleaner`] used to make [`Self::cleaner`] as a string.
+    /// The [`Cleaner`] used to make the [`ProfiledCleaner`] as a string.
     cleaner_string: String,
-    /// The [`ProfilesConfig`] used to make [`Self::cleaner`] as a string.
+    /// The [`ProfilesConfig`] used to make the [`ProfiledCleaner`] as a string.
     profiles_config_string: String,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
@@ -124,7 +122,7 @@ type Context<'a> = poise::Context<'a, State, Error>;
 async fn main() {
     let args = Args::parse();
 
-    let mut commands = vec![help(), clean_urls()];
+    let mut commands = vec![help()];
 
     #[cfg(feature = "default-cleaner")]
     let cleaner_string = match args.cleaner {
@@ -133,8 +131,7 @@ async fn main() {
     };
     #[cfg(not(feature = "default-cleaner"))]
     let cleaner_string = std::fs::read_to_string(args.cleaner).expect("The Cleaner file to be readable.");
-
-    let cleaner = serde_json::from_str::<Cleaner>(&cleaner_string).expect("The Cleaner string to be valid.");
+    let cleaner = Box::leak(Box::new(serde_json::from_str::<Cleaner<'static>>(&cleaner_string).expect("The Cleaner string to be valid."))).borrowed();
 
     let profiles_config_string = match (args.profiles, args.profiles_string) {
         (None      , None        ) => "{}".to_string(),
@@ -142,24 +139,26 @@ async fn main() {
         (None      , Some(string)) => string,
         (Some(_)   , Some(_)     ) => panic!("Can't have both --profiles and --profiles-string")
     };
-    let cleaner = cleaner.with_profiles(serde_json::from_str(&profiles_config_string).expect("The ProfilesConfig to be valid."));
+    let profiles_config: ProfilesConfig = serde_json::from_str(&profiles_config_string).expect("The ProfilesConfig to be valid.");
 
-    let mut profile_names = cleaner.profiles().names().map(String::from).collect::<Vec<_>>();
-    profile_names.sort();
+    let profiled_cleaner = ProfiledCleanerConfig { cleaner, profiles_config }.make();
 
-    for profile in profile_names {
+    for (name, cleaner) in profiled_cleaner.into_each_profile() {
         commands.push(poise::Command {
-            name: Cow::Owned(format!("Clean URLs ({profile})")),
+            name: match name {
+                Some(name) => Cow::Owned(format!("Clean URLs ({name})")),
+                None => Cow::Borrowed("Clean URLs")
+            },
             context_menu_action: Some(poise::structs::ContextMenuCommandAction::Message(|ctx: poise::structs::ApplicationContext<'_, State, Error>, msg: serenity::Message| {
                 Box::pin(async move {
-                    clean_urls_with_profile(
+                    clean_urls(
                         ctx.into(),
                         msg,
-                        Some(ctx.command().custom_data.downcast_ref::<String>().expect("The custom data to be a str"))
+                        ctx.command().custom_data.downcast_ref::<Cleaner>().expect("The custom data to be a Cleaner")
                     ).await.map_err(|error| poise::FrameworkError::new_command(ctx.into(), error.into()))
                 })
             })),
-            custom_data: Box::new(profile),
+            custom_data: Box::new(cleaner),
             install_context: Some(vec![serenity::InstallationContext::User, serenity::InstallationContext::Guild]),
             interaction_context: Some(vec![serenity::InteractionContext::Guild, serenity::InteractionContext::BotDm, serenity::InteractionContext::PrivateChannel]),
             ..Default::default()
@@ -167,7 +166,6 @@ async fn main() {
     }
 
     let state = State {
-        cleaner,
         cleaner_string,
         profiles_config_string,
         #[cfg(feature = "cache")]
@@ -240,19 +238,7 @@ async fn help(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(
-    context_menu_command = "Clean URLs",
-    install_context = "User|Guild",
-    interaction_context = "Guild|BotDm|PrivateChannel"
-)]
-async fn clean_urls(
-    ctx: Context<'_>,
-    msg: serenity::Message
-) -> Result<(), Error> {
-    clean_urls_with_profile(ctx, msg, None).await.map_err(Into::into)
-}
-
-/// The enum of errors [`clean_urls_with_profile`] can return.
+/// The enum of errors [`clean_urls`] can return.
 #[derive(Debug, Error)]
 pub enum CleanUrlsError {
     /// Returned when attempting to use an unknown profile.
@@ -264,18 +250,15 @@ pub enum CleanUrlsError {
 }
 
 /// Clean a message's URLs with the specified [`Params`].
-async fn clean_urls_with_profile(ctx: Context<'_>, msg: serenity::Message, profile: Option<&str>) -> Result<(), CleanUrlsError> {
-    let data = ctx.data();
-    let cleaner = data.cleaner.profile(profile).ok_or(CleanUrlsError::UnknownProfile)?;
-
+async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: &Cleaner<'_>) -> Result<(), CleanUrlsError> {
     let job = Job {
         config: &JobConfig {
             context: &Default::default(),
-            cleaner: &cleaner,
+            cleaner,
             #[cfg(feature = "cache")]
             cache: &ctx.data().cache,
             #[cfg(feature = "cache")]
-            cache_handle_config: data.cache_handle_config,
+            cache_handle_config: ctx.data().cache_handle_config,
             unthreader: &Unthreader::default()
         },
         lazy_task_configs: Box::new(GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into())))

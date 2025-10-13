@@ -5,122 +5,58 @@ on: [push, pull_request]
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    working-directory: site
-
 jobs:
-  order:
+  site:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v3
-    - name: order
+
+    - name: 'Restore cache'
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ runner.os }}-release-artifacts
+        path: target
+
+    - name: Setup
       run: |
         set -o pipefail
-        cargo run |& tee site-run.log &
-        site=$!
-        while true; do
-          sleep 0.1
-          if ! kill -0 "$site"; then
-            exit 1
-          fi
-          if grep "Rocket has launched" site-run.log; then
-            break
-          fi
+        cp target/release/url-cleaner-site urlcs
+
+    - name: Order
+      run: |
+        ./urlcs &
+        sleep 1
+        ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 127; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc
+        kill $!
+
+    - name: Unthreader
+      run: |
+        i=0
+        mins=( 0 0 0  0 0 3  0 0 0  3 0 3 )
+        maxs=( 3 3 3  3 3 5  3 3 3  5 3 5 )
+        rems=( 0 0 0  0 0 3  0 0 0  3 0 3 )
+        for default_unthread in '' '--default-unthread'; do
+          for unthread_ratelimit in '' '--unthread-ratelimit 3'; do
+            ./urlcs --cleaner example-cleaners/ratelimit-tester.json $default_unthread $unthread_ratelimit --port 9141 &
+            for config in '' ',"unthread":false' ',"unthread":true'; do
+              echo
+              echo i=$i min=${mins[$i]} max=${maxs[$i]} rem=${rems[$i]}
+              start=$(date +%s);
+              curl http://localhost:9141/clean -d '{"tasks":["https://example.com","https://example.com"]'$config'}'
+              time=$(($(date +%s) - $start))
+              echo
+              echo time=$time
+              [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
+              sleep ${rems[$i]}
+              i=$(($i + 1))
+            done
+            kill $!
+          done
         done
-        ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 100; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc
 
-  unthreader:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: unthreader
-      run: |
-        set -o pipefail
-        cargo build
 
-        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json &
-        sleep 1
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        kill $!
-        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json --unthread-ratelimit 1 &
-        sleep 1
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
-        end=$(date +%s)
-        [[ 3 -le $(($end-$start)) && $(($end-$start)) -le 5 ]]
-
-        kill $!
-        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json --default-unthread &
-        sleep 1
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        kill $!
-        cargo run -- --cleaner ../example-cleaners/ratelimit-tester.json --default-unthread --unthread-ratelimit 1 &
-        sleep 1
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"]}'
-        end=$(date +%s)
-        [[ 3 -le $(($end-$start)) && $(($end-$start)) -le 5 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": false}'
-        end=$(date +%s)
-        [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 2 ]]
-
-        start=$(date +%s)
-        curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com","https://example.com","https://example.com"], "unthread": true}'
-        end=$(date +%s)
-        [[ 3 -le $(($end-$start)) && $(($end-$start)) -le 5 ]]
-
-        kill $!
-
-  profiles:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: profiles
+    - name: Profiles
       run: |
         set -e
 
@@ -128,7 +64,7 @@ jobs:
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
-        cargo run -- --profiles <(echo "$PROFILES") |& tee site-run.log &
+        ./urlcs --profiles <(echo "$PROFILES") |& tee site-run.log &
         site=$!
         while true; do
           sleep 0.1
@@ -139,8 +75,6 @@ jobs:
             break
           fi
         done
-
-        cargo build
 
         diff -y <(
           curl -s http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://m.youtube.com/shorts/abc"]}'; echo

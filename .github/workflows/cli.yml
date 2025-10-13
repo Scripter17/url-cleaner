@@ -5,70 +5,60 @@ on: [push, pull_request]
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    working-directory: cli
-
 jobs:
-  offline_tests:
+  cli:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: offline_tests
-      run: cargo run -- --tests ../tests/offline.json
 
-  order:
-    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: order
+
+    - name: 'Restore cache'
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ runner.os }}-release-artifacts
+        path: target
+
+    - name: Setup
       run: |
         set -o pipefail
+        cp target/release/url-cleaner urlc
+
+    - name: offline_tests
+      run: ./urlc --tests engine/tests/offline.json
+
+    - name: Order
+      run: |
         in=$(seq -f "https://%0.0f.com/" 127)
-        [[ "$(echo "$in" | cargo run)" == "$in" ]]
-        [[ "$(echo "$in" | cargo run -- --json | grep -oP 'https://[^"]+')" == "$in" ]]
-        [[ "$(cargo run -- $in)" == "$in" ]]
-        [[ "$(cargo run -- $in --json | grep -oP 'https://[^"]+')" == "$in" ]]
-        [[ "$(echo "$in" | cargo run -- $in)" == "$(echo -ne "$in\n$in")" ]]
-        [[ "$(echo "$in" | cargo run -- $in --json | grep -oP 'https://[^"]+')" == "$(echo -ne "$in\n$in")" ]]
 
-  deadlock:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: deadlock
-      run: |
-        cargo build
-        yes "https://example.com" | head -n 100 | timeout 1s cargo run -- --cleaner ../example-cleaners/deadlock-tester.json
+        [[ "$(echo "$in" | ./urlc    )" == "$in" ]]
+        [[ "$(             ./urlc $in)" == "$in" ]]
+        [[ "$(echo "$in" | ./urlc $in)" == "$(echo -ne "$in\n$in")" ]]
 
-  ratelimit:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: ratelimit
+        [[ "$(echo "$in" | ./urlc     --json | grep -oP 'https://[^"]+')" == "$in" ]]
+        [[ "$(             ./urlc $in --json | grep -oP 'https://[^"]+')" == "$in" ]]
+        [[ "$(echo "$in" | ./urlc $in --json | grep -oP 'https://[^"]+')" == "$(echo -ne "$in\n$in")" ]]
+
+    - name: Deadlock
+      run: yes "https://example.com" | head -n 100 | timeout 10s ./urlc --cleaner example-cleaners/deadlock-tester.json
+
+    - name: Ratelimit
       run: |
-        cargo build
-        
         start=$(date +%s)
-        yes http://127.0.0.1 | head -n 10                       | ../target/debug/url-cleaner --cleaner ../example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 1
+        yes http://127.0.0.1 | head -n 10                       | ./urlc --cleaner example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 1
         end=$(date +%s)
         [[ 9 -le $(($end-$start)) && $(($end-$start)) -le 10 ]]
 
         start=$(date +%s)
-        echo http://127.0.0.1                                   | ../target/debug/url-cleaner --cleaner ../example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 3
+        echo http://127.0.0.1                                   | ./urlc --cleaner example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 3
         end=$(date +%s)
         [[ 0 -le $(($end-$start)) && $(($end-$start)) -le 1 ]]
 
         start=$(date +%s)
-        (echo http://127.0.0.1; sleep 5; echo http://127.0.0.1) | ../target/debug/url-cleaner --cleaner ../example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 3
+        (echo http://127.0.0.1; sleep 5; echo http://127.0.0.1) | ./urlc --cleaner example-cleaners/ratelimit-tester.json --unthread --unthread-ratelimit 3
         end=$(date +%s)
         [[ 5 -le $(($end-$start)) && $(($end-$start)) -le 6 ]]
 
-  profiles:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: profiles
+    - name: Profiles
       run: |
         set -e
 
@@ -76,18 +66,16 @@ jobs:
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
-        cargo build
-
         diff -y <(
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                 'https://m.youtube.com/shorts/abc'
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://m.youtube.com/shorts/abc'
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES")                                                                 'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
 
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                                                                 'https://youtube.com/shorts/abc'
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://youtube.com/shorts/abc'
-          ../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES")                                                                 'https://youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://youtube.com/shorts/abc'
+          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
         ) <(
           echo 'https://www.youtube.com/shorts/abc'
           echo 'https://m.youtube.com/shorts/abc'
@@ -98,4 +86,4 @@ jobs:
           echo 'https://www.youtube.com/watch?v=abc'
           echo 'https://m.youtube.com/watch?v=abc'
         )
-        diff <(../target/debug/url-cleaner --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')
+        diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')

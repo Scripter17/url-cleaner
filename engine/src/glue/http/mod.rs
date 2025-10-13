@@ -11,8 +11,13 @@ use reqwest::cookie::Cookie;
 use serde_with::{serde_as, DisplayFromStr};
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
+
+pub mod client;
+pub use client::*;
+pub mod proxy;
+pub use proxy::*;
 
 /// Rules for making an HTTP request.
 ///

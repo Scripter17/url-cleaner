@@ -34,13 +34,13 @@ default-cleaner = [
   "base64"
 ]
 
-regex    = ["url-cleaner-engine/regex"   , "url-cleaner-site-types/regex"   ]
-http     = ["url-cleaner-engine/http"    , "url-cleaner-site-types/http"    ]
-cache    = ["url-cleaner-engine/cache"   , "url-cleaner-site-types/cache"   ]
-base64   = ["url-cleaner-engine/base64"  , "url-cleaner-site-types/base64"  ]
-custom   = ["url-cleaner-engine/custom"  , "url-cleaner-site-types/custom"  ]
-commands = ["url-cleaner-engine/commands", "url-cleaner-site-types/commands"]
-debug    = ["url-cleaner-engine/debug"   , "url-cleaner-site-types/debug"   ]
+regex   = ["url-cleaner-engine/regex"  , "url-cleaner-site-types/regex"  ]
+http    = ["url-cleaner-engine/http"   , "url-cleaner-site-types/http"   ]
+cache   = ["url-cleaner-engine/cache"  , "url-cleaner-site-types/cache"  ]
+base64  = ["url-cleaner-engine/base64" , "url-cleaner-site-types/base64" ]
+custom  = ["url-cleaner-engine/custom" , "url-cleaner-site-types/custom" ]
+command = ["url-cleaner-engine/command", "url-cleaner-site-types/command"]
+debug   = ["url-cleaner-engine/debug"  , "url-cleaner-site-types/debug"  ]
 
 [lints]
 workspace = true

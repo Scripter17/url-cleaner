@@ -20,7 +20,7 @@ percent-encoding = "2.3.2"
 parking_lot = "0.12.5"
 better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 url-cleaner-macros = { version = "0.12.0-beta", path = "../macros" }
-regex          = { optional = true, version = "1.11.3"  }
+regex          = { optional = true, version = "1.12.1"  }
 reqwest        = { optional = true, version = "0.12.23", features = ["blocking", "socks", "json", "cookies", "native-tls-alpn"] }
 diesel         = { optional = true, version = "2.3.2" , features = ["sqlite"] }
 libsqlite3-sys = { optional = true, version = "0.35.0" , features = ["bundled"] }
@@ -41,15 +41,15 @@ harness = false
 serde_json = "1.0.145"
 
 [features]
-default         = ["default-cleaner"]
-default-cleaner = ["regex", "http", "cache", "base64"]
-regex           = ["dep:regex"]
-http            = ["dep:reqwest"]
-cache           = ["dep:diesel", "dep:rand", "dep:libsqlite3-sys"]
-base64          = ["dep:base64"]
-commands        = []
-custom          = []
-debug           = []
+default        = ["default-cleaner"]
+default-cleaner= ["regex", "http", "cache", "base64"]
+regex          = ["dep:regex"]
+http           = ["dep:reqwest"]
+cache          = ["dep:diesel", "dep:rand", "dep:libsqlite3-sys"]
+base64         = ["dep:base64"]
+command        = []
+custom         = []
+debug          = []
 
 [lints]
 workspace = true

@@ -16,7 +16,7 @@ use thiserror::Error;
 use serde::{Serialize, ser::Serializer};
 
 use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::*;
+use url_cleaner_engine::glue::prelude::*;
 use url_cleaner_engine::testing::*;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
@@ -32,7 +32,7 @@ use url_cleaner_engine::testing::*;
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
 #[cfg_attr(feature = "base64"         , doc = "base64"         )]
-#[cfg_attr(feature = "commands"       , doc = "commands"       )]
+#[cfg_attr(feature = "command"        , doc = "command"        )]
 #[cfg_attr(feature = "custom"         , doc = "custom"         )]
 #[cfg_attr(feature = "debug"          , doc = "debug"          )]
 ///
@@ -42,7 +42,7 @@ use url_cleaner_engine::testing::*;
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
-#[cfg_attr(not(feature = "commands"       ), doc = "commands"       )]
+#[cfg_attr(not(feature = "command"        ), doc = "command"        )]
 #[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
@@ -248,7 +248,8 @@ fn main() -> Result<ExitCode, CliError> {
     };
 
     if let Some(profiles_config) = profiles_config {
-        cleaner.params = profiles_config.into_params(args.profile.as_deref(), cleaner.params).ok_or(CliError::ProfileNotFound)?;
+        cleaner = ProfiledCleanerConfig { cleaner, profiles_config }
+            .into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
     }
 
     let params_diff = match (args.params_diff, args.params_diff_string) {

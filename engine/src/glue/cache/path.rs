@@ -28,7 +28,7 @@ impl CachePath {
     /// If `self` is [`Self::Memory`], returns `:memory:`.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::*;
+    /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// assert_eq!(CachePath::Memory                          .as_str(), ":memory:");
     /// assert_eq!(CachePath::Path(       "abc.sqlite".into()).as_str(), "abc.sqlite");

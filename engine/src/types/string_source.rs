@@ -8,10 +8,10 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 #[cfg(feature = "regex")]
 #[expect(unused_imports, reason = "Used in docs.")]
-use ::regex::Regex;
+use regex::Regex;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Dynamically get strings from either literals or various parts of a [`TaskStateView`].
@@ -465,7 +465,7 @@ pub enum StringSource {
     /// Calls [`CommandConfig::output`] and returns the value.
     /// # Errors
     #[doc = edoc!(callerr(CommandConfig::output))]
-    #[cfg(feature = "commands")]
+    #[cfg(feature = "command")]
     CommandOutput(Box<CommandConfig>),
 
 
@@ -715,7 +715,7 @@ pub enum StringSourceError {
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
     /// Returned when a [`CommandError`] is encountered.
-    #[cfg(feature = "commands")]
+    #[cfg(feature = "command")]
     #[error(transparent)]
     CommandError(#[from] Box<CommandError>),
 
@@ -738,7 +738,7 @@ pub enum StringSourceError {
     Custom(Box<dyn std::error::Error + Send>)
 }
 
-#[cfg(feature = "commands")]
+#[cfg(feature = "command")]
 impl From<CommandError> for StringSourceError {
     fn from(value: CommandError) -> Self {
         Self::CommandError(Box::new(value))
@@ -853,7 +853,7 @@ impl StringSource {
 
 
 
-            #[cfg(feature = "commands")]
+            #[cfg(feature = "command")]
             Self::CommandOutput(command) => Some(Cow::Owned(command.output(task_state)?)),
 
 

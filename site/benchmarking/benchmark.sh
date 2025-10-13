@@ -157,7 +157,7 @@ for server in "${SERVERS[@]}"; do
         echo -n "$num,"
         yes "$url" | head -n $num | jq -Rsc '{tasks: split("\n")[:-1]}' > stdin
         out_summary=$(
-          oha "$server" -m POST -D stdin --no-tui --output-format json --insecure |
+          oha "$server/clean" -m POST -D stdin --no-tui --output-format json --insecure |
           tee "oha-$file_safe_server-$file_safe_url-$num.out.json" |
           jq --argjson out_summary "$out_summary"  "\$out_summary * {\"$url\": {\"$num\": .rps.mean}}"
         )

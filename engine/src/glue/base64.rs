@@ -8,9 +8,9 @@ use crate::util::*;
 /// The config for how to encode and decode base64 text.
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::*;
+/// use url_cleaner_engine::glue::prelude::*;
 ///
-/// use ::base64::engine::Engine;
+/// use base64::engine::Engine;
 /// let base64 = Base64Config::default().build();
 ///
 /// let mut encoded = String::new();

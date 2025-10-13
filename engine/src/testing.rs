@@ -3,7 +3,7 @@
 use serde::{Serialize, Deserialize};
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Tests.

@@ -5,8 +5,8 @@ use std::borrow::Cow;
 use serde::Serialize;
 
 use crate::types::*;
+use crate::glue::prelude::*;
 use crate::util::*;
-use crate::glue::*;
 
 /// The state of a [`Task`] being done.
 #[derive(Debug, Serialize)]
@@ -89,7 +89,7 @@ macro_rules! task_state {
 
         let mut $task_state = {
             #[cfg(feature = "cache")]
-            use $crate::glue::CacheHandle;
+            use $crate::glue::cache::CacheHandle;
 
             $crate::types::TaskState {
                 url        : &mut url.try_into().unwrap(),
@@ -179,7 +179,7 @@ macro_rules! task_state_view {
 
         let $task_state_view = {
             #[cfg(feature = "cache")]
-            use $crate::glue::CacheHandle;
+            use $crate::glue::cache::CacheHandle;
 
             $crate::types::TaskStateView {
                 url        : &url.try_into().unwrap(),

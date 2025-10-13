@@ -39,7 +39,7 @@ pub use glue::*;
 /// For example, a CLI program writing results to a file doesn't need to enable cache delay/unthreading, but a userscript should.
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::*;
+/// use url_cleaner_engine::glue::prelude::*;
 /// use std::time::Duration;
 ///
 /// let cache = CacheHandle {

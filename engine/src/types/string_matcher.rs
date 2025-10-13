@@ -9,10 +9,10 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 #[cfg(feature = "regex")]
 #[expect(unused_imports, reason = "Used in docs.")]
-use ::regex::Regex;
+use regex::Regex;
 
 use crate::types::*;
-use crate::glue::*;
+use crate::glue::prelude::*;
 use crate::util::*;
 
 /// Check if a [`str`] matches a certain pattern/rule.
