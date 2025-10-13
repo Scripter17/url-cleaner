@@ -31,6 +31,7 @@ jobs:
       run: cargo build -r
 
     - name: 'Save cache'
+      if: runner.environment == null
       uses: actions/cache/save@v4
       with:
         key: ${{ runner.os }}-release-artifacts
