@@ -6,8 +6,7 @@ use diesel::prelude::*;
 #[expect(unused_imports, reason = "Used in docs.")]
 use diesel::query_builder::SqlQuery;
 
-use crate::glue::prelude::*;
-use crate::util::*;
+use crate::prelude::*;
 
 /// A lazily connected connection to a Sqlite database.
 /// # Examples
@@ -55,10 +54,10 @@ impl PartialEq for InnerCache {
 }
 impl Eq for InnerCache {}
 
-impl From<CachePath> for InnerCache {
-    fn from(value: CachePath) -> Self {
+impl<T: Into<CachePath>> From<T> for InnerCache {
+    fn from(value: T) -> Self {
         Self {
-            path: value,
+            path: value.into(),
             ..Default::default()
         }
     }

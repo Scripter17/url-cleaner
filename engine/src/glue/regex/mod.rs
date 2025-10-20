@@ -1,4 +1,4 @@
-//! A lazily compiled wrapper around [`Regex`].
+//! [`LazyRegex`].
 
 use std::str::FromStr;
 use std::sync::OnceLock;
@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 use serde::{Serialize, Deserialize};
 use regex::Regex;
 
-use crate::util::*;
+use crate::prelude::*;
 
 pub mod parts;
 pub use parts::*;
@@ -16,15 +16,15 @@ pub use parts::*;
 /// ```
 /// use url_cleaner_engine::glue::prelude::*;
 ///
-/// let regex = RegexWrapper::from("abc");
+/// let regex = LazyRegex::from("abc");
 /// assert!(regex.get().unwrap().is_match("abc"));
 ///
 /// // Trying to set flags like `/.../i` isn't supported by the regex crate, and so isn't supported here.
-/// assert_eq!(RegexWrapper::from("/abc/i").parts().pattern, "/abc/i");
+/// assert_eq!(LazyRegex::from("/abc/i").parts().pattern, "/abc/i");
 /// ```
 #[derive(Clone, Debug, Serialize, Deserialize, Suitability)]
 #[serde(from = "RegexParts", into = "RegexParts")]
-pub struct RegexWrapper {
+pub struct LazyRegex {
     /// The lazily initialized [`Regex`].
     #[suitable(always)]
     regex: OnceLock<Regex>,
@@ -32,13 +32,13 @@ pub struct RegexWrapper {
     parts: RegexParts
 }
 
-impl RegexWrapper {
+impl LazyRegex {
     /// Gets the [`RegexParts`] this uses to compile its [`Regex`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::glue::prelude::*;
     ///
-    /// let regex = RegexWrapper::from(".*=.*");
+    /// let regex = LazyRegex::from(".*=.*");
     /// assert_eq!(regex.parts(), &RegexParts {pattern: ".*=.*".into(), config: Default::default()});
     /// ```
     pub fn parts(&self) -> &RegexParts {
@@ -50,7 +50,7 @@ impl RegexWrapper {
     /// ```
     /// use url_cleaner_engine::glue::prelude::*;
     ///
-    /// let regex = RegexWrapper::from(".*=.*");
+    /// let regex = LazyRegex::from(".*=.*");
     /// assert!(regex.get_no_compile().is_none());
     /// regex.get().unwrap();
     /// assert!(regex.get_no_compile().is_some());
@@ -70,7 +70,7 @@ impl RegexWrapper {
     /// ```
     /// use url_cleaner_engine::glue::prelude::*;
     ///
-    /// let regex = RegexWrapper::from(".*=.*");
+    /// let regex = LazyRegex::from(".*=.*");
     /// assert!(regex.get_no_compile().is_none());
     /// regex.get().unwrap();
     /// assert!(regex.get_no_compile().is_some());
@@ -85,7 +85,7 @@ impl RegexWrapper {
     }
 }
 
-impl From<RegexParts> for RegexWrapper {
+impl From<RegexParts> for LazyRegex {
     fn from(parts: RegexParts) -> Self {
         Self {
             regex: OnceLock::new(),
@@ -94,7 +94,7 @@ impl From<RegexParts> for RegexWrapper {
     }
 }
 
-impl FromStr for RegexWrapper {
+impl FromStr for LazyRegex {
     type Err = std::convert::Infallible;
 
     /// Creates a new [`RegexParts`] and uses that.
@@ -105,7 +105,7 @@ impl FromStr for RegexWrapper {
     }
 }
 
-impl From<&str> for RegexWrapper {
+impl From<&str> for LazyRegex {
 
     /// Creates a new [`RegexParts`] and uses that.
     ///
@@ -115,31 +115,31 @@ impl From<&str> for RegexWrapper {
     }
 }
 
-impl PartialEq for RegexWrapper {
+impl PartialEq for LazyRegex {
     /// Whether or not `self` and/or `other` have their [`Regex`] cached is not considered.
     fn eq(&self, other: &Self) -> bool {
         self.parts.eq(&other.parts)
     }
 }
-impl Eq for RegexWrapper {}
+impl Eq for LazyRegex {}
 
-impl From<RegexWrapper> for RegexParts {
-    fn from(value: RegexWrapper) -> Self {
+impl From<LazyRegex> for RegexParts {
+    fn from(value: LazyRegex) -> Self {
         value.parts
     }
 }
 
-impl AsRef<RegexParts> for RegexWrapper {
+impl AsRef<RegexParts> for LazyRegex {
     fn as_ref(&self) -> &RegexParts {
         &self.parts
     }
 }
 
-impl TryFrom<RegexWrapper> for Regex {
+impl TryFrom<LazyRegex> for Regex {
     type Error = regex::Error;
 
     /// Does not re-compile or clone the [`Regex`] if it's already cached. It simply takes it.
-    fn try_from(value: RegexWrapper) -> Result<Self, Self::Error> {
+    fn try_from(value: LazyRegex) -> Result<Self, Self::Error> {
         if let Some(regex) = value.regex.into_inner() {
             Ok(regex)
         } else {

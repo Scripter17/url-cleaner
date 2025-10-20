@@ -1,4 +1,4 @@
-# URL Cleaner
+# URL Cleaner CLI
 
 [![Crates.io Version](https://img.shields.io/crates/v/url-cleaner)](https://crates.io/crates/url-cleaner/)
 
@@ -47,7 +47,59 @@ Also the numbers are in milliseconds.
 }
 ```
 
-For reasons not yet known to me, everything from an Intel i5-8500 (6) @ 4.100GHz to an AMD Ryzen 9 7950X3D (32) @ 5.759GHz seems to max out at between 140 and 110ms per 100k (not a typo) of the amazon URL despite the second CPU being significantly more powerful.
+### Memory usage
+
+Because cleaning enough URLs to reach max memory usage when ussing massif takes a LONG time, expect these numbers to be updated much less frequently.
+
+**Please note that URL Cleaner CLI uses a buffered output when it detects it's outputting to a program or file. That improves performance and dramatically improves memory usage.**
+
+**These numbers use that optimization.**
+
+Though if you're printing 10 million URLs of output to your terminal you're probably doing it by accident and therefore don't really care about the 40-ish meagbytes it took before the buffering.
+
+Also to turn off the buffering you can use `--unbuffer-output`.
+
+The format is `(number of the URL): (max memory usage in bytes)`.
+
+Updated 2025-10-14
+
+```
+Massif
+ https://x.com?a=2
+  0: 614,479
+  1: 614,479
+  10: 614,479
+  100: 614,479
+  1000: 737,647
+  10000: 2,330,884
+  100000: 5,787,300
+  1000000: 9,927,374
+  10000000: 12,370,646
+ https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id
+  0: 614,479
+  1: 614,479
+  10: 614,479
+  100: 614,479
+  1000: 884,168
+  10000: 2,083,448
+  100000: 4,292,294
+  1000000: 10,756,438
+  10000000: 5,887,986
+ https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8
+  0: 614,479
+  1: 614,479
+  10: 614,479
+  100: 614,479
+  1000: 761,637
+  10000: 828,922
+  100000: 793,266
+  1000000: 884,616
+  10000000: 1,063,494
+```
+
+Assuming you store 10 million URLs to give to URL Cleaner (in a real situation, for this I jused used the `yes` command), you probably have the 1 to 15 megabytes of RAM needed to clean all of them.
+
+And no I don't know what's going on with 1 million of the example.com URL taking twice the memory as 10 million of the same URL.
 
 ## Parsing output
 

@@ -40,7 +40,7 @@ jobs:
         ( echo '{"tasks":['; seq -s , -f '"https://%0.0f.com"' 127; echo ']}') | curl http://localhost:9149/clean -d @- | grep -oP 'http[^"]+' | sort -Vc
         kill $!
 
-    - name: Unthreader
+    - name: Ratelimit
       run: |
         i=0
         mins=( 0 0 0  0 0 5  0 0 0  5 0 5 )
@@ -50,21 +50,24 @@ jobs:
             ./urlcs --cleaner example-cleaners/ratelimit-tester.json $default_unthread $unthread_ratelimit &
             sleep 1
             for config in '' ',"unthread":false' ',"unthread":true'; do
-              echo
-              echo i=$i min=${mins[$i]} max=${maxs[$i]} rem=${rems[$i]}
               start=$(date +%s);
               curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com"]'$config'}'
               time=$(($(date +%s) - $start))
-              echo
-              echo time=$time
               [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
               sleep ${mins[$i]}
+
+              start=$(date +%s);
+              curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
+              curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
+              time=$(($(date +%s) - $start))
+              [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
+              sleep ${mins[$i]}
+
               i=$(($i + 1))
             done
             kill $!
           done
         done
-
 
     - name: Profiles
       run: |
@@ -74,7 +77,7 @@ jobs:
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
-        ./urlcs --profiles <(echo "$PROFILES") |& tee site-run.log &
+        ./urlcs --profiles-string "$PROFILES" |& tee site-run.log &
         site=$!
         while true; do
           sleep 0.1

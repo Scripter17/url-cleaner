@@ -1,9 +1,4 @@
-use std::hint::black_box;
-use criterion::Criterion;
-
 use crate::*;
-
-use url_cleaner_engine::types::*;
 
 macro_rules! thing {
     ($group:ident, $get:ident, $set:ident, $sets:expr) => {
@@ -18,7 +13,7 @@ macro_rules! thing {
 
                     c.bench_function(
                         &format!("BetterUrl::{}(): {url}", stringify!($get)),
-                        |b| b.iter(|| black_box(&url).$get())
+                        |b| b.iter(|| bb(&url).$get())
                     );
                 }
             }
@@ -32,7 +27,7 @@ macro_rules! thing {
                             &format!("BetterUrl::{}({set:?}): {url}", stringify!($set)),
                             |b| b.iter_batched_ref(
                                 || url.clone(),
-                                |url| black_box(url).$set(black_box(set)),
+                                |url| bb(url).$set(bb(set)),
                                 criterion::BatchSize::SmallInput
                             )
                         );

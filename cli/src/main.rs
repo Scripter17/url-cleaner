@@ -1,4 +1,4 @@
-//! URL Cleaner - Explicit non-consent to URL spytext.
+//! URL Cleaner CLI - Explicit non-consent to URL spytext.
 //!
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
@@ -15,12 +15,11 @@ use clap::Parser;
 use thiserror::Error;
 use serde::{Serialize, ser::Serializer};
 
-use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::prelude::*;
+use url_cleaner_engine::prelude::*;
 use url_cleaner_engine::testing::*;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
-/// URL Cleaner - Explicit non-consent to URL spytext.
+/// URL Cleaner CLI - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
 ///
@@ -99,31 +98,31 @@ struct Args {
     /// The ProfilesConfig file.
     ///
     /// Cannot be used with --profiles-string.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, conflicts_with = "profiles_string", value_name = "PATH")]
     profiles: Option<PathBuf>,
     /// The ProfilesConfig string.
     ///
     /// Cannot be used with --profiles.
-    #[arg(long, value_name = "JSON STRING")]
+    #[arg(long, conflicts_with = "profiles", value_name = "JSON STRING")]
     profiles_string: Option<String>,
     /// The Profile to use.
     ///
     /// Applied before ParamsDiffs and --flag/--var.
-    #[arg(long, requires = "profiles")]
+    #[arg(long)]
     profile: Option<String>,
     /// A standalone ParamsDiff file.
     ///
     /// Applied after Profiles and before --flag/--var.
     ///
     /// Cannot be used with --params-diff-string.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, conflicts_with = "params_diff_string", value_name = "PATH")]
     params_diff: Option<PathBuf>,
     /// A standalone ParamsDiff string.
     ///
     /// Applied after Profiles and before --flag/--var.
     ///
     /// Cannot be used with --params-diff.
-    #[arg(long, value_name = "JSON STRING")]
+    #[arg(long, conflicts_with = "params_diff", value_name = "JSON STRING")]
     params_diff_string: Option<String>,
     /// Flags to insert into the params.
     ///
@@ -138,13 +137,31 @@ struct Args {
     /// The JobContext file to use.
     ///
     /// Cannot be used with --job-context-string.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, conflicts_with = "job_context_string", value_name = "PATH")]
     job_context: Option<PathBuf>,
     /// The JobContext string to use.
     ///
     /// Cannot be used with --job-context.
-    #[arg(long, value_name = "JSON STRING")]
+    #[arg(long, conflicts_with = "job_context", value_name = "JSON STRING")]
     job_context_string: Option<String>,
+    /// The proxy to use for HTTP/HTTPS requests.
+    ///
+    /// Overrided by --http-proxy and --https-proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    proxy: Option<HttpProxyConfig>,
+    /// the proxy to use for HTTP requests.
+    ///
+    /// Overrides --proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    http_proxy: Option<HttpProxyConfig>,
+    /// the proxy to use for HTTPS requests.
+    ///
+    /// Overrides --proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    https_proxy: Option<HttpProxyConfig>,
     /// The path of the cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
@@ -191,34 +208,28 @@ pub enum CliError {
     #[error(transparent)] CantParseProfilesFile(serde_json::Error),
     /// Returned when unable to parse a [`ParamsDiff`] string.
     #[error(transparent)] CantParseProfilesString(serde_json::Error),
-    /// Returned when both `--profiles-config` and `--profiles-config-string` are specified.
-    #[error("Can't have both --profiles-config and --profiles-config-string")]
-    CantHaveBothProfilesAndProfilesString,
     /// Returned when unable to load a [`ParamsDiff`] file.
     #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
     #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
     /// Returned when unable to parse a [`ParamsDiff`] string.
     #[error(transparent)] CantParseParamsDiffString(serde_json::Error),
-    /// Returned when both `--params-diff` and `--params-diff-string` are specified.
-    #[error("Can't have both --params-diff and --params-diff-string")]
-    CantHaveBothParamsDiffAndParamsDiffString,
     /// Returned when unable to load a [`JobContext`] file.
     #[error(transparent)] CantLoadJobContextFile(std::io::Error),
     /// Returned when unable to parse a [`JobContext`] file.
     #[error(transparent)] CantParseJobContextFile(serde_json::Error),
     /// Returned when unable to parse a [`JobContext`] string.
     #[error(transparent)] CantParseJobContextString(serde_json::Error),
-    /// Returned when both `--job-context` and `--job-context-string` are specified.
-    #[error("Can't have both --job-context and --job-context-string")]
-    CantHaveBothJobContextAndJobContextString,
     /// Returned when unable to load a [`Tests`] file.
     #[error(transparent)] CantLoadTests(io::Error),
     /// Returned when unable to parse a [`Tests`] file.
     #[error(transparent)] CantParseTests(serde_json::Error),
     /// Returned when the requested [`Profile`] isn't found.
     #[error("The requested Profile wasn't found.")]
-    ProfileNotFound
+    ProfileNotFound,
+    /// Returned when a [`MakeHttpProxyError`] is encountered.
+    #[cfg(feature = "http")]
+    #[error(transparent)] MakeHttpProxyError(#[from] MakeHttpProxyError)
 }
 
 /// Helper type to print task errors to JSON output.
@@ -244,19 +255,21 @@ fn main() -> Result<ExitCode, CliError> {
         (None      , None        ) => None,
         (Some(path), None        ) => Some(serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfilesFile)?).map_err(CliError::CantParseProfilesFile)?),
         (None      , Some(string)) => Some(serde_json::from_str::<ProfilesConfig>(&string).map_err(CliError::CantParseProfilesString)?),
-        (Some(_)   , Some(_)     ) => Err(CliError::CantHaveBothProfilesAndProfilesString)?
+        (Some(_)   , Some(_)     ) => unreachable!()
     };
 
     if let Some(profiles_config) = profiles_config {
-        cleaner = ProfiledCleanerConfig { cleaner, profiles_config }
-            .into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
+        cleaner = ProfiledCleanerConfig {
+            cleaner,
+            profiles_config
+        }.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
     }
 
     let params_diff = match (args.params_diff, args.params_diff_string) {
         (None      , None        ) => None,
         (Some(path), None        ) => Some(serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile)?),
         (None      , Some(string)) => Some(serde_json::from_str::<ParamsDiff>(&string).map_err(CliError::CantParseParamsDiffString)?),
-        (Some(_)   , Some(_)     ) => Err(CliError::CantHaveBothParamsDiffAndParamsDiffString)?
+        (Some(_)   , Some(_)     ) => unreachable!()
     };
 
     if let Some(params_diff) = params_diff {
@@ -275,7 +288,7 @@ fn main() -> Result<ExitCode, CliError> {
         (None      , None        ) => Default::default(),
         (Some(path), None        ) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadJobContextFile)?).map_err(CliError::CantParseJobContextFile)?,
         (None      , Some(string)) => serde_json::from_str(&string).map_err(CliError::CantParseJobContextString)?,
-        (Some(_)   , Some(_)     ) => Err(CliError::CantHaveBothJobContextAndJobContextString)?
+        (Some(_)   , Some(_)     ) => unreachable!()
     };
 
     // Testing and stuff.
@@ -289,7 +302,8 @@ fn main() -> Result<ExitCode, CliError> {
 
     if !args.tests.is_empty() {
         for test_path in args.tests {
-            cleaner.run_tests(serde_json::from_str::<Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?);
+            serde_json::from_str::<Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?
+                .r#do(&cleaner);
         }
         println!("\nAll tests passed!");
     }
@@ -297,26 +311,6 @@ fn main() -> Result<ExitCode, CliError> {
     if no_cleaning {std::process::exit(0);}
 
     // Do the job.
-
-    #[cfg(feature = "cache")]
-    let cache = args.cache.into();
-    #[cfg(feature = "cache")]
-    let cache_handle_config = CacheHandleConfig {
-        delay: args.cache_delay,
-        read : !args.no_read_cache,
-        write: !args.no_write_cache
-    };
-    let unthreader = match (args.unthread, args.unthread_ratelimit) {
-        (false, None   ) => UnthreaderMode::Multithread,
-        (false, Some(_)) => unreachable!(),
-        (true , None   ) => UnthreaderMode::Unthread,
-        (true , Some(d)) => UnthreaderMode::UnthreadAndRatelimit(Duration::from_secs_f64(d))
-    }.into();
-
-    let threads = match args.threads {
-        0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
-        1.. => args.threads
-    };
 
     // The general idea is:
     // 1. The getter thread, if needed, make a new buffer.
@@ -327,6 +321,11 @@ fn main() -> Result<ExitCode, CliError> {
     // 6. *Then* the worker thread does the Task.
     // 7. The worker thread sends the Task's result to the output thread.
 
+    let threads = match args.threads {
+        0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
+        1.. => args.threads
+    };
+
     let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<(Vec<u8>, Option<GetLazyTaskConfigError>)>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
     let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
@@ -334,14 +333,27 @@ fn main() -> Result<ExitCode, CliError> {
     let mut some_ok  = false;
     let mut some_err = false;
 
-    let job_config = &JobConfig {
+
+    let job_config = JobConfig {
         cleaner: &cleaner,
         context: &job_context,
+        unthreader: &match (args.unthread, args.unthread_ratelimit) {
+            (false, None   ) => UnthreaderMode::Multithread,
+            (false, Some(_)) => unreachable!(),
+            (true , None   ) => UnthreaderMode::Unthread,
+            (true , Some(d)) => UnthreaderMode::Ratelimit(Duration::from_secs_f64(d))
+        }.into(),
         #[cfg(feature = "cache")]
-        cache  : &cache,
-        #[cfg(feature = "cache")]
-        cache_handle_config,
-        unthreader: &unthreader
+        cache_handle: CacheHandle {
+            cache: &args.cache.into(),
+            config: CacheHandleConfig {
+                delay: args.cache_delay,
+                read : !args.no_read_cache,
+                write: !args.no_write_cache
+            }
+        },
+        #[cfg(feature = "http")]
+        http_client: &HttpClient::new([args.proxy, args.http_proxy, args.https_proxy].into_iter().flatten().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>()?)
     };
 
     let mut buffers = args.urls.len() as u64;

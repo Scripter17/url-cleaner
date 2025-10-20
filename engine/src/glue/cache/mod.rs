@@ -19,9 +19,7 @@ use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 use rand::TryRngCore;
 
-#[expect(unused_imports, reason = "Used in docs.")]
-use crate::types::*;
-use crate::util::*;
+use crate::prelude::*;
 
 pub mod path;
 pub use path::*;

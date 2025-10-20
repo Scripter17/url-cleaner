@@ -2,9 +2,7 @@
 
 use serde::{Serialize, Deserialize};
 
-use crate::types::*;
-use crate::glue::prelude::*;
-use crate::util::*;
+use crate::prelude::*;
 
 /// Tests.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,7 +38,7 @@ pub struct TestSet {
 impl TestSet {
     /// Do the tests, panicking if any fail.
     /// # Panics
-    /// If a call to [`Job::next`] returns an error, panics.
+    /// If a call to [`JobIntoIterator::next`] returns an error, panics.
     ///
     /// If a call to [`Task::do`] returns an error, panics.
     ///
@@ -58,35 +56,25 @@ impl TestSet {
             params_diff.apply_once(&mut cleaner.params);
         }
 
+        let job_config = JobConfig {
+            context: &self.job_context,
+            cleaner: &cleaner,
+            unthreader: &Default::default(),
+            #[cfg(feature = "cache")]
+            cache_handle: CacheHandle {
+                cache: &Default::default(),
+                config: Default::default()
+            },
+            #[cfg(feature = "http")]
+            http_client: &Default::default()
+        };
+
         for test in self.tests {
             println!("    Test: {}", serde_json::to_string(&test).expect("Serialition to never fail."));
-            let task = Task {
-                config: test.task_config,
-                job_context: &self.job_context,
-                cleaner: &cleaner,
-                #[cfg(feature = "cache")]
-                cache: CacheHandle {
-                    cache: &Default::default(),
-                    config: Default::default()
-                },
-                unthreader: &Default::default()
-            };
-            let result1 = task.r#do().expect("The test to execute succesfully.");
+            let result1 = job_config.make_task(test.task_config).r#do().expect("The test to execute succesfully.");
             assert_eq!(result1, test.result, "The test to return the expected value.");
             if test.test_idempotence {
-                let task = Task {
-                    config: result1.clone().into(),
-                    job_context: &self.job_context,
-                    cleaner: &cleaner,
-
-                #[cfg(feature = "cache")]
-                    cache: CacheHandle {
-                        cache: &Default::default(),
-                        config: Default::default()
-                    },
-                    unthreader: &Default::default()
-                };
-                let result2 = task.r#do().expect("The idempotence test to be succeed.");
+                let result2 = job_config.make_task(result1.clone().into()).r#do().expect("The idempotence test to be succeed.");
                 assert_eq!(result2, result1, "Idempotence to be upheld.");
             }
         }

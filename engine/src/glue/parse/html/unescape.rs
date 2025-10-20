@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use thiserror::Error;
 
-use crate::util::*;
+use crate::prelude::*;
 
 /// The enum of errors that can happen when unescaping HTML text.
 #[derive(Debug, Error)]

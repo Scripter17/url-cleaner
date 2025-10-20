@@ -15,7 +15,9 @@
 				{
 				  "task_config": "https://www.youtube.com/redirect?event=backstage_event&redir_token=QUFFLUhqbVJScFJQZ1ZDbnVIMGg5bFRNelNCRlV1VjdFd3xBQ3Jtc0trV1phU2RGNVQ3czNBUzZ2SXJBbjdJNzZhSWdnSzhvU2RBaXJ2NDdnY0p3OC00NFpqaWZDZXRCOVdzNlhzdHVGbk5kcy1iOVR0RWVXdDFRRFRaM19UZ2lwMXB6Q1I1WlhCX01ub2ZvbUxPSmt2YV9QZw&q=https%3A%2F%2Fa.co%2FdNfiRDX&html_redirect=1Is",
 				  "result": "https://www.amazon.com/hz/wishlist/ls/2RBVWN4SJEAJ4"
-				}
+				},
+				{"task_config": "https://qr1.be/L7WG", "result": "https://app.bridgecard.app/?m=V3Pa&s=webd"},
+				{"task_config": "https://qr1.be/60AI", "result": "https://qr1.be/60AI"}
       ]
     }
   ]

@@ -1,6 +1,6 @@
 //! Segment utilities.
 
-use crate::util::*;
+use crate::prelude::*;
 
 /// Gets the range of elements form `iter`.
 ///

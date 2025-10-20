@@ -2,7 +2,7 @@
 
 use serde::{Serialize, Deserialize};
 
-use url_cleaner_engine::types::*;
+use url_cleaner_engine::prelude::*;
 
 use crate::util::*;
 use crate::auth::*;

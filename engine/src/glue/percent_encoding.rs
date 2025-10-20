@@ -3,9 +3,7 @@
 use serde::{Serialize, Deserialize};
 use percent_encoding::AsciiSet;
 
-#[expect(unused_imports, reason = "Used in docs.")]
-use crate::types::*;
-use crate::util::*;
+use crate::prelude::*;
 
 /// As defined in [the URL spec](https://url.spec.whatwg.org/#percent-encoded-bytes).
 pub const FRAGMENT_PERCENT_ENCODE_SET             : AsciiSet = percent_encoding::CONTROLS  .add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');

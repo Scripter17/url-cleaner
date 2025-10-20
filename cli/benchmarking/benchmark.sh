@@ -11,7 +11,9 @@ if [ -t 0 ]; then
 else
   URLS=( )
 fi
-NUMS=( 0 1 10 100 1000 10000 )
+HYPERFINE_NUMS=( 0 1 10 100 1000 10000 )
+CALLGRIND_NUMS=( 0 1 10 100 1000 10000 )
+MASSIF_NUMS=( 0 1 10 100 1000 10000 )
 
 if ls | grep -qF '.out'; then
   rm *.out*
@@ -37,25 +39,28 @@ out="benchmarks-$(date +%s).tar.gz"
 for arg in "$@"; do
   shift
   case "$arg" in
-    --no-compile)       mode=                ; compile=0                          ;;
-    --only-compile)     mode=                ; hyperfine=0; callgrind=0; massif=0 ;;
-    --features)         mode=features                                             ;;
+    --no-compile)       mode=                ; compile=0                                              ;;
+    --only-compile)     mode=                ; hyperfine=0; callgrind=0; massif=0                     ;;
+    --features)         mode=features                                                                 ;;
 
-    --cleaner)          mode=cleaner                                              ;;
+    --cleaner)          mode=cleaner                                                                  ;;
 
-    --all)              mode=                ; hyperfine=1; callgrind=1; massif=1 ;;
-    --no-hyperfine)     mode=                ; hyperfine=0                        ;;
-    --warmup)           mode=warmup                                               ;;
-    --runs)             mode=runs                                                 ;;
-    --ignore-failure)   mode=                ; ignore_failure=--ignore-failure    ;;
+    --all)              mode=                ; hyperfine=1; callgrind=1; massif=1                     ;;
+    --no-hyperfine)     mode=                ; hyperfine=0                                            ;;
+    --warmup)           mode=warmup                                                                   ;;
+    --runs)             mode=runs                                                                     ;;
+    --ignore-failure)   mode=                ; ignore_failure=--ignore-failure                        ;;
 
-    --callgrind)        mode=                ; callgrind=1                        ;;
-    --massif)           mode=                ; massif=1                           ;;
+    --callgrind)        mode=                ; callgrind=1                                            ;;
+    --massif)           mode=                ; massif=1                                               ;;
 
-    --urls)             mode=urls            ; URLS=( )                           ;;
-    --nums)             mode=nums            ; NUMS=( )                           ;;
+    --urls)             mode=urls            ; URLS=( )                                               ;;
+    --nums)             mode=nums            ; HYPERFINE_NUMS=( ); CALLGRIND_NUMS=( ); MASSIF_NUMS=( );;
+    --hyperfine-nums)   mode=hyperfine-nums  ; HYPERFINE_NUMS=( )                                     ;;
+    --callgrind-nums)   mode=callgrind-nums  ; CALLGRIND_NUMS=( )                                     ;;
+    --massif-nums)      mode=massif-nums     ; MASSIF_NUMS=( )                                        ;;
 
-    --out)              mode=out                                                  ;;
+    --out)              mode=out                                                                      ;;
 
     --)                 break ;;
     --*)                echo Unknown option \"$arg\"; exit 1 ;;
@@ -66,7 +71,10 @@ for arg in "$@"; do
       cleaner)  cleaner="$arg" ;;
 
       urls)     URLS=( "${URLS[@]}" "$arg" ) ;;
-      nums)     NUMS=( "${NUMS[@]}" "$arg" ) ;;
+      nums)     HYPERFINE_NUMS=( "${HYPERFINE_NUMS[@]}" "$arg" ); CALLGRIND_NUMS=( "${CALLGRIND_NUMS[@]}" "$arg" ); MASSIF_NUMS=( "${MASSIF_NUMS[@]}" "$arg" ) ;;
+      hyperfine-nums) HYPERFINE_NUMS=( "${HYPERFINE_NUMS[@]}" "$arg" ) ;;
+      callgrind-nums) CALLGRIND_NUMS=( "${CALLGRIND_NUMS[@]}" "$arg" ) ;;
+      massif-nums)    MASSIF_NUMS=(    "${MASSIF_NUMS[@]}"    "$arg" ) ;;
 
       warmup)   warmup="$arg" ;;
       runs)     runs="$arg" ;;
@@ -101,7 +109,7 @@ if [ $hyperfine -eq 1 ]; then
   touch stdin
   hyperfine \
     --command-name ""\
-    -L num $(IFS=, ; echo "${NUMS[*]}") \
+    -L num $(IFS=, ; echo "${HYPERFINE_NUMS[*]}") \
     -L url $(IFS=, ; echo "${URLS[*]}") \
     --prepare "bash -c \"yes '{url}' | head -n {num} > stdin\"" \
     --warmup $warmup \
@@ -129,13 +137,31 @@ if [ $hyperfine -eq 1 ]; then
     bat -ppl json
 fi
 
-for url in "${URLS[@]}"; do
-  file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
-  for num in "${NUMS[@]}"; do
-    if [ $callgrind -eq 1 ]; then echo "Callgrind - $num - $url"; yes "$url" | head -n $num | valgrind --tool=callgrind --separate-threads=yes     --callgrind-out-file="callgrind.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null; fi
-    if [ $massif    -eq 1 ]; then echo "Massif    - $num - $url"; yes "$url" | head -n $num | valgrind --tool=massif    --scheduling-quantum=10000 --massif-out-file="massif.out-$file_safe_url-$num-%p"       $COMMAND &> /dev/null; fi
+if [ $callgrind -eq 1 ]; then
+  echo "Callgrind"
+  for url in "${URLS[@]}"; do
+    echo " $url"
+    echo -n "  "
+    file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
+    for num in "${CALLGRIND_NUMS[@]}"; do
+      echo -n "$num "
+      yes "$url" | head -n $num | valgrind --tool=callgrind --separate-threads=yes --callgrind-out-file="callgrind.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null
+    done
   done
-done
+fi
+
+if [ $massif -eq 1 ]; then
+  echo "Massif"
+  for url in "${URLS[@]}"; do
+    echo " $url"
+    file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
+    for num in "${MASSIF_NUMS[@]}"; do
+      echo -n "  $num: "
+      yes "$url" | head -n $num | valgrind --tool=massif --massif-out-file="massif.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null
+      grep mem_heap_B "$(ls -t | grep '^massif\.out-' | head -n 1)" | grep -oP '\d+' | sort -V | tail -n 1 | sed -E ':a s/([0-9])([0-9][0-9][0-9])\b/\1,\2/; ta'
+    done
+  done
+fi
 
 if ls | grep -qF '.out'; then
   tar -czf $out *.out*

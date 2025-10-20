@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 
-use crate::util::*;
+use crate::prelude::*;
 
 /// The path of a cache database.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
@@ -31,13 +31,17 @@ impl CachePath {
     /// use url_cleaner_engine::glue::prelude::*;
     ///
     /// assert_eq!(CachePath::Memory                          .as_str(), ":memory:");
+    /// assert_eq!(CachePath::Path(         ":memory:".into()).as_str(), "file://:memory:");
     /// assert_eq!(CachePath::Path(       "abc.sqlite".into()).as_str(), "abc.sqlite");
     /// assert_eq!(CachePath::Path("file://abc.sqlite".into()).as_str(), "file://abc.sqlite");
     /// ```
     pub fn as_str(&self) -> &str {
         match self {
             Self::Memory => ":memory:",
-            Self::Path(x) => x
+            Self::Path(x) => match &**x {
+                ":memory:" => "file://:memory:",
+                _ => x
+            }
         }
     }
 }

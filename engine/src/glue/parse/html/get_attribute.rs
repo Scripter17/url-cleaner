@@ -4,7 +4,7 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use super::*;
-use crate::util::*;
+use crate::prelude::*;
 
 /// The enum of errors that can be encountered when failing to parse an HTML element.
 #[derive(Debug, Error, Clone, Copy)]

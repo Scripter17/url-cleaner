@@ -1,176 +1,156 @@
-//! Rules for how to make a [`reqwest::blocking::Client`].
+//! [`HttpClient`].
 
-use std::collections::HashSet;
+use std::sync::OnceLock;
 
-use serde::{Serialize, Deserialize};
-#[cfg(feature = "http")]
-use reqwest::header::HeaderMap;
+use url::Url;
+use thiserror::Error;
+use reqwest::{Proxy, header::{HeaderName, HeaderValue}};
 
-#[expect(unused_imports, reason = "Used in docs.")]
-use crate::types::*;
-use crate::glue::prelude::*;
-use crate::util::*;
+use crate::prelude::*;
 
-/// Rules for how to make a [`reqwest::blocking::Client`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-#[serde(deny_unknown_fields)]
-pub struct HttpClientConfig {
-    /// The headers to send by default.
-    #[serde(default, skip_serializing_if = "is_default", with = "serde_glue::header_map")]
-    pub default_headers: HeaderMap,
-    /// The redirect policy.
-    ///
-    /// Somewhat nuanced so check [`RedirectPolicy`]'s docs.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub redirect_policy: RedirectPolicy,
-    /// The value passed to [`reqwest::blocking::ClientBuilder::https_only`].
-    ///
-    /// Defaults to [`false`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub https_only: bool,
-    /// The value passed to [`reqwest::blocking::ClientBuilder::referer`].
-    ///
-    /// Defaults to [`false`] and frankly there's no legitimate reason for the header to exist or for you to turn it on.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub referer: bool,
-    /// Proxies to use.
-    ///
-    /// All proxies supported by [`reqwest`] should always be supported, but if I missed anything let me know.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub proxies: Vec<ProxyConfig>,
-    /// The value passed to [`reqwest::blocking::ClientBuilder::no_proxy`].
-    ///
-    /// Defaults to [`false`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub no_proxy: bool,
-    /// Extra PEM encoded TLS certificates to trust.
-    ///
-    /// See [`reqwest::blocking::ClientBuilder::add_root_certificate`] and [`reqwest::tls::Certificate::from_pem`] for details.
-    ///
-    /// Defaults to an empty list.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub extra_root_certificates: HashSet<String>
+/// A thin wrapper around [`reqwest::blocking::Client`] to allow `&Default::default` to give sensible defaults.
+///
+/// Specifically:
+///
+/// 1. Header `User-Agent` set to `Firefox`.
+/// 2. Header `Sec-Gpc` set to `1`.
+/// 3. Header `Dnt` set to `1`.
+/// 4. [`reqwest::blocking::ClientBuilder::redirect`] set to [`reqwest::redirect::Policy::none`].
+/// 5. [`reqwest::blocking::ClientBuilder::referer`] set to [`false`].
+///
+/// [`HttpClient`] implements [`From`] for [`reqwest::blocking::Client`] to allow more advanced usage.
+#[derive(Debug, Clone)]
+pub struct HttpClient {
+    /// The lazily made [`reqwest::blocking::Client`].
+    client: OnceLock<reqwest::blocking::Client>,
+    /// The [`Proxy`]s to use.
+    proxies: Vec<Proxy>
 }
 
-/// The policy on how to handle [HTTP redirects](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections).
-///
-/// Defaults to [`Self::Limited`] with a value of `10`, as that's what reqwest does.
-///
-/// For the default config (and all real use) it's recommended to use [`Self::None`] in a [`Action::Repeat`].
-///
-/// That has the added benefit of not sending a request to the final URL.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-#[serde(deny_unknown_fields)]
-pub enum RedirectPolicy {
-    /// If a request encounters [`Self::Limited::0`] redirects, the entire request fails.
-    ///
-    /// So if your policy is `RedirectPolicy::Limited(0)`, any redirects at all will return an error.
-    Limited(usize),
-    /// Don't follow redirects and instead return the page doing the redirecting.
-    None
-}
-
-impl Default for RedirectPolicy {
-    /// [`Self::Limited`] with a value of `10`, as that's what reqwest does.
-    fn default() -> Self {
-        Self::Limited(10)
-    }
-}
-
-impl From<RedirectPolicy> for reqwest::redirect::Policy {
-    fn from(value: RedirectPolicy) -> Self {
-        match value {
-            RedirectPolicy::Limited(x) => Self::limited(x),
-            RedirectPolicy::None => Self::none()
+impl HttpClient {
+    /// Make a new [`HttpClient`], optionally with proxies.
+    pub fn new(proxies: Vec<reqwest::Proxy>) -> Self {
+        Self {
+            client: OnceLock::new(),
+            proxies
         }
     }
-}
 
-impl HttpClientConfig {
-    /// Makes a [`reqwest::blocking::Client`].
+    /// Gets the compiled [`reqwest::blocking::Client`] or, if it hasn't been compiled. compiles it.
     /// # Errors
-    /// If a call to [`ProxyConfig::make`] returns an error, that error is returned.
-    ///
-    /// If the call to [`reqwest::blocking::ClientBuilder::build`] returns an error, that error is returned.
-    pub fn make(&self) -> reqwest::Result<reqwest::blocking::Client> {
-        let mut temp = reqwest::blocking::Client::builder().default_headers(self.default_headers.clone())
-            .redirect(self.redirect_policy.clone().into())
-            .https_only(self.https_only)
-            .referer(self.referer);
-        for proxy in &self.proxies {
-            temp = temp.proxy(proxy.clone().make()?);
+    #[doc = edoc!(callerr(reqwest::blocking::ClientBuilder::build))]
+    pub fn get(&self) -> Result<&reqwest::blocking::Client, reqwest::Error> {
+        debug!(HttpClient::get_response, self);
+        if let Some(client) = self.client.get() {
+            Ok(client)
+        } else {
+            let mut temp = reqwest::blocking::Client::builder().default_headers([
+    		    (HeaderName::from_static("user-agent"), HeaderValue::from_static("Firefox")),
+    		    (HeaderName::from_static("sec-gpc"   ), HeaderValue::from_static("1"      )),
+    		    (HeaderName::from_static("dnt"       ), HeaderValue::from_static("1"      ))
+            ].into_iter().collect())
+                .redirect(reqwest::redirect::Policy::none())
+                .referer(false);
+            for proxy in self.proxies.clone() {
+                temp = temp.proxy(proxy);
+            }
+            let ret = temp.build()?;
+            Ok(self.client.get_or_init(|| ret))
         }
-        if self.no_proxy {temp = temp.no_proxy();}
-        for cert in &self.extra_root_certificates {
-            temp = temp.add_root_certificate(reqwest::tls::Certificate::from_pem(cert.as_bytes())?);
+    }
+
+    /// Send a [`HttpRequestConfig`] and return the response.
+    /// # Errors
+    #[doc = edoc!(geterr(Self), geterr(StringSource), getnone(StringSource, DoHttpRequestError), callerr(HeaderName::try_from, 3), callerr(HeaderValue::try_from, 3), callerr(HttpRequestBodyConfig::apply), callerr(reqwest::blocking::RequestBuilder::send))]
+    pub fn get_response(&self, config: HttpRequestConfig, task_state: &TaskStateView) -> Result<reqwest::blocking::Response, DoHttpRequestError> {
+        debug!(HttpClient::get_response, self, config, task_state.debug_helper());
+        let mut req = self.get()?.request(
+            get_str!(config.method, task_state, DoHttpRequestError).parse()?,
+            Url::parse(get_str!(config.url, task_state, DoHttpRequestError))?,
+        );
+        for (name, value) in config.headers.iter() {
+            if let Some(value) = value.get(task_state)? {
+                req = req.header(HeaderName::try_from(name)?, HeaderValue::try_from(value.into_owned())?);
+            }
         }
-        temp.build()
+        if let Some(body) = &config.body {
+            req = body.apply(req, task_state)?;
+        }
+        Ok(req.send()?)
     }
 }
 
-/// Rules for updating a [`HttpClientConfig`].
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, Suitability)]
-#[serde(deny_unknown_fields)]
-pub struct HttpClientConfigDiff {
-    /// If [`Some`], overwrites [`HttpClientConfig::redirect_policy`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub redirect_policy: Option<RedirectPolicy>,
-    /// Appends each header into [`HttpClientConfig::default_headers`].
-    #[serde(default, skip_serializing_if = "is_default", with = "serde_glue::header_map")]
-    pub add_default_headers: HeaderMap,
-    /// If [`Some`], overwrites [`HttpClientConfig::https_only`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub https_only: Option<bool>,
-    /// If [`Some`], overwrites [`HttpClientConfig::proxies`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub set_proxies: Option<Vec<ProxyConfig>>,
-    /// Appends each [`ProxyConfig`] to [`HttpClientConfig::proxies`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub add_proxies: Vec<ProxyConfig>,
-    /// If [`Some`], overwrites [`HttpClientConfig::no_proxy`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub no_proxy: Option<bool>,
-    /// If [`Some`], overwrites [`HttpClientConfig::referer`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub referer: Option<bool>,
-    /// Adds to [`HttpClientConfig::extra_root_certificates`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub add_extra_root_certificates: HashSet<String>,
-    /// Removes from [`HttpClientConfig::extra_root_certificates`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub remove_extra_root_certificates: HashSet<String>
+impl Default for HttpClient {
+    fn default() -> Self {
+        Self::new(Vec::new())
+    }
 }
 
-impl HttpClientConfigDiff {
-    /// Applies the diff.
-    ///
-    /// If you want to apply `self` multiple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then using [`Self::apply_once`] on each clone.
-    pub fn apply_once(self, to: &mut HttpClientConfig) {
-        debug!(HttpClientConfigDiff::apply_once, &self, to);
-        if let Some(new_redirect_policy) = self.redirect_policy {to.redirect_policy = new_redirect_policy;}
-        to.default_headers.extend(self.add_default_headers);
-        if let Some(https_only) = self.https_only {to.https_only = https_only;}
-        if let Some(set_proxies) = self.set_proxies {to.proxies = set_proxies;}
-        to.proxies.extend(self.add_proxies);
-        if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
-        if let Some(referer) = self.referer {to.no_proxy = referer;}
-        to.extra_root_certificates.extend(self.add_extra_root_certificates);
-        to.extra_root_certificates.retain(|extra_root_certificate| !self.remove_extra_root_certificates.contains(extra_root_certificate));
+impl From<reqwest::blocking::Client> for HttpClient {
+    fn from(value: reqwest::blocking::Client) -> Self {
+        Self {
+            client: value.into(),
+            proxies: Vec::new()
+        }
     }
+}
 
-    /// Applies the diff.
-    ///
-    /// If you only want to apply `self` once, use [`Self::apply_once`].
-    pub fn apply_multiple(&self, to: &mut HttpClientConfig) {
-        debug!(HttpClientConfigDiff::apply_multiple, self, to);
-        if let Some(new_redirect_policy) = &self.redirect_policy {to.redirect_policy = new_redirect_policy.clone();}
-        to.default_headers.extend(self.add_default_headers.clone());
-        if let Some(https_only) = self.https_only {to.https_only = https_only;}
-        if let Some(set_proxies) = &self.set_proxies {to.proxies.clone_from(set_proxies);}
-        to.proxies.extend(self.add_proxies.clone());
-        if let Some(no_proxy) = self.no_proxy {to.no_proxy = no_proxy;}
-        if let Some(referer) = self.referer {to.no_proxy = referer;}
-        to.extra_root_certificates.extend(self.add_extra_root_certificates.clone());
-        to.extra_root_certificates.retain(|extra_root_certificate| !self.remove_extra_root_certificates.contains(extra_root_certificate));
+impl TryFrom<HttpClient> for reqwest::blocking::Client {
+    type Error = reqwest::Error;
+
+    fn try_from(value: HttpClient) -> Result<Self, Self::Error> {
+        if let Some(x) = value.client.into_inner() {
+            Ok(x)
+        } else {
+            let mut temp = reqwest::blocking::Client::builder().default_headers([
+    		    (HeaderName::from_static("user-agent"), HeaderValue::from_static("Firefox")),
+    		    (HeaderName::from_static("sec-gpc"   ), HeaderValue::from_static("1"      )),
+    		    (HeaderName::from_static("dnt"       ), HeaderValue::from_static("1"      ))
+            ].into_iter().collect())
+                .redirect(reqwest::redirect::Policy::none())
+                .referer(false);
+            for proxy in value.proxies {
+                temp = temp.proxy(proxy);
+            }
+            temp.build()
+        }
+    }
+}
+
+/// The enum of errors [`HttpClient::get_response`] can return.
+#[derive(Debug, Error)]
+pub enum DoHttpRequestError {
+    /// Returned when a [`reqwest::Error`] is encountered.
+    #[error(transparent)]
+    ReqwestError(#[from] reqwest::Error),
+    /// Returned when a [`ApplyRequestBodyError`] is encountered.
+    #[error(transparent)]
+    ApplyRequestBodyError(#[from] ApplyRequestBodyError),
+    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to return [`Some`].
+    #[error("A StringSource was None where it had to be Some.")]
+    StringSourceIsNone,
+    /// Returned when a [`StringSourceError`] is encountered.
+    #[error(transparent)]
+    StringSourceError(#[from] Box<StringSourceError>),
+    /// Returned when a [`url::ParseError`] is encountered.
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`ResponseHandlerError`] is encountered.
+    #[error(transparent)]
+    ResponseHandlerError(#[from] ResponseHandlerError),
+    /// Returned when a [`http::method::InvalidMethod`] is encountered.
+    #[error(transparent)]
+    InvalidMethod(#[from] http::method::InvalidMethod),
+    /// Returned when a [`reqwest::header::InvalidHeaderName`] is encountered.
+    #[error(transparent)]
+    InvalidHeaderName(#[from] reqwest::header::InvalidHeaderName),
+    /// Returned when a [`reqwest::header::InvalidHeaderValue`] is encountered.
+    #[error(transparent)]
+    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue)
+}
+
+impl From<StringSourceError> for DoHttpRequestError {
+    fn from(value: StringSourceError) -> Self {
+        Self::StringSourceError(value.into())
     }
 }

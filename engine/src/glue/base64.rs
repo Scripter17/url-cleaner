@@ -3,7 +3,7 @@
 use serde::{Serialize, Deserialize};
 use base64::{engine::{general_purpose::GeneralPurpose, GeneralPurposeConfig, DecodePaddingMode}, alphabet::Alphabet};
 
-use crate::util::*;
+use crate::prelude::*;
 
 /// The config for how to encode and decode base64 text.
 /// # Examples

@@ -15,7 +15,7 @@ COMPILE=1
 for arg in "$@"; do
   case "$mode" in
     "") case "$arg" in
-      --no-compile) COMPILE=0 ; CLIARGS=( "${CLIARGS[@]}" --no-compile ) ; SITEARGS=( "${SITEARGS[@]}" --no-compile ) ;;
+      --no-compile) COMPILE=0 ;;
       --only-compile) CLI=0 ; SITE=0 ;;
 
       --all-args) mode=all ;;

@@ -1,3 +1,9 @@
+//! Benchmarking stuff.
+
+#![allow(clippy::unwrap_used, reason = "Who cares?")]
+#![allow(missing_docs, reason = "Who cares?")]
+#![allow(clippy::missing_docs_in_private_items, reason = "Who cares?")]
+
 macro_rules! group {
     ($name:ident, $($targets:path),+) => {
         pub fn $name(c: &mut criterion::Criterion) {

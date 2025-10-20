@@ -1,10 +1,4 @@
-use std::hint::black_box;
-use criterion::Criterion;
-
 use crate::*;
-
-use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::prelude::*;
 
 group!(caching, rwr);
 
@@ -24,20 +18,20 @@ fn rwr(c: &mut Criterion) {
                 c.bench_function(
                     &format!("CacheHandle::read ({pass}) (empty): {subject:?}, {key:?}"),
                     |b| b.iter(
-                        || handle.read(black_box(CacheEntryKeys {subject, key}))
+                        || handle.read(bb(CacheEntryKeys {subject, key}))
                     )
                 );
                 for value in VALUES {
                     c.bench_function(
                         &format!("CacheHandle::write ({pass}): {subject:?}, {key:?}, {value:?}"),
                         |b| b.iter(
-                            || handle.write(black_box(NewCacheEntry {subject, key, value, duration: Default::default()}))
+                            || handle.write(bb(NewCacheEntry {subject, key, value, duration: Default::default()}))
                         )
                     );
                     c.bench_function(
                         &format!("CacheHandle::read ({pass}) ({value:?}): {subject:?}, {key:?}"),
                         |b| b.iter(
-                            || handle.read(black_box(CacheEntryKeys {subject, key}))
+                            || handle.read(bb(CacheEntryKeys {subject, key}))
                         )
                     );
                 }

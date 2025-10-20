@@ -6,8 +6,7 @@ use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
 
-use crate::types::*;
-use crate::util::*;
+use crate::prelude::*;
 
 /// Rules for making a [`serde_json::Value`] using [`StringSource`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]

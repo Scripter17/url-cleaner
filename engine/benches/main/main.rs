@@ -1,6 +1,19 @@
 //! Benchmarking stuff.
 
-const DOMAIN_HOSTS: [&'static str; 12] = [
+#![allow(clippy::unwrap_used, reason = "Who cares?")]
+#![allow(missing_docs, reason = "Who cares?")]
+#![allow(clippy::missing_docs_in_private_items, reason = "Who cares?")]
+
+pub(crate) use std::hint::black_box as bb;
+pub(crate) use std::io::Read;
+pub(crate) use std::fs::{read_to_string, File};
+
+pub(crate) use url::Host;
+pub(crate) use criterion::Criterion;
+
+pub(crate) use url_cleaner_engine::prelude::*;
+
+const DOMAIN_HOSTS: [&str; 12] = [
     "example.com",
     "example.com.",
     "example.co.uk",
@@ -15,7 +28,7 @@ const DOMAIN_HOSTS: [&'static str; 12] = [
     "abc.www.example.co.uk."
 ];
 
-const IP_HOSTS: [&'static str; 4] = [
+const IP_HOSTS: [&str; 4] = [
     "127.0.0.1",
     "1.1.1.1",
     "255.255.255.255",
@@ -23,22 +36,22 @@ const IP_HOSTS: [&'static str; 4] = [
 ];
 
 macro_rules! group {
-    ($name:ident, $($targets:path),+) => {
+    ($name:ident, $($(#[$a:meta])? $targets:path),+) => {
         pub fn $name(c: &mut criterion::Criterion) {
-            $($targets(c);)+
+            $($(#[$a])? $targets(c);)+
         }
     }
 }
 pub(crate) use group;
 macro_rules! group_mods {
-    ($name:ident, $($mods:ident),+) => {
-        $(mod $mods;)+
-        group!($name, $($mods::$mods),+);
+    ($name:ident, $($(#[$a:meta])? $mods:ident),+) => {
+        $($(#[$a])? mod $mods;)+
+        group!($name, $($(#[$a])? $mods::$mods),+);
     }
 }
 pub(crate) use group_mods;
 
-group_mods!(all, better_url, default_cleaner, host_details, caching);
+group_mods!(all, better_url, default_cleaner, host_details, #[cfg(feature = "cache")] caching);
 
 fn main() {
     let mut c = criterion::Criterion::default()

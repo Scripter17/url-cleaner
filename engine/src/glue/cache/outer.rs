@@ -3,7 +3,7 @@
 use std::cell::RefCell;
 use parking_lot::ReentrantMutex;
 
-use super::*;
+use crate::prelude::*;
 
 /// A shareable [`InnerCache`].
 /// # Examples
@@ -24,21 +24,14 @@ pub struct Cache(pub ReentrantMutex<RefCell<InnerCache>>);
 
 impl Cache {
     /// Create a new unconnected [`Self`].
-    #[allow(dead_code, reason = "Public API.")]
-    pub fn new(path: CachePath) -> Self {
-        path.into()
+    pub fn new<T: Into<InnerCache>>(path: T) -> Self {
+        path.into().into()
     }
 }
 
-impl From<InnerCache> for Cache {
-    fn from(value: InnerCache) -> Self {
-        Self(ReentrantMutex::new(RefCell::new(value)))
-    }
-}
-
-impl From<CachePath> for Cache {
-    fn from(value: CachePath) -> Self {
-        Cache::from(InnerCache::from(value))
+impl<T: Into<InnerCache>> From<T> for Cache {
+    fn from(value: T) -> Self {
+        Cache(ReentrantMutex::new(RefCell::new(value.into())))
     }
 }
 

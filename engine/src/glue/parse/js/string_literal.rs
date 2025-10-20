@@ -3,7 +3,7 @@
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use crate::util::*;
+use crate::prelude::*;
 
 /// The last state of the state machine used to unescape javascript string literal prefixes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

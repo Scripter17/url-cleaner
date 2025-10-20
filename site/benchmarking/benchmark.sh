@@ -11,7 +11,8 @@ if [ -t 0 ]; then
 else
   URLS=( )
 fi
-NUMS=( 0 1 10 100 1000 10000 )
+HYPERFINE_NUMS=( 0 1 10 100 1000 10000 )
+OHA_NUMS=( 0 1 10 100 1000 10000 )
 SERVERS=( http://127.0.0.1:9149 )
 
 if ls | grep -qF '.out'; then
@@ -37,43 +38,47 @@ out="benchmarks-$(date +%s).tar.gz"
 for arg in "$@"; do
   shift
   case "$arg" in
-    --no-compile)         mode=         ; compile=0                        ;;
-    --only-compile)       mode=         ; hyperfine=0                      ;;
-    --features)           mode=features                                    ;;
-    --no-confirm-restart) mode=         ; confirm_restart=0                ;;
+    --no-compile)         mode=              ; compile=0                        ;;
+    --only-compile)       mode=              ; hyperfine=0                      ;;
+    --features)           mode=features                                         ;;
+    --no-confirm-restart) mode=              ; confirm_restart=0                ;;
 
-    --https)              mode=         ; server="${server/#http:/https:}" ;;
-    --servers)            mode=servers  ; SERVERS=( )                      ;;
+    --https)              mode=              ; server="${server/#http:/https:}" ;;
+    --servers)            mode=servers       ; SERVERS=( )                      ;;
 
-    --all)                mode=         ; hyperfine=1                      ;;
-    --no-hyperfine)       mode=         ; hyperfine=0                      ;;
-    --oha)                                 oha=1                           ;;
-    --warmup)             mode=warmup                                      ;;
-    --runs)               mode=runs                                        ;;
-    --ignore-failure)     mode=         ; ignore_failure=--ignore-failure  ;;
+    --all)                mode=              ; hyperfine=1                      ;;
+    --no-hyperfine)       mode=              ; hyperfine=0                      ;;
+    --oha)                oha=1                                                 ;;
+    --warmup)             mode=warmup                                           ;;
+    --runs)               mode=runs                                             ;;
+    --ignore-failure)     mode=              ; ignore_failure=--ignore-failure  ;;
 
-    --urls)               mode=urls     ; URLS=( )                         ;;
-    --nums)               mode=nums     ; NUMS=( )                         ;;
+    --urls)               mode=urls          ; URLS=( )                         ;;
+    --nums)               mode=nums          ; HYPERFINE_NUMS=( ); OHA_NUMS=( ) ;;
+    --hyperfine-nums)     mode=hyperfine-nums; HYPERFINE_NUMS=( )               ;;
+    --oha-nums)           mode=oha-nums      ; OHA_NUMS=( )                     ;;
 
-    --out)                mode=out                                         ;;
+    --out)                mode=out                                              ;;
 
     --)                   break ;;
     --*)                  echo Unknown option \"$arg\"; exit 1 ;;
 
     *) case "$mode" in
-      features) features=(--features "$arg") ;;
+      features)       features=(--features "$arg") ;;
 
-      servers)  SERVERS=( "${SERVERS[@]}" "$arg" ) ;;
+      servers)        SERVERS=( "${SERVERS[@]}" "$arg" ) ;;
 
-      urls)     URLS=( "${URLS[@]}" "$arg" ) ;;
-      nums)     NUMS=( "${NUMS[@]}" "$arg" ) ;;
+      urls)           URLS=( "${URLS[@]}" "$arg" ) ;;
+      nums)           HYPERFINE_NUMS=( "${HYPERFINE_NUMS[@]}" "$arg" ); OHA_NUMS=( "${OHA_NUMS[@]}" "$arg" ) ;;
+      hyperfine-nums) HYPERFINE_NUMS=( "${HYPERFINE_NUMS[@]}" "$arg" )                                       ;;
+      oha-nums)       OHA_NUMS=( "${OHA_NUMS[@]}" "$arg" )                                                   ;;
 
-      warmup)   warmup="$arg" ;;
-      runs)     runs="$arg" ;;
+      warmup)         warmup="$arg" ;;
+      runs)           runs="$arg" ;;
 
-      out)      out="$arg" ;;
+      out)            out="$arg" ;;
 
-      "")       echo "Modal argument without mode"; exit 1 ;;
+      "")             echo "Modal argument without mode"; exit 1 ;;
     esac
   esac
 done
@@ -86,6 +91,8 @@ fi
 if [  $hyperfine -eq 1 ] && ! which -s hyperfine; then echo 'Hyperfine not found; Please run `cargo install hyperfine`.'                         ; exit 2; fi
 if [  $hyperfine -eq 1 ] && ! which -s jq       ; then echo 'Jq not found; Please install it. Also please learn it it'"'"'s a really handy tool.'; exit 2; fi
 if [  $hyperfine -eq 1 ] && ! which -s bat      ; then echo 'Bat not found; Please run `cargo install bat`.'                                     ; exit 2; fi
+if [  $oha       -eq 1 ] && ! which -s oha      ; then echo 'oha not found; Please run `cargo install oha`.'                                     ; exit 2; fi
+if [  $oha       -eq 1 ] && ! which -s jq       ; then echo 'Jq not found; Please install it. Also please learn it it'"'"'s a really handy tool.'; exit 2; fi
 
 if [ $compile -eq 1 -a $hyperfine -eq 1 ]; then
   if [ -e ../../target/release/url-cleaner-site ]; then
@@ -118,7 +125,7 @@ for server in "${SERVERS[@]}"; do
     touch stdin
     hyperfine \
       --command-name ""\
-      -L num $(IFS=, ; echo "${NUMS[*]}") \
+      -L num $(IFS=, ; echo "${HYPERFINE_NUMS[*]}") \
       -L url $(IFS=, ; echo "${URLS[*]}") \
       --prepare "bash -c \"yes '{url}' | head -n {num} | jq -Rsc '{tasks: split(\\\"\n\\\")[:-1]}' > stdin\"" \
       --warmup $warmup \
@@ -153,7 +160,7 @@ for server in "${SERVERS[@]}"; do
       echo "  $url"
       file_safe_url=$(echo $url | head -c 50 | sed "s/\//-/g")
       echo -n "   "
-      for num in "${NUMS[@]}"; do
+      for num in "${OHA_NUMS[@]}"; do
         echo -n "$num,"
         yes "$url" | head -n $num | jq -Rsc '{tasks: split("\n")[:-1]}' > stdin
         out_summary=$(

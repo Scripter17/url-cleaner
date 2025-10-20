@@ -1,9 +1,4 @@
-use std::hint::black_box;
-use criterion::Criterion;
-
-use super::*;
-
-use url_cleaner_engine::types::*;
+use crate::*;
 
 macro_rules! bounds {
     ($($funcs:ident),+) => {
@@ -14,7 +9,7 @@ macro_rules! bounds {
                     let domain_details = DomainDetails::parse(host).unwrap();
                     c.bench_function(
                         &format!("DomainDetails::{}(): {domain_details:?}", stringify!($funcs)),
-                        |b| b.iter(|| black_box(domain_details).$funcs())
+                        |b| b.iter(|| bb(domain_details).$funcs())
                     );
                 }
             }

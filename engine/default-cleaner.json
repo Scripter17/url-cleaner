@@ -178,22 +178,23 @@
 
 			"rd_www_subdomain": {
 				"ensure": [
-					"1688.com", "9news.com.au", "acer.com", "alibaba.com", "amtrak.com", "apple.co", "apple.com", "atom.bio", "bbc.com", "bell.ca", "boycat.io",
+					"1688.com", "9news.com.au", "acer.com", "alibaba.com", "amtrak.com", "apple.co", "apple.com", "atom.bio", "bbc.com", "bell.ca", "boot.dev", "boycat.io",
 					"browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com", "crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "entripy.com",
 					"facebook.com", "fandom.com", "fiverr.com", "flyac.ca", "furaffinity.net", "go.com", "gofundme.com", "goodreads.com", "history.com", "hp.com", "hulu.com",
 					"iana.org", "icloud.com", "instagram.com", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com", "mediafire.com", "minds.com", "mondly.com",
-					"mozilla.org", "nature.com", "ndw.jp", "nytimes.com", "patreon.com", "pcoptimum.ca", "phoronix.com", "pixiv.net", "razer.com", "reddit.com", "shareasale.com",
-					"shorturl.at", "snapchat.com", "spotify.com", "sub2get.com", "teepublic.com", "theguardian.com", "threads.com", "tiktok.com", "torproject.org", "trib.al",
-					"tribler.org", "tumblr.com", "twitch.tv", "unlock.com", "washingtonpost.com", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
+					"mozilla.org", "nature.com", "ndw.jp", "nytimes.com", "obo.de", "patreon.com", "pcoptimum.ca", "phoronix.com", "pixiv.net", "razer.com", "reddit.com",
+					"shareasale.com", "shorturl.at", "snapchat.com", "spotify.com", "sub2get.com", "teepublic.com", "theguardian.com", "threads.com", "tiktok.com",
+					"torproject.org", "trib.al", "tribler.org", "tumblr.com", "twitch.tv", "unlock.com", "washingtonpost.com", "wsj.com", "xiaohongshu.com", "xp-pen.com",
+					"yahoo.com", "youtube.com"
 				],
 				"remove": [
 					"a.co", "adfoc.us", "antifandom.com", "apexgamingpcs.com", "bambulab.com", "beacons.ai", "bit.ly", "bitly.com", "bityl.co", "boost.ink", "boosty.to",
 					"booth.pm", "breezewiki.com", "buymeacoffee.com", "bw.artemislena.eu", "bw.hamstro.dev", "carleton.ca", "carrd.co", "carrd.com", "cash.app", "cutt.ly",
 					"dis.gd", "drinkctrl.com", "drive.google.com", "duckduckgo.com", "fansly.com", "flip.it", "g.co", "gelbooru.com", "gum.co", "href.li", "inkbunny.net",
-					"invidious.nerdvpn.de", "linktr.ee", "lmddgtfy.net", "lmgtfy2.com", "loom.ly", "mboost.me", "metafy.gg", "nitter.net", "nitter.tiekoetter.com", "qudsnen.co",
-					"shor.tf", "sketchfab.com", "smartadserver.com", "socialwolvez.com", "stackoverflow.com", "steamcommunity.com", "sub2unlock.io", "sub4unlock.io",
-					"subscribestar.adult", "substack.com", "supernote.com", "support.google.com", "thangs.com", "theonion.com", "throne.com", "tinyurl.com", "t.ly", "toyhou.se",
-					"twitter.com", "unes.co", "visitlink.me", "vk.com", "xcancel.com", "yewtu.be", "zionism.observer", "z.opnxng.com"
+					"invidious.nerdvpn.de", "linktr.ee", "lmddgtfy.net", "lmgtfy2.com", "loom.ly", "mboost.me", "melscience.com", "metafy.gg", "nitter.net",
+					"nitter.tiekoetter.com", "qudsnen.co", "shor.tf", "sketchfab.com", "smartadserver.com", "socialwolvez.com", "stackoverflow.com", "steamcommunity.com",
+					"sub2unlock.io", "sub4unlock.io", "subscribestar.adult", "substack.com", "supernote.com", "support.google.com", "thangs.com", "theonion.com", "throne.com",
+					"tinyurl.com", "t.ly", "toyhou.se", "twitter.com", "unes.co", "visitlink.me", "vk.com", "xcancel.com", "yewtu.be", "zionism.observer", "z.opnxng.com"
 				]
 			},
 			"dm_www_subdomain": {
@@ -220,21 +221,22 @@
 				"redirect": [
 					"2kgam.es", "4.nbcla.com", "a.aliexpress.com", "abc7.la", "abc7ne.ws", "abcnews.link", "ab.co", "a.co", "adobe.ly", "aje.io", "amn.st", "amzn.asia", "amzn.eu",
 					"amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly",
-					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chn.ge", "chng.it", "clckhl.co", "click.email.pcoptimum.ca",
-					"click.fan", "click.linksynergy.com", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cp2077.ly", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", "dis.gd", "dlvr.it",
-					"econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co", "glo.bo", "go.forbes.com",
-					"go.france24.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "goodsmile.link", "goo.gl", "goo.gle", "goo.su",
-					"got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hov.to", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "is.gd", "iwe.one", "ja.ma", "jbgm.es",
-					"j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "link.chtbl.com", "linkr.it", "l.leparisien.fr",
-					"lnkd.in", "loom.ly", "lpc.ca", "mol.im", "mondly.app", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la", "nas.cr", "nbc4i.co", "nine.social",
-					"ninten.do", "n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "ojrq.net", "on.forbes.com", "on.ft.com",
-					"on.kff.org", "onl.bz", "onl.la", "onl.sc", "onl.tw", "on.msnbc.com", "on.nyc.gov", "on.wsj.com", "operagx.gg", "orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml",
-					"pin.it", "pixiv.me", "play.st", "pl.go-ga.me", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr1.be", "qr.paps.jp", "qrto.org", "rb.gy",
-					"rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s76.co", "sbuxjoin.com",
-					"scim.ag", "s.click.aliexpress.com", "s.goodsmile.link", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co",
-					"spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "t.co", "theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc",
-					"tinylf.com", "t.ly", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf", "visitlink.me",
-					"vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca", "zurl.co"
+					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
+					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cp2077.ly", "cutt.ly", "db.tt", "dcdr.me",
+					"diplo.de", "dis.gd", "dlvr.it", "econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co",
+					"glo.bo", "go.forbes.com", "go.france24.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "goodsmile.link", "goo.gl",
+					"goo.gle", "goo.su", "got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hov.to", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "is.gd", "iwe.one",
+					"ja.ma", "jbgm.es", "j.mp", "k00.fr", "katy.to", "kck.st", "kre.pe", "l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "link.chtbl.com", "linkr.it",
+					"l.leparisien.fr", "lnkd.in", "loom.ly", "lpc.ca", "melscience.com", "mol.im", "mondly.app", "mply.io", "m.sesame.org", "msft.it", "msi.gm", "mzl.la",
+					"nas.cr", "nbc4i.co", "nine.social", "ninten.do", "n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws", "nyer.cm", "nyp.st", "ny.ti", "nyti.ms", "nyto.ms", "obo.de",
+					"ojrq.net", "on.forbes.com", "on.ft.com", "on.kff.org", "onl.bz", "onl.la", "onl.sc", "onl.tw", "on.msnbc.com", "on.nyc.gov", "on.wsj.com", "operagx.gg",
+					"orlo.uk", "ow.ly", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl",
+					"qrco.de", "qr.link", "qr.paps.jp", "qrto.org", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redd.it", "redirect.global.commerce-connector.com",
+					"reut.rs", "rog.gg", "rzr.to", "s76.co", "sbuxjoin.com", "scim.ag", "s.click.aliexpress.com", "s.goodsmile.link", "share.firefox.dev", "share.temu.com",
+					"shor.tf", "shorturl.at", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t2m.io", "t.co",
+					"theatln.tc", "thecut.io", "thef.pub", "thr.cm", "thrn.co", "tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "trib.al",
+					"u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf", "visitlink.me", "vm.tiktok.com", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "wwdc.io", "w.wiki",
+					"x.alibaba.com", "xbx.ly", "x.gd", "xhslink.com", "yrp.ca", "zurl.co"
 				],
 				"sometimes_redirect": [
 					"allmylinks.com", "apexpartner.app", "api.pinterest.com", "facebook.com", "hisubway.com", "old.reddit.com", "pawoo.net", "qudsnen.co", "reddit.com",
@@ -246,8 +248,8 @@
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com",
 					"fiverr.com", "global.temu.com", "go.bsky.app", "goodreads.com", "go.shopyourlikes.com", "go.skimresources.com", "gprivate.com", "gznmedia.go2cloud.org",
 					"href.li", "instagr.am", "lego.com", "li.cnn.com", "link.blissy.com", "linkprotect.cudasvc.com", "link.sfchronicle.com", "l.instagram.com", "lmddgtfy.net",
-					"lmgtfy2.com", "lnk.bio", "l.threads.com", "mfy.gg", "o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "p.liadm.com",
-					"preview.tinyurl.com", "proxy.notsobot.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com",
+					"lmgtfy2.com", "lnk.bio", "l.threads.com", "mel.sc", "mfy.gg", "o93x.net", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net",
+					"p.liadm.com", "preview.tinyurl.com", "proxy.notsobot.com", "qr1.be", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com",
 					"shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com",
 					"subscribestar.adult", "substack.com", "tee.pub", "than.gs", "tinyurl.com", "tmz.me", "toyhou.se", "t.umblr.com", "twpf.jp", "u.afp.com", "urldefense.com",
 					"youtube.com"
@@ -278,15 +280,6 @@
 
 				"special_1688": ["detail.1688.com", "m.1688.com"]
 			}
-		},
-		"http_client_config": {
-			"default_headers": {
-				"user-agent": "Firefox",
-				"sec-gpc": "1",
-				"dnt": "1"
-			},
-			"referer": false,
-			"redirect_policy": "None"
 		}
 	},
 	"commons": {
@@ -687,24 +680,26 @@
 											"subject": "redirect",
 											"action": {"SetWhole": {"Modified": {
 												"value": {"HttpRequest": {
-													"url": {"Join": {
-														"values": [
-															{"IfNone": {
-																"value": {"NoneTo": {
-																	"value": {"Var": "bypass_vip_api_key"},
-																	"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+													"request": {
+														"url": {"Join": {
+															"values": [
+																{"IfNone": {
+																	"value": {"NoneTo": {
+																		"value": {"Var": "bypass_vip_api_key"},
+																		"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+																	}},
+																	"then": "https://api.bypass.vip/bypass?url=",
+																	"else": "https://api.bypass.vip/premium/bypass?url="
 																}},
-																"then": "https://api.bypass.vip/bypass?url=",
-																"else": "https://api.bypass.vip/premium/bypass?url="
-															}},
-															{"Modified": {"value": {"Part": "Whole"}, "modification": "PercentEncode"}}
-														]
-													}},
-													"headers": {
-														"x-api-key": {"NoneTo": {
-															"value": {"Var": "bypass_vip_api_key"},
-															"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
-														}}
+																{"Modified": {"value": {"Part": "Whole"}, "modification": "PercentEncode"}}
+															]
+														}},
+														"headers": {
+															"x-api-key": {"NoneTo": {
+																"value": {"Var": "bypass_vip_api_key"},
+																"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+															}}
+														}
 													}
 												}},
 												"modification": {"JsonPointer": "/result"}
@@ -1093,6 +1088,7 @@
 											"if": {"PathIs": "/go"},
 											"then": {"GetUrlFromQueryParam": "d"}
 										}},
+										"mel.sc": {"SetHost": "melscience.com"},
 										"mfy.gg": {"SetHost": "metafy.gg"},
 										"o93x.net": {"GetUrlFromQueryParam": "u"},
 										"open-api.tiktok.com": {"All": [
@@ -1134,6 +1130,21 @@
 											]
 										}}},
 										"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
+										"qr1.be": {"Common": {
+											"name": "extract_from_page",
+											"args": {
+												"string_modifications": {
+													"extractor": {"TryElse": {
+														"try": {"All": [
+															{"StripBefore": "<meta http-equiv"},
+															{"GetHtmlAttribute": "content"},
+															{"StripPrefix": "0; url = "}
+														]},
+														"else": {"Set": {"Part": "Whole"}}
+													}}
+												}
+											}
+										}},
 										"rd.bizrate.com": {"If": {
 											"if": {"PathIs": "/rd2"},
 											"then": {"GetUrlFromQueryParam": "t"}
@@ -1150,7 +1161,7 @@
 											"subject": "redirect",
 											"action": {"If": {
 												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"SetWhole": {"HttpRequest": {"response_handler": {"Header": "target"}}}}
+												"then": {"SetWhole": {"HttpRequest": {"response": {"Header": "target"}}}}
 											}}
 										}},
 										"ro.blox.com": {"GetUrlFromQueryParam": "af_web_dp"},
@@ -1780,7 +1791,7 @@
 							{"If": {
 								"if": {"PathStartsWith": "/album/"},
 								"then": "RemoveQuery",
-								"else": {"RemoveQueryParams": ["si", "nd", "_branch_match_id"]}
+								"else": {"RemoveQueryParams": ["si", "nd", "_branch_match_id", "pi"]}
 							}}
 						]},
 						"stackoverflow.com": {"RemoveQueryParams": ["so_medium", "so_source", "c"]},
@@ -1932,6 +1943,10 @@
 							"then": "RemoveQuery"
 						}},
 						"apps.apple.com": {"RemoveQueryParams": ["pt", "ct", "mt"]},
+						"boot.dev": {"If": {
+							"if": {"FlagIsNotSet": "keep_affiliate"},
+							"then": {"RemoveQueryParam": "promo"}
+						}},
 						"bsky.app": {"If": {
 							"if": {"PathStartsWith": "/profile/"},
 							"then": {"All": [

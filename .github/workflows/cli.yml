@@ -77,23 +77,23 @@ jobs:
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
         diff -y <(
-          ./urlc --profiles <(echo "$PROFILES")                                                                 'https://m.youtube.com/shorts/abc'
-          ./urlc --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
-          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://m.youtube.com/shorts/abc'
-          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF1") 'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES"                                                                'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES"                           --params-diff-string "$PARAMS_DIFF1" 'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES" --profile youtube_unshort                                      'https://m.youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES" --profile youtube_unshort --params-diff-string "$PARAMS_DIFF1" 'https://m.youtube.com/shorts/abc'
 
-          ./urlc --profiles <(echo "$PROFILES")                                                                 'https://youtube.com/shorts/abc'
-          ./urlc --profiles <(echo "$PROFILES")                           --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
-          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort                                       'https://youtube.com/shorts/abc'
-          ./urlc --profiles <(echo "$PROFILES") --profile youtube_unshort --params-diff <(echo "$PARAMS_DIFF2") 'https://youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES"                                                                'https://youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES"                           --params-diff-string "$PARAMS_DIFF2" 'https://youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES" --profile youtube_unshort                                      'https://youtube.com/shorts/abc'
+          ./urlc --profiles-string "$PROFILES" --profile youtube_unshort --params-diff-string "$PARAMS_DIFF2" 'https://youtube.com/shorts/abc'
         ) <(
           echo 'https://www.youtube.com/shorts/abc'
-          echo 'https://m.youtube.com/shorts/abc'
+          echo   'https://m.youtube.com/shorts/abc'
           echo 'https://www.youtube.com/watch?v=abc'
-          echo 'https://m.youtube.com/watch?v=abc'
+          echo   'https://m.youtube.com/watch?v=abc'
           echo 'https://www.youtube.com/shorts/abc'
-          echo 'https://m.youtube.com/shorts/abc'
+          echo   'https://m.youtube.com/shorts/abc'
           echo 'https://www.youtube.com/watch?v=abc'
-          echo 'https://m.youtube.com/watch?v=abc'
+          echo   'https://m.youtube.com/watch?v=abc'
         )
         diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')

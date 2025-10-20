@@ -1,9 +1,4 @@
-use std::hint::black_box;
-use criterion::Criterion;
-
 use crate::*;
-
-use url_cleaner_engine::types::*;
 
 group!(path, set);
 
@@ -14,7 +9,7 @@ fn set(c: &mut Criterion) {
             &format!("BetterUrl::set_path({path:?}): {url}"),
             |b| b.iter_batched_ref(
                 || url.clone(),
-                |url| black_box(url).set_path(black_box(path)),
+                |url| bb(url).set_path(bb(path)),
                 criterion::BatchSize::SmallInput
             )
         );

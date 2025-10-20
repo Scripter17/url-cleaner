@@ -2,7 +2,7 @@
 name = "url-cleaner-site"
 version = "0.12.0-beta"
 edition = "2024"
-description = "A basic HTTP server and userscript to make using URL Cleaner in a browser easier."
+description = "URL Cleaner's official HTTP server frontend"
 repository = "https://github.com/Scripter17/url-cleaner"
 keywords = ["url", "url-tracking", "privacy", "url-cleaner"]
 categories = ["web-programming::http-server"]
@@ -11,7 +11,7 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.48", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.49", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls", "mtls"] }
 serde = "1.0.228"

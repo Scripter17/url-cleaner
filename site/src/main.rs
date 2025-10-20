@@ -20,9 +20,7 @@ use rocket::{
 };
 use clap::Parser;
 
-use better_url::BetterUrl;
-use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::prelude::*;
+use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::*;
 
 /// The source code of this instance.
@@ -114,6 +112,24 @@ struct Args {
     /// The port to listen to.
     #[arg(long, default_value_t = DEFAULT_PORT)]
     port: u16,
+    /// The proxy to use for HTTP/HTTPS requests.
+    ///
+    /// Overrided by --http-proxy and --https-proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    proxy: Option<HttpProxyConfig>,
+    /// the proxy to use for HTTP requests.
+    ///
+    /// Overrides --proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    http_proxy: Option<HttpProxyConfig>,
+    /// the proxy to use for HTTPS requests.
+    ///
+    /// Overrides --proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    https_proxy: Option<HttpProxyConfig>,
     /// The cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, default_value = "url-cleaner-site-cache.sqlite", value_name = "PATH")]
@@ -177,7 +193,7 @@ struct ServerConfig {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: Cache,
-    /// The default value for [`JobConfig::cache_handle_config`]'s [`CacheHandleConfig::delay`].
+    /// [`CacheHandleConfig::delay`].
     #[cfg(feature = "cache")]
     default_cache_delay: bool,
     /// [`CacheHandleConfig::read`].
@@ -186,6 +202,9 @@ struct ServerConfig {
     /// [`CacheHandleConfig::write`].
     #[cfg(feature = "cache")]
     default_write_cache: bool,
+    /// The [`HttpClient`].
+    #[cfg(feature = "http")]
+    http_client: HttpClient,
     /// The number of threads to spawn for each [`CleanPayload`].
     threads: NonZero<usize>,
     /// If [`true`], defaults unthreading to use [`ServerState::unthreader`].
@@ -243,6 +262,8 @@ async fn rocket() -> _ {
             default_read_cache : !args.default_no_read_cache,
             #[cfg(feature = "cache")]
             default_write_cache: !args.default_no_write_cache,
+            #[cfg(feature = "http")]
+            http_client: HttpClient::new([args.proxy, args.http_proxy, args.https_proxy].into_iter().flatten().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid.")),
             threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
             default_unthread: args.default_unthread,
             max_payload: args.max_payload,
@@ -253,7 +274,7 @@ async fn rocket() -> _ {
         },
         unthreader: match args.unthread_ratelimit {
             None    => UnthreaderMode::Unthread,
-            Some(d) => UnthreaderMode::UnthreadAndRatelimit(std::time::Duration::from_secs_f64(d))
+            Some(d) => UnthreaderMode::Ratelimit(std::time::Duration::from_secs_f64(d))
         }.into(),
         job_count: Mutex::new(0)
     };
@@ -340,7 +361,7 @@ fn inner_clean(state: &State<ServerState>, clean_payload: &str) -> CleanResult {
         Err(CleanError {status: 401, message: "Unauthorized".into()})?
     }
 
-    let Some(mut cleaner) = state.config.profiled_cleaner.with_profile(clean_payload.config.profile.as_deref()) else {
+    let Some(mut cleaner) = state.config.profiled_cleaner.get(clean_payload.config.profile.as_deref()) else {
         Err(CleanError {status: 422, message: format!("Unknown profile: {:?}", clean_payload.config.profile)})?
     };
 
@@ -366,20 +387,23 @@ fn inner_clean(state: &State<ServerState>, clean_payload: &str) -> CleanResult {
     std::thread::scope(|s| {
         std::thread::Builder::new().name(format!("({id}) Task collector")).spawn_scoped(s, || {
             let job = Job {
-                config: &JobConfig {
+                config: JobConfig {
                     context: &clean_payload.config.context,
                     cleaner: &cleaner,
+                    unthreader,
                     #[cfg(feature = "cache")]
-                    cache: &state.config.cache,
-                    #[cfg(feature = "cache")]
-                    cache_handle_config: CacheHandleConfig {
-                        delay: clean_payload.config.cache_delay.unwrap_or(state.config.default_cache_delay),
-                        read : clean_payload.config.read_cache .unwrap_or(state.config.default_read_cache ),
-                        write: clean_payload.config.write_cache.unwrap_or(state.config.default_write_cache)
+                    cache_handle: CacheHandle {
+                        cache: &state.config.cache,
+                        config: CacheHandleConfig {
+                            delay: clean_payload.config.cache_delay.unwrap_or(state.config.default_cache_delay),
+                            read : clean_payload.config.read_cache .unwrap_or(state.config.default_read_cache ),
+                            write: clean_payload.config.write_cache.unwrap_or(state.config.default_write_cache)
+                        }
                     },
-                    unthreader
+                    #[cfg(feature = "http")]
+                    http_client: &state.config.http_client
                 },
-                lazy_task_configs: Box::new(clean_payload.tasks.into_iter().map(Ok))
+                lazy_task_configs: clean_payload.tasks.into_iter().map(Ok)
             };
             for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {
                 in_sender.send(maybe_task_source).expect("To successfully send the LazyTask.");

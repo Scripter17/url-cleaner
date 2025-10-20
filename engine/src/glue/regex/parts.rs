@@ -1,14 +1,11 @@
-//! Parts of a [`Regex`] for easy portability and lazy compilation.
+//! [`RegexParts`] and [`RegexConfig`].
 
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use regex::{Regex, RegexBuilder};
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use super::RegexWrapper;
 
-use crate::types::*;
-use crate::util::*;
+use crate::prelude::*;
 
 /// Config on how to make a [`Regex`].
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -22,6 +19,15 @@ pub struct RegexParts {
     /// Config to pass into [`RegexBuilder`].
     #[serde(flatten)]
     pub config: RegexConfig
+}
+
+crate::util::string_or_struct_magic!(RegexParts);
+
+impl FromStr for RegexParts {
+    type Err = std::convert::Infallible;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(s.into())
+    }
 }
 
 impl RegexParts {
@@ -41,15 +47,6 @@ impl RegexParts {
             .swap_greed          (self.config.swap_greed          )
             .unicode             (self.config.unicode             )
             .build()
-    }
-}
-
-crate::util::string_or_struct_magic!(RegexParts);
-
-impl FromStr for RegexParts {
-    type Err = std::convert::Infallible;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(s.into())
     }
 }
 
@@ -149,6 +146,8 @@ pub struct RegexConfig {
     #[serde(default = "get_true"  , skip_serializing_if = "is_true" )] pub unicode             : bool
 }
 
+/// Serde helper function.
+const fn is_false(x: &bool) -> bool {!*x}
 /// Serde helper function.
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
 /// Serde helper function.

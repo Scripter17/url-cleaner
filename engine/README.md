@@ -13,4 +13,4 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 ## Tutorial
 
-For a tutorial, see the `tutorial` module.
+TODO

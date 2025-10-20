@@ -13,8 +13,7 @@ use serenity::EventHandler;
 use serenity::CreateAttachment;
 use thiserror::Error;
 
-use url_cleaner_engine::types::*;
-use url_cleaner_engine::glue::prelude::*;
+use url_cleaner_engine::prelude::*;
 
 /// The introduction to the /help message.
 const INTRO: &str = r#"URL Cleaner Discord App
@@ -80,6 +79,24 @@ struct Args {
     /// Cannot be used with --profiles.
     #[arg(long, value_name = "JSON STRING")]
     profiles_string: Option<String>,
+    /// The proxy to use for HTTP/HTTPS requests.
+    ///
+    /// Overrided by --http-proxy and --https-proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    proxy: Option<HttpProxyConfig>,
+    /// the proxy to use for HTTP requests.
+    ///
+    /// Overrides --proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    http_proxy: Option<HttpProxyConfig>,
+    /// the proxy to use for HTTPS requests.
+    ///
+    /// Overrides --proxy.
+    #[cfg(feature = "http")]
+    #[arg(long)]
+    https_proxy: Option<HttpProxyConfig>,
     /// The path cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, value_name = "PATH", default_value = "url-cleaner-discord-app-cache.sqlite")]
@@ -110,7 +127,10 @@ struct State {
     cache: Cache,
     /// [`CacheHandleConfig`]
     #[cfg(feature = "cache")]
-    cache_handle_config: CacheHandleConfig
+    cache_handle_config: CacheHandleConfig,
+    /// The [`HttpClient`].
+    #[cfg(feature = "http")]
+    http_client: HttpClient
 }
 
 /// The error type.
@@ -127,7 +147,7 @@ async fn main() {
     #[cfg(feature = "default-cleaner")]
     let cleaner_string = match args.cleaner {
         Some(path) => std::fs::read_to_string(path).expect("The Cleaner file to be readable."),
-        None       => url_cleaner_engine::types::DEFAULT_CLEANER_STR.into()
+        None       => url_cleaner_engine::cleaner::DEFAULT_CLEANER_STR.into()
     };
     #[cfg(not(feature = "default-cleaner"))]
     let cleaner_string = std::fs::read_to_string(args.cleaner).expect("The Cleaner file to be readable.");
@@ -143,7 +163,7 @@ async fn main() {
 
     let profiled_cleaner = ProfiledCleanerConfig { cleaner, profiles_config }.make();
 
-    for (name, cleaner) in profiled_cleaner.into_each_profile() {
+    for (name, cleaner) in profiled_cleaner.into_each() {
         commands.push(poise::Command {
             name: match name {
                 Some(name) => Cow::Owned(format!("Clean URLs ({name})")),
@@ -175,7 +195,9 @@ async fn main() {
             delay: args.cache_delay,
             read : !args.no_read_cache,
             write: !args.no_write_cache
-        }
+        },
+        #[cfg(feature = "http")]
+        http_client: HttpClient::new([args.proxy, args.http_proxy, args.https_proxy].into_iter().flatten().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid."))
     };
 
     let token = std::env::var("URLCDA_KEY").expect("No discord app token found in the URLCDA_KEY environment variable.");
@@ -252,16 +274,19 @@ pub enum CleanUrlsError {
 /// Clean a message's URLs with the specified [`Params`].
 async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: &Cleaner<'_>) -> Result<(), CleanUrlsError> {
     let job = Job {
-        config: &JobConfig {
+        config: JobConfig {
             context: &Default::default(),
             cleaner,
+            unthreader: &Unthreader::default(),
             #[cfg(feature = "cache")]
-            cache: &ctx.data().cache,
-            #[cfg(feature = "cache")]
-            cache_handle_config: ctx.data().cache_handle_config,
-            unthreader: &Unthreader::default()
+            cache_handle: CacheHandle {
+                cache: &ctx.data().cache,
+                config: ctx.data().cache_handle_config,
+            },
+            #[cfg(feature = "http")]
+            http_client: &ctx.data().http_client
         },
-        lazy_task_configs: Box::new(GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into())))
+        lazy_task_configs: GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into()))
     };
 
     let mut responses = Vec::new();

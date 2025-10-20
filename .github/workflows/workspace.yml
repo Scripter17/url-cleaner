@@ -42,48 +42,23 @@ jobs:
         key: ${{ runner.os }}-debug
         path: target
 
-    - name: 'Build benchmarkers'
-      run: cargo build --benches
-
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-debug
-        path: target
-
     - name: 'Test each feature'
       run: cargo hack test --each-feature
-
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-debug
-        path: target
 
     - name: 'Document each feature'
       run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --each-feature --no-deps --document-private-items
 
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-debug
-        path: target
-
     - name: 'Clippy powerset with default'
-      run: cargo hack clippy --feature-powerset --at-least-one-of default,default --exclude url-cleaner-site-types --exclude url-cleaner-macros -- -D warnings
-
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-debug
-        path: target
+      run: cargo hack clippy --feature-powerset --at-least-one-of default,default -- -D warnings
 
     - name: 'Clippy each feature'
       run: cargo hack clippy --each-feature -- -D warnings -A unused_imports -A dead_code
+
+    - name: 'Clippy --benches powerset with default'
+      run: cargo hack clippy --feature-powerset --at-least-one-of default,default --benches -- -D warnings
+
+    - name: 'Clippy --benches each feature'
+      run: cargo hack clippy --each-feature --benches -- -D warnings -A unused_imports -A dead_code
 
     - name: 'Save cache'
       if: runner.environment == null

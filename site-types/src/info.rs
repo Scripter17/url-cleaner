@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 
-use url_cleaner_engine::types::*;
+use url_cleaner_engine::prelude::*;
 
 #[expect(unused_imports, reason = "Used in doc comments.")]
 use crate::CleanPayloadConfig;
