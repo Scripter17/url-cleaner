@@ -1,4 +1,4 @@
-//! [`CleanerDocs`].
+//! [`Docs`].
 
 use std::collections::HashMap;
 
@@ -7,13 +7,13 @@ use serde_with::*;
 
 use crate::prelude::*;
 
-/// Documentation stored inside of the [`Cleaner`].
+/// Documentation for a [`Cleaner`].
 ///
-/// Used for suitability tests to make sure I don't forget to document anything and also to generate the docs section of the README.
+/// Mainly used in [`Cleaner::docs`].
 #[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
-pub struct CleanerDocs {
+pub struct Docs {
     /// The name of the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub name: Option<String>,

@@ -4,12 +4,12 @@ use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-/// A [`ParamsDiff`] profile.
+/// A [`Params`] that has had a [`ParamsDiff`] from a [`ProfileConfig`] applied.
 ///
-/// Usually made via [`ProfileConfig`].
+/// Usually made from [`ProfileConfig`].
 ///
-/// Constructed by giving [`ProfilesConfig::make`] a [`Params`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Mainly used inside [`Profiles`].
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profile<'a> {
     /// The [`Params`].
     pub params: Params<'a>

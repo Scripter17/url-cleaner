@@ -8,8 +8,10 @@ use crate::prelude::*;
 
 /// A base [`Profile`] and named [`Profile`]s.
 ///
-/// Usually made via [`ProfilesConfig`] and used in [`ProfiledCleaner`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Usually made from [`ProfilesConfig`].
+///
+/// Mainly used in [`ProfiledCleaner`].
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profiles<'a> {
     /// The base [`Profile`].
     pub base: Profile<'a>,

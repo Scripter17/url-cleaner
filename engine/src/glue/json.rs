@@ -1,4 +1,4 @@
-//! Generating [`serde_json::Value`]s using [`StringSource`]s.
+//! Glue for [`serde_json`].
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -8,7 +8,7 @@ use serde_json::Value;
 
 use crate::prelude::*;
 
-/// Rules for making a [`serde_json::Value`] using [`StringSource`]s.
+/// Allow making [`serde_json::Value`]s using [`StringSource`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]

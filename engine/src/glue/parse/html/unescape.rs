@@ -32,7 +32,7 @@ pub enum UnescapeTextError {
 /// ```
 pub fn unescape_text(s: &str) -> Result<String, UnescapeTextError> {
     debug!(parse::html::unescape_text, &(), s);
-    
+
     let mut ret = String::new();
 
     let mut first = true;
@@ -2277,7 +2277,7 @@ enum HTMLNCRLastState {
 #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever happen.")]
 pub fn parse_num_char_ref(char_ref: &str) -> Result<char, NumCharRefError> {
     debug!(parse::html::parse_num_char_ref, &(), char_ref);
-    
+
     let mut scratchspace: u32 = 0;
 
     let mut last_state = HTMLNCRLastState::None;

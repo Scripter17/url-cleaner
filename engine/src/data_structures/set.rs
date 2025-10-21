@@ -9,7 +9,7 @@ use serde::{Serialize, Deserialize, ser::{Serializer, SerializeSeq}, de::{Deseri
 
 use crate::prelude::*;
 
-/// Allows semantics similar to a `HashSet<Option<String>>` without having to convert `Option<&str>`s to `Option<String>`s.
+/// A `HashMap<Option<T>>` tat allows indexing `HashMap<Option<String>>` with `Option<&str>`.
 ///
 /// Serializes and deserializes identically to `HashSet<Option<String>>`, though it's not yet optimized.
 /// # Examples

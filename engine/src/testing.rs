@@ -63,7 +63,11 @@ impl TestSet {
             #[cfg(feature = "cache")]
             cache_handle: CacheHandle {
                 cache: &Default::default(),
-                config: Default::default()
+                config: CacheHandleConfig {
+                    read: false,
+                    write: false,
+                    delay: false
+                }
             },
             #[cfg(feature = "http")]
             http_client: &Default::default()

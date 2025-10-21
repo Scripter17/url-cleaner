@@ -1,4 +1,4 @@
-//! [`Job`]s for processing [`Task`]s in bulk.
+//! [`Job`] and co.
 
 use std::io;
 use std::error::Error;
@@ -8,11 +8,17 @@ use thiserror::Error;
 use crate::prelude::*;
 
 pub mod job_config;
-pub use job_config::*;
 pub mod job_context;
-pub use job_context::*;
 pub mod job_into_iterator;
-pub use job_into_iterator::*;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::job_config::*;
+    pub use super::job_context::*;
+    pub use super::job_into_iterator::*;
+
+    pub use super::{Job, GetLazyTaskConfigError, MakeLazyTaskError};
+}
 
 /// The main way to turn [`LazyTaskConfig`]s into [`LazyTask`]s to be [`LazyTask::make`]d and [`Task::do`]ne.
 ///
@@ -94,7 +100,7 @@ pub enum GetLazyTaskConfigError {
     IoError(#[from] io::Error),
     /// Any other error that your [`LazyTaskConfig`] source can return.
     #[error(transparent)]
-    Other(#[from] Box<dyn Error + Send>)
+    Other(#[from] Box<dyn Error + Send + Sync>)
 }
 
 /// The enum of errors that can happen when trying to make a [`Task`].

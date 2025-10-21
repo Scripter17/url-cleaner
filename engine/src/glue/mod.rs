@@ -11,16 +11,16 @@ pub mod better_url;
 #[cfg(feature = "cache"  )] pub mod cache;
 #[cfg(feature = "base64" )] pub mod base64;
 
-/// Allows importing all glue stuff without the problematic module names.
+/// Prelude module for importing everything here better.
 pub mod prelude {
     pub use super::parse;
     pub use super::percent_encoding::*;
     pub use super::json::*;
     pub use super::better_url::*;
 
-    #[cfg(feature = "regex"  )] pub use super::regex::*;
+    #[cfg(feature = "regex"  )] pub use super::regex::prelude::*;
     #[cfg(feature = "command")] pub use super::command::*;
-    #[cfg(feature = "http"   )] pub use super::http::*;
-    #[cfg(feature = "cache"  )] pub use super::cache::*;
-    #[cfg(feature = "base64" )] pub use super::base64::*;
+    #[cfg(feature = "http"   )] pub use super::http::prelude::*;
+    #[cfg(feature = "cache"  )] pub use super::cache::prelude::*;
+    #[cfg(feature = "base64" )] pub use super::base64::prelude::*;
 }

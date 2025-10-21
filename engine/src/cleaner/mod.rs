@@ -1,4 +1,4 @@
-//! [`Cleaner`] and components that define how URLs are cleaned.
+//! [`Cleaner`] and co.
 
 use std::fs::read_to_string;
 use std::path::Path;
@@ -13,27 +13,43 @@ use thiserror::Error;
 use crate::prelude::*;
 
 pub mod params;
-pub use params::*;
 pub mod docs;
-pub use docs::*;
 pub mod commons;
-pub use commons::*;
-pub mod profiles;
-pub use profiles::*;
 pub mod condition;
-pub use condition::*;
 pub mod action;
-pub use action::*;
 pub mod string_source;
-pub use string_source::*;
 pub mod string_modification;
-pub use string_modification::*;
 pub mod string_location;
-pub use string_location::*;
 pub mod string_matcher;
-pub use string_matcher::*;
 pub mod char_matcher;
-pub use char_matcher::*;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::params::*;
+    pub use super::docs::*;
+    pub use super::commons::*;
+    pub use super::condition::*;
+    pub use super::action::*;
+    pub use super::string_source::*;
+    pub use super::string_modification::*;
+    pub use super::string_location::*;
+    pub use super::string_matcher::*;
+    pub use super::char_matcher::*;
+
+    pub use super::{Cleaner, GetCleanerError, ApplyCleanerError};
+    #[cfg(feature = "default-cleaner")]
+    pub use super::DEFAULT_CLEANER_STR;
+}
+
+/// The JSON text of the default config.
+#[cfg(all(feature = "default-cleaner", not(test)))]
+pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-cleaner.json.minified"));
+/// The JSON text of the default config.
+#[cfg(all(feature = "default-cleaner", test))]
+pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default-cleaner.json"));
+/// The cached deserialization of the default config.
+#[cfg(feature = "default-cleaner")]
+static DEFAULT_CLEANER: OnceLock<Cleaner> = OnceLock::new();
 
 /// The main unit describing how to clean URLs.
 ///
@@ -43,11 +59,11 @@ pub use char_matcher::*;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct Cleaner<'a> {
-    /// The [`CleanerDocs`].
+    /// The [`Docs`].
     ///
-    /// Defaults to an empty [`CleanerDocs`].
+    /// Defaults to an empty [`Docs`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub docs: Cow<'a, CleanerDocs>,
+    pub docs: Cow<'a, Docs>,
     /// The [`Params`].
     ///
     /// Defaults to an empty [`Params`].
@@ -69,7 +85,7 @@ impl<'a> Cleaner<'a> {
     /// Create a new [`Self`] that [`Cow::Borrowed`]s all fields (and [`Params::borrowed`]s [`Self::params`]).
     ///
     /// Used to enable both [`ProfiledCleaner`] and [`ParamsDiff`] to be much more memory efficient tha otherwise possible.
-    pub fn borrowed(&'a self) -> Self {
+    pub fn borrowed(&'a self) -> Cleaner<'a> {
         Self {
             docs   : Cow::Borrowed(&*self.docs),
             params : self.params.borrowed(),
@@ -143,7 +159,7 @@ impl<'a> Cleaner<'a> {
     /// );
     /// ```
     #[cfg(feature = "default-cleaner")]
-    pub fn load_or_get_default<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Self>, GetCleanerError> {
+    pub fn load_or_get_default<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Cleaner<'static>>, GetCleanerError> {
         Ok(match path {
             Some(path) => Cow::Owned(Self::load_from_file(path)?),
             None => Cow::Borrowed(Self::get_default()?)
@@ -170,7 +186,7 @@ impl<'a> Cleaner<'a> {
     /// );
     /// ```
     #[cfg(feature = "default-cleaner")]
-    pub fn load_or_get_default_no_cache<T: AsRef<Path>>(path: Option<T>) -> Result<Self, GetCleanerError> {
+    pub fn load_or_get_default_no_cache<T: AsRef<Path>>(path: Option<T>) -> Result<Cleaner<'static>, GetCleanerError> {
         Ok(match path {
             Some(path) => Self::load_from_file(path)?,
             None => Self::get_default_no_cache()?
@@ -205,24 +221,6 @@ impl<'a> Cleaner<'a> {
     }
 }
 
-/// The enum of errors [`Cleaner::apply`] can return.
-#[derive(Debug, Error)]
-pub enum ApplyCleanerError {
-    /// Returned when a [`ActionError`] is encountered.
-    #[error(transparent)]
-    ActionError(#[from] ActionError)
-}
-
-/// The JSON text of the default config.
-#[cfg(all(feature = "default-cleaner", not(test)))]
-pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/default-cleaner.json.minified"));
-/// The JSON text of the default config.
-#[cfg(all(feature = "default-cleaner", test))]
-pub const DEFAULT_CLEANER_STR: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default-cleaner.json"));
-/// The cached deserialization of the default config.
-#[cfg(feature = "default-cleaner")]
-static DEFAULT_CLEANER: OnceLock<Cleaner> = OnceLock::new();
-
 /// The enum of errors that can happen when loading a [`Cleaner`].
 #[derive(Debug, Error)]
 pub enum GetCleanerError {
@@ -232,4 +230,12 @@ pub enum GetCleanerError {
     /// Returned when deserializing a [`Cleaner`] fails.
     #[error(transparent)]
     CantParseCleaner(#[from] serde_json::Error),
+}
+
+/// The enum of errors [`Cleaner::apply`] can return.
+#[derive(Debug, Error)]
+pub enum ApplyCleanerError {
+    /// Returned when a [`ActionError`] is encountered.
+    #[error(transparent)]
+    ActionError(#[from] ActionError)
 }

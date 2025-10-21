@@ -1,12 +1,16 @@
-//! HTTP requests.
+//! Glue for [`reqwest`].
 
 pub mod client;
-pub use client::*;
 pub mod proxy;
-pub use proxy::*;
 pub mod request;
-pub use request::*;
 pub mod body;
-pub use body::*;
 pub mod response;
-pub use response::*;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::client::*;
+    pub use super::proxy::*;
+    pub use super::request::*;
+    pub use super::body::*;
+    pub use super::response::*;
+}

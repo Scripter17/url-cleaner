@@ -5,7 +5,7 @@ use thiserror::Error;
 use crate::prelude::*;
 
 /// Cheap intermediate step between [`LazyTaskConfig`] and [`Task`] to allow using worker threads.
-/// 
+///
 /// Mainly used to make [`Task`]s via [`Self::make`].
 #[derive(Debug, Clone)]
 pub struct LazyTask<'j, 't> {

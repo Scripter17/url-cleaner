@@ -150,4 +150,3 @@ pub fn string_literal_prefix(s: &str) -> Result<String, StringLiteralPrefixError
 
     Ok(ret)
 }
-

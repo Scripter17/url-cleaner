@@ -1,12 +1,31 @@
-//! [`ProfiledCleaner`].
+//! [`ProfiledCleaner`] and co.
 
 use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
+pub mod profiled_cleaner_config;
+pub mod unprofiled_cleaner;
+pub mod profiles;
+pub mod profiles_config;
+pub mod profile;
+pub mod profile_config;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::profiled_cleaner_config::*;
+    pub use super::unprofiled_cleaner::*;
+    pub use super::profiles::*;
+    pub use super::profiles_config::*;
+    pub use super::profile::*;
+    pub use super::profile_config::*;
+
+    pub use super::ProfiledCleaner;
+}
+
 /// A [`Cleaner`] with named and pre-computed [`ParamsDiff`]s for cheap and easy use.
 ///
-/// Usually made via [`ProfiledCleanerConfig`].
+/// Usually made from [`ProfiledCleanerConfig`].
 ///
 /// To reduce memory usage, put the [`Cleaner`] through [`Box::new`], [`Box::leak`], [`Cleaner::borrowed`], and only then [`ProfiledCleanerConfig`].
 ///
@@ -85,7 +104,7 @@ use crate::prelude::*;
 ///     "https://vxtwitter.com/user/status/1"
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProfiledCleaner<'a> {
     /// The [`UnprofiledCleaner`].
     pub unprofiled_cleaner: UnprofiledCleaner<'a>,

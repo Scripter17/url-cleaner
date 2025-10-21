@@ -1,4 +1,4 @@
-//! Named common [`percent_encoding::AsciiSet`]s.
+//! Glue for [`percent_encoding`].
 
 use serde::{Serialize, Deserialize};
 use percent_encoding::AsciiSet;

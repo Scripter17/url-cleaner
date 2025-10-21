@@ -92,9 +92,6 @@ macro_rules! task_state {
         #[allow(unused_variables, reason = "You're a macro. Shut up.")] let     commons    :        $crate::prelude::Commons         = Default::default();    $(let commons     = $commons    ;)?
 
         let mut $task_state = {
-            #[cfg(feature = "cache")]
-            use $crate::glue::cache::CacheHandle;
-
             $crate::prelude::TaskState {
                 url         : &mut url.try_into().unwrap(),
                 scratchpad  : &mut scratchpad,
@@ -105,7 +102,7 @@ macro_rules! task_state {
                 params      : &params,
                 commons     : &commons,
                 #[cfg(feature = "cache")]
-                cache_handle: CacheHandle {
+                cache_handle: url_cleaner_engine::prelude::CacheHandle {
                     cache: &Default::default(),
                     config: Default::default()
                 },
@@ -178,9 +175,6 @@ macro_rules! task_state_view {
         #[allow(unused_variables, reason = "You're a macro. Shut up.")] let commons    :        $crate::prelude::Commons         = Default::default();    $(let commons     = $commons    ;)?
 
         let $task_state_view = {
-            #[cfg(feature = "cache")]
-            use $crate::glue::cache::CacheHandle;
-
             $crate::prelude::TaskStateView {
                 url         : &url.try_into().unwrap(),
                 scratchpad  : &scratchpad,
@@ -191,7 +185,7 @@ macro_rules! task_state_view {
                 params      : &params,
                 commons     : &commons,
                 #[cfg(feature = "cache")]
-                cache_handle: CacheHandle {
+                cache_handle: url_cleaner_engine::prelude::CacheHandle {
                     cache: &Default::default(),
                     config: Default::default()
                 },

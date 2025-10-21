@@ -1,4 +1,4 @@
-//! [`LazyRegex`].
+//! Glue for [`regex`].
 
 use std::str::FromStr;
 use std::sync::OnceLock;
@@ -9,12 +9,20 @@ use regex::Regex;
 use crate::prelude::*;
 
 pub mod parts;
-pub use parts::*;
+pub mod config;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::parts::*;
+    pub use super::config::*;
+
+    pub use super::LazyRegex;
+}
 
 /// A lazily compiled [`Regex`].
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::prelude::*;
+/// use url_cleaner_engine::prelude::*;
 ///
 /// let regex = LazyRegex::from("abc");
 /// assert!(regex.get().unwrap().is_match("abc"));
@@ -36,7 +44,7 @@ impl LazyRegex {
     /// Gets the [`RegexParts`] this uses to compile its [`Regex`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::prelude::*;
+    /// use url_cleaner_engine::prelude::*;
     ///
     /// let regex = LazyRegex::from(".*=.*");
     /// assert_eq!(regex.parts(), &RegexParts {pattern: ".*=.*".into(), config: Default::default()});
@@ -48,7 +56,7 @@ impl LazyRegex {
     /// Get the compiled [`Regex`] if it's been compiled.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::prelude::*;
+    /// use url_cleaner_engine::prelude::*;
     ///
     /// let regex = LazyRegex::from(".*=.*");
     /// assert!(regex.get_no_compile().is_none());
@@ -68,7 +76,7 @@ impl LazyRegex {
     /// If the cache is unset and the call to [`RegexParts::build`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::prelude::*;
+    /// use url_cleaner_engine::prelude::*;
     ///
     /// let regex = LazyRegex::from(".*=.*");
     /// assert!(regex.get_no_compile().is_none());

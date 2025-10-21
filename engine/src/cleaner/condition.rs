@@ -521,6 +521,136 @@ pub enum Condition {
         value: StringSource
     },
 
+    // Host starts with
+
+    /// Satisfied if the value of [`Url::host`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    HostStartsWith(StringSource),
+    /// Satisfied if the [`BetterUrl::normalized_host`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    NormalizedHostStartsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::subdomain`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    SubdomainStartsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::reg_domain`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    RegDomainStartsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::domain`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainStartsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::domain_middle`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainMiddleStartsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::not_domain_suffix`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    NotDomainSuffixStartsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::domain_suffix`] starts with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainSuffixStartsWith(StringSource),
+
+
+
+    /// Satisfied if the [`BetterUrl::subdomain_segment`] starts with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    SubdomainSegmentStartsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
+    /// Satisfied if the [`BetterUrl::domain_segment`] starts with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainSegmentStartsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
+    /// Satisfied if the [`BetterUrl::domain_suffix_segment`] starts with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainSuffixSegmentStartsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
+
+    // Host ends with
+
+    /// Satisfied if the value of [`Url::host`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    HostEndsWith(StringSource),
+    /// Satisfied if the [`BetterUrl::normalized_host`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    NormalizedHostEndsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::subdomain`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    SubdomainEndsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::reg_domain`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    RegDomainEndsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::domain`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainEndsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::domain_middle`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainMiddleEndsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::not_domain_suffix`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    NotDomainSuffixEndsWith(StringSource),
+    /// Satisfied if the value of [`BetterUrl::domain_suffix`] ends with the specified string.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainSuffixEndsWith(StringSource),
+
+
+
+    /// Satisfied if the [`BetterUrl::subdomain_segment`] ends with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    SubdomainSegmentEndsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
+    /// Satisfied if the [`BetterUrl::domain_segment`] ends with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainSegmentEndsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
+    /// Satisfied if the [`BetterUrl::domain_suffix_segment`] ends with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainSuffixSegmentEndsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
+
     // Host is one of
 
     /// Satisfied if the [`Url::host`] is contained in the specified [`Set`].
@@ -1292,6 +1422,39 @@ pub enum ConditionError {
     /// Returned when a part of the URL is [`None`] where it has to be [`Some`].
     #[error("A part of the URL is None where it had to be Some.")]
     UrlPartIsNone,
+    /// Returned when the Host is [`None`] where it has to be [`Some`].
+    #[error("The Host was None where it had to be Some.")]
+    HostIsNone,
+    /// Returned when the NormalizedHost is [`None`] where it has to be [`Some`].
+    #[error("The NormalizedHost was None where it had to be Some.")]
+    NormalizedHostIsNone,
+    /// Returned when the Subdomain is [`None`] where it has to be [`Some`].
+    #[error("The Subdomain was None where it had to be Some.")]
+    SubdomainIsNone,
+    /// Returned when the RegDomain is [`None`] where it has to be [`Some`].
+    #[error("The RegDomain was None where it had to be Some.")]
+    RegDomainIsNone,
+    /// Returned when the Domain is [`None`] where it has to be [`Some`].
+    #[error("The Domain was None where it had to be Some.")]
+    DomainIsNone,
+    /// Returned when the DomainMiddle is [`None`] where it has to be [`Some`].
+    #[error("The DomainMiddle was None where it had to be Some.")]
+    DomainMiddleIsNone,
+    /// Returned when the NotDomainSuffix is [`None`] where it has to be [`Some`].
+    #[error("The NotDomainSuffix was None where it had to be Some.")]
+    NotDomainSuffixIsNone,
+    /// Returned when the DomainSuffix is [`None`] where it has to be [`Some`].
+    #[error("The DomainSuffix was None where it had to be Some.")]
+    DomainSuffixIsNone,
+    /// Returned when the DomainSegment is [`None`] where it has to be [`Some`].
+    #[error("The DomainSegment was None where it had to be Some.")]
+    DomainSegmentIsNone,
+    /// Returned when the SubdomainSegment is [`None`] where it has to be [`Some`].
+    #[error("The SubdomainSegment was None where it had to be Some.")]
+    SubdomainSegmentIsNone,
+    /// Returned when the DomainSuffixSegment is [`None`] where it has to be [`Some`].
+    #[error("The DomainSuffixSegment was None where it had to be Some.")]
+    DomainSuffixSegmentIsNone,
     /// Returned when attempting to get a segment/segments from a path with no segments.
     #[error("Attempted to get a segment/segments from a path with no segments.")]
     PathDoesNotHaveSegments,
@@ -1450,6 +1613,36 @@ impl Condition {
             Self::DomainSegmentIs       {index, value} => task_state.url.domain_segment       (*index) == get_option_str!(value, task_state),
             Self::SubdomainSegmentIs    {index, value} => task_state.url.subdomain_segment    (*index) == get_option_str!(value, task_state),
             Self::DomainSuffixSegmentIs {index, value} => task_state.url.domain_suffix_segment(*index) == get_option_str!(value, task_state),
+
+            // Host starts with
+
+            Self::HostStartsWith           (x) => task_state.url.host_str         ().ok_or(ConditionError::HostIsNone           )?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::NormalizedHostStartsWith (x) => task_state.url.normalized_host  ().ok_or(ConditionError::NormalizedHostIsNone )?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::SubdomainStartsWith      (x) => task_state.url.subdomain        ().ok_or(ConditionError::SubdomainIsNone      )?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::RegDomainStartsWith      (x) => task_state.url.reg_domain       ().ok_or(ConditionError::RegDomainIsNone      )?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::DomainStartsWith         (x) => task_state.url.domain           ().ok_or(ConditionError::DomainIsNone         )?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::DomainMiddleStartsWith   (x) => task_state.url.domain_middle    ().ok_or(ConditionError::DomainMiddleIsNone   )?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::NotDomainSuffixStartsWith(x) => task_state.url.not_domain_suffix().ok_or(ConditionError::NotDomainSuffixIsNone)?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::DomainSuffixStartsWith   (x) => task_state.url.domain_suffix    ().ok_or(ConditionError::DomainSuffixIsNone   )?.starts_with(get_str!(x, task_state, ConditionError)),
+
+            Self::DomainSegmentStartsWith       {index, value} => task_state.url.domain_segment       (*index).ok_or(ConditionError::DomainSegmentIsNone      )?.starts_with(get_str!(value, task_state, ConditionError)),
+            Self::SubdomainSegmentStartsWith    {index, value} => task_state.url.subdomain_segment    (*index).ok_or(ConditionError::SubdomainSegmentIsNone   )?.starts_with(get_str!(value, task_state, ConditionError)),
+            Self::DomainSuffixSegmentStartsWith {index, value} => task_state.url.domain_suffix_segment(*index).ok_or(ConditionError::DomainSuffixSegmentIsNone)?.starts_with(get_str!(value, task_state, ConditionError)),
+
+            // Host ends with
+
+            Self::HostEndsWith           (x) => task_state.url.host_str         ().ok_or(ConditionError::HostIsNone             )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::NormalizedHostEndsWith (x) => task_state.url.normalized_host  ().ok_or(ConditionError::NormalizedHostIsNone   )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::SubdomainEndsWith      (x) => task_state.url.subdomain        ().ok_or(ConditionError::SubdomainIsNone        )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::RegDomainEndsWith      (x) => task_state.url.reg_domain       ().ok_or(ConditionError::RegDomainIsNone        )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::DomainEndsWith         (x) => task_state.url.domain           ().ok_or(ConditionError::DomainIsNone           )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::DomainMiddleEndsWith   (x) => task_state.url.domain_middle    ().ok_or(ConditionError::DomainMiddleIsNone     )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::NotDomainSuffixEndsWith(x) => task_state.url.not_domain_suffix().ok_or(ConditionError::NotDomainSuffixIsNone  )?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::DomainSuffixEndsWith   (x) => task_state.url.domain_suffix    ().ok_or(ConditionError::DomainSuffixIsNone     )?.ends_with(get_str!(x, task_state, ConditionError)),
+
+            Self::DomainSegmentEndsWith       {index, value} => task_state.url.domain_segment       (*index).ok_or(ConditionError::DomainSegmentIsNone      )?.ends_with(get_str!(value, task_state, ConditionError)),
+            Self::SubdomainSegmentEndsWith    {index, value} => task_state.url.subdomain_segment    (*index).ok_or(ConditionError::SubdomainSegmentIsNone   )?.ends_with(get_str!(value, task_state, ConditionError)),
+            Self::DomainSuffixSegmentEndsWith {index, value} => task_state.url.domain_suffix_segment(*index).ok_or(ConditionError::DomainSuffixSegmentIsNone)?.ends_with(get_str!(value, task_state, ConditionError)),
 
             // Host is one of
 

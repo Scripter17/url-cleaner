@@ -6,7 +6,12 @@ use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-/// The configuration for a [`Profile`]s.
+/// The configuration for a [`Profiles`].
+///
+/// Mainly used in 2 ways:
+///
+/// 1. In [`ProfiledCleanerConfig`] to make a [`ProfiledCleaner`].
+/// 2. To make just a [`Profiles`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct ProfilesConfig {
@@ -31,7 +36,7 @@ impl ProfilesConfig {
         }
     }
 
-    /// Create and return only the specified profile.
+    /// Make only the specified [`Profile`], discarding the rest.
     pub fn into_profile<'a>(mut self, name: Option<&str>, params: Params<'a>) -> Option<Profile<'a>> {
         let ret = self.base.make(params);
         match name {

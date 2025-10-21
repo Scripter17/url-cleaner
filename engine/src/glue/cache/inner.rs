@@ -11,7 +11,7 @@ use crate::prelude::*;
 /// A lazily connected connection to a Sqlite database.
 /// # Examples
 /// ```
-/// use url_cleaner_engine::glue::prelude::*;
+/// use url_cleaner_engine::prelude::*;
 /// use std::time::Duration;
 ///
 /// // Note the mutability.
@@ -94,7 +94,7 @@ impl InnerCache {
             }
             let mut connection = SqliteConnection::establish(self.path.as_str())?;
             if needs_init {
-                diesel::sql_query(DB_INIT_COMMAND).execute(&mut connection)?;
+                diesel::sql_query(INIT_CACHE_COMMAND).execute(&mut connection)?;
             }
             self.connection.set(connection).map_err(|_| ()).expect("The connection to have just been confirmed unset.");
         }

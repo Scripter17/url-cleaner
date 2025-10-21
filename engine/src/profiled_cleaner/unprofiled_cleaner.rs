@@ -6,15 +6,17 @@ use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-/// A [`Cleaner`] with no [`Params`]. Primarily used internally by [`ProfiledCleaner`].
+/// A [`Cleaner`] with no [`Params`].
+///
+/// Mainly used in [`ProfiledCleaner`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct UnprofiledCleaner<'a> {
     /// The documentation.
     ///
-    /// Defaults to an empty [`CleanerDocs`].
+    /// Defaults to an empty [`Docs`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub docs: Cow<'a, CleanerDocs>,
+    pub docs: Cow<'a, Docs>,
     /// Basically functions.
     ///
     /// Defaults to an empty [`Commons`].

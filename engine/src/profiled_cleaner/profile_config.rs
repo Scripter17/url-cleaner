@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-/// A [`ParamsDiff`] profile.
+/// Configuration for a [`Profile`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct ProfileConfig {

@@ -1,4 +1,4 @@
-//! Parsing various things that badly behaved websites throw at you.
+//! Glue for parsing stuff.
 
 pub mod js;
 pub mod html;

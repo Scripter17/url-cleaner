@@ -9,7 +9,7 @@ use serde_with::{serde_as, MapPreventDuplicates, SetPreventDuplicates};
 
 use crate::prelude::*;
 
-/// Allows semantics similar to `HashMap<Option<String>, _>` without having to convert `Option<&str>`s to `Option<String>`s.
+/// A `HashMap<Option<String>, T>` that allows indexing with `Option<&str>`.
 ///
 /// Also has [`Self::else`] to specify a return value when a key isn't otherwise found.
 #[serde_as]

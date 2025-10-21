@@ -1,6 +1,4 @@
-//! Allows executing system commands.
-//!
-//! No the default config does not and will never use this.
+//! Glue for [`std::process::Command`].
 
 #[expect(unused_imports, reason = "Used in doc comments.")]
 use std::process::{Command, Stdio, ExitStatus, ChildStdin, Child};
@@ -17,9 +15,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-/// Config on how to make a [`Command`].
-///
-/// No the default config does not and will never use this.
+/// Config for making [`Command`]s.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[suitable(never)]
 #[serde(deny_unknown_fields)]
@@ -27,16 +23,24 @@ use crate::prelude::*;
 pub struct CommandConfig {
     /// The program.
     pub program: String,
-    #[serde(default, skip_serializing_if = "is_default")]
     /// The arguments to pass to the program.
+    ///
+    /// Defaults to an empty [`Vec`].
+    #[serde(default, skip_serializing_if = "is_default")]
     pub args: Vec<StringSource>,
     /// The directory to run the program in.
+    ///
+    /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub current_dir: Option<PathBuf>,
     /// The environment variables to run the program with.
+    ///
+    /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub envs: HashMap<String, StringSource>,
     /// The STDIN to give the program.
+    ///
+    /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub stdin: Option<StringSource>
 }
@@ -57,11 +61,11 @@ impl From<&str> for CommandConfig {
 impl From<String> for CommandConfig {
     fn from(value: String) -> Self {
         Self {
-            program: value,
-            args: Default::default(),
+            program    : value,
+            args       : Default::default(),
             current_dir: Default::default(),
-            envs: Default::default(),
-            stdin: Default::default()
+            envs       : Default::default(),
+            stdin      : Default::default()
         }
     }
 }
@@ -70,7 +74,7 @@ crate::util::string_or_struct_magic!(CommandConfig);
 
 /// The enum of errors the various [`CommandConfig`] methods can return.
 #[derive(Debug, Error)]
-pub enum CommandError {
+pub enum MakeCommandError {
     /// Returned when an [`std::io::Error`] is encountered.
     #[error(transparent)]
     IoError(#[from] std::io::Error),
@@ -97,10 +101,10 @@ impl CommandConfig {
     /// Builds the [`Command`].
     /// # Errors
     /// If a call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn build(&self, task_state: &TaskStateView) -> Result<Command, CommandError> {
+    pub fn make(&self, task_state: &TaskStateView) -> Result<Command, MakeCommandError> {
         let mut ret = Command::new(&self.program);
         for arg in self.args.iter() {
-            ret.arg(OsString::from(get_string!(arg, task_state, CommandError)));
+            ret.arg(OsString::from(get_string!(arg, task_state, MakeCommandError)));
         }
         if let Some(current_dir) = &self.current_dir {
             ret.current_dir(current_dir);
@@ -115,22 +119,22 @@ impl CommandConfig {
 
     /// Executes the command and gets its exit code.
     /// # Errors
-    /// If the call to [`Self::build`] returns an error, that error is returned.
+    /// If the call to [`Self::make`] returns an error, that error is returned.
     ///
     /// If the call to [`Command::status`] returns an error, that error is returned.
     ///
-    /// If the call to [`ExitStatus::code`] returns [`None`], returns the error [`CommandError::SignalTermination`].
-    pub fn exit_code(&self, task_state: &TaskStateView) -> Result<i32, CommandError> {
-        self.build(task_state)?.status()?.code().ok_or(CommandError::SignalTermination)
+    /// If the call to [`ExitStatus::code`] returns [`None`], returns the error [`MakeCommandError::SignalTermination`].
+    pub fn exit_code(&self, task_state: &TaskStateView) -> Result<i32, MakeCommandError> {
+        self.make(task_state)?.status()?.code().ok_or(MakeCommandError::SignalTermination)
     }
 
     /// Executes the command and returns its STDOUT.
     /// # Errors
-    /// If the call to [`Self::build`] returns an error, that error is returned.
+    /// If the call to [`Self::make`] returns an error, that error is returned.
     ///
     /// If the call to [`Command::spawn`] returns an error, that error is returned.
     ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`CommandError::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`MakeCommandError::StringSourceIsNone`].
     ///
     /// If the call to [`ChildStdin::write_all`] returns an error, that error is returned.
     ///
@@ -138,16 +142,16 @@ impl CommandConfig {
     ///
     /// If the call to [`std::str::from_utf8`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't ever panic.")]
-    pub fn output(&self, task_state: &TaskStateView) -> Result<String, CommandError> {
+    pub fn output(&self, task_state: &TaskStateView) -> Result<String, MakeCommandError> {
         // https://stackoverflow.com/a/49597789/10720231
-        let mut command = self.build(task_state)?;
+        let mut command = self.make(task_state)?;
         command.stdout(Stdio::piped());
         command.stderr(Stdio::null());
         let child = if let Some(stdin) = &self.stdin {
             command.stdin(Stdio::piped());
             let mut child=command.spawn()?;
             let child_stdin=child.stdin.as_mut().expect("The STDIN just set to be available."); // This never panics.
-            child_stdin.write_all(get_str!(stdin, task_state, CommandError).as_bytes())?;
+            child_stdin.write_all(get_str!(stdin, task_state, MakeCommandError).as_bytes())?;
             child
         } else {
             command.spawn()?
@@ -160,8 +164,7 @@ impl CommandConfig {
     /// If the call to [`Self::output`] returns an error, that error is returned.
     ///
     /// If the call to [`Url::parse`] returns an error, that error is returned.
-    #[allow(dead_code, reason = "Public API.")]
-    pub fn get_url(&self, task_state: &TaskStateView) -> Result<Url, CommandError> {
+    pub fn get_url(&self, task_state: &TaskStateView) -> Result<Url, MakeCommandError> {
         Ok(Url::parse(self.output(task_state)?.trim_end_matches(['\r', '\n']))?)
     }
 }

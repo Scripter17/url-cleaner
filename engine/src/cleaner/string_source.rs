@@ -750,10 +750,10 @@ pub enum StringSourceError {
     #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
-    /// Returned when a [`CommandError`] is encountered.
+    /// Returned when a [`MakeCommandError`] is encountered.
     #[cfg(feature = "command")]
     #[error(transparent)]
-    CommandError(#[from] Box<CommandError>),
+    MakeCommandError(#[from] Box<MakeCommandError>),
 
     /// Returned when a [`MakeCommonCallArgsError`] is encountered.
     #[error(transparent)]
@@ -775,9 +775,9 @@ pub enum StringSourceError {
 }
 
 #[cfg(feature = "command")]
-impl From<CommandError> for StringSourceError {
-    fn from(value: CommandError) -> Self {
-        Self::CommandError(Box::new(value))
+impl From<MakeCommandError> for StringSourceError {
+    fn from(value: MakeCommandError) -> Self {
+        Self::MakeCommandError(Box::new(value))
     }
 }
 

@@ -1,6 +1,10 @@
 //! Unified APIs for the various places flags and vars exist.
 
 pub mod flag;
-pub use flag::*;
 pub mod var;
-pub use var::*;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::flag::prelude::*;
+    pub use super::var::prelude::*;
+}

@@ -11,7 +11,7 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.49", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.50", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls", "mtls"] }
 serde = "1.0.228"

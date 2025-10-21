@@ -28,7 +28,7 @@ impl CachePath {
     /// If `self` is [`Self::Memory`], returns `:memory:`.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::glue::prelude::*;
+    /// use url_cleaner_engine::prelude::*;
     ///
     /// assert_eq!(CachePath::Memory                          .as_str(), ":memory:");
     /// assert_eq!(CachePath::Path(         ":memory:".into()).as_str(), "file://:memory:");

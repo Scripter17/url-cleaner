@@ -1,127 +1,30 @@
-//! Caching to allow for only expanding redirects the first time you encounter them.
-//!
-//! A cache is a Sqlite database containing one table, "cache", with 4 columns:
-//!
-//! - `subject` (`TEXT NOT NULL`): The subject of the cache entry. For example, redirects have their `subject` set to `redirect`.
-//!
-//! - `key` (`TEXT NOT NULL`): The key of the key/value pair. For example, redirects have their `key` set to the redirect URL.
-//!
-//! - `value` (`TEXT` (maybe null)): The value of the key/value pair. For example, redirects have their `value` set to the URL the starting redirect URL points to.
-//!
-//! - `duration` (`FLOAT`): The amount of time (in seconds) it took to do the thing being cached. For example, redirects have their `duration` set to about as long as it took to do the network request(s). This is used by [`CacheHandle`] to artificially delay cache reads if [`CacheHandleConfig::delay`] is [`true`] to reduce the ability of websites to tell if you've seen a certain URL before.
-//!
-//! Every pair of `subject` and `key` is unique.
+//! Glue for [`diesel`].
 
 use std::time::Duration;
 
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
-use rand::TryRngCore;
 
 use crate::prelude::*;
 
-pub mod path;
-pub use path::*;
-pub mod inner;
-pub use inner::*;
+pub mod handle;
+pub mod handle_config;
 pub mod outer;
-pub use outer::*;
+pub mod inner;
+pub mod path;
 pub mod glue;
-pub use glue::*;
 
-/// A wrapper around a [`Cache`] for optional security features provided by [`CacheHandleConfig`].
-///
-/// Unlike [`Cache`], which is intended to be shared between [`Job`]s, [`CacheHandle`]s are intended to be made on a per-[`Job`] basis using the [`CacheHandleConfig`] appropriate for each particular [`Job`].
-///
-/// For example, a CLI program writing results to a file doesn't need to enable cache delay/unthreading, but a userscript should.
-/// # Examples
-/// ```
-/// use url_cleaner_engine::glue::prelude::*;
-/// use std::time::Duration;
-///
-/// let cache = CacheHandle {
-///     cache: &Default::default(),
-///     config: Default::default()
-/// };
-///
-/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), None);
-/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: None, duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
-/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
-/// ```
-#[derive(Debug, Clone, Copy)]
-pub struct CacheHandle<'a> {
-    /// The [`Cache`].
-    pub cache: &'a Cache,
-    /// The [`CacheHandleConfig`].
-    pub config: CacheHandleConfig
-}
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::handle::*;
+    pub use super::handle_config::*;
+    pub use super::path::*;
+    pub use super::inner::*;
+    pub use super::outer::*;
+    pub use super::glue::*;
 
-/// Configuration for how a [`CacheHandle`] should behave.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CacheHandleConfig {
-    /// If [`true`], delay cache reads by about as long as the initial computation took.
-    ///
-    /// Used by URL Cleaner Site Userscript to reduce the ability of websites to tell if you have a URL cached.
-    ///
-    /// Defaults to [`false`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub delay: bool,
-    /// If [`false`], make [`CacheHandle::read`] always return [`None`].
-    ///
-    /// Defaults to [`true`].
-    #[serde(default = "get_true", skip_serializing_if = "is_true")]
-    pub read: bool,
-    /// If [`false`], make [`CacheHandle::write`] do nothing.
-    ///
-    /// Defaults to [`true`].
-    #[serde(default = "get_true", skip_serializing_if = "is_true")]
-    pub write: bool
-}
-
-impl Default for CacheHandleConfig {
-    fn default() -> Self {
-        Self {
-            delay: false,
-            read : true,
-            write: true
-        }
-    }
-}
-
-impl CacheHandle<'_> {
-    /// Reads from the cache.
-    /// # Errors
-    /// If the call to [`InnerCache::read`] returns an error, that error is returned.
-    /// # Panics
-    /// If, somehow, [`rand::rngs::OsRng`] doesn't work, this panics when [`Self::config`]'s [`CacheHandleConfig::delay`] is [`true`].
-    pub fn read(&self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        if self.config.read {
-            let ret = self.cache.read(keys)?;
-            if self.config.delay && let Some(CacheEntryValues {duration, ..}) = ret {
-                let between_neg_1_and_1 = rand::rngs::OsRng.try_next_u32().expect("Os RNG to be available") as f32 / f32::MAX * 2.0 - 1.0;
-                std::thread::sleep(duration.mul_f32(1.0 + between_neg_1_and_1 / 8.0));
-            }
-            Ok(ret)
-        } else {
-            Ok(None)
-        }
-    }
-
-    /// Writes to the cache.
-    ///
-    /// If an entry for the `subject` and `key` already exists, overwrites it.
-    /// # Errors
-    /// If the call to [`InnerCache::write`] returns an error, that error is returned.
-    pub fn write(&self, entry: NewCacheEntry) -> Result<(), WriteToCacheError> {
-        if self.config.write {
-            self.cache.write(entry)
-        } else {
-            Ok(())
-        }
-    }
+    pub use super::{cache, INIT_CACHE_COMMAND, NewCacheEntry, CacheEntryKeys, CacheEntryValues, ReadFromCacheError, WriteToCacheError, ConnectCacheError};
 }
 
 diesel::table! {
@@ -139,7 +42,7 @@ diesel::table! {
 }
 
 /// The Sqlite command to initialize the cache database.
-pub const DB_INIT_COMMAND: &str = r#"CREATE TABLE cache (
+pub const INIT_CACHE_COMMAND: &str = r#"CREATE TABLE cache (
     subject TEXT NOT NULL,
     "key" TEXT NOT NULL,
     value TEXT,

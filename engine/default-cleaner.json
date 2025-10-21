@@ -553,15 +553,19 @@
 										"app.link": {"All": [
 											"RemoveQuery",
 											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
+												"if": {"SubdomainEndsWith": "-alternate"},
 												"then": {"All": [
-													{"Common": "universal"},
-													{"ExpandRedirect": {
-														"headers": {
-															"User-Agent": "curl/8.12.1"
-														}
+													{"ModifySubdomain": {"StripSuffix": "-alternate"}},
+													{"InsertPathSegment": {
+														"index": 0,
+														"value": "e"
 													}}
 												]}
+											}},
+											{"Common": "universal"},
+											{"If": {
+												"if": {"FlagIsNotSet": "no_network"},
+												"then": "ExpandRedirect"
 											}}
 										]},
 										"awstrack.me": {"SetWhole": {"Modified": {
@@ -1938,6 +1942,7 @@
 				{"PartMap": {
 					"part": "NormalizedHost",
 					"map": {
+						"actionnetwork.org": {"RemoveQueryParam": "source"},
 						"aliexpress.com": {"If": {
 							"if": {"PathStartsWith": "/item/"},
 							"then": "RemoveQuery"

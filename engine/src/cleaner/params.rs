@@ -40,7 +40,7 @@ use crate::prelude::*;
 /// "#).unwrap();
 ///
 /// // Makes an equivalent Params where each field is just a reference to the respective field from the above Params.
-/// 
+///
 /// let mut borrowed_params = params.borrowed();
 ///
 /// let params_diff = serde_json::from_str::<ParamsDiff>(r#"

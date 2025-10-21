@@ -1,21 +1,27 @@
-//! Individual [`Task`]s to do.
+//! [`Task`] and co.
 
 use thiserror::Error;
 
 use crate::prelude::*;
 
 pub mod lazy_task_config;
-pub use lazy_task_config::*;
 pub mod task_config;
-pub use task_config::*;
 pub mod task_context;
-pub use task_context::*;
 pub mod lazy_task;
-pub use lazy_task::*;
 pub mod task_state;
-pub use task_state::*;
 pub mod scratchpad;
-pub use scratchpad::*;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::lazy_task_config::*;
+    pub use super::task_config::*;
+    pub use super::task_context::*;
+    pub use super::lazy_task::*;
+    pub use super::task_state::*;
+    pub use super::scratchpad::*;
+
+    pub use super::{Task, DoTaskError};
+}
 
 /// A task to be done with [`Self::do`].
 ///
