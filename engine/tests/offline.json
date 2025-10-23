@@ -79,6 +79,18 @@
 				{
 					"task_config": "https://link.sfchronicle.com/external/41488169.38548/aHR0cHM6Ly93d3cuaG90ZG9nYmlsbHMuY29tL2hhbWJ1cmdlci1tb2xkcy9idXJnZXItZG9nLW1vbGQ_c2lkPTY4MTNkMTljYzM0ZWJjZTE4NDA1ZGVjYSZzcz1QJnN0X3JpZD1udWxsJnV0bV9zb3VyY2U9bmV3c2xldHRlciZ1dG1fbWVkaXVtPWVtYWlsJnV0bV90ZXJtPWJyaWVmaW5nJnV0bV9jYW1wYWlnbj1zZmNfYml0ZWN1cmlvdXM/6813d19cc34ebce18405decaB7ef84e41",
 					"result": "https://www.hotdogbills.com/hamburger-molds/burger-dog-mold"
+				},
+
+				{
+					"task_config": {
+						"url": "https://www.washingtonpost.com/local/?itid=hp_top_nav_d.c.,%20md.%20&%20va.",
+						"context": {
+							"vars": {
+								"Real url from the actual washington post website": "true, unfortunately"
+							}
+						}
+					},
+					"result": "https://www.washingtonpost.com/local/"
 				}
 			]
 		},

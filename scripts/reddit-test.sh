@@ -38,7 +38,7 @@ if [ $GET_DATA -eq 1 ]; then
     after=
     for page in $(seq $PAGES); do
       echo "Getting page $page for $domain" > /dev/stderr
-      data=$(curl --retry 6 --retry-delay 10 -s "https://old.reddit.com/domain/$domain/.json?after=$after&limit=100" -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0' --compressed)
+      data=$(curl --retry 6 --retry-delay 10 -s "https://old.reddit.com/domain/$domain/.json?after=$after&limit=100" -H 'User-Agent: Firefox')
       after=$(echo "$data" | jq '.data.after' -r)
       echo "$data"
       if [ "$after" == "null" -a $page -ne $PAGES ]; then

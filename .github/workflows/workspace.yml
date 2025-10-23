@@ -52,13 +52,13 @@ jobs:
       run: cargo hack clippy --feature-powerset --at-least-one-of default,default -- -D warnings
 
     - name: 'Clippy each feature'
-      run: cargo hack clippy --each-feature -- -D warnings -A unused_imports -A dead_code
+      run: cargo hack clippy --each-feature -- -D warnings
 
     - name: 'Clippy --benches powerset with default'
       run: cargo hack clippy --feature-powerset --at-least-one-of default,default --benches -- -D warnings
 
     - name: 'Clippy --benches each feature'
-      run: cargo hack clippy --each-feature --benches -- -D warnings -A unused_imports -A dead_code
+      run: cargo hack clippy --each-feature --benches -- -D warnings
 
     - name: 'Save cache'
       if: runner.environment == null

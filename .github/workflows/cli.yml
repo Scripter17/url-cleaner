@@ -36,6 +36,10 @@ jobs:
     - name: offline_tests
       run: ./urlc --tests engine/tests/offline.json
 
+    - name: online_tests
+      if: runner.environment == null
+      run: ./urlc --tests engine/tests/online.json
+
     - name: Order
       run: |
         in=$(seq -f "https://%0.0f.com/" 127)

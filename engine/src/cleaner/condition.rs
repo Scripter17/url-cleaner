@@ -1306,6 +1306,20 @@ pub enum Condition {
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
+    /// Satisfied if [`Self::PartContains::part`] is [`Some`] and contains [`Self::PartContains::value`] at [`Self::PartContains::at`].
+    /// # Errors
+    #[doc = edoc!(getnone(StringSource, Condition), checkerr(StringLocation))]
+    PartIsSomeAndContains {
+        /// The part to look in.
+        part: UrlPart,
+        /// The value to look for.
+        value: StringSource,
+        /// Where to look in [`Self::PartContains::part`] for [`Self::PartContains::value`].
+        ///
+        /// Defaults to [`StringLocation::Anywhere`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        at: StringLocation
+    },
     /// Satisfied if [`Self::PartMatches::part`] satisfies [`Self::PartMatches::matcher`].
     /// # Errors
     #[doc = edoc!(getnone(UrlPart, Condition), checkerr(StringMatcher))]
@@ -1749,6 +1763,11 @@ impl Condition {
             Self::PartIs {part, value} => part.get(task_state.url) == get_option_cow!(value, task_state),
 
             Self::PartContains {part, value, at} => at.check(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartIsSomeAndContains {part, value, at} => if let Some(x) = part.get(task_state.url) {
+                at.check(&x, get_str!(value, task_state, ConditionError))?
+            } else {
+                false
+            },
 
             Self::PartMatches {part, matcher} => matcher.check   (part.get(task_state.url).as_deref(), task_state)?,
             Self::PartIsOneOf {part, values } => values .contains(part.get(task_state.url).as_deref()),

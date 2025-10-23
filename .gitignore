@@ -4,3 +4,4 @@ bacon.toml
 logs
 **/benchmarking/*
 !**/benchmarking/*.sh
+/reddit-*

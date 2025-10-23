@@ -557,6 +557,12 @@ pub enum Action {
 
     /// [`BetterUrl::set_path`].
     SetPath(StringSource),
+    /// Apply [`Self::ModifyPath::0`] to the path.
+    /// # Errors
+    #[doc = edoc!(applyerr(StringModification))]
+    ///
+    /// If the resulting path would be [`None`], returns the error [`ActionError::PathCannotBeNone`].
+    ModifyPath(StringModification),
     /// Removes the specified [`UrlPart::PathSegment`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::set_path_segment))]
@@ -569,6 +575,19 @@ pub enum Action {
         index: isize,
         /// The value to set it to.
         value: StringSource
+    },
+    /// Apply [`Self::ModifyPathSegment::modification`] to the specified path segment.
+    /// # Errors
+    /// If the call to [`BetterUrl::path_segment`] returns [`None`], returns the error [`ActionError::UrlDoesNotHavePathSegments`].
+    ///
+    /// If the call to [`BetterUrl::path_segment`] returns [`Some`] of [`None`], returns the error [`ActionError::PathSegmentNotFound`].
+    ///
+    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_path_segment))]
+    ModifyPathSegment {
+        /// The path segment to modify.
+        index: isize,
+        /// The [`StringModification`] to apply.
+        modification: StringModification
     },
     /// [`BetterUrl::insert_path_segment`].
     /// # Errors
@@ -688,12 +707,12 @@ pub enum Action {
     /// Keeps all query parameters with the specified name.
     ///
     /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
     AllowQueryParam(StringSource),
     /// Removes all query params with names in the specified [`HashSet`].
     ///
     /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -808,6 +827,49 @@ pub enum Action {
     RemoveFragment,
     /// If the [`Url::fragment`] is `Some("")`, set it to [`None`].
     RemoveEmptyFragment,
+    /// Removes all fragment parameters with the specified name.
+    ///
+    /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
+    RemoveFragmentParam(StringSource),
+    /// Removes all fragment params with names in the specified [`HashSet`].
+    ///
+    /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
+    AllowFragmentParam(StringSource),
+    /// Removes all fragment params with names in the specified [`HashSet`].
+    ///
+    /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
+    RemoveFragmentParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    /// Keeps only fragment params with names in the specified [`HashSet`].
+    ///
+    /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
+    AllowFragmentParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    /// Removes all fragment params with names matching the specified [`StringMatcher`].
+    ///
+    /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
+    /// # Errors
+    #[doc = edoc!(checkerr(StringMatcher))]
+    RemoveFragmentParamsMatching(StringMatcher),
+    /// Keeps only fragment params with names matching the specified [`StringMatcher`].
+    ///
+    /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
+    /// # Errors
+    #[doc = edoc!(checkerr(StringMatcher))]
+    AllowFragmentParamsMatching(StringMatcher),
+    /// Extreme shorthand for handling universal fragment parameters.
+    /// # Errors
+    #[doc = edoc!(notfound(Set, Action))]
+    ///
+    /// If the list isn't found, returns the error [`ActionError::ListNotFound`].
+    RemoveFragmentParamsInSetOrStartingWithAnyInList {
+        /// The name of the [`Set`] in [`Params::sets`] to use.
+        set: String,
+        /// The name of the list in [`Params::lists`] to use.
+        list: String
+    },
 
     // General parts
 
@@ -1180,6 +1242,9 @@ pub enum ActionError {
     /// Returned when attempting to get the path segments of a URL with no path segments.
     #[error("Attempted to get the path segments of a URL with no path segments.")]
     UrlDoesNotHavePathSegments,
+    /// Returned whem attempting to get a path segment that doesn't exist.
+    #[error("Attempted to get a path segment that didn't exist.")]
+    PathSegmentNotFound,
     /// Returned when a [`SetPathSegmentError`] is encountered.
     #[error(transparent)]
     SetPathSegmentError(#[from] SetPathSegmentError),
@@ -1480,9 +1545,20 @@ impl Action {
             // Path
 
             Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
+            Self::ModifyPath(modification) => {
+                let mut path = Some(Cow::Borrowed(task_state.url.path()));
+                modification.apply(&mut path, &task_state.to_view())?;
+                #[expect(clippy::unnecessary_to_owned, reason = "Borrow checker.")]
+                task_state.url.set_path(&path.ok_or(ActionError::PathCannotBeNone)?.into_owned());
+            },
 
-            Self::RemovePathSegment         (index) => task_state.url.set_path_segment(*index, None)?,
-            Self::SetPathSegment            {index, value} => task_state.url.set_path_segment       (*index, get_new_option_str!(value, task_state))?,
+            Self::RemovePathSegment(index       ) => task_state.url.set_path_segment(*index, None)?,
+            Self::SetPathSegment   {index, value} => task_state.url.set_path_segment(*index, get_new_option_str!(value, task_state))?,
+            Self::ModifyPathSegment {index, modification} => {
+                let mut path_segment = Some(Cow::Borrowed(task_state.url.path_segment(*index).ok_or(ActionError::UrlDoesNotHavePathSegments)?.ok_or(ActionError::PathSegmentNotFound)?));
+                modification.apply(&mut path_segment, &task_state.to_view())?;
+                task_state.url.set_path_segment(*index, path_segment.map(Cow::into_owned).as_deref())?;
+            },
             Self::InsertPathSegment         {index, value} => task_state.url.insert_path_segment    (*index, get_new_str!(value, task_state, ActionError))?,
             Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment   (*index, get_new_option_str!(value, task_state))?,
             Self::InsertRawPathSegment      {index, value} => task_state.url.insert_raw_path_segment(*index, get_new_str!(value, task_state, ActionError))?,
@@ -1606,6 +1682,95 @@ impl Action {
 
             Self::RemoveFragment => task_state.url.set_fragment(None),
             Self::RemoveEmptyFragment => if task_state.url.fragment() == Some("") {task_state.url.set_fragment(None)},
+            Self::RemoveFragmentParam(name) => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                let name = get_str!(name, task_state, ActionError);
+                for param in fragment.split('&') {
+                    if pds(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
+            Self::AllowFragmentParam(name) => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                let name = get_str!(name, task_state, ActionError);
+                for param in fragment.split('&') {
+                    if pds(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
+            Self::RemoveFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                for param in fragment.split('&') {
+                    if !names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
+            Self::AllowFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                for param in fragment.split('&') {
+                    if names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
+            Self::RemoveFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                for param in fragment.split('&') {
+                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
+            Self::AllowFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                for param in fragment.split('&') {
+                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
+            Self::RemoveFragmentParamsInSetOrStartingWithAnyInList {set, list} => if let Some(fragment) = task_state.url.fragment() {
+                let mut new = String::with_capacity(fragment.len());
+                let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
+                let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
+                for param in fragment.split('&') {
+                    let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
+                    if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
+                        if !new.is_empty() {new.push('&');}
+                        new.push_str(param);
+                    }
+                }
+                if new.len() != fragment.len() {
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+            },
 
             // General parts
 

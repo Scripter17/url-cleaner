@@ -12,6 +12,34 @@ use crate::prelude::*;
 /// A `HashMap<Option<String>, T>` that allows indexing with `Option<&str>`.
 ///
 /// Also has [`Self::else`] to specify a return value when a key isn't otherwise found.
+///
+/// Please note that the components that use [`Map`] generally use [`#[serde(flatten)]`](https://serde.rs/field-attrs.html#flatten), a component that looks like it'd be written as
+///
+/// ```Json
+/// {
+///   "map": {
+///     "map": {
+///       "a": "b",
+///       "c": "d"
+///     },
+///     "if_none": "e",
+///     "else": "f"
+///   }
+/// }
+/// ```
+///
+/// would instead be written as just
+///
+/// ```Json
+/// {
+///   "map": {
+///     "a": "b",
+///     "c": "d"
+///   },
+///   "if_none": "e",
+///   "else": "f"
+/// }
+/// ```
 #[serde_as]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
