@@ -1475,63 +1475,63 @@ impl Action {
             Self::SetDomainSuffixSegment{index, value} => task_state.url.set_domain_suffix_segment(*index, get_new_option_str!(value, task_state))?,
 
             Self::ModifyHost(modification) => {
-                let mut x = task_state.url.host_str().map(Cow::Borrowed);
+                let mut x = task_state.url.host_str().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_host(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_host(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifySubdomain(modification) => {
-                let mut x = task_state.url.subdomain().map(Cow::Borrowed);
+                let mut x = task_state.url.subdomain().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_subdomain(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_subdomain(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyRegDomain(modification) => {
-                let mut x = task_state.url.reg_domain().map(Cow::Borrowed);
+                let mut x = task_state.url.reg_domain().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_reg_domain(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_reg_domain(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyDomain(modification) => {
-                let mut x = task_state.url.domain().map(Cow::Borrowed);
+                let mut x = task_state.url.domain().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_domain(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_domain(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyDomainMiddle(modification) => {
-                let mut x = task_state.url.domain_middle().map(Cow::Borrowed);
+                let mut x = task_state.url.domain_middle().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_domain_middle(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_domain_middle(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyNotDomainSuffix(modification) => {
-                let mut x = task_state.url.not_domain_suffix().map(Cow::Borrowed);
+                let mut x = task_state.url.not_domain_suffix().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_not_domain_suffix(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_not_domain_suffix(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyDomainSuffix(modification) => {
-                let mut x = task_state.url.domain_suffix().map(Cow::Borrowed);
+                let mut x = task_state.url.domain_suffix().map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_domain_suffix(x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_domain_suffix(x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyDomainSegment{index, modification} => {
-                let mut x = task_state.url.domain_segment(*index).map(Cow::Borrowed);
+                let mut x = task_state.url.domain_segment(*index).map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_domain_segment(*index, x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_domain_segment(*index, x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifySubdomainSegment{index, modification} => {
-                let mut x = task_state.url.subdomain_segment(*index).map(Cow::Borrowed);
+                let mut x = task_state.url.subdomain_segment(*index).map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_subdomain_segment(*index, x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_subdomain_segment(*index, x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
             Self::ModifyDomainSuffixSegment{index, modification} => {
-                let mut x = task_state.url.domain_suffix_segment(*index).map(Cow::Borrowed);
+                let mut x = task_state.url.domain_suffix_segment(*index).map(TaskCow::Task);
                 modification.apply(&mut x, &task_state.to_view())?;
-                task_state.url.set_domain_suffix_segment(*index, x.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_domain_suffix_segment(*index, x.map(TaskCow::into_job_cow).as_deref())?;
             },
 
 
@@ -1546,7 +1546,7 @@ impl Action {
 
             Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
             Self::ModifyPath(modification) => {
-                let mut path = Some(Cow::Borrowed(task_state.url.path()));
+                let mut path = Some(TaskCow::Task(task_state.url.path()));
                 modification.apply(&mut path, &task_state.to_view())?;
                 #[expect(clippy::unnecessary_to_owned, reason = "Borrow checker.")]
                 task_state.url.set_path(&path.ok_or(ActionError::PathCannotBeNone)?.into_owned());
@@ -1555,9 +1555,9 @@ impl Action {
             Self::RemovePathSegment(index       ) => task_state.url.set_path_segment(*index, None)?,
             Self::SetPathSegment   {index, value} => task_state.url.set_path_segment(*index, get_new_option_str!(value, task_state))?,
             Self::ModifyPathSegment {index, modification} => {
-                let mut path_segment = Some(Cow::Borrowed(task_state.url.path_segment(*index).ok_or(ActionError::UrlDoesNotHavePathSegments)?.ok_or(ActionError::PathSegmentNotFound)?));
+                let mut path_segment = Some(TaskCow::Task(task_state.url.path_segment(*index).ok_or(ActionError::UrlDoesNotHavePathSegments)?.ok_or(ActionError::PathSegmentNotFound)?));
                 modification.apply(&mut path_segment, &task_state.to_view())?;
-                task_state.url.set_path_segment(*index, path_segment.map(Cow::into_owned).as_deref())?;
+                task_state.url.set_path_segment(*index, path_segment.map(TaskCow::into_owned).as_deref())?;
             },
             Self::InsertPathSegment         {index, value} => task_state.url.insert_path_segment    (*index, get_new_str!(value, task_state, ActionError))?,
             Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment   (*index, get_new_option_str!(value, task_state))?,
@@ -1777,14 +1777,14 @@ impl Action {
             Self::SetPart {part, value} => part.set(task_state.url, get_new_option_str!(value, task_state))?,
 
             Self::ModifyPart {part, modification} => {
-                let mut temp = part.get(task_state.url);
+                let mut temp = part.get(task_state.url).map(TaskCow::from_task_cow);
                 modification.apply(&mut temp, &task_state.to_view())?;
-                part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
+                part.set(task_state.url, temp.map(TaskCow::into_job_cow).as_deref())?;
             },
             Self::ModifyPartIfSome {part, modification} => {
-                if let mut temp @ Some(_) = part.get(task_state.url) {
+                if let mut temp @ Some(_) = part.get(task_state.url).map(TaskCow::from_task_cow) {
                     modification.apply(&mut temp, &task_state.to_view())?;
-                    part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
+                    part.set(task_state.url, temp.map(TaskCow::into_job_cow).as_deref())?;
                 }
             },
 
@@ -1845,7 +1845,7 @@ impl Action {
             },
             Self::ModifyScratchpadVar {name, modification} => {
                 let name = get_string!(name, task_state, ActionError);
-                let mut value = task_state.scratchpad.vars.get(&name).map(|x| Cow::Borrowed(&**x));
+                let mut value = task_state.scratchpad.vars.get(&name).map(|x| TaskCow::Task(&**x));
                 modification.apply(&mut value, &task_state.to_view())?;
                 match value {
                     Some(value) => {let _ = task_state.scratchpad.vars.insert( name, value.into_owned());},

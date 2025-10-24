@@ -2,7 +2,6 @@
 
 use std::str::FromStr;
 use std::convert::Infallible;
-use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -569,7 +568,7 @@ pub enum StringSource {
     #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
-    Custom(for<'a> fn(&TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError>)
+    Custom(for<'j, 't, 'c> fn(&TaskStateView<'j, 't, 'c>) -> Result<Option<TaskCow<'j, 't, 'c, str>>, StringSourceError>)
 }
 
 impl FromStr for StringSource {
@@ -796,10 +795,10 @@ impl StringSource {
     /// Get the string.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'j: 't, 't: 'c, 'c>(&'j self, task_state: &TaskStateView<'j, 't, 'c>) -> Result<Option<TaskCow<'j, 't, 'c, str>>, StringSourceError> {
         debug!(StringSource::get, self);
         Ok(match self {
-            Self::String(string) => Some(Cow::Borrowed(string)),
+            Self::String(string) => Some(TaskCow::Job(string)),
             Self::None => None,
             Self::Error(msg) => Err(StringSourceError::ExplicitError(msg.clone()))?,
             Self::TryElse{r#try, r#else} => match r#try.get(task_state) {
@@ -830,13 +829,13 @@ impl StringSource {
             },
             Self::EmptyToNone(value) => {
                 let x = value.get(task_state)?;
-                if x == Some("".into()) {
+                if x.as_deref() == Some("") {
                     None
                 } else {
                     x
                 }
             },
-            Self::NoneToEmpty(value) => Some(value.get(task_state)?.unwrap_or(Cow::Borrowed(""))),
+            Self::NoneToEmpty(value) => Some(value.get(task_state)?.unwrap_or(TaskCow::Job(""))),
             Self::AssertMatches {value, matcher, message} => {
                 let ret = value.get(task_state)?;
                 if matcher.check(ret.as_deref(), task_state)? {
@@ -852,24 +851,24 @@ impl StringSource {
 
 
 
-            Self::Part(part) => part.get(task_state.url),
-            Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| Cow::Owned(x.into_owned())),
-            Self::JobSourceHostPart(part) => task_state.job_context.source_host.as_ref().and_then(|host| part.get(host)).map(Cow::Borrowed),
+            Self::Part(part) => part.get(task_state.url).map(TaskCow::from_task_cow),
+            Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| TaskCow::Owned(x.into_owned())),
+            Self::JobSourceHostPart(part) => task_state.job_context.source_host.as_ref().and_then(|host| part.get(host)).map(TaskCow::Job),
 
 
 
             Self::Join {values, join} => match join.as_str() {
-                "" => Some(Cow::Owned(values.iter().filter_map(|value| value.get(task_state).transpose()).collect::<Result<String, _>>()?)),
-                _  => Some(Cow::Owned(values.iter().filter_map(|value| value.get(task_state).transpose()).collect::<Result<Vec<_>, _>>()?.join(join)))
+                "" => Some(TaskCow::Owned(values.iter().filter_map(|value| value.get(task_state).transpose()).map(|x| x.map(TaskCow::into_task_cow)).collect::<Result<String, _>>()?)),
+                _  => Some(TaskCow::Owned(values.iter().filter_map(|value| value.get(task_state).transpose()).map(|x| x.map(TaskCow::into_task_cow)).collect::<Result<Vec<_>, _>>()?.join(join)))
             },
 
 
 
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| TaskCow::Job(&**x)),
             Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
                 .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
-                .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
+                .get_partition_of(element.get(task_state)?.as_deref()).map(TaskCow::Job),
 
 
 
@@ -884,13 +883,13 @@ impl StringSource {
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
                 let _unthread_handle = task_state.unthreader.unthread();
-                Some(Cow::Owned(response.handle(task_state.http_client.get_response(*request.clone(), task_state)?, task_state)?))
+                Some(TaskCow::Owned(response.handle(task_state.http_client.get_response(*request.clone(), task_state)?, task_state)?))
             },
 
 
 
             #[cfg(feature = "command")]
-            Self::CommandOutput(command) => Some(Cow::Owned(command.output(task_state)?)),
+            Self::CommandOutput(command) => Some(TaskCow::Owned(command.output(task_state)?)),
 
 
 
@@ -900,7 +899,7 @@ impl StringSource {
                 let subject = get_cow!(subject, task_state, StringSourceError);
                 let key = get_cow!(key, task_state, StringSourceError);
                 if let Some(entry) = task_state.cache_handle.read(CacheEntryKeys {subject: &subject, key: &key})? {
-                    return Ok(entry.value.map(Cow::Owned));
+                    return Ok(entry.value.map(TaskCow::Owned));
                 }
                 let start = std::time::Instant::now();
                 let ret = value.get(task_state)?;
@@ -927,7 +926,7 @@ impl StringSource {
                     cache_handle: task_state.cache_handle,
                     #[cfg(feature = "http")]
                     http_client : task_state.http_client
-                })?.map(|x| Cow::Owned(x.into_owned()))
+                })?.map(|x| TaskCow::Owned(x.into_owned()))
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,
             #[cfg(feature = "custom")]

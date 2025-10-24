@@ -14,6 +14,7 @@ pub mod profiled_cleaner;
 pub mod data_structures;
 pub mod refs;
 pub mod unthreader;
+pub mod task_cow;
 pub mod glue;
 pub mod testing;
 pub(crate) mod util;
@@ -31,6 +32,7 @@ pub mod prelude {
     pub use crate::data_structures::prelude::*;
     pub use crate::refs::prelude::*;
     pub use crate::unthreader::prelude::*;
+    pub use crate::task_cow::*;
     pub use crate::glue::prelude::*;
 
     pub(crate) use crate::util::*;

@@ -45,7 +45,7 @@ macro_rules! string_or_struct_magic {
 /// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`String`].
 macro_rules! get_option_string {
     ($value:expr, $task_state:expr) => {
-        get_option_cow!($value, $task_state).map(std::borrow::Cow::into_owned)
+        get_option_cow!($value, $task_state).map($crate::prelude::TaskCow::into_owned)
     }
 }
 
@@ -67,7 +67,7 @@ macro_rules! get_new_option_str {
 macro_rules! get_option_cow {
     ($value:expr, $task_state:expr) => {
         match $value {
-            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
+            StringSource::String(value) => Some($crate::prelude::TaskCow::Job(value.as_str())),
             StringSource::None => None,
             value => value.get(&$task_state.to_view())?
         }
@@ -99,7 +99,7 @@ macro_rules! get_new_str {
 macro_rules! get_cow {
     ($value:expr, $task_state:expr, $error:ty) => {
         match $value.get_self() {
-            StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
+            StringSource::String(value) => $crate::prelude::TaskCow::Job(value.as_str()),
             value => value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
         }
     }

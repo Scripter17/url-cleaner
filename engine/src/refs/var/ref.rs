@@ -1,6 +1,5 @@
 //! [`VarRef`].
 
-use std::borrow::Cow;
 use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
@@ -36,7 +35,7 @@ impl VarRef {
     /// If the call to [`StringSource::get`] returns [`None`], returns the error [`GetVarError::StringSourceIsNone`].
     ///
     /// If the call to [`VarType::get`] returns an error, that error is returned.
-    pub fn get<'a>(&self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, GetVarError> {
+    pub fn get<'j: 't, 't: 'c, 'c>(&self, task_state: &TaskStateView<'j, 't, 'c>) -> Result<Option<TaskCow<'j, 't, 'c, str>>, GetVarError> {
         debug!(VarRef::get, self);
         self.r#type.get(get_str!(self.name, task_state, GetVarError), task_state)
     }

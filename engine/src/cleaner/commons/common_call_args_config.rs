@@ -65,7 +65,7 @@ impl CommonCallArgsConfig {
     /// Builds the [`CommonCallArgs`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
-    pub fn make<'a>(&'a self, task_state: &TaskStateView) -> Result<CommonCallArgs<'a>, MakeCommonCallArgsError> {
+    pub fn make<'j>(&'j self, task_state: &TaskStateView<'j, '_, '_>) -> Result<CommonCallArgs<'j>, MakeCommonCallArgsError> {
         Ok(CommonCallArgs {
             flags: &self.flags,
             vars: self.vars.iter().filter_map(|(k, v)| match v.get(task_state) {Ok(Some(x)) => Some(Ok((&**k, x.into_owned()))), Ok(None) => None, Err(e) => Some(Err(e))}).collect::<Result<HashMap<_, _>, StringSourceError>>()?,

@@ -3,7 +3,6 @@
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
@@ -514,7 +513,7 @@ impl StringMatcher {
             Self::LengthIs(x) => haystack.ok_or(StringMatcherError::StringIsNone)?.len() == *x,
 
             Self::Modified {modification, matcher} => {
-                let mut temp = haystack.map(Cow::Borrowed);
+                let mut temp = haystack.map(TaskCow::Task);
                 modification.apply(&mut temp, task_state)?;
                 matcher.check(temp.as_deref(), task_state)?
             }

@@ -8,38 +8,38 @@ use crate::prelude::*;
 ///
 /// For an immutable view, see [`TaskStateView`].
 #[derive(Debug)]
-pub struct TaskState<'a> {
+pub struct TaskState<'j: 't, 't: 'c, 'c> {
     /// The [`BetterUrl`] being modified.
-    pub url: &'a mut BetterUrl,
+    pub url: &'t mut BetterUrl,
     /// The [`Scratchpad`] being used.
-    pub scratchpad: &'a mut Scratchpad,
+    pub scratchpad: &'t mut Scratchpad,
     /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
-    pub common_args: Option<&'a CommonCallArgs<'a>>,
+    pub common_args: Option<&'c CommonCallArgs<'j>>,
     /// The [`TaskContext`] of the [`Task`] this came form.
-    pub context: &'a TaskContext,
+    pub context: &'j TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
-    pub job_context: &'a JobContext,
+    pub job_context: &'j JobContext,
     /// The [`Unthreader`].
-    pub unthreader: &'a Unthreader,
+    pub unthreader: &'j Unthreader,
     /// The [`Params`].
-    pub params: &'a Params<'a>,
+    pub params: &'j Params<'j>,
     /// The [`Commons`] that can be called.
-    pub commons: &'a Commons,
+    pub commons: &'j Commons,
     /// The [`CacheHandle`] being used.
     #[cfg(feature = "cache")]
-    pub cache_handle: CacheHandle<'a>,
+    pub cache_handle: CacheHandle<'j>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    pub http_client: &'a HttpClient
+    pub http_client: &'j HttpClient
 }
 
-impl TaskState<'_> {
+impl<'j: 't, 't: 'c, 'c> TaskState<'j, 't, 'c> {
     /// Converts `self` to a [`TaskStateView`], which just makes the references immutable.
     ///
     /// `&task_state.to_view()` should always effectively compile down to a [`std::mem::transmute`].
     ///
     /// Once safe transmutes are stabilized, I'll implement [`std::ops::Deref`] like that.
-    pub fn to_view(&self) -> TaskStateView<'_> {
+    pub fn to_view(&'t self) -> TaskStateView<'j, 't, 'c> {
         TaskStateView {
             url         : self.url,
             scratchpad  : self.scratchpad,
@@ -57,7 +57,7 @@ impl TaskState<'_> {
     }
 
     /// Make a [`TaskStateDebugHelper`].
-    pub fn debug_helper(&self) -> TaskStateDebugHelper<'_> {
+    pub fn debug_helper(&'t self) -> TaskStateDebugHelper<'t, 'c> {
         TaskStateDebugHelper {
             url: self.url,
             scratchpad: self.scratchpad,
@@ -68,13 +68,13 @@ impl TaskState<'_> {
 
 /// Used by the `debug` feature to only print parts of a [`TaskState`]/[`TaskStateView`] that can change.
 #[derive(Debug, Clone, Copy)]
-pub struct TaskStateDebugHelper<'a> {
+pub struct TaskStateDebugHelper<'t: 'c, 'c> {
     /// [`TaskState::url`].
-    pub url: &'a BetterUrl,
+    pub url: &'t BetterUrl,
     /// [`TaskState::scratchpad`].
-    pub scratchpad: &'a Scratchpad,
+    pub scratchpad: &'t Scratchpad,
     /// [`TaskState::common_args`]
-    pub common_args: Option<&'a CommonCallArgs<'a>>
+    pub common_args: Option<&'c CommonCallArgs<'t>>
 }
 
 /// Helper macro to make docs briefer.
@@ -119,39 +119,39 @@ macro_rules! task_state {
 ///
 /// For an mutable view, see [`TaskState`].
 #[derive(Debug, Clone, Copy)]
-pub struct TaskStateView<'a> {
+pub struct TaskStateView<'j: 't, 't: 'c, 'c> {
     /// The [`BetterUrl`] being modified.
-    pub url: &'a BetterUrl,
+    pub url: &'t BetterUrl,
     /// The [`Scratchpad`] being used.
-    pub scratchpad: &'a Scratchpad,
+    pub scratchpad: &'t Scratchpad,
     /// The [`CommonCallArgs`] for the current [`Commons`] context, if applicable.
-    pub common_args: Option<&'a CommonCallArgs<'a>>,
+    pub common_args: Option<&'c CommonCallArgs<'j>>,
     /// The [`TaskContext`] of the [`Task`] this came form.
-    pub context: &'a TaskContext,
+    pub context: &'j TaskContext,
     /// The [`JobContext`] of the [`Job`] this came from.
-    pub job_context: &'a JobContext,
+    pub job_context: &'j JobContext,
     /// The [`Unthreader`].
-    pub unthreader: &'a Unthreader,
+    pub unthreader: &'j Unthreader,
     /// The [`Params`].
-    pub params: &'a Params<'a>,
+    pub params: &'j Params<'j>,
     /// The [`Commons`] that can be called.
-    pub commons: &'a Commons,
+    pub commons: &'j Commons,
     /// The [`CacheHandle`] being used.
     #[cfg(feature = "cache")]
-    pub cache_handle: CacheHandle<'a>,
+    pub cache_handle: CacheHandle<'j>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    pub http_client: &'a HttpClient
+    pub http_client: &'j HttpClient
 }
 
-impl<'a> TaskStateView<'a> {
+impl<'j: 't, 't: 'c, 'c> TaskStateView<'j, 't, 'c> {
     /// No-op to make some internal macros more convenient.
     pub(crate) const fn to_view(self) -> Self {
         self
     }
 
     /// Make a [`TaskStateDebugHelper`].
-    pub fn debug_helper(&self) -> TaskStateDebugHelper<'_> {
+    pub fn debug_helper(&self) -> TaskStateDebugHelper<'t, 'c> {
         TaskStateDebugHelper {
             url: self.url,
             scratchpad: self.scratchpad,

@@ -1743,7 +1743,7 @@ impl Condition {
 
             Self::HasQueryParam(QueryParamSelector {name, index}) => task_state.url.has_query_param(name, *index),
 
-            Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten() == get_option_cow!(value, task_state),
+            Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten().as_deref() == get_option_str!(value, task_state),
 
             Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => values.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
             Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
@@ -1760,7 +1760,7 @@ impl Condition {
 
             // General parts
 
-            Self::PartIs {part, value} => part.get(task_state.url) == get_option_cow!(value, task_state),
+            Self::PartIs {part, value} => part.get(task_state.url).as_deref() == get_option_cow!(value, task_state).as_deref(),
 
             Self::PartContains {part, value, at} => at.check(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
             Self::PartIsSomeAndContains {part, value, at} => if let Some(x) = part.get(task_state.url) {
