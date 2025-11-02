@@ -6,7 +6,6 @@ use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-#[cfg(feature = "regex")]
 #[expect(unused_imports, reason = "Used in docs.")]
 use regex::Regex;
 
@@ -88,7 +87,7 @@ pub enum StringSource {
     ///
     /// The exact info printed is unspecified and subject to change at any time for any reason.
     /// # Suitability
-    /// Always unsuitable to be in the default config.
+    /// Always unsuitable to be in the bundled cleaner.
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
@@ -241,11 +240,11 @@ pub enum StringSource {
     ///
     /// tsv!(task_state);
     ///
-    /// let map = Map {
+    /// let map = Box::new(Map {
     ///     map    : [("abc".into(), "def".into())].into(),
-    ///     if_none: Some(Box::new("was none".into())),
-    ///     r#else : Some(Box::new("wasn't abc or none".into()))
-    /// };
+    ///     if_none: Some("was none".into()),
+    ///     r#else : Some("wasn't abc or none".into())
+    /// });
     ///
     /// assert_eq!(StringSource::Map {
     ///     value: Box::new("abc".into()),
@@ -267,7 +266,7 @@ pub enum StringSource {
         value: Box<Self>,
         /// The [`Map`] to index with [`Self::Map::value`].
         #[serde(flatten)]
-        map: Map<Self>,
+        map: Box<Map<Self>>,
     },
 
 
@@ -372,8 +371,8 @@ pub enum StringSource {
     /// tsv!(task_state, params = Params {
     ///     maps: Cow::Owned([("map_name".into(), Map {
     ///         map    : [("abc".into(), "def".into())].into(),
-    ///         if_none: Some(Box::new("was none".into())),
-    ///         r#else : Some(Box::new("wasn't abc or none".into()))
+    ///         if_none: Some("was none".into()),
+    ///         r#else : Some("wasn't abc or none".into())
     ///     })].into()),
     ///     ..Default::default()
     /// });
@@ -400,19 +399,19 @@ pub enum StringSource {
         /// The value to index the [`Map`] with.
         key: Box<Self>
     },
-    /// Gets the [`NamedPartitioning`] specified by [`Self::NamedPartitioning::named_partitioning`] from [`Params::named_partitionings`] then gets the name of the partition containing [`Self::NamedPartitioning::element`].
+    /// Gets the [`Partitioning`] specified by [`Self::Partitioning::partitioning`] from [`Params::partitionings`] then gets the name of the partition containing [`Self::Partitioning::element`].
     /// # Errors
-    #[doc = edoc!(geterr(Self, 2), getnone(Self, StringSource, 2), notfound(NamedPartitioning, StringSource))]
+    #[doc = edoc!(geterr(Self, 2), getnone(Self, StringSource, 2), notfound(Partitioning, StringSource))]
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
     /// use url_cleaner_engine::prelude::*;
     ///
     /// tsv!(task_state, params = Params {
-    ///     named_partitionings: Cow::Owned([
+    ///     partitionings: Cow::Owned([
     ///         (
     ///             "thing".into(),
-    ///             NamedPartitioning::try_from_iter([
+    ///             Partitioning::try_from_iter([
     ///                 ("abc".into(), vec![Some("a".into()), Some("b".into()), Some("c".into())]),
     ///                 ("def".into(), vec![Some("d".into()), Some("e".into()), Some("f".into())])
     ///             ]).unwrap()
@@ -421,15 +420,15 @@ pub enum StringSource {
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::NamedPartitioning {
-    ///     named_partitioning: Box::new("thing".into()),
+    /// assert_eq!(StringSource::Partitioning {
+    ///     partitioning: Box::new("thing".into()),
     ///     element: Box::new("a".into())
     /// }.get(&task_state).unwrap(), Some("abc".into()));
     /// ```
-    NamedPartitioning {
-        /// The name of the [`Params::named_partitionings`] to index.
-        #[suitable(assert = "named_partitioning_is_documented")]
-        named_partitioning: Box<Self>,
+    Partitioning {
+        /// The name of the [`Params::partitionings`] to index.
+        #[suitable(assert = "partitioning_is_documented")]
+        partitioning: Box<Self>,
         /// The element whose partition to get the name of.
         element: Box<Self>
     },
@@ -491,7 +490,7 @@ pub enum StringSource {
 
 
 
-    /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache_handle`], returns the cached value.
+    /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
     ///
     /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
     /// # Errors
@@ -507,7 +506,7 @@ pub enum StringSource {
     },
     /// Calls a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_sources`].
     /// # Errors
-    #[doc = edoc!(ageterr(Self, CommonCall::name), agetnone(Self, StringSource, CommonCall::name), commonnotfound(Self, StringSource), callerr(CommonCallArgsConfig::make), geterr(Self))]
+    #[doc = edoc!(ageterr(Self, CommonCallConfig::name), agetnone(Self, StringSource, CommonCallConfig::name), commonnotfound(Self, StringSource), callerr(CommonArgsConfig::make), geterr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -523,26 +522,26 @@ pub enum StringSource {
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::Common(CommonCall {
+    /// assert_eq!(StringSource::Common(CommonCallConfig {
     ///     name: Box::new("abc".into()),
     ///     args: Default::default()
     /// }).get(&task_state).unwrap(), Some("def".into()));
     ///
-    /// assert_eq!(StringSource::Common(CommonCall {
+    /// assert_eq!(StringSource::Common(CommonCallConfig {
     ///     name: Box::new("def".into()),
     ///     args: Default::default()
     /// }).get(&task_state).unwrap(), None);
     ///
-    /// assert_eq!(StringSource::Common(CommonCall {
+    /// assert_eq!(StringSource::Common(CommonCallConfig {
     ///     name: Box::new("def".into()),
-    ///     args: Box::new(CommonCallArgsConfig {
+    ///     args: Box::new(CommonArgsConfig {
     ///         vars: [("common_var".into(), "ghi".into())].into(),
     ///         ..Default::default()
     ///     })
     /// }).get(&task_state).unwrap(), Some("ghi".into()));
     /// ```
-    Common(CommonCall),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_sources`] and applies it.
+    Common(CommonCallConfig),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::string_sources`] and applies it.
     /// # Errors
     /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringSourceError::NotInCommonContext`].
     ///
@@ -716,9 +715,9 @@ pub enum StringSourceError {
     /// Returned when the requested [`Map`] isn't found.
     #[error("The requested map was not found.")]
     MapNotFound,
-    /// Returned when the requested [`Params::named_partitionings`] isn't found.
-    #[error("The requested Params NamedPartitioning was not found.")]
-    NamedPartitioningNotFound,
+    /// Returned when the requested [`Params::partitionings`] isn't found.
+    #[error("The requested Params Partitioning was not found.")]
+    PartitioningNotFound,
     /// Returned when a [`GetFlagError`] is encountered.
     #[error(transparent)]
     GetFlagError(#[from] GetFlagError),
@@ -727,9 +726,8 @@ pub enum StringSourceError {
     GetVarError(#[from] GetVarError),
 
     /// Returned when a [`regex::Error`]  is encountered.
-    #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] ::regex::Error),
+    RegexError(#[from] regex::Error),
     /// Returned when a [`DoHttpRequestError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
@@ -755,9 +753,9 @@ pub enum StringSourceError {
     #[error(transparent)]
     MakeCommandError(#[from] Box<MakeCommandError>),
 
-    /// Returned when a [`MakeCommonCallArgsError`] is encountered.
+    /// Returned when a [`MakeCommonArgsError`] is encountered.
     #[error(transparent)]
-    MakeCommonCallArgsError(#[from] MakeCommonCallArgsError),
+    MakeCommonArgsError(#[from] MakeCommonArgsError),
     /// Returned when the requested [`Commons::string_sources`] isn't found.
     #[error("The requested common StringSource was not found.")]
     CommonStringSourceNotFound,
@@ -867,9 +865,9 @@ impl StringSource {
 
             Self::Var(var_ref) => var_ref.get(task_state)?,
             Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
-            Self::NamedPartitioning {named_partitioning, element} => task_state.params.named_partitionings
-                .get(get_str!(named_partitioning, task_state, StringSourceError)).ok_or(StringSourceError::NamedPartitioningNotFound)?
-                .get_partition_of(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
+            Self::Partitioning {partitioning, element} => task_state.params.partitionings
+                .get(get_str!(partitioning, task_state, StringSourceError)).ok_or(StringSourceError::PartitioningNotFound)?
+                .get(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
 
 
 
@@ -899,13 +897,13 @@ impl StringSource {
                 let _unthreader_lock = task_state.unthreader.unthread();
                 let subject = get_cow!(subject, task_state, StringSourceError);
                 let key = get_cow!(key, task_state, StringSourceError);
-                if let Some(entry) = task_state.cache_handle.read(CacheEntryKeys {subject: &subject, key: &key})? {
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
                     return Ok(entry.value.map(Cow::Owned));
                 }
                 let start = std::time::Instant::now();
                 let ret = value.get(task_state)?;
                 let duration = start.elapsed();
-                task_state.cache_handle.write(NewCacheEntry {
+                task_state.cache.write(NewCacheEntry {
                     subject: &subject,
                     key: &key,
                     value: ret.as_deref(),
@@ -915,18 +913,18 @@ impl StringSource {
             },
             Self::Common(common_call) => {
                 task_state.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
-                    common_args : Some(&common_call.args.make(task_state)?),
-                    url         : task_state.url,
-                    scratchpad  : task_state.scratchpad,
-                    context     : task_state.context,
-                    job_context : task_state.job_context,
-                    params      : task_state.params,
-                    commons     : task_state.commons,
-                    unthreader  : task_state.unthreader,
+                    common_args: Some(&common_call.args.make(task_state)?),
+                    url        : task_state.url,
+                    scratchpad : task_state.scratchpad,
+                    context    : task_state.context,
+                    job_context: task_state.job_context,
+                    params     : task_state.params,
+                    commons    : task_state.commons,
+                    unthreader : task_state.unthreader,
                     #[cfg(feature = "cache")]
-                    cache_handle: task_state.cache_handle,
+                    cache      : task_state.cache,
                     #[cfg(feature = "http")]
-                    http_client : task_state.http_client
+                    http_client: task_state.http_client
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,

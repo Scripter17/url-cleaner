@@ -19,9 +19,9 @@ pub struct JobConfig<'j> {
     pub cleaner: &'j Cleaner<'j>,
     /// The [`Unthreader`].
     pub unthreader: &'j Unthreader,
-    /// The [`CacheHandle`].
+    /// The [`Cache`].
     #[cfg(feature = "cache")]
-    pub cache_handle: CacheHandle<'j>,
+    pub cache: Cache<'j>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     pub http_client: &'j HttpClient
@@ -36,7 +36,7 @@ impl<'j> JobConfig<'j> {
             cleaner     : self.cleaner,
             unthreader  : self.unthreader,
             #[cfg(feature = "cache")]
-            cache_handle: self.cache_handle,
+            cache: self.cache,
             #[cfg(feature = "http")]
             http_client : self.http_client
         }
@@ -50,7 +50,7 @@ impl<'j> JobConfig<'j> {
             cleaner     : self.cleaner,
             unthreader  : self.unthreader,
             #[cfg(feature = "cache")]
-            cache_handle: self.cache_handle,
+            cache: self.cache,
             #[cfg(feature = "http")]
             http_client : self.http_client
         }

@@ -18,17 +18,6 @@ pub struct ServerInfo<'a> {
     pub version: Cow<'a, str>,
     /// The max payload size.
     pub max_payload: u64,
-    /// The default value for [`CleanPayloadConfig::read_cache`].
-    #[cfg(feature = "cache")]
-    pub default_read_cache: bool,
-    /// The default value for [`CleanPayloadConfig::write_cache`].
-    #[cfg(feature = "cache")]
-    pub default_write_cache: bool,
-    /// The default value for [`CleanPayloadConfig::cache_delay`].
-    #[cfg(feature = "cache")]
-    pub default_cache_delay: bool,
-    /// The default value for [`CleanPayloadConfig::unthread`].
-    pub default_unthread: bool,
     /// The [`UnthreaderMode`] used when unthreading.
     pub unthreader_mode: UnthreaderMode
 }

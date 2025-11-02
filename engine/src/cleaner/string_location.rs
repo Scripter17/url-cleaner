@@ -155,7 +155,7 @@ pub enum StringLocation {
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
-        /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
+        /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
         r#else: Box<Self>
     },
     /// Return the first non-error value.

@@ -1,17 +1,12 @@
-//! [`CommonCallArgs`].
+//! [`CommonArgs`].
 
-use std::str::FromStr;
 use std::collections::{HashSet, HashMap};
-
-use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-string_or_struct_magic!(CommonCall);
-
 /// The args a [`Commons`] thing is called with.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct CommonCallArgs<'a> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommonArgs<'a> {
     /// The flags that are set.
     pub flags: &'a HashSet<String>,
     /// The vars that are set.

@@ -1,143 +1,126 @@
-//! The home if [`InnerCache`].
+//! [`InnerCache`].
 
-use std::cell::OnceCell;
+use std::time::Duration;
+use std::sync::OnceLock;
+use std::path::PathBuf;
 
-use diesel::prelude::*;
-#[expect(unused_imports, reason = "Used in docs.")]
-use diesel::query_builder::SqlQuery;
+use rusqlite::{Connection, OptionalExtension};
+use parking_lot::{ReentrantMutex, ReentrantMutexGuard, MappedReentrantMutexGuard};
 
 use crate::prelude::*;
 
-/// A lazily connected connection to a Sqlite database.
-/// # Examples
-/// ```
-/// use url_cleaner_engine::prelude::*;
-/// use std::time::Duration;
-///
-/// // Note the mutability.
-/// let mut cache = InnerCache::new(CachePath::Memory);
-///
-/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), None);
-/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: None, duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(None));
-/// cache.write(NewCacheEntry { subject: "subject", key: "key", value: Some("value"), duration: Default::default() }).unwrap();
-/// assert_eq!(cache.read(CacheEntryKeys { subject: "subject", key: "key" }).unwrap().map(|entry| entry.value), Some(Some("value".into())));
-/// ```
-#[derive(Default)]
+/// A [`Cache`] without a [`CacheConfig`].
+#[derive(Debug, Default)]
 pub struct InnerCache {
-    /// The path of the database.
-    path: CachePath,
-    /// The connection to the database.
-    connection: OnceCell<SqliteConnection>
-}
-
-impl ::core::fmt::Debug for InnerCache {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        f.debug_struct("InnerCache")
-            .field("path", &self.path)
-            .field("connection", if self.connection.get().is_some() {&"OnceCell(..)"} else {&"OnceCell(<uninit>)"})
-            .finish()
-    }
+    /// The [`CacheLocation`].
+    location: CacheLocation,
+    /// The [`Sync`]'d and lazied [`Connection`].
+    connection: ReentrantMutex<OnceLock<Connection>>
 }
 
 impl InnerCache {
-    /// Create a new unconnected [`Self`].
-    pub fn new(path: CachePath) -> Self {
-        path.into()
-    }
-}
+    /// The command to initialize the cache.
+    pub const INIT: &str = r#"CREATE TABLE IF NOT EXISTS cache (
+        subject TEXT NOT NULL,
+        "key" TEXT NOT NULL,
+        value TEXT,
+        duration FLOAT NOT NULL,
+        UNIQUE(subject, "key") ON CONFLICT REPLACE
+    )"#;
 
-impl PartialEq for InnerCache {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-    }
-}
-impl Eq for InnerCache {}
+    /// The template to read from the cache.
+    ///
+    /// - `?1` is [`CacheEntryKeys::subject`].
+    /// - `?2` is [`CacheEntryKeys::key`].
+    pub const READ: &str = r#"SELECT * FROM cache WHERE subject = ?1 AND "key" = ?2"#;
 
-impl<T: Into<CachePath>> From<T> for InnerCache {
-    fn from(value: T) -> Self {
+    /// The template to write to the cache.
+    ///
+    /// - `?1` is [`NewCacheEntry::subject`].
+    /// - `?2` is [`NewCacheEntry::key`].
+    /// - `?3` is [`NewCacheEntry::value`].
+    /// - `?4` is [`NewCacheEntry::duration`] as an [`f32`] of seconds.
+    pub const WRITE: &str = r#"INSERT INTO cache (subject, "key", value, duration) VALUES (?1, ?2, ?3, ?4)"#;
+
+    /// Make a new [`Self`] with the provided [`CacheLocation`].
+    pub fn new(location: CacheLocation) -> Self {
         Self {
-            path: value.into(),
+            location,
             ..Default::default()
         }
     }
-}
 
-impl InnerCache {
-    /// Gets the [`CachePath`] of the connection.
-    pub fn path(&self) -> &CachePath {
-        &self.path
+    /// Get the [`CacheLocation`].
+    pub fn location(&self) -> &CacheLocation {
+        &self.location
     }
 
-    /// Gets the connection itself, if `self` has been connected via [`Self::connect`] yet.
-    pub fn connection(&mut self) -> Option<&mut SqliteConnection> {
-        self.connection.get_mut()
-    }
-
-    /// Returns the connection, connecting if not already connected.
+    /// Get a lock on the cache.
     /// # Errors
-    /// If the call to [`std::fs::exists`] to check if the database exists returns an error, that error is returned.
-    ///
-    /// If the call to [`std::fs::File::create_new`] to create the database returns an error, that error is returned.
-    ///
-    /// If the call to [`SqliteConnection::establish`] to connect to the database returns an error, that error is returned.
-    ///
-    /// If the call to [`SqlQuery::execute`] to initialize the database returns an error, that error is returned.
-    #[allow(clippy::missing_panics_doc, reason = "Doesn't panic, but should be replaced with OnceCell::get_or_try_init once that's stable.")]
-    pub fn connect(&mut self) -> Result<&mut SqliteConnection, ConnectCacheError> {
+    #[doc = edoc!(callerr(Connection::open_in_memory), callerr(std::fs::exists), callerr(std::fs::File::create_new), callerr(Connection::open), callerr(Connection::execute))]
+    pub fn lock(&self) -> Result<MappedReentrantMutexGuard<'_, Connection>, LockCacheError> {
         debug!(InnerCache::connect, self);
-        if self.connection.get().is_none() {
-            let mut needs_init = self.path == CachePath::Memory;
-            if let CachePath::Path(path) = &self.path && !std::fs::exists(path)? {
-                needs_init = true;
-                std::fs::File::create_new(path)?;
+
+        Ok(match ReentrantMutexGuard::try_map(self.connection.lock(), OnceLock::get) {
+            Ok (lock) => lock,
+            Err(lock) => {
+                let connection = match &self.location {
+                    CacheLocation::Memory => Connection::open_in_memory()?,
+                    CacheLocation::Path(path) => {
+                        if !std::fs::exists(path)? {
+                            std::fs::File::create_new(path)?;
+                        }
+                        Connection::open(path)?
+                    }
+                };
+                connection.execute(Self::INIT, [])?;
+                ReentrantMutexGuard::map(lock, |ol| ol.get_or_init(move || connection))
             }
-            let mut connection = SqliteConnection::establish(self.path.as_str())?;
-            if needs_init {
-                diesel::sql_query(INIT_CACHE_COMMAND).execute(&mut connection)?;
-            }
-            self.connection.set(connection).map_err(|_| ()).expect("The connection to have just been confirmed unset.");
-        }
-        Ok(self.connection.get_mut().expect("The connection to have just been set."))
+        })
     }
 
-    /// Disconnects from the database.
-    pub fn disconnect(&mut self) {
-        let _ = self.connection.take();
-    }
-
-    /// Reads from the database.
+    /// Read an entry from the cache.
     /// # Errors
-    /// If the call to [`Self::connect`] returns an error, that error is returned.
-    ///
-    /// If the call to [`RunQueryDsl::load`] returns an error, that error is returned.
-    pub fn read(&mut self, keys: CacheEntryKeys) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        debug!(InnerCache::read, self, keys);
-        Ok(cache::dsl::cache
-            .filter(cache::dsl::subject.eq(keys.subject))
-            .filter(cache::dsl::key.eq(keys.key))
-            .limit(1)
-            .select(CacheEntryValues::as_select())
-            .load(self.connect()?)?
-            .first().cloned())
+    #[doc = edoc!(callerr(Self::lock), callerr(Connection::query_one))]
+    pub fn read(&self, keys: CacheEntryKeys<'_>) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
+        debug!(InnerCache::read, self, &keys);
+
+        Ok(self.lock()?.query_one(
+            Self::READ,
+            [keys.subject, keys.key],
+            |row| Ok(CacheEntryValues {
+                value   : row.get("value")?,
+                duration: Duration::from_secs_f32(row.get("duration")?)
+            })
+        ).optional()?)
     }
 
-    /// Writes to the database, overwriting the entry the equivalent call to [`Self::read`] would return.
+    /// Write an entry to the cache.
     /// # Errors
-    /// If the call to [`Self::connect`] returns an error, that error is returned.
-    ///
-    /// If the call to [`RunQueryDsl::get_result`] returns an error, that error is returned.
-    pub fn write(&mut self, entry: NewCacheEntry) -> Result<(), WriteToCacheError> {
-        debug!(InnerCache::write, self, entry);
-        diesel::insert_into(cache::table)
-            .values(entry)
-            .execute(self.connect()?)?;
+    #[doc = edoc!(callerr(Self::lock), callerr(Connection::execute))]
+    pub fn write(&self, entry: NewCacheEntry<'_>) -> Result<(), WriteToCacheError> {
+        debug!(InnerCache::write, self, &entry);
+
+        self.lock()?.execute(
+            Self::WRITE,
+            (entry.subject, entry.key, entry.value, entry.duration.as_secs_f32())
+        )?;
+
         Ok(())
     }
 }
 
-impl From<InnerCache> for (CachePath, OnceCell<SqliteConnection>) {
-    fn from(value: InnerCache) -> Self {
-        (value.path, value.connection)
+impl From<PathBuf> for InnerCache {
+    fn from(path: PathBuf) -> Self {
+        CacheLocation::from(path).into()
+    }
+}
+
+impl From<CacheLocation> for InnerCache {
+    fn from(location: CacheLocation) -> Self {
+        Self {
+            location,
+            ..Default::default()
+        }
     }
 }

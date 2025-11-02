@@ -17,7 +17,7 @@ pub mod prelude {
     pub use super::task_config::*;
     pub use super::task_context::*;
     pub use super::lazy_task::*;
-    pub use super::task_state::*;
+    pub use super::task_state::prelude::*;
     pub use super::scratchpad::*;
 
     pub use super::{Task, DoTaskError};
@@ -25,7 +25,7 @@ pub mod prelude {
 
 /// A task to be done with [`Self::do`].
 ///
-/// Usually made via [`LazyTask::make`].
+/// Usually made via [`LazyTask::make`] or [`JobConfig::make_task`].
 #[derive(Debug, Clone)]
 pub struct Task<'j> {
     /// The [`TaskConfig`].
@@ -36,9 +36,9 @@ pub struct Task<'j> {
     pub cleaner: &'j Cleaner<'j>,
     /// The [`Unthreader`].
     pub unthreader: &'j Unthreader,
-    /// The [`CacheHandle`].
+    /// The [`Cache`].
     #[cfg(feature = "cache")]
-    pub cache_handle: CacheHandle<'j>,
+    pub cache: Cache<'j>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     pub http_client: &'j HttpClient
@@ -50,18 +50,18 @@ impl Task<'_> {
     #[doc = edoc!(applyerr(Cleaner))]
     pub fn r#do(mut self) -> Result<BetterUrl, DoTaskError> {
         self.cleaner.apply(&mut TaskState {
-            url         : &mut self.config.url,
-            scratchpad  : &mut Default::default(),
-            common_args : None,
-            context     : &self.config.context,
-            job_context : self.job_context,
-            params      : &self.cleaner.params,
-            commons     : &self.cleaner.commons,
-            unthreader  : self.unthreader,
+            url        : &mut self.config.url,
+            scratchpad : &mut Default::default(),
+            common_args: None,
+            context    : &self.config.context,
+            job_context: self.job_context,
+            params     : &self.cleaner.params,
+            commons    : &self.cleaner.commons,
+            unthreader : self.unthreader,
             #[cfg(feature = "cache")]
-            cache_handle: self.cache_handle,
+            cache      : self.cache,
             #[cfg(feature = "http")]
-            http_client : self.http_client
+            http_client: self.http_client
         })?;
         Ok(self.config.url)
     }
@@ -70,8 +70,6 @@ impl Task<'_> {
 /// The enums of errors that [`Task::do`] can return.
 #[derive(Debug, Error)]
 pub enum DoTaskError {
-    /// Returned when an [`MakeTaskError`] is encountered.
-    #[error(transparent)] MakeTaskError(#[from] MakeTaskError),
     /// Returned when an [`ApplyCleanerError`] is encountered.
     #[error(transparent)] ApplyCleanerError(#[from] ApplyCleanerError)
 }
@@ -88,9 +86,9 @@ macro_rules! task {
             cleaner: $cleaner,
             unthreader: &Default::default(),
             #[cfg(feature = "cache")]
-            cache_handle: CacheHandle {
-                cache: &Default::default(),
-                config: Default::default()
+            cache: $crate::prelude::Cache {
+                config: Default::default(),
+                inner: &Default::default()
             },
             #[cfg(feature = "http")]
             http_client: &Default::default()

@@ -151,13 +151,13 @@ pub enum Action {
     ///
     /// Action::PartMap {
     ///     part: UrlPart::Host,
-    ///     map: Map {
+    ///     map: Box::new(Map {
     ///         map: [
     ///             ("example.com".into(), Action::Error("...".into()))
     ///         ].into(),
     ///         if_none: None,
     ///         r#else: None
-    ///     }
+    ///     })
     /// }.apply(&mut task_state).unwrap_err();
     /// ```
     PartMap {
@@ -165,7 +165,7 @@ pub enum Action {
         part: UrlPart,
         /// The [`Map`] to index with [`Self::PartMap::part`].
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
     /// Gets the string specified by [`Self::StringMap::value`], indexes [`Self::StringMap::map`], and applies the returned [`Self`].
     ///
@@ -180,13 +180,13 @@ pub enum Action {
     ///
     /// Action::StringMap {
     ///     value: StringSource::String("a".into()),
-    ///     map: Map {
+    ///     map: Box::new(Map {
     ///         map: [
     ///             ("a".into(), Action::Error("...".into()))
     ///         ].into(),
     ///         if_none: None,
     ///         r#else: None
-    ///     }
+    ///     })
     /// }.apply(&mut task_state).unwrap_err();
     /// ```
     StringMap {
@@ -194,33 +194,33 @@ pub enum Action {
         value: StringSource,
         /// The [`Map`] to index with [`Self::StringMap::value`].
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
-    /// Gets the name of the partition [`Self::PartNamedPartitioning::part`] is in in the specified [`NamedPartitioning`], indexes [`Self::PartNamedPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
+    /// Gets the name of the partition [`Self::PartPartitioning::part`] is in in the specified [`Partitioning`], indexes [`Self::PartPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Action, 2), notfound(NamedPartitioning, Action), applyerr(Self))]
-    PartNamedPartitioning {
-        /// The [`NamedPartitioning`] to search in.
-        named_partitioning: StringSource,
-        /// The [`UrlPart`] whose value to find in the [`NamedPartitioning`].
+    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Action, 2), notfound(Partitioning, Action), applyerr(Self))]
+    PartPartitioning {
+        /// The [`Partitioning`] to search in.
+        partitioning: StringSource,
+        /// The [`UrlPart`] whose value to find in the [`Partitioning`].
         part: UrlPart,
         /// The [`Map`] to index.
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
-    /// [`Self::PartNamedPartitioning`] but uses each [`UrlPart`] in [`Self::FirstMatchingPartNamedPartitioning`] until a match is found.
+    /// [`Self::PartPartitioning`] but uses each [`UrlPart`] in [`Self::FirstMatchingPartPartitioning`] until a match is found.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Action, 2), notfound(NamedPartitioning, Action), applyerr(Self))]
+    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Action, 2), notfound(Partitioning, Action), applyerr(Self))]
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
     /// use url_cleaner_engine::prelude::*;
     ///
     /// ts!(task_state, url = "https://abc.example.com", params = Params {
-    ///     named_partitionings: Cow::Owned([
+    ///     partitionings: Cow::Owned([
     ///         (
     ///             "a".into(),
-    ///             NamedPartitioning::try_from_iter([
+    ///             Partitioning::try_from_iter([
     ///                 ("b".into(), vec![Some("example.com".into())])
     ///             ]).unwrap(),
     ///         )
@@ -228,50 +228,50 @@ pub enum Action {
     ///     ..Default::default()
     /// });
     ///
-    /// Action::FirstMatchingPartNamedPartitioning {
-    ///     named_partitioning: "a".into(),
+    /// Action::FirstMatchingPartPartitioning {
+    ///     partitioning: "a".into(),
     ///     parts: vec![UrlPart::NormalizedHost, UrlPart::RegDomain],
-    ///     map: [
+    ///     map: Box::new([
     ///         ("b".to_string(), Action::SetPath("/123".into()))
-    ///     ].into(),
+    ///     ].into()),
     /// }.apply(&mut task_state).unwrap();
     ///
     /// assert_eq!(task_state.url.path(), "/123");
     /// ```
-    FirstMatchingPartNamedPartitioning {
-        /// The [`NamedPartitioning`] to search in.
-        named_partitioning: StringSource,
-        /// The [`UrlPart`]s whose value to find in the [`NamedPartitioning`].
+    FirstMatchingPartPartitioning {
+        /// The [`Partitioning`] to search in.
+        partitioning: StringSource,
+        /// The [`UrlPart`]s whose value to find in the [`Partitioning`].
         parts: Vec<UrlPart>,
         /// The [`Map`] to index.
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
-    /// Gets the name of the partition [`Self::StringNamedPartitioning::value`] is in in the specified [`NamedPartitioning`], indexes [`Self::StringNamedPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
+    /// Gets the name of the partition [`Self::StringPartitioning::value`] is in in the specified [`Partitioning`], indexes [`Self::StringPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), notfound(NamedPartitioning, Action), applyerr(Self))]
-    StringNamedPartitioning {
-        /// The [`NamedPartitioning`] to search in.
-        named_partitioning: StringSource,
-        /// The [`StringSource`] whose value to find in the [`NamedPartitioning`].
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), notfound(Partitioning, Action), applyerr(Self))]
+    StringPartitioning {
+        /// The [`Partitioning`] to search in.
+        partitioning: StringSource,
+        /// The [`StringSource`] whose value to find in the [`Partitioning`].
         value: StringSource,
         /// The [`Map`] to index.
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
-    /// [`Self::StringNamedPartitioning`] but uses each [`StringSource`] in [`Self::FirstMatchingStringNamedPartitioning`] until a match is found.
+    /// [`Self::StringPartitioning`] but uses each [`StringSource`] in [`Self::FirstMatchingStringPartitioning`] until a match is found.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), notfound(NamedPartitioning, Action), applyerr(Self))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), notfound(Partitioning, Action), applyerr(Self))]
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
     /// use url_cleaner_engine::prelude::*;
     ///
     /// ts!(task_state, url = "https://abc.example.com", params = Params {
-    ///     named_partitionings: Cow::Owned([
+    ///     partitionings: Cow::Owned([
     ///         (
     ///             "a".into(),
-    ///             NamedPartitioning::try_from_iter([
+    ///             Partitioning::try_from_iter([
     ///                 ("b".into(), vec![Some("example.com".into())])
     ///             ]).unwrap(),
     ///         )
@@ -279,24 +279,24 @@ pub enum Action {
     ///     ..Default::default()
     /// });
     ///
-    /// Action::FirstMatchingStringNamedPartitioning {
-    ///     named_partitioning: "a".into(),
+    /// Action::FirstMatchingStringPartitioning {
+    ///     partitioning: "a".into(),
     ///     values: vec![StringSource::Part(UrlPart::NormalizedHost), StringSource::Part(UrlPart::RegDomain)],
-    ///     map: [
+    ///     map: Box::new([
     ///         ("b".to_string(), Action::SetPath("/123".into()))
-    ///     ].into(),
+    ///     ].into()),
     /// }.apply(&mut task_state).unwrap();
     ///
     /// assert_eq!(task_state.url.path(), "/123");
     /// ```
-    FirstMatchingStringNamedPartitioning {
-        /// The [`NamedPartitioning`] to search in.
-        named_partitioning: StringSource,
-        /// The [`StringSource`] whose value to find in the [`NamedPartitioning`].
+    FirstMatchingStringPartitioning {
+        /// The [`Partitioning`] to search in.
+        partitioning: StringSource,
+        /// The [`StringSource`] whose value to find in the [`Partitioning`].
         values: Vec<StringSource>,
         /// The [`Map`] to index.
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
 
 
@@ -781,7 +781,7 @@ pub enum Action {
     #[doc = edoc!(notfound(Set, Action))]
     ///
     /// If the list isn't found, returns the error [`ActionError::ListNotFound`].
-    RemoveQueryParamsInSetOrStartingWithAnyInList {
+    QueryUTPHandler {
         /// The name of the [`Set`] in [`Params::sets`] to use.
         set: String,
         /// The name of the list in [`Params::lists`] to use.
@@ -864,7 +864,7 @@ pub enum Action {
     #[doc = edoc!(notfound(Set, Action))]
     ///
     /// If the list isn't found, returns the error [`ActionError::ListNotFound`].
-    RemoveFragmentParamsInSetOrStartingWithAnyInList {
+    FragmentUTPHandler {
         /// The name of the [`Set`] in [`Params::sets`] to use.
         set: String,
         /// The name of the list in [`Params::lists`] to use.
@@ -1051,7 +1051,7 @@ pub enum Action {
         /// The modification to apply.
         modification: StringModification
     },
-    /// If an entry with a subject of [`Self::CacheUrl::subject`] and a key of [`TaskState::url`] exists in the [`TaskState::cache_handle`], sets the URL to the entry's value.
+    /// If an entry with a subject of [`Self::CacheUrl::subject`] and a key of [`TaskState::url`] exists in the [`TaskState::cache`], sets the URL to the entry's value.
     ///
     /// If no such entry exists, applies [`Self::CacheUrl::action`] and inserts a new entry equivalent to applying it.
     ///
@@ -1067,7 +1067,7 @@ pub enum Action {
     },
     /// Applies a [`Self`] from [`TaskState::commons`]'s [`Commons::actions`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), commonnotfound(Self, Action), callerr(CommonCallArgsConfig::make), applyerr(Self))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), commonnotfound(Self, Action), callerr(CommonArgsConfig::make), applyerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -1077,10 +1077,10 @@ pub enum Action {
     ///     ..Default::default()
     /// });
     ///
-    /// Action::Common(CommonCall {name: Box::new("abc".into()), args: Default::default()}).apply(&mut task_state).unwrap();
+    /// Action::Common(CommonCallConfig {name: Box::new("abc".into()), args: Default::default()}).apply(&mut task_state).unwrap();
     /// ```
-    Common(CommonCall),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::actions`] and applies it.
+    Common(CommonCallConfig),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::actions`] and applies it.
     /// # Errors
     /// If [`TaskStateView::common_args`] is [`None`], returns the error [`ActionError::NotInCommonContext`].
     ///
@@ -1297,9 +1297,9 @@ pub enum ActionError {
     #[error(transparent)]
     ConditionError(#[from] ConditionError),
 
-    /// Returned when a [`NamedPartitioning`] with the specified name isn't found.
-    #[error("A NamedPartitioning with the specified name wasn't found.")]
-    NamedPartitioningNotFound,
+    /// Returned when a [`Partitioning`] with the specified name isn't found.
+    #[error("A Partitioning with the specified name wasn't found.")]
+    PartitioningNotFound,
     /// Returned when a [`Set`] with the specified name isn't found.
     #[error("A Set with the specified name wasn't found.")]
     SetNotFound,
@@ -1333,9 +1333,9 @@ pub enum ActionError {
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
 
-    /// Returned when a [`MakeCommonCallArgsError`] is encountered.
+    /// Returned when a [`MakeCommonArgsError`] is encountered.
     #[error(transparent)]
-    MakeCommonCallArgsError(#[from] MakeCommonCallArgsError),
+    MakeCommonArgsError(#[from] MakeCommonArgsError),
     /// Returned when a [`Action`] with the specified name isn't found in the [`Commons::actions`].
     #[error("An Action with the specified name wasn't found in the Commons::actions.")]
     CommonActionNotFound,
@@ -1433,20 +1433,20 @@ impl Action {
             Self::PartMap   {part , map} => if let Some(action) = map.get(part .get( task_state.url      ) ) {action.apply(task_state)?;},
             Self::StringMap {value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
 
-            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(part.get(task_state.url).as_deref())) {action.apply(task_state)?;}
-            Self::FirstMatchingPartNamedPartitioning {named_partitioning, parts, map} => {
-                let named_partitioning = task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?;
+            Self::PartPartitioning   {partitioning, part , map} => if let Some(action) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(part.get(task_state.url).as_deref())) {action.apply(task_state)?;}
+            Self::FirstMatchingPartPartitioning {partitioning, parts, map} => {
+                let partitioning = task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
                 for part in parts.iter() {
-                    if let Some(action) = map.get(named_partitioning.get_partition_of(part.get(task_state.url).as_deref())) {
+                    if let Some(action) = map.get(partitioning.get(part.get(task_state.url).as_deref())) {
                         return action.apply(task_state);
                     }
                 }
             }
-            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(action) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?.get_partition_of(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
-            Self::FirstMatchingStringNamedPartitioning {named_partitioning, values, map} => {
-                let named_partitioning = task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ActionError)).ok_or(ActionError::NamedPartitioningNotFound)?;
+            Self::StringPartitioning {partitioning, value, map} => if let Some(action) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
+            Self::FirstMatchingStringPartitioning {partitioning, values, map} => {
+                let partitioning = task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
                 for value in values.iter() {
-                    if let Some(action) = map.get(named_partitioning.get_partition_of(get_option_str!(value, task_state))) {
+                    if let Some(action) = map.get(partitioning.get(get_option_str!(value, task_state))) {
                         return action.apply(task_state);
                     }
                 }
@@ -1654,7 +1654,7 @@ impl Action {
                     task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
                 }
             },
-            Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(query) = task_state.url.query() {
+            Self::QueryUTPHandler {set, list} => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
                 let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
@@ -1756,7 +1756,7 @@ impl Action {
                     task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
                 }
             },
-            Self::RemoveFragmentParamsInSetOrStartingWithAnyInList {set, list} => if let Some(fragment) = task_state.url.fragment() {
+            Self::FragmentUTPHandler {set, list} => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
                 let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
@@ -1804,7 +1804,7 @@ impl Action {
                 };
                 let _unthread_handle = task_state.unthreader.unthread();
                 #[cfg(feature = "cache")]
-                if let Some(entry) = task_state.cache_handle.read(CacheEntryKeys {subject: "redirect", key: url.as_str()})? {
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: url.as_str()})? {
                     *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                     return Ok(());
                 }
@@ -1823,7 +1823,7 @@ impl Action {
                 #[cfg(feature = "cache")]
                 let duration = start.elapsed();
                 #[cfg(feature = "cache")]
-                task_state.cache_handle.write(NewCacheEntry {
+                task_state.cache.write(NewCacheEntry {
                     subject: "redirect",
                     key: url.as_str(),
                     value: Some(new_url.as_str()),
@@ -1856,7 +1856,7 @@ impl Action {
             Self::CacheUrl {subject, action} => {
                 let _unthread_handle = task_state.unthreader.unthread();
                 let subject = get_string!(subject, task_state, ActionError);
-                if let Some(entry) = task_state.cache_handle.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
+                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
                     *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                     return Ok(());
                 }
@@ -1864,7 +1864,7 @@ impl Action {
                 let start = std::time::Instant::now();
                 action.apply(task_state)?;
                 let duration = start.elapsed();
-                task_state.cache_handle.write(NewCacheEntry {
+                task_state.cache.write(NewCacheEntry {
                     subject: &subject,
                     key: &old_url,
                     value: Some(task_state.url.as_str()),
@@ -1873,18 +1873,18 @@ impl Action {
             },
             Self::Common(common_call) => {
                 task_state.commons.actions.get(get_str!(common_call.name, task_state, ActionError)).ok_or(ActionError::CommonActionNotFound)?.apply(&mut TaskState {
-                    common_args : Some(&common_call.args.make(&task_state.to_view())?),
-                    url         : task_state.url,
-                    scratchpad  : task_state.scratchpad,
-                    context     : task_state.context,
-                    job_context : task_state.job_context,
-                    params      : task_state.params,
-                    commons     : task_state.commons,
-                    unthreader  : task_state.unthreader,
+                    common_args: Some(&common_call.args.make(&task_state.to_view())?),
+                    url        : task_state.url,
+                    scratchpad : task_state.scratchpad,
+                    context    : task_state.context,
+                    job_context: task_state.job_context,
+                    params     : task_state.params,
+                    commons    : task_state.commons,
+                    unthreader : task_state.unthreader,
                     #[cfg(feature = "cache")]
-                    cache_handle: task_state.cache_handle,
+                    cache      : task_state.cache,
                     #[cfg(feature = "http")]
-                    http_client : task_state.http_client
+                    http_client: task_state.http_client
                 })?
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,

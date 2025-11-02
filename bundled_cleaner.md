@@ -1,8 +1,8 @@
-# The default cleaner
+# The bundled cleaner
 
-The default cleaner is included by in URL Cleaner Engine and is intended for normal everyday use.
+The bundled cleaner is included by in URL Cleaner Engine and is intended for normal everyday use.
 
-The default cleaner is intended to always obey the following rules:
+The bundled cleaner is intended to always obey the following rules:
 
 - Cleaning a URL shouldn't cause any "meaningful semantic changes"<sup>[definition?]</sup> when opening the result.
   - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
@@ -11,10 +11,10 @@ The default cleaner is intended to always obey the following rules:
 - It should always be both deterministic and idempotent.
   - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
 - Shuffling the input list of URLs should always give the same (equally shuffled) output.
-- Only the `default-cleaner` feature is expected to be enabled, and it is always expected to be enabled.
-- When the `no_network` flag is set, the default cleaner should NEVER make ANY network requests.
-  - The `no_network` flag should be equivalent to compiling URL Cleaner without network support and removing all network stuff from the default cleaner.
-- Opening a URL outputted by the default cleaner with the `no_network` flag disabled and the `bypass_vip`/any future related flags enebled should never result in a redirect.
+- Only the `bundled-cleaner` feature is expected to be enabled, and it is always expected to be enabled.
+- When the `no_network` flag is set, the bundled cleaner should NEVER make ANY network requests.
+  - The `no_network` flag should be equivalent to compiling URL Cleaner without network support and removing all network stuff from the bundled cleaner.
+- Opening a URL outputted by the bundled cleaner with the `no_network` flag disabled and the `bypass_vip`/any future related flags enebled should never result in a redirect.
 
 Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
 
@@ -24,7 +24,7 @@ Additionally, these rules may be changed at any time for any reason. Usually jus
 
 Cleaners use params to customize what exactly actions do, such as letting you choose whether or not to change `x.com` URLs to `vxtwitter.com` URLs.
 
-The default cleaner contains many flags and vars to control behavior I often want but don't want to make default. If there's a reasonably common task you sometimes want to do, I may be willing to integrate it into the default cleaner.
+The bundled cleaner contains many flags and vars to control behavior I often want but don't want to make default. If there's a reasonably common task you sometimes want to do, I may be willing to integrate it into the default cleaner.
 
 And yes I know the environment vars section shouldn't be listed under params. I don't want to refactor the script to generate markdown from cleaner docs.
 
@@ -82,7 +82,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `utp_prefixes`: Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove.
 
-### Named Partitionings
+### Partitionings
 
 - `nh_categories`: Categories of similar websites with shared cleaning methods.
 - `rd_www_subdomain`: The `RegDomain`s to ensure/remove `www` `Subdomain`s.

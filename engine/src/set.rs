@@ -1,34 +1,45 @@
-//! `HashSet<Option<T>>` but you can check inclusivity with `Option<&T>`.
+//! [`Set`].
 
 use std::collections::HashSet;
 use std::hash::Hash;
 use std::borrow::Borrow;
-use std::fmt::Debug;
 
-use serde::{Serialize, Deserialize, ser::{Serializer, SerializeSeq}, de::{Deserializer, Visitor, SeqAccess}};
+use serde::{Serialize, Deserialize, ser::{Serializer, SerializeSeq}, de::{Deserializer, Visitor, SeqAccess, Error as _}};
 
 use crate::prelude::*;
 
-/// A `HashMap<Option<T>>` tat allows indexing `HashMap<Option<String>>` with `Option<&str>`.
+/// A `HashMap<Option<T>>` that allows indexing with `Option<&Q>` where `T: Borrow<Q>`.
 ///
-/// Serializes and deserializes identically to `HashSet<Option<String>>`, though it's not yet optimized.
+/// Mainly used to allow indexing `Set<String>` with `Option<&str>`, where a [`HashSet`] would require `&Option<String>`.
 /// # Examples
 /// ```
-/// use serde_json::from_str;
 /// use url_cleaner_engine::prelude::*;
 ///
-/// assert_eq!(serde_json::from_str::<Set<String>>(r#"["abc"]"#      ).unwrap(), Set {set: ["abc".into()].into(), if_none: false});
-/// assert_eq!(serde_json::from_str::<Set<String>>(r#"["abc", null]"#).unwrap(), Set {set: ["abc".into()].into(), if_none: true });
+/// assert_eq!(
+///     serde_json::from_str::<Set<String>>(r#"["abc"]"#).unwrap(),
+///     Set {
+///         set: ["abc".into()].into(),
+///         if_none: false
+///     }
+/// );
+///
+/// assert_eq!(
+///     serde_json::from_str::<Set<String>>(r#"["abc", null]"#).unwrap(),
+///     Set {
+///         set: ["abc".into()].into(),
+///         if_none: true
+///     }
+/// );
 /// ```
 #[derive(Debug, Clone, Suitability)]
-pub struct Set<T: Debug> {
+pub struct Set<T> {
     /// The set of `T`.
     pub set: HashSet<T>,
     /// If [`true`], act like [`None`] is in [`Self::set`].
     pub if_none: bool
 }
 
-impl<T: Debug + Hash + Eq> Set<T> {
+impl<T: Hash + Eq> Set<T> {
     /// [`HashSet::with_capacity`].
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -50,8 +61,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
     /// assert!(yes_none.contains(Some("abc")));
     /// assert!(yes_none.contains(None::<&str>));
     /// ```
-    pub fn contains<Q>(&self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Debug + Hash + Eq + ?Sized {
-        debug!(Set::contains, self, value);
+    pub fn contains<Q>(&self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Hash + Eq + ?Sized {
         match value {
             Some(x) => self.set.contains(x),
             None => self.if_none
@@ -66,15 +76,8 @@ impl<T: Debug + Hash + Eq> Set<T> {
         }
     }
 
-    /// [`HashSet::insert`].
-    pub fn extend<I: IntoIterator<Item = Option<T>>>(&mut self, iter: I) {
-        for x in iter {
-            self.insert(x);
-        }
-    }
-
     /// [`HashSet::remove`].
-    pub fn remove<Q>(&mut self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Debug + Hash + Eq + ?Sized {
+    pub fn remove<Q>(&mut self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Hash + Eq + ?Sized {
         match value {
             Some(value) => self.set.remove(value),
             None => {let ret = self.if_none; self.if_none = false; ret}
@@ -83,7 +86,7 @@ impl<T: Debug + Hash + Eq> Set<T> {
 }
 
 /// Implemented manually to avoid the `T: Default` bound.
-impl<T: Debug> Default for Set<T> {
+impl<T> Default for Set<T> {
     fn default() -> Self {
         Self {
             set: Default::default(),
@@ -92,14 +95,14 @@ impl<T: Debug> Default for Set<T> {
     }
 }
 
-impl<T: Debug + Hash + Eq> PartialEq for Set<T> {
+impl<T: Hash + Eq> PartialEq for Set<T> {
     fn eq(&self, other: &Self) -> bool {
         self.set == other.set && self.if_none == other.if_none
     }
 }
-impl<T: Debug + Hash + Eq> Eq for Set<T> {}
+impl<T: Hash + Eq> Eq for Set<T> {}
 
-impl<T: Debug + Eq + Hash, const N: usize> From<[Option<T>; N]> for Set<T> {
+impl<T: Eq + Hash, const N: usize> From<[Option<T>; N]> for Set<T> {
     fn from(value: [Option<T>; N]) -> Self {
         let mut ret = Self::default();
         for x in value {
@@ -109,7 +112,7 @@ impl<T: Debug + Eq + Hash, const N: usize> From<[Option<T>; N]> for Set<T> {
     }
 }
 
-impl<T: Debug + Eq + Hash, const N: usize> From<[T; N]> for Set<T> {
+impl<T: Eq + Hash, const N: usize> From<[T; N]> for Set<T> {
     fn from(value: [T; N]) -> Self {
         let mut ret = Self::default();
         for x in value {
@@ -119,7 +122,7 @@ impl<T: Debug + Eq + Hash, const N: usize> From<[T; N]> for Set<T> {
     }
 }
 
-impl<T: Debug + Eq + Hash> FromIterator<T> for Set<T> {
+impl<T: Eq + Hash> FromIterator<T> for Set<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self{
         let mut ret = Self::default();
         for x in iter {
@@ -129,7 +132,7 @@ impl<T: Debug + Eq + Hash> FromIterator<T> for Set<T> {
     }
 }
 
-impl<T: Debug + Eq + Hash> FromIterator<Option<T>> for Set<T> {
+impl<T: Eq + Hash> FromIterator<Option<T>> for Set<T> {
     fn from_iter<I: IntoIterator<Item = Option<T>>>(iter: I) -> Self{
         let mut ret = Self::default();
         for x in iter {
@@ -139,7 +142,7 @@ impl<T: Debug + Eq + Hash> FromIterator<Option<T>> for Set<T> {
     }
 }
 
-impl<T: Debug + Hash + Eq> From<HashSet<Option<T>>> for Set<T> {
+impl<T: Hash + Eq> From<HashSet<Option<T>>> for Set<T> {
     fn from(value: HashSet<Option<T>>) -> Self {
         let mut ret = Self::default();
         for x in value {
@@ -152,7 +155,7 @@ impl<T: Debug + Hash + Eq> From<HashSet<Option<T>>> for Set<T> {
     }
 }
 
-impl<T: Debug + Hash + Eq> From<Set<T>> for HashSet<Option<T>> {
+impl<T: Hash + Eq> From<Set<T>> for HashSet<Option<T>> {
     fn from(value: Set<T>) -> Self {
         let mut ret = Self::default();
         for x in value.set {
@@ -163,7 +166,24 @@ impl<T: Debug + Hash + Eq> From<Set<T>> for HashSet<Option<T>> {
     }
 }
 
-impl<T: Debug + Serialize> Serialize for Set<T> {
+impl<T: Hash + Eq> Extend<T> for Set<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        self.set.extend(iter);
+    }
+}
+
+impl<T: Hash + Eq> Extend<Option<T>> for Set<T> {
+    fn extend<I: IntoIterator<Item = Option<T>>>(&mut self, iter: I) {
+        for x in iter {
+            match x {
+                Some(x) => {self.set.insert(x);},
+                None => self.if_none = true
+            }
+        }
+    }
+}
+
+impl<T: Serialize> Serialize for Set<T> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(Some(self.set.len() + (self.if_none as usize)))?;
         if self.if_none {seq.serialize_element(&None::<T>)?;}
@@ -174,7 +194,7 @@ impl<T: Debug + Serialize> Serialize for Set<T> {
     }
 }
 
-impl<'de, T: Debug + Deserialize<'de> + Eq + Hash> Deserialize<'de> for Set<T> {
+impl<'de, T: Deserialize<'de> + Eq + Hash> Deserialize<'de> for Set<T> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         deserializer.deserialize_seq(SetDeserializer::<T>(Default::default()))
     }
@@ -184,7 +204,7 @@ impl<'de, T: Debug + Deserialize<'de> + Eq + Hash> Deserialize<'de> for Set<T> {
 #[derive(Debug, Default)]
 struct SetDeserializer<T>(std::marker::PhantomData<T>);
 
-impl<'de, T: Debug + Deserialize<'de> + Eq + Hash> Visitor<'de> for SetDeserializer<T> {
+impl<'de, T: Deserialize<'de> + Eq + Hash> Visitor<'de> for SetDeserializer<T> {
     type Value = Set<T>;
 
     fn expecting(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -194,7 +214,9 @@ impl<'de, T: Debug + Deserialize<'de> + Eq + Hash> Visitor<'de> for SetDeseriali
     fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
         let mut ret = Set::with_capacity(seq.size_hint().unwrap_or_default());
         while let Some(x) = seq.next_element()? {
-            ret.insert(x);
+            if !ret.insert(x) {
+                Err(A::Error::custom("invalid entry: found duplicate value"))?;
+            }
         }
         Ok(ret)
     }

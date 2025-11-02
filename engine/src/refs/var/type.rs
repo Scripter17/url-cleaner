@@ -23,7 +23,7 @@ pub enum VarType {
     TaskContext,
     /// Get it from [`TaskStateView::scratchpad`]'s [`Scratchpad::vars`].
     Scratchpad,
-    /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
+    /// Get it from [`TaskStateView::common_args`]'s [`CommonArgs::vars`].
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     CommonArg,

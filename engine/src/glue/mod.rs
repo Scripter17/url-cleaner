@@ -4,12 +4,12 @@ pub mod parse;
 pub mod percent_encoding;
 pub mod json;
 pub mod better_url;
+pub mod regex;
+pub mod base64;
 
-#[cfg(feature = "regex"  )] pub mod regex;
-#[cfg(feature = "command")] pub mod command;
 #[cfg(feature = "http"   )] pub mod http;
 #[cfg(feature = "cache"  )] pub mod cache;
-#[cfg(feature = "base64" )] pub mod base64;
+#[cfg(feature = "command")] pub mod command;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
@@ -17,10 +17,10 @@ pub mod prelude {
     pub use super::percent_encoding::*;
     pub use super::json::*;
     pub use super::better_url::*;
+    pub use super::regex::prelude::*;
+    pub use super::base64::prelude::*;
 
-    #[cfg(feature = "regex"  )] pub use super::regex::prelude::*;
-    #[cfg(feature = "command")] pub use super::command::*;
     #[cfg(feature = "http"   )] pub use super::http::prelude::*;
     #[cfg(feature = "cache"  )] pub use super::cache::prelude::*;
-    #[cfg(feature = "base64" )] pub use super::base64::prelude::*;
+    #[cfg(feature = "command")] pub use super::command::*;
 }

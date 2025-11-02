@@ -160,7 +160,7 @@ pub enum Condition {
         part: UrlPart,
         /// The [`Map`] to index with [`Self::PartMap::part`].
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
     /// Gets the string specified by [`Self::StringMap::value`], indexes [`Self::StringMap::map`], and returns the value of the returned [`Self`].
     ///
@@ -172,31 +172,31 @@ pub enum Condition {
         value: StringSource,
         /// The [`Map`] to index with [`Self::StringMap::value`].
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
-    /// Gets the name of the partition [`Self::PartNamedPartitioning::part`] is in in the specified [`NamedPartitioning`], indexes [`Self::PartNamedPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
+    /// Gets the name of the partition [`Self::PartPartitioning::part`] is in in the specified [`Partitioning`], indexes [`Self::PartPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Condition, 2), notfound(NamedPartitioning, Condition), checkerr(Self))]
-    PartNamedPartitioning {
-        /// The [`NamedPartitioning`] to search in.
-        named_partitioning: StringSource,
-        /// The [`UrlPart`] whose value to find in the [`NamedPartitioning`].
+    #[doc = edoc!(geterr(StringSource, 2), getnone(StringSource, Condition, 2), notfound(Partitioning, Condition), checkerr(Self))]
+    PartPartitioning {
+        /// The [`Partitioning`] to search in.
+        partitioning: StringSource,
+        /// The [`UrlPart`] whose value to find in the [`Partitioning`].
         part: UrlPart,
         /// The [`Map`] to index.
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
-    /// Gets the name of the partition [`Self::StringNamedPartitioning::value`] is in in the specified [`NamedPartitioning`], indexes [`Self::StringNamedPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
+    /// Gets the name of the partition [`Self::StringPartitioning::value`] is in in the specified [`Partitioning`], indexes [`Self::StringPartitioning::map`] with the partition name, and if the [`Map`] has a [`Self`] there, applies it.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), notfound(NamedPartitioning, Condition), checkerr(Self))]
-    StringNamedPartitioning {
-        /// The [`NamedPartitioning`] to search in.
-        named_partitioning: StringSource,
-        /// The [`StringSource`] whose value to find in the [`NamedPartitioning`].
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), notfound(Partitioning, Condition), checkerr(Self))]
+    StringPartitioning {
+        /// The [`Partitioning`] to search in.
+        partitioning: StringSource,
+        /// The [`StringSource`] whose value to find in the [`Partitioning`].
         value: StringSource,
         /// The [`Map`] to index.
         #[serde(flatten)]
-        map: Map<Self>
+        map: Box<Map<Self>>
     },
 
     // Params
@@ -1060,6 +1060,8 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     PathIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Satisfied if the [`Url::path`] starts with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -1077,6 +1079,20 @@ pub enum Condition {
     /// assert!(!Condition::PathStartsWith("/a/b/c/d".into()).check(&task_state).unwrap());
     /// ```
     PathStartsWith(StringSource),
+    /// Satisfied if the [`Url::path`] ends with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError))]
+    PathEndsWith(StringSource),
+    /// Satisfied if the [`Url::path`] contains the specified value at [`Self::PathContains::at`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), checkerr(StringLocation))]
+    PathContains {
+        /// The value to check for.
+        value: StringSource,
+        /// The location to check at.
+        #[serde(default, skip_serializing_if = "is_default")]
+        at: StringLocation
+    },
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::first_n_path_segments), geterr(StringSource))]
     FirstNPathSegmentsIs {
@@ -1369,7 +1385,7 @@ pub enum Condition {
 
     /// Satisfied if the specified [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] is.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), commonnotfound(Self, Condition), callerr(CommonCallArgsConfig::make), checkerr(Self))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), commonnotfound(Self, Condition), callerr(CommonArgsConfig::make), checkerr(Self))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -1379,10 +1395,10 @@ pub enum Condition {
     ///     ..Default::default()
     /// });
     ///
-    /// assert!(Condition::Common(CommonCall {name: Box::new("abc".into()), args: Default::default()}).check(&task_state).unwrap());
+    /// assert!(Condition::Common(CommonCallConfig {name: Box::new("abc".into()), args: Default::default()}).check(&task_state).unwrap());
     /// ```
-    Common(CommonCall),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::conditions`] and applies it.
+    Common(CommonCallConfig),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::conditions`] and applies it.
     /// # Errors
     /// If [`TaskStateView::common_args`] is [`None`], returns the error [`ConditionError::NotInCommonContext`].
     ///
@@ -1496,16 +1512,16 @@ pub enum ConditionError {
     /// Returned when a [`Set`] wasn't found.
     #[error("The requested set wasn't found.")]
     SetNotFound,
-    /// Returned when a [`NamedPartitioning`] with the specified name isn't found.
-    #[error("A NamedPartitioning with the specified name wasn't found.")]
-    NamedPartitioningNotFound,
+    /// Returned when a [`Partitioning`] with the specified name isn't found.
+    #[error("A Partitioning with the specified name wasn't found.")]
+    PartitioningNotFound,
 
     /// Returned when a [`Condition`] with the specified name isn't found in the [`Commons::conditions`].
     #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
     CommonConditionNotFound,
-    /// Returned when a [`MakeCommonCallArgsError`] is encountered.
+    /// Returned when a [`MakeCommonArgsError`] is encountered.
     #[error(transparent)]
-    MakeCommonCallArgsError(#[from] MakeCommonCallArgsError),
+    MakeCommonArgsError(#[from] MakeCommonArgsError),
 
     /// Returned when trying to use [`Condition::CommonCallArg`] outside of a common context.
     #[error("Tried to use Condition::CommonCallArg outside of a common context.")]
@@ -1583,8 +1599,8 @@ impl Condition {
             Self::PartMap  {part , map} => if let Some(condition) = map.get(part .get(task_state.url) ) {condition.check(task_state)?} else {false},
             Self::StringMap{value, map} => if let Some(condition) = map.get(value.get(task_state    )?) {condition.check(task_state)?} else {false},
 
-            Self::PartNamedPartitioning   {named_partitioning, part , map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ConditionError)).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(part.get(task_state.url).as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringNamedPartitioning {named_partitioning, value, map} => if let Some(condition) = map.get(task_state.params.named_partitionings.get(get_str!(named_partitioning, task_state, ConditionError)).ok_or(ConditionError::NamedPartitioningNotFound)?.get_partition_of(get_option_str!(value, task_state)) ) {condition.check(task_state)?} else {false},
+            Self::PartPartitioning   {partitioning, part , map} => if let Some(condition) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(part.get(task_state.url).as_deref())) {condition.check(task_state)?} else {false},
+            Self::StringPartitioning {partitioning, value, map} => if let Some(condition) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(get_option_str!(value, task_state)) ) {condition.check(task_state)?} else {false},
 
             // Params
 
@@ -1720,6 +1736,8 @@ impl Condition {
             Self::PathIsOneOf   (values) => values.contains(Some(task_state.url.path())),
             Self::PathIsInSet   (set   ) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(Some(task_state.url.path())),
             Self::PathStartsWith(value ) => task_state.url.path().starts_with(get_str!(value, task_state, ConditionError)),
+            Self::PathEndsWith(value ) => task_state.url.path().ends_with(get_str!(value, task_state, ConditionError)),
+            Self::PathContains {value, at} => at.check(task_state.url.path(), get_str!(value, task_state, ConditionError))?,
             Self::FirstNPathSegmentsIs      {n, value} => task_state.url.first_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)? == get_option_str!(value, task_state),
             Self::FirstNPathSegmentsIsOneOf {n, set  } => set.contains(task_state.url.first_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
             Self::FirstNPathSegmentsIsInSet {n, set  } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.first_n_path_segments(*n).ok_or(ConditionError::NotEnoughPathSegments)?),
@@ -1777,18 +1795,18 @@ impl Condition {
 
             Self::Common(common_call) => {
                 task_state.commons.conditions.get(get_str!(common_call.name, task_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.check(&TaskStateView {
-                    common_args : Some(&common_call.args.make(task_state)?),
-                    url         : task_state.url,
-                    scratchpad  : task_state.scratchpad,
-                    context     : task_state.context,
-                    job_context : task_state.job_context,
-                    params      : task_state.params,
-                    commons     : task_state.commons,
-                    unthreader  : task_state.unthreader,
+                    common_args: Some(&common_call.args.make(task_state)?),
+                    url        : task_state.url,
+                    scratchpad : task_state.scratchpad,
+                    context    : task_state.context,
+                    job_context: task_state.job_context,
+                    params     : task_state.params,
+                    commons    : task_state.commons,
+                    unthreader : task_state.unthreader,
                     #[cfg(feature = "cache")]
-                    cache_handle: task_state.cache_handle,
+                    cache      : task_state.cache,
                     #[cfg(feature = "http")]
-                    http_client : task_state.http_client
+                    http_client: task_state.http_client
                 })?
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,

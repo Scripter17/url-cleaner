@@ -1,4 +1,4 @@
-//! A system to stop me from accidentally committing debug stuff to the default config.
+//! A system to stop me from accidentally committing debug stuff to the bundled cleaner.
 
 use std::fmt::Debug;
 use std::collections::{HashSet, HashMap};
@@ -11,15 +11,15 @@ use crate::prelude::*;
 
 pub(crate) use url_cleaner_macros::Suitability;
 
-/// A trait for things that may or may not be suitable for use in the default config.
+/// A trait for things that may or may not be suitable for use in the bundled cleaner.
 pub(crate) trait Suitability: Debug {
-    /// If `self` is deemed unsuitable to be in the default config, panics.
+    /// If `self` is deemed unsuitable to be in the bundled cleaner, panics.
     /// # Panics
-    /// If `self` is deemed unsuitable to be in the default config, panics.
+    /// If `self` is deemed unsuitable to be in the bundled cleaner, panics.
     fn assert_suitability(&self, config: &Cleaner);
 }
 
-/// Generate [`Suitability`] impls for types that are always suitable for use in the default config.
+/// Generate [`Suitability`] impls for types that are always suitable for use in the bundled cleaner.
 macro_rules! always_suitable {
     ($($t:ty),+) => {
         $(impl Suitability for $t {fn assert_suitability(&self, _: &Cleaner) {}})+
@@ -44,10 +44,10 @@ pub(crate) fn map_is_documented(name: &StringSource, config: &Cleaner) {
     }
 }
 /// Suitability helper function to check that a named partitioning is documented.
-pub(crate) fn named_partitioning_is_documented(name: &StringSource, config: &Cleaner) {
+pub(crate) fn partitioning_is_documented(name: &StringSource, config: &Cleaner) {
     if let StringSource::String(name) = name {
-        assert!(config.params.named_partitionings.contains_key(name), "Unset NamedPartitioning: {name}");
-        assert!(config.docs.named_partitionings.contains_key(name), "Undocumented NamedPartitioning: {name}");
+        assert!(config.params.partitionings.contains_key(name), "Unset Partitioning: {name}");
+        assert!(config.docs.partitionings.contains_key(name), "Undocumented Partitioning: {name}");
     }
 }
 

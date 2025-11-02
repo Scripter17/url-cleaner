@@ -13,25 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: 'Restore cache'
-      if: runner.environment == null
-      uses: actions/cache/restore@v4
-      with:
-        key: ${{ runner.os }}-site-debug
-        path: target
-
     - name: Setup
       run: |
-        set -o pipefail
+        set -euo pipefail
         cargo build -p url-cleaner-site
         cp target/debug/url-cleaner-site urlcs
-
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-site-debug
-        path: target
 
     - name: Order
       run: |
@@ -43,51 +29,38 @@ jobs:
     - name: Ratelimit
       run: |
         i=0
-        mins=( 0 0 0  0 0 5  0 0 0  5 0 5 )
-        maxs=( 5 5 5  5 5 9  5 5 5  9 5 9 )
-        for default_unthread in '' '--default-unthread'; do
-          for unthread_ratelimit in '' '--unthread-ratelimit 5'; do
-            ./urlcs --cleaner example-cleaners/ratelimit-tester.json $default_unthread $unthread_ratelimit &
-            sleep 1
-            for config in '' ',"unthread":false' ',"unthread":true'; do
-              start=$(date +%s);
-              curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com"]'$config'}'
-              time=$(($(date +%s) - $start))
-              [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
-              sleep ${mins[$i]}
+        mins=( 0 0 0  0 0 3 )
+        maxs=( 1 1 1  1 1 4 )
+        for unthread_ratelimit in '' '--unthread-ratelimit 3'; do
+          ./urlcs --cleaner example-cleaners/ratelimit-tester.json $unthread_ratelimit &
+          sleep 1
+          for config in '' ',"unthread":false' ',"unthread":true'; do
+            start=$(date +%s);
+            curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com"]'$config'}'
+            time=$(($(date +%s) - $start))
+            [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
+            sleep ${mins[$i]}
 
-              start=$(date +%s);
-              curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
-              curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
-              time=$(($(date +%s) - $start))
-              [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
-              sleep ${mins[$i]}
+            start=$(date +%s);
+            curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
+            curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
+            time=$(($(date +%s) - $start))
+            [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
+            sleep ${mins[$i]}
 
-              i=$(($i + 1))
-            done
-            kill $!
+            i=$(($i + 1))
           done
+          kill $!
         done
 
     - name: Profiles
       run: |
-        set -e
-
         PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
-        ./urlcs --profiles-string "$PROFILES" |& tee site-run.log &
-        site=$!
-        while true; do
-          sleep 0.1
-          if ! kill -0 "$site"; then
-            exit 1
-          fi
-          if grep "Rocket has launched" site-run.log; then
-            break
-          fi
-        done
+        ./urlcs --profiles-string "$PROFILES" &
+        sleep 1
 
         diff -y <(
           curl -s http://127.0.0.1:9149/clean -d '{                                                               "tasks":["https://m.youtube.com/shorts/abc"]}'; echo

@@ -11,7 +11,7 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.50", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.51", features = ["derive", "unstable-v5"] }
 parking_lot = "0.12.5"
 serde = "1.0.228"
 serde_json = "1.0.145"
@@ -20,21 +20,16 @@ url = { version = "2.5.7", features = ["serde"] }
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 
 [features]
-default = ["default-cleaner"]
+default = ["bundled-cleaner"]
 
-default-cleaner = [
-  "url-cleaner-engine/default-cleaner",
-  "regex",
+bundled-cleaner = [
+  "url-cleaner-engine/bundled-cleaner",
   "http",
-  "cache",
-  "base64"
+  "cache"
 ]
 
-regex   = ["url-cleaner-engine/regex"]
 http    = ["url-cleaner-engine/http"]
 cache   = ["url-cleaner-engine/cache"]
-base64  = ["url-cleaner-engine/base64"]
-custom  = ["url-cleaner-engine/custom"]
 command = ["url-cleaner-engine/command"]
 debug   = ["url-cleaner-engine/debug"]
 

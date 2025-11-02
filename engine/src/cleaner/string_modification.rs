@@ -7,9 +7,7 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 use percent_encoding::{percent_decode_str, utf8_percent_encode};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
-#[cfg(feature = "regex")]
 use regex::Regex;
-#[cfg(feature = "base64")]
 use base64::prelude::*;
 use percent_encoding::percent_decode_str as pds;
 
@@ -40,7 +38,7 @@ pub enum StringModification {
     ///
     /// The exact info printed is unspecified and subject to change at any time for any reason.
     /// # Suitability
-    /// Always unsuitable to be in the default config.
+    /// Always unsuitable to be in the bundled cleaner.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
@@ -216,7 +214,7 @@ pub enum StringModification {
         value: Box<StringSource>,
         /// The [`Map`] to index with [`Self::Map::value`].
         #[serde(flatten)]
-        map: Map<Self>,
+        map: Box<Map<Self>>,
     },
 
 
@@ -684,12 +682,10 @@ pub enum StringModification {
     /// Calls [`Regex::find`] and returns its value.
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(LazyRegex), callnone(Regex::find, StringModificationError::RegexMatchNotFound))]
-    #[cfg(feature = "regex")]
     RegexFind(LazyRegex),
     /// Calls [`::regex::Regex::captures`] and returns the result of [`::regex::Captures::expand`]ing with [`Self::RegexSubstitute::replace`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), callnone(Regex::captures, StringModificationError::RegexMatchNotFound))]
-    #[cfg(feature = "regex")]
     RegexSubstitute {
         /// The [`LazyRegex`] to capture with.
         regex: LazyRegex,
@@ -699,7 +695,6 @@ pub enum StringModification {
     /// [`::regex::Captures::expand`]s each [`::regex::Regex::captures_iter`] with [`Self::JoinAllRegexSubstitutions::replace`] and join them with [`Self::JoinAllRegexSubstitutions::join`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(LazyRegex))]
-    #[cfg(feature = "regex")]
     JoinAllRegexSubstitutions {
         /// The [`LazyRegex`] to capture with.
         regex: LazyRegex,
@@ -711,7 +706,6 @@ pub enum StringModification {
     /// [`Regex::replace`]s the first match of [`Self::RegexReplaceOne::regex`] with [`Self::RegexReplaceOne::replace`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(LazyRegex))]
-    #[cfg(feature = "regex")]
     RegexReplaceOne {
         /// The [`LazyRegex`] to search with.
         regex: LazyRegex,
@@ -721,7 +715,6 @@ pub enum StringModification {
     /// [`Regex::replace`]s the all matches of [`Self::RegexReplaceAll::regex`] with [`Self::RegexReplaceAll::replace`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(LazyRegex))]
-    #[cfg(feature = "regex")]
     RegexReplaceAll {
         /// The [`LazyRegex`] to search with.
         regex: LazyRegex,
@@ -731,7 +724,6 @@ pub enum StringModification {
     /// [`Regex::replacen`]s the first [`Self::RegexReplacen::n`] of [`Self::RegexReplacen::regex`] with [`Self::RegexReplacen::replace`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), getnone(StringSource, StringModification), geterr(LazyRegex))]
-    #[cfg(feature = "regex")]
     RegexReplacen {
         /// The [`LazyRegex`] to search with.
         regex: LazyRegex,
@@ -792,7 +784,6 @@ pub enum StringModification {
     ///
     /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Encode""#).unwrap(), StringModification::Base64Encode(Default::default()));
     /// ```
-    #[cfg(feature = "base64")]
     Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
     /// Base64 decodes the string.
     ///
@@ -805,7 +796,6 @@ pub enum StringModification {
     ///
     /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Decode""#).unwrap(), StringModification::Base64Decode(Default::default()));
     /// ```
-    #[cfg(feature = "base64")]
     Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
 
 
@@ -846,12 +836,12 @@ pub enum StringModification {
     /// assert_eq!(to, None);
     /// ```
     AllowQueryParamsMatching(Box<StringMatcher>),
-    /// The same operation [`Action::RemoveQueryParamsInSetOrStartingWithAnyInList`] does to a [`UrlPart::Query`].
+    /// The same operation [`Action::QueryUTPHandler`] does to a [`UrlPart::Query`].
     /// # Errors
     #[doc = edoc!(notfound(Set, StringModification))]
     ///
     /// If the list isn't found, returns the error [`StringModificationError::ListNotFound`].
-    RemoveQueryParamsInSetOrStartingWithAnyInList {
+    UTPHandler {
         /// The name of the [`Set`] in [`Params::sets`] to use.
         set: String,
         /// The name of the list in [`Params::lists`] to use.
@@ -862,9 +852,9 @@ pub enum StringModification {
 
     /// Gets a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
-    #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringModification, CommonCall::name), commonnotfound(Self, StringModification), callerr(CommonCallArgsConfig::make), applyerr(Self))]
-    Common(CommonCall),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_modifications`] and applies it.
+    #[doc = edoc!(ageterr(StringSource, CommonCallConfig::name), agetnone(StringSource, StringModification, CommonCallConfig::name), commonnotfound(Self, StringModification), callerr(CommonArgsConfig::make), applyerr(Self))]
+    Common(CommonCallConfig),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::string_modifications`] and applies it.
     /// # Errors
     /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringModificationError::NotInCommonContext`].
     ///
@@ -905,8 +895,8 @@ impl FromStr for StringModification {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
-            #[cfg(feature = "base64")] "Base64Decode" => StringModification::Base64Decode(Default::default()),
-            #[cfg(feature = "base64")] "Base64Encode" => StringModification::Base64Encode(Default::default()),
+            "Base64Decode"             => StringModification::Base64Decode(Default::default()),
+            "Base64Encode"             => StringModification::Base64Encode(Default::default()),
             "PercentEncode"            => StringModification::PercentEncode(Default::default()),
             "PercentDecode"            => StringModification::PercentDecode,
             "LossyPercentDecode"       => StringModification::LossyPercentDecode,
@@ -1029,21 +1019,18 @@ pub enum StringModificationError {
     ListNotFound,
 
     /// Returned when a [`::regex::Error`] is encountered.
-    #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] ::regex::Error),
+    RegexError(#[from] regex::Error),
     /// Returned when a [`Regex`] doesn't find any matches in the string.
-    #[cfg(feature = "regex")]
     #[error("The regex didn't find any matches in the string.")]
     RegexMatchNotFound,
     /// Returned when a [`::base64::DecodeError`] is encountered.
-    #[cfg(feature = "base64")]
     #[error(transparent)]
-    Base64DecodeError(#[from] ::base64::DecodeError),
+    Base64DecodeError(#[from] base64::DecodeError),
 
-    /// Returned when a [`MakeCommonCallArgsError`] is encountered.
+    /// Returned when a [`MakeCommonArgsError`] is encountered.
     #[error(transparent)]
-    MakeCommonCallArgsError(#[from] MakeCommonCallArgsError),
+    MakeCommonArgsError(#[from] MakeCommonArgsError),
     /// Returned when a [`StringModification`] with the specified name isn't found in the [`Commons::string_modifications`].
     #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
     CommonStringModificationNotFound,
@@ -1440,12 +1427,10 @@ impl StringModification {
 
 
 
-            #[cfg(feature = "regex")]
             Self::RegexFind(regex) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 *to = regex.get()?.find(to).ok_or(StringModificationError::RegexMatchNotFound)?.as_str().to_string();
             },
-            #[cfg(feature = "regex")]
             Self::RegexSubstitute {regex, replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 let replace = get_str!(replace, task_state, StringModificationError);
@@ -1453,7 +1438,6 @@ impl StringModification {
                 regex.get()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
                 *to = temp;
             },
-            #[cfg(feature = "regex")]
             Self::JoinAllRegexSubstitutions {regex, replace, join} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 let replace = get_str!(replace, task_state, StringModificationError);
@@ -1473,17 +1457,14 @@ impl StringModification {
                 }
                 *to = temp;
             },
-            #[cfg(feature = "regex")]
             Self::RegexReplaceOne {regex,replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 *to = regex.get()?.replace(to,get_str!(replace, task_state, StringModificationError)).into_owned();
             },
-            #[cfg(feature = "regex")]
             Self::RegexReplaceAll {regex,replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 *to = regex.get()?.replace_all(to,get_str!(replace, task_state, StringModificationError)).into_owned();
             },
-            #[cfg(feature = "regex")]
             Self::RegexReplacen {regex, n, replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 *to = regex.get()?.replacen(to, *n, get_str!(replace, task_state, StringModificationError)).into_owned();
@@ -1516,15 +1497,13 @@ impl StringModification {
 
 
 
-            #[cfg(feature = "base64")]
             Self::Base64Encode(config) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = config.build().encode(to.as_bytes());
+                *to = config.make().encode(to.as_bytes());
             },
-            #[cfg(feature = "base64")]
             Self::Base64Decode(config) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = String::from_utf8(config.build().decode(to.as_bytes())?)?;
+                *to = String::from_utf8(config.make().decode(to.as_bytes())?)?;
             },
 
 
@@ -1553,7 +1532,7 @@ impl StringModification {
                     *to = Some(Cow::<str>::Owned(new)).filter(|new| !new.is_empty());
                 }
             },
-            Self::RemoveQueryParamsInSetOrStartingWithAnyInList {set, list} => if let Some(inner) = to {
+            Self::UTPHandler {set, list} => if let Some(inner) = to {
                 let mut new = String::with_capacity(inner.len());
                 let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
                 let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
@@ -1575,18 +1554,18 @@ impl StringModification {
                 task_state.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
                     to,
                     &TaskStateView {
-                        common_args : Some(&common_call.args.make(task_state)?),
-                        url         : task_state.url,
-                        scratchpad  : task_state.scratchpad,
-                        context     : task_state.context,
-                        job_context : task_state.job_context,
-                        params      : task_state.params,
-                        commons     : task_state.commons,
-                        unthreader  : task_state.unthreader,
+                        common_args: Some(&common_call.args.make(task_state)?),
+                        url        : task_state.url,
+                        scratchpad : task_state.scratchpad,
+                        context    : task_state.context,
+                        job_context: task_state.job_context,
+                        params     : task_state.params,
+                        commons    : task_state.commons,
+                        unthreader : task_state.unthreader,
                         #[cfg(feature = "cache")]
-                        cache_handle: task_state.cache_handle,
+                        cache      : task_state.cache,
                         #[cfg(feature = "http")]
-                        http_client : task_state.http_client
+                        http_client: task_state.http_client
                     }
                 )?;
             },

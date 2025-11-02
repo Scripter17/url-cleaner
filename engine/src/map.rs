@@ -1,11 +1,9 @@
-//! `HashMap<Option<String>, T>` you can index with `Option<&T>`.
-//!
-//! Also has an optional fallback value for keys not otherwise in the map.
+//! [`Map`].
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, MapPreventDuplicates, SetPreventDuplicates};
+use serde_with::{serde_as, MapPreventDuplicates};
 
 use crate::prelude::*;
 
@@ -13,7 +11,9 @@ use crate::prelude::*;
 ///
 /// Also has [`Self::else`] to specify a return value when a key isn't otherwise found.
 ///
-/// Please note that the components that use [`Map`] generally use [`#[serde(flatten)]`](https://serde.rs/field-attrs.html#flatten), a component that looks like it'd be written as
+/// Please note that the components that use [`Map`] generally use [`#[serde(flatten)]`](https://serde.rs/field-attrs.html#flatten).
+///
+/// A component that looks like it'd be written as
 ///
 /// ```Json
 /// {
@@ -45,14 +45,20 @@ use crate::prelude::*;
 #[serde(deny_unknown_fields)]
 pub struct Map<T> {
     /// The map from [`Some`] to `T`.
+    ///
+    /// Defaults to an empty [`HashMap`].
     #[serde_as(as = "MapPreventDuplicates<_, _>")]
     pub map: HashMap<String, T>,
     /// The map from [`None`] to `T`.
+    ///
+    /// Defaults to [`None`].
     #[serde(default = "Option::default", skip_serializing_if = "Option::is_none")]
-    pub if_none: Option<Box<T>>,
+    pub if_none: Option<T>,
     /// The value to return when a value is otherwise not found.
+    ///
+    /// Defaults to [`None`].
     #[serde(default = "Option::default", skip_serializing_if = "Option::is_none")]
-    pub r#else: Option<Box<T>>
+    pub r#else: Option<T>
 }
 
 impl<T> Map<T> {
@@ -65,6 +71,8 @@ impl<T> Map<T> {
         }
     }
 
+    /// [`HashMap::get`].
+    ///
     /// If [`Some`], returns the corresponding value from [`Self::map`].
     ///
     /// If [`None`], returns the value of [`Self::if_none`].
@@ -73,8 +81,16 @@ impl<T> Map<T> {
     pub fn get<U: AsRef<str>>(&self, key: Option<U>) -> Option<&T> {
         match key {
             Some(key) => self.map.get(key.as_ref()),
-            None => self.if_none.as_deref()
-        }.or(self.r#else.as_deref())
+            None => self.if_none.as_ref()
+        }.or(self.r#else.as_ref())
+    }
+
+    /// [`HashMap::remove`].
+    pub fn remove<U: AsRef<str>>(&mut self, key: Option<U>) -> Option<T> {
+        match key {
+            Some(key) => self.map.remove(key.as_ref()),
+            None => self.if_none.take()
+        }
     }
 }
 
@@ -85,40 +101,6 @@ impl<T> Default for Map<T> {
             if_none: Default::default(),
             r#else : Default::default()
         }
-    }
-}
-
-/// Rules for updating a [`Map`].
-#[serde_as]
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub struct MapDiff<T> {
-    /// Values to insert/replace into [`Map::map`].
-    #[serde_as(as = "MapPreventDuplicates<_, _>")]
-    #[serde(default, bound(serialize = "T: Serialize", deserialize = "T: Deserialize<'de>"))]
-    pub insert: HashMap<String, T>,
-    /// Values to remove from [`Map::map`].
-    #[serde_as(as = "SetPreventDuplicates<_>")]
-    #[serde(default)]
-    pub remove: HashSet<String>
-}
-
-impl<T> MapDiff<T> {
-    /// Applies the diff.
-    ///
-    /// If you want to apply `self` multiple times, use [`Self::apply_multiple`] as it's slightly faster than [`Clone::clone`]ing this then using [`Self::apply_once`] on each clone.
-    pub fn apply_once(self, to: &mut Map<T>) {
-        to.map.extend(self.insert);
-        to.map.retain(|k, _| !self.remove.contains(k));
-    }
-}
-
-impl<T: Clone> MapDiff<T> {
-    /// Applies the diff.
-    ///
-    /// If you only want to apply `self` once, use [`Self::apply_once`].
-    pub fn apply_multiple(&self, to: &mut Map<T>) {
-        to.map.extend(self.insert.iter().map(|(k, v)| (k.clone(), v.clone())));
-        to.map.retain(|k, _| !self.remove.contains(k));
     }
 }
 
@@ -143,7 +125,7 @@ impl<T, const N: usize> From<[(Option<String>, T); N]> for Map<T> {
         for (k, v) in value {
             match k {
                 Some(k) => {ret.map.insert(k, v);},
-                None => ret.if_none = Some(Box::new(v))
+                None => ret.if_none = Some(v)
             }
         }
 
@@ -172,7 +154,7 @@ impl<T> From<HashMap<Option<String>, T>> for Map<T> {
         for (k, v) in value {
             match k {
                 Some(k) => {ret.map.insert(k, v);},
-                None => ret.if_none = Some(Box::new(v))
+                None => ret.if_none = Some(v)
             }
         }
 
@@ -202,9 +184,26 @@ impl<T> FromIterator<(Option<String>, T)> for Map<T> {
         for (k, v) in iter {
             match k {
                 Some(k) => {ret.map.insert(k, v);},
-                None => ret.if_none = Some(Box::new(v))
+                None => ret.if_none = Some(v)
             }
         }
         ret
+    }
+}
+
+impl<T> Extend<(String, T)> for Map<T> {
+    fn extend<I: IntoIterator<Item = (String, T)>>(&mut self, iter: I) {
+        self.map.extend(iter)
+    }
+}
+
+impl<T> Extend<(Option<String>, T)> for Map<T> {
+    fn extend<I: IntoIterator<Item = (Option<String>, T)>>(&mut self, iter: I) {
+        for (k, v) in iter {
+            match k {
+                Some(k) => {self.map.insert(k, v);},
+                None => self.if_none = Some(v)
+            }
+        }
     }
 }

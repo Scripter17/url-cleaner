@@ -39,6 +39,6 @@ The ProfileConfig is a JSON file like this:
 
 Using the base profile will enable the `flag you always want` flag, while using `profile name 1` will also enable the `flag you only sometimes want` flag.
 
-## Default cleaner
+## Bundled cleaner
 
-See [`../default_cleaner.md`](../default_cleaner.md) for details about the included default cleaner.
+See [`../bundled_cleaner.md`](../bundled_cleaner.md) for details about the included bundled cleaner.

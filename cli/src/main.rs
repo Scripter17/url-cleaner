@@ -2,7 +2,6 @@
 //!
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
-#![allow(rustdoc::bare_urls, reason = "All useless.")]
 
 use std::path::PathBuf;
 use std::io::{self, IsTerminal, BufRead, Write, BufWriter};
@@ -20,29 +19,21 @@ use url_cleaner_engine::testing::*;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.
-///
-/// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
-///
-/// Source code available at https://github.com/Scripter17/url-cleaner
+/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// https://github.com/Scripter17/url-cleaner
 ///
 /// Enabled features:
-#[cfg_attr(feature = "default-cleaner", doc = "default-cleaner")]
-#[cfg_attr(feature = "regex"          , doc = "regex"          )]
+#[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-#[cfg_attr(feature = "base64"         , doc = "base64"         )]
 #[cfg_attr(feature = "command"        , doc = "command"        )]
-#[cfg_attr(feature = "custom"         , doc = "custom"         )]
 #[cfg_attr(feature = "debug"          , doc = "debug"          )]
-///
+/// 
 /// Disabled features:
-#[cfg_attr(not(feature = "default-cleaner"), doc = "default-cleaner")]
-#[cfg_attr(not(feature = "regex"          ), doc = "regex"          )]
+#[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
-#[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
 #[cfg_attr(not(feature = "command"        ), doc = "command"        )]
-#[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
@@ -62,14 +53,13 @@ struct Args {
     #[arg(verbatim_doc_comment)]
     urls: Vec<String>,
     /// The config file to use.
-    ///
-    /// Omit to use the built in default cleaner.
-    #[cfg(feature = "default-cleaner")]
-    #[arg(long, value_name = "PATH")]
+    /// Omit to use the built in bundled cleaner.
+    #[cfg(feature = "bundled-cleaner")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: Option<PathBuf>,
     /// The cleaner file to use.
-    #[cfg(not(feature = "default-cleaner"))]
-    #[arg(long, value_name = "PATH")]
+    #[cfg(not(feature = "bundled-cleaner"))]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
     /// Output results as JSON.
     ///
@@ -86,114 +76,97 @@ struct Args {
     #[arg(short, long, verbatim_doc_comment)]
     json: bool,
     /// Always buffer output.
-    ///
-    /// By default, output is flushed after each line if and only if STDOUT is a tty.
-    #[arg(long, conflicts_with = "unbuffer_output")]
+    /// By default, output is buffered if and only if the STDOUT isn't a TTY, such as a pipe.
+    /// Buffering enables better performance but may not play nicely with some programs.
+    #[arg(long, verbatim_doc_comment, conflicts_with = "unbuffer_output")]
     buffer_output: bool,
     /// Never buffer output.
-    ///
-    /// By default, output is flushed after each line if and only if STDOUT is a tty.
-    #[arg(long, conflicts_with = "buffer_output")]
+    /// By default, output is buffered if and only if the STDOUT isn't a TTY, such as a pipe.
+    /// Buffering enables better performance but may not play nicely with some programs.
+    #[arg(long, verbatim_doc_comment, conflicts_with = "buffer_output")]
     unbuffer_output: bool,
+    /// The size of the output buffer.
+    #[arg(long, verbatim_doc_comment, default_value_t = 8192)]
+    buffer_size: usize,
     /// The ProfilesConfig file.
-    ///
     /// Cannot be used with --profiles-string.
-    #[arg(long, conflicts_with = "profiles_string", value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, conflicts_with = "profiles_string", value_name = "PATH")]
     profiles: Option<PathBuf>,
     /// The ProfilesConfig string.
-    ///
     /// Cannot be used with --profiles.
-    #[arg(long, conflicts_with = "profiles", value_name = "JSON STRING")]
+    #[arg(long, verbatim_doc_comment, conflicts_with = "profiles", value_name = "JSON STRING")]
     profiles_string: Option<String>,
     /// The Profile to use.
-    ///
     /// Applied before ParamsDiffs and --flag/--var.
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     profile: Option<String>,
     /// A standalone ParamsDiff file.
-    ///
     /// Applied after Profiles and before --flag/--var.
-    ///
     /// Cannot be used with --params-diff-string.
-    #[arg(long, conflicts_with = "params_diff_string", value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, conflicts_with = "params_diff_string", value_name = "PATH")]
     params_diff: Option<PathBuf>,
     /// A standalone ParamsDiff string.
-    ///
     /// Applied after Profiles and before --flag/--var.
-    ///
     /// Cannot be used with --params-diff.
-    #[arg(long, conflicts_with = "params_diff", value_name = "JSON STRING")]
+    #[arg(long, verbatim_doc_comment, conflicts_with = "params_diff", value_name = "JSON STRING")]
     params_diff_string: Option<String>,
     /// Flags to insert into the params.
-    ///
-    /// Applied after Profiles ParamsDiff.
-    #[arg(short, long)]
+    /// Applied after Profiles and ParamsDiff.
+    #[arg(short, long, verbatim_doc_comment)]
     flag: Vec<String>,
     /// Vars to insert into the params.
-    ///
-    /// Applied after Profiles ParamsDiff.
-    #[arg(short, long, value_names = ["NAME", "VALUE"], num_args = 2)]
+    /// Applied after Profiles and ParamsDiff.
+    #[arg(short, long, verbatim_doc_comment, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
     /// The JobContext file to use.
-    ///
     /// Cannot be used with --job-context-string.
-    #[arg(long, conflicts_with = "job_context_string", value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, conflicts_with = "job_context_string", value_name = "PATH")]
     job_context: Option<PathBuf>,
     /// The JobContext string to use.
-    ///
     /// Cannot be used with --job-context.
-    #[arg(long, conflicts_with = "job_context", value_name = "JSON STRING")]
+    #[arg(long, verbatim_doc_comment, conflicts_with = "job_context", value_name = "JSON STRING")]
     job_context_string: Option<String>,
     /// The proxy to use for HTTP/HTTPS requests.
-    ///
-    /// Overrided by --http-proxy and --https-proxy.
     #[cfg(feature = "http")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     proxy: Option<HttpProxyConfig>,
-    /// the proxy to use for HTTP requests.
-    ///
-    /// Overrides --proxy.
-    #[cfg(feature = "http")]
-    #[arg(long)]
-    http_proxy: Option<HttpProxyConfig>,
-    /// the proxy to use for HTTPS requests.
-    ///
-    /// Overrides --proxy.
-    #[cfg(feature = "http")]
-    #[arg(long)]
-    https_proxy: Option<HttpProxyConfig>,
     /// The path of the cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
-    cache: CachePath,
-    /// Whether or not to read from the cache. If unspecified, defaults to true.
+    #[arg(long, verbatim_doc_comment, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
+    cache: PathBuf,
+    /// Disables reading from the cache.
+    /// Useful for overwriting stale entries.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     no_read_cache: bool,
-    /// Whether or not to write to the cache. If unspecified, defaults to true.
+    /// Disables writing to the cache.
+    /// Useful for not leaving records.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     no_write_cache: bool,
-    /// Artificially delay cache reads about as long as the initial run to defend against cache detection.
+    /// Make cache reads wait about as long as the cached operation originally took.
+    /// Useful for not leaking what is and is not in the cache.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     cache_delay: bool,
-    /// Makes network requests, cache reads, etc. effectively single threaded while keeping most of the speed boost from multithreading.
-    #[arg(long)]
+    /// Make HTTP requests and cache reads happen one after another instead of in parallel.
+    /// Useful for not leaking the thread count.
+    #[arg(long, verbatim_doc_comment)]
     unthread: bool,
-    /// When used with --unthread, also ratelimit unthreaded things.
-    #[arg(long, requires = "unthread", value_name = "SECONDS")]
+    /// Makes unthreaded operations happen at most once per the specified amount of seconds.
+    /// If the ratelimit is 5 seconds and it's been 2 seconds since the last unthread, waits only 3 seconds.
+    #[arg(long, verbatim_doc_comment, requires = "unthread", value_name = "SECONDS")]
     unthread_ratelimit: Option<f64>,
     /// The number of worker threads to use.
-    ///
     /// Zero uses the CPU's thread count.
-    #[arg(long, default_value_t = 0)]
+    /// So on a 2 core 4 thread system it uses 4 threads.
+    #[arg(long, verbatim_doc_comment, default_value_t = 0)]
     threads: usize,
     /// Test files to run.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     tests: Vec<PathBuf>,
     /// Asserts the "suitability" of the loaded cleaner.
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     test_suitability: bool
 }
 
@@ -229,7 +202,10 @@ pub enum CliError {
     ProfileNotFound,
     /// Returned when a [`MakeHttpProxyError`] is encountered.
     #[cfg(feature = "http")]
-    #[error(transparent)] MakeHttpProxyError(#[from] MakeHttpProxyError)
+    #[error(transparent)] MakeHttpProxyError(#[from] MakeHttpProxyError),
+    /// Returned when a [`DoTestsError`] is encountered.
+    #[error(transparent)]
+    DoTestsError(#[from] DoTestsError)
 }
 
 /// Helper type to print task errors to JSON output.
@@ -244,9 +220,9 @@ impl<E: Debug> Serialize for ErrorToSerdeString<E> {
 fn main() -> Result<ExitCode, CliError> {
     let args = Args::parse();
 
-    #[cfg(feature = "default-cleaner")]
-    let mut cleaner = Cleaner::load_or_get_default_no_cache(args.cleaner.as_deref())?;
-    #[cfg(not(feature = "default-cleaner"))]
+    #[cfg(feature = "bundled-cleaner")]
+    let mut cleaner = Cleaner::load_or_get_bundled_no_cache(args.cleaner.as_deref())?;
+    #[cfg(not(feature = "bundled-cleaner"))]
     let mut cleaner = Cleaner::load_from_file(&args.cleaner)?;
 
     // Get and apply [`ParamsDiff`]s.
@@ -273,7 +249,7 @@ fn main() -> Result<ExitCode, CliError> {
     };
 
     if let Some(params_diff) = params_diff {
-        params_diff.apply_once(&mut cleaner.params);
+        params_diff.apply(&mut cleaner.params);
     }
 
     cleaner.params.flags.to_mut().extend(args.flag);
@@ -293,22 +269,20 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Testing and stuff.
 
-    let no_cleaning = args.test_suitability || !args.tests.is_empty();
-
     if args.test_suitability {
         cleaner.assert_suitability();
-        println!("The chosen cleaner is suitable to be the default cleaner!");
+        println!("The chosen cleaner is suitable to be the bundled cleaner!");
+        std::process::exit(0);
     }
 
     if !args.tests.is_empty() {
         for test_path in args.tests {
             serde_json::from_str::<Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?
-                .r#do(&cleaner);
+                .r#do(&cleaner)?;
         }
         println!("\nAll tests passed!");
+        std::process::exit(0);
     }
-
-    if no_cleaning {std::process::exit(0);}
 
     // Do the job.
 
@@ -328,11 +302,10 @@ fn main() -> Result<ExitCode, CliError> {
 
     let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<(Vec<u8>, Option<GetLazyTaskConfigError>)>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<BetterUrl, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoTaskError>, MakeTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let mut some_ok  = false;
     let mut some_err = false;
-
 
     let job_config = JobConfig {
         cleaner: &cleaner,
@@ -344,16 +317,16 @@ fn main() -> Result<ExitCode, CliError> {
             (true , Some(d)) => UnthreaderMode::Ratelimit(Duration::from_secs_f64(d))
         }.into(),
         #[cfg(feature = "cache")]
-        cache_handle: CacheHandle {
-            cache: &args.cache.into(),
-            config: CacheHandleConfig {
-                delay: args.cache_delay,
+        cache: Cache {
+            inner: &args.cache.into(),
+            config: CacheConfig {
                 read : !args.no_read_cache,
-                write: !args.no_write_cache
+                write: !args.no_write_cache,
+                delay:  args.cache_delay,
             }
         },
         #[cfg(feature = "http")]
-        http_client: &HttpClient::new([args.proxy, args.http_proxy, args.https_proxy].into_iter().flatten().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>()?)
+        http_client: &HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>()?)
     };
 
     let mut buffers = args.urls.len() as u64;
@@ -362,7 +335,7 @@ fn main() -> Result<ExitCode, CliError> {
 
         // Task getter thread.
 
-        std::thread::Builder::new().name("Task Getter".to_string()).spawn_scoped(s, || {
+        std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, || {
             let buf_ret_reciever = buf_ret_reciever;
             let buf_in_senders   = buf_in_senders  ;
             let mut biss = buf_in_senders.iter().cycle();
@@ -379,7 +352,7 @@ fn main() -> Result<ExitCode, CliError> {
                 for bis in biss {
                     // If there are no buffers available within the ratelimit, makea a new one.
                     // The ratelimit can reduce memory usage by up to 10x with, if properly tuned, minimal performance impact.
-                    
+
                     let mut buf = match buf_ret_reciever.recv_timeout(Duration::from_nanos(buffers / 8)) {
                         Ok(mut buf) => {buf.clear(); buf},
                         Err(RecvTimeoutError::Timeout) => {
@@ -392,10 +365,11 @@ fn main() -> Result<ExitCode, CliError> {
                     match stdin.read_until(b'\n', &mut buf) {
                         Ok(0) => break,
                         Ok(_) => {
-                            if buf.ends_with(b"\r\n") {
-                                buf.truncate(buf.len() - 2);
-                            } else {
-                                buf.truncate(buf.len() - 1);
+                            if buf.ends_with(b"\n") {
+                                buf.pop();
+                                if buf.ends_with(b"\r") {
+                                    buf.pop();
+                                }
                             }
                             bis.send((buf, None)).expect("The current buffer in reciever to stay open while needed.");
                         },
@@ -417,11 +391,11 @@ fn main() -> Result<ExitCode, CliError> {
                             // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
                             let _ = brs.send(buf);
                             match maybe_task {
-                                Ok(task) => task.r#do(),
-                                Err(e) => Err(e.into())
+                                Ok(task) => Ok(task.r#do()),
+                                Err(e) => Err(e)
                             }
                         },
-                        Some(e) => Err(DoTaskError::from(MakeTaskError::from(MakeLazyTaskError::from(e))))
+                        Some(e) => Err(MakeTaskError::from(MakeLazyTaskError::from(e)))
                     };
 
                     os.send(ret).expect("The result out reciever to stay open while needed.");
@@ -441,10 +415,15 @@ fn main() -> Result<ExitCode, CliError> {
 
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
-                        Ok(Ok(url)) => {
+                        Ok(Ok(Ok(url))) => {
                             if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
                             serde_json::to_writer(&mut stdout, &Ok::<_, ()>(url)).expect("Writing task results to STDOUT to work.");
                             some_ok = true;
+                        },
+                        Ok(Ok(Err(e))) => {
+                            if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
+                            serde_json::to_writer(&mut stdout, &Err::<(), _>(ErrorToSerdeString(e))).expect("Writing task results to STDOUT to work.");
+                            some_err = true;
                         },
                         Ok(Err(e)) => {
                             if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
@@ -460,35 +439,46 @@ fn main() -> Result<ExitCode, CliError> {
             } else if (stdout.is_terminal() || args.unbuffer_output) && !args.buffer_output {
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
-                        Ok(Ok(url)) => {
+                        Ok(Ok(Ok(url))) => {
                             stdout.write_all(url.as_str().as_bytes()).expect("Writing task results to STDOUT to work.");
                             stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
                             some_ok = true;
+                        },
+                        Ok(Ok(Err(e))) => {
+                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
+                            eprintln!("{e:?}");
+                            some_err = true;
                         },
                         Ok(Err(e)) => {
                             stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
                             eprintln!("{e:?}");
                             some_err = true;
-                        }
+                        },
                         Err(_) => break
                     }
                 }
             } else {
-                let mut stdout = BufWriter::with_capacity(8192, stdout);
+                let mut stdout = BufWriter::with_capacity(args.buffer_size, stdout);
 
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
-                        Ok(Ok(url)) => {
+                        Ok(Ok(Ok(url))) => {
                             stdout.write_all(url.as_str().as_bytes()).expect("Writing task results to STDOUT to work.");
                             stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
                             some_ok = true;
+                        },
+                        Ok(Ok(Err(e))) => {
+                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
+                            stdout.flush().expect("Flushing STDOUT to work.");
+                            eprintln!("{e:?}");
+                            some_err = true;
                         },
                         Ok(Err(e)) => {
                             stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
                             stdout.flush().expect("Flushing STDOUT to work.");
                             eprintln!("{e:?}");
                             some_err = true;
-                        }
+                        },
                         Err(_) => break
                     }
                 }

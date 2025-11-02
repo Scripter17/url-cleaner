@@ -6,12 +6,18 @@ use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
-pub mod common_call;
-pub use common_call::*;
-pub mod common_call_args;
-pub use common_call_args::*;
-pub mod common_call_args_config;
-pub use common_call_args_config::*;
+pub mod call_config;
+pub mod args;
+pub mod args_config;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::call_config::*;
+    pub use super::args::*;
+    pub use super::args_config::*;
+
+    pub use super::Commons;
+}
 
 /// Common snippets used throughout a [`Cleaner::actions`].
 ///

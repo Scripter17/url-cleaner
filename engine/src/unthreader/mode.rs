@@ -30,20 +30,42 @@ pub enum UnthreaderMode {
     /// std::thread::scope(|s| {
     ///     s.spawn(|| {
     ///         let x = unthreader.unthread();
-    ///         sleep(Duration::from_secs(1));
+    ///         sleep(Duration::from_millis(500));
     ///     });
     ///
     ///     s.spawn(|| {
     ///         let x = unthreader.unthread();
-    ///         sleep(Duration::from_secs(1));
+    ///         sleep(Duration::from_millis(500));
     ///     });
     /// });
     ///
-    /// assert_eq!(start.elapsed().as_secs(), 1);
+    /// let elapsed = start.elapsed();
+    ///
+    /// assert!(500 <= elapsed.as_millis() && elapsed.as_millis() < 750, "{elapsed:?}");
+    /// ```
+    ///
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::prelude::*;
+    ///
+    /// let unthreader = Unthreader::from(UnthreaderMode::Multithread);
+    /// let start = Instant::now();
+    ///
+    /// let x = unthreader.unthread();
+    /// sleep(Duration::from_millis(500));
+    ///
+    /// let x = unthreader.unthread();
+    /// sleep(Duration::from_millis(500));
+    ///
+    /// let elapsed = start.elapsed();
+    ///
+    /// assert!(1000 <= elapsed.as_millis() && elapsed.as_millis() < 1250, "{elapsed:?}");
     /// ```
     #[default]
     Multithread,
-    /// Unthread.
+    /// Unthread, making unthreading operations happen one by one even in multithreaded setups.
     /// # Examples
     /// ```
     /// use std::time::{Instant, Duration};
@@ -59,16 +81,25 @@ pub enum UnthreaderMode {
     /// std::thread::scope(|s| {
     ///     s.spawn(|| {
     ///         let x = unthreader.unthread();
-    ///         sleep(Duration::from_secs(1));
+    ///         sleep(Duration::from_millis(500));
     ///     });
     ///
     ///     s.spawn(|| {
     ///         let x = unthreader.unthread();
-    ///         sleep(Duration::from_secs(1));
+    ///         sleep(Duration::from_millis(500));
     ///     });
     /// });
     ///
-    /// assert_eq!(start.elapsed().as_secs(), 2);
+    /// let elapsed = start.elapsed();
+    ///
+    /// assert!(1000 <= elapsed.as_millis() && elapsed.as_millis() < 1250, "{elapsed:?}");
+    /// ```
+    ///
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::prelude::*;
     ///
     /// // Make sure deadlocks don't happen.
     ///
@@ -76,19 +107,21 @@ pub enum UnthreaderMode {
     /// let start = Instant::now();
     ///
     /// let x = unthreader.unthread();
-    /// sleep(Duration::from_secs(1));
+    /// sleep(Duration::from_millis(500));
     ///
     /// let y = unthreader.unthread();
-    /// sleep(Duration::from_secs(1));
+    /// sleep(Duration::from_millis(500));
     ///
-    /// assert_eq!(start.elapsed().as_secs(), 2);
+    /// let elapsed = start.elapsed();
+    ///
+    /// assert!(1000 <= elapsed.as_millis() && elapsed.as_millis() < 1250, "{elapsed:?}");
     /// ```
     Unthread,
-    /// [`Self::Unthread`] but if the last unthread started less than [`Self::Ratelimit::0`] ago, waits the remaining duration between starting the new unthread and returning the [`UnthreaderHandle`].
+    /// [`Self::Unthread`] but wait until [`Self::Ratelimit::0`] after the last unthreading to return [`UnthreaderHandle`].
     ///
-    /// Currently has difficult to predict and probably bad effects in async code due to using [`std::thread::sleep`].
+    /// For example, if the ratelimit is 5 seconds and the last HTTP request was 2 seconds ago, this waits 3 seconds.
     ///
-    /// If you know of an equivalent to [`std::thread::sleep`] that doesn't mess up async please let me know so I can switch to that.
+    /// This shouldn't be in unthreading but I can't think of a signficiantly better place to put it.
     /// # Examples
     /// ```
     /// use std::time::{Instant, Duration};
@@ -99,51 +132,69 @@ pub enum UnthreaderMode {
     /// // Make sure deserializing from a number works.
     ///
     /// assert_eq!(
-    ///     UnthreaderMode::Ratelimit(Duration::from_secs(5)),
-    ///     serde_json::from_str(r#"{"Ratelimit": 5}"#).unwrap()
+    ///     UnthreaderMode::Ratelimit(Duration::from_secs(3)),
+    ///     serde_json::from_str(r#"{"Ratelimit": 3}"#).unwrap()
     /// );
     ///
     /// assert_eq!(
-    ///     UnthreaderMode::Ratelimit(Duration::from_secs(5)),
-    ///     serde_json::from_str(r#"{"Ratelimit": 5.0}"#).unwrap()
+    ///     UnthreaderMode::Ratelimit(Duration::from_secs(3)),
+    ///     serde_json::from_str(r#"{"Ratelimit": 3.0}"#).unwrap()
     /// );
     ///
     /// assert_eq!(
-    ///     UnthreaderMode::Ratelimit(Duration::from_millis(5500)),
-    ///     serde_json::from_str(r#"{"Ratelimit": 5.5}"#).unwrap()
+    ///     UnthreaderMode::Ratelimit(Duration::from_millis(3500)),
+    ///     serde_json::from_str(r#"{"Ratelimit": 3.5}"#).unwrap()
     /// );
+    /// ```
     ///
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::prelude::*;
+    /// 
     /// // Make sure ratelimiting works.
     ///
-    /// let unthreader = Unthreader::from(UnthreaderMode::Ratelimit(Duration::from_secs(5)));
+    /// let unthreader = Unthreader::from(UnthreaderMode::Ratelimit(Duration::from_secs(1)));
     /// let start = Instant::now();
     ///
     /// std::thread::scope(|s| {
     ///     s.spawn(|| {
     ///         let x = unthreader.unthread();
-    ///         sleep(Duration::from_secs(1));
+    ///         sleep(Duration::from_millis(500));
     ///     });
     ///
     ///     s.spawn(|| {
     ///         let x = unthreader.unthread();
-    ///         sleep(Duration::from_secs(1));
+    ///         sleep(Duration::from_millis(500));
     ///     });
     /// });
     ///
-    /// assert_eq!(start.elapsed().as_secs(), 6);
+    /// let elapsed = start.elapsed();
     ///
+    /// assert!(1500 <= elapsed.as_millis() && elapsed.as_millis() < 1750, "{elapsed:?}");
+    /// ```
+    /// 
+    /// ```
+    /// use std::time::{Instant, Duration};
+    /// use std::thread::sleep;
+    ///
+    /// use url_cleaner_engine::prelude::*;
+    /// 
     /// // Make sure deadlocks don't happen.
     ///
-    /// let unthreader = Unthreader::from(UnthreaderMode::Ratelimit(Duration::from_secs(5)));
+    /// let unthreader = Unthreader::from(UnthreaderMode::Ratelimit(Duration::from_secs(1)));
     /// let start = Instant::now();
     ///
     /// let x = unthreader.unthread();
-    /// sleep(Duration::from_secs(1));
+    /// sleep(Duration::from_millis(500));
     ///
     /// let y = unthreader.unthread();
-    /// sleep(Duration::from_secs(1));
+    /// sleep(Duration::from_millis(500));
     ///
-    /// assert_eq!(start.elapsed().as_secs(), 6);
+    /// let elapsed = start.elapsed();
+    ///
+    /// assert!(1500 <= elapsed.as_millis() && elapsed.as_millis() < 1750, "{elapsed:?}");
     /// ```
     Ratelimit(#[serde_as(as = "DurationSecondsWithFrac<f64>")] Duration)
 }

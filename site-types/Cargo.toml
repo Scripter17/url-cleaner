@@ -18,21 +18,3 @@ url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-feat
 
 [lints]
 workspace = true
-
-[features]
-default = ["default-cleaner"]
-
-default-cleaner = [
-  "regex",
-  "http",
-  "cache",
-  "base64"
-]
-
-regex   = []
-http    = []
-cache   = []
-base64  = []
-custom  = []
-command = []
-debug   = []

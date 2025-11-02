@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Generate documentation from the default cleaner.
+# Generate documentation from the bundled cleaner.
 
 import json
 
@@ -24,7 +24,7 @@ def thing(x, i):
                 print(line)
             last = list
 
-with open("engine/default-cleaner.json", "r") as f:
+with open("engine/bundled-cleaner.json", "r") as f:
     x = json.loads(f.read())["docs"]
     del x["name"]
     del x["description"]

@@ -20,22 +20,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: 'Resore cache'
-      if: runner.environment == null
-      uses: actions/cache/restore@v4
-      with:
-        key: ${{ runner.os }}-release-artifacts
-        path: target
+    - name: Setup
+      run: set -euo pipefail
 
     - name: Build
       run: cargo build -r
-
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-release-artifacts
-        path: target
 
     - name: Upload
       if: runner.environment == 'github-hosted'
@@ -47,5 +36,5 @@ jobs:
           target/release/url-cleaner${{ matrix.oses.extension }}
           target/release/url-cleaner-site${{ matrix.oses.extension }}
           target/release/url-cleaner-discord-app${{ matrix.oses.extension }}
-          engine/default-cleaner.json
+          engine/bundled-cleaner.json
           site/url-cleaner-site-userscript.js

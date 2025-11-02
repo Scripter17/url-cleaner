@@ -14,7 +14,7 @@ use crate::prelude::*;
 pub struct JobContext {
     /// The [`BetterHost`] of the "source" of the [`Job`].
     ///
-    /// Used with [`TaskContext`] by the default cleaner and the userscript to allow for per-site optimizations and unmangling.
+    /// Used with [`TaskContext`] by the bundled cleaner and the userscript to allow for per-site optimizations and unmangling.
     #[serde(default, skip_serializing_if = "is_default")]
     pub source_host: Option<BetterHost<String>>,
     /// The vars.

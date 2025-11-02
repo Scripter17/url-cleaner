@@ -44,10 +44,10 @@ pub struct Docs {
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub maps: HashMap<String, String>,
-    /// The documentation of the named partitionings in [`Params::named_partitionings`].
+    /// The documentation of the named partitionings in [`Params::partitionings`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub named_partitionings: HashMap<String, String>,
+    pub partitionings: HashMap<String, String>,
     /// The documentation of the stuff used in [`JobContext`]s.
     #[serde(default, skip_serializing_if = "is_default")]
     pub job_context: JobContextDocs,

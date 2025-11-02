@@ -19,9 +19,9 @@ pub struct LazyTask<'j, 't> {
     pub cleaner: &'j Cleaner<'j>,
     /// The [`Unthreader`].
     pub unthreader: &'j Unthreader,
-    /// The [`CacheHandle`].
+    /// The [`Cache`].
     #[cfg(feature = "cache")]
-    pub cache_handle: CacheHandle<'j>,
+    pub cache: Cache<'j>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     pub http_client: &'j HttpClient
@@ -57,14 +57,14 @@ impl<'j> LazyTask<'j, '_> {
     #[doc = edoc!(callerr(LazyTaskConfig::make))]
     pub fn make(self) -> Result<Task<'j>, MakeTaskError> {
         Ok(Task {
-            config      : self.config.make()?,
-            job_context : self.job_context,
-            cleaner     : self.cleaner,
-            unthreader  : self.unthreader,
+            config     : self.config.make()?,
+            job_context: self.job_context,
+            cleaner    : self.cleaner,
+            unthreader : self.unthreader,
             #[cfg(feature = "cache")]
-            cache_handle: self.cache_handle,
+            cache      : self.cache,
             #[cfg(feature = "http")]
-            http_client : self.http_client
+            http_client: self.http_client
         })
     }
 }
@@ -72,14 +72,14 @@ impl<'j> LazyTask<'j, '_> {
 impl<'j> From<Task<'j>> for LazyTask<'j, '_> {
     fn from(value: Task<'j>) -> Self {
         Self {
-            config      : value.config.into(),
-            job_context : value.job_context,
-            cleaner     : value.cleaner,
-            unthreader  : value.unthreader,
+            config     : value.config.into(),
+            job_context: value.job_context,
+            cleaner    : value.cleaner,
+            unthreader : value.unthreader,
             #[cfg(feature = "cache")]
-            cache_handle: value.cache_handle,
+            cache      : value.cache,
             #[cfg(feature = "http")]
-            http_client : value.http_client
+            http_client: value.http_client
         }
     }
 }

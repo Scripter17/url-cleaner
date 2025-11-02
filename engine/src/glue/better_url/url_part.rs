@@ -346,23 +346,23 @@ pub enum SetUrlPartError {
     #[error(transparent)] SetHostError(#[from] SetHostError),
     /// Returned when a [`SetIpHostError`] is encountered.
     #[error(transparent)] SetIpHostError(#[from] SetIpHostError),
-    /// Returned when a [`SetSubdomainError)`] is encountered.
+    /// Returned when a [`SetSubdomainError`] is encountered.
     #[error(transparent)] SetSubdomainError(#[from] SetSubdomainError),
-    /// Returned when a [`SetDomainError)`] is encountered.
+    /// Returned when a [`SetDomainError`] is encountered.
     #[error(transparent)] SetDomainError(#[from] SetDomainError),
-    /// Returned when a [`SetNotDomainSuffixError)`] is encountered.
+    /// Returned when a [`SetNotDomainSuffixError`] is encountered.
     #[error(transparent)] SetNotDomainSuffixError(#[from] SetNotDomainSuffixError),
-    /// Returned when a [`SetDomainMiddleError)`] is encountered.
+    /// Returned when a [`SetDomainMiddleError`] is encountered.
     #[error(transparent)] SetDomainMiddleError(#[from] SetDomainMiddleError),
-    /// Returned when a [`SetRegDomainError)`] is encountered.
+    /// Returned when a [`SetRegDomainError`] is encountered.
     #[error(transparent)] SetRegDomainError(#[from] SetRegDomainError),
-    /// Returned when a [`SetDomainSuffixError)`] is encountered.
+    /// Returned when a [`SetDomainSuffixError`] is encountered.
     #[error(transparent)] SetDomainSuffixError(#[from] SetDomainSuffixError),
-    /// Returned when a [`SetDomainSegmentError)`] is encountered.
+    /// Returned when a [`SetDomainSegmentError`] is encountered.
     #[error(transparent)] SetDomainSegmentError(#[from] SetDomainSegmentError),
-    /// Returned when a [`SetSubdomainSegmentError)`] is encountered.
+    /// Returned when a [`SetSubdomainSegmentError`] is encountered.
     #[error(transparent)] SetSubdomainSegmentError(#[from] SetSubdomainSegmentError),
-    /// Returned when a [`SetDomainSuffixSegmentError)`] is encountered.
+    /// Returned when a [`SetDomainSuffixSegmentError`] is encountered.
     #[error(transparent)] SetDomainSuffixSegmentError(#[from] SetDomainSuffixSegmentError),
 
     // Post-host stuff.
@@ -401,7 +401,7 @@ pub enum SetUrlPartError {
     #[error(transparent)]
     SetPathSegmentsBeforeLastNError(#[from] SetPathSegmentsBeforeLastNError),
 
-    /// Returned when a [`SetQueryParamError)`] is encountered.
+    /// Returned when a [`SetQueryParamError`] is encountered.
     #[error(transparent)]
     SetQueryParamError(#[from] SetQueryParamError),
 

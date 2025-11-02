@@ -18,7 +18,7 @@ URL Cleaner, not to be confused with the many other projects called URL Cleaner 
 With if-then-else, switch case, and loop-until-no-change control flow, [PSL](https://publicsuffix.org) powered subdomain/domain middle/domain suffix parts,
 constructing strings from both the cleaner's params and the URL, setting arbitrary parts of the URL to those strings, regex, base64, and HTTP requests, basically every URL you could ever want to clean is cleanable.
 
-Despite how complex it is, URL Cleaner is very fast! On my Lenovo Thinkpad T460S from 2016, ten thousand amazon product listing URLs can be cleaned in under 40 milliseconds using the included default cleaner.
+Despite how complex it is, URL Cleaner is very fast! On my Lenovo Thinkpad T460S from 2016, ten thousand amazon product listing URLs can be cleaned in under 40 milliseconds using the bundled cleaner.
 And that's the CLI program reading from a file and writing the cleaned URLs to `/dev/null`.
 
 ## Frontends
@@ -31,13 +31,13 @@ URL Cleaner currently has 3 official frontends:
 
 You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
 
-## Default cleaner
+## Bundled cleaner
 
-URL Cleaner Engine comes with a cleaner currently called the default cleaner (better name pending). The default cleaner is meant for general purpose cleaning of URLs you would typically click on and send to/get from friends.
+URL Cleaner Engine comes with a cleaner currently called the bundled cleaner (better name pending). The bundled cleaner is meant for general purpose cleaning of URLs you would typically click on and send to/get from friends.
 
-The default cleaner also has a variety of optional flags you can set such as changing `x.com` URLs to `vxtwitter.com`, making URLs for the mobile version of websites into the desktop version, and so on.
+The bundled cleaner also has a variety of optional flags you can set such as changing `x.com` URLs to `vxtwitter.com`, making URLs for the mobile version of websites into the desktop version, and so on.
 
-For more information, see the [default cleaner's documentation](default_cleaner.md).
+For more information, see the [bundled cleaner's documentation](bundled_cleaner.md).
 
 # Performance
 
@@ -54,7 +54,7 @@ However, using URL Cleaner Site and its included userscript to clean every URL o
 
 1. Websites can tell you're using URL Cleaner Site and its userscript. It's not hard to tell.
 
-2. Websites can possibly figure out which version of the default cleaner you're using, and pretty easily figure out what ParamsDiff you're using.
+2. Websites can possibly figure out which version of the bundled cleaner you're using, and pretty easily figure out what ParamsDiff you're using.
 
 3. Redirects are cached to reduce information leaks. URL Cleaner also caches how long the redirect took and lets you optionally wait about that long (plus or minus up to 12.5%) when reading from the cache to stop websites from noticing if you have a redirect cached.
 
@@ -68,7 +68,7 @@ If you want to sidestep the entire headache and replace it with a worse one just
 
 # Credits
 
-The people and projects I have stolen various parts of the default cleaner from.
+The people and projects I have stolen various parts of the bundled cleaner from.
 
 - [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
 - [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)

@@ -13,25 +13,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: 'Restore cache'
-      if: runner.environment == null
-      uses: actions/cache/restore@v4
-      with:
-        key: ${{ runner.os }}-cli-debug
-        path: target
-
     - name: Setup
       run: |
-        set -o pipefail
+        set -euo pipefail
         cargo build -p url-cleaner
         cp target/debug/url-cleaner urlc
-
-    - name: 'Save cache'
-      if: runner.environment == null
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-cli-debug
-        path: target
 
     - name: offline_tests
       run: ./urlc --tests engine/tests/offline.json
@@ -74,8 +60,6 @@ jobs:
 
     - name: Profiles
       run: |
-        set -e
-
         PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
         PARAMS_DIFF1='{"unflags":["unmobile"]}'
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'

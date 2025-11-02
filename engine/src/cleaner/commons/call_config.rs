@@ -1,4 +1,4 @@
-//! Details on how to call a [`Commons`] thing.
+//! [`CommonCallConfig`].
 
 use std::str::FromStr;
 
@@ -10,17 +10,19 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
-pub struct CommonCall {
+pub struct CommonCallConfig {
     /// The name of the [`Commons`] thing to call.
     pub name: Box<StringSource>,
-    /// The [`CommonCallArgsConfig`].
+    /// The [`CommonArgsConfig`].
     ///
-    /// Defaults to [`CommonCallArgsConfig::default`].
+    /// Defaults to [`CommonArgsConfig::default`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub args: Box<CommonCallArgsConfig>
+    pub args: Box<CommonArgsConfig>
 }
 
-impl FromStr for CommonCall {
+string_or_struct_magic!(CommonCallConfig);
+
+impl FromStr for CommonCallConfig {
     type Err = std::convert::Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -28,25 +30,25 @@ impl FromStr for CommonCall {
     }
 }
 
-impl From<&str> for CommonCall {
+impl From<&str> for CommonCallConfig {
     fn from(value: &str) -> Self {
         StringSource::from(value).into()
     }
 }
 
-impl From<String> for CommonCall {
+impl From<String> for CommonCallConfig {
     fn from(value: String) -> Self {
         StringSource::from(value).into()
     }
 }
 
-impl From<StringSource> for CommonCall {
+impl From<StringSource> for CommonCallConfig {
     fn from(value: StringSource) -> Self {
         Box::new(value).into()
     }
 }
 
-impl From<Box<StringSource>> for CommonCall {
+impl From<Box<StringSource>> for CommonCallConfig {
     fn from(value: Box<StringSource>) -> Self {
         Self {
             name: value,

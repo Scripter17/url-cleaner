@@ -18,7 +18,7 @@ pub struct ProfileConfig {
 impl ProfileConfig {
     /// Make a [`Profile`] with the provided [`Params`].
     pub fn make<'a>(self, mut params: Params<'a>) -> Profile<'a> {
-        self.params_diff.apply_once(&mut params);
+        self.params_diff.apply(&mut params);
         Profile {params}
     }
 }

@@ -22,7 +22,7 @@ pub mod prelude {
 
 /// The main way to turn [`LazyTaskConfig`]s into [`LazyTask`]s to be [`LazyTask::make`]d and [`Task::do`]ne.
 ///
-/// Combines a [`JobConfig`] and an [`Iterator`] for convenience when practical.
+/// Combines a [`JobConfig`] and an [`IntoIterator`] for convenience when practical.
 ///
 /// However sometimes it's very hard to fit your queue of tasks into an [`Iterator`]. For that please feel free to use [`JobConfig`] directly.
 ///
@@ -54,10 +54,9 @@ pub mod prelude {
 ///         // This comes up a bit in certain situations such as browser extensions, but usually it's fine to just use the default.
 ///         unthreader: &Default::default(),
 #[cfg_attr(feature = "cache" , doc = "        // Just making an in-memory cache because this is just example code.")]
-#[cfg_attr(feature = "cache" , doc = "        cache_handle: CacheHandle {")]
-#[cfg_attr(feature = "cache" , doc = "            // In real code you should do something like `&\"my-url-cleaner-frontend-cache.sqlite\".into()`.")]
-#[cfg_attr(feature = "cache" , doc = "            cache: &Default::default(),")]
-#[cfg_attr(feature = "cache" , doc = "            config: Default::default()")]
+#[cfg_attr(feature = "cache" , doc = "        cache: Cache {")]
+#[cfg_attr(feature = "cache" , doc = "            config: Default::default(),")]
+#[cfg_attr(feature = "cache" , doc = "            inner: &Default::default(),")]
 #[cfg_attr(feature = "cache" , doc = "        },")]
 #[cfg_attr(feature = "http"  , doc = "        http_client: &Default::default()")]
 ///     },

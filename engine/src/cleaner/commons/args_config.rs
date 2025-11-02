@@ -1,4 +1,4 @@
-//! [`CommonCallArgsConfig`].
+//! [`CommonArgsConfig`].
 
 use std::collections::{HashSet, HashMap};
 
@@ -7,9 +7,9 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
-/// Instructions on how to make the [`CommonCallArgs`] to call a [`Commons`] thing.
+/// Instructions on how to make the [`CommonArgs`] to call a [`Commons`] thing.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
-pub struct CommonCallArgsConfig {
+pub struct CommonArgsConfig {
     /// The flags to set.
     ///
     /// Defaults to an empty [`HashSet`].
@@ -47,26 +47,26 @@ pub struct CommonCallArgsConfig {
     pub string_matchers: HashMap<String, StringMatcher>
 }
 
-/// The enum of errors [`CommonCallArgsConfig::make`] can return.
+/// The enum of errors [`CommonArgsConfig::make`] can return.
 #[derive(Debug, Error)]
-pub enum MakeCommonCallArgsError {
+pub enum MakeCommonArgsError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>)
 }
 
-impl From<StringSourceError> for MakeCommonCallArgsError {
+impl From<StringSourceError> for MakeCommonArgsError {
     fn from(value: StringSourceError) -> Self {
         Self::StringSourceError(Box::new(value))
     }
 }
 
-impl CommonCallArgsConfig {
-    /// Builds the [`CommonCallArgs`].
+impl CommonArgsConfig {
+    /// Builds the [`CommonArgs`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
-    pub fn make<'a>(&'a self, task_state: &TaskStateView) -> Result<CommonCallArgs<'a>, MakeCommonCallArgsError> {
-        Ok(CommonCallArgs {
+    pub fn make<'a>(&'a self, task_state: &TaskStateView) -> Result<CommonArgs<'a>, MakeCommonArgsError> {
+        Ok(CommonArgs {
             flags: &self.flags,
             vars: self.vars.iter().filter_map(|(k, v)| match v.get(task_state) {Ok(Some(x)) => Some(Ok((&**k, x.into_owned()))), Ok(None) => None, Err(e) => Some(Err(e))}).collect::<Result<HashMap<_, _>, StringSourceError>>()?,
             conditions: &self.conditions,

@@ -41,7 +41,7 @@ pub enum FlagType {
     /// assert!(FlagType::Scratchpad.get("abc", &task_state).unwrap())
     /// ```
     Scratchpad,
-    /// Get it from [`TaskStateView::common_args`]'s [`CommonCallArgs::vars`].
+    /// Get it from [`TaskStateView::common_args`]'s [`CommonArgs::vars`].
     /// # Errors
     /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetVarError::NotInCommonContext`].
     CommonArg

@@ -24,7 +24,7 @@ mode=
 compile=1
 features=
 
-cleaner="../../engine/default-cleaner.json"
+cleaner="../../engine/bundled-cleaner.json"
 
 hyperfine=1
 warmup=100

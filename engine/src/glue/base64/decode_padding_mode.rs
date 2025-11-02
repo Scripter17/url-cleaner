@@ -23,12 +23,28 @@ pub enum Base64DecodePaddingMode {
 }
 
 impl Base64DecodePaddingMode {
-    /// Builds a [`DecodePaddingMode`].
-    pub fn build(&self) -> DecodePaddingMode {
-        match self {
-            Self::Indifferent      => DecodePaddingMode::Indifferent,
-            Self::RequireCanonical => DecodePaddingMode::RequireCanonical,
-            Self::RequireNone      => DecodePaddingMode::RequireNone
+    /// Make a [`DecodePaddingMode`].
+    pub fn make(self) -> DecodePaddingMode {
+        self.into()
+    }
+}
+
+impl From<Base64DecodePaddingMode> for DecodePaddingMode {
+    fn from(value: Base64DecodePaddingMode) -> Self {
+        match value {
+            Base64DecodePaddingMode::Indifferent      => Self::Indifferent,
+            Base64DecodePaddingMode::RequireCanonical => Self::RequireCanonical,
+            Base64DecodePaddingMode::RequireNone      => Self::RequireNone
+        }
+    }
+}
+
+impl From<DecodePaddingMode> for Base64DecodePaddingMode {
+    fn from(value: DecodePaddingMode) -> Self {
+        match value {
+            DecodePaddingMode::Indifferent      => Self::Indifferent,
+            DecodePaddingMode::RequireCanonical => Self::RequireCanonical,
+            DecodePaddingMode::RequireNone      => Self::RequireNone
         }
     }
 }

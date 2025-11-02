@@ -24,8 +24,18 @@ pub struct CleanPayload<'a> {
     pub config: CleanPayloadConfig
 }
 
+impl<'a> CleanPayload<'a> {
+    /// Make each contained [`LazyTaskConfig`] owned.
+    pub fn into_owned(self) -> CleanPayload<'static> {
+        CleanPayload {
+            tasks: self.tasks.into_iter().map(LazyTaskConfig::into_owned).collect(),
+            ..self
+        }
+    }
+}
+
 /// The config or a [`CleanPayload`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CleanPayloadConfig {
     /// The authentication to use.
@@ -52,34 +62,41 @@ pub struct CleanPayloadConfig {
     /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
-    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
-    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::read`].
+    /// If [`true`], enable reading from the cache.
     ///
-    /// Defaults to [`None`].
-    #[cfg(feature = "cache")]
+    /// Defaults to [`true`].
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
+    pub read_cache: bool,
+    /// If [`true`], enable writing to the cache.
+    ///
+    /// Defaults to [`true`].
+    #[serde(default = "get_true", skip_serializing_if = "is_true")]
+    pub write_cache: bool,
+    /// If [`true`], enable cache delays.
+    ///
+    /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub read_cache: Option<bool>,
-    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
-    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::write`].
+    pub cache_delay: bool,
+    /// If [`true`], enables unhtreading.
     ///
-    /// Defaults to [`None`].
-    #[cfg(feature = "cache")]
+    /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub write_cache: Option<bool>,
-    #[allow(rustdoc::broken_intra_doc_links, reason = "Fixing it would require bloating the dependency tree.")]
-    /// if [`Some`], overwrite [`Job::cache_handle_config`]'s [`CacheHandleConfig::delay`].
-    ///
-    /// Defaults to [`None`].
-    #[cfg(feature = "cache")]
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub cache_delay: Option<bool>,
-    /// If [`Some`], enables/disables unthreading.
-    ///
-    /// If [`None`], uses the default value set by the server.
-    ///
-    /// Defaults to [`None`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub unthread: Option<bool>
+    pub unthread: bool
+}
+
+impl Default for CleanPayloadConfig {
+    fn default() -> Self {
+        Self {
+            auth       : None,
+            context    : Default::default(),
+            profile    : None,
+            params_diff: None,
+            read_cache : true,
+            write_cache: true,
+            cache_delay: false,
+            unthread   : false
+        }
+    }
 }
 
 /// The [`Result`] returned by the `/clean` route.

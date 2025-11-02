@@ -33,85 +33,60 @@ static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Discord App - Explicit non-consent to URL spytext.
-///
-/// Licensed under the Aferro GNU Public License version 3.0 or later (SPDX: AGPL-3.0-or-later)
-///
-/// Source code available at https://github.com/Scripter17/url-cleaner
+/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// https://github.com/Scripter17/url-cleaner
 ///
 /// Enabled features:
-#[cfg_attr(feature = "default-cleaner", doc = "default-cleaner")]
-#[cfg_attr(feature = "regex"          , doc = "regex"          )]
+#[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-#[cfg_attr(feature = "base64"         , doc = "base64"         )]
 #[cfg_attr(feature = "command"        , doc = "command"        )]
-#[cfg_attr(feature = "custom"         , doc = "custom"         )]
 #[cfg_attr(feature = "debug"          , doc = "debug"          )]
 ///
 /// Disabled features:
-#[cfg_attr(not(feature = "default-cleaner"), doc = "default-cleaner")]
-#[cfg_attr(not(feature = "regex"          ), doc = "regex"          )]
+#[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
-#[cfg_attr(not(feature = "base64"         ), doc = "base64"         )]
 #[cfg_attr(not(feature = "command"        ), doc = "command"        )]
-#[cfg_attr(not(feature = "custom"         ), doc = "custom"         )]
 #[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
     /// The config file to use.
-    ///
-    /// Omit to use the built in default cleaner.
-    #[arg(long, value_name = "PATH")]
-    #[cfg(feature = "default-cleaner")]
+    /// Omit to use the built in bundled cleaner.
+    #[cfg(feature = "bundled-cleaner")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: Option<PathBuf>,
     /// The config file to use.
-    #[arg(long, value_name = "PATH")]
-    #[cfg(not(feature = "default-cleaner"))]
+    #[cfg(not(feature = "bundled-cleaner"))]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
     /// The ProfilesConfig file.
-    ///
     /// Cannot be used with --profiles-string.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
     /// The ProfilesConfig string.
-    ///
     /// Cannot be used with --profiles.
-    #[arg(long, value_name = "JSON STRING")]
+    #[arg(long, verbatim_doc_comment, value_name = "JSON STRING")]
     profiles_string: Option<String>,
     /// The proxy to use for HTTP/HTTPS requests.
-    ///
-    /// Overrided by --http-proxy and --https-proxy.
     #[cfg(feature = "http")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     proxy: Option<HttpProxyConfig>,
-    /// the proxy to use for HTTP requests.
-    ///
-    /// Overrides --proxy.
-    #[cfg(feature = "http")]
-    #[arg(long)]
-    http_proxy: Option<HttpProxyConfig>,
-    /// the proxy to use for HTTPS requests.
-    ///
-    /// Overrides --proxy.
-    #[cfg(feature = "http")]
-    #[arg(long)]
-    https_proxy: Option<HttpProxyConfig>,
     /// The path cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long, value_name = "PATH", default_value = "url-cleaner-discord-app-cache.sqlite")]
-    cache: CachePath,
+    #[arg(long, verbatim_doc_comment, value_name = "PATH", default_value = "url-cleaner-discord-app-cache.sqlite")]
+    cache: PathBuf,
     /// If true, read from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     no_read_cache: bool,
     /// If true, write to the cache.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     no_write_cache: bool,
     /// If true, artificially delay cache reads.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, verbatim_doc_comment)]
     cache_delay: bool
 }
 
@@ -124,10 +99,7 @@ struct State {
     profiles_config_string: String,
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
-    cache: Cache,
-    /// [`CacheHandleConfig`]
-    #[cfg(feature = "cache")]
-    cache_handle_config: CacheHandleConfig,
+    cache: Cache<'static>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     http_client: HttpClient
@@ -144,12 +116,12 @@ async fn main() {
 
     let mut commands = vec![help()];
 
-    #[cfg(feature = "default-cleaner")]
+    #[cfg(feature = "bundled-cleaner")]
     let cleaner_string = match args.cleaner {
         Some(path) => std::fs::read_to_string(path).expect("The Cleaner file to be readable."),
-        None       => url_cleaner_engine::cleaner::DEFAULT_CLEANER_STR.into()
+        None       => BUNDLED_CLEANER_STR.into()
     };
-    #[cfg(not(feature = "default-cleaner"))]
+    #[cfg(not(feature = "bundled-cleaner"))]
     let cleaner_string = std::fs::read_to_string(args.cleaner).expect("The Cleaner file to be readable.");
     let cleaner = Box::leak(Box::new(serde_json::from_str::<Cleaner<'static>>(&cleaner_string).expect("The Cleaner string to be valid."))).borrowed();
 
@@ -189,15 +161,16 @@ async fn main() {
         cleaner_string,
         profiles_config_string,
         #[cfg(feature = "cache")]
-        cache: args.cache.into(),
-        #[cfg(feature = "cache")]
-        cache_handle_config: CacheHandleConfig {
-            delay: args.cache_delay,
-            read : !args.no_read_cache,
-            write: !args.no_write_cache
+        cache: Cache {
+            config: CacheConfig {
+                read : !args.no_read_cache,
+                write: !args.no_write_cache,
+                delay:  args.cache_delay
+            },
+            inner: Box::leak(Box::new(args.cache.into()))
         },
         #[cfg(feature = "http")]
-        http_client: HttpClient::new([args.proxy, args.http_proxy, args.https_proxy].into_iter().flatten().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid."))
+        http_client: HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid."))
     };
 
     let token = std::env::var("URLCDA_KEY").expect("No discord app token found in the URLCDA_KEY environment variable.");
@@ -279,10 +252,7 @@ async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: &Cleaner<
             cleaner,
             unthreader: &Unthreader::default(),
             #[cfg(feature = "cache")]
-            cache_handle: CacheHandle {
-                cache: &ctx.data().cache,
-                config: ctx.data().cache_handle_config,
-            },
+            cache: ctx.data().cache,
             #[cfg(feature = "http")]
             http_client: &ctx.data().http_client
         },

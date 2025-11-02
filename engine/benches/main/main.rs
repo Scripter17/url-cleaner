@@ -51,7 +51,7 @@ macro_rules! group_mods {
 }
 pub(crate) use group_mods;
 
-group_mods!(all, better_url, default_cleaner, host_details, #[cfg(feature = "cache")] caching);
+group_mods!(all, better_url, bundled_cleaner, host_details, #[cfg(feature = "cache")] caching);
 
 fn main() {
     let mut c = criterion::Criterion::default()

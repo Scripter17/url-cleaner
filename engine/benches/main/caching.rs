@@ -7,29 +7,29 @@ const KEYS    : [&str; 3] = ["", "https://example.com/", "https://example.com/sa
 const VALUES  : [Option<&str>; 4] = [None, Some(""), Some("https://example.com"), Some("https://example.com/sahdgkdjhgasdjhgsdafigsdbfksdjfsdfsdfsfg")];
 
 fn rwr(c: &mut Criterion) {
-    let handle = CacheHandle {
-        cache: &Cache::from(CachePath::Memory),
-        config: CacheHandleConfig::default()
+    let handle = Cache {
+        inner: &Default::default(),
+        config: Default::default()
     };
 
     for pass in ["from empty", "from full"] {
         for subject in SUBJECTS {
             for key in KEYS {
                 c.bench_function(
-                    &format!("CacheHandle::read ({pass}) (empty): {subject:?}, {key:?}"),
+                    &format!("Cache::read ({pass}) (empty): {subject:?}, {key:?}"),
                     |b| b.iter(
                         || handle.read(bb(CacheEntryKeys {subject, key}))
                     )
                 );
                 for value in VALUES {
                     c.bench_function(
-                        &format!("CacheHandle::write ({pass}): {subject:?}, {key:?}, {value:?}"),
+                        &format!("Cache::write ({pass}): {subject:?}, {key:?}, {value:?}"),
                         |b| b.iter(
                             || handle.write(bb(NewCacheEntry {subject, key, value, duration: Default::default()}))
                         )
                     );
                     c.bench_function(
-                        &format!("CacheHandle::read ({pass}) ({value:?}): {subject:?}, {key:?}"),
+                        &format!("Cache::read ({pass}) ({value:?}): {subject:?}, {key:?}"),
                         |b| b.iter(
                             || handle.read(bb(CacheEntryKeys {subject, key}))
                         )

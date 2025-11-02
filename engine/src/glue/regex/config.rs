@@ -65,8 +65,6 @@ pub struct RegexConfig {
 }
 
 /// Serde helper function.
-const fn is_false(x: &bool) -> bool {!*x}
-/// Serde helper function.
 const fn is_nlu8(x: &u8) -> bool {*x==b'\n'}
 /// Serde helper function.
 const fn newline_u8() -> u8 {b'\n'}

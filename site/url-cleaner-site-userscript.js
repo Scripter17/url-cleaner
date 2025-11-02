@@ -154,7 +154,7 @@ function element_to_task_config(element) {
 			// Some contact info fields let invalid inputs result in invalid URLs, which URL Cleaner can't accept.
 			// Since the unmangling for this doesn't touch the actual URL, just replace it with a dummy.
 			return {
-				url: "https://example.com/fa_ci_dummy",
+				url: "https://example.com/url_cleaner_dummy",
 				context: {
 					vars: {
 						contact_info_site_name: element.parentElement.querySelector("strong").innerHTML,

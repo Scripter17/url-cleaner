@@ -3,17 +3,35 @@
 use std::io::Write;
 
 fn main() {
-    // "Watch" the default config.
-    println!("cargo::rerun-if-changed=default-cleaner.json");
+    // "Watch" the bundled cleaner.
+    println!("cargo::rerun-if-changed=bundled-cleaner.json");
 
-    // Minify the default cleaner.
-    let default_cleaner = serde_json::from_str::<serde_json::Value>(&std::fs::read_to_string("default-cleaner.json").expect("The default cleaner couldn't be read")).expect("The default cleaner coulnd't be parsed");
+    // Minify the bundled cleaner.
+    let original = std::fs::read_to_string("bundled-cleaner.json").expect("The bundled cleaner couldn't be read").into_bytes();
+    let mut minified = Vec::with_capacity(original.len());
+
+    // A basic state machine to remove unnecessary whitespace.
+    let mut ins = false;
+    let mut esc = false;
+    for b in original {
+        match (ins, esc, b) {
+            (false, _    , b' ' | b'\n' | b'\t') => continue,
+            (false, _    , b'"' ) => ins = true,
+            (false, _    , _    ) => {},
+            (true , false, b'"' ) => ins = false,
+            (true , false, b'\\') => esc = true,
+            (true , false, _    ) => {},
+            (true , true , _    ) => esc = false,
+        }
+        minified.push(b);
+    }
+    
     std::fs::OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
-        .open(std::path::PathBuf::from(std::env::var_os("OUT_DIR").expect("The OUT_DIR environment variable wasn't set")).join("default-cleaner.json.minified"))
-        .expect("The minified default cleaner's output file couldn't be opened")
-        .write_all(serde_json::to_string(&default_cleaner).expect("The minified default cleaner couldn't be serialized").as_bytes())
-        .expect("The minified default cleaner coulnd't be written");
+        .open(format!("{}/bundled-cleaner.json.minified", std::env::var("OUT_DIR").expect("OUT_DIR to be set")))
+        .expect("The minified bundled cleaner's output file couldn't be opened")
+        .write_all(&minified)
+        .expect("The minified bundled cleaner coulnd't be written");
 }

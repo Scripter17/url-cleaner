@@ -14,8 +14,8 @@ fn make(c: &mut Criterion) {
         cleaner            : &Default::default(),
         unthreader         : &Default::default(),
         #[cfg(feature = "cache")]
-        cache_handle: CacheHandle {
-            cache: &Default::default(),
+        cache: Cache {
+            inner: &Default::default(),
             config: Default::default()
         },
         #[cfg(feature = "http")]
@@ -52,7 +52,7 @@ fn make(c: &mut Criterion) {
 }
 
 fn r#do(c: &mut Criterion) {
-    let cleaner = &serde_json::from_str(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default-cleaner.json"))).unwrap();
+    let cleaner = &serde_json::from_str(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/bundled-cleaner.json"))).unwrap();
 
     for url in TASK_URLS {
         let task = Task {
@@ -61,8 +61,8 @@ fn r#do(c: &mut Criterion) {
             cleaner,
             unthreader: &Default::default(),
             #[cfg(feature = "cache")]
-            cache_handle: CacheHandle {
-                cache: &Default::default(),
+            cache: Cache {
+                inner: &Default::default(),
                 config: Default::default()
             },
             #[cfg(feature = "http")]

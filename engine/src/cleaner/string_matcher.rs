@@ -7,7 +7,6 @@ use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
-#[cfg(feature = "regex")]
 #[expect(unused_imports, reason = "Used in docs.")]
 use regex::Regex;
 
@@ -73,7 +72,7 @@ pub enum StringMatcher {
     TryElse {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
-        /// The [`Self`] to try if [`Self::TryElse::try'] returns an error.
+        /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
         r#else: Box<Self>
     },
     /// Calls [`Self::check`] on each contained [`Self`] in order, returning the first to return [`Ok`].
@@ -270,16 +269,15 @@ pub enum StringMatcher {
     /// Satisfied if the call to [`Regex::is_match`] returns [`true`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher), geterr(LazyRegex))]
-    #[cfg(feature = "regex")]
     Regex(LazyRegex),
 
     // Common/Custom
 
     /// Gets a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_modifications`] and applies it.
     /// # Errors
-    #[doc = edoc!(ageterr(StringSource, CommonCall::name), agetnone(StringSource, StringMatcher, CommonCall::name), commonnotfound(Self, StringMatcher), callerr(CommonCallArgsConfig::make), checkerr(Self))]
-    Common(CommonCall),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonCallArgs::string_matchers`] and applies it.
+    #[doc = edoc!(ageterr(StringSource, CommonCallConfig::name), agetnone(StringSource, StringMatcher, CommonCallConfig::name), commonnotfound(Self, StringMatcher), callerr(CommonArgsConfig::make), checkerr(Self))]
+    Common(CommonCallConfig),
+    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::string_matchers`] and applies it.
     /// # Errors
     /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringMatcherError::NotInCommonContext`].
     ///
@@ -296,7 +294,6 @@ pub enum StringMatcher {
     Custom(fn(Option<&str>, &TaskStateView) -> Result<bool, StringMatcherError>)
 }
 
-#[cfg(feature = "regex")]
 impl From<LazyRegex> for StringMatcher {
     fn from(value: LazyRegex) -> Self {
         Self::Regex(value)
@@ -353,13 +350,12 @@ pub enum StringMatcherError {
     SetNotFound,
 
     /// Returned when a [`::regex::Error`] is encountered.
-    #[cfg(feature = "regex")]
     #[error(transparent)]
-    RegexError(#[from] ::regex::Error),
+    RegexError(#[from] regex::Error),
 
-    /// Returned when a [`MakeCommonCallArgsError`] is encountered.
+    /// Returned when a [`MakeCommonArgsError`] is encountered.
     #[error(transparent)]
-    MakeCommonCallArgsError(#[from] MakeCommonCallArgsError),
+    MakeCommonArgsError(#[from] MakeCommonArgsError),
     /// Returned when a [`StringMatcher`] with the specified name isn't found in the [`Commons::string_matchers`].
     #[error("A StringMatcher with the specified name wasn't found in the Commons::string_matchers.")]
     CommonStringMatcherNotFound,
@@ -526,7 +522,7 @@ impl StringMatcher {
 
             // Glue
 
-            #[cfg(feature = "regex")] Self::Regex(regex) => regex.get()?.is_match(haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::Regex(regex) => regex.get()?.is_match(haystack.ok_or(StringMatcherError::StringIsNone)?),
 
             // Common/Custom
 
@@ -534,18 +530,18 @@ impl StringMatcher {
                 task_state.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.check(
                     haystack,
                     &TaskStateView {
-                        common_args : Some(&common_call.args.make(task_state)?),
-                        url         : task_state.url,
-                        scratchpad  : task_state.scratchpad,
-                        context     : task_state.context,
-                        job_context : task_state.job_context,
-                        params      : task_state.params,
-                        commons     : task_state.commons,
-                        unthreader  : task_state.unthreader,
+                        common_args: Some(&common_call.args.make(task_state)?),
+                        url        : task_state.url,
+                        scratchpad : task_state.scratchpad,
+                        context    : task_state.context,
+                        job_context: task_state.job_context,
+                        params     : task_state.params,
+                        commons    : task_state.commons,
+                        unthreader : task_state.unthreader,
                         #[cfg(feature = "cache")]
-                        cache_handle: task_state.cache_handle,
+                        cache      : task_state.cache,
                         #[cfg(feature = "http")]
-                        http_client : task_state.http_client
+                        http_client: task_state.http_client
                     }
                 )?
             },
