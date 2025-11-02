@@ -52,8 +52,6 @@ impl ParamsDiff {
     ///
     /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
     pub fn apply(self, to: &mut Params) {
-        debug!(Params::apply, &self, to);
-
         // Flags
         if !self.flags.is_empty() {
             to.flags.to_mut().extend(self.flags);

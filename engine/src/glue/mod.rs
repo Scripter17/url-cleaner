@@ -9,7 +9,6 @@ pub mod base64;
 
 #[cfg(feature = "http"   )] pub mod http;
 #[cfg(feature = "cache"  )] pub mod cache;
-#[cfg(feature = "command")] pub mod command;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
@@ -22,5 +21,4 @@ pub mod prelude {
 
     #[cfg(feature = "http"   )] pub use super::http::prelude::*;
     #[cfg(feature = "cache"  )] pub use super::cache::prelude::*;
-    #[cfg(feature = "command")] pub use super::command::*;
 }

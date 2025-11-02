@@ -6,9 +6,6 @@ use serde::{Serialize, Deserialize};
 
 use url_cleaner_engine::prelude::*;
 
-#[expect(unused_imports, reason = "Used in doc comments.")]
-use crate::CleanPayloadConfig;
-
 /// Info about a URL Cleaner Site server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServerInfo<'a> {

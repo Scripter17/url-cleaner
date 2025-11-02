@@ -1103,7 +1103,6 @@ pub enum Action {
     ///
     /// Action::Custom(some_complex_operation).apply(&mut task_state).unwrap();
     /// ```
-    #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
     Custom(fn(&mut TaskState) -> Result<(), ActionError>)
@@ -1347,8 +1346,7 @@ pub enum ActionError {
     CommonCallArgActionNotFound,
     /// An arbitrary [`std::error::Error`] returned by [`Action::Custom`].
     #[error(transparent)]
-    #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error + Send>)
+    Custom(Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl Action {
@@ -1359,8 +1357,6 @@ impl Action {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ActionError> {
-        debug!(Action::apply, self, task_state.debug_helper());
-
         match self {
             // Debug/constants
 
@@ -1888,7 +1884,6 @@ impl Action {
                 })?
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,
-            #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         };
         Ok(())

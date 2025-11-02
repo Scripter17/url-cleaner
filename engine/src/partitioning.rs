@@ -120,7 +120,6 @@ impl Partitioning {
 
     /// If `element` is in `self`, return [`true`].
     pub fn contains(&self, element: Option<&str>) -> bool {
-        debug!(Partitioning::contains, self, element);
         match element {
             Some(element) => self.map.contains_key(element),
             None => self.if_none.is_some()
@@ -129,7 +128,6 @@ impl Partitioning {
 
     /// If `element` is in `self`, return the partition it belongs to.
     pub fn get<'a>(&'a self, element: Option<&str>) -> Option<&'a str> {
-        debug!(Partitioning::get, self, element);
         match element {
             Some(element) => self.map.get(element).map(|x| &**x),
             None => self.if_none.as_deref()

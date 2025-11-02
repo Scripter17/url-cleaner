@@ -97,8 +97,6 @@ impl Cache<'_> {
     /// # Errors
     #[doc = edoc!(callerr(InnerCache::read))]
     pub fn read(&self, keys: CacheEntryKeys<'_>) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        debug!(Cache::read, self, &keys);
-
         Ok(if self.config.read {
             let start = std::time::Instant::now();
             let ret = self.inner.read(keys)?;
@@ -119,8 +117,6 @@ impl Cache<'_> {
     /// # Errors
     #[doc = edoc!(callerr(InnerCache::write))]
     pub fn write(&self, entry: NewCacheEntry<'_>) -> Result<(), WriteToCacheError> {
-        debug!(Cache::write, self, &entry);
-
         if self.config.write {
             self.inner.write(entry)?;
         }

@@ -41,9 +41,6 @@ default        = ["bundled-cleaner"]
 bundled-cleaner= ["http", "cache"]
 http           = ["dep:reqwest", "dep:http"]
 cache          = ["dep:rusqlite"]
-command        = []
-custom         = []
-debug          = []
 
 [lints]
 workspace = true

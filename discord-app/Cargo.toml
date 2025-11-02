@@ -31,8 +31,6 @@ bundled-cleaner = [
 
 http    = ["url-cleaner-engine/http"]
 cache   = ["url-cleaner-engine/cache"]
-command = ["url-cleaner-engine/command"]
-debug   = ["url-cleaner-engine/debug"]
 
 [lints]
 workspace = true

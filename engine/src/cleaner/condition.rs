@@ -1421,7 +1421,6 @@ pub enum Condition {
     ///
     /// assert!(Condition::Custom(some_complex_operation).check(&task_state).unwrap());
     /// ```
-    #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
     Custom(fn(&TaskStateView) -> Result<bool, ConditionError>)
@@ -1531,8 +1530,7 @@ pub enum ConditionError {
     CommonCallArgConditionNotFound,
    /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
     #[error(transparent)]
-    #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error + Send>)
+    Custom(Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl Condition {
@@ -1542,7 +1540,6 @@ impl Condition {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check(&self, task_state: &TaskStateView) -> Result<bool, ConditionError> {
-        debug!(Condition::check, self);
         Ok(match self {
             // Debug/constants
 
@@ -1810,7 +1807,6 @@ impl Condition {
                 })?
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
-            #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         })
     }

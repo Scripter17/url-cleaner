@@ -4,7 +4,6 @@ use thiserror::Error;
 use serde::{Serialize, Deserialize};
 
 use super::*;
-use crate::prelude::*;
 
 /// The enum of errors that can be encountered when failing to parse an HTML element.
 #[derive(Debug, Error, Clone, Copy)]
@@ -167,8 +166,6 @@ type EK = GAVSyntaxErrorKind;
 /// assert_eq!(parse::html::get_attribute_value("<a href=\"1\">href=\"2\""         , "href").unwrap(), Some(Some("1".to_string())));
 /// ```
 pub fn get_attribute_value<'a>(input: &'a str, name: &'a str) -> Result<Option<Option<String>>, GAVError> {
-    debug!(parse::html::get_attribute_value, &(), input, name);
-
     let mut state = GAVState {
         input,
         name,
@@ -201,7 +198,6 @@ pub fn get_attribute_value<'a>(input: &'a str, name: &'a str) -> Result<Option<O
 
 /// Advance the state of the [`get_attribute_value`] DFA.
 fn munch(state: &mut GAVState, i: usize, c: char) -> Result<(), GAVSyntaxErrorKind> {
-    debug!(parse::html::get_attribute::munch, &(), state, i, c);
     match (state.last_bite, c) {
         (LB::Data, '<') => {state.last_bite = LB::TagOpen;},
         (LB::Data, _  ) => Err(EK::InputDoesntStartWithHtmlElement)?,

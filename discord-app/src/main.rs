@@ -40,23 +40,19 @@ static GET_URLS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\[[^\]]+\]\((?<
 #[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-#[cfg_attr(feature = "command"        , doc = "command"        )]
-#[cfg_attr(feature = "debug"          , doc = "debug"          )]
 ///
 /// Disabled features:
 #[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
-#[cfg_attr(not(feature = "command"        ), doc = "command"        )]
-#[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
-    /// The config file to use.
+    /// The cleaner file to use.
     /// Omit to use the built in bundled cleaner.
     #[cfg(feature = "bundled-cleaner")]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: Option<PathBuf>,
-    /// The config file to use.
+    /// The cleaner file to use.
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
@@ -173,7 +169,7 @@ async fn main() {
         http_client: HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid."))
     };
 
-    let token = std::env::var("URLCDA_KEY").expect("No discord app token found in the URLCDA_KEY environment variable.");
+    let token = std::env::var("URLCDA_TOKEN").expect("No discord app token found in the URLCDA_TOKEN environment variable.");
     let intents = serenity::GatewayIntents::non_privileged();
 
     let framework = poise::Framework::builder()
@@ -193,7 +189,7 @@ async fn main() {
         .event_handler(ReadyHandler)
         .framework(framework)
         .await.expect("Making the client failed.")
-        .start().await.expect("Starting the app failed. Maybe the app token in the URLCDA_KEY environment variable was invalid?");
+        .start().await.expect("Starting the app failed. Maybe the app token in the URLCDA_TOKEN environment variable was invalid?");
 }
 
 /// An [`EventHandler`] that prints license info and the app's authorization URL on [`EventHandler::ready`].

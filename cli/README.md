@@ -6,7 +6,7 @@
 
 The CLI interface for URL Cleaner.
 
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+Licensed under the Affero General Public License V3 or later.
 
 https://www.gnu.org/licenses/agpl-3.0.html
 

@@ -64,15 +64,11 @@ fn parse_byte_unit(s: &str) -> Result<rocket::data::ByteUnit, String> {
 #[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-#[cfg_attr(feature = "command"        , doc = "command"        )]
-#[cfg_attr(feature = "debug"          , doc = "debug"          )]
 ///
 /// Disabled features:
 #[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
-#[cfg_attr(not(feature = "command"        ), doc = "command"        )]
-#[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
     /// The config file to use.
@@ -290,15 +286,15 @@ fn inner_clean(state: &State<ServerState>, clean_payload: &str) -> CleanResult {
         Err(e) => Err(CleanError {status: 422, message: e.to_string()})?
     };
 
-    if !state.config.accounts.auth(clean_payload.config.auth.as_ref()) {
+    if !state.config.accounts.auth(clean_payload.auth.as_ref()) {
         Err(CleanError {status: 401, message: "Unauthorized".into()})?
     }
 
-    let Some(mut cleaner) = state.config.profiled_cleaner.get(clean_payload.config.profile.as_deref()) else {
-        Err(CleanError {status: 422, message: format!("Unknown profile: {:?}", clean_payload.config.profile)})?
+    let Some(mut cleaner) = state.config.profiled_cleaner.get(clean_payload.profile.as_deref()) else {
+        Err(CleanError {status: 422, message: format!("Unknown profile: {:?}", clean_payload.profile)})?
     };
 
-    if let Some(params_diff) = clean_payload.config.params_diff {
+    if let Some(params_diff) = clean_payload.params_diff {
         params_diff.apply(&mut cleaner.params);
     }
 
@@ -314,7 +310,7 @@ fn inner_clean(state: &State<ServerState>, clean_payload: &str) -> CleanResult {
     *temp += 1;
     drop(temp);
 
-    let unthreader = match clean_payload.config.unthread {
+    let unthreader = match clean_payload.unthread {
         false => &NO_UNTHREADER,
         true  => &state.unthreader
     };
@@ -323,16 +319,16 @@ fn inner_clean(state: &State<ServerState>, clean_payload: &str) -> CleanResult {
         std::thread::Builder::new().name(format!("({id}) Task collector")).spawn_scoped(s, || {
             let job = Job {
                 config: JobConfig {
-                    context: &clean_payload.config.context,
+                    context: &clean_payload.context,
                     cleaner: &cleaner,
                     unthreader,
                     #[cfg(feature = "cache")]
                     cache: Cache {
                         inner: &state.inner_cache,
                         config: CacheConfig {
-                            read : clean_payload.config.read_cache ,
-                            write: clean_payload.config.write_cache,
-                            delay: clean_payload.config.cache_delay
+                            read : clean_payload.read_cache ,
+                            write: clean_payload.write_cache,
+                            delay: clean_payload.cache_delay
                         }
                     },
                     #[cfg(feature = "http")]

@@ -59,8 +59,6 @@ impl InnerCache {
     /// # Errors
     #[doc = edoc!(callerr(Connection::open_in_memory), callerr(std::fs::exists), callerr(std::fs::File::create_new), callerr(Connection::open), callerr(Connection::execute))]
     pub fn lock(&self) -> Result<MappedReentrantMutexGuard<'_, Connection>, LockCacheError> {
-        debug!(InnerCache::connect, self);
-
         Ok(match ReentrantMutexGuard::try_map(self.connection.lock(), OnceLock::get) {
             Ok (lock) => lock,
             Err(lock) => {
@@ -83,8 +81,6 @@ impl InnerCache {
     /// # Errors
     #[doc = edoc!(callerr(Self::lock), callerr(Connection::query_one))]
     pub fn read(&self, keys: CacheEntryKeys<'_>) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
-        debug!(InnerCache::read, self, &keys);
-
         Ok(self.lock()?.query_one(
             Self::READ,
             [keys.subject, keys.key],
@@ -99,8 +95,6 @@ impl InnerCache {
     /// # Errors
     #[doc = edoc!(callerr(Self::lock), callerr(Connection::execute))]
     pub fn write(&self, entry: NewCacheEntry<'_>) -> Result<(), WriteToCacheError> {
-        debug!(InnerCache::write, self, &entry);
-
         self.lock()?.execute(
             Self::WRITE,
             (entry.subject, entry.key, entry.value, entry.duration.as_secs_f32())

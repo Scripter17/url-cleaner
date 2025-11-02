@@ -46,7 +46,6 @@ impl VarRef {
     ///
     /// If the call to [`VarType::get`] returns an error, that error is returned.
     pub fn get<'a>(&self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, GetVarError> {
-        debug!(VarRef::get, self);
         self.r#type.get(get_str!(self.name, task_state, GetVarError), task_state)
     }
 }

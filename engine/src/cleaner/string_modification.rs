@@ -865,7 +865,6 @@ pub enum StringModification {
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
-    #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
     Custom(fn(&mut Option<Cow<'_, str>>, &TaskStateView) -> Result<(), StringModificationError>)
@@ -1042,9 +1041,8 @@ pub enum StringModificationError {
     CommonCallArgStringModificationNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringModification::Custom`].
-    #[cfg(feature = "custom")]
     #[error(transparent)]
-    Custom(Box<dyn std::error::Error + Send>)
+    Custom(Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl From<StringSourceError> for StringModificationError {
@@ -1065,7 +1063,6 @@ impl StringModification {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn apply(&self, to: &mut Option<Cow<'_, str>>, task_state: &TaskStateView) -> Result<(), StringModificationError> {
-        debug!(StringModification::apply, self, to);
         match self {
             Self::None => {},
             Self::Error(msg) => Err(StringModificationError::ExplicitError(msg.clone()))?,
@@ -1570,7 +1567,6 @@ impl StringModification {
                 )?;
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
-            #[cfg(feature = "custom")]
             Self::Custom(function) => function(to, task_state)?
         };
         Ok(())

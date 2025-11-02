@@ -406,7 +406,6 @@ impl StringLocation {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check(&self, haystack: &str, needle: &str) -> Result<bool, StringLocationError> {
-        debug!(StringLocation::check, self, haystack, needle);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

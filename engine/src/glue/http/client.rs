@@ -40,7 +40,6 @@ impl HttpClient {
     /// # Errors
     #[doc = edoc!(callerr(reqwest::blocking::ClientBuilder::build))]
     pub fn get(&self) -> Result<&reqwest::blocking::Client, reqwest::Error> {
-        debug!(HttpClient::get_response, self);
         if let Some(client) = self.client.get() {
             Ok(client)
         } else {
@@ -63,7 +62,6 @@ impl HttpClient {
     /// # Errors
     #[doc = edoc!(geterr(Self), geterr(StringSource), getnone(StringSource, DoHttpRequestError), callerr(HeaderName::try_from, 3), callerr(HeaderValue::try_from, 3), callerr(HttpRequestBodyConfig::apply), callerr(reqwest::blocking::RequestBuilder::send))]
     pub fn get_response(&self, config: HttpRequestConfig, task_state: &TaskStateView) -> Result<reqwest::blocking::Response, DoHttpRequestError> {
-        debug!(HttpClient::get_response, self, config, task_state.debug_helper());
         let mut req = self.get()?.request(
             get_str!(config.method, task_state, DoHttpRequestError).parse()?,
             Url::parse(get_str!(config.url, task_state, DoHttpRequestError))?,

@@ -482,14 +482,6 @@ pub enum StringSource {
 
 
 
-    /// Calls [`CommandConfig::output`] and returns the value.
-    /// # Errors
-    #[doc = edoc!(callerr(CommandConfig::output))]
-    #[cfg(feature = "command")]
-    CommandOutput(Box<CommandConfig>),
-
-
-
     /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
     ///
     /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
@@ -565,7 +557,6 @@ pub enum StringSource {
     ///
     /// assert_eq!(StringSource::Custom(some_complex_operation).get(&task_state).unwrap(), Some("a".into()));
     /// ```
-    #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
     Custom(for<'a> fn(&TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError>)
@@ -748,10 +739,6 @@ pub enum StringSourceError {
     #[cfg(feature = "cache")]
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
-    /// Returned when a [`MakeCommandError`] is encountered.
-    #[cfg(feature = "command")]
-    #[error(transparent)]
-    MakeCommandError(#[from] Box<MakeCommandError>),
 
     /// Returned when a [`MakeCommonArgsError`] is encountered.
     #[error(transparent)]
@@ -767,16 +754,8 @@ pub enum StringSourceError {
     CommonCallArgStringSourceNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
-    #[cfg(feature = "custom")]
     #[error(transparent)]
-    Custom(Box<dyn std::error::Error + Send>)
-}
-
-#[cfg(feature = "command")]
-impl From<MakeCommandError> for StringSourceError {
-    fn from(value: MakeCommandError) -> Self {
-        Self::MakeCommandError(Box::new(value))
-    }
+    Custom(Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl From<StringMatcherError> for StringSourceError {
@@ -795,7 +774,6 @@ impl StringSource {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
-        debug!(StringSource::get, self);
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string)),
             Self::None => None,
@@ -887,11 +865,6 @@ impl StringSource {
 
 
 
-            #[cfg(feature = "command")]
-            Self::CommandOutput(command) => Some(Cow::Owned(command.output(task_state)?)),
-
-
-
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
                 let _unthreader_lock = task_state.unthreader.unthread();
@@ -928,7 +901,6 @@ impl StringSource {
                 })?.map(|x| Cow::Owned(x.into_owned()))
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,
-            #[cfg(feature = "custom")]
             Self::Custom(function) => function(task_state)?
         })
     }

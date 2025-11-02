@@ -288,7 +288,6 @@ pub enum StringMatcher {
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
     /// # Errors
     #[doc = edoc!(callerr(Self::Custom::0))]
-    #[cfg(feature = "custom")]
     #[suitable(never)]
     #[serde(skip)]
     Custom(fn(Option<&str>, &TaskStateView) -> Result<bool, StringMatcherError>)
@@ -368,8 +367,7 @@ pub enum StringMatcherError {
 
     /// An arbitrary [`std::error::Error`] for use with [`StringMatcher::Custom`].
     #[error(transparent)]
-    #[cfg(feature = "custom")]
-    Custom(Box<dyn std::error::Error + Send>)
+    Custom(Box<dyn std::error::Error + Send + Sync>)
 }
 
 impl StringMatcher {
@@ -377,7 +375,6 @@ impl StringMatcher {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check(&self, haystack: Option<&str>, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
-        debug!(StringMatcher::check, self, haystack);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
@@ -546,7 +543,6 @@ impl StringMatcher {
                 )?
             },
             Self::CommonCallArg(name) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
-            #[cfg(feature = "custom")]
             Self::Custom(function) => function(haystack, task_state)?,
         })
     }

@@ -153,7 +153,6 @@ impl CharMatcher {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check(&self, c: char) -> Result<bool, CharMatcherError> {
-        debug!(CharMatcher::check, self, c);
         Ok(match self {
             Self::Always => true,
             Self::Never => false,

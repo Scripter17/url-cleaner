@@ -53,7 +53,6 @@ impl Unthreader {
     /// See each variant of [`UnthreaderMode`] to see what each does.
     #[must_use]
     pub fn unthread(&self) -> UnthreaderHandle<'_> {
-        debug!(Unthreader::unthread, self);
         UnthreaderHandle (
             match self.mode {
                 UnthreaderMode::Multithread => None,

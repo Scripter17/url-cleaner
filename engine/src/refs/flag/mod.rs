@@ -55,7 +55,6 @@ impl FlagRef {
     ///
     /// If the call to [`FlagType::get`] returns an error, that error is returned.
     pub fn get(&self, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
-        debug!(FlagRef::get, self);
         self.r#type.get(get_str!(self.name, task_state, GetFlagError), task_state)
     }
 }

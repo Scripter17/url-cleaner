@@ -7,18 +7,13 @@ env:
   CARGO_PROFILE_dev_DEBUG: 0
 
 jobs:
-  workspace:
+  versions:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-
-    - name: Setup
-      run: set -euo pipefail
-
     - name: Versions
       run: |
+        set -euo pipefail
         version_lines=$(grep -PI '^(// @version|url-cleaner.+version|^version)' */Cargo.toml site/url-cleaner-site-userscript.js)
         versions=$(echo "$version_lines" | grep -oP '\d[\d.]+(-beta)?')
         if [ $(echo "$versions" | uniq | wc -l) -ne 1 ]; then
@@ -28,42 +23,44 @@ jobs:
           exit 1
         fi
 
+  mds:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
     - name: 'Check MDs'
       run: |
         old=$(cat *.md */*.md)
         scripts/fill-mds.sh
         test "$old" == "$(cat *.md */*.md)"
 
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
     - name: 'Check MSRV consistency'
       run: |
         [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")[\d.]+' | sort -u | wc -l)" == 1 ]]
 
   test_powerset:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-
     - name: 'Test powerset'
-      run: cargo hack test --feature-powerset
+      run: cargo hack test --feature-powerset --clean-per-run
 
   doc_powerset:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-
     - name: 'Doc powerset'
-      run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --document-private-items
+      run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
 
   clippy_powerset:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-
     - name: 'Clippy powerset'
-      run: cargo hack clippy --feature-powerset --benches -- -D warnings
+      run: cargo hack clippy --feature-powerset --benches --clean-per-run -- -D warnings

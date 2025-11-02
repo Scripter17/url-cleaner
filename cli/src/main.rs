@@ -26,15 +26,11 @@ use url_cleaner_engine::testing::*;
 #[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-#[cfg_attr(feature = "command"        , doc = "command"        )]
-#[cfg_attr(feature = "debug"          , doc = "debug"          )]
 /// 
 /// Disabled features:
 #[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
-#[cfg_attr(not(feature = "command"        ), doc = "command"        )]
-#[cfg_attr(not(feature = "debug"          ), doc = "debug"          )]
 #[derive(Debug, Parser)]
 struct Args {
     /// The URLs to clean before STDIN.

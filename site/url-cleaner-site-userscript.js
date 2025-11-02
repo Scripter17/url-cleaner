@@ -12,13 +12,28 @@
 // ==/UserScript==
 
 window.config = {
-	instance   : "http://localhost:9149", // The origin (protocol://host:port) of your URL Cleaner Site instance. When changing, please also update the "// @connect" line above.
-	auth       : null, // Either null for guest mode or `{"username": "...", "password": "..."}` for a user.
-	profile    : null, // Either null for the default profile or a string for a named profile.
-	params_diff: null, // The ParamsDiff to apply on top of the chosen profile. Should only be used as a last resort.
-	send_host  : true, // If true, tells URL Cleaner Site the host of the webpage you're on so it can clean stuff the website does.
-	cache_delay: true, // Artifically delay cache reads to take about as long as the initial run to defend against cache detection.
-	unthread   : true, // Makes requests, cache reads, etc. effectively single threaded to hide thread count.
+	// The location of the chosen URL Cleaner Site instance.
+	// When changing please remember to change the `@connect` line above to the same host.
+	instance: "http://localhost:9149",
+	// The authentication.
+	// For guest, set to `null`.
+	// For a user, set to `{"username": "...", "password": "..."}`.
+	auth: null,
+	// The profile.
+	// For the base profile, set to `null`.
+	// For a named profile, set to `"profile_name"`.
+	profile: null,
+	// The ParamsDiff.
+	// Please just use profiles.
+	// Using this re-computes the Params for every single job.
+	params_diff: null,
+	// If true, enable cache delays.
+	// For privacy, this should be enabled.
+	cache_delay: true,
+	// If true, do unthreading.
+	// For privacy, this should be enabled.
+	unthread: true,
+	// Debug settings.
 	debug: {
 		log: {
 			new_clean_payload: false,
@@ -125,13 +140,15 @@ async function clean_elements(elements, clean_payload) {
 
 async function elements_to_clean_payload(elements) {
 	let ret = {
+		context: {
+			source_host: window.location.hostname
+		},
 		tasks: elements.map(x => element_to_task_config(x)),
 	};
-	let job_context = await get_job_context();
-	if (job_context                       ) {ret.context     = job_context;}
-	if (window.config.auth                ) {ret.auth        = window.config.auth;}
+
+	if (window.config.auth        !== null) {ret.auth        = window.config.auth;}
 	if (window.config.profile     !== null) {ret.profile     = window.config.profile;}
-	if (window.config.params_diff         ) {ret.params_diff = window.config.params_diff;}
+	if (window.config.params_diff !== null) {ret.params_diff = window.config.params_diff;}
 	if (window.config.cache_delay !== null) {ret.cache_delay = window.config.cache_delay;}
 	if (window.config.unthread    !== null) {ret.unthread    = window.config.unthread;}
 	return ret;
@@ -172,17 +189,6 @@ function element_to_task_config(element) {
 	} else {
 		return element.href;
 	}
-}
-
-// Because the webpage's URL can change without reloading the script, this needs to be calculated per job config.
-async function get_job_context() {
-	let ret = {};
-
-	if (window.config.send_host) {
-		ret.source_host = window.location.hostname;
-	}
-
-	return ret;
 }
 
 (async () => {
