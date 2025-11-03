@@ -148,13 +148,13 @@ pub enum StringSource {
     /// tsv!(task_state, params = Params {flags: Cow::Owned(["abc".into()].into()), ..Default::default()});
     ///
     /// assert_eq!(StringSource::IfFlag {
-    ///     flag: Box::new(FlagRef {r#type: FlagType::Params, name: "abc".into()}),
+    ///     flag: Box::new(FlagRef::Params("abc".into())),
     ///     then: Box::new("set!".into()),
     ///     r#else: Box::new("unset".into())
     /// }.get(&task_state).unwrap(), Some("set!".into()));
     ///
     /// assert_eq!(StringSource::IfFlag {
-    ///     flag: Box::new(FlagRef {r#type: FlagType::Params, name: "def".into()}),
+    ///     flag: Box::new(FlagRef::Params("def".into())),
     ///     then: Box::new("set!".into()),
     ///     r#else: Box::new("unset".into())
     /// }.get(&task_state).unwrap(), Some("unset".into()));
@@ -340,8 +340,6 @@ pub enum StringSource {
 
 
     /// Gets the var specified by the [`VarRef`].
-    ///
-    /// Can by any type of var supported by [`VarType`].
     /// # Errors
     #[doc = edoc!(callerr(VarRef::get))]
     /// # Examples
@@ -354,10 +352,8 @@ pub enum StringSource {
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::Var(Box::new(VarRef {
-    ///     r#type: VarType::Params,
-    ///     name: "abc".into()
-    /// })).get(&task_state).unwrap(), Some("def".into()));
+    /// assert_eq!(StringSource::Var(Box::new(VarRef::Params("abc".into())))
+    ///     .get(&task_state).unwrap(), Some("def".into()));
     /// ```
     Var(Box<VarRef>),
     /// Gets the [`Map`] specified by [`Self::ParamsMap::name`] from [`Params::maps`] then indexes it with [`Self::ParamsMap::key`].
@@ -506,10 +502,7 @@ pub enum StringSource {
     /// tsv!(task_state, commons = Commons {
     ///     string_sources: [
     ///         ("abc".into(), "def".into()),
-    ///         ("def".into(), StringSource::Var(Box::new(VarRef {
-    ///             r#type: VarType::CommonArg,
-    ///             name: "common_var".into()
-    ///         })))
+    ///         ("def".into(), StringSource::Var(Box::new(VarRef::CommonArg("common_var".into()))))
     ///     ].into(),
     ///     ..Default::default()
     /// });

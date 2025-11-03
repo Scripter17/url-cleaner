@@ -4,7 +4,7 @@ A basic overview of the API of URL Cleaner Site's API.
 
 For a more detailed understanding of the types used, see the crate documentations for [URL Cleaner Engine](../engine) and [URL Cleaner Site Types](../site-types).
 
-For a typed API, see [URL Cleaner Site Types](../site-types).
+For a typed API you can make clients with, see [URL Cleaner Site Types](../site-types).
 
 ## `/info`
 
@@ -68,13 +68,25 @@ pub struct CleanPayload<'a> {
     pub params_diff: Option<ParamsDiff>,
     /// If [`true`], enable reading from the cache.
     ///
+    /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.
+    ///
+    /// It's just easier like this.
+    ///
     /// Defaults to [`true`].
     pub read_cache: bool,
     /// If [`true`], enable writing to the cache.
     ///
+    /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.
+    ///
+    /// It's just easier like this.
+    ///
     /// Defaults to [`true`].
     pub write_cache: bool,
     /// If [`true`], enable cache delays.
+    ///
+    /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.
+    ///
+    /// It's just easier like this.
     ///
     /// Defaults to [`false`].
     pub cache_delay: bool,

@@ -1,5 +1,7 @@
 # URL Cleaner Discord App
 
+[Documentation for URL Cleaner in general](../README.md)
+
 A basic discord app to use URL Cleaner.
 
 Licensed under the Affero General Public License V3 or later.

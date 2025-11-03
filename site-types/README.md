@@ -5,4 +5,6 @@
 
 [Documentation for URL Cleaner in general](../README.md)
 
-Types used by [URL Cleaner Site](../site) and for parsing its output.
+Types used by [URL Cleaner Site](../site) and for clients to parse its output.
+
+Yes it does pull in all of URL Cleaner Engine (with `default-features = false`). Not a lot I could do to get around it.

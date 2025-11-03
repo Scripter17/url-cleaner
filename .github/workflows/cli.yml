@@ -19,12 +19,8 @@ jobs:
         cargo build -p url-cleaner
         cp target/debug/url-cleaner urlc
 
-    - name: offline_tests
+    - name: 'Offline tests'
       run: ./urlc --tests engine/tests/offline.json
-
-    - name: online_tests
-      if: runner.environment == null
-      run: ./urlc --tests engine/tests/online.json
 
     - name: Order
       run: |

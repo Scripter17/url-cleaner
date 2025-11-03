@@ -27,6 +27,10 @@ window.config = {
 	// Please just use profiles.
 	// Using this re-computes the Params for every single job.
 	params_diff: null,
+	// If true, read from the cache.
+	read_cache: true,
+	// If true, write to the cache.
+	write_cache: true,
 	// If true, enable cache delays.
 	// For privacy, this should be enabled.
 	cache_delay: true,
@@ -149,6 +153,8 @@ async function elements_to_clean_payload(elements) {
 	if (window.config.auth        !== null) {ret.auth        = window.config.auth;}
 	if (window.config.profile     !== null) {ret.profile     = window.config.profile;}
 	if (window.config.params_diff !== null) {ret.params_diff = window.config.params_diff;}
+	if (window.config.read_cache  !== null) {ret.read_cache  = window.config.read_cache;}
+	if (window.config.write_cache !== null) {ret.write_cache = window.config.write_cache;}
 	if (window.config.cache_delay !== null) {ret.cache_delay = window.config.cache_delay;}
 	if (window.config.unthread    !== null) {ret.unthread    = window.config.unthread;}
 	return ret;

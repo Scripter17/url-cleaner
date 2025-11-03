@@ -43,15 +43,27 @@ pub struct CleanPayload<'a> {
     pub params_diff: Option<ParamsDiff>,
     /// If [`true`], enable reading from the cache.
     ///
+    /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.
+    ///
+    /// It's just easier like this.
+    ///
     /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub read_cache: bool,
     /// If [`true`], enable writing to the cache.
     ///
+    /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.
+    ///
+    /// It's just easier like this.
+    ///
     /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write_cache: bool,
     /// If [`true`], enable cache delays.
+    ///
+    /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.
+    ///
+    /// It's just easier like this.
     ///
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]

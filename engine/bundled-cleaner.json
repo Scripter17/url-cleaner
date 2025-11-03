@@ -468,7 +468,7 @@
 
 
 			"url_from_query_param_or_query": {"FirstNotError": [
-				{"GetUrlFromQueryParam": {"Var": {"type": "CommonArg", "name": "param"}}},
+				{"GetUrlFromQueryParam": {"Var": {"CommonArg": "param"}}},
 				{"CopyPart": {"from": "Query", "to": "Whole"}},
 				{"SetWhole": {"Modified": {
 					"value": {"Part": "Query"},
@@ -689,7 +689,7 @@
 																{"IfNone": {
 																	"value": {"NoneTo": {
 																		"value": {"Var": "bypass_vip_api_key"},
-																		"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+																		"if_none": {"Var": {"Env": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
 																	}},
 																	"then": "https://api.bypass.vip/bypass?url=",
 																	"else": "https://api.bypass.vip/premium/bypass?url="
@@ -700,7 +700,7 @@
 														"headers": {
 															"x-api-key": {"NoneTo": {
 																"value": {"Var": "bypass_vip_api_key"},
-																"if_none": {"Var": {"type": "Env", "name": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
+																"if_none": {"Var": {"Env": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
 															}}
 														}
 													}
@@ -1549,11 +1549,11 @@
 					"map": {
 						"alibaba": {"RemoveQueryParams": ["spm", "file"]},
 						"furaffinity": {"If": {
-							"if": {"StringIsSome": {"Var": {"type": "TaskContext", "name": "contact_info_site_name"}}},
+							"if": {"StringIsSome": {"Var": {"TaskContext": "contact_info_site_name"}}},
 							"then": {"SetWhole": {"Modified": {
-								"value": {"Var": {"type": "TaskContext", "name": "link_text"}},
+								"value": {"Var": {"TaskContext": "link_text"}},
 								"modification": {"Map": {
-									"value": {"Modified": {"value": {"Var": {"type": "TaskContext", "name": "contact_info_site_name"}}, "modification": "Lowercase"}},
+									"value": {"Modified": {"value": {"Var": {"TaskContext": "contact_info_site_name"}}, "modification": "Lowercase"}},
 									"map": {
 										"website"       : "None",
 										"ao3"           : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)archiveofourown\\.org)?/?(?:users/)?@?([^/]+)"  , "replace": "https://archiveofourown.org/users/$1"}},

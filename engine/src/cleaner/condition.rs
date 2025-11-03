@@ -1601,8 +1601,8 @@ impl Condition {
 
             // Params
 
-            Self::FlagIsSet   (FlagRef {name: StringSource::String(name), r#type: FlagType::Params}) =>  task_state.params.flags.contains(name),
-            Self::FlagIsNotSet(FlagRef {name: StringSource::String(name), r#type: FlagType::Params}) => !task_state.params.flags.contains(name),
+            Self::FlagIsSet   (FlagRef::Params(StringSource::String(name))) =>  task_state.params.flags.contains(name),
+            Self::FlagIsNotSet(FlagRef::Params(StringSource::String(name))) => !task_state.params.flags.contains(name),
 
             Self::FlagIsSet(flag)    =>  flag.get(task_state)?,
             Self::FlagIsNotSet(flag) => !flag.get(task_state)?,

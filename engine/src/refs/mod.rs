@@ -5,6 +5,6 @@ pub mod var;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
-    pub use super::flag::prelude::*;
-    pub use super::var::prelude::*;
+    pub use super::flag::*;
+    pub use super::var::*;
 }

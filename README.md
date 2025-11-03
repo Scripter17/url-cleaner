@@ -4,22 +4,36 @@
 
 Explicit non-consent to URL spytext.
 
-Often when a website/app gives you a URL to share to a friend, that URL contains a unique identifier that, when your friend clicks on it, tells the website that you were the one who sent them that URL.
-I call this "spytext", as it's text that allows spyware to do spyware things such as telling the united states federal government you associate with wrongthinkers.
+## Spytext?
 
-Because of the ongoing human rights catastrophes intentionally enabled by spytext, it is basic decency to remove it before you send a URL, and basic opsec to remove it when you recieve a URL.
+Spytext is text that enables spyware to work. For URLs, spytext usually takes the form of query parameters like `utm_source=twitter` on any website or `?t=...&si=...` on twitter.
 
-URL Cleaner is designed to make this as comprehensive, fast, and easy as possible. With the priorities mostly in that order.
+The purpose of spytext in URLs is to allow websites to know who sent which URLs to who. If your friend clicks a tweet you sent them and neither of you removed the spytext,
+congratulations! Twitter now knows you're friends, and soon so will your government.
 
-# Why specifically this URL cleaner?
+If you are not already aware of why you should not let companies or your government know who you associate with, then I am so sorry but you are not ready for what's coming.
 
-URL Cleaner, not to be confused with the many other projects called URL Cleaner or the genre of projects that clean URLs, is comically versatile.
+## Why this URL Cleaner?
 
-With if-then-else, switch case, and loop-until-no-change control flow, [PSL](https://publicsuffix.org) powered subdomain/domain middle/domain suffix parts,
-constructing strings from both the cleaner's params and the URL, setting arbitrary parts of the URL to those strings, regex, base64, and HTTP requests, basically every URL you could ever want to clean is cleanable.
+There are many projects that clean URLs. Most adblockers have some basic URL cleaning built in.
 
-Despite how complex it is, URL Cleaner is very fast! On my Lenovo Thinkpad T460S from 2016, ten thousand amazon product listing URLs can be cleaned in under 40 milliseconds using the bundled cleaner.
-And that's the CLI program reading from a file and writing the cleaned URLs to `/dev/null`.
+The problem with adblockers is that they exist only in the browser, and the problem with all the other tools I've found is they are extremely inadequate.
+
+URL Cleaner is designed to be as comprehensive, flexible, and fast as possible, with the priorities mostly in that order.
+
+URL Cleaner's engine, URL Cleaner Engine:
+
+- Is just a normal Rust crate, and so can be integrated into almost anything. See the [frontends](#frontends) below.
+- Is incredibly fast, cleaning 10 thousand amazon product listing URLs in less than 40 milliseconds on a thinkpad T460S from 2016.
+- Supports using profiles to give names to sets of toggles, enabling frontends to only have to compute the toggles once.
+- Doesn't use regex and glob for everything.
+
+URL Cleaner also comes bundled with a cleaner called the Bundled Cleaner, which:
+
+- Does all the normal tracking parameter removal.
+- Handles redirects.
+- Finds ways to skip steps in redirect chains.
+- Caches every step in redirect chains.
 
 ## Frontends
 
@@ -27,48 +41,38 @@ URL Cleaner currently has 3 official frontends:
 
 - [A CLI tool](cli)
 - [An HTTP server and userscript](site)
-- [A Discord app](discord-app)
+- [A discord app/bot](discord-app)
 
 You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
 
-## Bundled cleaner
+## Bundled Cleaner
 
-URL Cleaner Engine comes with a cleaner currently called the bundled cleaner (better name pending). The bundled cleaner is meant for general purpose cleaning of URLs you would typically click on and send to/get from friends.
+By default, URL Cleaner bundles a cleaner uncreatively called the Bundled Cleaner.
 
-The bundled cleaner also has a variety of optional flags you can set such as changing `x.com` URLs to `vxtwitter.com`, making URLs for the mobile version of websites into the desktop version, and so on.
+The Bundled Cleaner is meant for general purpose cleaning of URLs you're likely to click on/send to friends and has various flags to allow features you only sometimes want.
 
-For more information, see the [bundled cleaner's documentation](bundled_cleaner.md).
-
-# Performance
-
-URL Cleaner is reasonably fast. See [`cli/README.md#performance`](cli/README.md#performance) and [`site/README.md#performance`](site/README.md#performance) for detials.
-
-TL;DR: On a decade old thinkpad running nothing else, URL Cleaner's CLI tool can do 10000 amazon product URLs in under 40ms.
-The HTTP server can do the same job in about 50ms without TLS and about 70ms with TLS.
+For more information, see the [Bundled Cleaner's documentation](bundled_cleaner.md).
 
 # Privacy
 
 URL Cleaner and co. will never contain any telemetry. If I ever add it, you are required to kill me on sight.
 
-However, using URL Cleaner Site and its included userscript to clean every URL on every webpage you visit naturally raises a few issues, the majority of which are due to expanding redirect URLs by sending HTTP requests.
+However, the Bundled Cleaner will by default expand known redirects by sending HTTP requests and cache those results to a local SQLite database.
 
-1. Websites can tell you're using URL Cleaner Site and its userscript. It's not hard to tell.
+To disable network access when using the Bundled Cleaner, enable the `no_network` flag.
+For URL Cleaner CLI this can be done with `-f no_network`.
+Fer all 3 frontends this can be done with either `ParamsDiff`s or profiles.
 
-2. Websites can possibly figure out which version of the bundled cleaner you're using, and pretty easily figure out what ParamsDiff you're using.
+To disable writing the cache, you can:
+- For either URL Cleaner CLI/URL Cleaner Discord App with the `--no-write-cache` command line argument.
+- For URL Cleaner Site, always set `write_cache` to `false`.
+- For URL Cleaner Site Userscript, set `write_cache` to `false`.
 
-3. Redirects are cached to reduce information leaks. URL Cleaner also caches how long the redirect took and lets you optionally wait about that long (plus or minus up to 12.5%) when reading from the cache to stop websites from noticing if you have a redirect cached.
-
-4. Even with cache delays, websites can figure out how many threads your instance of URL Cleaner Site is using by measuring how long various amounts of the same redirect takes.
-  To defend against this, URL Cleaner has an optional "unthreading" functionality that lets requests, cache reads, etc. be effectively single threaded.
-  The userscript enbales unthreading by default.
-
-5. Caching at all means the website you're on and the website whose redirect URL you're getting from the cache can check the redirect website's logs to see whether or not you actually sent an HTTP request.
-
-If you want to sidestep the entire headache and replace it with a worse one just set the `no_network` flag.
+Please note that using URL Cleaner Site Userscript also comes with its own privacy concerns, detailed [here](site/userscript.md#privacy).
 
 # Credits
 
-The people and projects I have stolen various parts of the bundled cleaner from.
+The people and projects I have stolen various parts of the Bundled Cleaner from.
 
 - [Mozilla Firefox's Extended Tracking Protection's query stripping](https://firefox-source-docs.mozilla.org/toolkit/components/antitracking/anti-tracking/query-stripping/index.html)
 - [Brave Browser's query filter](https://github.com/brave/brave-core/blob/master/components/query_filter/utils.cc)
