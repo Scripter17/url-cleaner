@@ -4,10 +4,10 @@ use std::io::Write;
 
 fn main() {
     // "Watch" the bundled cleaner.
-    println!("cargo::rerun-if-changed=bundled-cleaner.json");
+    println!("cargo::rerun-if-changed=src/cleaner/bundled-cleaner.json");
 
     // Minify the bundled cleaner.
-    let original = std::fs::read_to_string("bundled-cleaner.json").expect("The bundled cleaner couldn't be read").into_bytes();
+    let original = std::fs::read_to_string("src/cleaner/bundled-cleaner.json").expect("The bundled cleaner couldn't be read").into_bytes();
     let mut minified = Vec::with_capacity(original.len());
 
     // A basic state machine to remove unnecessary whitespace.

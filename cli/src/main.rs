@@ -16,6 +16,7 @@ use serde::{Serialize, ser::Serializer};
 
 use url_cleaner_engine::prelude::*;
 use url_cleaner_engine::testing::*;
+use better_url::BetterUrl;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.

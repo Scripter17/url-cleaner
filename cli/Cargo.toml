@@ -17,6 +17,7 @@ serde = "1.0.228"
 serde_json = "1.0.145"
 thiserror = "2.0.17"
 url = { version = "2.5.7", features = ["serde"] }
+better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 
 [features]

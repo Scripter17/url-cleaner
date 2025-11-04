@@ -12,6 +12,7 @@ pub(crate) use url::Host;
 pub(crate) use criterion::Criterion;
 
 pub(crate) use url_cleaner_engine::prelude::*;
+pub(crate) use ::better_url::*;
 
 const DOMAIN_HOSTS: [&str; 12] = [
     "example.com",

@@ -14,35 +14,35 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 On a mostly stock lenovo thinkpad T460S (Intel i5-6300U (4) @ 3.000GHz) running Kubuntu 25.04 (kernel 6.14.0) that has "not much" going on (FireFox, Steam, etc. are closed), hyperfine gives me the following benchmark:
 
-Last updated 2025-11-02.
+Last updated 2025-11-03.
 
 Also the numbers are in milliseconds.
 
 ```Json
 {
   "https://x.com?a=2": {
-    "0"    :  6.155,
-    "1"    :  6.264,
-    "10"   :  6.338,
-    "100"  :  6.459,
-    "1000" :  8.118,
-    "10000": 24.715
+    "0"    :  5.989,
+    "1"    :  6.188,
+    "10"   :  6.210,
+    "100"  :  6.324,
+    "1000" :  8.225,
+    "10000": 25.109
   },
   "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id": {
-    "0"    :  6.087,
-    "1"    :  6.231,
-    "10"   :  6.341,
-    "100"  :  6.523,
-    "1000" :  9.150,
-    "10000": 31.446
+    "0"    :  5.959,
+    "1"    :  6.075,
+    "10"   :  6.148,
+    "100"  :  6.402,
+    "1000" :  8.975,
+    "10000": 31.778
   },
   "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8": {
-    "0"    :  6.271,
-    "1"    :  6.341,
-    "10"   :  6.409,
-    "100"  :  6.568,
-    "1000" :  9.118,
-    "10000": 34.249
+    "0"    :  6.008,
+    "1"    :  6.137,
+    "10"   :  6.236,
+    "100"  :  6.438,
+    "1000" :  8.923,
+    "10000": 34.542
   }
 }
 ```

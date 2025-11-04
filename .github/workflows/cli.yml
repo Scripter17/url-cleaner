@@ -20,7 +20,7 @@ jobs:
         cp target/debug/url-cleaner urlc
 
     - name: 'Offline tests'
-      run: ./urlc --tests engine/tests/offline.json
+      run: ./urlc --tests engine/src/cleaner/tests/offline.json
 
     - name: Order
       run: |

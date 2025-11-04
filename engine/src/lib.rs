@@ -8,15 +8,12 @@
 use prelude::*;
 
 pub mod job;
-pub mod task;
 pub mod cleaner;
-pub mod profiled_cleaner;
-pub mod set;
-pub mod map;
-pub mod partitioning;
-pub mod refs;
 pub mod unthreader;
-pub mod glue;
+
+#[cfg(feature = "http" )] pub mod http;
+#[cfg(feature = "cache")] pub mod cache;
+
 pub mod testing;
 pub(crate) mod util;
 
@@ -24,22 +21,17 @@ pub(crate) mod util;
 ///
 /// Generally not meant for external use.
 pub mod prelude {
-    pub use better_url::*;
+    pub use super::job::prelude::*;
+    pub use super::cleaner::prelude::*;
+    pub use super::unthreader::prelude::*;
 
-    pub use crate::job::prelude::*;
-    pub use crate::task::prelude::*;
-    pub use crate::cleaner::prelude::*;
-    pub use crate::profiled_cleaner::prelude::*;
-    pub use crate::set::*;
-    pub use crate::map::*;
-    pub use crate::partitioning::*;
-    pub use crate::refs::prelude::*;
-    pub use crate::unthreader::prelude::*;
-    pub use crate::glue::prelude::*;
+    #[cfg(feature = "http" )] pub use super::http::prelude::*;
+    #[cfg(feature = "cache")] pub use super::cache::prelude::*;
 
-    pub(crate) use crate::util::*;
+    pub use super::task_state as ts;
+    pub use super::task_state_view as tsv;
+    pub use super::task;
 
-    pub use crate::task_state as ts;
-    pub use crate::task_state_view as tsv;
-    pub use crate::task;
+    pub(crate) use better_url::*;
+    pub(crate) use super::util::*;
 }

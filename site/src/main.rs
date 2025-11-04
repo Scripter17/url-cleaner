@@ -22,6 +22,7 @@ use clap::Parser;
 
 use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::*;
+use better_url::BetterUrl;
 
 /// The source code of this instance.
 static SOURCE_CODE: LazyLock<BetterUrl> = LazyLock::new(|| env!("CARGO_PKG_REPOSITORY").parse().expect("The CARGO_PKG_REPOSITORY enviroment vairable to be a valid BetterUrl."));

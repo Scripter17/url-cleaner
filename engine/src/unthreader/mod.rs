@@ -23,8 +23,8 @@ pub mod prelude {
 /// Without unthreading, a website URL Cleaner Site Userscript is being run on can figure out the worker thread count of its URL Cleaner Site instacne
 /// by giving it one redirect URL, then two, then three, and so on until the time the job takes doubles at the worker count plus one, where one worker has to do two redirects.
 ///
-/// Because the default worker thread count computed using (and currently literally is just) the CPU's thread count,
-/// that'd let websites fingerprint you based on the thread count of the computer your URL Cleaner Site instance is running on.
+/// Because the default worker thread count is just the CPU's thread count,
+/// that'd let websites figure out the thread count of the computer your URL Cleaner Site instance is running on.
 ///
 /// [`UnthreaderMode::Unthread`] makes long operations like HTTP requests and cache reads happen one after another, avoiding most risk of fingerprinting on thread counts.
 ///

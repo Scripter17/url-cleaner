@@ -4,7 +4,7 @@
 
 cd $(dirname "$0")/..
 
-for file in *.md */*.md; do
+for file in *.md */*.md */src/**/*.md; do
   printlines=1
 
   while IFS= read -r line; do

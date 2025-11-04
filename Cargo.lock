@@ -3536,6 +3536,7 @@ dependencies = [
 name = "url-cleaner"
 version = "0.12.0-beta"
 dependencies = [
+ "better-url",
  "clap",
  "parking_lot",
  "serde",
@@ -3610,6 +3611,7 @@ dependencies = [
 name = "url-cleaner-site-types"
 version = "0.12.0-beta"
 dependencies = [
+ "better-url",
  "serde",
  "thiserror 2.0.17",
  "url",

@@ -52,14 +52,14 @@ fn make(c: &mut Criterion) {
 }
 
 fn r#do(c: &mut Criterion) {
-    let cleaner = &serde_json::from_str(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/bundled-cleaner.json"))).unwrap();
+    let cleaner = &Cleaner::load_from_file("src/cleaner/bundled_cleaner.json").unwrap();
 
     for url in TASK_URLS {
         let task = Task {
-            config: bb(url).parse().unwrap(),
+            config     : bb(bb(bb(url).parse()).unwrap()),
             job_context: &Default::default(),
             cleaner,
-            unthreader: &Default::default(),
+            unthreader : &Default::default(),
             #[cfg(feature = "cache")]
             cache: Cache {
                 inner: &Default::default(),
@@ -72,7 +72,7 @@ fn r#do(c: &mut Criterion) {
         c.bench_function(
             &format!("Do 10k Tasks: {url}"),
             |b| b.iter_batched(
-                || std::iter::repeat_n(task.clone(), 10_000),
+                || std::iter::repeat_n(bb(task.clone()), 10_000),
                 |tasks| bb(tasks).for_each(|x| {let _ = bb(bb(x).r#do());}),
                 criterion::BatchSize::SmallInput
             )

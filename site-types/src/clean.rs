@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 
 use url_cleaner_engine::prelude::*;
+use better_url::BetterUrl;
 
 use crate::util::*;
 use crate::auth::*;

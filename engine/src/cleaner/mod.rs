@@ -12,29 +12,21 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
+pub mod profiled_cleaner;
 pub mod params;
+pub mod params_diff;
 pub mod docs;
 pub mod commons;
-pub mod condition;
-pub mod action;
-pub mod string_source;
-pub mod string_modification;
-pub mod string_location;
-pub mod string_matcher;
-pub mod char_matcher;
+pub mod components;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
-    pub use super::params::prelude::*;
+    pub use super::profiled_cleaner::prelude::*;
+    pub use super::params::*;
+    pub use super::params_diff::*;
     pub use super::docs::*;
     pub use super::commons::prelude::*;
-    pub use super::condition::*;
-    pub use super::action::*;
-    pub use super::string_source::*;
-    pub use super::string_modification::*;
-    pub use super::string_location::*;
-    pub use super::string_matcher::*;
-    pub use super::char_matcher::*;
+    pub use super::components::prelude::*;
 
     pub use super::{Cleaner, GetCleanerError, ApplyCleanerError};
 
@@ -81,7 +73,7 @@ pub const BUNDLED_CLEANER_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/bu
 ///
 /// Please see [`Cleaner::get_bundled`] and co.
 #[cfg(all(feature = "bundled-cleaner", test))]
-pub const BUNDLED_CLEANER_STR: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/bundled-cleaner.json"));
+pub const BUNDLED_CLEANER_STR: &str = include_str!("bundled-cleaner.json");
 /// The cached deserialization of the bundled cleaner.
 #[cfg(feature = "bundled-cleaner")]
 static BUNDLED_CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
@@ -99,7 +91,7 @@ impl<'a> Cleaner<'a> {
         }
     }
 
-    /// Become an owned [`Self`], cloning only what needed.
+    /// Become an owned [`Self`], cloning only what's needed.
     pub fn into_owned(self) -> Cleaner<'static> {
         Cleaner {
             docs   : Cow::Owned(self.docs.into_owned()),
@@ -116,9 +108,7 @@ impl<'a> Cleaner<'a> {
         serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
     }
 
-    /// Gets the bundled cleaner.
-    ///
-    /// If you know you're only going to get the bundled cleaner once, [`Self::get_bundled_no_cache`] is better because you can apply [`ParamsDiff`]s to it without [`Clone::clone`]ing.
+    /// Gets the cached bundled cleaner, parsing it if not already cached.
     /// # Errors
     #[doc = edoc!(callerr(Self::get_bundled_no_cache))]
     /// If the call to [`Self::get_bundled_no_cache`] returns an error, that error is returned.
@@ -138,9 +128,7 @@ impl<'a> Cleaner<'a> {
         }
     }
 
-    /// Deserializes [`BUNDLED_CLEANER_STR`] and returns it without caching.
-    ///
-    /// If you're getting the bundled cleaner often and rarely using [`ParamsDiff`]s, [`Self::get_bundled`] may be better due to it only deserializing the cleaner once.
+    /// Parses a new copy the bundled cleaner.
     /// # Errors
     #[doc = edoc!(callerr(serde_json::from_str))]
     /// # Examples
@@ -154,9 +142,7 @@ impl<'a> Cleaner<'a> {
         serde_json::from_str(BUNDLED_CLEANER_STR).map_err(Into::into)
     }
 
-    /// If `path` is [`Some`], returns the result of [`Self::load_from_file`] in a [`Cow::Owned`].
-    ///
-    /// If `path` is [`None`], returns the result of [`Self::get_bundled`] in a [`Cow::Borrowed`].
+    /// Either [`Self::load_from_file`] or [`Self::get_bundled`].
     /// # Errors
     #[doc = edoc!(callerr(Self::load_from_file), callerr(Self::get_bundled))]
     /// # Examples
@@ -170,7 +156,7 @@ impl<'a> Cleaner<'a> {
     ///
     /// assert_eq!(
     ///     Cleaner::get_bundled().unwrap(),
-    ///     &*Cleaner::load_or_get_bundled(Some("bundled-cleaner.json")).unwrap()
+    ///     &*Cleaner::load_or_get_bundled(Some("src/cleaner/bundled-cleaner.json")).unwrap()
     /// );
     /// ```
     #[cfg(feature = "bundled-cleaner")]
@@ -181,9 +167,7 @@ impl<'a> Cleaner<'a> {
         })
     }
 
-    /// If `path` is [`Some`], returns the result of [`Self::load_from_file`].
-    ///
-    /// If `path` is [`None`], returns the result of [`Self::get_bundled_no_cache`].
+    /// Either [`Self::load_from_file`] or [`Self::get_bundled_no_cache`].
     /// # Errors
     #[doc = edoc!(callerr(Self::load_from_file), callerr(Self::get_bundled_no_cache))]
     /// # Examples
@@ -197,7 +181,7 @@ impl<'a> Cleaner<'a> {
     ///
     /// assert_eq!(
     ///     Cleaner::get_bundled_no_cache().unwrap(),
-    ///     Cleaner::load_or_get_bundled_no_cache(Some("bundled-cleaner.json")).unwrap()
+    ///     Cleaner::load_or_get_bundled_no_cache(Some("src/cleaner/bundled-cleaner.json")).unwrap()
     /// );
     /// ```
     #[cfg(feature = "bundled-cleaner")]
@@ -208,9 +192,7 @@ impl<'a> Cleaner<'a> {
         })
     }
 
-    /// Applies each [`Action`] in [`Self::actions`] in order to the provided [`TaskState`].
-    ///
-    /// If an error is returned, `task_state` may be left in a partially modified state.
+    /// [`Action::apply`]s each [`Action`] in [`Self::actions`] in order.
     /// # Errors
     #[doc = edoc!(applyerr(Action, 3))]
     pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
@@ -257,13 +239,13 @@ pub enum ApplyCleanerError {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     #[cfg(feature = "bundled-cleaner")]
     fn minificiation_test() {
+        use super::*;
+
         let minified   = include_str!(concat!(env!("OUT_DIR"), "/bundled-cleaner.json.minified"));
-        let unminified = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/bundled-cleaner.json"));
+        let unminified = include_str!("bundled-cleaner.json");
 
         assert_eq!(
             serde_json::from_str::<Cleaner>(minified  ).expect("Deserializing the minified bundled cleaner to work"),

@@ -41,26 +41,26 @@ jobs:
       run: |
         [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")[\d.]+' | sort -u | wc -l)" == 1 ]]
 
-  test_powerset:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-    - name: 'Test powerset'
+    - name: Test
       run: cargo hack test --feature-powerset --clean-per-run
 
-  doc_powerset:
+  doc:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-    - name: 'Doc powerset'
+    - name: Doc
       run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
 
-  clippy_powerset:
+  clippy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
-    - name: 'Clippy powerset'
+    - name: Clippy
       run: cargo hack clippy --feature-powerset --benches --clean-per-run -- -D warnings

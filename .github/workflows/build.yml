@@ -37,5 +37,6 @@ jobs:
           target/release/url-cleaner${{ matrix.oses.extension }}
           target/release/url-cleaner-site${{ matrix.oses.extension }}
           target/release/url-cleaner-discord-app${{ matrix.oses.extension }}
-          engine/bundled-cleaner.json
+          engine/src/cleaner/bundled-cleaner.json
+          engine/src/cleaner/tests
           site/url-cleaner-site-userscript.js

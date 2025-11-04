@@ -14,6 +14,7 @@ rust-version = "1.88.0"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 url = "2.5.7"
+better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 
 [lints]

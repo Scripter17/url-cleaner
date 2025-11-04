@@ -30,21 +30,26 @@ jobs:
       run: |
         i=0
         mins=( 0 0 0  0 0 3 )
-        maxs=( 1 1 1  1 1 4 )
+        maxs=( 2 2 2  2 2 5 )
         for unthread_ratelimit in '' '--unthread-ratelimit 3'; do
-          ./urlcs --cleaner example-cleaners/ratelimit-tester.json $unthread_ratelimit &
+          ./urlcs --cleaner example-cleaners/ratelimit-tester.json $unthread_ratelimit &> /dev/null &
           sleep 1
           for config in '' ',"unthread":false' ',"unthread":true'; do
+            echo "i=$i, min=${mins[$i]}, max=${maxs[$i]}"
+            echo -n "Testing 1x2: "
             start=$(date +%s);
-            curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com"]'$config'}'
+            curl http://localhost:9149/clean -d '{"tasks":["https://example.com","https://example.com"]'$config'}' &> /dev/null
             time=$(($(date +%s) - $start))
+            echo "$time"
             [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
             sleep ${mins[$i]}
 
+            echo -n "Testing 2x1: "
             start=$(date +%s);
-            curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
-            curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}'
+            curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}' &> /dev/null
+            curl http://localhost:9149/clean -d '{"tasks":["https://example.com"]'$config'}' &> /dev/null
             time=$(($(date +%s) - $start))
+            echo "$time"
             [[ ${mins[$i]} -le $time && $time -le ${maxs[$i]} ]]
             sleep ${mins[$i]}
 

@@ -5,6 +5,7 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 
 use url_cleaner_engine::prelude::*;
+use better_url::BetterUrl;
 
 /// Info about a URL Cleaner Site server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
