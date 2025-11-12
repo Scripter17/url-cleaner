@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
-/// Check if a [`char`] is in a certain set of [`char`]s.
+/// Match a [`char`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum CharMatcher {

@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
-/// Search a string for a substring in one of various ways.
+/// Search for a substring.
 ///
 /// Defaults to [`Self::Anywhere`].
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Suitability)]

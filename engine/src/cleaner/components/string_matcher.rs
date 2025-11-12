@@ -12,7 +12,7 @@ use regex::Regex;
 
 use crate::prelude::*;
 
-/// Check if a [`str`] matches a certain pattern/rule.
+/// Match a string.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum StringMatcher {
@@ -181,6 +181,20 @@ pub enum StringMatcher {
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher))]
     IsAscii,
+    /// Satisfied if the string is a decimal number.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsNumber,
+    /// Satisfied if the string is a hexadecimal number.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsHexNumber,
+    /// Satisfied if the string is a number of the specified radix.
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    ///
+    /// If the radix is greater than 36, returns the error [`StringMatcherError::InvalidRadix`].
+    IsNumberRadix(u32),
 
     // Segments
 
@@ -350,7 +364,11 @@ pub enum StringMatcherError {
     #[error("The requested set wasn't found.")]
     SetNotFound,
 
-    /// Returned when a [`::regex::Error`] is encountered.
+    /// Returned when attempting to use [`StringMatcher::IsNumberRadix`] with an invalid radix (above 36).
+    #[error("Attempted to use StringMatcher::IsNumberRadix with an invalid radix ({0}).")]
+    InvalidRadix(u32),
+
+    /// Returned when a [`regex::Error`] is encountered.
     #[error(transparent)]
     RegexError(#[from] regex::Error),
 
@@ -479,6 +497,13 @@ impl StringMatcher {
                 false
             },
             Self::IsAscii => haystack.ok_or(StringMatcherError::StringIsNone)?.is_ascii(),
+            Self::IsNumber => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_digit()),
+            Self::IsHexNumber => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_hexdigit()),
+            Self::IsNumberRadix(radix) => if *radix <= 36 {
+                haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_digit(*radix))
+            } else {
+                Err(StringMatcherError::InvalidRadix(*radix))?
+            },
 
             // Segments
 

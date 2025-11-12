@@ -29,6 +29,25 @@ pub fn set_segment<E>(segments: &str, split: &str, index: isize, value: Option<&
     })
 }
 
+pub fn set_key_value<E>(segments: &str, split: &str, index: isize, key: &str, value: Option<&str>, segment_not_found: E) -> Result<String, E> {
+    let mut x = segments.split(split);
+    let len = x.clone().count();
+    let index = neg_index(index, len).ok_or(segment_not_found)?;
+    let replace = x.nth(index).expect("The index to be in-bounds.");
+    Ok(match value {
+        None => format!(
+            "{}{key}{}",
+            segments.get(.. replace.as_ptr().addr() - segments.as_ptr().addr() - split  .len()   ).expect("The substring to be in-bounds."),
+            segments.get(   replace.as_ptr().addr() - segments.as_ptr().addr() + replace.len() ..).expect("The substring to be in-bounds.")
+        ),
+        Some(value) => format!(
+            "{}{key}={value}{}",
+            segments.get(.. replace.as_ptr().addr() - segments.as_ptr().addr()                   ).expect("The substring to be in-bounds."),
+            segments.get(   replace.as_ptr().addr() - segments.as_ptr().addr() + replace.len() ..).expect("The substring to be in-bounds.")
+        )
+    })
+}
+
 /// Insert a new segment such that the segment at `index` is `value`, assuming `value` doesn't contain `split`.
 /// # Errors
 /// If `index` is out of range, returns `segment_not_found` as an error.
@@ -48,6 +67,29 @@ pub fn insert_segment<E>(segments: &str, split: &str, index: isize, value: &str,
         let next = x.nth(index).expect("The index to be in-bounds.");
         format!(
             "{}{split}{value}{}",
+            segments.get(.. next.as_ptr().addr() - segments.as_ptr().addr() - split.len()   ).expect("The substring to be in-bounds."),
+            segments.get(   next.as_ptr().addr() - segments.as_ptr().addr() - split.len() ..).expect("The substring to be in-bounds.")
+        )
+    })
+}
+
+pub fn insert_key_value<E>(segments: &str, split: &str, index: isize, key: &str, value: Option<&str>, segment_not_found: E) -> Result<String, E> {
+    let mut x = segments.split(split);
+    let len = x.clone().count();
+    let index = match index {
+        0.. if index as usize <= len => index as usize,
+        ..0 => len.checked_add_signed(index + 1).ok_or(segment_not_found)?,
+        _ => Err(segment_not_found)?
+    };
+    let next = x.nth(index).expect("The index to be in-bounds.");
+    Ok(match value {
+        Some(value) => format!(
+            "{}{split}{key}={value}{}",
+            segments.get(.. next.as_ptr().addr() - segments.as_ptr().addr() - split.len()   ).expect("The substring to be in-bounds."),
+            segments.get(   next.as_ptr().addr() - segments.as_ptr().addr() - split.len() ..).expect("The substring to be in-bounds.")
+        ),
+        None => format!(
+            "{}{split}{key}{}",
             segments.get(.. next.as_ptr().addr() - segments.as_ptr().addr() - split.len()   ).expect("The substring to be in-bounds."),
             segments.get(   next.as_ptr().addr() - segments.as_ptr().addr() - split.len() ..).expect("The substring to be in-bounds.")
         )

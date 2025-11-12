@@ -18,6 +18,28 @@ pub enum SetQueryParamError {
     QueryParamIndexNotFound
 }
 
+/// The enum of errors [`BetterUrl::set_query_segment`] and [`BetterUrl::set_raw_query_segment`] can return.
+#[derive(Debug, Error)]
+pub enum SetQuerySegmentError {
+    /// Returned when there is no query.
+    #[error("There is no query.")]
+    NoQuery,
+    /// Returned when the query segment isn't found.
+    #[error("The query segment wasn't found.")]
+    QuerySegmentNotFound
+}
+
+/// The enum of errors [`BetterUrl::insert_query_segment`] and [`BetterUrl::insert_raw_query_segment`] can return.
+#[derive(Debug, Error)]
+pub enum InsertQuerySegmentError {
+    /// Returned when there is no query.
+    #[error("There is no query.")]
+    NoQuery,
+    /// Returned when the query segment isn't found.
+    #[error("The query segment wasn't found.")]
+    QuerySegmentNotFound
+}
+
 /// The enum of errors [`BetterUrl::rename_query_param`] can return.
 #[derive(Debug, Error)]
 pub enum RenameQueryParamError {
@@ -87,7 +109,7 @@ impl BetterUrl {
     /// assert_eq!(url.raw_query_param("b", 2), Some(Some(Some("%43"))));
     /// ```
     pub fn raw_query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<&'a str>>> {
-        self.raw_query_pairs().map(|pairs| pairs.filter(|(x, _)| peh(x) == name).nth(index).map(|(_, v)| v))
+        self.raw_query_pairs().map(|pairs| pairs.filter(|(x, _)| pdh(x) == name).nth(index).map(|(_, v)| v))
     }
 
     /// Return [`true`] if [`Self::raw_query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
@@ -127,7 +149,7 @@ impl BetterUrl {
     /// assert!(!url.has_query_param("a", 4));
     /// ```
     pub fn has_query_param(&self, name: &str, index: usize) -> bool {
-        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(key, _)| peh(key) == name).nth(index).is_some())
+        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(key, _)| pdh(key) == name).nth(index).is_some())
     }
 
     /// Get the selected query parameter.
@@ -170,7 +192,7 @@ impl BetterUrl {
     /// assert_eq!(url.query_param("b", 2), Some(Some(Some("C".into()))));
     /// ```
     pub fn query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<Cow<'a, str>>>> {
-        self.raw_query_param(name, index).map(|v| v.map(|v| v.map(|v| peh(v))))
+        self.raw_query_param(name, index).map(|v| v.map(|v| v.map(|v| pdh(v))))
     }
 
     /// Set the selected query parameter.
@@ -367,7 +389,7 @@ impl BetterUrl {
                 Some((k, v)) => (k, Some(v)),
                 None => (param, None)
             };
-            if peh(k) == name {
+            if pdh(k) == name {
                 if found == index {
                     new.push_str(to);
                     if let Some(v) = v {
@@ -386,6 +408,90 @@ impl BetterUrl {
             Err(RenameQueryParamError::QueryParamNotFound)?;
         }
         self.set_query(Some(&new));
+        Ok(())
+    }
+
+    /// Set the specified query segment without percent encoding.
+    ///
+    /// If `value` is [`Some`], sets the segment to `{key}={value}`.
+    ///
+    /// If `value` is [`None`], sets the segment to `{key}`.
+    /// # Errors
+    /// If the call to [`Url::query`] returns [`None`], returns the error [`SetQuerySegmentError::NoQuery`].
+    ///
+    /// If the index is out of range, returns the error [`SetQuerySegmentError::QuerySegmentNotFound`].
+    pub fn set_raw_query_segment(&mut self, index: isize, key: &str, value: Option<&str>) -> Result<(), SetQuerySegmentError> {
+        self.set_query(Some(&set_key_value(
+            self.query().ok_or(SetQuerySegmentError::NoQuery)?,
+            "&",
+            index,
+            &qpeh(key),
+            value.map(qpeh).as_deref(),
+            SetQuerySegmentError::QuerySegmentNotFound
+        )?));
+        Ok(())
+    }
+
+    /// Inserts the specified query segment without percent encoding.
+    ///
+    /// If `value` is [`Some`], sets the segment to `{key}={value}`.
+    ///
+    /// If `value` is [`None`], sets the segment to `{key}`.
+    /// # Errors
+    /// If the call to [`Url::query`] returns [`None`], returns the error [`InsertQuerySegmentError::NoQuery`].
+    ///
+    /// If the index is out of range, returns the error [`InsertQuerySegmentError::QuerySegmentNotFound`].
+    pub fn insert_raw_query_segment(&mut self, index: isize, key: &str, value: Option<&str>) -> Result<(), InsertQuerySegmentError> {
+        self.set_query(Some(&insert_key_value(
+            self.query().ok_or(InsertQuerySegmentError::NoQuery)?,
+            "&",
+            index,
+            key,
+            value,
+            InsertQuerySegmentError::QuerySegmentNotFound
+        )?));
+        Ok(())
+    }
+
+    /// Set the specified query segment.
+    ///
+    /// If `value` is [`Some`], sets the segment to `{key}={value}`.
+    ///
+    /// If `value` is [`None`], sets the segment to `{key}`.
+    /// # Errors
+    /// If the call to [`Url::query`] returns [`None`], returns the error [`SetQuerySegmentError::NoQuery`].
+    ///
+    /// If the index is out of range, returns the error [`SetQuerySegmentError::QuerySegmentNotFound`].
+    pub fn set_query_segment(&mut self, index: isize, key: &str, value: Option<&str>) -> Result<(), SetQuerySegmentError> {
+        self.set_query(Some(&set_key_value(
+            self.query().ok_or(SetQuerySegmentError::NoQuery)?,
+            "&",
+            index,
+            key,
+            value,
+            SetQuerySegmentError::QuerySegmentNotFound
+        )?));
+        Ok(())
+    }
+
+    /// Inserts the specified query segment.
+    ///
+    /// If `value` is [`Some`], sets the segment to `{key}={value}`.
+    ///
+    /// If `value` is [`None`], sets the segment to `{key}`.
+    /// # Errors
+    /// If the call to [`Url::query`] returns [`None`], returns the error [`InsertQuerySegmentError::NoQuery`].
+    ///
+    /// If the index is out of range, returns the error [`InsertQuerySegmentError::QuerySegmentNotFound`].
+    pub fn insert_query_segment(&mut self, index: isize, key: &str, value: Option<&str>) -> Result<(), InsertQuerySegmentError> {
+        self.set_query(Some(&insert_key_value(
+            self.query().ok_or(InsertQuerySegmentError::NoQuery)?,
+            "&",
+            index,
+            &qpeh(key),
+            value.map(qpeh).as_deref(),
+            InsertQuerySegmentError::QuerySegmentNotFound
+        )?));
         Ok(())
     }
 }

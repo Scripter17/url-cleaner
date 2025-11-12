@@ -128,6 +128,9 @@ fn thing2(span: Span, name: &str, args: &[Arg]) -> Result<String> {
         ("callnone"             , [pa, epa, Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns [`None`], returns the error [`{epa}`].", thing(*x)),
         ("callnone"             , [pa, epa                                 ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
 
+        ("callsomenone"         , [pa, epa, Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns [`Some`] of [`None`], returns the error [`{epa}`].", thing(*x)),
+        ("callsomenone"         , [pa, epa                                 ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
+
         ("callerrte"            , [pa, epa                                 ]) => format!("If both calls to [`{pa}`] return errors, both errors are returned in a [`{epa}Error::TryElseError`]."),
         ("callerrfne"           , [pa, epa                                 ]) => format!("If all calls to [`{pa}`] return errors, all errors are returned in a [`{epa}Error::FirstNotErrorErrors`]."),
 

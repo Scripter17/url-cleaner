@@ -11,9 +11,7 @@ use regex::Regex;
 
 use crate::prelude::*;
 
-/// Dynamically get strings from either literals or various parts of a [`TaskStateView`].
-///
-/// The order things call [`Self::get`] is not considered stable. If your [`Cleaner`] cares about the order [`Self::get`] is called, you are in the wrong.
+/// Get a string.
 /// # Deserialization
 /// Deserializing from a string produces a [`Self::String`] with that string.
 ///

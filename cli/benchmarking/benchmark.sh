@@ -97,7 +97,7 @@ if [  $hyperfine -eq 1                   ] && ! which -s bat      ; then echo 'B
 if [[ $callgrind -eq 1 || $massif -eq 1 ]] && ! which -s valgrind ; then echo 'Valgrind not found; Please install it.'                                             ; exit 2; fi
 
 if [ $compile -eq 1 ]; then
-  cargo build -r ${features[@]} --config profile.release.strip=false --config profile.release.debug=2
+  cargo build -r ${features[@]} --config profile.release.strip=false --config profile.release.debug=2 --locked
   if [ $? -ne 0 ]; then exit 3; fi
 fi
 
@@ -147,6 +147,7 @@ if [ $callgrind -eq 1 ]; then
       echo -n "$num "
       yes "$url" | head -n $num | valgrind --tool=callgrind --separate-threads=yes --callgrind-out-file="callgrind.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null
     done
+  echo
   done
 fi
 
@@ -160,6 +161,7 @@ if [ $massif -eq 1 ]; then
       yes "$url" | head -n $num | valgrind --tool=massif --massif-out-file="massif.out-$file_safe_url-$num-%p" $COMMAND &> /dev/null
       grep mem_heap_B "$(ls -t | grep '^massif\.out-' | head -n 1)" | grep -oP '\d+' | sort -V | tail -n 1 | sed -E ':a s/([0-9])([0-9][0-9][0-9])\b/\1,\2/; ta'
     done
+  echo
   done
 fi
 

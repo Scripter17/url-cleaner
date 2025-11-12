@@ -68,6 +68,11 @@ impl<T: Hash + Eq> Set<T> {
         }
     }
 
+    /// [`Self::contains`] without [`None`].
+    pub fn contains_some<Q>(&self, value: &Q) -> bool where T: Borrow<Q>, Q: Hash + Eq + ?Sized {
+        self.set.contains(value)
+    }
+
     /// [`HashSet::insert`].
     pub fn insert(&mut self, value: Option<T>) -> bool {
         match value {
@@ -82,6 +87,16 @@ impl<T: Hash + Eq> Set<T> {
             Some(value) => self.set.remove(value),
             None => {let ret = self.if_none; self.if_none = false; ret}
         }
+    }
+
+    /// The length of the set.
+    pub fn len(&self) -> usize {
+        self.set.len() + (self.if_none as usize)
+    }
+
+    /// If the set is empty.
+    pub fn is_empty(&self) -> bool {
+        self.set.is_empty() || self.if_none
     }
 }
 

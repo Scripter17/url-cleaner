@@ -836,17 +836,6 @@ pub enum StringModification {
     /// assert_eq!(to, None);
     /// ```
     AllowQueryParamsMatching(Box<StringMatcher>),
-    /// The same operation [`Action::QueryUTPHandler`] does to a [`UrlPart::Query`].
-    /// # Errors
-    #[doc = edoc!(notfound(Set, StringModification))]
-    ///
-    /// If the list isn't found, returns the error [`StringModificationError::ListNotFound`].
-    UTPHandler {
-        /// The name of the [`Set`] in [`Params::sets`] to use.
-        set: String,
-        /// The name of the list in [`Params::lists`] to use.
-        list: String
-    },
 
 
 
@@ -1529,21 +1518,6 @@ impl StringModification {
                 }
                 if new.len() != inner.len() {
                     *to = Some(Cow::<str>::Owned(new)).filter(|new| !new.is_empty());
-                }
-            },
-            Self::UTPHandler {set, list} => if let Some(inner) = to {
-                let mut new = String::with_capacity(inner.len());
-                let set = task_state.params.sets.get(set).ok_or(StringModificationError::SetNotFound)?;
-                let list = task_state.params.lists.get(list).ok_or(StringModificationError::ListNotFound)?;
-                for param in inner.split('&') {
-                    let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
-                    if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != inner.len() {
-                    *to = Some(Cow::<str>::Owned(new)).filter(|x| !x.is_empty());
                 }
             },
 

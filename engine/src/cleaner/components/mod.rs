@@ -4,6 +4,8 @@ pub mod condition;
 pub mod action;
 pub mod flag_source;
 pub mod var_source;
+pub mod list_source;
+pub mod set_source;
 pub mod set;
 pub mod map;
 pub mod partitioning;
@@ -28,6 +30,8 @@ pub mod prelude {
     pub use super::action::*;
     pub use super::flag_source::*;
     pub use super::var_source::*;
+    pub use super::list_source::*;
+    pub use super::set_source::*;
     pub use super::set::*;
     pub use super::map::*;
     pub use super::partitioning::*;

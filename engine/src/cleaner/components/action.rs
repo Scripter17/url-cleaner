@@ -620,10 +620,6 @@ pub enum Action {
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::path_segments_mut))]
     RemoveEmptyLastPathSegment,
-    /// [`PathSegmentsMut::pop_if_empty`] and [`PathSegmentsMut::push`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::path_segments_mut))]
-    RemoveEmptyLastPathSegmentAndInsertNew(StringSource),
     /// Remove the first `n` path segments.
     ///
     /// The number of path segments after this succeeds is equal to the number of path segments before this is applied minus `n`.
@@ -776,17 +772,6 @@ pub enum Action {
     /// assert_eq!(task_state.url.query(), None);
     /// ```
     AllowQueryParamsMatching(StringMatcher),
-    /// Extreme shorthand for handling universal query parameters.
-    /// # Errors
-    #[doc = edoc!(notfound(Set, Action))]
-    ///
-    /// If the list isn't found, returns the error [`ActionError::ListNotFound`].
-    QueryUTPHandler {
-        /// The name of the [`Set`] in [`Params::sets`] to use.
-        set: String,
-        /// The name of the list in [`Params::lists`] to use.
-        list: String
-    },
     /// Rename the specified query parameter to the specified name.
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::rename_query_param))]
@@ -859,17 +844,6 @@ pub enum Action {
     /// # Errors
     #[doc = edoc!(checkerr(StringMatcher))]
     AllowFragmentParamsMatching(StringMatcher),
-    /// Extreme shorthand for handling universal fragment parameters.
-    /// # Errors
-    #[doc = edoc!(notfound(Set, Action))]
-    ///
-    /// If the list isn't found, returns the error [`ActionError::ListNotFound`].
-    FragmentUTPHandler {
-        /// The name of the [`Set`] in [`Params::sets`] to use.
-        set: String,
-        /// The name of the list in [`Params::lists`] to use.
-        list: String
-    },
 
     // General parts
 
@@ -961,6 +935,30 @@ pub enum Action {
     },
 
     // Misc.
+
+    /// Remove parameters from both the query and fragment.
+    ///
+    /// For each parameter, if its name is in [`Self::RemoveUTPs::names`] or starts with a string in [`Self::RemoveUTPs::prefixes`] and neither is in [`Self::RemoveUTPs::except_names`] or starts with a value in [`Self::RemoveUTPs::except_prefixes`], remove the segment.
+    ///
+    /// The exception stuff is because certain websites use parameters that are normall for tracking for actual features.
+    ///
+    /// Treats [`SetSource::get`]/[`ListSource::get`] returning [`None`] as if they returned an empty set/list.
+    /// # Errors
+    #[doc = edoc!(geterr(SetSource, 2), geterr(ListSource, 2))]
+    RemoveUTPs {
+        /// The names of segments to remove.
+        #[serde(default, skip_serializing_if = "is_default")]
+        names: SetSource,
+        /// The prefixes of segments to remove.
+        #[serde(default, skip_serializing_if = "is_default")]
+        prefixes: ListSource,
+        /// The names of segments to not remove.
+        #[serde(default, skip_serializing_if = "is_default")]
+        except_names: SetSource,
+        /// The prefixes of segments to not remove.
+        #[serde(default, skip_serializing_if = "is_default")]
+        except_prefixes: ListSource
+    },
 
     /// Sends an HTTP GET request to the current [`TaskState::url`], and sets it either to the value of the response's `Location` header (if the response is a redirect) or the final URL after redirects.
     ///
@@ -1307,6 +1305,12 @@ pub enum ActionError {
     /// Returned when a list with the specified name isn't found.
     #[error("A list with the specified name wasn't found.")]
     ListNotFound,
+    /// Returned when a [`GetListError`] is encountered.
+    #[error(transparent)]
+    GetListError(#[from] GetListError),
+    /// Returned when a [`GetSetError`] is encountered.
+    #[error(transparent)]
+    GetSetError(#[from] GetSetError),
 
     /// Returned when a [`DoHttpRequestError`] is encountered.
     #[cfg(feature = "http")]
@@ -1534,9 +1538,9 @@ impl Action {
             },
 
 
-            Self::InsertDomainSegment            {index, value} => task_state.url.insert_domain_segment       (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertSubdomainSegment         {index, value} => task_state.url.insert_subdomain_segment    (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertDomainSuffixSegment      {index, value} => task_state.url.insert_domain_suffix_segment(*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainSegment       {index, value} => task_state.url.insert_domain_segment       (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertSubdomainSegment    {index, value} => task_state.url.insert_subdomain_segment    (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainSuffixSegment {index, value} => task_state.url.insert_domain_suffix_segment(*index, get_new_str!(value, task_state, ActionError))?,
 
             Self::EnsureFqdnPeriod => task_state.url.set_fqdn(true)?,
             Self::RemoveFqdnPeriod => task_state.url.set_fqdn(false)?,
@@ -1562,12 +1566,6 @@ impl Action {
             Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment   (*index, get_new_option_str!(value, task_state))?,
             Self::InsertRawPathSegment      {index, value} => task_state.url.insert_raw_path_segment(*index, get_new_str!(value, task_state, ActionError))?,
             Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut().ok_or(ActionError::UrlDoesNotHavePathSegments)?.pop_if_empty();},
-            Self::RemoveEmptyLastPathSegmentAndInsertNew(value) => {
-                let value = get_new_str!(value, task_state, ActionError);
-                let mut segments_mut = task_state.url.path_segments_mut().ok_or(ActionError::UrlDoesNotHavePathSegments)?;
-                segments_mut.pop_if_empty();
-                segments_mut.push(value);
-            },
             Self::RemoveFirstNPathSegments(n) => task_state.url.remove_first_n_path_segments(*n)?,
             Self::KeepFirstNPathSegments  (n) => task_state.url.keep_first_n_path_segments  (*n)?,
             Self::RemoveLastNPathSegments (n) => task_state.url.remove_last_n_path_segments (*n)?,
@@ -1653,25 +1651,10 @@ impl Action {
                     task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
                 }
             },
-            Self::QueryUTPHandler {set, list} => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
-                let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
-                for param in query.split('&') {
-                    let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
-                    if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
-            },
             Self::RenameQueryParam {from, to} => task_state.url.rename_query_param(&from.name, from.index, get_new_str!(to, task_state, ActionError))?,
 
             Self::GetUrlFromQueryParam(name) => match task_state.url.query_param(get_str!(name, task_state, ActionError), 0) {
-                Some(Some(Some(new_url))) => {*task_state.url = BetterUrl::parse(&new_url)?;},
+                Some(Some(Some(new_url))) => *task_state.url = BetterUrl::parse(&new_url)?,
                 Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
                 Some(None)                => Err(ActionError::QueryParamNotFound)?,
                 None                      => Err(ActionError::NoQuery)?
@@ -1755,21 +1738,6 @@ impl Action {
                     task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
                 }
             },
-            Self::FragmentUTPHandler {set, list} => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                let set = task_state.params.sets.get(set).ok_or(ActionError::SetNotFound)?;
-                let list = task_state.params.lists.get(list).ok_or(ActionError::ListNotFound)?;
-                for param in fragment.split('&') {
-                    let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
-                    if !(set.contains(Some(&*name)) || list.iter().any(|x| name.starts_with(x))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
-            },
 
             // General parts
 
@@ -1794,6 +1762,50 @@ impl Action {
             },
 
             // Misc.
+
+            Self::RemoveUTPs {names, prefixes, except_names, except_prefixes} => if task_state.url.query().is_some() || task_state.url.fragment().is_some() {
+                let default_list = Default::default();
+                let default_set = Default::default();
+
+                let names = match names {
+                    SetSource::Params(StringSource::String(x)) => task_state.params.sets.get(x),
+                    _ => names.get(&task_state.to_view())?
+                }.unwrap_or(&default_set);
+
+                let prefixes = match prefixes {
+                    ListSource::Params(StringSource::String(x)) => task_state.params.lists.get(x),
+                    _ => prefixes.get(&task_state.to_view())?
+                }.unwrap_or(&default_list);
+
+                let except_names = except_names.get(&task_state.to_view())?.unwrap_or(&default_set);
+                let except_prefixes = except_prefixes.get(&task_state.to_view())?.unwrap_or(&default_list);
+                let excepts = !except_names.is_empty() || !except_prefixes.is_empty();
+
+                let new_query = task_state.url.query().map(|query| {
+                    let mut new = String::with_capacity(query.len());
+                    for param in query.split('&') {
+                        let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
+                        if !(names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix))) || (excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix)))) {
+                            if !new.is_empty() {new.push('&');}
+                            new.push_str(param);
+                        }
+                    }
+                    if new.is_empty() {None} else {Some(new)}
+                });
+                let new_fragment = task_state.url.fragment().map(|fragment| {
+                    let mut new = String::with_capacity(fragment.len());
+                    for param in fragment.split('&') {
+                        let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
+                        if !(names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix))) || (excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix)))) {
+                            if !new.is_empty() {new.push('&');}
+                            new.push_str(param);
+                        }
+                    }
+                    if new.is_empty() {None} else {Some(new)}
+                });
+                if let Some(new_query   ) = new_query    {task_state.url.set_query   (new_query   .as_deref());}
+                if let Some(new_fragment) = new_fragment {task_state.url.set_fragment(new_fragment.as_deref());}
+            },
 
             #[cfg(feature = "http")]
             Self::ExpandRedirect {url, headers} => {
