@@ -88,3 +88,39 @@ jobs:
           echo '{"Ok":{"urls":[{"Ok":"https://www.youtube.com/watch?v=abc"}]}}'
           echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/watch?v=abc"}]}}'
         )
+
+    - name: Accounts
+      run: |
+        ACCOUNTS='{"allow_guest":false,"users":{"abc":"def"}}'
+
+        ./urlcs --accounts <(echo "$ACCOUNTS") &
+        sleep 1
+
+        ! curl http://127.0.0.1:9149/clean --json '{"tasks":[]}'
+        ! curl http://abc@127.0.0.1:9149/clean --json '{"tasks":[]}'
+        ! curl http://abc:wrong@127.0.0.1:9149/clean --json '{"tasks":[]}'
+        curl http://abc:def@127.0.0.1:9149/clean --json '{"tasks":[]}'
+
+        kill $!
+
+        ACCOUNTS='{"allow_guest":true,"users":{"abc":"def"}}'
+
+        ./urlcs --accounts <(echo "$ACCOUNTS") &
+        sleep 1
+
+        curl http://127.0.0.1:9149/clean --json '{"tasks":[]}'
+        ! curl http://abc@127.0.0.1:9149/clean --json '{"tasks":[]}'
+        ! curl http://abc:wrong@127.0.0.1:9149/clean --json '{"tasks":[]}'
+        curl http://abc:def@127.0.0.1:9149/clean --json '{"tasks":[]}'
+
+        kill $!
+
+    - name: Misc
+      run: |
+        ./urlcs &
+        sleep 1
+
+        ! curl http://127.0.0.1:9149/clean --json 'a' -f
+
+        kill $!
+

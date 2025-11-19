@@ -2,6 +2,5 @@ target
 *.sqlite
 bacon.toml
 logs
-**/benchmarking/*
-!**/benchmarking/*.sh
 /reddit-*
+/benchmark-results/

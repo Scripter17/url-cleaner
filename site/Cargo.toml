@@ -11,7 +11,7 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.51", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.52", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls", "mtls"] }
 serde = "1.0.228"
@@ -21,7 +21,9 @@ time = { version = "0.3.44", features = ["formatting"] }
 url = { version = "2.5.7", features = ["serde"] }
 better-url = { path = "../better-url", version = "0.12.0-beta" }
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
-url-cleaner-site-types = { path = "../site-types", version = "0.12.0-beta", default-features = false }
+url-cleaner-site-types = { path = "../site-types", version = "0.12.0-beta", features = ["server"] }
+either = "1.15.0"
+rocket_ws = "0.1.1"
 
 [features]
 default = ["bundled-cleaner"]
@@ -32,8 +34,8 @@ bundled-cleaner = [
   "cache"
 ]
 
-http    = ["url-cleaner-engine/http"   ]
-cache   = ["url-cleaner-engine/cache"  ]
+http  = ["url-cleaner-engine/http" ]
+cache = ["url-cleaner-engine/cache"]
 
 [lints]
 workspace = true

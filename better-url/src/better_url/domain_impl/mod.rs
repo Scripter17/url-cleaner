@@ -218,7 +218,7 @@ impl BetterUrl {
     pub fn set_domain(&mut self, to: Option<&str>) -> Result<(), SetDomainError> {
         Ok(match (self.host_details(), to.map(|to| (to, HostDetails::parse(to)))) {
             (Some(HostDetails::Domain(DomainDetails {fqdn_period: Some(_), ..})), Some((to, Ok(HostDetails::Domain(mut domain_details @ DomainDetails {fqdn_period: None, ..}))))) => {
-                {domain_details.fqdn_period = Some(to.len());}
+                {domain_details.fqdn_period = Some(to.len() as u32);}
                 self.set_host_with_known_details(Some(&format!("{to}.")), Some(HostDetails::Domain(domain_details)))?
             },
             (Some(HostDetails::Domain(DomainDetails {fqdn_period: None, ..})), Some((to, Ok(host_details @ HostDetails::Domain(DomainDetails {fqdn_period: None, ..}))))) => {
@@ -272,7 +272,7 @@ impl BetterUrl {
                     (None    , None    , false) => format!(""),
                     (None    , None    , true ) => format!(".")
                 };
-                let new_middle_start = to.map_or(0, |subdomain| subdomain.len() + 1);
+                let new_middle_start = to.map_or(0, |subdomain| subdomain.len() + 1) as u32;
                 let len_diff = new_middle_start.wrapping_sub(domain_details.middle_start.expect(""));
                 domain_details.middle_start = Some(new_middle_start);
                 domain_details.suffix_start = domain_details.suffix_start.map(|x| x.wrapping_add(len_diff));

@@ -40,7 +40,7 @@
 		"vars": {
 			"bluesky_embed_host": "The host to use for Bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.",
 			"pixiv_embed_host"  : "The host to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.",
-			"twitter_embed_host": "The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`.",
+			"twitter_embed_host": "The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `fixupx.com`.",
 
 			"breezewiki_host"   : "The host to replace fandom/known Breezewiki hosts with when the `breezewiki` flag is enabled. Defaults to `breezewiki.com`.",
 			"invidious_host"    : "The host to replace youtube/known Invidious hosts with when the `invidious` flag is enabled. Defaults to `yewtu.be`.",
@@ -82,7 +82,7 @@
 		"vars": {
 			"bluesky_embed_host": "fxbsky.app",
 			"pixiv_embed_host"  : "phixiv.net",
-			"twitter_embed_host": "vxtwitter.com",
+			"twitter_embed_host": "fixupx.com",
 
 			"breezewiki_host": "breezewiki.com",
 			"invidious_host" : "yewtu.be",
@@ -235,8 +235,8 @@
 				],
 				"redirect": [
 					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "abc7.la", "abc7ne.ws", "abcnews.link", "ab.co", "a.co", "adobe.ly", "aje.io", "amn.st", "amzn.asia",
-					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly",
-					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
+					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bitly.com", "bityl.co",
+					"blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
 					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cnn.it", "cons.lv", "cos.lv", "cp2077.ly", "cutt.ly", "db.tt", "dcdr.me",
 					"diplo.de", "dis.gd", "dlvr.it", "econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co",
 					"glo.bo", "go.forbes.com", "go.france24.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "goodsmile.link", "goo.gl",
@@ -260,7 +260,7 @@
 				],
 				"special": [
 					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw",
-					"bit.ly", "bugzil.la", "buymeacoff.ee", "cach.me", "cj.dotomi.com", "click.notification.elsevier.com", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
+					"bugzil.la", "buymeacoff.ee", "cach.me", "cj.dotomi.com", "click.notification.elsevier.com", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com",
 					"fiverr.com", "global.temu.com", "go.bsky.app", "goodreads.com", "go.shopyourlikes.com", "go.skimresources.com", "gprivate.com", "gznmedia.go2cloud.org",
 					"href.li", "instagr.am", "lego.com", "li.cnn.com", "link.blissy.com", "linkprotect.cudasvc.com", "link.sfchronicle.com", "l.instagram.com", "lmddgtfy.net",
@@ -876,14 +876,6 @@
 													]}
 												}
 											}
-										}},
-										"bit.ly": {"If": {
-											"if": {"HasPathSegment": 1},
-											"then": {"All": [
-												"RemoveQuery",
-												{"Common": "universal"},
-												"ExpandRedirect"
-											]}
 										}},
 										"bugzil.la": {"All": [
 											{"SetHost": "bugzilla.mozilla.org"},

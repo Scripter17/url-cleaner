@@ -16,11 +16,11 @@ use crate::*;
 #[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct DomainDetails {
     /// The start of the domain middle.
-    pub middle_start: Option<usize>,
+    pub middle_start: Option<u32>,
     /// The start of the domain suffix.
-    pub suffix_start: Option<usize>,
+    pub suffix_start: Option<u32>,
     /// The location of the [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) period.
-    pub fqdn_period : Option<usize>
+    pub fqdn_period : Option<u32>
 }
 
 /// The enum of errors [`DomainDetails::parse`] can return.
@@ -97,12 +97,12 @@ impl DomainDetails {
     /// assert_eq!(DomainDetails::parse_unchecked("www.example.co.uk."), DomainDetails {middle_start: Some(4), suffix_start: Some(12), fqdn_period: Some(17)});
     /// ```
     pub fn parse_unchecked(domain: &str) -> Self {
-        let suffix_start = psl::suffix(domain.as_bytes()).map(|suffix| (suffix.as_bytes().as_ptr() as usize) - (domain.as_ptr() as usize));
+        let suffix_start = psl::suffix(domain.as_bytes()).map(|suffix| (suffix.as_bytes().as_ptr() as u32) - (domain.as_ptr() as u32));
         Self {
             #[allow(clippy::indexing_slicing, reason = "Can't panic.")]
-            middle_start: suffix_start.and_then(|ss| domain.as_bytes()[..ss].rsplit(|x| *x==b'.').nth(1).map(|middle| (middle.as_ptr() as usize) - (domain.as_ptr() as usize))),
+            middle_start: suffix_start.and_then(|ss| domain.as_bytes()[..ss as usize].rsplit(|x| *x==b'.').nth(1).map(|middle| (middle.as_ptr() as u32) - (domain.as_ptr() as u32))),
             suffix_start,
-            fqdn_period : domain.strip_suffix('.').map(|x| x.len())
+            fqdn_period : domain.strip_suffix('.').map(|x| x.len() as u32)
         }
     }
 
@@ -121,7 +121,7 @@ impl DomainDetails {
     /// assert_eq!(DomainDetails::parse("www.example.co.uk.").unwrap().subdomain_period(), Some(3));
     /// ```
     pub fn subdomain_period(&self) -> Option<usize> {
-        self.middle_start.and_then(|x| x.checked_sub(1))
+        self.middle_start.and_then(|x| x.checked_sub(1).map(|x| x as usize))
     }
     /// The location of the period between domain middle and domain suffix.
     /// # Examples
@@ -138,7 +138,7 @@ impl DomainDetails {
     /// assert_eq!(DomainDetails::parse("www.example.co.uk.").unwrap().domain_suffix_period(), Some(11));
     /// ```
     pub fn domain_suffix_period(&self) -> Option<usize> {
-        self.suffix_start.and_then(|x| x.checked_sub(1))
+        self.suffix_start.and_then(|x| x.checked_sub(1).map(|x| x as usize))
     }
 
     /// The bounds of domain.
@@ -158,7 +158,7 @@ impl DomainDetails {
     /// let x = "www.example.co.uk."; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_bounds()], "www.example.co.uk");
     /// ```
     pub fn domain_bounds(&self) -> (Bound<usize>, Bound<usize>) {
-        (Bound::Unbounded, exorub(self.fqdn_period))
+        (Bound::Unbounded, exorub(self.fqdn_period.map(|x| x as usize)))
     }
     /// The bounds of subdomain.
     /// # Examples
@@ -209,7 +209,7 @@ impl DomainDetails {
     /// let x = "www.example.co.uk."; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_middle_bounds().unwrap()], "example");
     /// ```
     pub fn domain_middle_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {
-        self.middle_start.zip(self.domain_suffix_period()).map(|(ms, sp)| (Bound::Included(ms), Bound::Excluded(sp)))
+        self.middle_start.zip(self.domain_suffix_period()).map(|(ms, sp)| (Bound::Included(ms as usize), Bound::Excluded(sp)))
     }
     /// The bounds of reg domain.
     ///
@@ -228,7 +228,7 @@ impl DomainDetails {
     /// let x = "www.example.co.uk."; assert_eq!(&x[DomainDetails::parse(x).unwrap().reg_domain_bounds().unwrap()], "example.co.uk");
     /// ```
     pub fn reg_domain_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {
-        self.middle_start.map(|x| (Bound::Included(x), exorub(self.fqdn_period)))
+        self.middle_start.map(|x| (Bound::Included(x as usize), exorub(self.fqdn_period.map(|x| x as usize))))
     }
     /// The bounds of domain suffix.
     ///
@@ -247,7 +247,7 @@ impl DomainDetails {
     /// let x = "www.example.co.uk."; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_suffix_bounds().unwrap()], "co.uk");
     /// ```
     pub fn domain_suffix_bounds(&self) -> Option<(Bound<usize>, Bound<usize>)> {
-        self.suffix_start.map(|x| (Bound::Included(x), exorub(self.fqdn_period)))
+        self.suffix_start.map(|x| (Bound::Included(x as usize), exorub(self.fqdn_period.map(|x| x as usize))))
     }
     /// If [`Self`] describes a [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name), return [`true`].
     /// # Examples

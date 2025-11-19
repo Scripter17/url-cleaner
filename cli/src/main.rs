@@ -16,7 +16,6 @@ use serde::{Serialize, ser::Serializer};
 
 use url_cleaner_engine::prelude::*;
 use url_cleaner_engine::testing::*;
-use better_url::BetterUrl;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.
@@ -299,7 +298,7 @@ fn main() -> Result<ExitCode, CliError> {
 
     let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<(Vec<u8>, Option<GetLazyTaskConfigError>)>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoTaskError>, MakeTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let mut some_ok  = false;
     let mut some_err = false;
@@ -332,7 +331,7 @@ fn main() -> Result<ExitCode, CliError> {
 
         // Task getter thread.
 
-        std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, || {
+        std::thread::Builder::new().name("SmallLazyTaskConfig Getter".to_string()).spawn_scoped(s, || {
             let buf_ret_reciever = buf_ret_reciever;
             let buf_in_senders   = buf_in_senders  ;
             let mut biss = buf_in_senders.iter().cycle();
@@ -384,15 +383,15 @@ fn main() -> Result<ExitCode, CliError> {
                 while let Ok((buf, err)) = bir.recv() {
                     let ret = match err {
                         None => {
-                            let maybe_task = job_config.make_lazy_task(LazyTaskConfig::ByteSlice(&buf)).make();
+                            let maybe_task = job_config.make_small_lazy_task(SmallLazyTaskConfig::ByteSlice(&buf)).make();
                             // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
                             let _ = brs.send(buf);
                             match maybe_task {
-                                Ok(task) => Ok(task.r#do()),
-                                Err(e) => Err(e)
+                                Ok(task) => task.r#do().map(Into::into),
+                                Err(e) => Err(e.into())
                             }
                         },
-                        Some(e) => Err(MakeTaskError::from(MakeLazyTaskError::from(e)))
+                        Some(e) => Err(DoTaskError::from(MakeTaskError::from(MakeLazyTaskError::from(e))))
                     };
 
                     os.send(ret).expect("The result out reciever to stay open while needed.");
@@ -412,15 +411,10 @@ fn main() -> Result<ExitCode, CliError> {
 
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
-                        Ok(Ok(Ok(url))) => {
+                        Ok(Ok(url)) => {
                             if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
                             serde_json::to_writer(&mut stdout, &Ok::<_, ()>(url)).expect("Writing task results to STDOUT to work.");
                             some_ok = true;
-                        },
-                        Ok(Ok(Err(e))) => {
-                            if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
-                            serde_json::to_writer(&mut stdout, &Err::<(), _>(ErrorToSerdeString(e))).expect("Writing task results to STDOUT to work.");
-                            some_err = true;
                         },
                         Ok(Err(e)) => {
                             if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
@@ -436,15 +430,10 @@ fn main() -> Result<ExitCode, CliError> {
             } else if (stdout.is_terminal() || args.unbuffer_output) && !args.buffer_output {
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
-                        Ok(Ok(Ok(url))) => {
-                            stdout.write_all(url.as_str().as_bytes()).expect("Writing task results to STDOUT to work.");
+                        Ok(Ok(url)) => {
+                            stdout.write_all(url.as_bytes()).expect("Writing task results to STDOUT to work.");
                             stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
                             some_ok = true;
-                        },
-                        Ok(Ok(Err(e))) => {
-                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
-                            eprintln!("{e:?}");
-                            some_err = true;
                         },
                         Ok(Err(e)) => {
                             stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
@@ -459,16 +448,10 @@ fn main() -> Result<ExitCode, CliError> {
 
                 for or in {out_recievers}.iter().cycle() {
                     match or.recv() {
-                        Ok(Ok(Ok(url))) => {
-                            stdout.write_all(url.as_str().as_bytes()).expect("Writing task results to STDOUT to work.");
+                        Ok(Ok(url)) => {
+                            stdout.write_all(url.as_bytes()).expect("Writing task results to STDOUT to work.");
                             stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
                             some_ok = true;
-                        },
-                        Ok(Ok(Err(e))) => {
-                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
-                            stdout.flush().expect("Flushing STDOUT to work.");
-                            eprintln!("{e:?}");
-                            some_err = true;
                         },
                         Ok(Err(e)) => {
                             stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");

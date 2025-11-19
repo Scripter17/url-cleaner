@@ -5,9 +5,11 @@ use thiserror::Error;
 use crate::prelude::*;
 
 pub mod lazy_task_config;
+pub mod small_lazy_task_config;
 pub mod task_config;
 pub mod task_context;
 pub mod lazy_task;
+pub mod small_lazy_task;
 pub mod task_state;
 pub mod task_state_view;
 pub mod scratchpad;
@@ -15,9 +17,11 @@ pub mod scratchpad;
 /// Prelude module for importing everything here better.
 pub mod prelude {
     pub use super::lazy_task_config::*;
+    pub use super::small_lazy_task_config::*;
     pub use super::task_config::*;
     pub use super::task_context::*;
     pub use super::lazy_task::*;
+    pub use super::small_lazy_task::*;
     pub use super::task_state::*;
     pub use super::task_state_view::*;
     pub use super::scratchpad::*;
@@ -73,7 +77,9 @@ impl Task<'_> {
 #[derive(Debug, Error)]
 pub enum DoTaskError {
     /// Returned when an [`ApplyCleanerError`] is encountered.
-    #[error(transparent)] ApplyCleanerError(#[from] ApplyCleanerError)
+    #[error(transparent)] ApplyCleanerError(#[from] ApplyCleanerError),
+    /// Returned when an [`MakeTaskError`] is encountered.
+    #[error(transparent)] MakeTaskError(#[from] MakeTaskError)
 }
 
 /// Helper macro to make docs briefer.

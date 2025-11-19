@@ -4,7 +4,6 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use std::fs::read_to_string;
 use std::str::FromStr;
-use std::sync::Mutex;
 use std::num::NonZero;
 use std::sync::LazyLock;
 use std::borrow::Cow;
@@ -24,20 +23,12 @@ use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::*;
 use better_url::BetterUrl;
 
-/// The source code of this instance.
-static SOURCE_CODE: LazyLock<BetterUrl> = LazyLock::new(|| env!("CARGO_PKG_REPOSITORY").parse().expect("The CARGO_PKG_REPOSITORY enviroment vairable to be a valid BetterUrl."));
-/// The version of this instance.
-const VERSION     : &str = env!("CARGO_PKG_VERSION");
-
-/// The base info to return when getting `/`.
-const INFO: &str = concat!("URL Cleaner Site ", env!("CARGO_PKG_VERSION"), r#"
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
-https://www.gnu.org/licenses/agpl-3.0.html
-"#, env!("CARGO_PKG_REPOSITORY"), r#"
-
-See /info     to get the ServerInfo.
-See /cleaner  to get the Cleaner.
-See /profiles to get the ProfilesConfig."#);
+mod index;
+mod info;
+mod cleaner;
+mod profiles;
+mod clean;
+mod clean_ws;
 
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_PAYLOAD: &str = "25MiB";
@@ -166,9 +157,7 @@ struct ServerState {
     #[cfg(feature = "http")]
     http_client: HttpClient,
     /// The [`Unthreader] to use.
-    unthreader: Unthreader,
-    /// The number of [`CleanPayload`]s handled. Used for naming threads.
-    job_count: Mutex<usize>,
+    unthreader: Unthreader
 }
 
 /// Make the server.
@@ -212,8 +201,7 @@ async fn rocket() -> _ {
         unthreader: match args.unthread_ratelimit {
             None    => UnthreaderMode::Unthread,
             Some(d) => UnthreaderMode::Ratelimit(std::time::Duration::from_secs_f64(d))
-        }.into(),
-        job_count: Mutex::new(0)
+        }.into()
     };
 
     let tls = match (args.key, args.cert) {
@@ -230,145 +218,10 @@ async fn rocket() -> _ {
     rocket::custom(rocket::Config {
         address: args.ip,
         port: args.port,
-        limits: Limits::default().limit("json", args.max_payload).limit("string", args.max_payload),
+        limits: Limits::default()
+            .limit("json", args.max_payload)
+            .limit("string", args.max_payload),
         tls,
         ..rocket::Config::default()
-    }).mount("/", routes![index, info, clean, cleaner, profiles]).manage(server_state)
-}
-
-/// The `/` route.
-#[get("/")]
-async fn index() -> &'static str {
-    &INFO
-}
-
-/// The `/info` endpoint.
-#[get("/info")]
-async fn info(state: &State<ServerState>) -> Json<ServerInfo<'_>> {
-    Json(ServerInfo {
-        source_code         : Cow::Borrowed(&SOURCE_CODE),
-        version             : Cow::Borrowed(VERSION),
-        max_payload         : state.config.max_payload.as_u64(),
-        unthreader_mode     : state.unthreader.mode
-    })
-}
-
-/// The `/cleaner` route.
-#[get("/cleaner")]
-async fn cleaner(state: &State<ServerState>) -> impl Responder<'_, '_> {
-    (
-        ContentType(MediaType::JSON),
-        &*state.config.cleaner_string
-    )
-}
-
-/// The `/profiles` route.
-#[get("/profiles")]
-async fn profiles(state: &State<ServerState>) -> impl Responder<'_, '_> {
-    (
-        ContentType(MediaType::JSON),
-        &*state.config.profiles_config_string
-    )
-}
-
-/// The `/clean` route.
-#[post("/clean", data="<clean_payload>")]
-async fn clean(state: &State<ServerState>, clean_payload: &str) -> (Status, Json<CleanResult>) {
-    match inner_clean(state, clean_payload) {
-        Ok (clean_success) => (Status::Ok                       , Json(Ok (clean_success))),
-        Err(clean_error  ) => (Status {code: clean_error.status}, Json(Err(clean_error  )))
-    }
-}
-
-/// The actual `/clean` route handler, separated for easier error handling.
-fn inner_clean(state: &State<ServerState>, clean_payload: &str) -> CleanResult {
-    let clean_payload = match serde_json::from_str::<CleanPayload>(clean_payload) {
-        Ok(clean_payload) => clean_payload,
-        Err(e) => Err(CleanError {status: 422, message: e.to_string()})?
-    };
-
-    if !state.config.accounts.auth(clean_payload.auth.as_ref()) {
-        Err(CleanError {status: 401, message: "Unauthorized".into()})?
-    }
-
-    let Some(mut cleaner) = state.config.profiled_cleaner.get(clean_payload.profile.as_deref()) else {
-        Err(CleanError {status: 422, message: format!("Unknown profile: {:?}", clean_payload.profile)})?
-    };
-
-    if let Some(params_diff) = clean_payload.params_diff {
-        params_diff.apply(&mut cleaner.params);
-    }
-
-    let (in_senders , in_recievers ) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<LazyTask<'_, '_>, MakeLazyTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
-    let (out_senders, out_recievers) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel::<Result<Result<BetterUrl, DoTaskError>, MakeTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
-
-    let mut ret = CleanSuccess {
-        urls: Vec::with_capacity(clean_payload.tasks.len())
-    };
-
-    let mut temp = state.job_count.lock().expect("No panics.");
-    let id = *temp;
-    *temp += 1;
-    drop(temp);
-
-    let unthreader = match clean_payload.unthread {
-        false => &NO_UNTHREADER,
-        true  => &state.unthreader
-    };
-
-    std::thread::scope(|s| {
-        std::thread::Builder::new().name(format!("({id}) Task collector")).spawn_scoped(s, || {
-            let job = Job {
-                config: JobConfig {
-                    context: &clean_payload.context,
-                    cleaner: &cleaner,
-                    unthreader,
-                    #[cfg(feature = "cache")]
-                    cache: Cache {
-                        inner: &state.inner_cache,
-                        config: CacheConfig {
-                            read : clean_payload.read_cache ,
-                            write: clean_payload.write_cache,
-                            delay: clean_payload.cache_delay
-                        }
-                    },
-                    #[cfg(feature = "http")]
-                    http_client: &state.http_client
-                },
-                lazy_task_configs: clean_payload.tasks.into_iter().map(Ok)
-            };
-            for (in_sender, maybe_task_source) in {in_senders}.iter().cycle().zip(job) {
-                in_sender.send(maybe_task_source).expect("To successfully send the LazyTask.");
-            }
-        }).expect("Spawning a thread to work fine.");
-
-        in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (ir, os))| {
-            std::thread::Builder::new().name(format!("({id}) Worker {i}")).spawn_scoped(s, move || {
-                while let Ok(maybe_task_source) = ir.recv() {
-                    let ret = match maybe_task_source {
-                        Ok(task_source) => match task_source.make() {
-                            Ok(task) => Ok(task.r#do()),
-                            Err(e) => Err(e)
-                        },
-                        Err(e) => Err(e.into())
-                    };
-
-                    os.send(ret).expect("The out receiver to still exist.");
-                }
-            }).expect("Spawning a thread to work fine.");
-        }).for_each(drop);
-
-        std::thread::Builder::new().name(format!("({id}) Task returner")).spawn_scoped(s, || {
-            for or in {out_recievers}.iter().cycle() {
-                match or.recv() {
-                    Ok(Ok(Ok (x))) => ret.urls.push(Ok(x)),
-                    Ok(Ok(Err(e))) => ret.urls.push(Err(e.to_string())),
-                    Ok(Err(e))     => ret.urls.push(Err(e.to_string())),
-                    Err(_) => break
-                }
-            }
-        }).expect("Spawning a thread to work fine.");
-    });
-
-    Ok(ret)
+    }).mount("/", routes![index::index, info::info, cleaner::cleaner, profiles::profiles, clean::clean, clean_ws::clean_ws]).manage(server_state)
 }

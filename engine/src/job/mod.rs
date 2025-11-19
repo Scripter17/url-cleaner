@@ -7,16 +7,20 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
+pub mod small_job;
 pub mod job_config;
 pub mod job_context;
 pub mod job_into_iterator;
+pub mod small_job_into_iterator;
 pub mod task;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
+    pub use super::small_job::*;
     pub use super::job_config::*;
     pub use super::job_context::*;
     pub use super::job_into_iterator::*;
+    pub use super::small_job_into_iterator::*;
     pub use super::task::prelude::*;
 
     pub use super::{Job, GetLazyTaskConfigError, MakeLazyTaskError};

@@ -70,7 +70,10 @@ pub enum MakeTaskConfigError {
     Utf8Error(#[from] std::str::Utf8Error),
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error)
+    SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a [`GetLazyTaskConfigError`] is encountered.
+    #[error(transparent)]
+    GetLazyTaskConfigError(#[from] GetLazyTaskConfigError)
 }
 
 impl From<Url> for TaskConfig {

@@ -1,11 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["engine", "cli", "site-types", "site", "discord-app", "better-url"]
+members = ["engine", "cli", "site-types", "site", "discord-app", "better-url", "benchmarking"]
 
 [workspace.lints.rust]
 missing_docs = "warn"
 missing_debug_implementations = "deny"
-unsafe_code = "forbid"
 unused_import_braces = "warn"
 unpredictable_function_pointer_comparisons = "allow"
 

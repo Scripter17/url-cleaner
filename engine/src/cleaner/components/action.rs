@@ -1419,9 +1419,12 @@ impl Action {
                 }
             },
             Self::Repeat{actions, limit} => {
+                for action in actions {
+                    action.apply(task_state)?;
+                }
                 let mut previous_url;
                 let mut previous_scratchpad;
-                for _ in 0..*limit {
+                for _ in 1..*limit {
                     previous_url = task_state.url.clone();
                     previous_scratchpad = task_state.scratchpad.clone();
                     for action in actions {
@@ -1457,7 +1460,7 @@ impl Action {
 
             // Whole
 
-            Self::SetWhole(new) => *task_state.url = BetterUrl::parse(get_new_str!(new, task_state, ActionError))?,
+            Self::SetWhole(new) => *task_state.url = BetterUrl::parse(get_str!(new, task_state, ActionError))?,
             Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, ActionError))?.into(),
 
             // Scheme

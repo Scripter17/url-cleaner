@@ -36,20 +36,49 @@ A GET endpoint that returns the loaded `ProfilesConfig`.
 
 ## `/clean`
 
-A POST endpoint that takes a `CleanPayload` and returns a `CleanResult`, both as JSON.
+A POST endpoint that takes a `CleanPayload` and returns a `SmallCleanResult`, both as JSON.
 
-Generally `LazyTaskConfig`s are just strings.
+`SmallCleanResult` and `CleanResult` serialize and deserialize identically.
+
+Generally `SmallLazyTaskConfig`s are just strings.
+
+See [`/clean_ws`](#clean_ws) for a WebSocket API.
 
 <!--cmd echo '```Rust'; cat site-types/src/clean.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
 ```Rust
 /// Used to construct a [`Job`].
 pub struct CleanPayload<'a> {
     /// The [`LazyTaskConfig`]s to use.
-    pub tasks: Vec<LazyTaskConfig<'a>>,
-    /// The authentication to use.
-    ///
-    /// Defaults to [`None`].
-    pub auth: Option<Auth>,
+    pub tasks: Vec<SmallLazyTaskConfig<'a>>,
+    /// The [`CleanPayloadConfig`] with `#[serde(flatten)]` applied.
+    pub config: CleanPayloadConfig
+}
+
+/// [`CleanResult`] but small.
+pub type SmallCleanResult = Result<SmallCleanSuccess, CleanError>;
+
+/// [`CleanSuccess`] but small.
+pub struct SmallCleanSuccess {
+    /// The [`Task`] results.
+    pub urls: Vec<Result<String, String>>
+}
+
+/// The success state of doing a [`JobConfig`].
+pub struct CleanSuccess {
+    /// The [`Task`] results.
+    pub urls: Vec<Result<BetterUrl, String>>
+}
+
+/// The error state of doing a [`JobConfig`].
+pub struct CleanError {
+    /// The HTTP status code.
+    pub status: u16,
+    /// The error message.
+    pub message: String
+}
+
+/// When used in `/clean_ws`, each field is sent as a query parameter with JSON values.
+pub struct CleanPayloadConfig {
     /// The [`JobContext`] to use.
     ///
     /// Defaults to [`JobContext::default`].
@@ -95,27 +124,14 @@ pub struct CleanPayload<'a> {
     /// Defaults to [`false`].
     pub unthread: bool
 }
-
-/// The [`Result`] returned by the `/clean` route.
-pub type CleanResult = Result<CleanSuccess, CleanError>;
-
-/// The success state of doing a [`JobConfig`].
-pub struct CleanSuccess {
-    /// The [`Task`] results.
-    pub urls: Vec<Result<BetterUrl, String>>
-}
-
-/// The error state of doing a [`JobConfig`].
-pub struct CleanError {
-    /// The HTTP status code.
-    pub status: u16,
-    /// The error message.
-    pub message: String
-}
 ```
 <!--/cmd-->
 
 ## Authenticaton
+
+Authentication is sent as a username and password in the URL like `http://username:password@127.0.0.1/clean`.
+
+This is the same for both [`/clean`](#clean) and [`/clean_ws`](#clean_ws).
 
 <!--cmd echo '```Rust'; cat site-types/src/auth.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
 ```Rust
@@ -132,11 +148,23 @@ pub struct Accounts {
 }
 
 /// A username and password.
-pub struct Auth {
-    /// The username.
-    pub username: String,
-    /// The password.
-    pub password: String
-}
+pub enum Auth {
+    /// Guest
+    Guest,
+    /// User
+    User {
+        /// The username.
+        username: String,
+        /// The password.
+        password: String
+    }
 ```
 <!--/cmd-->
+
+## `/clean_ws`
+
+Like [`/clean`](#clean) but uses WebSockets.
+
+The `CleanPayloadConfig` is set with a query parameter for each field.
+
+Tasks are done line-by-line like URL Cleaner CLI, but the output lines are prefixed with `Ok\t` for successful tasks and `Err\t` for unsuccessful tasks.

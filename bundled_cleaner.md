@@ -2,23 +2,9 @@
 
 The Bundled Cleaner is included by in URL Cleaner Engine and is intended for normal everyday use.
 
-The Bundled Cleaner is intended to always obey the following rules:
+## Performance
 
-- Cleaning a URL shouldn't cause any "meaningful semantic changes"<sup>[definition?]</sup> when opening the result.
-  - Insignificant details like the item categories navbar on amazon listings being slightly different are insignificant.
-- URLs that are "semantically valid"<sup>[definition?]</sup> shouldn't ever return an error or become semantically invalid.
-  - Basically, if opening a pre-clean URL doesn't return a an error, opening the post-clean URL shouldn't return an error.
-- It should always be both deterministic and idempotent.
-  - This falls apart the second network connectivity is involved. Exceedingly long redirect chains, netowrk connectivity issues, etc. are allowed to break this intent.
-- Shuffling the input list of URLs should always give the same (equally shuffled) output.
-- Only the `bundled-cleaner` feature is expected to be enabled, and it is always expected to be enabled.
-- When the `no_network` flag is set, the Bundled Cleaner should NEVER make ANY network requests.
-  - The `no_network` flag should be equivalent to compiling URL Cleaner without network support and removing all network stuff from the Bundled Cleaner.
-- Opening a URL outputted by the Bundled Cleaner with the `no_network` flag disabled and the `bypass_vip`/any future related flags enebled should never result in a redirect.
-
-Currently no guarantees are made, though when the above rules are broken it is considered a bug and I'd appreciate being told about it.
-
-Additionally, these rules may be changed at any time for any reason. Usually just for clarification.
+See [benchmarks.md](benchmarks.md) for performance information.
 
 ## Params
 
@@ -63,7 +49,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 - `bluesky_embed_host`: The host to use for Bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.
 - `pixiv_embed_host`: The host to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.
-- `twitter_embed_host`: The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `vxtwitter.com`.
+- `twitter_embed_host`: The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `fixupx.com`.
 - `breezewiki_host`: The host to replace fandom/known Breezewiki hosts with when the `breezewiki` flag is enabled. Defaults to `breezewiki.com`.
 - `invidious_host`: The host to replace youtube/known Invidious hosts with when the `invidious` flag is enabled. Defaults to `yewtu.be`.
 - `nitter_host`: The host to replace twitter/known Nitter hosts with when the `nitter` flag is enabled. Defaults to `nitter.net`.

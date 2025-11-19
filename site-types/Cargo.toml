@@ -16,6 +16,12 @@ thiserror = "2.0.17"
 url = "2.5.7"
 better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
+base64 = { version = "0.22.1", optional = true }
+rocket = { version = "0.5.1", optional = true, features = ["json"] }
+serde_json = "1.0.145"
+
+[features]
+server = ["dep:base64", "dep:rocket"]
 
 [lints]
 workspace = true

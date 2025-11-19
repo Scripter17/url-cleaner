@@ -8,4 +8,6 @@ pub mod auth;
 pub use auth::*;
 pub mod info;
 pub use info::*;
+#[cfg(feature = "server")]
+pub mod server;
 pub(crate) mod util;

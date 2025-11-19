@@ -35,10 +35,10 @@ impl Accounts {
     /// If `auth` is [`Some`], returns true if [`Self::users`] has an entry with the username set to the password.
     ///
     /// If `auth` is [`None`], returns [`Self::allow_guest`].
-    pub fn auth(&self, auth: Option<&Auth>) -> bool {
+    pub fn check(&self, auth: &Auth) -> bool {
         match auth {
-            Some(auth) => self.users.get(&auth.username).is_some_and(|password| &auth.password == password),
-            None => self.allow_guest
+            Auth::Guest => self.allow_guest,
+            Auth::User {username, password} => self.users.get(username) == Some(password)
         }
     }
 }
@@ -46,9 +46,14 @@ impl Accounts {
 /// A username and password.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Auth {
-    /// The username.
-    pub username: String,
-    /// The password.
-    pub password: String
+pub enum Auth {
+    /// Guest
+    Guest,
+    /// User
+    User {
+        /// The username.
+        username: String,
+        /// The password.
+        password: String
+    }
 }

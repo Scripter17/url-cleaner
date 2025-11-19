@@ -25,7 +25,7 @@ jobs:
       run: set -euo pipefail
 
     - name: Build
-      run: cargo build -r
+      run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-discord-app
 
     - name: Upload
       if: runner.environment == 'github-hosted'

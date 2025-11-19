@@ -42,6 +42,20 @@ impl<'j> JobConfig<'j> {
         }
     }
 
+    /// Make a [`LazyTask`] using the provided [`LazyTaskConfig`].
+    pub fn make_small_lazy_task<'t>(&self, config: SmallLazyTaskConfig<'t>) -> SmallLazyTask<'j, 't> {
+        SmallLazyTask {
+            config,
+            job_context : self.context,
+            cleaner     : self.cleaner,
+            unthreader  : self.unthreader,
+            #[cfg(feature = "cache")]
+            cache: self.cache,
+            #[cfg(feature = "http")]
+            http_client : self.http_client
+        }
+    }
+
     /// Make a [`Task`] using the provided [`TaskConfig`].
     pub fn make_task(&self, config: TaskConfig) -> Task<'j> {
         Task {
