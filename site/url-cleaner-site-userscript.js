@@ -18,7 +18,8 @@ window.config = {
 	read_cache : true, // Read from the cache (default: true)
 	write_cache: true, // Write to the cache  (default: true)
 	cache_delay: true, // Enable cache delay  (default: true)
-	unthread   : true  // Enable unthreading  (default: true)
+	unthread   : true, // Enable unthreading  (default: true)
+	extra_debug: false
 };
 
 (() => {
@@ -27,6 +28,14 @@ window.config = {
 
 	// Send an element from the queue to Site, doing shortcuts and context as needed.
 	function send_element(element) {
+
+		if (element.href.startsWith("#")) {
+			if (window.config.extra_debug) {
+				console.debug("[URLC] Ignoring element", element, "because it's URL is just an anchor.");
+			}
+			return;
+		}
+
 		let task = element.href;
 
 		if (/(^|\.)furaffinity\.net$/.test(window.location.hostname) && element.matches(".user-contact-user-info a")) {
@@ -61,7 +70,9 @@ window.config = {
 			task = element.href.replace(/i\/web|i\/user\/\d+/g, element.parentElement.querySelector("[href*='/i/user/']").innerHTML.replace("@", ""));
 		}
 
-		console.debug("[URLC] Sending task", task, "for element", element);
+		if (window.config.extra_debug) {
+			console.debug("[URLC] Sending task", task, "for element", element);
+		}
 
 		queue.push(element);
 		socket.send(task);
@@ -79,37 +90,6 @@ window.config = {
 
 	// Make the socket.
 	let socket = new WebSocket(socket_url);
-
-	// When the socket opens, send all existing links.
-	socket.addEventListener("open", function() {
-		console.debug("[URLC] Opening socket.");
-
-		for (element of document.links) {
-			send_element(element);
-		}
-	});
-
-	// WHen getting a message, apply the clean.
-	socket.addEventListener("message", function(message) {
-		let [status, payload] = message.data.split("\t");
-		let element = queue.shift();
-		console.debug("[URLC] Got", status, "with", payload, "for element", element);
-		if (status == "Ok") {
-			cleaned_elements.set(element, payload);
-			element.href = payload;
-		} else if (status == "Err") {
-			cleaned_elements.set(element, element.href);
-		}
-	});
-
-	// Print a message when the socket is closing.
-	socket.addEventListener("close", function() {
-		console.debug("[URLC] Closing socket.");
-	});
-
-	socket.addEventListener("error", function(e) {
-		console.error("[URLC] Socket error:", e);
-	})
 
 	// Observe all changes to the page.
 	let observer = new MutationObserver(function(mutations) {
@@ -131,18 +111,51 @@ window.config = {
 		});
 	});
 
-	// Watch changes to any href attribute.
-	observer.observe(document.documentElement, {
-		attributes: true,
-		attributeFilter: ["href"],
-		subtree: true
+	// When the socket opens, send all existing links.
+	socket.addEventListener("open", function() {
+		console.debug("[URLC] Opened socket to", socket_url.href);
+
+		// Watch changes to any href attribute.
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["href"],
+			subtree: true
+		});
+
+		// Watch changes to the node tree.
+		observer.observe(document.documentElement, {
+			subtree: true,
+			childList: true
+		});
+
+		for (element of document.links) {
+			send_element(element);
+		}
 	});
 
-	// Watch changes to the node tree.
-	observer.observe(document.documentElement, {
-		subtree: true,
-		childList: true
+	// WHen getting a message, apply the clean.
+	socket.addEventListener("message", function(message) {
+		let [status, payload] = message.data.split("\t");
+		let element = queue.shift();
+		if (window.config.extra_debug) {
+			console.debug("[URLC] Got", status, "with", payload, "for element", element);
+		}
+		if (status == "Ok") {
+			cleaned_elements.set(element, payload);
+			element.href = payload;
+		} else if (status == "Err") {
+			cleaned_elements.set(element, element.href);
+		}
 	});
+
+	// Print a message when the socket is closing.
+	socket.addEventListener("close", function() {
+		console.debug("[URLC] Closing socket.");
+	});
+
+	socket.addEventListener("error", function(e) {
+		console.error("[URLC] Socket error:", e);
+	})
 
 	// Close the socket and disconnect the observer.
 	window.addEventListener("beforeunload", () => {

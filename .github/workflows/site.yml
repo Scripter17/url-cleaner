@@ -89,6 +89,8 @@ jobs:
           echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/watch?v=abc"}]}}'
         )
 
+        kill $!
+
     - name: Accounts
       run: |
         ACCOUNTS='{"allow_guest":false,"users":{"abc":"def"}}'
@@ -123,4 +125,3 @@ jobs:
         ! curl http://127.0.0.1:9149/clean --json 'a' -f
 
         kill $!
-
