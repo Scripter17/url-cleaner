@@ -65,6 +65,7 @@ jobs:
         PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
 
         ./urlcs --profiles-string "$PROFILES" &
+        a=$!
         sleep 1
 
         diff -y <(
@@ -89,7 +90,7 @@ jobs:
           echo '{"Ok":{"urls":[{"Ok":"https://m.youtube.com/watch?v=abc"}]}}'
         )
 
-        kill $!
+        kill $a
 
     - name: Accounts
       run: |
