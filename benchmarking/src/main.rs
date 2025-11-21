@@ -1,9 +1,10 @@
+//! A benchmarking tool for URL Cleaner's frontends.
+
 #![feature(unix_send_signal)]
 
 #![allow(clippy::unwrap_used)]
 #![allow(clippy::indexing_slicing)]
 
-use std::fs;
 use std::os::unix::process::ChildExt;
 
 use clap::Parser;

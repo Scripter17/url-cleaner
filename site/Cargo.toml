@@ -11,7 +11,7 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-clap = { version = "4.5.52", features = ["derive", "unstable-v5"] }
+clap = { version = "4.5.53", features = ["derive", "unstable-v5"] }
 futures = "0.3.31"
 rocket = { version = "0.5.1", features = ["json", "tls", "mtls"] }
 serde = "1.0.228"
@@ -24,6 +24,7 @@ url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-feat
 url-cleaner-site-types = { path = "../site-types", version = "0.12.0-beta", features = ["server"] }
 either = "1.15.0"
 rocket_ws = "0.1.1"
+tokio = "1.48.0"
 
 [features]
 default = ["bundled-cleaner"]

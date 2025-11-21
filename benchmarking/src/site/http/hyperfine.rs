@@ -23,18 +23,18 @@ impl Args {
     
         let mut stdin = fs::OpenOptions::new().create(true).write(true).truncate(true).open(STDIN).unwrap();
 
-        write!(stdin, r#"{{"tasks":["#);
+        write!(stdin, r#"{{"tasks":["#).unwrap();
 
         let task_json = serde_json::to_string(&self.url).unwrap();
 
         for i in 0..self.num {
             if i != 0 {
-                write!(stdin, ",");
+                write!(stdin, ",").unwrap();
             }
-            write!(stdin, "{}", task_json);
+            write!(stdin, "{}", task_json).unwrap();
         }
 
-        write!(stdin, r#"]}}"#);
+        write!(stdin, r#"]}}"#).unwrap();
 
         drop(stdin);
 
@@ -46,7 +46,7 @@ impl Args {
 
         let out = format!("{DIR}/hyperfine.out-{}-{}.json", self.name, self.num);
 
-        for i in 0..10 {
+        for _ in 0..10 {
             match std::net::TcpStream::connect("127.0.0.1:9148") {
                 Ok(_) => {
                     Command::new("hyperfine")

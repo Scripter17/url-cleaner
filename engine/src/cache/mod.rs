@@ -161,10 +161,16 @@ pub struct CacheEntryValues {
 pub enum ReadFromCacheError {
     /// Returned when a [`rusqlite::Error`] is encountered.
     #[error(transparent)]
-    RusqliteError(#[from] rusqlite::Error),
+    RusqliteError(#[from] Box<rusqlite::Error>),
     /// Returned when a [`LockCacheError`] is encountered.
     #[error(transparent)]
     LockCacheError(#[from] LockCacheError)
+}
+
+impl From<rusqlite::Error> for ReadFromCacheError {
+    fn from(value: rusqlite::Error) -> Self {
+        Self::RusqliteError(Box::new(value))
+    }
 }
 
 /// The enum of errors [`Cache::read`] and [`InnerCache::read`] can return.
@@ -172,10 +178,16 @@ pub enum ReadFromCacheError {
 pub enum WriteToCacheError {
     /// Returned when a [`rusqlite::Error`] is encountered.
     #[error(transparent)]
-    RusqliteError(#[from] rusqlite::Error),
+    RusqliteError(#[from] Box<rusqlite::Error>),
     /// Returned when a [`LockCacheError`] is encountered.
     #[error(transparent)]
     LockCacheError(#[from] LockCacheError)
+}
+
+impl From<rusqlite::Error> for WriteToCacheError {
+    fn from(value: rusqlite::Error) -> Self {
+        Self::RusqliteError(Box::new(value))
+    }
 }
 
 /// The enum of errors that [`InnerCache::lock`] can return.
@@ -183,8 +195,14 @@ pub enum WriteToCacheError {
 pub enum LockCacheError {
     /// Returned when a [`rusqlite::Error`] is encountered.
     #[error(transparent)]
-    RusqliteError(#[from] rusqlite::Error),
+    RusqliteError(#[from] Box<rusqlite::Error>),
     /// Returned when a [`std::io::Error`] is encountered.
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+}
+
+impl From<rusqlite::Error> for LockCacheError {
+    fn from(value: rusqlite::Error) -> Self {
+        Self::RusqliteError(Box::new(value))
+    }
 }

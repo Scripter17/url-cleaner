@@ -24,7 +24,7 @@ impl Args {
         let mut stdin = fs::OpenOptions::new().create(true).write(true).truncate(true).open(STDIN).unwrap();
 
         for _ in 0..self.num {
-            writeln!(stdin, "{}", self.url);
+            writeln!(stdin, "{}", self.url).unwrap();
         }
 
         drop(stdin);
@@ -37,13 +37,13 @@ impl Args {
             .stderr(std::process::Stdio::null())
             .spawn().unwrap());
 
-        for i in 0..10 {
+        for _ in 0..10 {
             match std::net::TcpStream::connect("127.0.0.1:9148") {
                 Ok(_) => {
                     Command::new("hyperfine")
                         .args([
                             "--command-name", &self.name,
-                            "websocat -0 ws://127.0.0.1:9148/clean_ws",
+                            "websocat ws://127.0.0.1:9148/clean_ws",
                             "--input", STDIN,
                             "--export-json", &out
                         ])

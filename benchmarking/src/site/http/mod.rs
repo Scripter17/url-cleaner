@@ -1,4 +1,3 @@
-use std::process::Command;
 use std::fs;
 
 use clap::Subcommand;

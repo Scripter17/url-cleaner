@@ -129,6 +129,8 @@ pub struct CleanPayloadConfig {
 
 ## Authenticaton
 
+Authentication can be setup by giving a JSON `Accounts` file to `--accounts`.
+
 Authentication is sent as a username and password in the URL like `http://username:password@127.0.0.1/clean`.
 
 This is the same for both [`/clean`](#clean) and [`/clean_ws`](#clean_ws).
@@ -165,6 +167,12 @@ pub enum Auth {
 
 Like [`/clean`](#clean) but uses WebSockets.
 
-The `CleanPayloadConfig` is set with a query parameter for each field.
+The `CleanPayloadConfig` is set with a query parameter for each field either omitted for the default value or set to a JSON string.
 
-Tasks are done line-by-line like URL Cleaner CLI, but the output lines are prefixed with `Ok\t` for successful tasks and `Err\t` for unsuccessful tasks.
+Tasks are sent as strings with any number of lines. Each line contains one task.
+
+Results are returned in the same order they are recieved as strings of lines, each containing `Ok` or `Err`, a tab, then the result payload. Every line, even the last one, is followed by a newline.
+
+Only the order in which result lines are sent is defined. A group of 3 tasks may be returned as a group of 2 results and a group of 1 result.
+
+Users should be careful to only close the connection once either all results are recieved or once further results are no longer needed.

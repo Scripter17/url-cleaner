@@ -135,16 +135,18 @@ window.config = {
 
 	// WHen getting a message, apply the clean.
 	socket.addEventListener("message", function(message) {
-		let [status, payload] = message.data.split("\t");
-		let element = queue.shift();
-		if (window.config.extra_debug) {
-			console.debug("[URLC] Got", status, "with", payload, "for element", element);
-		}
-		if (status == "Ok") {
-			cleaned_elements.set(element, payload);
-			element.href = payload;
-		} else if (status == "Err") {
-			cleaned_elements.set(element, element.href);
+		for (line of message.data.trimEnd().split("\n")) {
+			let [status, payload] = line.split("\t");
+			let element = queue.shift();
+			if (window.config.extra_debug) {
+				console.debug("[URLC] Got", status, "with", payload, "for element", element);
+			}
+			if (status == "Ok") {
+				cleaned_elements.set(element, payload);
+				element.href = payload;
+			} else if (status == "Err") {
+				cleaned_elements.set(element, element.href);
+			}
 		}
 	});
 

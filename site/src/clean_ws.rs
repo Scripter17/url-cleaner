@@ -1,5 +1,10 @@
 //! The `/clean_ws` route.
 
+use std::sync::Arc;
+use std::fmt::Write;
+use std::sync::mpsc::TryRecvError;
+
+use tokio::sync::Mutex;
 use rocket_ws as ws;
 use rocket::futures::{SinkExt, StreamExt};
 
@@ -8,10 +13,6 @@ use url_cleaner_engine::prelude::*;
 use crate::*;
 
 /// The `/clean_ws` route.
-///
-/// A WebSocket channel that's set up by supplying each field of [`CleanPayloadConfig`] as a query parameter with JSON values, takes lines of [`SmallLazyTaskConfig::Str`], and returns lines of either `Ok\t{url}` or `Err\t{e:?}`.
-///
-/// Currently only single threaded due to complexities of how Rust and Rocket and WebSockets all work together.
 #[get("/clean_ws")]
 pub async fn clean_ws<'a>(auth: Auth, config: CleanPayloadConfig, state: &'a State<ServerState>, ws: ws::WebSocket) -> Result<ws::Channel<'a>, CleanError> {
     if !state.config.accounts.check(&auth) {
@@ -31,7 +32,33 @@ pub async fn clean_ws<'a>(auth: Auth, config: CleanPayloadConfig, state: &'a Sta
         true  => &state.unthreader
     };
 
-    Ok(ws.channel(move |mut stream| Box::pin(async move {
+    Ok(ws.channel(move |stream| Box::pin(async move {
+        let (sink, mut stream) = stream.split();
+
+        let sink = Arc::new(Mutex::new(sink));
+        let sink2 = sink.clone();
+        let (os, or) = std::sync::mpsc::channel::<Result<String, String>>();
+
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                let mut buf = String::new();
+                loop {
+                    match or.try_recv() {
+                        Ok(x) => match x {
+                            Ok (x) => writeln!(buf, "Ok\t{x}"),
+                            Err(e) => writeln!(buf, "Err\t{e}")
+                        }.expect("Write a result to the buffer to never fail."),
+                        Err(TryRecvError::Empty) => break,
+                        Err(TryRecvError::Disconnected) => return
+                    }
+                }
+                if !buf.is_empty() {
+                    let _ = sink2.lock().await.send(buf.into()).await;
+                }
+            }
+        });
+
         let job_config = JobConfig {
             context: &config.context,
             cleaner: &cleaner,
@@ -52,13 +79,16 @@ pub async fn clean_ws<'a>(auth: Auth, config: CleanPayloadConfig, state: &'a Sta
         while let Some(message) = stream.next().await {
             match message? {
                 ws::Message::Text(text) => for line in text.lines() {
-                    match job_config.make_small_lazy_task(line.to_string().into()).make().map_err(Into::into).and_then(Task::r#do) {
-                        Ok (url) => stream.send(format!("Ok\t{url}" ).into()).await.expect("Sending a WebSocket response to work."),
-                        Err(e  ) => stream.send(format!("Err\t{e:?}").into()).await.expect("Sending a WebSocket response to work."),
-                    }
+                    os.send(match job_config.make_small_lazy_task(line.into()).make() {
+                        Ok(task) => match task.r#do() {
+                            Ok(x) => Ok(x.into()),
+                            Err(e) => Err(format!("{e:?}"))
+                        },
+                        Err(e) => Err(format!("{:?}", DoTaskError::from(e)))
+                    }).expect("The receiver to still be open.");
                 },
-                ws::Message::Close(x) => {let _ = stream.send(ws::Message::Close(x)).await; break},
-                ws::Message::Ping(x) => stream.send(ws::Message::Pong(x)).await.expect("Sending a WebSocket pong to work."),
+                ws::Message::Close(x) => {let _ = sink.lock().await.send(ws::Message::Close(x)).await; break},
+                ws::Message::Ping(x) => sink.lock().await.send(ws::Message::Pong(x)).await?,
                 _ => {}
             }
         }

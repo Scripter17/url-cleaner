@@ -17,7 +17,13 @@ pub struct Args {
     #[arg(long)]
     hyperfine: bool,
     #[arg(long)]
-    massif: bool
+    massif: bool,
+
+    #[arg(long, default_values_t = [1_000, 10_000, 100_000])]
+    hyperfine_nums: Vec<usize>,
+
+    #[arg(long, default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
+    massif_nums: Vec<usize>
 }
 
 struct Task {
@@ -49,9 +55,6 @@ const TASKS: &[Task] = &[
     }
 ];
 
-const HYPERFINE_NUMS: &[usize] = &[1_000, 10_000, 100_000];
-const MASSIF_NUMS: &[usize] = &[0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000];
-
 macro_rules! printflush {
     ($($x:tt)*) => {
         print!($($x)*);
@@ -80,7 +83,7 @@ impl Args {
 
         if self.cli {
             Command::new("cargo")
-                .args(["build", "-r", "--bin", "url-cleaner"])
+                .args(["+stable", "build", "-r", "--bin", "url-cleaner"])
                 .args(crate::CARGO_CONFIG)
                 .stdout(std::io::stderr())
                 .stderr(std::io::stderr())
@@ -91,7 +94,7 @@ impl Args {
 
                 print_hyperfine_header();
                 for task in TASKS {
-                    for num in HYPERFINE_NUMS {
+                    for num in &self.hyperfine_nums {
                         printflush!("|{}|{num}|", task.name);
                         print_hyperfine_entry(crate::cli::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
@@ -101,10 +104,10 @@ impl Args {
             if self.massif {
                 println!("\n## CLI Massif\n");
 
-                print_massif_header();
+                print_massif_header(&self.massif_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
-                    for num in MASSIF_NUMS {
+                    for num in &self.massif_nums {
                         print_massif_entry   (crate::cli::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
                     println!();
@@ -114,7 +117,7 @@ impl Args {
 
         if self.site_http {
             Command::new("cargo")
-                .args(["build", "-r", "--bin", "url-cleaner-site"])
+                .args(["+stable", "build", "-r", "--bin", "url-cleaner-site"])
                 .args(crate::CARGO_CONFIG)
                 .stdout(std::io::stderr())
                 .stderr(std::io::stderr())
@@ -127,7 +130,7 @@ impl Args {
 
                 print_hyperfine_header();
                 for task in TASKS {
-                    for num in HYPERFINE_NUMS {
+                    for num in &self.hyperfine_nums {
                         printflush!("|{}|{num}|", task.name);
                         print_hyperfine_entry(crate::site::http::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
@@ -139,10 +142,10 @@ impl Args {
                 println!("The max payload was increased from 25MiB to 1GiB.\n");
                 println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.\n");
 
-                print_massif_header();
+                print_massif_header(&self.massif_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
-                    for num in MASSIF_NUMS {
+                    for num in &self.massif_nums {
                         print_massif_entry   (crate::site::http::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
                     println!();
@@ -152,7 +155,7 @@ impl Args {
 
         if self.site_ws {
             Command::new("cargo")
-                .args(["build", "-r", "--bin", "url-cleaner-site"])
+                .args(["+stable", "build", "-r", "--bin", "url-cleaner-site"])
                 .args(crate::CARGO_CONFIG)
                 .stdout(std::io::stderr())
                 .stderr(std::io::stderr())
@@ -163,7 +166,7 @@ impl Args {
 
                 print_hyperfine_header();
                 for task in TASKS {
-                    for num in HYPERFINE_NUMS {
+                    for num in &self.hyperfine_nums {
                         printflush!("|{}|{num}|", task.name);
                         print_hyperfine_entry(crate::site::websocket::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
@@ -173,10 +176,10 @@ impl Args {
             if self.massif {
                 println!("\n## Site Websocket Massif\n");
 
-                print_massif_header();
+                print_massif_header(&self.massif_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
-                    for num in MASSIF_NUMS {
+                    for num in &self.massif_nums {
                         print_massif_entry   (crate::site::websocket::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
                     println!();
@@ -205,18 +208,18 @@ fn print_hyperfine_entry(mut file: fs::File) {
     )
 }
 
-fn print_massif_header() {
+fn print_massif_header(nums: &[usize]) {
     println!("Peak memory usage to do various amounts of the tasks, measured in bytes.");
     println!();
     printflush!("|Name|");
-    for num in MASSIF_NUMS {printflush!("{num}|");}
+    for num in nums {printflush!("{num}|");}
     println!();
     printflush!("|:--:|");
-    for _ in MASSIF_NUMS {printflush!("--:|");}
+    for _ in nums {printflush!("--:|");}
     println!();
 }
 
-fn print_massif_entry(mut file: fs::File) {
+fn print_massif_entry(file: fs::File) {
     let mut max = 0;
 
     for line in BufReader::new(file).lines() {

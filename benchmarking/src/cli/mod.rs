@@ -1,4 +1,4 @@
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::fs;
 
 use clap::Subcommand;
@@ -15,7 +15,7 @@ pub enum Args {
 impl Args {
     pub fn r#do(self) -> fs::File {
         Command::new("cargo")
-            .args(["build", "-r", "--bin", "url-cleaner"])
+            .args(["+stable", "build", "-r", "--bin", "url-cleaner"])
             .args(crate::CARGO_CONFIG)
             .stdout(std::io::stderr())
             .stderr(std::io::stderr())

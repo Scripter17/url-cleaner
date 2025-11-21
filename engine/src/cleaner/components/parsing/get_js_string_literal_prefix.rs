@@ -50,23 +50,10 @@ pub enum GetJsStringLiteralPrefixLastState {
 pub enum GetJsStringLiteralPrefixError {
     /// Returned when a syntax error is encountered.
     #[error("A syntax error was encountered.")]
-    SyntaxError {
-        /// The last state of the state machine before the error was encountered.
-        last_state: GetJsStringLiteralPrefixLastState,
-        /// The index of the character that triggered the error.
-        i: usize,
-        /// The character that triggered the error.
-        c: char,
-        /// The scratchspace that was calculating the unescaped character.
-        scratchspace: u32,
-        /// The quote being used.
-        quote: char,
-        /// The calculated return value prior to the error.
-        partial: String
-    },
+    SyntaxError,
     /// Returned when an invalid codepoint is encountered.
-    #[error("An invalid codepoint was encountered: {0}.")]
-    InvalidCodepoint(u32)
+    #[error("An invalid codepoint was encountered.")]
+    InvalidCodepoint
 }
 
 /// Given a [`str`] that starts with a javascript string literal, return the value of that string.
@@ -98,7 +85,7 @@ pub fn get_js_string_literal_prefix(s: &str) -> Result<String, GetJsStringLitera
     let mut scratchspace: u32 = 0;
     let mut quote = '"';
 
-    for (i, c) in s.chars().enumerate() {
+    for c in s.chars() {
         match (last_state, c) {
             (GetJsStringLiteralPrefixLastState::Outside         , '"' | '\''                       ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; quote = c;},
             (GetJsStringLiteralPrefixLastState::Inside          , '\\'                             ) => {last_state = GetJsStringLiteralPrefixLastState::Start           ;},
@@ -115,10 +102,10 @@ pub fn get_js_string_literal_prefix(s: &str) -> Result<String, GetJsStringLitera
             (GetJsStringLiteralPrefixLastState::Start           , '\\'                             ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; ret.push('\\');},
             (GetJsStringLiteralPrefixLastState::Start           , '0'..='7'                        ) => {last_state = GetJsStringLiteralPrefixLastState::Octal1          ; scratchspace =                     c.to_digit( 8).unwrap();},
             (GetJsStringLiteralPrefixLastState::Octal1          , '0'..='7'                        ) => {last_state = GetJsStringLiteralPrefixLastState::Octal2          ; scratchspace = scratchspace *  8 + c.to_digit( 8).unwrap();},
-            (GetJsStringLiteralPrefixLastState::Octal2          , '0'..='7'                        ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; scratchspace = scratchspace *  8 + c.to_digit( 8).unwrap(); ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint(scratchspace))?);},
+            (GetJsStringLiteralPrefixLastState::Octal2          , '0'..='7'                        ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; scratchspace = scratchspace *  8 + c.to_digit( 8).unwrap(); ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint)?);},
             (GetJsStringLiteralPrefixLastState::Start           , 'x'                              ) => {last_state = GetJsStringLiteralPrefixLastState::AsciiHexx       ;},
             (GetJsStringLiteralPrefixLastState::AsciiHexx       , '0'..='7' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::AsciiHex1       ; scratchspace =                     c.to_digit(16).unwrap();},
-            (GetJsStringLiteralPrefixLastState::AsciiHex1       , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; scratchspace = scratchspace * 16 + c.to_digit(16).unwrap(); ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint(scratchspace))?);},
+            (GetJsStringLiteralPrefixLastState::AsciiHex1       , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; scratchspace = scratchspace * 16 + c.to_digit(16).unwrap(); ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint)?);},
             (GetJsStringLiteralPrefixLastState::Start           , 'u'                              ) => {last_state = GetJsStringLiteralPrefixLastState::UnicodeU        ;},
             (GetJsStringLiteralPrefixLastState::UnicodeU        , '{'                              ) => {last_state = GetJsStringLiteralPrefixLastState::UnicodeLeftBrace;},
             (GetJsStringLiteralPrefixLastState::UnicodeLeftBrace, '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Unicode51       ; scratchspace =                     c.to_digit(16).unwrap();},
@@ -130,15 +117,15 @@ pub fn get_js_string_literal_prefix(s: &str) -> Result<String, GetJsStringLitera
                 | GetJsStringLiteralPrefixLastState::Unicode52
                 | GetJsStringLiteralPrefixLastState::Unicode53
                 | GetJsStringLiteralPrefixLastState::Unicode54
-                | GetJsStringLiteralPrefixLastState::Unicode55  , '}'                              ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint(scratchspace))?);},
+                | GetJsStringLiteralPrefixLastState::Unicode55  , '}'                              ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint)?);},
             (GetJsStringLiteralPrefixLastState::UnicodeU        , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Unicode41       ; scratchspace =                     c.to_digit(16).unwrap();},
             (GetJsStringLiteralPrefixLastState::Unicode41       , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Unicode42       ; scratchspace = scratchspace * 16 + c.to_digit(16).unwrap();},
             (GetJsStringLiteralPrefixLastState::Unicode42       , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Unicode43       ; scratchspace = scratchspace * 16 + c.to_digit(16).unwrap();},
-            (GetJsStringLiteralPrefixLastState::Unicode43       , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; scratchspace = scratchspace * 16 + c.to_digit(16).unwrap(); ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint(scratchspace))?);},
+            (GetJsStringLiteralPrefixLastState::Unicode43       , '0'..='9' | 'A'..='F' | 'a'..='f') => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; scratchspace = scratchspace * 16 + c.to_digit(16).unwrap(); ret.push(char::from_u32(scratchspace).ok_or(GetJsStringLiteralPrefixError::InvalidCodepoint)?);},
             (GetJsStringLiteralPrefixLastState::Inside          , '"' | '\''                       ) if c == quote => break,
             (GetJsStringLiteralPrefixLastState::Start           , _                                ) => {last_state = GetJsStringLiteralPrefixLastState::Inside          ; ret.push(c);},
             (GetJsStringLiteralPrefixLastState::Inside          , _                                ) => {ret.push(c);}
-            _ => Err(GetJsStringLiteralPrefixError::SyntaxError {last_state, i, c, scratchspace, quote, partial: ret.clone()})?
+            _ => Err(GetJsStringLiteralPrefixError::SyntaxError)?
         };
     }
 

@@ -24,7 +24,7 @@ impl Args {
         let mut stdin = fs::OpenOptions::new().create(true).write(true).truncate(true).open(STDIN).unwrap();
 
         for _ in 0..self.num {
-            writeln!(stdin, "{}", self.url);
+            writeln!(stdin, "{}", self.url).unwrap();
         }
 
         drop(stdin);
