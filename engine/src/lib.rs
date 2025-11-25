@@ -14,7 +14,6 @@ pub mod unthreader;
 #[cfg(feature = "http" )] pub mod http;
 #[cfg(feature = "cache")] pub mod cache;
 
-pub mod testing;
 pub(crate) mod util;
 
 /// A prelude module to make importing all the various types nicer.
@@ -23,7 +22,7 @@ pub(crate) mod util;
 pub mod prelude {
     pub use super::job::prelude::*;
     pub use super::cleaner::prelude::*;
-    pub use super::unthreader::prelude::*;
+    pub use super::unthreader::*;
 
     #[cfg(feature = "http" )] pub use super::http::prelude::*;
     #[cfg(feature = "cache")] pub use super::cache::prelude::*;

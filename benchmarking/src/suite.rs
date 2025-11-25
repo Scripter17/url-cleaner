@@ -17,11 +17,14 @@ pub struct Args {
     #[arg(long)]
     hyperfine: bool,
     #[arg(long)]
+    callgrind: bool,
+    #[arg(long)]
     massif: bool,
 
-    #[arg(long, default_values_t = [1_000, 10_000, 100_000])]
+    #[arg(long, default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000])]
     hyperfine_nums: Vec<usize>,
-
+    #[arg(long, default_values_t = [0, 10_000])]
+    callgrind_nums: Vec<usize>,
     #[arg(long, default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
     massif_nums: Vec<usize>
 }
@@ -92,11 +95,24 @@ impl Args {
             if self.hyperfine {
                 println!("## CLI Hyperfine\n");
 
-                print_hyperfine_header();
+                print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
+                    printflush!("|{}|", task.name);
                     for num in &self.hyperfine_nums {
-                        printflush!("|{}|{num}|", task.name);
                         print_hyperfine_entry(crate::cli::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
+                    }
+                    println!();
+                }
+            }
+
+            if self.callgrind {
+                eprintln!("CLI Callgrind");
+
+                for task in TASKS {
+                    eprintln!("  {}", task.name);
+                    for num in &self.callgrind_nums {
+                        eprintln!("    {num}");
+                        crate::cli::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
                     }
                 }
             }
@@ -108,7 +124,7 @@ impl Args {
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.massif_nums {
-                        print_massif_entry   (crate::cli::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
+                        print_massif_entry(crate::cli::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
                     println!();
                 }
@@ -128,11 +144,24 @@ impl Args {
                 println!("The max payload was increased from 25MiB to 1GiB.\n");
                 println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.\n");
 
-                print_hyperfine_header();
+                print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
+                    printflush!("|{}|", task.name);
                     for num in &self.hyperfine_nums {
-                        printflush!("|{}|{num}|", task.name);
                         print_hyperfine_entry(crate::site::http::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
+                    }
+                    println!();
+                }
+            }
+
+            if self.callgrind {
+                eprintln!("Site HTTP Callgrind)");
+
+                for task in TASKS {
+                    eprintln!("  {}", task.name);
+                    for num in &self.callgrind_nums {
+                        eprintln!("    {num}");
+                        crate::site::http::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
                     }
                 }
             }
@@ -146,7 +175,7 @@ impl Args {
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.massif_nums {
-                        print_massif_entry   (crate::site::http::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
+                        print_massif_entry(crate::site::http::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
                     println!();
                 }
@@ -164,11 +193,24 @@ impl Args {
             if self.hyperfine {
                 println!("\n## Site Websocket Hyperfine\n");
 
-                print_hyperfine_header();
+                print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
+                    printflush!("|{}|", task.name);
                     for num in &self.hyperfine_nums {
-                        printflush!("|{}|{num}|", task.name);
                         print_hyperfine_entry(crate::site::websocket::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
+                    }
+                    println!();
+                }
+            }
+
+            if self.callgrind {
+                eprintln!("Site WebSocket Callgrind");
+
+                for task in TASKS {
+                    eprintln!("  {}", task.name);
+                    for num in &self.callgrind_nums {
+                        eprintln!("    {num}");
+                        crate::site::websocket::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
                     }
                 }
             }
@@ -180,7 +222,7 @@ impl Args {
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.massif_nums {
-                        print_massif_entry   (crate::site::websocket::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
+                        print_massif_entry(crate::site::websocket::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
                     println!();
                 }
@@ -189,30 +231,28 @@ impl Args {
     }
 }
 
-fn print_hyperfine_header() {
-    println!("Time it takes to do various amounts of the tasks, measured in milliseconds.");
+fn print_hyperfine_header(nums: &[usize]) {
+    println!("Time it takes to do various amounts of the tasks, measured in milliseconds.\n");
+    printflush!("|Name|");
+    for num in nums {printflush!("{}|", num.to_formatted_string(&Locale::en));}
     println!();
-    println!("|Name|Count|Min|Mean|Max|Std. Dev.|");
-    println!("|:--:|:--:|--:|--:|--:|--:|");
+    printflush!("|:--:|");
+    for _ in nums {printflush!("--:|");}
+    println!();
 }
 
 fn print_hyperfine_entry(mut file: fs::File) {
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     let data = serde_json::from_str::<serde_json::Value>(&data).unwrap()["results"][0].take();
-    println!("`{:.1}`|`{:.1}`|`{:.1}`|`{:.1}`|",
-        data["min"   ].as_f64().unwrap() * 1000.0,
-        data["mean"  ].as_f64().unwrap() * 1000.0,
-        data["max"   ].as_f64().unwrap() * 1000.0,
-        data["stddev"].as_f64().unwrap() * 1000.0
-    )
+    printflush!("`{:.1}`|", data["mean"].as_f64().unwrap() * 1000.0);
 }
 
 fn print_massif_header(nums: &[usize]) {
     println!("Peak memory usage to do various amounts of the tasks, measured in bytes.");
     println!();
     printflush!("|Name|");
-    for num in nums {printflush!("{num}|");}
+    for num in nums {printflush!("{}|", num.to_formatted_string(&Locale::en));}
     println!();
     printflush!("|:--:|");
     for _ in nums {printflush!("--:|");}

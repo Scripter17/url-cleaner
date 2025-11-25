@@ -14,8 +14,8 @@ pub struct Args {
     pub num: usize
 }
 
-const DIR  : &str = "benchmark-results/site-http/hyperfine/";
-const STDIN: &str = "benchmark-results/site-http/hyperfine/stdin.txt";
+const DIR  : &str = "benchmark-results/site-http/callgrind/";
+const STDIN: &str = "benchmark-results/site-http/callgrind/stdin.txt";
 
 impl Args {
     pub fn r#do(self) -> fs::File {
@@ -27,25 +27,33 @@ impl Args {
             writeln!(stdin, "{}", self.url).unwrap();
         }
 
+        write!(stdin, r#"]}}"#).unwrap();
+
         drop(stdin);
 
-        let server = crate::KillOnDrop(Command::new("target/release/url-cleaner-site")
-            .args(["--port", "9148", "--max-payload", "1GiB"])
+        let out = format!("{DIR}/callgrind.out-{}-{}", self.name, self.num);
+
+        let server = crate::KillOnDrop(Command::new("valgrind")
+            .args([
+                "-q",
+                "--tool=callgrind",
+                "--separate-threads=yes",
+                &format!("--callgrind-out-file={out}"),
+                "target/release/url-cleaner-site",
+                "--port", "9148",
+                "--max-payload", "1GiB"
+            ])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .spawn().unwrap());
 
-        let out = format!("{DIR}/hyperfine.out-{}-{}.json", self.name, self.num);
-
         for _ in 0..10 {
             match std::net::TcpStream::connect("127.0.0.1:9148") {
                 Ok(_) => {
-                    Command::new("hyperfine")
+                    Command::new("curl")
                         .args([
-                            "--command-name", &self.name,
-                            "curl http://127.0.0.1:9148/clean --json @-",
-                            "--input", STDIN,
-                            "--export-json", &out
+                            "http://127.0.0.1:9148/clean",
+                            "--json", &format!("@{STDIN}")
                         ])
                         .stdout(std::process::Stdio::null())
                         .stderr(std::process::Stdio::null())

@@ -4,18 +4,15 @@
 
 
 use std::path::PathBuf;
-use std::io::{self, IsTerminal, BufRead, Write, BufWriter};
-use std::process::ExitCode;
+use std::io::{IsTerminal, BufRead, Write, BufWriter};
 use std::fmt::Debug;
 use std::time::Duration;
 use std::sync::mpsc::RecvTimeoutError;
 
 use clap::Parser;
 use thiserror::Error;
-use serde::{Serialize, ser::Serializer};
 
 use url_cleaner_engine::prelude::*;
-use url_cleaner_engine::testing::*;
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.
@@ -57,55 +54,22 @@ struct Args {
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
-    /// Output results as JSON.
-    ///
-    /// The format looks like this, but minified:
-    ///
-    /// {"Ok": {
-    ///   "urls": [
-    ///     {"Ok": "https://example.com/success"},
-    ///     {"Err": "Error message"}
-    ///   ]
-    /// }}
-    ///
-    /// The surrounding `{"Ok": {...}}` is to let URL Cleaner Site return `{"Err": {...}}` on invalid input.
-    #[arg(short, long, verbatim_doc_comment)]
-    json: bool,
-    /// Always buffer output.
-    /// By default, output is buffered if and only if the STDOUT isn't a TTY, such as a pipe.
-    /// Buffering enables better performance but may not play nicely with some programs.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "unbuffer_output")]
-    buffer_output: bool,
-    /// Never buffer output.
-    /// By default, output is buffered if and only if the STDOUT isn't a TTY, such as a pipe.
-    /// Buffering enables better performance but may not play nicely with some programs.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "buffer_output")]
-    unbuffer_output: bool,
-    /// The size of the output buffer.
-    #[arg(long, verbatim_doc_comment, default_value_t = 8192)]
-    buffer_size: usize,
+    /// The size of the STDOUT buffer.
+    /// When STDOUT is a terminal, defaults to 0.
+    /// Otherwise defaults to 8192.
+    #[arg(long, verbatim_doc_comment)]
+    output_buffer: Option<usize>,
     /// The ProfilesConfig file.
-    /// Cannot be used with --profiles-string.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "profiles_string", value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
-    /// The ProfilesConfig string.
-    /// Cannot be used with --profiles.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "profiles", value_name = "JSON STRING")]
-    profiles_string: Option<String>,
     /// The Profile to use.
     /// Applied before ParamsDiffs and --flag/--var.
     #[arg(long, verbatim_doc_comment)]
     profile: Option<String>,
     /// A standalone ParamsDiff file.
     /// Applied after Profiles and before --flag/--var.
-    /// Cannot be used with --params-diff-string.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "params_diff_string", value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     params_diff: Option<PathBuf>,
-    /// A standalone ParamsDiff string.
-    /// Applied after Profiles and before --flag/--var.
-    /// Cannot be used with --params-diff.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "params_diff", value_name = "JSON STRING")]
-    params_diff_string: Option<String>,
     /// Flags to insert into the params.
     /// Applied after Profiles and ParamsDiff.
     #[arg(short, long, verbatim_doc_comment)]
@@ -115,13 +79,8 @@ struct Args {
     #[arg(short, long, verbatim_doc_comment, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
     /// The JobContext file to use.
-    /// Cannot be used with --job-context-string.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "job_context_string", value_name = "PATH")]
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     job_context: Option<PathBuf>,
-    /// The JobContext string to use.
-    /// Cannot be used with --job-context.
-    #[arg(long, verbatim_doc_comment, conflicts_with = "job_context", value_name = "JSON STRING")]
-    job_context_string: Option<String>,
     /// The proxy to use for HTTP/HTTPS requests.
     #[cfg(feature = "http")]
     #[arg(long, verbatim_doc_comment)]
@@ -149,21 +108,11 @@ struct Args {
     /// Useful for not leaking the thread count.
     #[arg(long, verbatim_doc_comment)]
     unthread: bool,
-    /// Makes unthreaded operations happen at most once per the specified amount of seconds.
-    /// If the ratelimit is 5 seconds and it's been 2 seconds since the last unthread, waits only 3 seconds.
-    #[arg(long, verbatim_doc_comment, requires = "unthread", value_name = "SECONDS")]
-    unthread_ratelimit: Option<f64>,
     /// The number of worker threads to use.
     /// Zero uses the CPU's thread count.
     /// So on a 2 core 4 thread system it uses 4 threads.
     #[arg(long, verbatim_doc_comment, default_value_t = 0)]
-    threads: usize,
-    /// Test files to run.
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
-    tests: Vec<PathBuf>,
-    /// Asserts the "suitability" of the loaded cleaner.
-    #[arg(long, verbatim_doc_comment)]
-    test_suitability: bool
+    threads: usize
 }
 
 /// The enum of errors [`main`] can return.
@@ -172,48 +121,26 @@ pub enum CliError {
     /// Returned when a [`GetCleanerError`] is encountered.
     #[error(transparent)] GetCleanerError(#[from] GetCleanerError),
     /// Returned when unable to load a [`ParamsDiff`] file.
-    #[error(transparent)] CantLoadProfilesFile(std::io::Error),
+    #[error(transparent)] CantLoadProfiles(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
-    #[error(transparent)] CantParseProfilesFile(serde_json::Error),
-    /// Returned when unable to parse a [`ParamsDiff`] string.
-    #[error(transparent)] CantParseProfilesString(serde_json::Error),
+    #[error(transparent)] CantParseProfiles(serde_json::Error),
     /// Returned when unable to load a [`ParamsDiff`] file.
-    #[error(transparent)] CantLoadParamsDiffFile(std::io::Error),
+    #[error(transparent)] CantLoadParamsDiff(std::io::Error),
     /// Returned when unable to parse a [`ParamsDiff`] file.
-    #[error(transparent)] CantParseParamsDiffFile(serde_json::Error),
-    /// Returned when unable to parse a [`ParamsDiff`] string.
-    #[error(transparent)] CantParseParamsDiffString(serde_json::Error),
+    #[error(transparent)] CantParseParamsDiff(serde_json::Error),
     /// Returned when unable to load a [`JobContext`] file.
-    #[error(transparent)] CantLoadJobContextFile(std::io::Error),
+    #[error(transparent)] CantLoadJobContext(std::io::Error),
     /// Returned when unable to parse a [`JobContext`] file.
-    #[error(transparent)] CantParseJobContextFile(serde_json::Error),
-    /// Returned when unable to parse a [`JobContext`] string.
-    #[error(transparent)] CantParseJobContextString(serde_json::Error),
-    /// Returned when unable to load a [`Tests`] file.
-    #[error(transparent)] CantLoadTests(io::Error),
-    /// Returned when unable to parse a [`Tests`] file.
-    #[error(transparent)] CantParseTests(serde_json::Error),
+    #[error(transparent)] CantParseJobContext(serde_json::Error),
     /// Returned when the requested [`Profile`] isn't found.
     #[error("The requested Profile wasn't found.")]
     ProfileNotFound,
     /// Returned when a [`MakeHttpProxyError`] is encountered.
     #[cfg(feature = "http")]
-    #[error(transparent)] MakeHttpProxyError(#[from] MakeHttpProxyError),
-    /// Returned when a [`DoTestsError`] is encountered.
-    #[error(transparent)]
-    DoTestsError(#[from] DoTestsError)
+    #[error(transparent)] MakeHttpProxyError(#[from] MakeHttpProxyError)
 }
 
-/// Helper type to print task errors to JSON output.
-struct ErrorToSerdeString<E: Debug>(E);
-
-impl<E: Debug> Serialize for ErrorToSerdeString<E> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        format!("{:?}", self.0).serialize(serializer)
-    }
-}
-
-fn main() -> Result<ExitCode, CliError> {
+fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
     #[cfg(feature = "bundled-cleaner")]
@@ -223,29 +150,17 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Get and apply [`ParamsDiff`]s.
 
-    let profiles_config = match (args.profiles, args.profiles_string) {
-        (None      , None        ) => None,
-        (Some(path), None        ) => Some(serde_json::from_str::<ProfilesConfig>(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfilesFile)?).map_err(CliError::CantParseProfilesFile)?),
-        (None      , Some(string)) => Some(serde_json::from_str::<ProfilesConfig>(&string).map_err(CliError::CantParseProfilesString)?),
-        (Some(_)   , Some(_)     ) => unreachable!()
-    };
-
-    if let Some(profiles_config) = profiles_config {
+    if let Some(path) = args.profiles {
         cleaner = ProfiledCleanerConfig {
             cleaner,
-            profiles_config
+            profiles_config: serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfiles)?).map_err(CliError::CantParseProfiles)?
         }.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
     }
 
-    let params_diff = match (args.params_diff, args.params_diff_string) {
-        (None      , None        ) => None,
-        (Some(path), None        ) => Some(serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiffFile)?).map_err(CliError::CantParseParamsDiffFile)?),
-        (None      , Some(string)) => Some(serde_json::from_str::<ParamsDiff>(&string).map_err(CliError::CantParseParamsDiffString)?),
-        (Some(_)   , Some(_)     ) => unreachable!()
-    };
-
-    if let Some(params_diff) = params_diff {
-        params_diff.apply(&mut cleaner.params);
+    if let Some(path) = args.params_diff {
+        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiff)?)
+            .map_err(CliError::CantParseParamsDiff)?
+            .apply(&mut cleaner.params);
     }
 
     cleaner.params.flags.to_mut().extend(args.flag);
@@ -256,29 +171,10 @@ fn main() -> Result<ExitCode, CliError> {
 
     // Get the [`JobContext`].
 
-    let job_context = match (args.job_context, args.job_context_string) {
-        (None      , None        ) => Default::default(),
-        (Some(path), None        ) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadJobContextFile)?).map_err(CliError::CantParseJobContextFile)?,
-        (None      , Some(string)) => serde_json::from_str(&string).map_err(CliError::CantParseJobContextString)?,
-        (Some(_)   , Some(_)     ) => unreachable!()
+    let job_context = match args.job_context {
+        None       => Default::default(),
+        Some(path) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadJobContext)?).map_err(CliError::CantParseJobContext)?,
     };
-
-    // Testing and stuff.
-
-    if args.test_suitability {
-        cleaner.assert_suitability();
-        println!("The chosen cleaner is suitable to be the bundled cleaner!");
-        std::process::exit(0);
-    }
-
-    if !args.tests.is_empty() {
-        for test_path in args.tests {
-            serde_json::from_str::<Tests>(&std::fs::read_to_string(test_path).map_err(CliError::CantLoadTests)?).map_err(CliError::CantParseTests)?
-                .r#do(&cleaner)?;
-        }
-        println!("\nAll tests passed!");
-        std::process::exit(0);
-    }
 
     // Do the job.
 
@@ -296,22 +192,14 @@ fn main() -> Result<ExitCode, CliError> {
         1.. => args.threads
     };
 
-    let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<(Vec<u8>, Option<GetLazyTaskConfigError>)>()).collect::<(Vec<_>, Vec<_>)>();
+    let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, (Vec<u8>, std::io::Error)>>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<String, DoTaskError>>()).collect::<(Vec<_>, Vec<_>)>();
-
-    let mut some_ok  = false;
-    let mut some_err = false;
+    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let job_config = JobConfig {
         cleaner: &cleaner,
         context: &job_context,
-        unthreader: &match (args.unthread, args.unthread_ratelimit) {
-            (false, None   ) => UnthreaderMode::Multithread,
-            (false, Some(_)) => unreachable!(),
-            (true , None   ) => UnthreaderMode::Unthread,
-            (true , Some(d)) => UnthreaderMode::Ratelimit(Duration::from_secs_f64(d))
-        }.into(),
+        unthreader: &Unthreader::r#if(args.unthread),
         #[cfg(feature = "cache")]
         cache: Cache {
             inner: &args.cache.into(),
@@ -331,13 +219,13 @@ fn main() -> Result<ExitCode, CliError> {
 
         // Task getter thread.
 
-        std::thread::Builder::new().name("SmallLazyTaskConfig Getter".to_string()).spawn_scoped(s, || {
+        std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, || {
             let buf_ret_reciever = buf_ret_reciever;
             let buf_in_senders   = buf_in_senders  ;
             let mut biss = buf_in_senders.iter().cycle();
 
             for (url, bis) in args.urls.into_iter().zip(&mut biss) {
-                bis.send((url.into(), None)).expect("The current buffer in reciever to stay open while needed.");
+                bis.send(Ok(url.into())).expect("The current buffer in reciever to stay open while needed.");
             }
 
             let stdin = std::io::stdin();
@@ -367,9 +255,9 @@ fn main() -> Result<ExitCode, CliError> {
                                     buf.pop();
                                 }
                             }
-                            bis.send((buf, None)).expect("The current buffer in reciever to stay open while needed.");
+                            bis.send(Ok(buf)).expect("The current buffer in reciever to stay open while needed.");
                         },
-                        Err(e) => bis.send((buf, Some(e.into()))).expect("The current buffer in reciever to stay open while needed.")
+                        Err(e) => bis.send(Err((buf, e))).expect("The current buffer in reciever to stay open while needed.")
                     }
                 }
             }
@@ -377,99 +265,56 @@ fn main() -> Result<ExitCode, CliError> {
 
         // Worker threads.
 
-        buf_in_recievers.into_iter().zip(out_senders).enumerate().map(|(i, (bir, os))| {
+        for (i, (bir, os)) in buf_in_recievers.into_iter().zip(out_senders).enumerate() {
             let brs = buf_ret_sender.clone();
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
-                while let Ok((buf, err)) = bir.recv() {
-                    let ret = match err {
-                        None => {
-                            let maybe_task = job_config.make_small_lazy_task(SmallLazyTaskConfig::ByteSlice(&buf)).make();
+                while let Ok(x) = bir.recv() {
+                    let ret = match x {
+                        Ok(buf) => {
+                            let maybe_task = job_config.make_lazy_task(&buf).make();
                             // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
                             let _ = brs.send(buf);
                             match maybe_task {
-                                Ok(task) => task.r#do().map(Into::into),
-                                Err(e) => Err(e.into())
+                                Ok(task) => match task.r#do() {
+                                    Ok(x) => x.into(),
+                                    Err(e) => format!("-{e:?}")
+                                },
+                                Err(e) => format!("-{:?}", DoTaskError::from(e))
                             }
                         },
-                        Some(e) => Err(DoTaskError::from(MakeTaskError::from(MakeLazyTaskError::from(e))))
+                        Err((buf, e)) => {
+                            let _ = brs.send(buf);
+                            format!("-{:?}", DoTaskError::from(MakeTaskError::from(GetTaskError::from(e))))
+                        }
                     };
 
-                    os.send(ret).expect("The result out reciever to stay open while needed.");
+                    os.send(ret.into_boxed_str()).expect("The result out reciever to stay open while needed.");
                 }
             }).expect("Making threads to work fine.");
-        }).for_each(drop);
+        }
 
         // Stdout thread.
 
         std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, || {
-            let mut stdout = std::io::stdout().lock();
-
-            if args.json {
-                let mut first_job = true;
-
-                stdout.write_all(b"{\"Ok\":{\"urls\":[").expect("Writing JSON prelude to STDOUT to work.");
-
-                for or in {out_recievers}.iter().cycle() {
-                    match or.recv() {
-                        Ok(Ok(url)) => {
-                            if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
-                            serde_json::to_writer(&mut stdout, &Ok::<_, ()>(url)).expect("Writing task results to STDOUT to work.");
-                            some_ok = true;
-                        },
-                        Ok(Err(e)) => {
-                            if !first_job {stdout.write_all(b",").expect("Writing task result separators STDOUT to work.");}
-                            serde_json::to_writer(&mut stdout, &Err::<(), _>(ErrorToSerdeString(e))).expect("Writing task results to STDOUT to work.");
-                            some_err = true;
-                        },
-                        Err(_) => break
-                    }
-                    first_job = false;
+            let stdout = std::io::stdout().lock();
+            let buffer_size = match args.output_buffer {
+                Some(x) => x,
+                None => if stdout.is_terminal() {
+                    0
+                } else {
+                    8192
                 }
+            };
+            let mut stdout = BufWriter::with_capacity(buffer_size, stdout);
 
-                stdout.write_all(b"]}}").expect("Writing JSON epilogue to STDOUT to work.");
-            } else if (stdout.is_terminal() || args.unbuffer_output) && !args.buffer_output {
-                for or in {out_recievers}.iter().cycle() {
-                    match or.recv() {
-                        Ok(Ok(url)) => {
-                            stdout.write_all(url.as_bytes()).expect("Writing task results to STDOUT to work.");
-                            stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
-                            some_ok = true;
-                        },
-                        Ok(Err(e)) => {
-                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
-                            eprintln!("{e:?}");
-                            some_err = true;
-                        },
-                        Err(_) => break
-                    }
-                }
-            } else {
-                let mut stdout = BufWriter::with_capacity(args.buffer_size, stdout);
-
-                for or in {out_recievers}.iter().cycle() {
-                    match or.recv() {
-                        Ok(Ok(url)) => {
-                            stdout.write_all(url.as_bytes()).expect("Writing task results to STDOUT to work.");
-                            stdout.write_all(b"\n").expect("Writing newlines to STDOUT to work.");
-                            some_ok = true;
-                        },
-                        Ok(Err(e)) => {
-                            stdout.write_all(b"\n").expect("Writing blank lines to STDOUT to work.");
-                            stdout.flush().expect("Flushing STDOUT to work.");
-                            eprintln!("{e:?}");
-                            some_err = true;
-                        },
-                        Err(_) => break
-                    }
+            for or in {out_recievers}.iter().cycle() {
+                match or.recv() {
+                    Ok(x) => writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail."),
+                    Err(_) => break
                 }
             }
         }).expect("Making threads to work fine.");
     });
 
-    Ok(match (some_ok, some_err) {
-        (false, false) => 0,
-        (false, true ) => 1,
-        (true , false) => 0,
-        (true , true ) => 2
-    }.into())
+    Ok(())
 }

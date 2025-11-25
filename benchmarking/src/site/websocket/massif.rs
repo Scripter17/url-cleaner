@@ -47,10 +47,7 @@ impl Args {
             match std::net::TcpStream::connect("127.0.0.1:9148") {
                 Ok(_) => {
                     Command::new("websocat")
-                        .args([
-                            "ws://127.0.0.1:9148/clean_ws",
-                            "-0"
-                        ])
+                        .arg("ws://127.0.0.1:9148/clean_ws")
                         .stdin(std::fs::File::open(STDIN).unwrap())
                         .stdout(std::process::Stdio::null())
                         .stderr(std::process::Stdio::null())
@@ -58,11 +55,16 @@ impl Args {
 
                     drop(server);
 
+                    fs::remove_file(STDIN).unwrap();
+
                     return fs::File::open(out).unwrap();
                 },
                 Err(_) => std::thread::sleep(std::time::Duration::from_secs(1))
             }
         }
+
+        fs::remove_file(STDIN).unwrap();
+
         panic!("Server not found???")
     }
 }

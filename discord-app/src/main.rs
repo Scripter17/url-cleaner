@@ -57,13 +57,8 @@ struct Args {
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
     /// The ProfilesConfig file.
-    /// Cannot be used with --profiles-string.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
-    /// The ProfilesConfig string.
-    /// Cannot be used with --profiles.
-    #[arg(long, verbatim_doc_comment, value_name = "JSON STRING")]
-    profiles_string: Option<String>,
     /// The proxy to use for HTTP/HTTPS requests.
     #[cfg(feature = "http")]
     #[arg(long, verbatim_doc_comment)]
@@ -121,11 +116,9 @@ async fn main() {
     let cleaner_string = std::fs::read_to_string(args.cleaner).expect("The Cleaner file to be readable.");
     let cleaner = Box::leak(Box::new(serde_json::from_str::<Cleaner<'static>>(&cleaner_string).expect("The Cleaner string to be valid."))).borrowed();
 
-    let profiles_config_string = match (args.profiles, args.profiles_string) {
-        (None      , None        ) => "{}".to_string(),
-        (Some(path), None        ) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
-        (None      , Some(string)) => string,
-        (Some(_)   , Some(_)     ) => panic!("Can't have both --profiles and --profiles-string")
+    let profiles_config_string = match args.profiles {
+        None       => "{}".to_string(),
+        Some(path) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
     };
     let profiles_config: ProfilesConfig = serde_json::from_str(&profiles_config_string).expect("The ProfilesConfig to be valid.");
 
@@ -252,7 +245,7 @@ async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: &Cleaner<
             #[cfg(feature = "http")]
             http_client: &ctx.data().http_client
         },
-        lazy_task_configs: GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into()))
+        tasks: GET_URLS.captures_iter(&msg.content).map(|x| Ok(x.name("URL1").or(x.name("URL2")).expect("The regex to always match at least one.").as_str().into()))
     };
 
     let mut responses = Vec::new();

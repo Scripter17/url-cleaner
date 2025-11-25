@@ -1,7 +1,5 @@
 //! [`LazyTask`].
 
-use thiserror::Error;
-
 use crate::prelude::*;
 
 /// Cheap intermediate step between [`LazyTaskConfig`] and [`Task`] to allow using worker threads.
@@ -25,17 +23,6 @@ pub struct LazyTask<'j, 't> {
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     pub http_client: &'j HttpClient
-}
-
-/// The enum of errors that can happen when making a [`TaskConfig`].
-#[derive(Debug, Error)]
-pub enum MakeTaskError {
-    /// Returned when a [`MakeLazyTaskError`] is encountered.
-    #[error(transparent)]
-    MakeLazyTaskError(#[from] MakeLazyTaskError),
-    /// Returned when a [`MakeTaskConfigError`] is encountered.
-    #[error(transparent)]
-    MakeTaskConfigError(#[from] MakeTaskConfigError)
 }
 
 impl<'j> TryFrom<LazyTask<'j, '_>> for Task<'j> {
@@ -69,6 +56,7 @@ impl<'j> LazyTask<'j, '_> {
     }
 }
 
+#[cfg(feature = "extended-lazy-task-config")]
 impl<'j> From<Task<'j>> for LazyTask<'j, '_> {
     fn from(value: Task<'j>) -> Self {
         Self {

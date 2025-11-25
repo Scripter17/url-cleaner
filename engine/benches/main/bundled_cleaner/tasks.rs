@@ -28,7 +28,7 @@ fn make(c: &mut Criterion) {
             |b| b.iter_batched(
                 || Job {
                     config: job_config,
-                    lazy_task_configs: std::iter::repeat_n(bb(url), bb(10_000)).map(|url| bb(Ok(bb(url).into())))
+                    tasks: std::iter::repeat_n(bb(url), bb(10_000)).map(|url| bb(Ok(bb(url).into())))
                 },
                 |job| bb(job).into_iter().for_each(|x| {let _ = bb(x.expect("Ok").make());}),
                 criterion::BatchSize::SmallInput
@@ -42,7 +42,7 @@ fn make(c: &mut Criterion) {
             |b| b.iter_batched(
                 || Job {
                     config: job_config,
-                    lazy_task_configs: std::iter::repeat_n(bb(url), bb(10_000)).map(|url| bb(Ok(bb(url).as_bytes().into())))
+                    tasks: std::iter::repeat_n(bb(url), bb(10_000)).map(|url| bb(Ok(bb(url).as_bytes().into())))
                 },
                 |job| bb(job).into_iter().for_each(|x| {let _ = bb(x.expect("Ok").make());}),
                 criterion::BatchSize::SmallInput

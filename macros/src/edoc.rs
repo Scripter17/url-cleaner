@@ -97,7 +97,7 @@ impl Parse for Arg {
 impl std::fmt::Display for Arg {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::Path  (path  ) => write!(fmt, "{}", quote!(#path).to_string().replace(' ', "")),
+            Self::Path  (path  ) => write!(fmt, "{}", quote!(#path).to_string().replace(' ', "").replace("r#", "")),
             Self::Int   (int   ) => write!(fmt, "{int}" ),
             Self::String(string) => write!(fmt, "{string}")
         }

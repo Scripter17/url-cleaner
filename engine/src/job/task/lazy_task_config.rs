@@ -5,34 +5,32 @@ use std::str::FromStr;
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Visitor, MapAccess}};
+#[allow(unused_imports, reason = "Used in a doc comment.")]
 use url::Url;
 
 use crate::prelude::*;
 
-/// A cheaply deserializable form of [`TaskConfig`] mainly for use in [`Job`]s and [`JobConfig`]s.
+/// A cheap step between inputs and [`LazyTask`]s to let expensive deserialization be done in worker threads.
 ///
 /// Mainly used in 3 ways:
 ///
-/// 1. Given in an iterator to [`Job::lazy_task_configs`].
+/// 1. Given in an iterator to [`Job::tasks`].
 ///
 /// 2. Given one-by-one to [`JobConfig::make_lazy_task`].
 ///
 /// 3. Made into a [`TaskConfig`] with [`Self::make`].
 ///
-/// Because [`LazyTaskConfig`]s are extremely cheap to make from common sources of tasks, any API or server endpoint for doing [`Task`]s should take [`LazyTaskConfig`]s instead of [`TaskConfig`]s.
-///
-/// If using serde, the field should also be annotated with [`#[serde(borrow)]`](https://serde.rs/field-attrs.html#borrow) and the container should have whatever [`#[serde(bound(deserialize = "'a: 'de, 'de: 'a"))]`](https://serde.rs/field-attrs.html#borrow) makes it shut up.
-///
-/// [`#[serde(borrow)]`](https://serde.rs/field-attrs.html#borrow) only borrows if it's possible to do so, so accepting a JSON payload will properly unescape strings, allocating into a [`Self::String`] if needed.
+/// Enabling the non-default feature `extended-lazy-task-config` unlocks extra variants for [`TaskConfig`], [`Url`], and [`BetterUrl`] at the cost of tripling this type's size.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LazyTaskConfig<'t> {
     /// An already made [`TaskConfig`].
-    ///
-    /// Hopefully never useful but enum variants are basically free.
+    #[cfg(feature = "extended-lazy-task-config")]
     Made(TaskConfig),
     /// A [`Url`].
+    #[cfg(feature = "extended-lazy-task-config")]
     Url(Url),
     /// A [`BetterUrl`].
+    #[cfg(feature = "extended-lazy-task-config")]
     BetterUrl(BetterUrl),
     /// A [`str`] for use in [`TaskConfig::from_str`].
     ///
@@ -116,25 +114,25 @@ impl<'t> LazyTaskConfig<'t> {
     /// Simply calling [`Url::parse`] takes up a significant chunk of the time it takes to do a [`Job`].
     /// # Errors
     /// For each variant, uses thier respective [`Into::into`] or [`TryInto::try_into`] implementation.
-    pub fn make(self) -> Result<TaskConfig, MakeTaskConfigError> {
+    pub fn make(self) -> Result<TaskConfig, MakeTaskError> {
         Ok(match self {
-            LazyTaskConfig::Made     (task_config) =>    task_config,
-            LazyTaskConfig::Url      (url)         =>    url    .into(),
-            LazyTaskConfig::BetterUrl(url)         =>    url    .into(),
-            LazyTaskConfig::Str      (string)      =>    string .try_into()?,
-            LazyTaskConfig::String   (string)      => (&*string).try_into()?,
-            LazyTaskConfig::ByteSlice(bytes)       =>    bytes  .try_into()?,
-            LazyTaskConfig::Bytes    (bytes)       => (&*bytes ).try_into()?,
-            LazyTaskConfig::JsonValue(value)       =>    value  .try_into()?
+            #[cfg(feature = "extended-lazy-task-config")] LazyTaskConfig::Made     (task_config) =>    task_config,
+            #[cfg(feature = "extended-lazy-task-config")] LazyTaskConfig::Url      (url)         =>    url    .into(),
+            #[cfg(feature = "extended-lazy-task-config")] LazyTaskConfig::BetterUrl(url)         =>    url    .into(),
+            LazyTaskConfig::Str      (string) =>    string .try_into()?,
+            LazyTaskConfig::String   (string) => (&*string).try_into()?,
+            LazyTaskConfig::ByteSlice(bytes)  =>    bytes  .try_into()?,
+            LazyTaskConfig::Bytes    (bytes)  => (&*bytes ).try_into()?,
+            LazyTaskConfig::JsonValue(value)  =>    value  .try_into()?
         })
     }
 
     /// Convert [`Self::Str`] to [`Self::String`] and [`Self::ByteSlice`] to [`Self::Bytes`].
     pub fn into_owned(self) -> LazyTaskConfig<'static> {
         match self {
-            Self::Made     (x) => LazyTaskConfig::Made     (x),
-            Self::Url      (x) => LazyTaskConfig::Url      (x),
-            Self::BetterUrl(x) => LazyTaskConfig::BetterUrl(x),
+            #[cfg(feature = "extended-lazy-task-config")] Self::Made     (x) => LazyTaskConfig::Made     (x),
+            #[cfg(feature = "extended-lazy-task-config")] Self::Url      (x) => LazyTaskConfig::Url      (x),
+            #[cfg(feature = "extended-lazy-task-config")] Self::BetterUrl(x) => LazyTaskConfig::BetterUrl(x),
             Self::Str      (x) => LazyTaskConfig::String   (x.into()),
             Self::String   (x) => LazyTaskConfig::String   (x),
             Self::ByteSlice(x) => LazyTaskConfig::Bytes    (x.into()),
@@ -147,14 +145,14 @@ impl<'t> LazyTaskConfig<'t> {
 impl Serialize for LazyTaskConfig<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
-            Self::Made     (task_config) => task_config.serialize(serializer),
-            Self::Url      (url)         => url        .serialize(serializer),
-            Self::BetterUrl(url)         => url        .serialize(serializer),
-            Self::Str      (string)      => string     .serialize(serializer),
-            Self::String   (string)      => string     .serialize(serializer),
-            Self::Bytes    (bytes)       => bytes      .serialize(serializer),
-            Self::ByteSlice(bytes)       => bytes      .serialize(serializer),
-            Self::JsonValue(value)       => value      .serialize(serializer)
+            #[cfg(feature = "extended-lazy-task-config")] Self::Made     (task_config) => task_config.serialize(serializer),
+            #[cfg(feature = "extended-lazy-task-config")] Self::Url      (url)         => url        .serialize(serializer),
+            #[cfg(feature = "extended-lazy-task-config")] Self::BetterUrl(url)         => url        .serialize(serializer),
+            Self::Str      (string) => string.serialize(serializer),
+            Self::String   (string) => string.serialize(serializer),
+            Self::Bytes    (bytes)  => bytes .serialize(serializer),
+            Self::ByteSlice(bytes)  => bytes .serialize(serializer),
+            Self::JsonValue(value)  => value .serialize(serializer)
         }
     }
 }
@@ -210,18 +208,21 @@ impl<'de> Deserialize<'de> for LazyTaskConfig<'de> {
     }
 }
 
+#[cfg(feature = "extended-lazy-task-config")]
 impl From<TaskConfig> for LazyTaskConfig<'_> {
     fn from(value: TaskConfig) -> Self {
         Self::Made(value)
     }
 }
 
+#[cfg(feature = "extended-lazy-task-config")]
 impl From<Url> for LazyTaskConfig<'_> {
     fn from(value: Url) -> Self {
         Self::Url(value)
     }
 }
 
+#[cfg(feature = "extended-lazy-task-config")]
 impl From<BetterUrl> for LazyTaskConfig<'_> {
     fn from(value: BetterUrl) -> Self {
         Self::BetterUrl(value)
@@ -237,6 +238,12 @@ impl<'t> From<&'t str> for LazyTaskConfig<'t> {
 impl From<String> for LazyTaskConfig<'_> {
     fn from(value: String) -> Self {
         Self::String(value)
+    }
+}
+
+impl<'t> From<&'t String> for LazyTaskConfig<'t> {
+    fn from(value: &'t String) -> Self {
+        Self::Str(value)
     }
 }
 
@@ -258,6 +265,12 @@ impl<'t> From<&'t [u8]> for LazyTaskConfig<'t> {
 impl From<Vec<u8>> for LazyTaskConfig<'_> {
     fn from(value: Vec<u8>) -> Self {
         Self::Bytes(value)
+    }
+}
+
+impl<'t> From<&'t Vec<u8>> for LazyTaskConfig<'t> {
+    fn from(value: &'t Vec<u8>) -> Self {
+        Self::ByteSlice(value)
     }
 }
 

@@ -23,15 +23,8 @@ impl Args {
     
         let mut stdin = fs::OpenOptions::new().create(true).write(true).truncate(true).open(STDIN).unwrap();
 
-        write!(stdin, r#"{{"tasks":["#).unwrap();
-
-        let task_json = serde_json::to_string(&self.url).unwrap();
-
-        for i in 0..self.num {
-            if i != 0 {
-                write!(stdin, ",").unwrap();
-            }
-            write!(stdin, "{}", task_json).unwrap();
+        for _ in 0..self.num {
+            writeln!(stdin, "{}", self.url).unwrap();
         }
 
         write!(stdin, r#"]}}"#).unwrap();
@@ -67,11 +60,16 @@ impl Args {
 
                     drop(server);
 
+                    fs::remove_file(STDIN).unwrap();
+
                     return fs::File::open(out).unwrap();
                 },
                 Err(_) => std::thread::sleep(std::time::Duration::from_secs(1))
             }
         }
+
+        fs::remove_file(STDIN).unwrap();
+
         panic!("Server not found???")
     }
 }

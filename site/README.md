@@ -26,4 +26,4 @@ See [userscript.md](userscript.md) for details.
 
 ### API
 
-See the [API documentation](api.md) for how to interact with URL Cleaner Site.
+See the [API documentation](api.md) for how to interact with URL Cleaner Site with code.

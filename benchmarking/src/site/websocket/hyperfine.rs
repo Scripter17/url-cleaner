@@ -53,11 +53,16 @@ impl Args {
 
                     drop(server);
 
+                    fs::remove_file(STDIN).unwrap();
+
                     return fs::File::open(out).unwrap();
                 },
                 Err(_) => std::thread::sleep(std::time::Duration::from_secs(1))
             }
         }
+
+        fs::remove_file(STDIN).unwrap();
+
         panic!("Server not found???")
     }
 }

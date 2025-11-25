@@ -13,15 +13,13 @@ A GET endpoint that returns the following information as JSON.
 <!--cmd echo '```Rust'; cat site-types/src/info.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
 ```Rust
 /// Info about a URL Cleaner Site server.
-pub struct ServerInfo<'a> {
+pub struct ServerInfo {
     /// The link to the source code.
-    pub source_code: Cow<'a, BetterUrl>,
+    pub source_code: String,
     /// The version.
-    pub version: Cow<'a, str>,
+    pub version: String,
     /// The max payload size.
-    pub max_payload: u64,
-    /// The [`UnthreaderMode`] used when unthreading.
-    pub unthreader_mode: UnthreaderMode
+    pub max_payload: u64
 }
 ```
 <!--/cmd-->
@@ -34,41 +32,28 @@ A GET endpoint that returns the loaded `Cleaner` from before any profiles were a
 
 A GET endpoint that returns the loaded `ProfilesConfig`.
 
-## `/clean`
+## Cleaning
 
-A POST endpoint that takes a `CleanPayload` and returns a `SmallCleanResult`, both as JSON.
+For how tasks and results are formatted, see [this](../format.md).
 
-`SmallCleanResult` and `CleanResult` serialize and deserialize identically.
+### `/clean`
 
-Generally `SmallLazyTaskConfig`s are just strings.
+An HTTP POST endpoint where a `CleanConfig` is sent as JSON in the `clean` query parameter.
 
-See [`/clean_ws`](#clean_ws) for a WebSocket API.
+### `/clean_ws`
+
+A WebSocket endpoint where a `CleanConfig` is sent as JSON in the `clean` query parameter.
+
+Tasks are sent as either text or binary messages and their results are returned as text messages.
+
+Each message is treated as a separate stream of lines.
+
+The distribution of result lines in result messages is not guaranteed and should not be relied upon.
+
+### Types
 
 <!--cmd echo '```Rust'; cat site-types/src/clean.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
 ```Rust
-/// Used to construct a [`Job`].
-pub struct CleanPayload<'a> {
-    /// The [`LazyTaskConfig`]s to use.
-    pub tasks: Vec<SmallLazyTaskConfig<'a>>,
-    /// The [`CleanPayloadConfig`] with `#[serde(flatten)]` applied.
-    pub config: CleanPayloadConfig
-}
-
-/// [`CleanResult`] but small.
-pub type SmallCleanResult = Result<SmallCleanSuccess, CleanError>;
-
-/// [`CleanSuccess`] but small.
-pub struct SmallCleanSuccess {
-    /// The [`Task`] results.
-    pub urls: Vec<Result<String, String>>
-}
-
-/// The success state of doing a [`JobConfig`].
-pub struct CleanSuccess {
-    /// The [`Task`] results.
-    pub urls: Vec<Result<BetterUrl, String>>
-}
-
 /// The error state of doing a [`JobConfig`].
 pub struct CleanError {
     /// The HTTP status code.
@@ -77,8 +62,8 @@ pub struct CleanError {
     pub message: String
 }
 
-/// When used in `/clean_ws`, each field is sent as a query parameter with JSON values.
-pub struct CleanPayloadConfig {
+/// Config for a `/clean` or `/clean_ws` payload.
+pub struct CleanConfig {
     /// The [`JobContext`] to use.
     ///
     /// Defaults to [`JobContext::default`].
@@ -131,9 +116,7 @@ pub struct CleanPayloadConfig {
 
 Authentication can be setup by giving a JSON `Accounts` file to `--accounts`.
 
-Authentication is sent as a username and password in the URL like `http://username:password@127.0.0.1/clean`.
-
-This is the same for both [`/clean`](#clean) and [`/clean_ws`](#clean_ws).
+Authentication is sent as a username and password in the URL like `http://username:password@example.com`.
 
 <!--cmd echo '```Rust'; cat site-types/src/auth.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
 ```Rust
@@ -162,17 +145,3 @@ pub enum Auth {
     }
 ```
 <!--/cmd-->
-
-## `/clean_ws`
-
-Like [`/clean`](#clean) but uses WebSockets.
-
-The `CleanPayloadConfig` is set with a query parameter for each field either omitted for the default value or set to a JSON string.
-
-Tasks are sent as strings with any number of lines. Each line contains one task.
-
-Results are returned in the same order they are recieved as strings of lines, each containing `Ok` or `Err`, a tab, then the result payload. Every line, even the last one, is followed by a newline.
-
-Only the order in which result lines are sent is defined. A group of 3 tasks may be returned as a group of 2 results and a group of 1 result.
-
-Users should be careful to only close the connection once either all results are recieved or once further results are no longer needed.

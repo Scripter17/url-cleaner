@@ -42,6 +42,8 @@ impl Args {
             .stderr(std::process::Stdio::null())
             .spawn().unwrap().wait().unwrap();
 
+        fs::remove_file(STDIN).unwrap();
+
         fs::File::open(out).unwrap()
     }
 }

@@ -1,15 +1,16 @@
 //! [`Task`] and co.
 
+use std::io;
+use std::error::Error;
+
 use thiserror::Error;
 
 use crate::prelude::*;
 
 pub mod lazy_task_config;
-pub mod small_lazy_task_config;
 pub mod task_config;
 pub mod task_context;
 pub mod lazy_task;
-pub mod small_lazy_task;
 pub mod task_state;
 pub mod task_state_view;
 pub mod scratchpad;
@@ -17,16 +18,14 @@ pub mod scratchpad;
 /// Prelude module for importing everything here better.
 pub mod prelude {
     pub use super::lazy_task_config::*;
-    pub use super::small_lazy_task_config::*;
     pub use super::task_config::*;
     pub use super::task_context::*;
     pub use super::lazy_task::*;
-    pub use super::small_lazy_task::*;
     pub use super::task_state::*;
     pub use super::task_state_view::*;
     pub use super::scratchpad::*;
 
-    pub use super::{Task, DoTaskError};
+    pub use super::{Task, GetTaskError, MakeTaskError, DoTaskError};
 }
 
 /// A task to be done with [`Self::do`].
@@ -73,13 +72,43 @@ impl Task<'_> {
     }
 }
 
+/// The enum of errors the [`Job::tasks`] iterator can return.
+#[derive(Debug, Error)]
+pub enum GetTaskError {
+    /// Returned when an [`io::Error`] is encountered.
+    #[error(transparent)]
+    IoError(#[from] io::Error),
+    /// Any other error that your [`LazyTaskConfig`] source can return.
+    #[error(transparent)]
+    Other(#[from] Box<dyn Error + Send + Sync>)
+}
+
+/// The enum of errors that can happen when making a [`TaskConfig`].
+#[derive(Debug, Error)]
+pub enum MakeTaskError {
+    /// Returned when a [`GetTaskError`] is encountered.
+    #[error(transparent)]
+    GetTaskError(#[from] GetTaskError),
+    /// Returned when a [`url::ParseError`] is encountered.
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+    /// Returned when a [`std::str::Utf8Error`] is encountered.
+    #[error(transparent)]
+    Utf8Error(#[from] std::str::Utf8Error),
+    /// Returned when a [`serde_json::Error`] is encountered.
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error)
+}
+
 /// The enums of errors that [`Task::do`] can return.
 #[derive(Debug, Error)]
 pub enum DoTaskError {
-    /// Returned when an [`ApplyCleanerError`] is encountered.
-    #[error(transparent)] ApplyCleanerError(#[from] ApplyCleanerError),
     /// Returned when an [`MakeTaskError`] is encountered.
-    #[error(transparent)] MakeTaskError(#[from] MakeTaskError)
+    #[error(transparent)]
+    MakeTaskError(#[from] MakeTaskError),
+    /// Returned when an [`ApplyCleanerError`] is encountered.
+    #[error(transparent)]
+    ApplyCleanerError(#[from] ApplyCleanerError)
 }
 
 /// Helper macro to make docs briefer.

@@ -14,8 +14,8 @@ pub struct Args {
     pub num: usize
 }
 
-const DIR  : &str = "benchmark-results/cli/massif/";
-const STDIN: &str = "benchmark-results/cli/massif/stdin.txt";
+const DIR  : &str = "benchmark-results/cli/callgrind/";
+const STDIN: &str = "benchmark-results/cli/callgrind/stdin.txt";
 
 impl Args {
     pub fn r#do(self) -> fs::File {
@@ -29,13 +29,14 @@ impl Args {
 
         drop(stdin);
 
-        let out = format!("{DIR}/massif.out-{}-{}", self.name, self.num);
+        let out = format!("{DIR}/callgrind.out-{}-{}", self.name, self.num);
 
         Command::new("valgrind")
             .args([
                 "-q",
-                "--tool=massif",
-                &format!("--massif-out-file={out}"),
+                "--tool=callgrind",
+                "--separate-threads=yes",
+                &format!("--callgrind-out-file={out}"),
                 "target/release/url-cleaner"
             ])
             .stdin(fs::File::open(STDIN).unwrap())
@@ -48,3 +49,4 @@ impl Args {
         fs::File::open(out).unwrap()
     }
 }
+

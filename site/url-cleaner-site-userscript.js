@@ -13,25 +13,38 @@
 
 window.config = {
 	instance   : "ws://localhost:9149/clean_ws", // Login info can be added with `username:password@` before the `localhost`.
-	profile    : null, // The Profile name    (default: null)
-	params_diff: null, // The ParamsDiff      (default: null)
-	read_cache : true, // Read from the cache (default: true)
-	write_cache: true, // Write to the cache  (default: true)
-	cache_delay: true, // Enable cache delay  (default: true)
-	unthread   : true, // Enable unthreading  (default: true)
-	extra_debug: false
+	payload_config: {
+		profile    : null, // The Profile name    (default: null)
+		params_diff: null, // The ParamsDiff      (default: null)
+		unthread   : true, // Enable unthreading  (default: true)
+		read_cache : true, // Read from the cache (default: true)
+		write_cache: true, // Write to the cache  (default: true)
+		cache_delay: true, // Enable cache delay  (default: true)
+	},
+	debug: false
 };
 
 (() => {
-	cleaned_elements = new WeakMap(); // Elements that have been cleaned (or errored) and the hrefs they were set to.
+	cleaned_elements = new WeakMap(); // Elements that have been cleaned (or errored) and the hrefs they were set to (or left at).
 	queue = []; // Elements in order of soonest next task result.
+	click_on_clean = null; // When an element is unclean when clicked, stop the click and put it here to click it once cleaned.
+
+	// Set up the URL for the socket.
+	let socket_url = new URL(window.config.instance);
+	let config = {
+		"context": {
+			"source_host": window.location.hostname
+		},
+		...window.config.payload_config
+	};
+	socket_url.searchParams.append("config", JSON.stringify(config));
 
 	// Send an element from the queue to Site, doing shortcuts and context as needed.
 	function send_element(element) {
 
 		if (element.href.startsWith("#")) {
-			if (window.config.extra_debug) {
-				console.debug("[URLC] Ignoring element", element, "because it's URL is just an anchor.");
+			if (window.config.debug) {
+				console.debug("[URLC] Ignoring anchor:", element);
 			}
 			return;
 		}
@@ -70,7 +83,7 @@ window.config = {
 			task = element.href.replace(/i\/web|i\/user\/\d+/g, element.parentElement.querySelector("[href*='/i/user/']").innerHTML.replace("@", ""));
 		}
 
-		if (window.config.extra_debug) {
+		if (window.config.debug) {
 			console.debug("[URLC] Sending task", task, "for element", element);
 		}
 
@@ -78,90 +91,124 @@ window.config = {
 		socket.send(task);
 	}
 
-	// Set up the URL for the socket.
-	let socket_url = new URL(window.config.instance);
-	socket_url.searchParams.append("context", JSON.stringify({"source_host": window.location.hostname}));
-	if (window.config.profile     !== null ) {socket_url.searchParams.append("profile"    , JSON.stringify(window.config.profile    ));}
-	if (window.config.params_diff !== null ) {socket_url.searchParams.append("params_diff", JSON.stringify(window.config.params_diff));}
-	if (window.config.read_cache  !== true ) {socket_url.searchParams.append("read_cache" , JSON.stringify(window.config.read_cache ));}
-	if (window.config.write_cache !== true ) {socket_url.searchParams.append("write_cache", JSON.stringify(window.config.write_cache));}
-	if (window.config.cache_delay !== false) {socket_url.searchParams.append("cache_delay", JSON.stringify(window.config.cache_delay));}
-	if (window.config.unthread    !== false) {socket_url.searchParams.append("unthread"   , JSON.stringify(window.config.unthread   ));}
+	// Stops clicks on dirty links and remembers them to click on them later.
+	function dirty_click_delayer(e) {
+		if (socket.readyState == 1 && queue.indexOf(e.target) != -1) {
+			if (window.config.debug) {
+				console.debug("[URLC] Delaying click for unclean element:", e.target);
+			}
+			e.preventDefault();
+			click_on_clean = e.target;
+		}
+	}
 
-	// Make the socket.
-	let socket = new WebSocket(socket_url);
+	// Attach the dirty click delayer.
+	window.addEventListener("click", dirty_click_delayer);
 
-	// Observe all changes to the page.
-	let observer = new MutationObserver(function(mutations) {
-		mutations.forEach(function(mutation) {
-			if (mutation.type == "attributes") {
-				send_element(mutation.target);
-			} else if (mutation.type == "childList") {
-				for (let node of mutation.addedNodes) {
-					if (node.nodeType == 1) {
-						if (node.href) {
-							send_element(node);
-						}
-						for (element of node.querySelectorAll("[href]")) {
-							send_element(element);
-						}
+	// Observing changes to href attributes.
+	let attribute_observer = new MutationObserver(function(mutations) {
+		for (let mutation of mutations) {
+			send_element(mutation.target);
+		}
+	});
+
+	// Observing changes to the node tree.
+	let tree_observer = new MutationObserver(function(mutations) {
+		for (let mutation of mutations) {
+			for (let node of mutation.addedNodes) {
+				if (node.nodeType == 1) {
+					if (node.href) {
+						send_element(node);
+					}
+					for (element of node.querySelectorAll("[href]")) {
+						send_element(element);
 					}
 				}
 			}
-		});
+		}
 	});
+
+	// Make the socket.
+	let socket = new WebSocket(socket_url);
 
 	// When the socket opens, send all existing links.
 	socket.addEventListener("open", function() {
 		console.debug("[URLC] Opened socket to", socket_url.href);
 
 		// Watch changes to any href attribute.
-		observer.observe(document.documentElement, {
+		attribute_observer.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ["href"],
 			subtree: true
 		});
 
 		// Watch changes to the node tree.
-		observer.observe(document.documentElement, {
+		tree_observer.observe(document.documentElement, {
 			subtree: true,
 			childList: true
 		});
 
+		// Clean all existing links.
 		for (element of document.links) {
 			send_element(element);
 		}
 	});
 
-	// WHen getting a message, apply the clean.
+	// When getting a message, apply the clean.
 	socket.addEventListener("message", function(message) {
-		for (line of message.data.trimEnd().split("\n")) {
-			let [status, payload] = line.split("\t");
-			let element = queue.shift();
-			if (window.config.extra_debug) {
-				console.debug("[URLC] Got", status, "with", payload, "for element", element);
-			}
-			if (status == "Ok") {
-				cleaned_elements.set(element, payload);
-				element.href = payload;
-			} else if (status == "Err") {
-				cleaned_elements.set(element, element.href);
+		if (typeof message.data === "string") {
+			for (line of message.data.trimEnd().split("\n")) {
+				let element = queue.shift();
+				if (line.startsWith("-")) {
+					console.error("[URLC] Got error", line, "for element", element);
+					cleaned_elements.set(element, element.href);
+				} else {
+					if (window.config.debug) {
+						console.debug("[URLC] Got success", line, "for element", element);
+					}
+					cleaned_elements.set(element, line);
+					if (element.href != line) {
+							element.href = line;
+					}
+				}
+
+				// If the element was clicked when dirty (and thus had the click intercepted), click it.
+				if (element == click_on_clean) {
+					if (window.config.debug) {
+						console.debug("[URLC] Redoing delayed click for now clean element:", element);
+					}
+					element.click();
+					click_on_clean = null;
+				}
 			}
 		}
 	});
 
 	// Print a message when the socket is closing.
-	socket.addEventListener("close", function() {
-		console.debug("[URLC] Closing socket.");
+	socket.addEventListener("close", function(e) {
+		if (window.config.debug) {
+			console.debug("[URLC] Closing socket:", e);
+			attribute_observer.disconnect();
+			tree_observer.disconnect();
+			window.removeEventListener(dirty_click_delayer);
+		}
 	});
 
+	// Print a message when the socket errors.
 	socket.addEventListener("error", function(e) {
-		console.error("[URLC] Socket error:", e);
-	})
+		if (window.config.debug) {
+			console.error("[URLC] Socket error:", e);
+			attribute_observer.disconnect();
+			tree_observer.disconnect();
+			window.removeEventListener(dirty_click_delayer);
+		}
+	});
 
 	// Close the socket and disconnect the observer.
 	window.addEventListener("beforeunload", () => {
+		if (window.config.debug) {
+			console.debug("[URLC] Doing beforeunload cleanup.");
+		}
 		socket.close();
-		observer.disconnect();
 	});
 })();

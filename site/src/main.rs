@@ -5,8 +5,6 @@ use std::path::PathBuf;
 use std::fs::read_to_string;
 use std::str::FromStr;
 use std::num::NonZero;
-use std::sync::LazyLock;
-use std::borrow::Cow;
 
 #[macro_use] extern crate rocket;
 use rocket::{
@@ -21,7 +19,6 @@ use clap::Parser;
 
 use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::*;
-use better_url::BetterUrl;
 
 mod index;
 mod info;
@@ -29,6 +26,7 @@ mod cleaner;
 mod profiles;
 mod clean;
 mod clean_ws;
+mod util;
 
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_PAYLOAD: &str = "25MiB";
@@ -36,11 +34,6 @@ const DEFAULT_MAX_PAYLOAD: &str = "25MiB";
 const DEFAULT_IP         : &str = "127.0.0.1";
 /// The default port to listen to.
 const DEFAULT_PORT       : u16  = 9149;
-
-/// An [`Unthreader`] that doesn't do any unthreading.
-///
-/// Used when unthrading is defaulted to or set to off.
-static NO_UNTHREADER: LazyLock<Unthreader> = LazyLock::new(|| UnthreaderMode::Multithread.into());
 
 /// Clap doesn't like `<rocket::data::ByteUnit as FromStr>::Error`.
 fn parse_byte_unit(s: &str) -> Result<rocket::data::ByteUnit, String> {
@@ -73,13 +66,8 @@ struct Args {
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
     /// The ProfilesConfig file.
-    /// Cannot be used with --profiles-string.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
-    /// The ProfilesConfig string.
-    /// Cannot be used with --profiles.
-    #[arg(long, value_name = "JSON STRING")]
-    profiles_string: Option<String>,
     /// The max size of a POST request to the `/clean` endpoint.
     #[arg(long, verbatim_doc_comment, default_value = DEFAULT_MAX_PAYLOAD, value_parser = parse_byte_unit)]
     max_payload: rocket::data::ByteUnit,
@@ -97,9 +85,6 @@ struct Args {
     #[cfg(feature = "cache")]
     #[arg(long, verbatim_doc_comment, default_value = "url-cleaner-site-cache.sqlite", value_name = "PATH")]
     cache: PathBuf,
-    /// When unthreading, also ratelimit unthreaded things.
-    #[arg(long, verbatim_doc_comment, value_name = "SECONDS")]
-    unthread_ratelimit: Option<f64>,
     /// Amount of threads to process tasks in.
     /// Zero uses the CPU's thread count.
     #[arg(long, verbatim_doc_comment, default_value_t = 0)]
@@ -137,9 +122,9 @@ struct ServerConfig {
     profiled_cleaner: ProfiledCleaner<'static>,
     /// The string [`ProfilesConfig`] used.
     profiles_config_string: String,
-    /// The number of threads to spawn for each [`CleanPayload`].
+    /// The number of threads to spawn for clean.
     threads: NonZero<usize>,
-    /// The max size for a [`CleanPayload`]'s JSON representation.
+    /// The max size for a clean payload.
     max_payload: rocket::data::ByteUnit,
     /// The [`Accounts`] to use.
     accounts: Accounts
@@ -148,6 +133,8 @@ struct ServerConfig {
 /// The state of the server.
 #[derive(Debug)]
 struct ServerState {
+    /// The [`Unthreader`] to use.
+    unthreader: Unthreader,
     /// The [`ServerConfig`] to use.
     config: ServerConfig,
     /// The [`Cache`] to use.
@@ -155,9 +142,7 @@ struct ServerState {
     inner_cache: InnerCache,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    http_client: HttpClient,
-    /// The [`Unthreader] to use.
-    unthreader: Unthreader
+    http_client: HttpClient
 }
 
 /// Make the server.
@@ -173,16 +158,14 @@ async fn rocket() -> _ {
     // For my personal server this saves about 500KB.
     let cleaner = Box::leak(Box::new(serde_json::from_str::<Cleaner<'static>>(&cleaner_string).expect("The cleaner file to contain a valid Cleaner."))).borrowed();
 
-    let profiles_config_string = match (args.profiles, args.profiles_string) {
-        (None      , None        ) => "{}".into(),
-        (Some(path), None        ) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
-        (None      , Some(string)) => string,
-        (Some(_)   , Some(_)     ) => panic!("Cannot have both --profiles and --profiles-string.")
+    let profiles_config_string = match args.profiles {
+        None       => "{}".into(),
+        Some(path) => std::fs::read_to_string(path).expect("The ProfilesConfig file to be readable."),
     };
     let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig to be a valid ProfilesConfig.");
     let profiled_cleaner = ProfiledCleanerConfig { cleaner, profiles_config }.make();
 
-    let server_state = ServerState {
+    let state: &'static ServerState = Box::leak(Box::new(ServerState {
         config: ServerConfig {
             cleaner_string,
             profiled_cleaner,
@@ -194,15 +177,12 @@ async fn rocket() -> _ {
                 None => Default::default()
             }
         },
+        unthreader: Unthreader::on(),
         #[cfg(feature = "cache")]
         inner_cache: args.cache.into(),
         #[cfg(feature = "http")]
         http_client: HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid.")),
-        unthreader: match args.unthread_ratelimit {
-            None    => UnthreaderMode::Unthread,
-            Some(d) => UnthreaderMode::Ratelimit(std::time::Duration::from_secs_f64(d))
-        }.into()
-    };
+    }));
 
     let tls = match (args.key, args.cert) {
         (Some(key), Some(cert)) => {
@@ -218,10 +198,10 @@ async fn rocket() -> _ {
     rocket::custom(rocket::Config {
         address: args.ip,
         port: args.port,
-        limits: Limits::default()
-            .limit("json", args.max_payload)
-            .limit("string", args.max_payload),
+        limits: Limits::default().limit("bytes", args.max_payload).limit("string", args.max_payload),
         tls,
         ..rocket::Config::default()
-    }).mount("/", routes![index::index, info::info, cleaner::cleaner, profiles::profiles, clean::clean, clean_ws::clean_ws]).manage(server_state)
+    })
+        .mount("/", routes![index::index, info::info, cleaner::cleaner, profiles::profiles, clean::clean, clean_ws::clean_ws])
+        .manage(state)
 }

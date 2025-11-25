@@ -23,13 +23,15 @@ URL Cleaner currently has 3 official frontends:
 
 You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
 
+When doing so, please try to use the [standard format](format.md).
+
 ## Bundled Cleaner
 
 By default, URL Cleaner bundles a cleaner uncreatively called the Bundled Cleaner.
 
 The Bundled Cleaner is meant for general purpose cleaning of URLs you're likely to click on/send to friends and has various flags to allow features you only sometimes want.
 
-For more information, see the [Bundled Cleaner's documentation](bundled_cleaner.md).
+For more information, see the [Bundled Cleaner's documentation](bundled_cleaner.md) and its [benchmarks](benchmarksmd).
 
 ## Privacy
 

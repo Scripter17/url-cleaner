@@ -1,29 +1,20 @@
 //! [`Job`] and co.
 
-use std::io;
-use std::error::Error;
-
-use thiserror::Error;
-
 use crate::prelude::*;
 
-pub mod small_job;
 pub mod job_config;
 pub mod job_context;
 pub mod job_into_iterator;
-pub mod small_job_into_iterator;
 pub mod task;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
-    pub use super::small_job::*;
     pub use super::job_config::*;
     pub use super::job_context::*;
     pub use super::job_into_iterator::*;
-    pub use super::small_job_into_iterator::*;
     pub use super::task::prelude::*;
 
-    pub use super::{Job, GetLazyTaskConfigError, MakeLazyTaskError};
+    pub use super::Job;
 }
 
 /// The main way to turn [`LazyTaskConfig`]s into [`LazyTask`]s to be [`LazyTask::make`]d and [`Task::do`]ne.
@@ -67,7 +58,7 @@ pub mod prelude {
 #[cfg_attr(feature = "http"  , doc = "        http_client: &Default::default()")]
 ///     },
 ///     // The actual URLs, well, "tasks", which are a URL and some context, to clean/"do".
-///     lazy_task_configs: [
+///     tasks: [
 ///         Ok("https://example.com?utm_source=url_cleaner".into())
 ///     ]
 /// };
@@ -78,40 +69,21 @@ pub mod prelude {
 /// }
 /// ```
 #[derive(Debug, Clone, Copy)]
-pub struct Job<'j, 't, I: IntoIterator<Item = Result<LazyTaskConfig<'t>, GetLazyTaskConfigError>>> {
-    /// The [`JobConfig`] whose [`JobConfig::make_lazy_task`] each [`LazyTaskConfig`] from [`Self::lazy_task_configs`] is given to.
+pub struct Job<'j, 't, I: IntoIterator<Item = Result<LazyTaskConfig<'t>, GetTaskError>>> {
+    /// The [`JobConfig`] whose [`JobConfig::make_lazy_task`] each [`LazyTaskConfig`] from [`Self::tasks`] is given to.
     pub config: JobConfig<'j>,
     /// The source of [`LazyTaskConfig`]s to turn into [`LazyTask`]s via [`Self::config`]'s [`JobConfig::make_lazy_task`].
-    pub lazy_task_configs: I
+    pub tasks: I
 }
 
-impl<'j, 't, I: IntoIterator<Item = Result<LazyTaskConfig<'t>, GetLazyTaskConfigError>>> IntoIterator for Job<'j, 't, I> {
+impl<'j, 't, I: IntoIterator<Item = Result<LazyTaskConfig<'t>, GetTaskError>>> IntoIterator for Job<'j, 't, I> {
     type IntoIter = JobIntoIterator<'j, 't, I::IntoIter>;
-    type Item = Result<LazyTask<'j, 't>, MakeLazyTaskError>;
+    type Item = Result<LazyTask<'j, 't>, GetTaskError>;
 
     fn into_iter(self) -> Self::IntoIter {
         JobIntoIterator {
             config: self.config,
-            lazy_task_configs: self.lazy_task_configs.into_iter()
+            tasks: self.tasks.into_iter()
         }
     }
-}
-
-/// The enum of errors the [`Job::lazy_task_configs`] iterator can return.
-#[derive(Debug, Error)]
-pub enum GetLazyTaskConfigError {
-    /// Returned when an [`io::Error`] is encountered.
-    #[error(transparent)]
-    IoError(#[from] io::Error),
-    /// Any other error that your [`LazyTaskConfig`] source can return.
-    #[error(transparent)]
-    Other(#[from] Box<dyn Error + Send + Sync>)
-}
-
-/// The enum of errors that can happen when trying to make a [`Task`].
-#[derive(Debug, Error)]
-pub enum MakeLazyTaskError {
-    /// Returned when a [`GetLazyTaskConfigError`] is encountered.
-    #[error(transparent)]
-    GetLazyTaskConfigError(#[from] GetLazyTaskConfigError)
 }

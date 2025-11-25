@@ -4,7 +4,6 @@ use std::str::FromStr;
 
 use serde::{Serialize, Deserialize};
 use url::Url;
-use thiserror::Error;
 
 use crate::prelude::*;
 
@@ -49,7 +48,7 @@ pub struct TaskConfig {
 string_or_struct_magic!(TaskConfig);
 
 impl TryFrom<LazyTaskConfig<'_>> for TaskConfig {
-    type Error = MakeTaskConfigError;
+    type Error = MakeTaskError;
 
     /// [`LazyTaskConfig::make`].
     /// # Errors
@@ -57,23 +56,6 @@ impl TryFrom<LazyTaskConfig<'_>> for TaskConfig {
     fn try_from(value: LazyTaskConfig) -> Result<TaskConfig, Self::Error> {
         value.make()
     }
-}
-
-/// The enum of errors that can happen when making a [`TaskConfig`].
-#[derive(Debug, Error)]
-pub enum MakeTaskConfigError {
-    /// Returned when a [`url::ParseError`] is encountered.
-    #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
-    /// Returned when a [`std::str::Utf8Error`] is encountered.
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-    /// Returned when a [`serde_json::Error`] is encountered.
-    #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when a [`GetLazyTaskConfigError`] is encountered.
-    #[error(transparent)]
-    GetLazyTaskConfigError(#[from] GetLazyTaskConfigError)
 }
 
 impl From<Url> for TaskConfig {
@@ -97,7 +79,7 @@ impl From<BetterUrl> for TaskConfig {
 }
 
 impl FromStr for TaskConfig {
-    type Err = MakeTaskConfigError;
+    type Err = MakeTaskError;
 
     /// If `s` starts with `{` or `"`, deserializes it as JSON using [`serde_json::from_str`].
     ///
@@ -125,7 +107,7 @@ impl TryFrom<&str> for TaskConfig {
 }
 
 impl TryFrom<&[u8]> for TaskConfig {
-    type Error = MakeTaskConfigError;
+    type Error = MakeTaskError;
 
     /// If `value` starts with `{` or `"`, deserializes it as JSON using [`serde_json::from_slice`].
     ///
