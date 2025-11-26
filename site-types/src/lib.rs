@@ -3,11 +3,16 @@
 //! Can be used to parse its output.
 
 pub mod clean;
-pub use clean::*;
-pub mod auth;
-pub use auth::*;
 pub mod info;
-pub use info::*;
-#[cfg(feature = "server")]
-pub mod server;
 pub(crate) mod util;
+
+#[cfg(feature = "rocket")]
+pub mod rocket;
+
+/// Prelude module for importing everything here better.
+pub mod prelude {
+    pub use super::clean::*;
+    pub use super::info::*;
+
+    pub(crate) use super::util::*;
+}

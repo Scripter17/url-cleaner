@@ -10,22 +10,12 @@ impl<'a> ByteLines<'a> {
 impl<'a> Iterator for ByteLines<'a> {
     type Item = &'a [u8];
 
-    #[expect(clippy::indexing_slicing, reason = "Always in bounds.")]
     fn next(&mut self) -> Option<Self::Item> {
-        use std::ops::Bound;
-
-        if self.0.is_empty() {
-            None
-        } else {
-            let ret = self.0.split(|x| *x == b'\n').next()?;
-            if ret.len() < self.0.len() {
-                self.0 = &self.0[(Bound::Excluded(ret.len()), Bound::Unbounded)];
-                Some(ret.strip_suffix(b"\r").unwrap_or(ret))
-            } else {
-                self.0 = &[];
-                Some(ret)
-            }
-        }
+        let ret = self.0.split_inclusive(|x| *x == b'\n').next()?;
+        self.0 = self.0.strip_prefix(ret).expect("This to not even generate a panic handler.");
+        let Some(ret) = ret.strip_suffix(b"\n") else {return Some(ret);};
+        let Some(ret) = ret.strip_suffix(b"\r") else {return Some(ret);};
+        Some(ret)
     }
 }
 
@@ -56,4 +46,3 @@ mod tests {
         test!("a\r\nb\r\n\r\n");
     }
 }
-

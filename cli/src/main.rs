@@ -30,7 +30,7 @@ use url_cleaner_engine::prelude::*;
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[derive(Debug, Parser)]
 struct Args {
-    /// The URLs to clean before STDIN.
+    /// The tasks to clean before STDIN.
     ///
     /// The following are all equivalent:
     ///
@@ -44,7 +44,7 @@ struct Args {
     ///
     /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
-    urls: Vec<String>,
+    tasks: Vec<String>,
     /// The config file to use.
     /// Omit to use the built in bundled cleaner.
     #[cfg(feature = "bundled-cleaner")]
@@ -54,11 +54,7 @@ struct Args {
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
-    /// The size of the STDOUT buffer.
-    /// When STDOUT is a terminal, defaults to 0.
-    /// Otherwise defaults to 8192.
-    #[arg(long, verbatim_doc_comment)]
-    output_buffer: Option<usize>,
+
     /// The ProfilesConfig file.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
@@ -78,6 +74,7 @@ struct Args {
     /// Applied after Profiles and ParamsDiff.
     #[arg(short, long, verbatim_doc_comment, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
+
     /// The JobContext file to use.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     job_context: Option<PathBuf>,
@@ -85,6 +82,7 @@ struct Args {
     #[cfg(feature = "http")]
     #[arg(long, verbatim_doc_comment)]
     proxy: Option<HttpProxyConfig>,
+
     /// The path of the cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, verbatim_doc_comment, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
@@ -104,6 +102,7 @@ struct Args {
     #[cfg(feature = "cache")]
     #[arg(long, verbatim_doc_comment)]
     cache_delay: bool,
+
     /// Make HTTP requests and cache reads happen one after another instead of in parallel.
     /// Useful for not leaking the thread count.
     #[arg(long, verbatim_doc_comment)]
@@ -112,7 +111,13 @@ struct Args {
     /// Zero uses the CPU's thread count.
     /// So on a 2 core 4 thread system it uses 4 threads.
     #[arg(long, verbatim_doc_comment, default_value_t = 0)]
-    threads: usize
+    threads: usize,
+
+    /// The size of the STDOUT buffer.
+    /// When STDOUT is a terminal, defaults to 0.
+    /// Otherwise defaults to 8192.
+    #[arg(long, verbatim_doc_comment)]
+    output_buffer: Option<usize>
 }
 
 /// The enum of errors [`main`] can return.
@@ -192,9 +197,9 @@ fn main() -> Result<(), CliError> {
         1.. => args.threads
     };
 
-    let (buf_in_senders, buf_in_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, (Vec<u8>, std::io::Error)>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (in_senders    , in_recievers    ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, (Vec<u8>, std::io::Error)>>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
-    let (out_senders, out_recievers) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (out_senders   , out_recievers   ) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let job_config = JobConfig {
         cleaner: &cleaner,
@@ -213,19 +218,17 @@ fn main() -> Result<(), CliError> {
         http_client: &HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>()?)
     };
 
-    let mut buffers = args.urls.len() as u64;
+    let mut buffers = args.tasks.len() as u64;
 
     std::thread::scope(|s| {
 
         // Task getter thread.
 
-        std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, || {
-            let buf_ret_reciever = buf_ret_reciever;
-            let buf_in_senders   = buf_in_senders  ;
-            let mut biss = buf_in_senders.iter().cycle();
+        std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, move || {
+            let mut in_senders = in_senders.iter().cycle();
 
-            for (url, bis) in args.urls.into_iter().zip(&mut biss) {
-                bis.send(Ok(url.into())).expect("The current buffer in reciever to stay open while needed.");
+            for (url, is) in args.tasks.into_iter().zip(&mut in_senders) {
+                is.send(Ok(url.into())).expect("The current buffer in reciever to stay open while needed.");
             }
 
             let stdin = std::io::stdin();
@@ -233,12 +236,12 @@ fn main() -> Result<(), CliError> {
             if !stdin.is_terminal() {
                 let mut stdin = stdin.lock();
 
-                for bis in biss {
+                for is in in_senders {
                     // If there are no buffers available within the ratelimit, makea a new one.
                     // The ratelimit can reduce memory usage by up to 10x with, if properly tuned, minimal performance impact.
 
                     let mut buf = match buf_ret_reciever.recv_timeout(Duration::from_nanos(buffers / 8)) {
-                        Ok(mut buf) => {buf.clear(); buf},
+                        Ok(buf) => buf,
                         Err(RecvTimeoutError::Timeout) => {
                             buffers += 1;
                             Vec::new()
@@ -247,17 +250,9 @@ fn main() -> Result<(), CliError> {
                     };
 
                     match stdin.read_until(b'\n', &mut buf) {
-                        Ok(0) => break,
-                        Ok(_) => {
-                            if buf.ends_with(b"\n") {
-                                buf.pop();
-                                if buf.ends_with(b"\r") {
-                                    buf.pop();
-                                }
-                            }
-                            bis.send(Ok(buf)).expect("The current buffer in reciever to stay open while needed.");
-                        },
-                        Err(e) => bis.send(Err((buf, e))).expect("The current buffer in reciever to stay open while needed.")
+                        Ok (0) => break,
+                        Ok (_) => is.send(Ok ( buf    )).expect("The current buffer in reciever to stay open while needed."),
+                        Err(e) => is.send(Err((buf, e))).expect("The current buffer in reciever to stay open while needed.")
                     }
                 }
             }
@@ -265,15 +260,21 @@ fn main() -> Result<(), CliError> {
 
         // Worker threads.
 
-        for (i, (bir, os)) in buf_in_recievers.into_iter().zip(out_senders).enumerate() {
+        for (i, (bir, os)) in in_recievers.into_iter().zip(out_senders).enumerate() {
             let brs = buf_ret_sender.clone();
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
                 while let Ok(x) = bir.recv() {
                     let ret = match x {
-                        Ok(buf) => {
+                        Ok(mut buf) => {
+                            if buf.ends_with(b"\n") {
+                                buf.pop();
+                                if buf.ends_with(b"\r") {
+                                    buf.pop();
+                                }
+                            }
                             let maybe_task = job_config.make_lazy_task(&buf).make();
-                            // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
-                            let _ = brs.send(buf);
+                            buf.clear();
+                            let _ = brs.send(buf); // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
                             match maybe_task {
                                 Ok(task) => match task.r#do() {
                                     Ok(x) => x.into(),
@@ -282,7 +283,8 @@ fn main() -> Result<(), CliError> {
                                 Err(e) => format!("-{:?}", DoTaskError::from(e))
                             }
                         },
-                        Err((buf, e)) => {
+                        Err((mut buf, e)) => {
+                            buf.clear();
                             let _ = brs.send(buf);
                             format!("-{:?}", DoTaskError::from(MakeTaskError::from(GetTaskError::from(e))))
                         }
@@ -293,27 +295,25 @@ fn main() -> Result<(), CliError> {
             }).expect("Making threads to work fine.");
         }
 
-        // Stdout thread.
+        // Stdout stuff.
 
-        std::thread::Builder::new().name("Stdout".to_string()).spawn_scoped(s, || {
-            let stdout = std::io::stdout().lock();
-            let buffer_size = match args.output_buffer {
-                Some(x) => x,
-                None => if stdout.is_terminal() {
-                    0
-                } else {
-                    8192
-                }
-            };
-            let mut stdout = BufWriter::with_capacity(buffer_size, stdout);
-
-            for or in {out_recievers}.iter().cycle() {
-                match or.recv() {
-                    Ok(x) => writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail."),
-                    Err(_) => break
-                }
+        let stdout = std::io::stdout().lock();
+        let buffer_size = match args.output_buffer {
+            Some(x) => x,
+            None => if stdout.is_terminal() {
+                0
+            } else {
+                8192
             }
-        }).expect("Making threads to work fine.");
+        };
+        let mut stdout = BufWriter::with_capacity(buffer_size, stdout);
+
+        for or in {out_recievers}.iter().cycle() {
+            match or.recv() {
+                Ok(x) => writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail."),
+                Err(_) => break
+            }
+        }
     });
 
     Ok(())

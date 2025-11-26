@@ -113,6 +113,11 @@ pub struct ProfiledCleaner<'a> {
 }
 
 impl<'a> ProfiledCleaner<'a> {
+    /// Get an iterator of the names of the nemaed profiles.
+    pub fn names(&'a self) -> impl Iterator<Item = &'a str> {
+        self.profiles.named.keys().map(|x| &**x)
+    }
+
     /// Make a borrowing [`Cleaner`] with the base profile.
     pub fn get_base(&'a self) -> Cleaner<'a> {
         self.unprofiled_cleaner.borrowed().with_profile(self.profiles.get_base())

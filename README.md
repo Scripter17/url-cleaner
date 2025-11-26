@@ -31,19 +31,19 @@ By default, URL Cleaner bundles a cleaner uncreatively called the Bundled Cleane
 
 The Bundled Cleaner is meant for general purpose cleaning of URLs you're likely to click on/send to friends and has various flags to allow features you only sometimes want.
 
-For more information, see the [Bundled Cleaner's documentation](bundled_cleaner.md) and its [benchmarks](benchmarksmd).
+For more information, see the [Bundled Cleaner's documentation](bundled_cleaner.md) and its [benchmarks](benchmarks.md).
 
 ## Privacy
 
 URL Cleaner and co. will never contain any telemetry. If I ever add it, you are required to kill me on sight.
 
-However, the Bundled Cleaner will by default expand and cache known redirects by sending HTTP requests.
+However, the Bundled Cleaner will by default expand and cache known redirects by sending HTTP requests and writing a SQLite database to disk.
 
 To disable network access, set the `no_network` flag.
 
-To disable reading from the cache, use `--read-cache false`.
+To disable reading from the cache, use `--no-read-cache`.
 
-To disable writing to the cache, use `--write-cache false`.
+To disable writing to the cache, use `--no-write-cache`.
 
 Please note that using URL Cleaner Site Userscript also comes with its own privacy concerns, detailed [here](site/userscript.md#privacy).
 

@@ -27,23 +27,6 @@ jobs:
         [[ "$(             ./urlc $in)" == "$in" ]]
         [[ "$(echo "$in" | ./urlc $in)" == "$(echo -ne "$in\n$in")" ]]
 
-    - name: Deadlock
-      run: |
-        DEADLOCK_TESTER='{
-          "actions": [
-            {"CacheUrl": {
-              "subject": {"Cache": {
-                "subject": "a",
-                "key": "a",
-                "value": "a"
-              }},
-              "action": "None"
-            }}
-          ]
-        }'
-
-        yes "https://example.com" | head -n 100 | timeout 10s ./urlc --cleaner <(echo "$DEADLOCK_TESTER")
-
     - name: Profiles
       run: |
         PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
@@ -70,4 +53,5 @@ jobs:
           echo 'https://www.youtube.com/watch?v=abc'
           echo   'https://m.youtube.com/watch?v=abc'
         )
+
         diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')

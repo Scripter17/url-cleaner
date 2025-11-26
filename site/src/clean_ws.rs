@@ -11,12 +11,8 @@ use crate::*;
 
 /// The `/clean_ws` route.
 #[get("/clean_ws")]
-pub async fn clean_ws(state: &State<&'static ServerState>, auth: Auth, config: CleanConfig, ws: ws::WebSocket) -> Result<ws::Channel<'static>, CleanError> {
+pub async fn clean_ws(state: &State<&'static ServerState>, config: CleanConfig, ws: ws::WebSocket) -> Result<ws::Channel<'static>, CleanError> {
     let state = *state.inner();
-
-    if !state.config.accounts.check(&auth) {
-        Err(Status::Unauthorized)?
-    }
 
     let Some(mut cleaner) = state.config.profiled_cleaner.get(config.profile.as_deref()) else {
         Err(CleanError {status: 400, message: format!("Unknown profile: {:?}", config.profile)})?
@@ -47,17 +43,17 @@ pub async fn clean_ws(state: &State<&'static ServerState>, auth: Auth, config: C
         while let Some(message) = stream.next().await {
             match message? {
                 ws::Message::Text(text) => {
-                    let mut ret = String::new();
+                    let mut ret = String::with_capacity(64 * text.len().checked_ilog2().unwrap_or(0).pow(2) as usize);
                     for line in text.lines() {
                         match job_config.do_lazy_task_config(line) {
-                            Ok (x) => writeln!(ret, "{x}").expect("This to always work."),
+                            Ok (x) => writeln!(ret, "{x}"   ).expect("This to always work."),
                             Err(e) => writeln!(ret, "-{e:?}").expect("This to always work.")
                         }
                     }
                     stream.send(ret.into()).await?;
                 },
                 ws::Message::Binary(bytes) => {
-                    let mut ret = String::new();
+                    let mut ret = String::with_capacity(64 * bytes.len().checked_ilog2().unwrap_or(0).pow(2) as usize);
                     for line in crate::util::ByteLines::new(&bytes) {
                         match job_config.do_lazy_task_config(line) {
                             Ok (x) => writeln!(ret, "{x}").expect("This to always work."),

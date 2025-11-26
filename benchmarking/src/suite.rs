@@ -65,8 +65,17 @@ macro_rules! printflush {
     }
 }
 
+macro_rules! eprintflush {
+    ($($x:tt)*) => {
+        eprint!($($x)*);
+        std::io::stderr().flush().unwrap();
+    }
+}
+
 impl Args {
     pub fn r#do(self) {
+        let start = std::time::Instant::now();
+
         match fs::remove_dir_all("benchmark-results") {
             Ok(_) => {},
             Err(e) if matches!(e.kind(), std::io::ErrorKind::NotFound) => {},
@@ -82,18 +91,19 @@ impl Args {
         for Task {name, desc, url} in TASKS {
             println!("|{name}|{desc}|`{url}`|");
         }
-        println!();
 
         if self.cli {
-            Command::new("cargo")
+            assert!(Command::new("cargo")
                 .args(["+stable", "build", "-r", "--bin", "url-cleaner"])
                 .args(crate::CARGO_CONFIG)
                 .stdout(std::io::stderr())
                 .stderr(std::io::stderr())
-                .spawn().unwrap().wait().unwrap();
+                .spawn().unwrap().wait().unwrap().success());
+
+            eprintflush!("\n{:?}", start.elapsed());
 
             if self.hyperfine {
-                println!("## CLI Hyperfine\n");
+                println!("\n## CLI Hyperfine\n");
 
                 print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
@@ -101,6 +111,8 @@ impl Args {
                     for num in &self.hyperfine_nums {
                         print_hyperfine_entry(crate::cli::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
+
+                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
                 }
             }
@@ -113,6 +125,8 @@ impl Args {
                     for num in &self.callgrind_nums {
                         eprintln!("    {num}");
                         crate::cli::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
+
+                        eprintflush!("\n{:?}", start.elapsed());
                     }
                 }
             }
@@ -126,18 +140,22 @@ impl Args {
                     for num in &self.massif_nums {
                         print_massif_entry(crate::cli::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
+
+                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
                 }
             }
         }
 
         if self.site_http {
-            Command::new("cargo")
+            assert!(Command::new("cargo")
                 .args(["+stable", "build", "-r", "--bin", "url-cleaner-site"])
                 .args(crate::CARGO_CONFIG)
                 .stdout(std::io::stderr())
                 .stderr(std::io::stderr())
-                .spawn().unwrap().wait().unwrap();
+                .spawn().unwrap().wait().unwrap().success());
+
+            eprintflush!("\n{:?}", start.elapsed());
 
             if self.hyperfine {
                 println!("\n## Site HTTP Hyperfine\n");
@@ -150,6 +168,8 @@ impl Args {
                     for num in &self.hyperfine_nums {
                         print_hyperfine_entry(crate::site::http::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
+
+                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
                 }
             }
@@ -162,6 +182,8 @@ impl Args {
                     for num in &self.callgrind_nums {
                         eprintln!("    {num}");
                         crate::site::http::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
+
+                        eprintflush!("\n{:?}", start.elapsed());
                     }
                 }
             }
@@ -177,18 +199,22 @@ impl Args {
                     for num in &self.massif_nums {
                         print_massif_entry(crate::site::http::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
+
+                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
                 }
             }
         }
 
         if self.site_ws {
-            Command::new("cargo")
+            assert!(Command::new("cargo")
                 .args(["+stable", "build", "-r", "--bin", "url-cleaner-site"])
                 .args(crate::CARGO_CONFIG)
                 .stdout(std::io::stderr())
                 .stderr(std::io::stderr())
-                .spawn().unwrap().wait().unwrap();
+                .spawn().unwrap().wait().unwrap().success());
+
+            eprintflush!("\n{:?}", start.elapsed());
 
             if self.hyperfine {
                 println!("\n## Site Websocket Hyperfine\n");
@@ -199,6 +225,8 @@ impl Args {
                     for num in &self.hyperfine_nums {
                         print_hyperfine_entry(crate::site::websocket::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
+
+                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
                 }
             }
@@ -211,6 +239,8 @@ impl Args {
                     for num in &self.callgrind_nums {
                         eprintln!("    {num}");
                         crate::site::websocket::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
+
+                        eprintflush!("\n{:?}", start.elapsed());
                     }
                 }
             }
@@ -224,10 +254,14 @@ impl Args {
                     for num in &self.massif_nums {
                         print_massif_entry(crate::site::websocket::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
+
+                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
                 }
             }
         }
+
+        eprintflush!("\n{:?}", start.elapsed());
     }
 }
 

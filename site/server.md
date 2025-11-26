@@ -1,23 +1,5 @@
 # URL Cleaner Site server management
 
-## Accounts
-
-In general, a firewall should be used to prevent malicious usage, but if this is infeasable you can use accounts.
-
-An account file looks like this:
-
-```Json
-{
-  "users": {
-    "username1": "password1",
-    "username2": "password2"
-  },
-  "allow_guests": true
-}
-```
-
-With no accounts file specified, the default is no users and to allow guests.
-
 ## HTTPS
 
 HTTPS can be used with the `--key` and `--cert` arguments.
@@ -63,7 +45,5 @@ Please note that due to a bug in Greasemonkey, setting `about:config`'s `privacy
 ### mTLS
 
 mTLS is an addition to HTTPS that lets servers require clients to have their own public/private key pair to prove their identity.
-
-Unlike the account system, mTLS makes it impossible for unauthorized people to connect to the server at all.
 
 While URL Cleaner Site *should* support mTLS, I've yet to do any proper testing because nothing makes it easy to use.

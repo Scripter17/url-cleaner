@@ -19,7 +19,12 @@ use test::*;
 
 #[derive(Parser)]
 struct Args {
-    tests: PathBuf
+    #[arg(long)]
+    cleaner: Option<PathBuf>,
+    #[arg(long)]
+    tests: PathBuf,
+    #[arg(long)]
+    assert_suitability: bool
 }
 
 fn is_default<T: Default + Eq>(x: &T) -> bool {
@@ -45,7 +50,13 @@ pub enum TestingError {
 fn main() -> Result<(), TestingError> {
     let args = Args::parse();
 
-    serde_json::from_str::<Tests>(&std::fs::read_to_string(args.tests)?)?.r#do(Cleaner::get_bundled()?)?;
+    let cleaner = Cleaner::load_or_get_bundled(args.cleaner)?;
+
+    if args.assert_suitability {
+        cleaner.assert_suitability();
+    }
+
+    serde_json::from_str::<Tests>(&std::fs::read_to_string(args.tests)?)?.r#do(&cleaner)?;
 
     Ok(())
 }

@@ -29,6 +29,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: 'Check MDs'
       run: |
+        set -euo pipefail
         old=$(cat *.md */*.md)
         scripts/fill-mds.sh
         test "$old" == "$(cat *.md */*.md)"
@@ -39,7 +40,17 @@ jobs:
     - uses: actions/checkout@v3
     - name: 'Check MSRV consistency'
       run: |
+        set -euo pipefail
         [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")[\d.]+' | sort -u | wc -l)" == 1 ]]
+
+  bundled_cleaner:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: 'Check bundled cleaner'
+      run: |
+        set -euo pipefail
+        cargo run -p url-cleaner-testing -- --assert-suitability --tests testing/src/offline.json
 
   test:
     runs-on: ubuntu-latest
@@ -47,7 +58,9 @@ jobs:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
     - name: Test
-      run: cargo hack test --feature-powerset --clean-per-run --exclude url-cleaner-benchmarking
+      run: |
+        set -euo pipefail
+        cargo hack test --feature-powerset --clean-per-run --exclude url-cleaner-benchmarking
 
   doc:
     runs-on: ubuntu-latest
@@ -55,7 +68,9 @@ jobs:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
     - name: Doc
-      run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items --exclude url-cleaner-benchmarking
+      run: |
+        set -euo pipefail
+        RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items --exclude url-cleaner-benchmarking
 
   clippy:
     runs-on: ubuntu-latest
@@ -63,4 +78,6 @@ jobs:
     - uses: actions/checkout@v3
     - uses: taiki-e/install-action@cargo-hack
     - name: Clippy
-      run: cargo hack clippy --feature-powerset --benches --clean-per-run --exclude url-cleaner-benchmarking -- -D warnings
+      run: |
+        set -euo pipefail
+        cargo hack clippy --feature-powerset --benches --clean-per-run --exclude url-cleaner-benchmarking -- -D warnings

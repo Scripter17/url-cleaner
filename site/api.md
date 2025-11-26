@@ -62,7 +62,7 @@ pub struct CleanError {
     pub message: String
 }
 
-/// Config for a `/clean` or `/clean_ws` payload.
+/// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
 pub struct CleanConfig {
     /// The [`JobContext`] to use.
     ///
@@ -109,39 +109,5 @@ pub struct CleanConfig {
     /// Defaults to [`false`].
     pub unthread: bool
 }
-```
-<!--/cmd-->
-
-## Authenticaton
-
-Authentication can be setup by giving a JSON `Accounts` file to `--accounts`.
-
-Authentication is sent as a username and password in the URL like `http://username:password@example.com`.
-
-<!--cmd echo '```Rust'; cat site-types/src/auth.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
-```Rust
-/// Accounts to control who can use a URL Cleaner Site instance.
-pub struct Accounts {
-    /// If [`true`], allow "guest" users.
-    ///
-    /// Defaults to [`true`].
-    pub allow_guest: bool,
-    /// A map of usernames to passwords.
-    ///
-    /// Defaults to an empty [`HashMap`].
-    pub users: HashMap<String, String>
-}
-
-/// A username and password.
-pub enum Auth {
-    /// Guest
-    Guest,
-    /// User
-    User {
-        /// The username.
-        username: String,
-        /// The password.
-        password: String
-    }
 ```
 <!--/cmd-->

@@ -9,7 +9,6 @@ use std::num::NonZero;
 #[macro_use] extern crate rocket;
 use rocket::{
     serde::json::Json,
-    http::Status,
     data::Limits,
     State,
     response::Responder,
@@ -18,7 +17,7 @@ use rocket::{
 use clap::Parser;
 
 use url_cleaner_engine::prelude::*;
-use url_cleaner_site_types::*;
+use url_cleaner_site_types::prelude::*;
 
 mod index;
 mod info;
@@ -68,15 +67,15 @@ struct Args {
     /// The ProfilesConfig file.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
-    /// The max size of a POST request to the `/clean` endpoint.
-    #[arg(long, verbatim_doc_comment, default_value = DEFAULT_MAX_PAYLOAD, value_parser = parse_byte_unit)]
-    max_payload: rocket::data::ByteUnit,
     /// The IP to listen to.
     #[arg(long, verbatim_doc_comment, default_value = DEFAULT_IP)]
     ip: IpAddr,
     /// The port to listen to.
     #[arg(long, verbatim_doc_comment, default_value_t = DEFAULT_PORT)]
     port: u16,
+    /// The max size of a POST request to the `/clean` endpoint.
+    #[arg(long, verbatim_doc_comment, default_value = DEFAULT_MAX_PAYLOAD, value_parser = parse_byte_unit)]
+    max_payload: rocket::data::ByteUnit,
     /// The proxy to use for HTTP/HTTPS requests.
     #[cfg(feature = "http")]
     #[arg(long, verbatim_doc_comment)]
@@ -89,19 +88,6 @@ struct Args {
     /// Zero uses the CPU's thread count.
     #[arg(long, verbatim_doc_comment, default_value_t = 0)]
     threads: usize,
-    /// The accounts file to use.
-    ///
-    /// The format looks like this:
-    ///
-    /// {
-    ///   "allow_guests": true,
-    ///   "users": {
-    ///     "username1": "password1",
-    ///     "username2": "password2"
-    ///   }
-    /// }
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
-    accounts: Option<PathBuf>,
     /// The TLS/HTTPS cert. If specified, requires `--key`.
     #[arg(long, verbatim_doc_comment, requires = "key", value_name = "PATH")]
     cert: Option<PathBuf>,
@@ -125,9 +111,7 @@ struct ServerConfig {
     /// The number of threads to spawn for clean.
     threads: NonZero<usize>,
     /// The max size for a clean payload.
-    max_payload: rocket::data::ByteUnit,
-    /// The [`Accounts`] to use.
-    accounts: Accounts
+    max_payload: rocket::data::ByteUnit
 }
 
 /// The state of the server.
@@ -171,11 +155,7 @@ async fn rocket() -> _ {
             profiled_cleaner,
             profiles_config_string,
             threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
-            max_payload: args.max_payload,
-            accounts: match args.accounts {
-                Some(accounts) => serde_json::from_str(&std::fs::read_to_string(accounts).expect("The accounts file to be readable.")).expect("The accounts file to be valid."),
-                None => Default::default()
-            }
+            max_payload: args.max_payload
         },
         unthreader: Unthreader::on(),
         #[cfg(feature = "cache")]

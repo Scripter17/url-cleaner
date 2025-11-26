@@ -23,7 +23,7 @@ jobs:
       run: |
         ./urlcs &
         sleep 1
-        seq -f 'https://%0.0f.com' 127 | curl http://localhost:9149/clean --data-binary @- | sort -Vc
+        seq -f 'https://%0.0f.com' 127 | curl -f http://localhost:9149/clean --data-binary @- | sort -Vc
         kill $!
 
     - name: Profiles
@@ -38,16 +38,36 @@ jobs:
         sleep 1
 
         diff -y <(
-          curl -s "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -s "http://127.0.0.1:9149/clean" --url-query 'config={                             "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -s "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort"                                 }' --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -s "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={                             "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort"                                 }' --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
 
-          curl -s "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://youtube.com/shorts/abc'
-          curl -s "http://127.0.0.1:9149/clean" --url-query 'config={                             "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
-          curl -s "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort"                                 }' --data-binary 'https://youtube.com/shorts/abc'
-          curl -s "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={                             "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort"                                 }' --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
+
+          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {                             "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube_unshort"                                 }' --data-binary 'https://m.youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
+
+          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {                             "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube_unshort"                                 }' --data-binary 'https://youtube.com/shorts/abc'
+          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube_unshort", "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
         ) <(
+          echo 'https://www.youtube.com/shorts/abc'
+          echo 'https://m.youtube.com/shorts/abc'
+          echo 'https://www.youtube.com/watch?v=abc'
+          echo 'https://m.youtube.com/watch?v=abc'
+
+          echo 'https://www.youtube.com/shorts/abc'
+          echo 'https://m.youtube.com/shorts/abc'
+          echo 'https://www.youtube.com/watch?v=abc'
+          echo 'https://m.youtube.com/watch?v=abc'
+
           echo 'https://www.youtube.com/shorts/abc'
           echo 'https://m.youtube.com/shorts/abc'
           echo 'https://www.youtube.com/watch?v=abc'
@@ -59,30 +79,6 @@ jobs:
           echo 'https://m.youtube.com/watch?v=abc'
         )
 
+        ! curl -sf "http://127.0.0.1:9148/clean" -H 'X-Config: {"profile":"notfound"}' --data-binary ""
+
         kill $site
-
-    - name: Accounts
-      run: |
-        ACCOUNTS='{"allow_guest":false,"users":{"abc":"def"}}'
-
-        ./urlcs --accounts <(echo "$ACCOUNTS") &
-        sleep 1
-
-        ! curl http://127.0.0.1:9149/clean           --data-binary ''
-        ! curl http://abc@127.0.0.1:9149/clean       --data-binary ''
-        ! curl http://abc:wrong@127.0.0.1:9149/clean --data-binary ''
-          curl http://abc:def@127.0.0.1:9149/clean   --data-binary ''
-
-        kill $!
-
-        ACCOUNTS='{"allow_guest":true,"users":{"abc":"def"}}'
-
-        ./urlcs --accounts <(echo "$ACCOUNTS") &
-        sleep 1
-
-          curl http://127.0.0.1:9149/clean           --data-binary ''
-        ! curl http://abc@127.0.0.1:9149/clean       --data-binary ''
-        ! curl http://abc:wrong@127.0.0.1:9149/clean --data-binary ''
-          curl http://abc:def@127.0.0.1:9149/clean   --data-binary ''
-
-        kill $!

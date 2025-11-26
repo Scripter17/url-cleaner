@@ -16,12 +16,12 @@ pub enum Args {
 
 impl Args {
     pub fn r#do(self) -> fs::File {
-        Command::new("cargo")
+        assert!(Command::new("cargo")
             .args(["+stable", "build", "-r", "--bin", "url-cleaner-site"])
             .args(crate::CARGO_CONFIG)
             .stdout(std::io::stderr())
             .stderr(std::io::stderr())
-            .spawn().unwrap().wait().unwrap();
+            .spawn().unwrap().wait().unwrap().success());
 
         match self {
             Args::Http(args) => args.r#do(),
@@ -29,4 +29,3 @@ impl Args {
         }
     }
 }
-

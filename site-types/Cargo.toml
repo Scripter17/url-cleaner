@@ -14,12 +14,11 @@ rust-version = "1.88.0"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
-base64 = { version = "0.22.1", optional = true }
 rocket = { version = "0.5.1", optional = true, features = ["json"] }
 serde_json = { version = "1.0.145", optional = true }
 
 [features]
-server = ["dep:base64", "dep:rocket", "dep:serde_json"]
+rocket = ["dep:rocket", "dep:serde_json"]
 
 [lints]
 workspace = true

@@ -6,7 +6,7 @@ Where applicable, other frontends should try to mimic this format.
 
 ## Sending tasks
 
-Tasks are sent as lines of `LazyTaskConfig::Str` or `LazyTaskConfig::ByteSlice`.
+Tasks are sent as lines of strings/UTF-8 encoded bytes.
 
 For each line:
 
@@ -24,7 +24,7 @@ For each line:
 - If the line starts with `-`, its corresponding task returned an error. The rest of the line is a string of unspecified format about the exact error returned.
 - Otherwise, the line is the cleaned URL.
 
-Every result, even the last one, is succeeded by a lone `\n`.
+Every result line, even the last one, is succeeded by a lone `\n`.
 
 ## Examples
 

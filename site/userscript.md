@@ -32,9 +32,15 @@ Using your extension's method of adding userscripts, add [url-cleaner-site-users
 
 Near the start of the userscript is an object called `window.config` with various settings you should at least check if you care about.
 
+### TLS/HTTPS
+
+When using TLS, please see [here](../server.md#installing-the-certificate) for instructions on making your OS/browser accept your certificate.
+
+Additionally, in the `instance` field of the `window.config`, change `ws://` to `wss://`.
+
 ## Known problems
 
-Greasemonkey has a bug where HTTP requests don't work when `privacy.firstparty.isolate` is `true`.
+Please note that due to a bug in Greasemonkey, setting `about:config`'s `privacy.firstparty.isolate` to `true` (as is default in forks like Mullvad Browser) breaks the userscript.
 
 You can either set it to false in `about:config` or install a patched version of Greasemonkey, such as the one I submitted at <https://github.com/greasemonkey/greasemonkey/pull/3220>.
 

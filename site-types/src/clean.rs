@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 
 use url_cleaner_engine::prelude::*;
 
-use crate::util::*;
+use crate::prelude::*;
 
 /// The error state of doing a [`JobConfig`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -17,6 +17,8 @@ pub struct CleanError {
 }
 
 /// Config for a `/clean` or `/clean_ws` payload.
+///
+/// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CleanConfig {
