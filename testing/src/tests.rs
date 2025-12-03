@@ -1,3 +1,5 @@
+//! [`Tests`].
+
 use crate::*;
 
 /// Tests.
@@ -17,11 +19,11 @@ impl Tests {
     /// Do the tests.
     /// # Errors
     /// If a test fails, returns an error.
-    pub fn r#do(self, cleaner: &Cleaner) -> Result<(), DoTestsError> {
+    pub fn r#do(self, cleaner: Cleaner) -> Result<(), DoTestsError> {
         let mut ret = Ok(());
 
         for set in self.sets {
-            if set.r#do(cleaner).is_err() {
+            if set.r#do(cleaner.borrowed()).is_err() {
                 ret = Err(DoTestsError);
             }
         }

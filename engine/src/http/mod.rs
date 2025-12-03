@@ -75,13 +75,16 @@ impl HttpClient {
 
     /// Send a [`HttpRequestConfig`] and return the response.
     /// # Errors
-    #[doc = edoc!(geterr(Self), geterr(StringSource), getnone(StringSource, DoHttpRequestError), callerr(HeaderName::try_from, 3), callerr(HeaderValue::try_from, 3), callerr(HttpBodyConfig::apply), callerr(reqwest::blocking::RequestBuilder::send))]
-    pub fn get_response(&self, config: HttpRequestConfig, task_state: &TaskStateView) -> Result<reqwest::blocking::Response, DoHttpRequestError> {
+    #[doc = edoc!(geterr(Self), geterr(StringSource), getnone(StringSource, DoHttpRequestError, 3), geterr(MapSource), getnone(MapSource, DoHttpRequestError), callerr(HeaderName::try_from, 3), callerr(HeaderValue::try_from, 3), callerr(HttpBodyConfig::apply), callerr(reqwest::blocking::RequestBuilder::send))]
+    pub fn get_response<'j>(&'j self, config: &'j HttpRequestConfig, task_state: &TaskState<'j>) -> Result<reqwest::blocking::Response, DoHttpRequestError> {
         let mut req = self.get()?.request(
             get_str!(config.method, task_state, DoHttpRequestError).parse()?,
             Url::parse(get_str!(config.url, task_state, DoHttpRequestError))?,
         );
-        for (name, value) in config.headers.iter() {
+        for (name, value) in config.const_headers.get(task_state)?.ok_or(DoHttpRequestError::MapNotFound)?.map.iter() {
+            req = req.header(HeaderName::try_from(name)?, HeaderValue::try_from(value)?);
+        }
+        for (name, value) in config.dynamic_headers.iter() {
             if let Some(value) = value.get(task_state)? {
                 req = req.header(HeaderName::try_from(name)?, HeaderValue::try_from(value.into_owned())?);
             }
@@ -159,11 +162,23 @@ pub enum DoHttpRequestError {
     InvalidHeaderName(#[from] reqwest::header::InvalidHeaderName),
     /// Returned when a [`reqwest::header::InvalidHeaderValue`] is encountered.
     #[error(transparent)]
-    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue)
+    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue),
+    /// Returned when a [`MapSourceError`] is encountered.
+    #[error(transparent)]
+    MapSourceError(#[from] Box<MapSourceError>),
+    /// Returned when a [`Map`] with the specified name isn't found.
+    #[error("A Map with the specified name wasn't found.")]
+    MapNotFound
 }
 
 impl From<StringSourceError> for DoHttpRequestError {
     fn from(value: StringSourceError) -> Self {
         Self::StringSourceError(value.into())
+    }
+}
+
+impl From<MapSourceError> for DoHttpRequestError {
+    fn from(value: MapSourceError) -> Self {
+        Self::MapSourceError(value.into())
     }
 }

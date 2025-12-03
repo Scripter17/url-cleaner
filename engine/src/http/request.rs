@@ -22,13 +22,20 @@ pub struct HttpRequestConfig {
     /// Defaults to `"GET"`.
     #[serde(default = "get_string_source_get", skip_serializing_if = "is_string_source_get")]
     pub method: StringSource,
-    /// The extra headers to send.
+    /// The headers to send that never change.
     ///
-    /// If a call to [`StringSource::get`] returns [`None`], the header it came from isn't sent. This can be useful for API keys.
+    /// [`Map::if_none`] and [`Map::else`] are ignored.
+    ///
+    /// Defaults to [`MapSource::None`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub const_headers: MapSource,
+    /// The headers to send that may change.
+    ///
+    /// If a call to [`StringSource::get`] returns [`None`], the header it came from isn't sent.
     ///
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub headers: HashMap<String, StringSource>,
+    pub dynamic_headers: HashMap<String, StringSource>,
     /// The body to send.
     ///
     /// Defaults to [`None`].
@@ -41,7 +48,8 @@ impl Default for HttpRequestConfig {
         Self {
             url    : UrlPart::Whole.into(),
             method : "GET".into(),
-            headers: Default::default(),
+            const_headers: Default::default(),
+            dynamic_headers: Default::default(),
             body   : None
         }
     }

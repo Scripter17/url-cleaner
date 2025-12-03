@@ -1,3 +1,3 @@
 use crate::*;
 
-group_mods!(bundled_cleaner, tasks, load);
+group_mods!(bundled_cleaner, load);

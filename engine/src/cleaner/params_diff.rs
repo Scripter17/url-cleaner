@@ -13,7 +13,8 @@ use crate::prelude::*;
 ///
 /// If you're frequently using the same few [`ParamsDiff`]s, please check out [`ProfiledCleaner`] for both convenience and speed.
 #[serde_as]
-#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct ParamsDiff {
     /// [`Params::flags`] to enable.
     #[serde_with = "SetPreventDuplicates<_>"]
@@ -38,10 +39,7 @@ pub struct ParamsDiff {
 
     /// Entries to insert into [`Params::maps`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, HashMap<Option<String>, String>>,
-    /// [`Map::else`]s to set for [`Params::maps`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub set_map_elses: HashMap<String, Option<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, Map<String>>,
     /// Entries to remove from [`Params::maps`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, HashSet<Option<String>>>,
@@ -77,11 +75,11 @@ impl ParamsDiff {
         }
 
         // Maps
-        for (m, kv) in self.insert_into_maps {
-            to.maps.to_mut().entry(m).or_default().extend(kv);
-        }
-        for (m, v) in self.set_map_elses {
-            to.maps.to_mut().entry(m).or_default().r#else = v;
+        for (k, v) in self.insert_into_maps {
+            let map = to.maps.to_mut().entry(k).or_default();
+            map.map.extend(v.map);
+            map.if_none = v.if_none;
+            map.r#else = v.r#else;
         }
         for (m, vs) in self.remove_from_maps {
             if let Some(x) = to.maps.to_mut().get_mut(&m) {

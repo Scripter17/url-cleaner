@@ -12,6 +12,7 @@ mod help;
 mod clean_url;
 mod clean_urls;
 
+/// Prelude module for importing everything here better.
 mod prelude {
     pub use poise::serenity_prelude as serenity;
 
@@ -157,7 +158,7 @@ async fn main() {
                     clean_urls(
                         ctx.into(),
                         msg,
-                        ctx.command().custom_data.downcast_ref::<Cleaner>().expect("The custom data to be a Cleaner")
+                        ctx.command().custom_data.downcast_ref::<Cleaner>().expect("The custom data to be a Cleaner").borrowed()
                     ).await.map_err(|error| poise::FrameworkError::new_command(ctx.into(), error.into()))
                 })
             })),

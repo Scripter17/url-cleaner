@@ -45,7 +45,8 @@ struct Args {
     /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
     #[arg(verbatim_doc_comment)]
     tasks: Vec<String>,
-    /// The config file to use.
+
+    /// The cleaner file to use.
     /// Omit to use the built in bundled cleaner.
     #[cfg(feature = "bundled-cleaner")]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
@@ -62,10 +63,12 @@ struct Args {
     /// Applied before ParamsDiffs and --flag/--var.
     #[arg(long, verbatim_doc_comment)]
     profile: Option<String>,
+
     /// A standalone ParamsDiff file.
     /// Applied after Profiles and before --flag/--var.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     params_diff: Option<PathBuf>,
+
     /// Flags to insert into the params.
     /// Applied after Profiles and ParamsDiff.
     #[arg(short, long, verbatim_doc_comment)]
@@ -75,9 +78,10 @@ struct Args {
     #[arg(short, long, verbatim_doc_comment, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
 
-    /// The JobContext file to use.
+    /// The JobContext.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     job_context: Option<PathBuf>,
+
     /// The proxy to use for HTTP/HTTPS requests.
     #[cfg(feature = "http")]
     #[arg(long, verbatim_doc_comment)]
@@ -174,11 +178,9 @@ fn main() -> Result<(), CliError> {
         cleaner.params.vars.to_mut().insert(name, value);
     }
 
-    // Get the [`JobContext`].
-
     let job_context = match args.job_context {
-        None       => Default::default(),
         Some(path) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadJobContext)?).map_err(CliError::CantParseJobContext)?,
+        None => Default::default()
     };
 
     // Do the job.
@@ -201,9 +203,9 @@ fn main() -> Result<(), CliError> {
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
     let (out_senders   , out_recievers   ) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
 
-    let job_config = JobConfig {
-        cleaner: &cleaner,
-        context: &job_context,
+    let job_config = &Job {
+        context: job_context,
+        cleaner,
         unthreader: &Unthreader::r#if(args.unthread),
         #[cfg(feature = "cache")]
         cache: Cache {
@@ -272,21 +274,18 @@ fn main() -> Result<(), CliError> {
                                     buf.pop();
                                 }
                             }
-                            let maybe_task = job_config.make_lazy_task(&buf).make();
+                            let task = (&buf).make_task();
                             buf.clear();
                             let _ = brs.send(buf); // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
-                            match maybe_task {
-                                Ok(task) => match task.r#do() {
-                                    Ok(x) => x.into(),
-                                    Err(e) => format!("-{e:?}")
-                                },
-                                Err(e) => format!("-{:?}", DoTaskError::from(e))
+                            match job_config.r#do(task) {
+                                Ok(x) => x.into(),
+                                Err(e) => format!("-{e:?}")
                             }
                         },
                         Err((mut buf, e)) => {
                             buf.clear();
                             let _ = brs.send(buf);
-                            format!("-{:?}", DoTaskError::from(MakeTaskError::from(GetTaskError::from(e))))
+                            format!("-{:?}", e)
                         }
                     };
 

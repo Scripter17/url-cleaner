@@ -2,29 +2,29 @@
   "sets": [
     {
       "tests": [
-				{"task_config": "https://tinyurl.com/wp-tinyurl"                           , "expect": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"task_config": "https://tinyurl.com/preview/wp-tinyurl"                   , "expect": "https://en.wikipedia.org/wiki/TinyURL"},
-				{"task_config": "https://smarturl.it/irl_s05e04?IQid=eg"                   , "expect": "https://irlpodcast.org/season5/episode4/"},
-				{"task_config": "https://gprivate.com/6bi5b"                               , "expect": "https://www.google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"},
-				{"task_config": "http://bfy.tw/9ZSk"                                       , "expect": "https://www.google.com/search?q=How+does+the+US+government+work"},
-				{"task_config": "https://fireship.page.link/slack"                         , "expect": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"},
-				{"task_config": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre", "expect": "https://open.spotify.com/album/76qQt7n5SKtIa38BmZxvl4"},
-				{"task_config": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"       , "expect": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"},
-				{"task_config": "https://u.afp.com/SdEU"                                   , "expect": "https://www.yahoo.com/news/articles/south-korean-women-sue-us-062831445.html"},
-				{"task_config": "https://than.gs/m/1382126"                                , "expect": "https://thangs.com/designer/LeHa%20Design/3d-model/Stanley%20the%20Drink%E2%80%91Snapping%20Shark-1382126"},
+				{"task": "https://tinyurl.com/wp-tinyurl"                           , "expect": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"task": "https://tinyurl.com/preview/wp-tinyurl"                   , "expect": "https://en.wikipedia.org/wiki/TinyURL"},
+				{"task": "https://smarturl.it/irl_s05e04?IQid=eg"                   , "expect": "https://irlpodcast.org/season5/episode4/"},
+				{"task": "https://gprivate.com/6bi5b"                               , "expect": "https://www.google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"},
+				{"task": "http://bfy.tw/9ZSk"                                       , "expect": "https://www.google.com/search?q=How+does+the+US+government+work"},
+				{"task": "https://fireship.page.link/slack"                         , "expect": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"},
+				{"task": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre", "expect": "https://open.spotify.com/album/76qQt7n5SKtIa38BmZxvl4"},
+				{"task": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"       , "expect": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"},
+				{"task": "https://u.afp.com/SdEU"                                   , "expect": "https://www.yahoo.com/news/articles/south-korean-women-sue-us-062831445.html"},
+				{"task": "https://than.gs/m/1382126"                                , "expect": "https://thangs.com/designer/LeHa%20Design/3d-model/Stanley%20the%20Drink%E2%80%91Snapping%20Shark-1382126"},
 				{
-				  "task_config": "https://www.youtube.com/redirect?event=backstage_event&redir_token=QUFFLUhqbVJScFJQZ1ZDbnVIMGg5bFRNelNCRlV1VjdFd3xBQ3Jtc0trV1phU2RGNVQ3czNBUzZ2SXJBbjdJNzZhSWdnSzhvU2RBaXJ2NDdnY0p3OC00NFpqaWZDZXRCOVdzNlhzdHVGbk5kcy1iOVR0RWVXdDFRRFRaM19UZ2lwMXB6Q1I1WlhCX01ub2ZvbUxPSmt2YV9QZw&q=https%3A%2F%2Fa.co%2FdNfiRDX&html_redirect=1Is",
+				  "task": "https://www.youtube.com/redirect?event=backstage_event&redir_token=QUFFLUhqbVJScFJQZ1ZDbnVIMGg5bFRNelNCRlV1VjdFd3xBQ3Jtc0trV1phU2RGNVQ3czNBUzZ2SXJBbjdJNzZhSWdnSzhvU2RBaXJ2NDdnY0p3OC00NFpqaWZDZXRCOVdzNlhzdHVGbk5kcy1iOVR0RWVXdDFRRFRaM19UZ2lwMXB6Q1I1WlhCX01ub2ZvbUxPSmt2YV9QZw&q=https%3A%2F%2Fa.co%2FdNfiRDX&html_redirect=1Is",
 				  "expect": "https://www.amazon.com/hz/wishlist/ls/2RBVWN4SJEAJ4"
 				},
-				{"task_config": "https://qr1.be/L7WG", "expect": "https://app.bridgecard.app/?m=V3Pa&s=webd"},
-				{"task_config": "https://qr1.be/60AI", "expect": "https://qr1.be/60AI"},
-				{"task_config": "https://406q7.app.link/e/5uDpsIQcwUb"        , "expect": "https://www.checkout51.com/pc-optimum-landing-page?%24web_only=true"},
-				{"task_config": "https://406q7-alternate.app.link/5uDpsIQcwUb", "expect": "https://www.checkout51.com/pc-optimum-landing-page?%24web_only=true"},
-				{"task_config": "https://qrcc.me/t1z23aii4l9b", "expect": "https://www.bell.ca/Bell-Promotions/Promo-code"},
-        {"task_config": "https://qrcodes.pro/L1izR3", "expect": "https://deckstore.ca/retail/"},
-				{"task_config": "https://scanqr.to/65d381ec", "expect": "https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative/canada-greener-homes-loan/24286"},
-				{"task_config": "https://smartyt.ag/d5e7e8", "expect": "https://www.instagram.com/rwgarciasnacks/"},
-				{"task_config": "https://www.fiverr.com/s/VNk0Vz", "expect": "https://www.fiverr.com/categories/graphics-design"}
+				{"task": "https://qr1.be/L7WG", "expect": "https://app.bridgecard.app/?m=V3Pa&s=webd"},
+				{"task": "https://qr1.be/60AI", "expect": "https://qr1.be/60AI"},
+				{"task": "https://406q7.app.link/e/5uDpsIQcwUb"        , "expect": "https://www.checkout51.com/pc-optimum-landing-page?%24web_only=true"},
+				{"task": "https://406q7-alternate.app.link/5uDpsIQcwUb", "expect": "https://www.checkout51.com/pc-optimum-landing-page?%24web_only=true"},
+				{"task": "https://qrcc.me/t1z23aii4l9b", "expect": "https://www.bell.ca/Bell-Promotions/Promo-code"},
+        {"task": "https://qrcodes.pro/L1izR3", "expect": "https://deckstore.ca/retail/"},
+				{"task": "https://scanqr.to/65d381ec", "expect": "https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative/canada-greener-homes-loan/24286"},
+				{"task": "https://smartyt.ag/d5e7e8", "expect": "https://www.instagram.com/rwgarciasnacks/"},
+				{"task": "https://www.fiverr.com/s/VNk0Vz", "expect": "https://www.fiverr.com/categories/graphics-design"}
       ]
     }
   ]

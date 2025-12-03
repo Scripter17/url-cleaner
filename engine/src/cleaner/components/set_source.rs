@@ -8,6 +8,8 @@ use crate::prelude::*;
 /// Get a set.
 ///
 /// Defauls to [`Self::None`].
+///
+/// Strings deserialize into [`Self::Params`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub enum SetSource {
@@ -60,17 +62,18 @@ pub enum SetSource {
     Literal(Set<String>),
     /// Gets a set from [`Params::sets`].
     ///
-    /// If [`StringSource::String`], serializes and deserializes to and from a string.
+    /// If [`StringSource::String`], serializes to a string.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, GetSetError))]
-    Params(StringSource)
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, SetSourceError))]
+    Params(StringSource),
+    CallArg(StringSource)
 }
 
 impl SetSource {
     /// Get the set.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<&'a Set<String>>, GetSetError> {
+    pub fn get<'j>(&'j self, task_state: &TaskState<'j>) -> Result<Option<&'j Set<String>>, SetSourceError> {
         Ok(match self {
             Self::None => None,
             Self::If {r#if, r#then, r#else} => if r#if.check(task_state)? {r#then} else {r#else}.get(task_state)?,
@@ -78,19 +81,20 @@ impl SetSource {
                 Some(source) => source.get(task_state)?,
                 None => None
             },
-            Self::PartMap {part, map} => match map.get(part.get(task_state.url)) {
+            Self::PartMap {part, map} => match map.get(part.get(&task_state.url)) {
                 Some(source) => source.get(task_state)?,
                 None => None
             },
             Self::Literal(x) => Some(x),
-            Self::Params(x) => task_state.params.sets.get(get_str!(x, task_state, GetSetError))
+            Self::Params(x) => task_state.job.cleaner.params.sets.get(get_str!(x, task_state, SetSourceError)),
+            Self::CallArg(name) => task_state.call_args.get().ok_or(SetSourceError::NotInFunction)?.sets.get(get_str!(name, task_state, SetSourceError)),
         })
     }
 }
 
 /// The enum of errors [`ListSource::get`] can return.
 #[derive(Debug, Error)]
-pub enum GetSetError {
+pub enum SetSourceError {
     /// Returned when a [`StringSource`] returned [`None`] where it has to return [`Some`].
     #[error("A StringSource returned None where it had to return Some.")]
     StringSourceIsNone,
@@ -100,10 +104,13 @@ pub enum GetSetError {
 
     /// Returned when a [`ConditionError`] is encountered.
     #[error(transparent)]
-    ConditionError(#[from] Box<ConditionError>)
+    ConditionError(#[from] Box<ConditionError>),
+
+    #[error("TOOD")]
+    NotInFunction
 }
 
-impl From<ConditionError> for GetSetError {
+impl From<ConditionError> for SetSourceError {
     fn from(value: ConditionError) -> Self {
         Self::ConditionError(value.into())
     }

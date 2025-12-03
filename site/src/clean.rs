@@ -6,7 +6,7 @@ use crate::*;
 
 /// The `/clean` endpoint.
 #[post("/clean", data="<tasks>")]
-pub async fn clean(state: &State<&'static ServerState>, config: CleanConfig, tasks: &[u8]) -> Result<String, CleanError> {
+pub async fn clean(state: &State<&'static ServerState>, config: JobConfig, tasks: &[u8]) -> Result<String, CleanError> {
     let state = *state.inner();
 
     let Some(mut cleaner) = state.config.profiled_cleaner.get(config.profile.as_deref()) else {
@@ -20,9 +20,9 @@ pub async fn clean(state: &State<&'static ServerState>, config: CleanConfig, tas
         params_diff.apply(&mut cleaner.params);
     }
 
-    let job_config = JobConfig {
-        context: &config.context,
-        cleaner: &cleaner,
+    let job = &Job {
+        context: config.context,
+        cleaner,
         unthreader: state.unthreader.filter(config.unthread),
         #[cfg(feature = "cache")]
         cache: Cache {
@@ -38,17 +38,16 @@ pub async fn clean(state: &State<&'static ServerState>, config: CleanConfig, tas
     };
 
     std::thread::scope(|s| {
-        std::thread::Builder::new().name("Task collector".into()).spawn_scoped(s, || {
-            for (in_sender, lazy_task_config) in {in_senders}.iter().cycle().zip(crate::util::ByteLines::new(tasks)) {
+        std::thread::Builder::new().name("Task collector".into()).spawn_scoped(s, move || {
+            for (in_sender, lazy_task_config) in {in_senders}.iter().cycle().zip(crate::util::ByteLines(tasks)) {
                 in_sender.send(lazy_task_config).expect("The in reciever to still exist.");
             }
         }).expect("Spawning a thread to work fine.");
 
         for (i, (ir, os)) in in_recievers.into_iter().zip(out_senders).enumerate() {
-            std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, || {
-                let (ir, os) = (ir, os); // Moves just the channel stuff without moving job_config.
+            std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
                 while let Ok(lazy_task_config) = ir.recv() {
-                    let ret = match job_config.do_lazy_task_config(lazy_task_config) {
+                    let ret = match job.r#do(lazy_task_config) {
                         Ok(x) => String::from(x),
                         Err(e) => format!("-{e:?}")
                     };

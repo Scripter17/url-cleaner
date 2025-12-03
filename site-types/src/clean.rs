@@ -21,7 +21,7 @@ pub struct CleanError {
 /// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct CleanConfig {
+pub struct JobConfig {
     /// The [`JobContext`] to use.
     ///
     /// Defaults to [`JobContext::default`].

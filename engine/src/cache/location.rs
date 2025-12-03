@@ -1,6 +1,7 @@
 //! [`CacheLocation`].
 
 use std::path::{Path, PathBuf};
+use std::ffi::{OsStr, OsString};
 
 use serde::{Serialize, Deserialize};
 
@@ -22,14 +23,27 @@ pub enum CacheLocation {
     Path(PathBuf)
 }
 
-impl From<PathBuf> for CacheLocation {
-    fn from(path: PathBuf) -> Self {
-        Self::Path(path)
+macro_rules! into_cache_location_impl {
+    ($($t:ty),*) => {
+        $(
+            impl From<$t> for CacheLocation {
+                /// [`Self::Path`].
+                fn from(path: $t) -> Self {
+                    Self::Path(path.into())
+                }
+            }
+
+            impl From<Option<$t>> for CacheLocation {
+                /// If [`Some`], [`Self::Path`]. If [`None`], [`Self::Memory`].
+                fn from(path: Option<$t>) -> Self {
+                    match path {
+                        Some(path) => path.into(),
+                        None => Self::Memory
+                    }
+                }
+            }
+        )*
     }
 }
 
-impl From<&Path> for CacheLocation {
-    fn from(path: &Path) -> Self {
-        Self::Path(path.into())
-    }
-}
+into_cache_location_impl!{&str, String, &OsStr, OsString, &Path, PathBuf}

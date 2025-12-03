@@ -34,21 +34,27 @@ A GET endpoint that returns the loaded `ProfilesConfig`.
 
 ## Cleaning
 
-For how tasks and results are formatted, see [this](../format.md).
-
 ### `/clean`
 
-An HTTP POST endpoint where a `CleanConfig` is sent as JSON in the `clean` query parameter.
+A POST endpoint.
+
+- The `CleanConfig` is sent either in the `config` query parameter XOR the `X-Config` header.
+
+- The body of the request and response (if successful) follow [the standard format](../format.md) with no additional guarantees.
+
+- If processing the request failed, a JSON encoded `CleanError` is returned instead.
+
+The maximum size of a body is set with the `--max-payload` CLI argument and exposed in the [`/info`](#info) endpoint under the `max_payload` field.
+
+By default this value is 25MiB.
 
 ### `/clean_ws`
 
-A WebSocket endpoint where a `CleanConfig` is sent as JSON in the `clean` query parameter.
+A WebSocket endpoint.
 
-Tasks are sent as either text or binary messages and their results are returned as text messages.
+- The `CleanConfig` is sent in the `config` query parameter. Unfortunately WebSocket doesn't support custom headers.
 
-Each message is treated as a separate stream of lines.
-
-The distribution of result lines in result messages is not guaranteed and should not be relied upon.
+- The body of each message follow [the standard format](../format.md) with no additional guarantees.
 
 ### Types
 
@@ -63,7 +69,7 @@ pub struct CleanError {
 }
 
 /// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
-pub struct CleanConfig {
+pub struct JobConfig {
     /// The [`JobContext`] to use.
     ///
     /// Defaults to [`JobContext::default`].

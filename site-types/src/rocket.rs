@@ -28,7 +28,7 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for CleanError {
 }
 
 #[rocket::async_trait]
-impl<'r> FromRequest<'r> for CleanConfig {
+impl<'r> FromRequest<'r> for JobConfig {
     type Error = CleanError;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {

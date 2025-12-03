@@ -4,7 +4,6 @@ use std::collections::{HashMap, HashSet};
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use serde_with::serde_as;
 
 use crate::prelude::*;
 
@@ -58,32 +57,27 @@ use crate::prelude::*;
 ///
 /// params_diff.apply(&mut borrowed_params);
 /// ```
-#[serde_as]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct Params<'a> {
     /// Flags allow enabling and disabling certain behavior.
     ///
     /// Defaults to an empty [`HashSet`].
-    #[serde_with = "SetPreventDuplicates<_>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub flags: Cow<'a, HashSet<String>>,
     /// Vars allow setting strings used for certain behaviors.
     ///
     /// Defaults to an empty [`HashMap`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: Cow<'a, HashMap<String, String>>,
     /// Sets allow quickly checking if a string is in a certain genre of possible values.
     ///
     /// Defaults to an empty [`HashMap`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub sets: Cow<'a, HashMap<String, Set<String>>>,
     /// Lists are a niche thing that lets you iterate over a set of values in a known order.
     ///
     /// Defaults to an empty [`HashMap`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub lists: Cow<'a, HashMap<String, Vec<String>>>,
     /// Maps allow mapping input values to output values.
@@ -91,7 +85,6 @@ pub struct Params<'a> {
     /// Please note that [`Map`]s make this more powerful than a normal [`HashMap`], notably including a default value.
     ///
     /// Defaults to an empty [`HashMap`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub maps: Cow<'a, HashMap<String, Map<String>>>,
     /// Named partitionings effectively let you check which if several sets a value is in.
@@ -99,7 +92,6 @@ pub struct Params<'a> {
     /// See [this Wikipedia article](https://en.wikipedia.org/wiki/Partition_of_a_set) for the math end of this idea.
     ///
     /// Defaults to an empty [`HashMap`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     pub partitionings: Cow<'a, HashMap<String, Partitioning>>
 }
@@ -129,5 +121,14 @@ impl<'a> Params<'a> {
             maps         : Cow::Owned(self.maps.into_owned()),
             partitionings: Cow::Owned(self.partitionings.into_owned())
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.flags.is_empty() &&
+            self.vars .is_empty() &&
+            self.sets .is_empty() &&
+            self.lists.is_empty() &&
+            self.maps .is_empty() &&
+            self.partitionings.is_empty()
     }
 }

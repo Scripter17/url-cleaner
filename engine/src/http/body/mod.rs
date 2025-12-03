@@ -60,7 +60,7 @@ impl HttpBodyConfig {
     /// Inserts the specified body into a [`reqwest::blocking::RequestBuilder`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn apply(&self, request: reqwest::blocking::RequestBuilder, task_state: &TaskStateView) -> Result<reqwest::blocking::RequestBuilder, ApplyHttpBodyError> {
+    pub fn apply<'j>(&'j self, request: reqwest::blocking::RequestBuilder, task_state: &TaskState<'j>) -> Result<reqwest::blocking::RequestBuilder, ApplyHttpBodyError> {
         Ok(match self {
             Self::Text(StringSource::String(value)) => request.body(value.clone()),
             Self::Text(value) => request.body(get_string!(value, task_state, ApplyHttpBodyError)),

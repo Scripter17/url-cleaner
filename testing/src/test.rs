@@ -1,10 +1,12 @@
+//! [`Test`].
+
 use crate::*;
 
 /// An individual test.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Test {
-    /// The [`TaskConfig`].
-    pub task_config: TaskConfig,
+    /// The task.
+    pub task: serde_json::Value,
     /// The expected result.
     pub expect: BetterUrl,
     /// If [`true`], test idempotence.
@@ -46,15 +48,15 @@ impl Test {
     /// # Errors
     /// If the test fails, returns an error.
     #[expect(clippy::result_large_err, reason = "It's a testing thing. Who cares?")]
-    pub fn r#do(self, job_config: &JobConfig) -> Result<(), DoTestError> {
-        let result = job_config.make_task(self.task_config).r#do().map_err(DoTestError::DoTaskError)?;
+    pub fn r#do(self, job: &Job) -> Result<(), DoTestError> {
+        let result = job.r#do(self.task).map_err(DoTestError::DoTaskError)?;
         if result != self.expect {
             Err(DoTestError::ExpectationError {
                 expected: self.expect,
                 got: result
             })?
         } else {
-            let idempotence_result = job_config.make_task(result.clone()).r#do().map_err(DoTestError::DoIdempotenceTaskError)?;
+            let idempotence_result = job.r#do(result.clone()).map_err(DoTestError::DoIdempotenceTaskError)?;
             if idempotence_result != result {
                 Err(DoTestError::NotIdempotent {
                     initial: result,

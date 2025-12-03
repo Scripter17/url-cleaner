@@ -21,11 +21,11 @@ pub struct Args {
     #[arg(long)]
     massif: bool,
 
-    #[arg(long, default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000])]
+    #[arg(long, num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000])]
     hyperfine_nums: Vec<usize>,
-    #[arg(long, default_values_t = [0, 10_000])]
+    #[arg(long, num_args = 1.., default_values_t = [0, 10_000])]
     callgrind_nums: Vec<usize>,
-    #[arg(long, default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
+    #[arg(long, num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
     massif_nums: Vec<usize>
 }
 
@@ -65,16 +65,9 @@ macro_rules! printflush {
     }
 }
 
-macro_rules! eprintflush {
-    ($($x:tt)*) => {
-        eprint!($($x)*);
-        std::io::stderr().flush().unwrap();
-    }
-}
-
 impl Args {
     pub fn r#do(self) {
-        let start = std::time::Instant::now();
+        let mut time = std::time::Instant::now();
 
         match fs::remove_dir_all("benchmark-results") {
             Ok(_) => {},
@@ -82,15 +75,20 @@ impl Args {
             x => x.unwrap()
         };
 
-        println!("# Benchmarks\n");
-
-        println!("## Tasks\n");
-
+        println!("# Benchmarks");
+        println!();
+        println!("As measured on a thinkpad T460S (from 2016) running Kubuntu.");
+        println!();
+        println!("## Tasks");
+        println!();
+        println!("The tasks that are benchmarks");
+        println!();
         println!("|Name|Description|URL|");
         println!("|:--:|:--:|:--|");
         for Task {name, desc, url} in TASKS {
             println!("|{name}|{desc}|`{url}`|");
         }
+        println!();
 
         if self.cli {
             assert!(Command::new("cargo")
@@ -100,10 +98,14 @@ impl Args {
                 .stderr(std::io::stderr())
                 .spawn().unwrap().wait().unwrap().success());
 
-            eprintflush!("\n{:?}", start.elapsed());
+            eprintln!("{:?}", time.elapsed());
+            time = std::time::Instant::now();
 
             if self.hyperfine {
-                println!("\n## CLI Hyperfine\n");
+                println!("## CLI Hyperfine");
+                println!();
+                println!("Time it takes to do various amounts of the tasks, measured in milliseconds.");
+                println!();
 
                 print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
@@ -111,10 +113,13 @@ impl Args {
                     for num in &self.hyperfine_nums {
                         print_hyperfine_entry(crate::cli::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
-
-                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
+
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                    eprintln!("{:?}", time.elapsed());
+                    time = std::time::Instant::now();
                 }
+                println!();
             }
 
             if self.callgrind {
@@ -126,13 +131,18 @@ impl Args {
                         eprintln!("    {num}");
                         crate::cli::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
 
-                        eprintflush!("\n{:?}", start.elapsed());
+                        std::thread::sleep(std::time::Duration::from_millis(1));
+                        eprintln!("{:?}", time.elapsed());
+                        time = std::time::Instant::now();
                     }
                 }
             }
 
             if self.massif {
-                println!("\n## CLI Massif\n");
+                println!("## CLI Massif");
+                println!();
+                println!("Peak memory usage to do various amounts of the tasks, measured in bytes.");
+                println!();
 
                 print_massif_header(&self.massif_nums);
                 for task in TASKS {
@@ -140,10 +150,13 @@ impl Args {
                     for num in &self.massif_nums {
                         print_massif_entry(crate::cli::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
-
-                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
+
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                    eprintln!("{:?}", time.elapsed());
+                    time = std::time::Instant::now();
                 }
+                println!();
             }
         }
 
@@ -155,27 +168,36 @@ impl Args {
                 .stderr(std::io::stderr())
                 .spawn().unwrap().wait().unwrap().success());
 
-            eprintflush!("\n{:?}", start.elapsed());
+            eprintln!("{:?}", time.elapsed());
+            time = std::time::Instant::now();
 
             if self.hyperfine {
-                println!("\n## Site HTTP Hyperfine\n");
-                println!("The max payload was increased from 25MiB to 1GiB.\n");
-                println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.\n");
-
+                println!("## Site HTTP Hyperfine");
+                println!();
+                println!("Time it takes to do various amounts of the tasks, measured in milliseconds.");
+                println!();
+                println!("The max payload was increased from 25MiB to 1GiB.");
+                println!();
+                println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.");
+                println!();
                 print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.hyperfine_nums {
                         print_hyperfine_entry(crate::site::http::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
-
-                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
+
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                    eprintln!("{:?}", time.elapsed());
+                    time = std::time::Instant::now();
                 }
+                println!();
             }
 
             if self.callgrind {
                 eprintln!("Site HTTP Callgrind)");
+                println!();
 
                 for task in TASKS {
                     eprintln!("  {}", task.name);
@@ -183,26 +205,36 @@ impl Args {
                         eprintln!("    {num}");
                         crate::site::http::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
 
-                        eprintflush!("\n{:?}", start.elapsed());
+                        std::thread::sleep(std::time::Duration::from_millis(1));
+                        eprintln!("{:?}", time.elapsed());
+                        time = std::time::Instant::now();
                     }
                 }
+                println!();
             }
 
             if self.massif {
-                println!("\n## Site HTTP Massif\n");
-                println!("The max payload was increased from 25MiB to 1GiB.\n");
-                println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.\n");
-
+                println!("## Site HTTP Massif");
+                println!();
+                println!("Peak memory usage to do various amounts of the tasks, measured in bytes.");
+                println!();
+                println!("The max payload was increased from 25MiB to 1GiB.");
+                println!();
+                println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.");
+                println!();
                 print_massif_header(&self.massif_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.massif_nums {
                         print_massif_entry(crate::site::http::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
-
-                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
+
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                    eprintln!("{:?}", time.elapsed());
+                    time = std::time::Instant::now();
                 }
+                println!();
             }
         }
 
@@ -214,21 +246,27 @@ impl Args {
                 .stderr(std::io::stderr())
                 .spawn().unwrap().wait().unwrap().success());
 
-            eprintflush!("\n{:?}", start.elapsed());
+            eprintln!("{:?}", time.elapsed());
+            time = std::time::Instant::now();
 
             if self.hyperfine {
-                println!("\n## Site Websocket Hyperfine\n");
-
+                println!("## Site WebSocket Hyperfine");
+                println!();
+                println!("Time it takes to do various amounts of the tasks, measured in milliseconds.");
+                println!();
                 print_hyperfine_header(&self.hyperfine_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.hyperfine_nums {
                         print_hyperfine_entry(crate::site::websocket::hyperfine::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
-
-                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
+
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                    eprintln!("{:?}", time.elapsed());
+                    time = std::time::Instant::now();
                 }
+                println!();
             }
 
             if self.callgrind {
@@ -240,33 +278,39 @@ impl Args {
                         eprintln!("    {num}");
                         crate::site::websocket::callgrind::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do();
 
-                        eprintflush!("\n{:?}", start.elapsed());
+                        std::thread::sleep(std::time::Duration::from_millis(1));
+                        eprintln!("{:?}", time.elapsed());
+                        time = std::time::Instant::now();
                     }
                 }
             }
 
             if self.massif {
-                println!("\n## Site Websocket Massif\n");
-
+                println!("## Site WebSocket Massif");
+                println!();
+                println!("Peak memory usage to do various amounts of the tasks, measured in bytes.");
+                println!();
                 print_massif_header(&self.massif_nums);
                 for task in TASKS {
                     printflush!("|{}|", task.name);
                     for num in &self.massif_nums {
                         print_massif_entry(crate::site::websocket::massif::Args { name: task.name.into(), url: task.url.into(), num: *num}.r#do());
                     }
-
-                    eprintflush!("\n{:?}", start.elapsed());
                     println!();
+
+                    std::thread::sleep(std::time::Duration::from_millis(1));
+                    eprintln!("{:?}", time.elapsed());
+                    time = std::time::Instant::now();
                 }
+                println!();
             }
         }
 
-        eprintflush!("\n{:?}", start.elapsed());
+        eprintln!("{:?}", time.elapsed());
     }
 }
 
 fn print_hyperfine_header(nums: &[usize]) {
-    println!("Time it takes to do various amounts of the tasks, measured in milliseconds.\n");
     printflush!("|Name|");
     for num in nums {printflush!("{}|", num.to_formatted_string(&Locale::en));}
     println!();
@@ -283,8 +327,6 @@ fn print_hyperfine_entry(mut file: fs::File) {
 }
 
 fn print_massif_header(nums: &[usize]) {
-    println!("Peak memory usage to do various amounts of the tasks, measured in bytes.");
-    println!();
     printflush!("|Name|");
     for num in nums {printflush!("{}|", num.to_formatted_string(&Locale::en));}
     println!();

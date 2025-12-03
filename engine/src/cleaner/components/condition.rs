@@ -20,21 +20,21 @@ pub enum Condition {
     /// Always satisfied.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(Condition::Always.check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::Always, &ts);
     /// ```
     Always,
     /// Never satisfied.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(!Condition::Never.check(&task_state).unwrap());
+    /// doc_test!(check, false, Condition::Never, &ts);
     /// ```
     Never,
     /// Always returns the error [`ConditionError::ExplicitError`] with the included message.
@@ -42,11 +42,11 @@ pub enum Condition {
     /// Always returns the error [`ConditionError::ExplicitError`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts);
     ///
-    /// Condition::Error("...".into()).check(&task_state).unwrap_err();
+    /// doc_test!(check, Err, Condition::Error("...".into()), &ts);
     /// ```
     Error(String),
     /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
@@ -64,18 +64,18 @@ pub enum Condition {
     #[doc = edoc!(checkerr(Self, 2))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!( Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Always))}.check(&task_state).unwrap());
-    /// assert!( Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Never ))}.check(&task_state).unwrap());
-    /// assert!(!Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Always))}.check(&task_state).unwrap());
-    /// assert!(!Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Never ))}.check(&task_state).unwrap());
-    /// assert!( Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Always))}.check(&task_state).unwrap());
-    /// assert!(!Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Never ))}.check(&task_state).unwrap());
-    /// assert!( Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Always))}.check(&task_state).unwrap());
-    /// assert!(!Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Never ))}.check(&task_state).unwrap());
+    /// doc_test!(check, true , Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Always))}, &ts);
+    /// doc_test!(check, true , Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Never ))}, &ts);
+    /// doc_test!(check, false, Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Always))}, &ts);
+    /// doc_test!(check, false, Condition::If {r#if: Box::new(Condition::Always), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Never ))}, &ts);
+    /// doc_test!(check, true , Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Always))}, &ts);
+    /// doc_test!(check, false, Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Always), r#else: Some(Box::new(Condition::Never ))}, &ts);
+    /// doc_test!(check, true , Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Always))}, &ts);
+    /// doc_test!(check, false, Condition::If {r#if: Box::new(Condition::Never ), then: Box::new(Condition::Never ), r#else: Some(Box::new(Condition::Never ))}, &ts);
     /// ```
     If {
         /// The [`Self`] to decide between [`Self::If::then`] and [`Self::If::else`].
@@ -91,12 +91,12 @@ pub enum Condition {
     #[doc = edoc!(checkerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(!Condition::Not(Box::new(Condition::Always)).check(&task_state).unwrap());
-    /// assert!( Condition::Not(Box::new(Condition::Never )).check(&task_state).unwrap());
+    /// doc_test!(check, false, Condition::Not(Box::new(Condition::Always)), &ts);
+    /// doc_test!(check, true , Condition::Not(Box::new(Condition::Never )), &ts);
     /// ```
     Not(Box<Self>),
     /// Satisfied if all contained [`Self`]s are satisfied.
@@ -104,14 +104,14 @@ pub enum Condition {
     #[doc = edoc!(checkerr(Self, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(!Condition::All(vec![Condition::Never , Condition::Never ]).check(&task_state).unwrap());
-    /// assert!(!Condition::All(vec![Condition::Never , Condition::Always]).check(&task_state).unwrap());
-    /// assert!(!Condition::All(vec![Condition::Always, Condition::Never ]).check(&task_state).unwrap());
-    /// assert!( Condition::All(vec![Condition::Always, Condition::Always]).check(&task_state).unwrap());
+    /// doc_test!(check, false, Condition::All(vec![Condition::Never , Condition::Never ]), &ts);
+    /// doc_test!(check, false, Condition::All(vec![Condition::Never , Condition::Always]), &ts);
+    /// doc_test!(check, false, Condition::All(vec![Condition::Always, Condition::Never ]), &ts);
+    /// doc_test!(check, true , Condition::All(vec![Condition::Always, Condition::Always]), &ts);
     /// ```
     All(Vec<Self>),
     /// Satisfied if any contained [`Self`] is satisfied.
@@ -119,14 +119,14 @@ pub enum Condition {
     #[doc = edoc!(checkerr(Self, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(!Condition::Any(vec![Condition::Never , Condition::Never ]).check(&task_state).unwrap());
-    /// assert!( Condition::Any(vec![Condition::Never , Condition::Always]).check(&task_state).unwrap());
-    /// assert!( Condition::Any(vec![Condition::Always, Condition::Never ]).check(&task_state).unwrap());
-    /// assert!( Condition::Any(vec![Condition::Always, Condition::Always]).check(&task_state).unwrap());
+    /// doc_test!(check, false, Condition::Any(vec![Condition::Never , Condition::Never ]), &ts);
+    /// doc_test!(check, true , Condition::Any(vec![Condition::Never , Condition::Always]), &ts);
+    /// doc_test!(check, true , Condition::Any(vec![Condition::Always, Condition::Never ]), &ts);
+    /// doc_test!(check, true , Condition::Any(vec![Condition::Always, Condition::Always]), &ts);
     /// ```
     Any(Vec<Self>),
 
@@ -226,12 +226,12 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource, 2))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!( Condition::StringIs {left: "a".into(), right: "a".into()}.check(&task_state).unwrap());
-    /// assert!(!Condition::StringIs {left: "a".into(), right: "b".into()}.check(&task_state).unwrap());
+    /// doc_test!(check, true , Condition::StringIs {left: "a".into(), right: "a".into()}, &ts);
+    /// doc_test!(check, false, Condition::StringIs {left: "a".into(), right: "b".into()}, &ts);
     /// ```
     StringIs {
         /// The left hand side of the equality check.
@@ -244,12 +244,12 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!( Condition::StringIsSome("abc"       .into()).check(&task_state).unwrap());
-    /// assert!(!Condition::StringIsSome(None::<&str>.into()).check(&task_state).unwrap());
+    /// doc_test!(check, true , Condition::StringIsSome("abc"       .into()), &ts);
+    /// doc_test!(check, false, Condition::StringIsSome(None::<&str>.into()), &ts);
     /// ```
     StringIsSome(StringSource),
     /// Satisfied if [`Self::StringContains::value`] contains [`Self::StringContains::substring`] at [`Self::StringContains::value`].
@@ -257,11 +257,11 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), checkerr(StringLocation))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(Condition::StringContains {value: "abc".into(), substring: "b".into(), at: StringLocation::Anywhere}.check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::StringContains {value: "abc".into(), substring: "b".into(), at: StringLocation::Anywhere}, &ts);
     /// ```
     StringContains {
         /// The value to search for [`Self::StringContains::substring`].
@@ -279,11 +279,11 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), checkerr(StringMatcher))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert!(Condition::StringMatches {value: "abc".into(), matcher: StringMatcher::Always}.check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::StringMatches {value: "abc".into(), matcher: StringMatcher::Always}, &ts);
     /// ```
     StringMatches {
         /// The value to check the value of.
@@ -299,11 +299,11 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// assert!(Condition::UrlIs("https://example.com/".into()).check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::UrlIs("https://example.com/".into()), &ts);
     /// ```
     UrlIs(#[suitable(assert = "string_source_string_literal_is_url_literal")] StringSource),
 
@@ -316,7 +316,7 @@ pub enum Condition {
     /// Satisfied if the [`Url::scheme`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::SchemeIsOneOf(
     ///     [
@@ -325,9 +325,9 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "http://example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com"); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "other://example.com"); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "http://example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com"); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "other://example.com"); doc_test!(check, false, condition, &ts);
     /// ```
     SchemeIsOneOf(Set<String>),
     /// Satisfied if the [`Url::scheme`] is in the specified [`Params::sets`] [`Set`].
@@ -342,18 +342,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::HostIs("example.com".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     HostIs(StringSource),
     /// Satisfied if the [`BetterUrl::normalized_host`] is equal to the specified string.
@@ -361,18 +361,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::NormalizedHostIs("example.com".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     NormalizedHostIs(StringSource),
     /// Satisfied if the value of [`BetterUrl::subdomain`] is equal to the specified string.
@@ -380,18 +380,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::SubdomainIs("www".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     SubdomainIs(StringSource),
     /// Satisfied if the value of [`BetterUrl::reg_domain`] is equal to the specified string.
@@ -399,18 +399,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::RegDomainIs("example.com".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     RegDomainIs(StringSource),
     /// Satisfied if the value of [`BetterUrl::domain`] is equal to the specified string.
@@ -418,18 +418,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::DomainIs("example.com".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainIs(StringSource),
     /// Satisfied if the value of [`BetterUrl::domain_middle`] is equal to the specified string.
@@ -437,18 +437,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::DomainMiddleIs("example".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainMiddleIs(StringSource),
     /// Satisfied if the value of [`BetterUrl::not_domain_suffix`] is equal to the specified string.
@@ -456,18 +456,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::NotDomainSuffixIs("www.example".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     NotDomainSuffixIs(StringSource),
     /// Satisfied if the value of [`BetterUrl::domain_suffix`] is equal to the specified string.
@@ -475,18 +475,18 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::DomainSuffixIs("com".into());
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainSuffixIs(StringSource),
 
@@ -655,7 +655,7 @@ pub enum Condition {
     /// Satisfied if the [`Url::host`] is contained in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::HostIsOneOf(
     ///     [
@@ -664,20 +664,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     HostIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::normalized_host`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::NormalizedHostIsOneOf(
     ///     [
@@ -685,20 +685,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     NormalizedHostIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::subdomain`] is contained in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::SubdomainIsOneOf(
     ///     [
@@ -707,20 +707,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     SubdomainIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::reg_domain`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::RegDomainIsOneOf(
     ///     [
@@ -728,20 +728,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     RegDomainIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::domain`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::DomainIsOneOf(
     ///     [
@@ -750,20 +750,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::domain_middle`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::DomainMiddleIsOneOf(
     ///     [
@@ -771,20 +771,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainMiddleIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::not_domain_suffix`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::NotDomainSuffixIsOneOf(
     ///     [
@@ -793,20 +793,20 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     NotDomainSuffixIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::domain_suffix`] is in the specified [`Set`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// let condition = Condition::DomainSuffixIsOneOf(
     ///     [
@@ -814,14 +814,14 @@ pub enum Condition {
     ///     ].into()
     /// );
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!condition.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!condition.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainSuffixIsOneOf(Set<String>),
 
@@ -922,91 +922,91 @@ pub enum Condition {
     /// Satisfied if the [`Url::host`] is [`Some`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(Condition::UrlHasHost.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, true, Condition::UrlHasHost, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, true, Condition::UrlHasHost, &ts);
     /// ```
     UrlHasHost,
     /// Satisfied if the URL's host is a fully qualified domain name.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!Condition::HostIsFqdn.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!Condition::HostIsFqdn.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
     /// ```
     HostIsFqdn,
     /// Satisfied if the URL's host is a domain.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!( Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!( Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!( Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!( Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!( Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!( Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!Condition::HostIsDomain.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!Condition::HostIsDomain.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, Condition::HostIsDomain, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, Condition::HostIsDomain, &ts);
     /// ```
     HostIsDomain,
     /// Satisfied if the URL's host is an IP address.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!( Condition::HostIsIp.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!( Condition::HostIsIp.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, true , Condition::HostIsIp, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, true , Condition::HostIsIp, &ts);
     /// ```
     HostIsIp,
     /// Satisfied if the URL's host is an IPv4 address.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!( Condition::HostIsIpv4.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!(!Condition::HostIsIpv4.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, true , Condition::HostIsIpv4, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
     /// ```
     HostIsIpv4,
     /// Satisfied if the URL's host is an IPv6 address.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(ts, url = "https://example.com"     ); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://example.com."    ); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com" ); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://www.example.com."); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com" ); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://abc.example.com."); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://127.0.0.1"       ); assert!(!Condition::HostIsIpv6.check(&ts).unwrap());
-    /// tsv!(ts, url = "https://[::1]"           ); assert!( Condition::HostIsIpv6.check(&ts).unwrap());
+    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
+    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, true , Condition::HostIsIpv6, &ts);
     /// ```
     HostIsIpv6,
 
@@ -1165,13 +1165,13 @@ pub enum Condition {
     /// Satisfied if the URL' has a query query and has a matching query parameter.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com?a=2&b=3");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3");
     ///
-    /// assert!( Condition::HasQueryParam("a".into()).check(&task_state).unwrap());
-    /// assert!( Condition::HasQueryParam("b".into()).check(&task_state).unwrap());
-    /// assert!(!Condition::HasQueryParam("c".into()).check(&task_state).unwrap());
+    /// doc_test!(check, true , Condition::HasQueryParam("a".into()), &ts);
+    /// doc_test!(check, true , Condition::HasQueryParam("b".into()), &ts);
+    /// doc_test!(check, false, Condition::HasQueryParam("c".into()), &ts);
     /// ```
     HasQueryParam(QueryParamSelector),
     /// Satisfied if the [`BetterUrl::query_param`] is the specified value.
@@ -1221,14 +1221,14 @@ pub enum Condition {
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com/abc?a=2");
+    /// doc_test!(task_state, ts, task = "https://example.com/abc?a=2");
     ///
-    /// assert!(Condition::PartIs {part: UrlPart::Host                  , value: "example.com".into()}.check(&task_state).unwrap());
-    /// assert!(Condition::PartIs {part: UrlPart::Path                  , value: "/abc"       .into()}.check(&task_state).unwrap());
-    /// assert!(Condition::PartIs {part: UrlPart::Query                 , value: "a=2"        .into()}.check(&task_state).unwrap());
-    /// assert!(Condition::PartIs {part: UrlPart::QueryParam("a".into()), value: "2"          .into()}.check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::PartIs {part: UrlPart::Host                  , value: "example.com".into()}, &ts);
+    /// doc_test!(check, true, Condition::PartIs {part: UrlPart::Path                  , value: "/abc"       .into()}, &ts);
+    /// doc_test!(check, true, Condition::PartIs {part: UrlPart::Query                 , value: "a=2"        .into()}, &ts);
+    /// doc_test!(check, true, Condition::PartIs {part: UrlPart::QueryParam("a".into()), value: "2"          .into()}, &ts);
     /// ```
     PartIs {
         /// The [`UrlPart`] to get.
@@ -1241,12 +1241,12 @@ pub enum Condition {
     #[doc = edoc!(getnone(UrlPart, Condition), getnone(StringSource, Condition), checkerr(StringLocation))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com/abc");
+    /// doc_test!(task_state, ts, task = "https://example.com/abc");
     ///
-    /// assert!(Condition::PartContains {part: UrlPart::Path, value: "/ab".into(), at: StringLocation::Start}.check(&task_state).unwrap());
-    /// Condition::PartContains {part: UrlPart::Fragment, value: "".into(), at: StringLocation::Start}.check(&task_state).unwrap_err();
+    /// doc_test!(check, true, Condition::PartContains {part: UrlPart::Path    , value: "/ab".into(), at: StringLocation::Start}, &ts);
+    /// doc_test!(check, Err , Condition::PartContains {part: UrlPart::Fragment, value: ""   .into(), at: StringLocation::Start}, &ts);
     /// ```
     PartContains {
         /// The part to look in.
@@ -1278,12 +1278,12 @@ pub enum Condition {
     #[doc = edoc!(getnone(UrlPart, Condition), checkerr(StringMatcher))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com/abc");
+    /// doc_test!(task_state, ts, task = "https://example.com/abc");
     ///
-    /// assert!(Condition::PartMatches {part: UrlPart::Path    , matcher: StringMatcher::Always}.check(&task_state).unwrap());
-    /// assert!(Condition::PartMatches {part: UrlPart::Fragment, matcher: StringMatcher::Always}.check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::PartMatches {part: UrlPart::Path    , matcher: StringMatcher::Always}, &ts);
+    /// doc_test!(check, true, Condition::PartMatches {part: UrlPart::Fragment, matcher: StringMatcher::Always}, &ts);
     /// ```
     PartMatches {
         /// The part to match the value of.
@@ -1294,12 +1294,12 @@ pub enum Condition {
     /// Satisfied if [`Self::PartIsOneOf::part`] is in [`Self::PartIsOneOf::values`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com/abc");
+    /// doc_test!(task_state, ts, task = "https://example.com/abc");
     ///
-    /// assert!(Condition::PartIsOneOf {part: UrlPart::Path    , values: [Some("/abc".into()), None].into()}.check(&task_state).unwrap());
-    /// assert!(Condition::PartIsOneOf {part: UrlPart::Fragment, values: [Some("/abc".into()), None].into()}.check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::PartIsOneOf {part: UrlPart::Path    , values: [Some("/abc".into()), None].into()}, &ts);
+    /// doc_test!(check, true, Condition::PartIsOneOf {part: UrlPart::Fragment, values: [Some("/abc".into()), None].into()}, &ts);
     /// ```
     PartIsOneOf {
         /// The part to check the value of.
@@ -1320,27 +1320,27 @@ pub enum Condition {
 
     // Misc.
 
-    /// Satisfied if the specified [`Self`] from [`TaskStateView::commons`]'s [`Commons::conditions`] is.
+    /// Uses a [`Self`] from [`Cleaner::functions`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Condition), commonnotfound(Self, Condition), callerr(CommonArgsConfig::make), checkerr(Self))]
+    #[doc = edoc!(functionnotfound(Self, Condition), checkerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, commons = Commons {
+    /// doc_test!(task_state, ts, functions = Functions {
     ///     conditions: [("abc".into(), Condition::Always)].into(),
     ///     ..Default::default()
     /// });
     ///
-    /// assert!(Condition::Common(CommonCallConfig {name: Box::new("abc".into()), args: Default::default()}).check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::Function(Box::new(FunctionCall {name: "abc".into(), args: Default::default()})), &ts);
     /// ```
-    Common(CommonCallConfig),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::conditions`] and applies it.
+    Function(Box<FunctionCall>),
+    /// Uses a [`Self`] from [`TaskState::call_args`].
     /// # Errors
-    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`ConditionError::NotInCommonContext`].
+    /// If [`TaskState::call_args`] is [`None`], returns the error [`ConditionError::NotInFunction`].
     ///
-    #[doc = edoc!(commoncallargnotfound(Self, Condition), checkerr(Self))]
-    CommonCallArg(StringSource),
+    #[doc = edoc!(callargfunctionnotfound(Self, Condition), checkerr(Self))]
+    CallArg(StringSource),
     /// Calls the specified function and returns its value.
     ///
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
@@ -1350,19 +1350,19 @@ pub enum Condition {
     #[doc = edoc!(callerr(Self::Custom::0))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// fn some_complex_operation(task_state: &TaskStateView) -> Result<bool, ConditionError> {
+    /// fn some_complex_operation(task_state: &TaskState) -> Result<bool, ConditionError> {
     ///     Ok(true)
     /// }
     ///
-    /// assert!(Condition::Custom(some_complex_operation).check(&task_state).unwrap());
+    /// doc_test!(check, true, Condition::Custom(some_complex_operation), &ts);
     /// ```
     #[suitable(never)]
     #[serde(skip)]
-    Custom(fn(&TaskStateView) -> Result<bool, ConditionError>)
+    Custom(fn(&TaskState) -> Result<bool, ConditionError>)
 }
 
 /// The enum of errors [`Condition::check`] can return.
@@ -1440,12 +1440,12 @@ pub enum ConditionError {
     #[error(transparent)]
     StringLocationError(#[from] StringLocationError),
 
-    /// Returned when a [`GetFlagError`] is encountered.
+    /// Returned when a [`FlagSourceError`] is encountered.
     #[error(transparent)]
-    GetFlagError(#[from] GetFlagError),
-    /// Returned when a [`GetVarError`] is encountered.
+    FlagSourceError(#[from] FlagSourceError),
+    /// Returned when a [`VarSourceError`] is encountered.
     #[error(transparent)]
-    GetVarError(#[from] GetVarError),
+    VarSourceError(#[from] VarSourceError),
 
     /// Returned when a [`Set`] wasn't found.
     #[error("The requested set wasn't found.")]
@@ -1454,20 +1454,14 @@ pub enum ConditionError {
     #[error("A Partitioning with the specified name wasn't found.")]
     PartitioningNotFound,
 
-    /// Returned when a [`Condition`] with the specified name isn't found in the [`Commons::conditions`].
-    #[error("A Condition with the specified name wasn't found in the Commons::conditions.")]
-    CommonConditionNotFound,
-    /// Returned when a [`MakeCommonArgsError`] is encountered.
-    #[error(transparent)]
-    MakeCommonArgsError(#[from] MakeCommonArgsError),
-
-    /// Returned when trying to use [`Condition::CommonCallArg`] outside of a common context.
-    #[error("Tried to use Condition::CommonCallArg outside of a common context.")]
-    NotInCommonContext,
-     /// Returned when the [`Condition`] requested from a [`Condition::CommonCallArg`] isn't found.
-    #[error("The Condition requested from a Condition::CommonCallArg wasn't found.")]
-    CommonCallArgConditionNotFound,
-   /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
+    /// Returned when a [`Condition`] with the specified name isn't found in the [`Functions::conditions`].
+    #[error("A Condition with the specified name wasn't found in the Functions::conditions.")]
+    FunctionNotFound,
+    #[error("TODO")]
+    NotInFunction,
+    #[error("TODO")]
+    CallArgFunctionNotFound,
+    /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
     #[error(transparent)]
     Custom(Box<dyn std::error::Error + Send + Sync>)
 }
@@ -1478,7 +1472,7 @@ impl Condition {
     /// If the specified variant of [`Self`] is unsatisfied, return [`false`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn check(&self, task_state: &TaskStateView) -> Result<bool, ConditionError> {
+    pub fn check<'j>(&'j self, task_state: &TaskState<'j>) -> Result<bool, ConditionError> {
         Ok(match self {
             // Debug/constants
 
@@ -1532,16 +1526,16 @@ impl Condition {
 
             // Maps
 
-            Self::PartMap  {part , map} => if let Some(condition) = map.get(part .get(task_state.url) ) {condition.check(task_state)?} else {false},
+            Self::PartMap  {part , map} => if let Some(condition) = map.get(part .get(&task_state.url) ) {condition.check(task_state)?} else {false},
             Self::StringMap{value, map} => if let Some(condition) = map.get(value.get(task_state    )?) {condition.check(task_state)?} else {false},
 
-            Self::PartPartitioning   {partitioning, part , map} => if let Some(condition) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(part.get(task_state.url).as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringPartitioning {partitioning, value, map} => if let Some(condition) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(get_option_str!(value, task_state)) ) {condition.check(task_state)?} else {false},
+            Self::PartPartitioning   {partitioning, part , map} => if let Some(condition) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(part.get(&task_state.url).as_deref())) {condition.check(task_state)?} else {false},
+            Self::StringPartitioning {partitioning, value, map} => if let Some(condition) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(get_option_str!(value, task_state)) ) {condition.check(task_state)?} else {false},
 
             // Params
 
-            Self::FlagIsSet   (FlagSource::Params(StringSource::String(name))) =>  task_state.params.flags.contains(name),
-            Self::FlagIsNotSet(FlagSource::Params(StringSource::String(name))) => !task_state.params.flags.contains(name),
+            Self::FlagIsSet   (FlagSource::Params(StringSource::String(name))) =>  task_state.job.cleaner.params.flags.contains(name),
+            Self::FlagIsNotSet(FlagSource::Params(StringSource::String(name))) => !task_state.job.cleaner.params.flags.contains(name),
 
             Self::FlagIsSet(flag)    =>  flag.get(task_state)?,
             Self::FlagIsNotSet(flag) => !flag.get(task_state)?,
@@ -1557,13 +1551,13 @@ impl Condition {
 
             // Whole
 
-            Self::UrlIs(value) => task_state.url == get_str!(value, task_state, ConditionError),
+            Self::UrlIs(value) => task_state.url == *get_cow!(value, task_state, ConditionError),
 
             // Scheme
 
             Self::SchemeIs(value) => task_state.url.scheme() == get_str!(value, task_state, ConditionError),
             Self::SchemeIsOneOf(values) => values.contains_some(task_state.url.scheme()),
-            Self::SchemeIsInSet(set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.scheme()),
+            Self::SchemeIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.scheme()),
 
             // Host is
 
@@ -1627,18 +1621,18 @@ impl Condition {
 
             // Host is in set
 
-            Self::HostIsInSet           (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str         ()),
-            Self::NormalizedHostIsInSet (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normalized_host  ()),
-            Self::SubdomainIsInSet      (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain        ()),
-            Self::RegDomainIsInSet      (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.reg_domain       ()),
-            Self::DomainIsInSet         (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain           ()),
-            Self::DomainMiddleIsInSet   (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle    ()),
-            Self::NotDomainSuffixIsInSet(set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.not_domain_suffix()),
-            Self::DomainSuffixIsInSet   (set) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix    ()),
+            Self::HostIsInSet           (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str         ()),
+            Self::NormalizedHostIsInSet (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normalized_host  ()),
+            Self::SubdomainIsInSet      (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain        ()),
+            Self::RegDomainIsInSet      (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.reg_domain       ()),
+            Self::DomainIsInSet         (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain           ()),
+            Self::DomainMiddleIsInSet   (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle    ()),
+            Self::NotDomainSuffixIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.not_domain_suffix()),
+            Self::DomainSuffixIsInSet   (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix    ()),
 
-            Self::DomainSegmentIsInSet       {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
-            Self::SubdomainSegmentIsInSet    {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain_segment    (*index)),
-            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
+            Self::DomainSegmentIsInSet       {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
+            Self::SubdomainSegmentIsInSet    {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.subdomain_segment    (*index)),
+            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
 
             // Misc. host
 
@@ -1671,7 +1665,7 @@ impl Condition {
             Self::PathStartsWith(value    ) => task_state.url.path().starts_with(get_str!(value, task_state, ConditionError)),
             Self::PathEndsWith  (value    ) => task_state.url.path().ends_with (get_str!(value, task_state, ConditionError)),
             Self::PathIsOneOf   (values   ) => values.contains_some(task_state.url.path()),
-            Self::PathIsInSet   (set      ) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.path()),
+            Self::PathIsInSet   (set      ) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.path()),
             Self::PathContains  {value, at} => at.check(task_state.url.path(), get_str!(value, task_state, ConditionError))?,
             Self::PathMatches   (matcher  ) => matcher.check(Some(task_state.url.path()), task_state)?,
 
@@ -1679,7 +1673,7 @@ impl Condition {
             Self::PathSegmentStartsWith{index, value    } => task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?.ok_or(ConditionError::PathSegmentNotFound)?.starts_with(get_str!(value, task_state, ConditionError)),
             Self::PathSegmentEndsWith  {index, value    } => task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?.ok_or(ConditionError::PathSegmentNotFound)?.ends_with(get_str!(value, task_state, ConditionError)),
             Self::PathSegmentIsOneOf   {index, values   } => values.contains(task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?),
-            Self::PathSegmentIsInSet   {index, set      } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment               (*index).ok_or(ConditionError::PathDoesNotHaveSegments)?),
+            Self::PathSegmentIsInSet   {index, set      } => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment               (*index).ok_or(ConditionError::PathDoesNotHaveSegments)?),
             Self::PathSegmentContains  {index, value, at} => at.check(task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?.ok_or(ConditionError::PathSegmentNotFound  )?, get_str!(value, task_state, ConditionError))?,
             Self::PathSegmentMatches   {index, matcher  } => matcher.check(task_state.url.path_segment(*index).ok_or(ConditionError::PathDoesNotHaveSegments)?, task_state)?,
 
@@ -1695,13 +1689,13 @@ impl Condition {
             Self::QueryParamIs {param: QueryParamSelector {name, index}, value } => task_state.url.query_param(name, *index).flatten().flatten() == get_option_cow!(value, task_state),
 
             Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => values.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
-            Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
+            Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.query_param(name, *index).flatten().flatten().as_deref()),
 
             // Fragment
 
             Self::FragmentIs                 (value ) => task_state.url.fragment() == get_option_str!(value, task_state),
             Self::FragmentIsOneOf            (values) => values.contains(task_state.url.fragment()),
-            Self::FragmentIsInSet            (set   ) => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
+            Self::FragmentIsInSet            (set   ) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
             Self::FragmentIsSomeAndStartsWith(value ) => match task_state.url.fragment() {
                 Some(fragment) => fragment.starts_with(get_str!(value, task_state, ConditionError)),
                 None => false
@@ -1709,38 +1703,31 @@ impl Condition {
 
             // General parts
 
-            Self::PartIs {part, value} => part.get(task_state.url) == get_option_cow!(value, task_state),
+            Self::PartIs {part, value} => part.get(&task_state.url) == get_option_cow!(value, task_state),
 
-            Self::PartContains {part, value, at} => at.check(&part.get(task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
-            Self::PartIsSomeAndContains {part, value, at} => if let Some(x) = part.get(task_state.url) {
+            Self::PartContains {part, value, at} => at.check(&part.get(&task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartIsSomeAndContains {part, value, at} => if let Some(x) = part.get(&task_state.url) {
                 at.check(&x, get_str!(value, task_state, ConditionError))?
             } else {
                 false
             },
 
-            Self::PartMatches {part, matcher} => matcher.check   (part.get(task_state.url).as_deref(), task_state)?,
-            Self::PartIsOneOf {part, values } => values .contains(part.get(task_state.url).as_deref()),
-            Self::PartIsInSet {part, set    } => task_state.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(part.get(task_state.url).as_deref()),
+            Self::PartMatches {part, matcher} => matcher.check   (part.get(&task_state.url).as_deref(), task_state)?,
+            Self::PartIsOneOf {part, values } => values .contains(part.get(&task_state.url).as_deref()),
+            Self::PartIsInSet {part, set    } => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(part.get(&task_state.url).as_deref()),
 
             // Misc
 
-            Self::Common(common_call) => {
-                task_state.commons.conditions.get(get_str!(common_call.name, task_state, ConditionError)).ok_or(ConditionError::CommonConditionNotFound)?.check(&TaskStateView {
-                    common_args: Some(&common_call.args.make(task_state)?),
-                    url        : task_state.url,
-                    scratchpad : task_state.scratchpad,
-                    context    : task_state.context,
-                    job_context: task_state.job_context,
-                    params     : task_state.params,
-                    commons    : task_state.commons,
-                    unthreader : task_state.unthreader,
-                    #[cfg(feature = "cache")]
-                    cache      : task_state.cache,
-                    #[cfg(feature = "http")]
-                    http_client: task_state.http_client
-                })?
+            Self::Function(call) => {
+                let func = task_state.job.cleaner.functions.conditions.get(&call.name).ok_or(ConditionError::FunctionNotFound)?;
+                let old_args = task_state.call_args.replace(Some(&call.args));
+                let ret = func.check(task_state);
+                task_state.call_args.replace(old_args);
+                ret?
             },
-            Self::CommonCallArg(name) => task_state.common_args.ok_or(ConditionError::NotInCommonContext)?.conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CommonCallArgConditionNotFound)?.check(task_state)?,
+            Self::CallArg(name) => task_state.call_args.get().ok_or(ConditionError::NotInFunction)?
+                .conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CallArgFunctionNotFound)?
+                .check(task_state)?,
             Self::Custom(function) => function(task_state)?
         })
     }

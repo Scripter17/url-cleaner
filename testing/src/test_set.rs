@@ -1,12 +1,14 @@
+//! [`TestSet`].
+
 use crate::*;
 
-/// Rules for how to construct a [`Job`] from a [`Cleaner`] and the [`Test`]s to run on it.
+/// Rules for how to construct a [`Job`] and the [`Test`]s to run on it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TestSet {
     /// The [`ParamsDiff`] to apply to the [`Cleaner`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params_diff: Option<ParamsDiff>,
-    /// The [`JobContext`] to give to the [`Job`].
+    /// The [`JobContext`] to use.
     #[serde(default, skip_serializing_if = "is_default")]
     pub job_context: JobContext,
     /// The [`Test`]s to run.
@@ -22,22 +24,19 @@ impl TestSet {
     /// Do the tests.
     /// # Errors
     /// If a test fails, returns an error.
-    pub fn r#do(self, cleaner: &Cleaner) -> Result<(), DoTestSetError> {
-        let mut cleaner = cleaner.borrowed();
-
+    pub fn r#do(self, mut cleaner: Cleaner) -> Result<(), DoTestSetError> {
         println!(
-            "TestSet\n  params_diff: {}\n  job_context: {}",
-            serde_json::to_string(&self.params_diff).expect("Serialization to never fail."),
-            serde_json::to_string(&self.job_context).expect("Serialization to never fail.")
+            "TestSet\n  params_diff: {}",
+            serde_json::to_string(&self.params_diff).expect("Serialization to never fail.")
         );
 
         if let Some(params_diff) = self.params_diff {
             params_diff.apply(&mut cleaner.params);
         }
 
-        let job_config = JobConfig {
-            context: &self.job_context,
-            cleaner: &cleaner,
+        let job = &Job {
+            context: self.job_context,
+            cleaner,
             unthreader: &Default::default(),
             cache: Cache {
                 config: CacheConfig {
@@ -54,7 +53,7 @@ impl TestSet {
 
         for test in self.tests {
             println!("    Test: {}", serde_json::to_string(&test).expect("Serialition to never fail."));
-            match test.r#do(&job_config) {
+            match test.r#do(job) {
                 Ok(()) => {},
                 Err(e) => {
                     println!("     FAILED: {e:?}");

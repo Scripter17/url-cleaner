@@ -1,18 +1,18 @@
-//! [`ListSource`].
+//! [`MapSource`].
 
-use serde::{Serialize, ser::{Serializer, SerializeSeq}, Deserialize, de::{self, Deserializer, Visitor, SeqAccess, MapAccess}};
+use serde::{Serialize, ser::Serializer, Deserialize, de::{self, Deserializer, Visitor, MapAccess}};
 use thiserror::Error;
 
 use crate::prelude::*;
 
-/// Get a list.
+/// Get a map.
 ///
 /// Defauls to [`Self::None`].
 ///
 /// Strings deserialize into [`Self::Params`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
-pub enum ListSource {
+pub enum MapSource {
     /// [`None`].
     ///
     /// Serializes to and deserializes from `null`.
@@ -56,24 +56,24 @@ pub enum ListSource {
         #[serde(flatten)]
         map: Box<Map<Self>>
     },
-    /// Returns the contained list.
+    /// Returns the contained map.
     ///
     /// Serializes and deserializes to and from a list.
-    Literal(Vec<String>),
-    /// Gets a list from [`Params::lists`].
+    Literal(Map<String>),
+    /// Gets a map from [`Params::maps`].
     ///
     /// If [`StringSource::String`], serializes to a string.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ListSourceError))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, MapSourceError))]
     Params(StringSource),
     CallArg(StringSource)
 }
 
-impl ListSource {
-    /// Get the list.
+impl MapSource {
+    /// Get the map.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'j>(&'j self, task_state: &TaskState<'j>) -> Result<Option<&'j Vec<String>>, ListSourceError> {
+    pub fn get<'j>(&'j self, task_state: &TaskState<'j>) -> Result<Option<&'j Map<String>>, MapSourceError> {
         Ok(match self {
             Self::None => None,
             Self::If {r#if, r#then, r#else} => if r#if.check(task_state)? {r#then} else {r#else}.get(task_state)?,
@@ -86,15 +86,15 @@ impl ListSource {
                 None => None
             },
             Self::Literal(x) => Some(x),
-            Self::Params(x) => task_state.job.cleaner.params.lists.get(get_str!(x, task_state, ListSourceError)),
-            Self::CallArg(name) => task_state.call_args.get().ok_or(ListSourceError::NotInFunction)?.lists.get(get_str!(name, task_state, ListSourceError)),
+            Self::Params(x) => task_state.job.cleaner.params.maps.get(get_str!(x, task_state, MapSourceError)),
+            Self::CallArg(x) => task_state.call_args.get().ok_or(MapSourceError::NotInFunction)?.maps.get(get_str!(x, task_state, MapSourceError))
         })
     }
 }
 
 /// The enum of errors [`ListSource::get`] can return.
 #[derive(Debug, Error)]
-pub enum ListSourceError {
+pub enum MapSourceError {
     /// Returned when a [`StringSource`] returned [`None`] where it has to return [`Some`].
     #[error("A StringSource returned None where it had to return Some.")]
     StringSourceIsNone,
@@ -106,45 +106,38 @@ pub enum ListSourceError {
     #[error(transparent)]
     ConditionError(#[from] Box<ConditionError>),
 
-    #[error("TOOD")]
+    #[error("TODO")]
     NotInFunction
 }
 
-impl From<ConditionError> for ListSourceError {
+impl From<ConditionError> for MapSourceError {
     fn from(value: ConditionError) -> Self {
         Self::ConditionError(value.into())
     }
 }
 
-impl Serialize for ListSource {
+impl Serialize for MapSource {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         Ok(match self {
             Self::None => serializer.serialize_none()?,
-            Self::Literal(list) => {
-                let mut serializer = serializer.serialize_seq(Some(list.len()))?;
-                for x in list {
-                    serializer.serialize_element(x)?;
-                }
-                serializer.end()?
-            },
             Self::Params(StringSource::String(x)) => serializer.serialize_str(x)?,
             _ => Self::serialize(self, serializer)?
         })
     }
 }
 
-impl<'de> Deserialize<'de> for ListSource {
+impl<'de> Deserialize<'de> for MapSource {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(ListSourceVisitor)
+        deserializer.deserialize_any(MapSourceVisitor)
     }
 }
 
-/// [`Visitor`] for [`ListSource`].
+/// [`Visitor`] for [`MapSource`].
 #[derive(Debug)]
-struct ListSourceVisitor;
+struct MapSourceVisitor;
 
-impl<'de> Visitor<'de> for ListSourceVisitor {
-    type Value = ListSource;
+impl<'de> Visitor<'de> for MapSourceVisitor {
+    type Value = MapSource;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "a list, null, or another variant written normally.")
@@ -160,14 +153,6 @@ impl<'de> Visitor<'de> for ListSourceVisitor {
 
     fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
         Ok(Self::Value::Params(v.into()))
-    }
-
-    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-        let mut ret = Vec::with_capacity(seq.size_hint().unwrap_or(8));
-        while let Some(x) = seq.next_element()? {
-            ret.push(x);
-        }
-        Ok(Self::Value::Literal(ret))
     }
 
     fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {

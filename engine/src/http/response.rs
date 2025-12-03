@@ -71,7 +71,7 @@ impl HttpResponseHandler {
     /// Gets the specified part of a [`reqwest::blocking::Response`].
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn handle(&self, response: reqwest::blocking::Response, task_state: &TaskStateView) -> Result<String, ResponseHandlerError> {
+    pub fn handle<'j>(&'j self, response: reqwest::blocking::Response, task_state: &TaskState<'j>) -> Result<String, ResponseHandlerError> {
         Ok(match self {
             Self::Body => response.text()?,
             Self::Header(name) => response.headers().get(get_str!(name, task_state, ResponseHandlerError)).ok_or(ResponseHandlerError::HeaderNotFound)?.to_str()?.to_string(),

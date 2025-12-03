@@ -59,7 +59,11 @@ macro_rules! get_option_str {
 /// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
 macro_rules! get_new_option_str {
     ($value:expr, $task_state:expr) => {
-        get_option_string!($value, $task_state).as_deref()
+        match $value {
+            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
+            StringSource::None => None,
+            value => value.get($task_state)?.map(std::borrow::Cow::into_owned).map(Cow::Owned)
+        }.as_deref()
     }
 }
 
@@ -69,12 +73,13 @@ macro_rules! get_option_cow {
         match $value {
             StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
             StringSource::None => None,
-            value => value.get(&$task_state.to_view())?
+            value => value.get($task_state)?
         }
     }
 }
 
 /// Helper macro to get a [`StringSource`]'s value as a [`String`] or return an error if it's [`None`].
+#[allow(unused_macros, reason = "Used when some features are enabled.")]
 macro_rules! get_string {
     ($value:expr, $task_state:expr, $error:ty) => {
         get_cow!($value, $task_state, $error).into_owned()
@@ -91,7 +96,10 @@ macro_rules! get_str {
 /// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
 macro_rules! get_new_str {
     ($value:expr, $task_state:expr, $error:ty) => {
-        &*get_string!($value, $task_state, $error)
+        &*match $value.get_self() {
+            StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
+            value => Cow::Owned(value.get($task_state)?.ok_or(<$error>::StringSourceIsNone)?.into_owned())
+        }
     }
 }
 
@@ -100,7 +108,7 @@ macro_rules! get_cow {
     ($value:expr, $task_state:expr, $error:ty) => {
         match $value.get_self() {
             StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
-            value => value.get(&$task_state.to_view())?.ok_or(<$error>::StringSourceIsNone)?
+            value => value.get($task_state)?.ok_or(<$error>::StringSourceIsNone)?
         }
     }
 }

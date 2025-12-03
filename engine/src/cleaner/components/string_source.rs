@@ -23,11 +23,11 @@ pub enum StringSource {
     /// Return a reference to the contained [`String`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::String("abc".into()).get(&task_state).unwrap(), Some("abc".into()));
+    /// doc_test!(get, Some("abc"), StringSource::String("abc".into()), &ts);
     /// ```
     String(String),
     /// Always returns [`None`].
@@ -35,11 +35,11 @@ pub enum StringSource {
     /// Deserializes from and serializes to `null`.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::None.get(&task_state).unwrap(), None);
+    /// doc_test!(get, None, StringSource::None, &ts);
     ///
     /// assert_eq!(serde_json::from_str::<StringSource>("null").unwrap(), StringSource::None);
     /// assert_eq!(serde_json::to_string(&StringSource::None)  .unwrap(), "null");
@@ -51,11 +51,11 @@ pub enum StringSource {
     /// Always returns the error [`StringSourceError::ExplicitError`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// StringSource::Error("Message".into()).get(&task_state).unwrap_err();
+    /// StringSource::Error("Message".into()).get(&ts).unwrap_err();
     /// ```
     Error(String),
     /// If [`Self::TryElse::try`]'s call to [`Self::get`] returns an error, instead return the value of [`Self::TryElse::else`].
@@ -63,11 +63,11 @@ pub enum StringSource {
     #[doc = edoc!(geterrte(Self, StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::TryElse {r#try: Box::new(StringSource::Error("Message".into())), r#else: Box::new(StringSource::None)}.get(&task_state).unwrap(), None);
+    /// doc_test!(get, None, StringSource::TryElse {r#try: Box::new(StringSource::Error("Message".into())), r#else: Box::new(StringSource::None)}, &ts);
     /// ```
     TryElse {
         /// The value to try to get.
@@ -95,19 +95,19 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self, 2))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::NoneTo {
+    /// doc_test!(get, Some("none"), StringSource::NoneTo {
     ///     value: Box::new(StringSource::None),
     ///     if_none: Box::new("none".into())
-    /// }.get(&task_state).unwrap(), Some("none".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::NoneTo {
+    /// doc_test!(get, Some("not none"), StringSource::NoneTo {
     ///     value: Box::new("not none".into()),
     ///     if_none: Box::new("none".into())
-    /// }.get(&task_state).unwrap(), Some("not none".into()));
+    /// }, &ts);
     /// ```
     NoneTo {
         /// The value to return if it's [`Some`].
@@ -141,21 +141,21 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, params = Params {flags: Cow::Owned(["abc".into()].into()), ..Default::default()});
+    /// doc_test!(task_state, ts, params = Params {flags: Cow::Owned(["abc".into()].into()), ..Default::default()});
     ///
-    /// assert_eq!(StringSource::IfFlag {
+    /// doc_test!(get, Some("set!"), StringSource::IfFlag {
     ///     flag: Box::new(FlagSource::Params("abc".into())),
     ///     then: Box::new("set!".into()),
     ///     r#else: Box::new("unset".into())
-    /// }.get(&task_state).unwrap(), Some("set!".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::IfFlag {
+    /// doc_test!(get, Some("unset"), StringSource::IfFlag {
     ///     flag: Box::new(FlagSource::Params("def".into())),
     ///     then: Box::new("set!".into()),
     ///     r#else: Box::new("unset".into())
-    /// }.get(&task_state).unwrap(), Some("unset".into()));
+    /// }, &ts);
     /// ```
     IfFlag {
         /// The name of the flag to check.
@@ -171,21 +171,21 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::IfNone {
+    /// doc_test!(get, Some("none"), StringSource::IfNone {
     ///     value : Box::new(StringSource::None),
     ///     then  : Box::new("none".into()),
     ///     r#else: Box::new("some".into())
-    /// }.get(&task_state).unwrap(), Some("none".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::IfNone {
+    /// doc_test!(get, Some("some"), StringSource::IfNone {
     ///     value : Box::new("some value. it's not returned".into()),
     ///     then  : Box::new("none".into()),
     ///     r#else: Box::new("some".into())
-    /// }.get(&task_state).unwrap(), Some("some".into()));
+    /// }, &ts);
     /// ```
     IfNone {
         /// The value whose [`None`]ness to check.
@@ -200,23 +200,23 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self, 3), checkerr(StringMatcher))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::IfMatches {
+    /// doc_test!(get, Some("matches"), StringSource::IfMatches {
     ///     value  : Box::new("abc".into()),
     ///     matcher: Box::new(StringMatcher::Is("abc".into())),
     ///     then   : Box::new("matches".into()),
     ///     r#else : Box::new("doesn't match".into())
-    /// }.get(&task_state).unwrap(), Some("matches".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::IfMatches {
+    /// doc_test!(get, Some("doesn't match"), StringSource::IfMatches {
     ///     value  : Box::new("def".into()),
     ///     matcher: Box::new(StringMatcher::Is("abc".into())),
     ///     then   : Box::new("matches".into()),
     ///     r#else : Box::new("doesn't match".into())
-    /// }.get(&task_state).unwrap(), Some("doesn't match".into()));
+    /// }, &ts);
     /// ```
     IfMatches {
         /// The value to match.
@@ -233,9 +233,9 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
     /// let map = Box::new(Map {
     ///     map    : [("abc".into(), "def".into())].into(),
@@ -243,20 +243,20 @@ pub enum StringSource {
     ///     r#else : Some("wasn't abc or none".into())
     /// });
     ///
-    /// assert_eq!(StringSource::Map {
+    /// doc_test!(get, Some("def"), StringSource::Map {
     ///     value: Box::new("abc".into()),
     ///     map: map.clone()
-    /// }.get(&task_state).unwrap(), Some("def".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::Map {
+    /// doc_test!(get, Some("wasn't abc or none"), StringSource::Map {
     ///     value: Box::new("else".into()),
     ///     map: map.clone()
-    /// }.get(&task_state).unwrap(), Some("wasn't abc or none".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::Map {
+    /// doc_test!(get, Some("was none"), StringSource::Map {
     ///     value: Box::new(StringSource::None),
     ///     map: map.clone()
-    /// }.get(&task_state).unwrap(), Some("was none".into()));
+    /// }, &ts);
     /// ```
     Map {
         /// The value to index [`Self::Map::map`] with.
@@ -268,14 +268,14 @@ pub enum StringSource {
 
 
 
-    /// Returns the value of the specified [`UrlPart`] of the [`TaskStateView::url`].
+    /// Returns the value of the specified [`UrlPart`] of the [`TaskState::url`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// assert_eq!(StringSource::Part(UrlPart::Host).get(&task_state).unwrap(), Some("example.com".into()));
+    /// doc_test!(get, Some("example.com"), StringSource::Part(UrlPart::Host), &ts);
     /// ```
     Part(UrlPart),
     /// Parses [`Self::ExtractPart`] as a [`BetterUrl`] and returns the part specified by [`Self::ExtractPart::part`].
@@ -283,14 +283,14 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self), getnone(StringSource, StringSource), callerr(BetterUrl::parse))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::ExtractPart {
+    /// doc_test!(get, Some("example.com"), StringSource::ExtractPart {
     ///     value: Box::new("https://example.com".into()),
     ///     part: UrlPart::Host
-    /// }.get(&task_state).unwrap(), Some("example.com".into()));
+    /// }, &ts);
     /// ```
     ExtractPart {
         /// The [`BetterUrl`] to get [`Self::ExtractPart::part`] from.
@@ -298,7 +298,7 @@ pub enum StringSource {
         /// The [`UrlPart`] to get from [`Self::ExtractPart::value`].
         part: UrlPart
     },
-    /// Gets the specified [`HostPart`] from the [`TaskStateView::job_context`]'s [`JobContext::source_host`].
+    /// Gets the specified [`HostPart`] from the [`JobContext::source_host`].
     JobSourceHostPart(HostPart),
 
 
@@ -310,19 +310,19 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self), getnone(Self, StringSource))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::Join {
+    /// doc_test!(get, Some("abc/def"), StringSource::Join {
     ///     values: vec!["abc".into(), "def".into()],
     ///     join: "/".into()
-    /// }.get(&task_state).unwrap(), Some("abc/def".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::Join {
+    /// doc_test!(get, Some("abc/def"), StringSource::Join {
     ///     values: vec!["abc".into(), StringSource::None, "def".into()],
     ///     join: "/".into()
-    /// }.get(&task_state).unwrap(), Some("abc/def".into()));
+    /// }, &ts);
     /// ```
     Join {
         /// The values to join the values of with [`Self::Join::join`].
@@ -342,15 +342,14 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, params = Params {
+    /// doc_test!(task_state, ts, params = Params {
     ///     vars: Cow::Owned([("abc".into(), "def".into())].into()),
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::Var(Box::new(VarSource::Params("abc".into())))
-    ///     .get(&task_state).unwrap(), Some("def".into()));
+    /// doc_test!(get, Some("def"), StringSource::Var(Box::new(VarSource::Params("abc".into()))), &ts);
     /// ```
     Var(Box<VarSource>),
     /// Gets the [`Map`] specified by [`Self::ParamsMap::name`] from [`Params::maps`] then indexes it with [`Self::ParamsMap::key`].
@@ -359,9 +358,9 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, params = Params {
+    /// doc_test!(task_state, ts, params = Params {
     ///     maps: Cow::Owned([("map_name".into(), Map {
     ///         map    : [("abc".into(), "def".into())].into(),
     ///         if_none: Some("was none".into()),
@@ -370,20 +369,20 @@ pub enum StringSource {
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::ParamsMap {
+    /// doc_test!(get, Some("def"), StringSource::ParamsMap {
     ///     name: Box::new("map_name".into()),
     ///     key: Box::new("abc".into())
-    /// }.get(&task_state).unwrap(), Some("def".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::ParamsMap {
+    /// doc_test!(get, Some("wasn't abc or none"), StringSource::ParamsMap {
     ///     name: Box::new("map_name".into()),
     ///     key: Box::new("else".into())
-    /// }.get(&task_state).unwrap(), Some("wasn't abc or none".into()));
+    /// }, &ts);
     ///
-    /// assert_eq!(StringSource::ParamsMap {
+    /// doc_test!(get, Some("was none"), StringSource::ParamsMap {
     ///     name: Box::new("map_name".into()),
     ///     key: Box::new(StringSource::None)
-    /// }.get(&task_state).unwrap(), Some("was none".into()));
+    /// }, &ts);
     /// ```
     ParamsMap {
         /// The name of the [`Params::maps`] to index.
@@ -398,9 +397,9 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, params = Params {
+    /// doc_test!(task_state, ts, params = Params {
     ///     partitionings: Cow::Owned([
     ///         (
     ///             "thing".into(),
@@ -413,10 +412,10 @@ pub enum StringSource {
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::Partitioning {
+    /// doc_test!(get, Some("abc"), StringSource::Partitioning {
     ///     partitioning: Box::new("thing".into()),
     ///     element: Box::new("a".into())
-    /// }.get(&task_state).unwrap(), Some("abc".into()));
+    /// }, &ts);
     /// ```
     Partitioning {
         /// The name of the [`Params::partitionings`] to index.
@@ -433,19 +432,19 @@ pub enum StringSource {
     #[doc = edoc!(geterr(Self), applyerr(StringModification))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// assert_eq!(StringSource::Modified {
+    /// doc_test!(get, Some("ABC"), StringSource::Modified {
     ///     value: Box::new("abc".into()),
     ///     modification: Box::new(StringModification::Uppercase)
-    /// }.get(&task_state).unwrap(), Some("ABC".into()));
+    /// }, &ts);
     ///
-    /// StringSource::Modified {
+    /// doc_test!(get, Err, StringSource::Modified {
     ///     value: Box::new(StringSource::None),
     ///     modification: Box::new(StringModification::Uppercase)
-    /// }.get(&task_state).unwrap_err();
+    /// }, &ts);
     /// ```
     Modified {
         /// The value to get and modify.
@@ -475,7 +474,7 @@ pub enum StringSource {
 
 
 
-    /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`Self::Cache::key`] exists in the [`TaskStateView::cache`], returns the cached value.
+    /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`Self::Cache::key`] exists in the [`Cache`], returns the cached value.
     ///
     /// If no such entry exists, gets [`Self::Cache::value`] and inserts a new entry equivalent to getting it.
     /// # Errors
@@ -489,46 +488,46 @@ pub enum StringSource {
         /// The value to cache.
         value: Box<Self>
     },
-    /// Calls a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_sources`].
+    /// Uses a [`Self`] from [`Cleaner::functions`].
     /// # Errors
-    #[doc = edoc!(ageterr(Self, CommonCallConfig::name), agetnone(Self, StringSource, CommonCallConfig::name), commonnotfound(Self, StringSource), callerr(CommonArgsConfig::make), geterr(Self))]
+    #[doc = edoc!(functionnotfound(Self, StringSource), geterr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state, commons = Commons {
+    /// doc_test!(task_state, ts, functions = Functions {
     ///     string_sources: [
     ///         ("abc".into(), "def".into()),
-    ///         ("def".into(), StringSource::Var(Box::new(VarSource::CommonArg("common_var".into()))))
+    ///         ("def".into(), StringSource::Var(Box::new(VarSource::CallArg("function_var".into()))))
     ///     ].into(),
     ///     ..Default::default()
     /// });
     ///
-    /// assert_eq!(StringSource::Common(CommonCallConfig {
-    ///     name: Box::new("abc".into()),
+    /// doc_test!(get, Some("def"), StringSource::Function(Box::new(FunctionCall {
+    ///     name: "abc".into(),
     ///     args: Default::default()
-    /// }).get(&task_state).unwrap(), Some("def".into()));
+    /// })), &ts);
     ///
-    /// assert_eq!(StringSource::Common(CommonCallConfig {
-    ///     name: Box::new("def".into()),
+    /// doc_test!(get, None, StringSource::Function(Box::new(FunctionCall {
+    ///     name: "def".into(),
     ///     args: Default::default()
-    /// }).get(&task_state).unwrap(), None);
+    /// })), &ts);
     ///
-    /// assert_eq!(StringSource::Common(CommonCallConfig {
-    ///     name: Box::new("def".into()),
-    ///     args: Box::new(CommonArgsConfig {
-    ///         vars: [("common_var".into(), "ghi".into())].into(),
+    /// doc_test!(get, Some("ghi"), StringSource::Function(Box::new(FunctionCall {
+    ///     name: "def".into(),
+    ///     args: CallArgs {
+    ///         vars: [("function_var".into(), "ghi".into())].into(),
     ///         ..Default::default()
-    ///     })
-    /// }).get(&task_state).unwrap(), Some("ghi".into()));
+    ///     }
+    /// })), &ts);
     /// ```
-    Common(CommonCallConfig),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::string_sources`] and applies it.
+    Function(Box<FunctionCall>),
+    /// Uses a [`Self`] from [`TaskState::call_args`].
     /// # Errors
-    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringSourceError::NotInCommonContext`].
+    /// If [`TaskState::call_args`] is [`None`], returns the error [`StringSourceError::NotInFunction`].
     ///
-    #[doc = edoc!(commoncallargnotfound(Self, StringSource), geterr(Self))]
-    CommonCallArg(Box<Self>),
+    #[doc = edoc!(callargfunctionnotfound(Self, StringSource), geterr(Self))]
+    CallArg(Box<StringSource>),
     /// Calls the contained function and returns what it does.
     ///
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
@@ -539,19 +538,19 @@ pub enum StringSource {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// fn some_complex_operation<'a>(task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    /// fn some_complex_operation<'j, 't>(ts: &'t TaskState<'j>) -> Result<Option<Cow<'t, str>>, StringSourceError> {
     ///     Ok(Some("a".into()))
     /// }
     ///
-    /// assert_eq!(StringSource::Custom(some_complex_operation).get(&task_state).unwrap(), Some("a".into()));
+    /// doc_test!(get, Some("a"), StringSource::Custom(some_complex_operation), &ts);
     /// ```
     #[suitable(never)]
     #[serde(skip)]
-    Custom(for<'a> fn(&TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError>)
+    Custom(for<'j, 't> fn(&'t TaskState<'j>) -> Result<Option<Cow<'t, str>>, StringSourceError>)
 }
 
 impl FromStr for StringSource {
@@ -701,12 +700,12 @@ pub enum StringSourceError {
     /// Returned when the requested [`Params::partitionings`] isn't found.
     #[error("The requested Params Partitioning was not found.")]
     PartitioningNotFound,
-    /// Returned when a [`GetFlagError`] is encountered.
+    /// Returned when a [`FlagSourceError`] is encountered.
     #[error(transparent)]
-    GetFlagError(#[from] GetFlagError),
-    /// Returned when a [`GetVarError`] is encountered.
+    FlagSourceError(#[from] FlagSourceError),
+    /// Returned when a [`VarSourceError`] is encountered.
     #[error(transparent)]
-    GetVarError(#[from] GetVarError),
+    VarSourceError(#[from] VarSourceError),
 
     /// Returned when a [`regex::Error`]  is encountered.
     #[error(transparent)]
@@ -732,18 +731,13 @@ pub enum StringSourceError {
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
 
-    /// Returned when a [`MakeCommonArgsError`] is encountered.
-    #[error(transparent)]
-    MakeCommonArgsError(#[from] MakeCommonArgsError),
-    /// Returned when the requested [`Commons::string_sources`] isn't found.
-    #[error("The requested common StringSource was not found.")]
-    CommonStringSourceNotFound,
-    /// Returned when trying to use [`StringSource::CommonCallArg`] outside of a common context.
-    #[error("Tried to use StringSource::CommonCallArg outside of a common context.")]
-    NotInCommonContext,
-    /// Returned when the [`StringSource`] requested from a [`StringSource::CommonCallArg`] isn't found.
-    #[error("The StringSource requested from a StringSource::CommonCallArg wasn't found.")]
-    CommonCallArgStringSourceNotFound,
+    /// Returned when the requested [`Functions::string_sources`] isn't found.
+    #[error("The requested function StringSource was not found.")]
+    FunctionNotFound,
+    #[error("TODO")]
+    NotInFunction,
+    #[error("TODO")]
+    CallArgFunctionNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
     #[error(transparent)]
@@ -765,7 +759,7 @@ impl StringSource {
     /// Get the string.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'a>(&'a self, task_state: &TaskStateView<'a>) -> Result<Option<Cow<'a, str>>, StringSourceError> {
+    pub fn get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>) -> Result<Option<Cow<'t, str>>, StringSourceError> {
         Ok(match self {
             Self::String(string) => Some(Cow::Borrowed(string)),
             Self::None => None,
@@ -820,9 +814,9 @@ impl StringSource {
 
 
 
-            Self::Part(part) => part.get(task_state.url),
+            Self::Part(part) => part.get(&task_state.url),
             Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| Cow::Owned(x.into_owned())),
-            Self::JobSourceHostPart(part) => task_state.job_context.source_host.as_ref().and_then(|host| part.get(host)).map(Cow::Borrowed),
+            Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host)).map(Cow::Borrowed),
 
 
 
@@ -834,8 +828,8 @@ impl StringSource {
 
 
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
-            Self::Partitioning {partitioning, element} => task_state.params.partitionings
+            Self::ParamsMap {name, key} => task_state.job.cleaner.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::Partitioning {partitioning, element} => task_state.job.cleaner.params.partitionings
                 .get(get_str!(partitioning, task_state, StringSourceError)).ok_or(StringSourceError::PartitioningNotFound)?
                 .get(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
 
@@ -851,24 +845,24 @@ impl StringSource {
 
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
-                let _unthread_handle = task_state.unthreader.unthread();
-                Some(Cow::Owned(response.handle(task_state.http_client.get_response(*request.clone(), task_state)?, task_state)?))
+                let _unthread_handle = task_state.job.unthreader.unthread();
+                Some(Cow::Owned(response.handle(task_state.job.http_client.get_response(request, task_state)?, task_state)?))
             },
 
 
 
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
-                let _unthreader_lock = task_state.unthreader.unthread();
+                let _unthreader_lock = task_state.job.unthreader.unthread();
                 let subject = get_cow!(subject, task_state, StringSourceError);
                 let key = get_cow!(key, task_state, StringSourceError);
-                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
+                if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
                     return Ok(entry.value.map(Cow::Owned));
                 }
                 let start = std::time::Instant::now();
                 let ret = value.get(task_state)?;
                 let duration = start.elapsed();
-                task_state.cache.write(NewCacheEntry {
+                task_state.job.cache.write(NewCacheEntry {
                     subject: &subject,
                     key: &key,
                     value: ret.as_deref(),
@@ -876,23 +870,16 @@ impl StringSource {
                 })?;
                 ret
             },
-            Self::Common(common_call) => {
-                task_state.commons.string_sources.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringSourceError::CommonStringSourceNotFound)?.get(&TaskStateView {
-                    common_args: Some(&common_call.args.make(task_state)?),
-                    url        : task_state.url,
-                    scratchpad : task_state.scratchpad,
-                    context    : task_state.context,
-                    job_context: task_state.job_context,
-                    params     : task_state.params,
-                    commons    : task_state.commons,
-                    unthreader : task_state.unthreader,
-                    #[cfg(feature = "cache")]
-                    cache      : task_state.cache,
-                    #[cfg(feature = "http")]
-                    http_client: task_state.http_client
-                })?.map(|x| Cow::Owned(x.into_owned()))
+            Self::Function(call) => {
+                let func = task_state.job.cleaner.functions.string_sources.get(&call.name).ok_or(StringSourceError::FunctionNotFound)?;
+                let old_args = task_state.call_args.replace(Some(&call.args));
+                let ret = func.get(task_state);
+                task_state.call_args.replace(old_args);
+                ret?
             },
-            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringSourceError::NotInCommonContext)?.string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CommonCallArgStringSourceNotFound)?.get(task_state)?,
+            Self::CallArg(name) => task_state.call_args.get().ok_or(StringSourceError::NotInFunction)?
+                .string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CallArgFunctionNotFound)?
+                .get(task_state)?,
             Self::Custom(function) => function(task_state)?
         })
     }

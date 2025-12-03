@@ -50,12 +50,8 @@ ${GM.info.script.namespace}`);
 
 	// Set up the URL for the socket.
 	let socket_url = new URL(window.config.instance);
-	let config = {
-		"context": {
-			"source_host": window.location.hostname
-		},
-		...window.config.payload_config
-	};
+	let config = {...window.config.payload_config};
+	config.context = {...config.context, "source_host": window.location.hostname};
 	socket_url.searchParams.append("config", JSON.stringify(config));
 
 	if (window.config.debug) {
@@ -93,7 +89,7 @@ ${GM.info.script.namespace}`);
 
 		// Ignore anchors.
 		// TODO: In theory, this could filter out legitimately unclean URLs. I need to fix that.
-		if (element.href.startsWith("#")) {
+		if (element.getAttribute("href").startsWith("#")) {
 			if (window.config.debug) {
 				console.debug("[URLC] Ignoring anchor link", element);
 			}
@@ -113,28 +109,19 @@ ${GM.info.script.namespace}`);
 		let task = element.href;
 
 		if (/(^|\.)furaffinity\.net\.?$/.test(window.location.hostname) && element.matches(".user-contact-user-info a")) {
-			// Allows unmangling contact info links.
-
-			if (element.href === "javascript:void(0);") {
-				// The "Website" field, if it contains an invalid URL, has a URL of `javascript:void(0);`.
-				// Generally this is caused by the user forgetting to add the `https://` at the start.
-
-				task = "https://" + element.innerText;
-			} else {
-				// If a contact info field has more of the URL than expected, such as `https://x.com/user` instead of just `user`,
-				// the URL of the link is incoherent and very hard to unmangle.
-				// For that the bundled cleaner just parses the link's text and extracts just the expected part.
-
-				task = JSON.stringify({
-					url: "https://example.com/", // The URL might be invalid so we need a dummy value.
-					context: {
-						vars: {
-							contact_info_site_name: element.parentElement.querySelector("strong").innerHTML,
-							link_text: element.innerText
-						}
+			// If a contact info field has more of the URL than expected, such as `https://x.com/user` instead of just `user`,
+			// the URL of the link is incoherent and very hard to unmangle.
+			// For that the bundled cleaner just parses the link's text and extracts just the expected part.
+			task = JSON.stringify({
+				url: "https://example.com/", // The URL might be invalid so we need a dummy value.
+				context: {
+					vars: {
+						unmangle_mode: "contact_info",
+						site: element.parentElement.querySelector("strong").innerHTML.toLowerCase(),
+						text: element.innerText
 					}
-				});
-			}
+				}
+			});
 		} else if (/(^|\.)x\.com\.?$/.test(window.location.hostname) && element.href.startsWith("https://t.co/") && element.innerText.startsWith("http")) {
 			// Even when a link in a tweet is shown as `https://example.com/really-long-...`, twitter still puts the full `really-long-url` in the HTML.
 			// By getting it from there, we can skip an HTTP request to t.co.
@@ -236,11 +223,8 @@ ${GM.info.script.namespace}`);
 	socket.addEventListener("message", function(message) {
 		// Ignore pings, pongs, etc. and get only return frames, which are always strings.
 		if (typeof message.data === "string") {
-			// Unlike Rust, where `"".lines()` is empty (`[]`), javascript decided `"".split("\n")` is `[""]`.
-			// Because non-empty return frames always end in a newline, this means every return frame split on newlines by javascript has an `""` element at the end that must be removed.
-			// Two inconvenient things that together are weirdly convenient.
 			let lines = message.data.split("\n");
-			lines.pop();
+			if (lines[lines.length - 1] === "") {lines.pop();}
 
 			// Gotta remove the trailing newline.
 			for (line of lines) {

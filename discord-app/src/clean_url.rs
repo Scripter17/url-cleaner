@@ -6,6 +6,7 @@ use url_cleaner_engine::prelude::*;
 
 use crate::prelude::*;
 
+/// Autocomplete for [`clean_url`]'s `profile` field.
 async fn profile_autocomplete<'a>(ctx: Context<'a>, partial: &str) -> serenity::CreateAutocompleteResponse {
     serenity::CreateAutocompleteResponse::new()
         .set_choices(ctx.data().profiled_cleaner.names().filter(|name| name.starts_with(partial)).map(Into::into).collect())
@@ -23,9 +24,9 @@ pub async fn clean_url(
 ) -> Result<(), Error> {
     match ctx.data().profiled_cleaner.get(profile.as_deref()) {
         Some(cleaner) => {
-            let job_config = JobConfig {
-                context: &Default::default(),
-                cleaner: &cleaner,
+            let job = &Job {
+                context: Default::default(),
+                cleaner,
                 unthreader: &Unthreader::default(),
                 #[cfg(feature = "cache")]
                 cache: ctx.data().cache,
@@ -33,7 +34,7 @@ pub async fn clean_url(
                 http_client: &ctx.data().http_client
             };
 
-            let ret = match job_config.do_lazy_task_config(url) {
+            let ret = match job.r#do(url) {
                 Ok (x) => String::from(x),
                 Err(e) => format!("-{e:?}")
             };

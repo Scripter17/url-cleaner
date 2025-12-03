@@ -19,9 +19,9 @@ pub struct UnprofiledCleaner<'a> {
     pub docs: Cow<'a, Docs>,
     /// Basically functions.
     ///
-    /// Defaults to an empty [`Commons`].
+    /// Defaults to an empty [`Functions`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub commons: Cow<'a, Commons>,
+    pub functions: Cow<'a, Functions>,
     /// The [`Action`]s to apply.
     ///
     /// Defaults to an empty [`Vec`].
@@ -34,7 +34,7 @@ impl<'a> UnprofiledCleaner<'a> {
     pub fn borrowed(&'a self) -> Self {
         Self {
             docs   : Cow::Borrowed(&*self.docs),
-            commons: Cow::Borrowed(&*self.commons),
+            functions: Cow::Borrowed(&*self.functions),
             actions: Cow::Borrowed(&*self.actions)
         }
     }
@@ -44,7 +44,7 @@ impl<'a> UnprofiledCleaner<'a> {
         Cleaner {
             docs   : self.docs,
             params : profile.into(),
-            commons: self.commons,
+            functions: self.functions,
             actions: self.actions
         }
     }

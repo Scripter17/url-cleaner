@@ -1,11 +1,8 @@
+//! Utility stuff.
 
-pub struct ByteLines<'a>(&'a [u8]);
-
-impl<'a> ByteLines<'a> {
-    pub fn new(bytes: &'a [u8]) -> Self {
-        Self(bytes)
-    }
-}
+/// An [`Iterator`] to do [`str::lines`] on byte slices.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ByteLines<'a>(pub &'a [u8]);
 
 impl<'a> Iterator for ByteLines<'a> {
     type Item = &'a [u8];

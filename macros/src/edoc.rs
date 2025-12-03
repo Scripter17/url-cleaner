@@ -117,51 +117,51 @@ fn thing(x: u8) -> &'static str {
 /// Thing2
 fn thing2(span: Span, name: &str, args: &[Arg]) -> Result<String> {
     Ok(match (name, args) {
-        ("callerr"              , [pa     , epa @ Arg::Path(_), Arg::Int(x)]) => format!("If {} call to [`{pa}`] returns an error, returns the error [`{epa}`].", thing(*x)),
-        ("callerr"              , [pa     , epa @ Arg::Path(_)             ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
+        ("callerr"                , [pa     , epa @ Arg::Path(_), Arg::Int(x)]) => format!("If {} call to [`{pa}`] returns an error, returns the error [`{epa}`].", thing(*x)),
+        ("callerr"                , [pa     , epa @ Arg::Path(_)             ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
 
-        ("acallerr"             , [pa     , item                           ]) => format!("If [`{item}`]'s call to [`{pa}`] returns an error, that error is returned."),
-        ("callerr"              , [pa     , Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns an error, that error is returned.", thing(*x)),
-        ("callerr"              , [pa                                      ]) => thing2(span, name, &[pa.clone(), Arg::Int(1)])?,
+        ("acallerr"               , [pa     , item                           ]) => format!("If [`{item}`]'s call to [`{pa}`] returns an error, that error is returned."),
+        ("callerr"                , [pa     , Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns an error, that error is returned.", thing(*x)),
+        ("callerr"                , [pa                                      ]) => thing2(span, name, &[pa.clone(), Arg::Int(1)])?,
 
-        ("acallnone"            , [pa, epa, item @ Arg::Path(_)            ]) => format!("If [`{item}`]'s call to [`{pa}`] returns [`None`], returns the error [`{epa}`]."),
-        ("callnone"             , [pa, epa, Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns [`None`], returns the error [`{epa}`].", thing(*x)),
-        ("callnone"             , [pa, epa                                 ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
+        ("acallnone"              , [pa, epa, item @ Arg::Path(_)            ]) => format!("If [`{item}`]'s call to [`{pa}`] returns [`None`], returns the error [`{epa}`]."),
+        ("callnone"               , [pa, epa, Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns [`None`], returns the error [`{epa}`].", thing(*x)),
+        ("callnone"               , [pa, epa                                 ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
 
-        ("callsomenone"         , [pa, epa, Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns [`Some`] of [`None`], returns the error [`{epa}`].", thing(*x)),
-        ("callsomenone"         , [pa, epa                                 ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
+        ("callsomenone"           , [pa, epa, Arg::Int(x)                    ]) => format!("If {} call to [`{pa}`] returns [`Some`] of [`None`], returns the error [`{epa}`].", thing(*x)),
+        ("callsomenone"           , [pa, epa                                 ]) => thing2(span, name, &[pa.clone(), epa.clone(), Arg::Int(1)])?,
 
-        ("callerrte"            , [pa, epa                                 ]) => format!("If both calls to [`{pa}`] return errors, both errors are returned in a [`{epa}Error::TryElseError`]."),
-        ("callerrfne"           , [pa, epa                                 ]) => format!("If all calls to [`{pa}`] return errors, all errors are returned in a [`{epa}Error::FirstNotErrorErrors`]."),
+        ("callerrte"              , [pa, epa                                 ]) => format!("If both calls to [`{pa}`] return errors, both errors are returned in a [`{epa}Error::TryElseError`]."),
+        ("callerrfne"             , [pa, epa                                 ]) => format!("If all calls to [`{pa}`] return errors, all errors are returned in a [`{epa}Error::FirstNotErrorErrors`]."),
 
-        ("notfound"             , [pa, epa                                 ]) => format!("If the [`{pa}`] isn't found, returns the error [`{epa}Error::{pa}NotFound`]."),
-        ("commonnotfound"       , [pa, epa                                 ]) => format!("If the common [`{pa}`] isn't found, returns the error [`{epa}Error::Common{epa}NotFound`]."),
-        ("commoncallargnotfound", [pa, epa                                 ]) => format!("If the common call arg [`{pa}`] isn't found, returns the error [`{epa}Error::CommonCallArg{epa}NotFound`]."),
+        ("notfound"               , [pa, epa                                 ]) => format!("If the [`{pa}`] isn't found, returns the error [`{epa}Error::{pa}NotFound`]."),
+        ("functionnotfound"       , [pa, epa                                 ]) => format!("If the function [`{pa}`] isn't found, returns the error [`{epa}Error::FunctionNotFound`]."),
+        ("callargfunctionnotfound", [pa, epa                                 ]) => format!("If the call arg function [`{pa}`] isn't found, returns the error [`{epa}Error::CallArgFunctionNotFound`]."),
 
-        ("stringisnone"         , [epa                                     ]) => format!("If the string is [`None`], returns the error [`{epa}Error::StringIsNone`]"),
+        ("stringisnone"           , [epa                                     ]) => format!("If the string is [`None`], returns the error [`{epa}Error::StringIsNone`]"),
 
-        ("ageterr"              , [pa     , item                           ]) => thing2(span, "acallerr"  , &[Arg::String(format!("{pa}::get"))         , item.clone()             ])?,
-        ("geterr"               , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::get"))         , x.clone()                ])?,
-        ("geterr"               , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
-        ("geterrte"             , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::get"))         , epa.clone()              ])?,
-        ("geterrfne"            , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::get"))         , epa.clone()              ])?,
+        ("ageterr"                , [pa     , item                           ]) => thing2(span, "acallerr"  , &[Arg::String(format!("{pa}::get"))         , item.clone()             ])?,
+        ("geterr"                 , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::get"))         , x.clone()                ])?,
+        ("geterr"                 , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
+        ("geterrte"               , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::get"))         , epa.clone()              ])?,
+        ("geterrfne"              , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::get"))         , epa.clone()              ])?,
 
-        ("agetnone"             , [pa, epa, item                           ]) => thing2(span, "acallnone" , &[Arg::String(format!("{pa}::get"))         , epa.clone(), item.clone()])?,
-        ("getnone"              , [pa, epa, x @ Arg::Int(_)                ]) => thing2(span, "callnone"  , &[Arg::String(format!("{pa}::get"))         , epa.clone(), x.clone()   ])?,
-        ("getnone"              , [pa, epa                                 ]) => thing2(span, name        , &[pa.clone()                                , epa.clone(), Arg::Int(1) ])?,
+        ("agetnone"               , [pa, epa, item                           ]) => thing2(span, "acallnone" , &[Arg::String(format!("{pa}::get"))         , epa.clone(), item.clone()])?,
+        ("getnone"                , [pa, epa, x @ Arg::Int(_)                ]) => thing2(span, "callnone"  , &[Arg::String(format!("{pa}::get"))         , epa.clone(), x.clone()   ])?,
+        ("getnone"                , [pa, epa                                 ]) => thing2(span, name        , &[pa.clone()                                , epa.clone(), Arg::Int(1) ])?,
 
-        ("seterr"               , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::set"))         , x.clone()                ])?,
-        ("seterr"               , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
+        ("seterr"                 , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::set"))         , x.clone()                ])?,
+        ("seterr"                 , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
 
-        ("checkerr"             , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::check"))       , x.clone()                ])?,
-        ("checkerr"             , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                       , Arg::Int(1)              ])?,
-        ("checkerrte"           , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::check"))       , epa.clone()              ])?,
-        ("checkerrfne"          , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::check"))       , epa.clone()              ])?,
+        ("checkerr"               , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::check"))       , x.clone()                ])?,
+        ("checkerr"               , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                       , Arg::Int(1)              ])?,
+        ("checkerrte"             , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::check"))       , epa.clone()              ])?,
+        ("checkerrfne"            , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::check"))       , epa.clone()              ])?,
 
-        ("applyerr"             , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::apply"))       , x.clone()                ])?,
-        ("applyerr"             , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
-        ("applyerrte"           , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::apply"))       , epa.clone()              ])?,
-        ("applyerrfne"          , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::apply"))       , epa.clone()              ])?,
+        ("applyerr"               , [pa     , x @ Arg::Int(_)                ]) => thing2(span, "callerr"   , &[Arg::String(format!("{pa}::apply"))       , x.clone()                ])?,
+        ("applyerr"               , [pa                                      ]) => thing2(span, name        , &[pa.clone()                                , Arg::Int(1)              ])?,
+        ("applyerrte"             , [pa, epa                                 ]) => thing2(span, "callerrte" , &[Arg::String(format!("{pa}::apply"))       , epa.clone()              ])?,
+        ("applyerrfne"            , [pa, epa                                 ]) => thing2(span, "callerrfne", &[Arg::String(format!("{pa}::apply"))       , epa.clone()              ])?,
 
         x => Err(Error::new(span, format!("Invalid: {x:?}")))?
     })

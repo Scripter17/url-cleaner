@@ -16,7 +16,8 @@ pub mod profiled_cleaner;
 pub mod params;
 pub mod params_diff;
 pub mod docs;
-pub mod commons;
+pub mod functions;
+pub mod call_args;
 pub mod components;
 
 /// Prelude module for importing everything here better.
@@ -25,7 +26,8 @@ pub mod prelude {
     pub use super::params::*;
     pub use super::params_diff::*;
     pub use super::docs::*;
-    pub use super::commons::prelude::*;
+    pub use super::functions::*;
+    pub use super::call_args::*;
     pub use super::components::prelude::*;
 
     pub use super::{Cleaner, GetCleanerError, ApplyCleanerError};
@@ -52,11 +54,11 @@ pub struct Cleaner<'a> {
     /// Defaults to an empty [`Params`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params<'a>,
-    /// The [`Commons`].
+    /// The [`Functions`].
     ///
-    /// Defaults to an empty [`Commons`].
+    /// Defaults to an empty [`Functions`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub commons: Cow<'a, Commons>,
+    pub functions: Cow<'a, Functions>,
     /// The [`Action`]s.
     ///
     /// Defaults to an empty [`Vec`].
@@ -84,20 +86,20 @@ impl<'a> Cleaner<'a> {
     /// Used to enable both [`ProfiledCleaner`] and [`ParamsDiff`] to be much more memory efficient tha otherwise possible.
     pub fn borrowed(&'a self) -> Cleaner<'a> {
         Self {
-            docs   : Cow::Borrowed(&*self.docs),
-            params : self.params.borrowed(),
-            commons: Cow::Borrowed(&*self.commons),
-            actions: Cow::Borrowed(&*self.actions)
+            docs     : Cow::Borrowed(&*self.docs),
+            params   : self.params.borrowed(),
+            functions: Cow::Borrowed(&*self.functions),
+            actions  : Cow::Borrowed(&*self.actions)
         }
     }
 
     /// Become an owned [`Self`], cloning only what's needed.
     pub fn into_owned(self) -> Cleaner<'static> {
         Cleaner {
-            docs   : Cow::Owned(self.docs.into_owned()),
-            params : self.params.into_owned(),
-            commons: Cow::Owned(self.commons.into_owned()),
-            actions: Cow::Owned(self.actions.into_owned())
+            docs     : Cow::Owned(self.docs.into_owned()),
+            params   : self.params.into_owned(),
+            functions: Cow::Owned(self.functions.into_owned()),
+            actions  : Cow::Owned(self.actions.into_owned())
         }
     }
 
@@ -192,16 +194,6 @@ impl<'a> Cleaner<'a> {
         })
     }
 
-    /// [`Action::apply`]s each [`Action`] in [`Self::actions`] in order.
-    /// # Errors
-    #[doc = edoc!(applyerr(Action, 3))]
-    pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ApplyCleanerError> {
-        for action in &*self.actions {
-            action.apply(task_state)?;
-        }
-        Ok(())
-    }
-
     /// Asserts the suitability of `self` to be URL Cleaner's bundled cleaner.
     ///
     /// Exact behavior is unspecified and changes are not considered breaking.
@@ -215,6 +207,18 @@ impl<'a> Cleaner<'a> {
     #[cfg_attr(feature = "bundled-cleaner", doc = "```")]
     pub fn assert_suitability(&self) {
         Suitability::assert_suitability(self, self)
+    }
+}
+
+impl<'j> Cleaner<'j> {
+    /// [`Action::apply`]s each [`Action`] in [`Self::actions`] in order.
+    /// # Errors
+    #[doc = edoc!(applyerr(Action, 3))]
+    pub fn apply(&'j self, task_state: &mut TaskState<'j>) -> Result<(), ApplyCleanerError> {
+        for action in &*self.actions {
+            action.apply(task_state)?;
+        }
+        Ok(())
     }
 }
 

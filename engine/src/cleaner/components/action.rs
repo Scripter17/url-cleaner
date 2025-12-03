@@ -2,8 +2,6 @@
 
 use std::str::{FromStr, Utf8Error};
 use std::collections::HashSet;
-#[cfg(feature = "http")]
-use std::collections::HashMap;
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
@@ -19,17 +17,17 @@ use crate::prelude::*;
 ///
 /// Please note that, in general, when a [`Action`] returns an [`Err`], the [`TaskState`] may still be modified. For example:
 /// ```
-/// use url_cleaner_engine::prelude::*;
+/// use url_cleaner_engine::docs::*;
 ///
-/// ts!(task_state, url = "https://example.com");
+/// doc_test!(task_state, ts, task = "https://example.com");
 ///
-/// Action::All(vec![
+/// doc_test!(apply, Err, Action::All(vec![
 ///     Action::SetPath("/change".into()),
 ///     Action::Error("This won't revert the above".into()),
 ///     Action::SetPath("/this-wont-happen".into())
-/// ]).apply(&mut task_state).unwrap_err();
+/// ]), &mut ts);
 ///
-/// assert_eq!(task_state.url, "https://example.com/change");
+/// assert_eq!(ts.url, "https://example.com/change");
 /// ```
 ///
 /// This is because reverting on an error requires keeping a copy of the input state, which is very expensive and, if the error is just going to be returned as the result of the [`Task`], not useful.
@@ -43,13 +41,13 @@ pub enum Action {
     /// Does nothing.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::None.apply(&mut task_state).unwrap();
+    /// doc_test!(apply, Ok, Action::None, &mut ts);
     ///
-    /// assert_eq!(task_state.url, "https://example.com/");
+    /// assert_eq!(ts.url, "https://example.com/");
     /// ```
     None,
     /// Always returns the error [`ActionError::ExplicitError`] with the included message.
@@ -57,16 +55,16 @@ pub enum Action {
     /// Always returns the error [`ActionError::ExplicitError`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::Error("...".into()).apply(&mut task_state).unwrap_err();
+    /// doc_test!(apply, Err, Action::Error("...".into()), &mut ts);
     ///
-    /// assert_eq!(task_state.url, "https://example.com/");
+    /// assert_eq!(ts.url, "https://example.com/");
     /// ```
     Error(String),
-    /// Prints debug info about the contained [`Self`] and the current [`TaskStateView`], then returns its return value.
+    /// Prints debug info about the contained [`Self`] and the current [`TaskState`], then returns its return value.
     /// # Errors
     /// If the call to [`Self::apply`] returns an error, that error is returned after the debug info is printed.
     #[suitable(never)]
@@ -79,33 +77,14 @@ pub enum Action {
     #[doc = edoc!(checkerr(Condition), applyerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::If {
-    ///     r#if  : Condition::Always,
-    ///     then  : Box::new(Action::None),
-    ///     r#else: Some(Box::new(Action::Error("...".into())))
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// Action::If {
-    ///     r#if  : Condition::Never,
-    ///     then  : Box::new(Action::None),
-    ///     r#else: Some(Box::new(Action::Error("...".into())))
-    /// }.apply(&mut task_state).unwrap_err();
-    ///
-    /// Action::If {
-    ///     r#if  : Condition::Always,
-    ///     then  : Box::new(Action::None),
-    ///     r#else: None
-    /// }.apply(&mut task_state).unwrap();
-    ///
-    /// Action::If {
-    ///     r#if  : Condition::Never,
-    ///     then  : Box::new(Action::None),
-    ///     r#else: None
-    /// }.apply(&mut task_state).unwrap();
+    /// doc_test!(apply, Ok , Action::If {r#if: Condition::Always, then: Box::new(Action::None),r#else: Some(Box::new(Action::Error("...".into())))}, &mut ts);
+    /// doc_test!(apply, Err, Action::If {r#if: Condition::Never , then: Box::new(Action::None),r#else: Some(Box::new(Action::Error("...".into())))}, &mut ts);
+    /// doc_test!(apply, Ok , Action::If {r#if: Condition::Always, then: Box::new(Action::None),r#else: None                                       }, &mut ts);
+    /// doc_test!(apply, Ok , Action::If {r#if: Condition::Never , then: Box::new(Action::None),r#else: None                                       }, &mut ts);
     /// ```
     If {
         /// The [`Condition`] to decide between [`Self::If::then`] and [`Self::If::else`].
@@ -125,17 +104,17 @@ pub enum Action {
     #[doc = edoc!(applyerr(Self, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// Action::All(vec![
+    /// doc_test!(apply, Err, Action::All(vec![
     ///     Action::SetHost("example2.com".into()),
     ///     Action::Error("...".into()),
     ///     Action::SetHost("example3.com".into()),
-    /// ]).apply(&mut task_state).unwrap_err();
+    /// ]), &mut ts);
     ///
-    /// assert_eq!(task_state.url, "https://example2.com/");
+    /// assert_eq!(ts.url, "https://example2.com/");
     /// ```
     All(Vec<Self>),
     /// Gets the value specified by [`Self::PartMap::part`], indexes [`Self::PartMap::map`], and applies the returned [`Self`]
@@ -145,11 +124,11 @@ pub enum Action {
     #[doc = edoc!(applyerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// Action::PartMap {
+    /// doc_test!(apply, Err, Action::PartMap {
     ///     part: UrlPart::Host,
     ///     map: Box::new(Map {
     ///         map: [
@@ -158,7 +137,7 @@ pub enum Action {
     ///         if_none: None,
     ///         r#else: None
     ///     })
-    /// }.apply(&mut task_state).unwrap_err();
+    /// }, &mut ts);
     /// ```
     PartMap {
         /// The [`UrlPart`] to index [`Self::PartMap::map`] with.
@@ -174,11 +153,11 @@ pub enum Action {
     #[doc = edoc!(geterr(StringSource), applyerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state);
+    /// doc_test!(task_state, ts);
     ///
-    /// Action::StringMap {
+    /// doc_test!(apply, Err, Action::StringMap {
     ///     value: StringSource::String("a".into()),
     ///     map: Box::new(Map {
     ///         map: [
@@ -187,7 +166,7 @@ pub enum Action {
     ///         if_none: None,
     ///         r#else: None
     ///     })
-    /// }.apply(&mut task_state).unwrap_err();
+    /// }, &mut ts);
     /// ```
     StringMap {
         /// The [`StringSource`] to index [`Self::StringMap::map`] with.
@@ -214,9 +193,9 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://abc.example.com", params = Params {
+    /// doc_test!(task_state, ts, task = "https://abc.example.com", params = Params {
     ///     partitionings: Cow::Owned([
     ///         (
     ///             "a".into(),
@@ -228,15 +207,15 @@ pub enum Action {
     ///     ..Default::default()
     /// });
     ///
-    /// Action::FirstMatchingPartPartitioning {
+    /// doc_test!(apply, Ok, Action::FirstMatchingPartPartitioning {
     ///     partitioning: "a".into(),
     ///     parts: vec![UrlPart::NormalizedHost, UrlPart::RegDomain],
     ///     map: Box::new([
     ///         ("b".to_string(), Action::SetPath("/123".into()))
     ///     ].into()),
-    /// }.apply(&mut task_state).unwrap();
+    /// }, &mut ts);
     ///
-    /// assert_eq!(task_state.url.path(), "/123");
+    /// assert_eq!(ts.url.path(), "/123");
     /// ```
     FirstMatchingPartPartitioning {
         /// The [`Partitioning`] to search in.
@@ -265,9 +244,9 @@ pub enum Action {
     /// # Examples
     /// ```
     /// use std::borrow::Cow;
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://abc.example.com", params = Params {
+    /// doc_test!(task_state, ts, task = "https://abc.example.com", params = Params {
     ///     partitionings: Cow::Owned([
     ///         (
     ///             "a".into(),
@@ -279,15 +258,15 @@ pub enum Action {
     ///     ..Default::default()
     /// });
     ///
-    /// Action::FirstMatchingStringPartitioning {
+    /// doc_test!(apply, Ok, Action::FirstMatchingStringPartitioning {
     ///     partitioning: "a".into(),
     ///     values: vec![StringSource::Part(UrlPart::NormalizedHost), StringSource::Part(UrlPart::RegDomain)],
     ///     map: Box::new([
     ///         ("b".to_string(), Action::SetPath("/123".into()))
     ///     ].into()),
-    /// }.apply(&mut task_state).unwrap();
+    /// }, &mut ts);
     ///
-    /// assert_eq!(task_state.url.path(), "/123");
+    /// assert_eq!(ts.url.path(), "/123");
     /// ```
     FirstMatchingStringPartitioning {
         /// The [`Partitioning`] to search in.
@@ -301,7 +280,7 @@ pub enum Action {
 
 
 
-    /// Repeat [`Self::Repeat::actions`] until either the [`TaskState::url`] and [`TaskState::scratchpad`] end up in the same state or the rules were executed [`Self::Repeat::limit`] times.
+    /// Repeat [`Self::Repeat::actions`] until [`TaskState::url`] ends up in the same state or the rules were executed [`Self::Repeat::limit`] times.
     /// # Errors
     #[doc = edoc!(applyerr(Self, 3))]
     Repeat {
@@ -321,11 +300,12 @@ pub enum Action {
     /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::IgnoreError(Box::new(
+    /// // Error is ignored.
+    /// doc_test!(apply, Ok, Action::IgnoreError(Box::new(
     ///     Action::RevertOnError(Box::new(
     ///         Action::All(vec![
     ///             Action::SetPath("/change".into()),
@@ -333,9 +313,10 @@ pub enum Action {
     ///             Action::SetPath("/wont-happen".into())
     ///         ])
     ///     ))
-    /// )).apply(&mut task_state).unwrap(); // Error is ignored.
+    /// )), &mut ts);
     ///
-    /// assert_eq!(task_state.url, "https://example.com/"); // The first `Action::SetPath` is reverted.
+    /// // The first `Action::SetPath` is reverted.
+    /// assert_eq!(ts.url, "https://example.com/");
     /// ```
     IgnoreError(Box<Self>),
     /// If the contained [`Self`] returns an error, revert the [`TaskState`] to its previous state then return the error.
@@ -345,19 +326,21 @@ pub enum Action {
     #[doc = edoc!(applyerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::RevertOnError(Box::new(
+    /// // Still returns an error.
+    /// doc_test!(apply, Err, Action::RevertOnError(Box::new(
     ///     Action::All(vec![
     ///         Action::SetPath("/change".into()),
     ///         Action::Error("This won't revert the above".into()),
     ///         Action::SetPath("/wont-happen".into())
     ///     ])
-    /// )).apply(&mut task_state).unwrap_err(); // Still returns an error.
+    /// )), &mut ts);
     ///
-    /// assert_eq!(task_state.url, "https://example.com/"); // The first `Action::SetPath` is reverted.
+    /// // The first `Action::SetPath` is reverted.
+    /// assert_eq!(ts.url, "https://example.com/");
     /// ```
     RevertOnError(Box<Self>),
     /// If [`Self::TryElse::try`]'s call to [`Self::apply`] returns an error, apply [`Self::TryElse::else`].
@@ -383,18 +366,16 @@ pub enum Action {
     #[doc = edoc!(geterr(StringSource), callerr(Url::join))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com/a/b/c");
+    /// doc_test!(task_state, ts, task = "https://example.com/a/b/c");
+    /// doc_test!(apply, Ok, Action::Join("..".into()), &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/a/");
     ///
-    /// Action::Join("..".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/a/");
     ///
-    ///
-    /// ts!(task_state, url = "https://example.com/a/b/c/");
-    ///
-    /// Action::Join("..".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/a/b/");
+    /// doc_test!(task_state, ts, task = "https://example.com/a/b/c/");
+    /// doc_test!(apply, Ok, Action::Join("..".into()), &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/a/b/");
     /// ```
     Join(StringSource),
 
@@ -671,12 +652,12 @@ pub enum Action {
     /// Remove the entire [`UrlPart::Query`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?a=2");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2");
     ///
-    /// Action::RemoveQuery.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/");
+    /// doc_test!(apply, Ok, Action::RemoveQuery, &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/");
     /// ```
     RemoveQuery,
     /// If the [`Url::query`] is `Some("")`, set it to [`None`].
@@ -688,16 +669,18 @@ pub enum Action {
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?a=2&b=3&a=4&c=5");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&a=4&c=5");
     ///
-    /// Action::RemoveQueryParam("a".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("b=3&c=5"));
-    /// Action::RemoveQueryParam("b".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("c=5"));
-    /// Action::RemoveQueryParam("c".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), None);
+    /// doc_test!(apply, Ok, Action::RemoveQueryParam("a".into()), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("b=3&c=5"));
+    ///
+    /// doc_test!(apply, Ok, Action::RemoveQueryParam("b".into()), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("c=5"));
+    ///
+    /// doc_test!(apply, Ok, Action::RemoveQueryParam("c".into()), &mut ts);
+    /// assert_eq!(ts.url.query(), None);
     /// ```
     RemoveQueryParam(StringSource),
     /// Keeps all query parameters with the specified name.
@@ -711,14 +694,15 @@ pub enum Action {
     /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
-    /// Action::RemoveQueryParams(["a".to_string(), "b".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("c=5"));
-    /// Action::RemoveQueryParams(["c".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), None);
+    /// doc_test!(apply, Ok, Action::RemoveQueryParams(["a".to_string(), "b".to_string()].into()), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("c=5"));
+    ///
+    /// doc_test!(apply, Ok, Action::RemoveQueryParams(["c".to_string()].into()), &mut ts);
+    /// assert_eq!(ts.url.query(), None);
     /// ```
     RemoveQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
     /// Keeps only query params with names in the specified [`HashSet`].
@@ -726,14 +710,15 @@ pub enum Action {
     /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
-    /// Action::AllowQueryParams(["a".to_string(), "b".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("a=2&b=3&%61=4"));
-    /// Action::AllowQueryParams(["c".to_string()].into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), None);
+    /// doc_test!(apply, Ok, Action::AllowQueryParams(["a".to_string(), "b".to_string()].into()), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("a=2&b=3&%61=4"));
+    ///
+    /// doc_test!(apply, Ok, Action::AllowQueryParams(["c".to_string()].into()), &mut ts);
+    /// assert_eq!(ts.url.query(), None);
     /// ```
     AllowQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
     /// Removes all query params with names matching the specified [`StringMatcher`].
@@ -743,16 +728,18 @@ pub enum Action {
     #[doc = edoc!(checkerr(StringMatcher))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
-    /// Action::RemoveQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("b=3&c=5"));
-    /// Action::RemoveQueryParamsMatching(StringMatcher::Is("b".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("c=5"));
-    /// Action::RemoveQueryParamsMatching(StringMatcher::Is("c".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), None);
+    /// doc_test!(apply, Ok, Action::RemoveQueryParamsMatching(StringMatcher::Is("a".into())), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("b=3&c=5"));
+    ///
+    /// doc_test!(apply, Ok, Action::RemoveQueryParamsMatching(StringMatcher::Is("b".into())), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("c=5"));
+    ///
+    /// doc_test!(apply, Ok, Action::RemoveQueryParamsMatching(StringMatcher::Is("c".into())), &mut ts);
+    /// assert_eq!(ts.url.query(), None);
     /// ```
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only query params with names matching the specified [`StringMatcher`].
@@ -762,14 +749,15 @@ pub enum Action {
     #[doc = edoc!(checkerr(StringMatcher))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?a=2&b=3&%61=4&c=5");
+    /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
-    /// Action::AllowQueryParamsMatching(StringMatcher::Is("a".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), Some("a=2&%61=4"));
-    /// Action::AllowQueryParamsMatching(StringMatcher::Is("b".into())).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url.query(), None);
+    /// doc_test!(apply, Ok, Action::AllowQueryParamsMatching(StringMatcher::Is("a".into())), &mut ts);
+    /// assert_eq!(ts.url.query(), Some("a=2&%61=4"));
+    ///
+    /// doc_test!(apply, Ok, Action::AllowQueryParamsMatching(StringMatcher::Is("b".into())), &mut ts);
+    /// assert_eq!(ts.url.query(), None);
     /// ```
     AllowQueryParamsMatching(StringMatcher),
     /// Rename the specified query parameter to the specified name.
@@ -795,14 +783,14 @@ pub enum Action {
     /// If no matching query parameter is found, returns the error [`ActionError::QueryParamNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com?redirect=https://example.com/2");
+    /// doc_test!(task_state, ts, task = "https://example.com?redirect=https://example.com/2");
     ///
-    /// Action::GetUrlFromQueryParam("redirect".into()).apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/2");
+    /// doc_test!(apply, Ok, Action::GetUrlFromQueryParam("redirect".into()), &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/2");
     ///
-    /// Action::GetUrlFromQueryParam("redirect".into()).apply(&mut task_state).unwrap_err();
+    /// doc_test!(apply, Err, Action::GetUrlFromQueryParam("redirect".into()), &mut ts);
     /// ```
     GetUrlFromQueryParam(StringSource),
 
@@ -852,12 +840,12 @@ pub enum Action {
     #[doc = edoc!(geterr(StringSource), seterr(UrlPart))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::SetPart {part: UrlPart::Path, value: "abc".into()}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/abc");
+    /// doc_test!(apply, Ok, Action::SetPart {part: UrlPart::Path, value: "abc".into()}, &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/abc");
     /// ```
     SetPart {
         /// The part to set the value of.
@@ -872,15 +860,15 @@ pub enum Action {
     #[doc = edoc!(applyerr(StringModification), seterr(UrlPart))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com");
+    /// doc_test!(task_state, ts, task = "https://example.com");
     ///
-    /// Action::ModifyPart {part: UrlPart::Path, modification: StringModification::Set("abc".into())}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/abc");
+    /// doc_test!(apply, Ok, Action::ModifyPart {part: UrlPart::Path, modification: StringModification::Set("abc".into())}, &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/abc");
     ///
-    /// Action::ModifyPart {part: UrlPart::Query, modification: StringModification::Set("abc".into())}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/abc?abc");
+    /// doc_test!(apply, Ok, Action::ModifyPart {part: UrlPart::Query, modification: StringModification::Set("abc".into())}, &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/abc?abc");
     /// ```
     ModifyPart {
         /// The part to modify.
@@ -902,12 +890,12 @@ pub enum Action {
     #[doc = edoc!(seterr(UrlPart))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com/abc#def");
+    /// doc_test!(task_state, ts, task = "https://example.com/abc#def");
     ///
-    /// Action::CopyPart {from: UrlPart::Fragment, to: UrlPart::Path}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/def#def");
+    /// Action::CopyPart {from: UrlPart::Fragment, to: UrlPart::Path}.apply(&mut ts).unwrap();
+    /// assert_eq!(ts.url, "https://example.com/def#def");
     /// ```
     CopyPart {
         /// The part whose value to copy.
@@ -920,12 +908,12 @@ pub enum Action {
     #[doc = edoc!(seterr(UrlPart, 2))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, url = "https://example.com/abc#def");
+    /// doc_test!(task_state, ts, task = "https://example.com/abc#def");
     ///
-    /// Action::MovePart {from: UrlPart::Fragment, to: UrlPart::Path}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.url, "https://example.com/def");
+    /// doc_test!(apply, Ok, Action::MovePart {from: UrlPart::Fragment, to: UrlPart::Path}, &mut ts);
+    /// assert_eq!(ts.url, "https://example.com/def");
     /// ```
     MovePart {
         /// The part whose value to move.
@@ -960,130 +948,42 @@ pub enum Action {
         except_prefixes: ListSource
     },
 
-    /// Sends an HTTP GET request to the current [`TaskState::url`], and sets it either to the value of the response's `Location` header (if the response is a redirect) or the final URL after redirects.
+    /// If an entry with a subject of [`Self::Cache::subject`] and a key of [`TaskState::url`] exists in the [`Job::cache`], sets the URL to the entry's value.
     ///
-    /// If the `cache` feature flag is enabled, caches the operation with the subject `redirect`, the key set to the input URL, and the value set to the returned URL.
-    /// # Errors
-    #[cfg_attr(feature = "cache", doc = edoc!(callerr(Cache::read), callnone(Cache::read, ActionError::CachedUrlIsNone), callerr(BetterUrl::parse)))]
-    #[cfg_attr(feature = "cache", doc = "")]
-    #[doc = edoc!(callerr(TaskStateView::http_client), callerr(reqwest::blocking::RequestBuilder::send))]
-    ///
-    /// If the response is a redirect:
-    ///
-    /// - If the `Location` header is missing, returns the error [`ActionError::LocationHeaderNotFound`].
-    ///
-    #[doc = edoc!(listitem, callerr(std::str::from_utf8), callerr(BetterUrl::parse))]
-    #[cfg_attr(feature = "cache", doc = "")]
-    #[cfg_attr(feature = "cache", doc = edoc!(callerr(Cache::write)))]
-    #[cfg(feature = "http")]
-    ExpandRedirect {
-        /// If [`Some`], expand this URL instead.
-        ///
-        /// Defaults to [`None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        url: Option<StringSource>,
-        /// The extra headers to send.
-        ///
-        /// Defaults to an empty [`HashMap`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        headers: HashMap<String, StringSource>
-    },
-    /// Sets the specified [`Scratchpad::flags`] to [`Self::SetScratchpadFlag::value`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// ts!(task_state);
-    ///
-    /// assert_eq!(task_state.scratchpad.flags.contains("abc"), false);
-    /// Action::SetScratchpadFlag {name: "abc".into(), value: true}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.flags.contains("abc"), true);
-    /// ```
-    SetScratchpadFlag {
-        /// The name of the flag to set.
-        name: StringSource,
-        /// The value to set the flag to.
-        value: bool
-    },
-    /// Sets the specified [`Scratchpad::vars`] to [`Self::SetScratchpadVar::value`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// ts!(task_state);
-    ///
-    /// Action::SetScratchpadVar {name: "abc".into(), value: "def".into()}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("def"));
-    /// Action::SetScratchpadVar {name: "abc".into(), value: StringSource::None}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
-    /// ```
-    SetScratchpadVar {
-        /// The name of the var to set.
-        name: StringSource,
-        /// The value to set the var to.
-        value: StringSource
-    },
-    /// If the specified [`Scratchpad::vars`] is [`Some`], applies [`Self::ModifyScratchpadVar::modification`].
-    ///
-    /// If the part is [`None`], does nothing.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), applyerr(StringModification))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// ts!(task_state);
-    ///
-    /// Action::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set("123".into())}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), Some("123"));
-    /// Action::ModifyScratchpadVar {name: "abc".into(), modification: StringModification::Set(StringSource::None)}.apply(&mut task_state).unwrap();
-    /// assert_eq!(task_state.scratchpad.vars.get("abc").map(|x| &**x), None);
-    /// ```
-    ModifyScratchpadVar {
-        /// The name of the var to modify.
-        name: StringSource,
-        /// The modification to apply.
-        modification: StringModification
-    },
-    /// If an entry with a subject of [`Self::CacheUrl::subject`] and a key of [`TaskState::url`] exists in the [`TaskState::cache`], sets the URL to the entry's value.
-    ///
-    /// If no such entry exists, applies [`Self::CacheUrl::action`] and inserts a new entry equivalent to applying it.
-    ///
-    /// Does not cache the [`TaskState::scratchpad`].
+    /// If no such entry exists, applies [`Self::Cache::action`] and inserts a new entry equivalent to applying it.
     /// # Errors
     #[doc = edoc!(callerr(Cache::read), callnone(Cache::read, ActionError::CachedUrlIsNone), callerr(BetterUrl::parse), applyerr(Self), callerr(Cache::write))]
     #[cfg(feature = "cache")]
-    CacheUrl {
+    Cache {
         /// The subject for the cache entry.
         subject: StringSource,
         /// The action to apply and cache.
         action: Box<Self>
     },
-    /// Applies a [`Self`] from [`TaskState::commons`]'s [`Commons::actions`].
+
+
+
+    /// Uses a [`Self`] from [`Cleaner::functions`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, Action), commonnotfound(Self, Action), callerr(CommonArgsConfig::make), applyerr(Self))]
+    #[doc = edoc!(functionnotfound(Self, Action), applyerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state, commons = Commons {
+    /// doc_test!(task_state, ts, functions = Functions {
     ///     actions: [("abc".into(), Action::None)].into(),
     ///     ..Default::default()
     /// });
     ///
-    /// Action::Common(CommonCallConfig {name: Box::new("abc".into()), args: Default::default()}).apply(&mut task_state).unwrap();
+    /// doc_test!(apply, Ok, Action::Function(Box::new(FunctionCall {name: "abc".into(), args: Default::default()})), &mut ts);
     /// ```
-    Common(CommonCallConfig),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::actions`] and applies it.
+    Function(Box<FunctionCall>),
+    /// Uses a [`Self`] from [`TaskState::call_args`].
     /// # Errors
-    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`ActionError::NotInCommonContext`].
+    /// If [`TaskState::call_args`] is [`None`], returns the error [`ActionError::NotInFunction`].
     ///
-    #[doc = edoc!(commoncallargnotfound(Self, Action), applyerr(Self))]
-    CommonCallArg(StringSource),
+    #[doc = edoc!(callargfunctionnotfound(Self, Action), applyerr(Self))]
+    CallArg(StringSource),
     /// Calls the specified function and returns its value.
     ///
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
@@ -1093,15 +993,15 @@ pub enum Action {
     #[doc = edoc!(callerr(Self::Custom::0))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// ts!(task_state);
+    /// doc_test!(task_state, ts);
     ///
     /// fn some_complex_operation(task_state: &mut TaskState) -> Result<(), ActionError> {
     ///     Ok(())
     /// }
     ///
-    /// Action::Custom(some_complex_operation).apply(&mut task_state).unwrap();
+    /// doc_test!(apply, Ok, Action::Custom(some_complex_operation), &mut ts);
     /// ```
     #[suitable(never)]
     #[serde(skip)]
@@ -1140,8 +1040,6 @@ impl FromStr for Action {
             "RemoveEmptyQuery"           => Action::RemoveEmptyQuery,
             "RemoveFragment"             => Action::RemoveFragment,
             "RemoveEmptyFragment"        => Action::RemoveEmptyFragment,
-            #[cfg(feature = "http")]
-            "ExpandRedirect"             => Action::ExpandRedirect {url: Default::default(), headers: Default::default()},
             _                            => return Err(s.into())
         })
     }
@@ -1299,31 +1197,18 @@ pub enum ActionError {
     /// Returned when a [`Partitioning`] with the specified name isn't found.
     #[error("A Partitioning with the specified name wasn't found.")]
     PartitioningNotFound,
-    /// Returned when a [`Set`] with the specified name isn't found.
-    #[error("A Set with the specified name wasn't found.")]
-    SetNotFound,
+    /// Returned when a [`ListSourceError`] is encountered.
+    #[error(transparent)]
+    ListSourceError(#[from] ListSourceError),
     /// Returned when a list with the specified name isn't found.
     #[error("A list with the specified name wasn't found.")]
     ListNotFound,
-    /// Returned when a [`GetListError`] is encountered.
+    /// Returned when a [`SetSourceError`] is encountered.
     #[error(transparent)]
-    GetListError(#[from] GetListError),
-    /// Returned when a [`GetSetError`] is encountered.
-    #[error(transparent)]
-    GetSetError(#[from] GetSetError),
-
-    /// Returned when a [`DoHttpRequestError`] is encountered.
-    #[cfg(feature = "http")]
-    #[error(transparent)]
-    DoHttpRequestError(#[from] DoHttpRequestError),
-    /// Returned when a redirect's `Location` header isn't found.
-    #[cfg(feature = "http")]
-    #[error("The redirect's Location header wasn't found")]
-    LocationHeaderNotFound,
-    /// Returned when a [`reqwest::header::ToStrError`] is encountered.
-    #[cfg(feature = "http")]
-    #[error(transparent)]
-    ToStrError(#[from] reqwest::header::ToStrError),
+    SetSourceError(#[from] SetSourceError),
+    /// Returned when a [`Set`] with the specified name isn't found.
+    #[error("A Set with the specified name wasn't found.")]
+    SetNotFound,
 
     /// Returned when attempting to get a URL from the cache but its value is [`None`].
     #[cfg(feature = "cache")]
@@ -1338,18 +1223,13 @@ pub enum ActionError {
     #[error(transparent)]
     WriteToCacheError(#[from] WriteToCacheError),
 
-    /// Returned when a [`MakeCommonArgsError`] is encountered.
-    #[error(transparent)]
-    MakeCommonArgsError(#[from] MakeCommonArgsError),
-    /// Returned when a [`Action`] with the specified name isn't found in the [`Commons::actions`].
-    #[error("An Action with the specified name wasn't found in the Commons::actions.")]
-    CommonActionNotFound,
-    /// Returned when trying to use [`Action::CommonCallArg`] outside of a common context.
-    #[error("Tried to use Action::CommonCallArg outside of a common context.")]
-    NotInCommonContext,
-    /// Returned when the [`Action`] requested from an [`Action::CommonCallArg`] isn't found.
-    #[error("The Action requested from an Action::CommonCallArg wasn't found.")]
-    CommonCallArgActionNotFound,
+    /// Returned when a [`Action`] with the specified name isn't found in the [`Functions::actions`].
+    #[error("An Action with the specified name wasn't found in the Functions::actions.")]
+    FunctionNotFound,
+    #[error("TODO")]
+    NotInFunction,
+    #[error("TODO")]
+    CallArgFunctionNotFound,
     /// An arbitrary [`std::error::Error`] returned by [`Action::Custom`].
     #[error(transparent)]
     Custom(Box<dyn std::error::Error + Send + Sync>)
@@ -1362,7 +1242,7 @@ impl Action {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
-    pub fn apply(&self, task_state: &mut TaskState) -> Result<(), ActionError> {
+    pub fn apply<'j>(&'j self, task_state: &mut TaskState<'j>) -> Result<(), ActionError> {
         match self {
             // Debug/constants
 
@@ -1370,9 +1250,8 @@ impl Action {
             Self::Error(msg) => Err(ActionError::ExplicitError(msg.clone()))?,
             Self::Debug(action) => {
                 let old_url = format!("{:?}", task_state.url);
-                let old_scratchpad = format!("{:?}", task_state.scratchpad);
                 let return_value=action.apply(task_state);
-                eprintln!("=== Action::Debug ===\nOld url: {old_url}\nOld scratchpad: {old_scratchpad}\nReturn value: {return_value:?}\nNew url: {:?}\nNew scratchpad: {:?}", task_state.url, task_state.scratchpad);
+                eprintln!("=== Action::Debug ===\nOld url: {old_url}\nReturn value: {return_value:?}\nNew url: {:?}", task_state.url);
                 return_value?
             },
 
@@ -1398,17 +1277,15 @@ impl Action {
             },
             Self::RevertOnError(action) => {
                 let old_url = task_state.url.clone();
-                let old_scratchpad = task_state.scratchpad.clone();
                 if let Err(e) = action.apply(task_state) {
-                    *task_state.url = old_url;
-                    *task_state.scratchpad = old_scratchpad;
+                    task_state.url = old_url;
                     Err(e)?;
                 }
             },
 
             // Logic
 
-            Self::If {r#if, then, r#else} => if r#if.check(&task_state.to_view())? {
+            Self::If {r#if, then, r#else} => if r#if.check(task_state)? {
                 then.apply(task_state)?;
             } else if let Some(r#else) = r#else {
                 r#else.apply(task_state)?;
@@ -1423,34 +1300,32 @@ impl Action {
                     action.apply(task_state)?;
                 }
                 let mut previous_url;
-                let mut previous_scratchpad;
                 for _ in 1..*limit {
                     previous_url = task_state.url.clone();
-                    previous_scratchpad = task_state.scratchpad.clone();
                     for action in actions {
                         action.apply(task_state)?;
                     }
-                    if task_state.url == &previous_url && task_state.scratchpad == &previous_scratchpad {break;}
+                    if task_state.url == previous_url {break;}
                 }
             },
 
             // Maps
 
-            Self::PartMap   {part , map} => if let Some(action) = map.get(part .get( task_state.url      ) ) {action.apply(task_state)?;},
-            Self::StringMap {value, map} => if let Some(action) = map.get(value.get(&task_state.to_view())?) {action.apply(task_state)?;},
+            Self::PartMap   {part , map} => if let Some(action) = map.get(part .get(&task_state.url      ) ) {action.apply(task_state)?;},
+            Self::StringMap {value, map} => if let Some(action) = map.get(value.get(task_state)?) {action.apply(task_state)?;},
 
-            Self::PartPartitioning   {partitioning, part , map} => if let Some(action) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(part.get(task_state.url).as_deref())) {action.apply(task_state)?;}
+            Self::PartPartitioning   {partitioning, part , map} => if let Some(action) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(part.get(&task_state.url).as_deref())) {action.apply(task_state)?;}
             Self::FirstMatchingPartPartitioning {partitioning, parts, map} => {
-                let partitioning = task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
+                let partitioning = task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
                 for part in parts.iter() {
-                    if let Some(action) = map.get(partitioning.get(part.get(task_state.url).as_deref())) {
+                    if let Some(action) = map.get(partitioning.get(part.get(&task_state.url).as_deref())) {
                         return action.apply(task_state);
                     }
                 }
             }
-            Self::StringPartitioning {partitioning, value, map} => if let Some(action) = map.get(task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
+            Self::StringPartitioning {partitioning, value, map} => if let Some(action) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
             Self::FirstMatchingStringPartitioning {partitioning, values, map} => {
-                let partitioning = task_state.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
+                let partitioning = task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
                 for value in values.iter() {
                     if let Some(action) = map.get(partitioning.get(get_option_str!(value, task_state))) {
                         return action.apply(task_state);
@@ -1460,8 +1335,8 @@ impl Action {
 
             // Whole
 
-            Self::SetWhole(new) => *task_state.url = BetterUrl::parse(get_str!(new, task_state, ActionError))?,
-            Self::Join(with) => *task_state.url=task_state.url.join(get_str!(with, task_state, ActionError))?.into(),
+            Self::SetWhole(new) => task_state.url = BetterUrl::parse(get_str!(new, task_state, ActionError))?,
+            Self::Join(with) => task_state.url=task_state.url.join(get_str!(with, task_state, ActionError))?.into(),
 
             // Scheme
 
@@ -1482,61 +1357,61 @@ impl Action {
 
             Self::ModifyHost(modification) => {
                 let mut x = task_state.url.host_str().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_host(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifySubdomain(modification) => {
                 let mut x = task_state.url.subdomain().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_subdomain(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyRegDomain(modification) => {
                 let mut x = task_state.url.reg_domain().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_reg_domain(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyDomain(modification) => {
                 let mut x = task_state.url.domain().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_domain(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyDomainMiddle(modification) => {
                 let mut x = task_state.url.domain_middle().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_domain_middle(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyNotDomainSuffix(modification) => {
                 let mut x = task_state.url.not_domain_suffix().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_not_domain_suffix(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyDomainSuffix(modification) => {
                 let mut x = task_state.url.domain_suffix().map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_domain_suffix(x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyDomainSegment{index, modification} => {
                 let mut x = task_state.url.domain_segment(*index).map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_domain_segment(*index, x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifySubdomainSegment{index, modification} => {
                 let mut x = task_state.url.subdomain_segment(*index).map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_subdomain_segment(*index, x.map(Cow::into_owned).as_deref())?;
             },
 
             Self::ModifyDomainSuffixSegment{index, modification} => {
                 let mut x = task_state.url.domain_suffix_segment(*index).map(Cow::Borrowed);
-                modification.apply(&mut x, &task_state.to_view())?;
+                modification.apply(&mut x, task_state)?;
                 task_state.url.set_domain_suffix_segment(*index, x.map(Cow::into_owned).as_deref())?;
             },
 
@@ -1553,7 +1428,7 @@ impl Action {
             Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
             Self::ModifyPath(modification) => {
                 let mut path = Some(Cow::Borrowed(task_state.url.path()));
-                modification.apply(&mut path, &task_state.to_view())?;
+                modification.apply(&mut path, task_state)?;
                 #[expect(clippy::unnecessary_to_owned, reason = "Borrow checker.")]
                 task_state.url.set_path(&path.ok_or(ActionError::PathCannotBeNone)?.into_owned());
             },
@@ -1562,7 +1437,7 @@ impl Action {
             Self::SetPathSegment   {index, value} => task_state.url.set_path_segment(*index, get_new_option_str!(value, task_state))?,
             Self::ModifyPathSegment {index, modification} => {
                 let mut path_segment = Some(Cow::Borrowed(task_state.url.path_segment(*index).ok_or(ActionError::UrlDoesNotHavePathSegments)?.ok_or(ActionError::PathSegmentNotFound)?));
-                modification.apply(&mut path_segment, &task_state.to_view())?;
+                modification.apply(&mut path_segment, task_state)?;
                 task_state.url.set_path_segment(*index, path_segment.map(Cow::into_owned).as_deref())?;
             },
             Self::InsertPathSegment         {index, value} => task_state.url.insert_path_segment    (*index, get_new_str!(value, task_state, ActionError))?,
@@ -1633,7 +1508,7 @@ impl Action {
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
+                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1645,7 +1520,7 @@ impl Action {
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
+                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1657,7 +1532,7 @@ impl Action {
             Self::RenameQueryParam {from, to} => task_state.url.rename_query_param(&from.name, from.index, get_new_str!(to, task_state, ActionError))?,
 
             Self::GetUrlFromQueryParam(name) => match task_state.url.query_param(get_str!(name, task_state, ActionError), 0) {
-                Some(Some(Some(new_url))) => *task_state.url = BetterUrl::parse(&new_url)?,
+                Some(Some(Some(new_url))) => task_state.url = BetterUrl::parse(&new_url)?,
                 Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
                 Some(None)                => Err(ActionError::QueryParamNotFound)?,
                 None                      => Err(ActionError::NoQuery)?
@@ -1720,7 +1595,7 @@ impl Action {
             Self::RemoveFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 for param in fragment.split('&') {
-                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
+                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1732,7 +1607,7 @@ impl Action {
             Self::AllowFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 for param in fragment.split('&') {
-                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), &task_state.to_view())? {
+                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1744,24 +1619,33 @@ impl Action {
 
             // General parts
 
-            Self::SetPart {part, value} => part.set(task_state.url, get_new_option_str!(value, task_state))?,
+            Self::SetPart {part, value} => {
+                let temp = get_option_string!(value, task_state);
+                part.set(&mut task_state.url, temp.as_deref())?;
+            },
 
             Self::ModifyPart {part, modification} => {
-                let mut temp = part.get(task_state.url);
-                modification.apply(&mut temp, &task_state.to_view())?;
-                part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
+                let mut temp = part.get(&task_state.url);
+                modification.apply(&mut temp, task_state)?;
+                let temp = temp.map(Cow::into_owned);
+                part.set(&mut task_state.url, temp.as_deref())?;
             },
             Self::ModifyPartIfSome {part, modification} => {
-                if let mut temp @ Some(_) = part.get(task_state.url) {
-                    modification.apply(&mut temp, &task_state.to_view())?;
-                    part.set(task_state.url, temp.map(Cow::into_owned).as_deref())?;
+                if let mut temp @ Some(_) = part.get(&task_state.url) {
+                    modification.apply(&mut temp, task_state)?;
+                    let temp = temp.map(Cow::into_owned);
+                    part.set(&mut task_state.url, temp.as_deref())?;
                 }
             },
 
-            Self::CopyPart {from, to} => to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?,
+            Self::CopyPart {from, to} => {
+                let temp = from.get(&task_state.url).map(Cow::into_owned);
+                to.set(&mut task_state.url, temp.as_deref())?;
+            },
             Self::MovePart {from, to} => {
-                to.set(task_state.url, from.get(task_state.url).map(|x| x.into_owned()).as_deref())?;
-                from.set(task_state.url, None)?;
+                let temp = from.get(&task_state.url).map(Cow::into_owned);
+                to.set(&mut task_state.url, temp.as_deref())?;
+                from.set(&mut task_state.url, None)?;
             },
 
             // Misc.
@@ -1771,17 +1655,17 @@ impl Action {
                 let default_set = Default::default();
 
                 let names = match names {
-                    SetSource::Params(StringSource::String(x)) => task_state.params.sets.get(x),
-                    _ => names.get(&task_state.to_view())?
+                    SetSource::Params(StringSource::String(x)) => task_state.job.cleaner.params.sets.get(x),
+                    _ => names.get(task_state)?
                 }.unwrap_or(&default_set);
 
                 let prefixes = match prefixes {
-                    ListSource::Params(StringSource::String(x)) => task_state.params.lists.get(x),
-                    _ => prefixes.get(&task_state.to_view())?
+                    ListSource::Params(StringSource::String(x)) => task_state.job.cleaner.params.lists.get(x),
+                    _ => prefixes.get(task_state)?
                 }.unwrap_or(&default_list);
 
-                let except_names = except_names.get(&task_state.to_view())?.unwrap_or(&default_set);
-                let except_prefixes = except_prefixes.get(&task_state.to_view())?.unwrap_or(&default_list);
+                let except_names = except_names.get(task_state)?.unwrap_or(&default_set);
+                let except_prefixes = except_prefixes.get(task_state)?.unwrap_or(&default_list);
                 let excepts = !except_names.is_empty() || !except_prefixes.is_empty();
 
                 let new_query = task_state.url.query().map(|query| {
@@ -1810,98 +1694,36 @@ impl Action {
                 if let Some(new_fragment) = new_fragment {task_state.url.set_fragment(new_fragment.as_deref());}
             },
 
-            #[cfg(feature = "http")]
-            Self::ExpandRedirect {url, headers} => {
-                let url = match url {
-                    Some(url) => Cow::Owned(Url::parse(get_str!(url, task_state, ActionError))?),
-                    None => Cow::Borrowed(&**task_state.url)
-                };
-                let _unthread_handle = task_state.unthreader.unthread();
-                #[cfg(feature = "cache")]
-                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: "redirect", key: url.as_str()})? {
-                    *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
-                    return Ok(());
-                }
-                #[cfg(feature = "cache")]
-                let start = std::time::Instant::now();
-                let response = task_state.http_client.get_response(HttpRequestConfig {
-                    url: url.clone().into_owned().into(),
-                    headers: headers.clone(),
-                    ..Default::default()
-                }, &task_state.to_view())?;
-                let new_url = if response.status().is_redirection() {
-                    url.join(std::str::from_utf8(response.headers().get("location").ok_or(ActionError::LocationHeaderNotFound)?.as_bytes())?)?
-                } else {
-                    response.url().clone()
-                };
-                #[cfg(feature = "cache")]
-                let duration = start.elapsed();
-                #[cfg(feature = "cache")]
-                task_state.cache.write(NewCacheEntry {
-                    subject: "redirect",
-                    key: url.as_str(),
-                    value: Some(new_url.as_str()),
-                    duration
-                })?;
-                *task_state.url = new_url.into();
-            },
-
-            Self::SetScratchpadFlag {name, value} => {
-                let name = get_string!(name, task_state, ActionError);
-                match value {
-                    true  => task_state.scratchpad.flags.insert( name),
-                    false => task_state.scratchpad.flags.remove(&name)
-                };
-            },
-            Self::SetScratchpadVar {name, value} => match get_option_string!(value, task_state) {
-                Some(value) => {let _ = task_state.scratchpad.vars.insert( get_string!(name, task_state, ActionError), value);}
-                None        => {let _ = task_state.scratchpad.vars.remove(&get_string!(name, task_state, ActionError));}
-            },
-            Self::ModifyScratchpadVar {name, modification} => {
-                let name = get_string!(name, task_state, ActionError);
-                let mut value = task_state.scratchpad.vars.get(&name).map(|x| Cow::Borrowed(&**x));
-                modification.apply(&mut value, &task_state.to_view())?;
-                match value {
-                    Some(value) => {let _ = task_state.scratchpad.vars.insert( name, value.into_owned());},
-                    None        => {let _ = task_state.scratchpad.vars.remove(&name);}
-                }
-            },
             #[cfg(feature = "cache")]
-            Self::CacheUrl {subject, action} => {
-                let _unthread_handle = task_state.unthreader.unthread();
+            Self::Cache {subject, action} => {
+                let _unthread_handle = task_state.job.unthreader.unthread();
                 let subject = get_string!(subject, task_state, ActionError);
-                if let Some(entry) = task_state.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
-                    *task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
+                if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject: &subject, key: task_state.url.as_str()})? {
+                    task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
                     return Ok(());
                 }
                 let old_url = task_state.url.to_string();
                 let start = std::time::Instant::now();
                 action.apply(task_state)?;
                 let duration = start.elapsed();
-                task_state.cache.write(NewCacheEntry {
+                task_state.job.cache.write(NewCacheEntry {
                     subject: &subject,
                     key: &old_url,
                     value: Some(task_state.url.as_str()),
                     duration
                 })?;
             },
-            Self::Common(common_call) => {
-                task_state.commons.actions.get(get_str!(common_call.name, task_state, ActionError)).ok_or(ActionError::CommonActionNotFound)?.apply(&mut TaskState {
-                    common_args: Some(&common_call.args.make(&task_state.to_view())?),
-                    url        : task_state.url,
-                    scratchpad : task_state.scratchpad,
-                    context    : task_state.context,
-                    job_context: task_state.job_context,
-                    params     : task_state.params,
-                    commons    : task_state.commons,
-                    unthreader : task_state.unthreader,
-                    #[cfg(feature = "cache")]
-                    cache      : task_state.cache,
-                    #[cfg(feature = "http")]
-                    http_client: task_state.http_client
-                })?
+
+            Self::Function(call) => {
+                let func = task_state.job.cleaner.functions.actions.get(&call.name).ok_or(ActionError::FunctionNotFound)?;
+                let old_args = task_state.call_args.replace(Some(&call.args));
+                let ret = func.apply(task_state);
+                task_state.call_args.replace(old_args);
+                ret?
             },
-            Self::CommonCallArg(name) => task_state.common_args.ok_or(ActionError::NotInCommonContext)?.actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CommonCallArgActionNotFound)?.apply(task_state)?,
+            Self::CallArg(name) => task_state.call_args.get().ok_or(ActionError::NotInFunction)?
+                .actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CallArgFunctionNotFound)?
+                .apply(task_state)?,
             Self::Custom(function) => function(task_state)?
         };
         Ok(())

@@ -73,8 +73,9 @@
 		},
 		"task_context": {
 			"vars": {
-				"contact_info_site_name": "The name oe the website this URL is contact info for.",
-				"link_text"             : "The text of the link the job came from."
+				"unmangle_mode": "The unmangle mode to use.",
+				"site": "The name of the website used in the parse_contact_field prelude",
+				"text": "The text of the link used in the parse_contact_field prelude"
 			}
 		}
 	},
@@ -113,13 +114,13 @@
 				"oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_ope", "_openstat", "oprtrack", "oref", "OutLink",
 				"personaclick_input_query", "personaclick_search_query", "pg", "phfp", "phone_code", "pk_campaign", "pk_cid", "pk_medium", "pk_source", "pk_vid", "plink",
 				"promotionId", "publish_id", "rb_clickid", "recom", "recommended_by", "recommended_code", "ref", "ref_src", "refsrc", "ref_type", "ref_url", "rtkcid", "__s",
-				"s", "sc", "sc_customer", "sc_eh", "s_cid", "scid", "scm", "sc_uid", "search_domain", "search_source", "_sgm_action", "_sgm_campaign", "_sgm_pinned",
-				"_sgm_source", "_sgm_term", "s-id", "sms_click", "sms_source", "sms_uph", "source_ve_path", "sp_atk", "spm", "spot_im_redirect_source", "src_module",
-				"src_tab_page_id", "srsltid", "sscid", "ss_email_id", "stm_medium", "stm_source", "sub_rt", "tag3", "Tcsack", "tduid", "trackcode", "trafficFrom", "ttclid",
-				"twclid", "tw_medium", "tw_profile_id", "tw_source", "unicorn_click_id", "union_lens", "urrad", "user_email_address", "usqp", "utm_ad", "utm_adgroup",
-				"utm_adset", "utm_affiliate", "utm_brand", "utm_campaign", "utm_campaignid", "utm_campaign_name", "utm_channel", "utm_cid", "utm_content", "utm_creative",
-				"utm_emcid", "utm_emmid", "utm_id", "utm_id_", "utm_journey_id", "utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer",
-				"utm_reader", "utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_source_code",
+				"sc", "sc_customer", "sc_eh", "s_cid", "scid", "scm", "sc_uid", "search_domain", "search_source", "_sgm_action", "_sgm_campaign", "_sgm_pinned", "_sgm_source",
+				"_sgm_term", "s-id", "sms_click", "sms_source", "sms_uph", "source_ve_path", "sp_atk", "spm", "spot_im_redirect_source", "src_module", "src_tab_page_id",
+				"srsltid", "sscid", "ss_email_id", "stm_medium", "stm_source", "sub_rt", "tag3", "Tcsack", "tduid", "trackcode", "trafficFrom", "ttclid", "twclid",
+				"tw_medium", "tw_profile_id", "tw_source", "unicorn_click_id", "union_lens", "urrad", "user_email_address", "usqp", "utm_ad", "utm_adgroup", "utm_adset",
+				"utm_affiliate", "utm_brand", "utm_campaign", "utm_campaignid", "utm_campaign_name", "utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid",
+				"utm_emmid", "utm_id", "utm_id_", "utm_journey_id", "utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader",
+				"utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_source_code",
 				"utm_source_platform", "utm_supplier", "utm_swu", "utm_tag", "utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "uzcid", "vc_lpp", "vero_conv", "vero_id",
 				"vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wgexpiry", "wgu", "wickedid", "wt_mc", "xmt", "xptdk", "xtor", "yclid", "ymclid", "ymid", "ysclid",
 				"_zucks_suid"
@@ -298,18 +299,36 @@
 			}
 		}
 	},
-	"commons": {
+	"functions": {
 		"actions": {
+			"expand_redirect": {"If": {
+				"if": {"FlagIsNotSet": "no_network"},
+				"then": {"All": [
+					{"Function": "universal"},
+						{"IgnoreError": {"Cache": {
+						"subject": "redirect",
+						"action": {"Join": {"HttpRequest": {
+							"request": {
+								"const_headers": {"CallArg": "headers"}
+							},
+							"response": {"Header": "Location"}
+						}}}
+					}}}
+				]}
+			}},
+
+
+
 			"extract_from_page": {"If": {
 				"if": {"FlagIsNotSet": "no_network"},
 				"then": {"All": [
-					{"Common": "universal"},
+					{"Function": "universal"},
 					{"SetWhole": {"Cache": {
 						"subject": "redirect",
 						"key": {"Part": "Whole"},
 						"value": {"Modified": {
 							"value": {"HttpRequest": {}},
-							"modification": {"CommonCallArg": "extractor"}
+							"modification": {"CallArg": "extractor"}
 						}}}
 					}}
 				]}
@@ -512,7 +531,7 @@
 
 
 			"url_from_query_param_or_query": {"FirstNotError": [
-				{"GetUrlFromQueryParam": {"Var": {"CommonArg": "param"}}},
+				{"GetUrlFromQueryParam": {"Var": {"CallArg": "param"}}},
 				{"CopyPart": {
 					"from": "Query",
 					"to": "Whole"
@@ -528,19 +547,69 @@
 		{"If": {
 			"if": {"SchemeIsOneOf": ["http", "https"]},
 			"then": {"All": [
+				{"StringPartitioning": {
+					"value": {"JobSourceHostPart": "NormalizedHost"},
+					"partitioning": "nh_categories",
+					"map": {
+						"alibaba": {"RemoveQueryParams": ["spf", "file"]},
+						"furaffinity": {"If": {
+							"if": {"StringIs": {
+								"left": {"Var": {"TaskContext": "unmangle_mode"}},
+								"right": "contact_info"
+							}},
+							"then": {"SetWhole": {"Modified": {
+								"value": {"Var": {"TaskContext": "text"}},
+								"modification": {"Map": {
+									"value": {"Var": {"TaskContext": "site"}},
+									"map": {
+										"website"       : "None",
+										"ao3"           : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)archiveofourown\\.org)?/?(?:users/)?@?([^/]+)"  , "replace": "https://archiveofourown.org/users/$1"}},
+										"bluesky"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/profile)?/?@?([^/]+)$"              , "replace": "https://bsky.app/profile/$1"         }},
+										"cara"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app)?/?@?([^/]+)/?$"                    , "replace": "https://cara.app/$1"                 }},
+										"dealer's den"  : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/store)?/?@?([^/]+)$"       , "replace": "https://thedealersden.com/store/$1"  }},
+										"deviantart"    : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:deviantart\\.com)?/?@?([^/]*)$" , "replace": "https://deviantart.com/$1$2"         }},
+										"etsy"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/shop)?/?@?([^/]+)$"                 , "replace": "https://etsy.com/shop/$1"            }},
+										"facebook"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com)?/?@?([^/]+)$"                  , "replace": "https://facebook.com/$1"             }},
+										"fanfiction.net": {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?fanfiction\\.net)?/?(?:u?/)?@?([^/]+)/?$"      , "replace": "https://fanfiction.net/u/$1"         }},
+										"furry network" : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com)?/?@?([^/]+)$"              , "replace": "https://furrynetwork.com/$1"         }},
+										"inkbunny"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net)?/?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"             }},
+										"itaku"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/profile)?/?([^/]+)$"                , "replace": "https://itaku.ee/profile/$1"         }},
+										"ko-fi"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com)?/?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"                }},
+										"patreon"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com)?/?([^/]+)$"                     , "replace": "https://patreon.com/$1"              }},
+										"picarto"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?picarto\\.tv)?/?@?([^/]+)$"                    , "replace": "https://picarto.tv/$1"               }},
+										"piczel"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/watch)?/?@?([^/]+)$"               , "replace": "https://piczel.tv/watch/$1"          }},
+										"pixiv"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/(?:[a-z-]+/)?users)?/?@?([^/]+)/?$", "replace": "https://pixiv.net/en/users/$1"       }},
+										"reddit"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?reddit\\.com)?/?(?:u?/)?@?([^/]+)/?$"          , "replace": "https://reddit.com/u/$1"             }},
+										"sofurry"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?([^.]+)(?:\\.sofurry\\.com/?)?$"                  , "replace": "https://$1.sofurry.com"              }},
+										"steam"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/id)?/?@?([^/]+)$"         , "replace": "https://steamcommunity.com/id/$1"    }},
+										"telegram"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:t\\.me)?/?@?([^/]+)$"                          , "replace": "https://t.me/$1"                     }},
+										"tiktok"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?tiktok.com)?/?@?([^/]+)/?$"                    , "replace": "https://tiktok.com/@$1"              }},
+										"toyhou.se"     : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?toyhou\\.se)?/?@?([^/]+)/?$"                   , "replace": "https://toyhou.se/$1"                }},
+										"transfur"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com)?/?(?:(?:users)?/)?@?([^/]+)$"  , "replace": "https://transfur.com/users/$1"       }},
+										"tumblr"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:tumblr\\.com)?/?@?([^/]*)$"     , "replace": "https://$1$2.tumblr.com"             }},
+										"twitch"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv)?/?@?([^/]+)$"                     , "replace": "https://twitch.tv/$1"                }},
+										"twitter"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
+										"wattpad"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)wattpad\\.com/users)?/?@?([^/]+)/?$"            , "replace": "https://wattpad.com/user/$1"         }},
+										"weasyl"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com)?/?@?~?([^/]+)$"                  , "replace": "https://weasyl.com/~$1"              }},
+										"x"             : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
+										"youtube"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com)?/?@?([^/]+)$"                   , "replace": "https://youtube.com/$1"              }}
+									},
+									"else": {"Error": "Unknown Furaffinity contact info field."}
+								}}
+							}}}
+						}}
+					}
+				}},
+
+
+
 				{"Repeat": {
 					"actions": [
 						{"PartPartitioning": {
 							"part": "DomainMiddle",
 							"partitioning": "dm_expand_mode",
 							"map": {
-								"redirect": {"If": {
-									"if": {"FlagIsNotSet": "no_network"},
-									"then": {"All": [
-										{"Common": "universal"},
-										"ExpandRedirect"
-									]}
-								}},
+								"redirect": {"Function": "expand_redirect"},
 								"special": {"PartMap": {
 									"part": "DomainMiddle",
 									"map": {
@@ -562,41 +631,25 @@
 							"part": "RegDomain",
 							"partitioning": "rd_expand_mode",
 							"map": {
-								"redirect": {"If": {
-									"if": {"FlagIsNotSet": "no_network"},
-									"then": {"All": [
-										{"Common": "universal"},
-										"ExpandRedirect"
-									]}
-								}},
+								"redirect": {"Function": "expand_redirect"},
 								"sometimes_redirect": {"If": {
-									"if": {"All": [
-										{"FlagIsNotSet": "no_network"},
-										{"PartMap": {
-											"part": "RegDomain",
-											"map": {
-												"cmail20.com": {"PathStartsWith": "/t/"},
-												"sendgrid.net": {"PathIs": "/ls/click"}
-											}
-										}}
-									]},
-									"then": {"All": [
-										{"Common": "universal"},
-										"ExpandRedirect"
-									]}
+									"if": {"PartMap": {
+										"part": "RegDomain",
+										"map": {
+											"cmail20.com": {"PathStartsWith": "/t/"},
+											"sendgrid.net": {"PathIs": "/ls/click"}
+										}
+									}},
+									"then": {"Function": "expand_redirect"}
 								}},
 								"special": {"PartMap": {
 									"part": "RegDomain",
 									"map": {
 										"alibaba.com": {"If": {
-											"if": {"All": [
-												{"FlagIsNotSet": "no_network"},
-												{"PathStartsWith": "/x/"}
-											]},
+											"if": {"PathStartsWith": "/x/"},
 											"then": {"All": [
 												"RemoveQuery",
-												{"Common": "universal"},
-												"ExpandRedirect"
+												{"Function": "expand_redirect"}
 											]}
 										}},
 										"app.link": {"All": [
@@ -611,11 +664,7 @@
 													}}
 												]}
 											}},
-											{"Common": "universal"},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": "ExpandRedirect"
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"awstrack.me": {"SetWhole": {"Modified": {
 											"value": {"Part": {"PathSegment": 1}},
@@ -630,38 +679,24 @@
 											"then": {"GetUrlFromQueryParam": "url"}
 										}},
 										"dw.com": {"If": {
-											"if": {"All": [
-												{"PathStartsWith": "/p/"},
-												{"FlagIsNotSet": "no_network"}
-											]},
+											"if": {"PathStartsWith": "/p/"},
 											"then": {"All": [
 												{"SetHost": "www.dw.com"},
-												{"Common": "universal"},
-												"ExpandRedirect"
+												{"Function": "expand_redirect"}
 											]}
 										}},
 										"fb.watch": {"All": [
 											{"RemoveQueryParams": ["mibextid", "ref", "share_url"]},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"list-manage.com": {"If": {
-											"if": {"All": [
-												{"FlagIsNotSet": "no_network"},
-												{"PathStartsWith": "/track/click"}
-											]},
+											"if": {"PathStartsWith": "/track/click"},
 											"then": {"All": [
-												{"Common": "universal"},
-												"ExpandRedirect",
+												{"Function": "expand_redirect"},
 												{"RemoveQueryParam": "mc_cid"}
 											]}
 										}},
-										"lnk.to": {"Common": {
+										"lnk.to": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -678,22 +713,17 @@
 										"nbcla.com": {"SetHost": "trib.al"},
 										"onelink.me": {"All": [
 											"RemoveQuery",
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"pulse.ly": {"If": {
 											"if": {"FlagIsNotSet": "no_network"},
-											"then": {"ExpandRedirect": {
-												"url": {"Join": {"values": [
+											"then": {"All": [
+												{"SetWhole": {"Join": {"values": [
 													"https://api.link.agorapulse.com/redirect",
 													{"Part": "Path"}
-												]}}
-											}}
+												]}}},
+												{"Function": "expand_redirect"}
+											]}
 										}},
 										"smartadserver.com": {"If": {
 											"if": {"PathIs": "/click"},
@@ -702,13 +732,13 @@
 										"sng.link": {"All": [
 											"RemoveQuery",
 											{"SetPathSegment": {"index": 0, "value": "a"}},
-											{"Common": "universal"},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													"ExpandRedirect",
-													{"RemoveQueryParam": "referrer"}
-												]}
+											{"Function": {
+												"name": "expand_redirect",
+												"args": {
+													"actions": {
+														"after": {"RemoveQueryParam": "referrer"}
+													}
+												}
 											}}
 										]},
 										"vk.com": {"If": {
@@ -733,8 +763,8 @@
 										{"FlagIsNotSet": "no_network"}
 									]},
 									"then": {"All": [
-										{"Common": "universal"},
-										{"CacheUrl": {
+										{"Function": "universal"},
+										{"Cache": {
 											"subject": "redirect",
 											"action": {"SetWhole": {"Modified": {
 												"value": {"HttpRequest": {
@@ -745,7 +775,7 @@
 																{"Modified": {"value": {"Part": "Whole"}, "modification": "PercentEncode"}}
 															]
 														}},
-														"headers": {
+														"dynamic_headers": {
 															"x-api-key": {"NoneTo": {
 																"value": {"Var": "bypass_vip_api_key"},
 																"if_none": {"Var": {"Env": "URL_CLEANER_BYPASS_VIP_API_KEY"}}
@@ -758,46 +788,34 @@
 										}}
 									]}
 								}},
-								"redirect": {"If": {
-									"if": {"FlagIsNotSet": "no_network"},
-									"then": {"All": [
-										{"Common": "universal"},
-										"ExpandRedirect"
-									]}
-								}},
+								"redirect": {"Function": "expand_redirect"},
 								"sometimes_redirect": {"If": {
-									"if": {"All": [
-										{"FlagIsNotSet": "no_network"},
-										{"PartMap": {
-											"part": "NormalizedHost",
-											"map": {
-												"allmylinks.com"   : {"PathIs": "/link/out"},
-												"apexpartner.app"  : {"PathStartsWith": "/redirect/"},
-												"api.pinterest.com": {"PathStartsWith": "/url_shortener/"},
-												"facebook.com"     : {"PathStartsWith": "/share/"},
-												"hisubway.com"     : {"HasQueryParam": "link"},
-												"mydealz.de"       : {"PathStartsWith": "/visit/"},
-												"old.reddit.com"   : {"PathContains": {"value": "/s/", "at": {"After": 0}}},
-												"pawoo.net"        : {"PathStartsWith": "/oauth_authentications/"},
-												"qudsnen.co"       : {"HasQueryParam": "p"},
-												"reddit.com"       : {"PathContains": {"value": "/s/", "at": {"After": 0}}},
-												"sketchfab.com"    : {"PathStartsWith": "/s/"},
-												"teepublic.com"    : {"PathStartsWith": "/lic/"},
-												"thangs.com"       : {"PathStartsWith": "/m/"},
-												"snapchat.com"     : {"PathStartsWith": "/t/"}
-											},
-											"else": {"Error": "Unhandled nh_expand_mode::sometimes_redirect element."}
-										}}
-									]},
-									"then": {"All": [
-										{"Common": "universal"},
-										"ExpandRedirect"
-									]}
+									"if": {"PartMap": {
+										"part": "NormalizedHost",
+										"map": {
+											"allmylinks.com"   : {"PathIs": "/link/out"},
+											"apexpartner.app"  : {"PathStartsWith": "/redirect/"},
+											"api.pinterest.com": {"PathStartsWith": "/url_shortener/"},
+											"facebook.com"     : {"PathStartsWith": "/share/"},
+											"hisubway.com"     : {"HasQueryParam": "link"},
+											"mydealz.de"       : {"PathStartsWith": "/visit/"},
+											"old.reddit.com"   : {"PathContains": {"value": "/s/", "at": {"After": 0}}},
+											"pawoo.net"        : {"PathStartsWith": "/oauth_authentications/"},
+											"qudsnen.co"       : {"HasQueryParam": "p"},
+											"reddit.com"       : {"PathContains": {"value": "/s/", "at": {"After": 0}}},
+											"sketchfab.com"    : {"PathStartsWith": "/s/"},
+											"teepublic.com"    : {"PathStartsWith": "/lic/"},
+											"thangs.com"       : {"PathStartsWith": "/m/"},
+											"snapchat.com"     : {"PathStartsWith": "/t/"}
+										},
+										"else": {"Error": "Unhandled nh_expand_mode::sometimes_redirect element."}
+									}},
+									"then": {"Function": "expand_redirect"}
 								}},
 								"special": {"PartMap": {
 									"part": "NormalizedHost",
 									"map": {
-										"1link.club": {"Common": {
+										"1link.club": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -817,13 +835,7 @@
 												"if": {"FlagIsNotSet": "keep_affiliate"},
 												"then": {"RemoveQueryParam": "a_aid"}
 											}},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"allegro.pl": {"If": {
 											"if": {"PathStartsWith": "/affiliate"},
@@ -842,32 +854,26 @@
 												"if": {"FlagIsNotSet": "keep_affiliate"},
 												"then": "RemoveQuery"
 											}},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"awin1.com": {"If": {
 											"if": {"PathIs": "/cread.php"},
 											"then": {"TryElse": {
 												"try": {"GetUrlFromQueryParam": "ued"},
-												"else": {"If": {
-													"if": {"FlagIsNotSet": "no_network"},
-													"then": {"All": [
-														{"Common": "universal"},
-														"ExpandRedirect",
-														{"RemoveQueryParamsMatching": {"Any": [
-															{"IsOneOf": ["source", "awc", "sv1", "sv_campaign_id"]},
-															{"StartsWith": "awin_"}
-														]}}
-													]}
+												"else": {"Function": {
+													"name": "expand_redirect",
+													"args": {
+														"actions": {
+															"after": {"RemoveQueryParamsMatching": {"Any": [
+																{"IsOneOf": ["source", "awc", "sv1", "sv_campaign_id"]},
+																{"StartsWith": "awin_"}
+															]}}
+														}
+													}
 												}}
 											}}
 										}},
-										"bfy.tw": {"Common": {
+										"bfy.tw": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -896,13 +902,7 @@
 										"cash.me": {"SetHost": "cash.app"},
 										"cj.dotomi.com": {"All": [
 											"RemoveQuery",
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"click.notification.elsevier.com": {"If": {
 											"if": {"PathStartsWith": "/CL0/"},
@@ -916,7 +916,7 @@
 										}},
 										"deviantart.com": {"If": {
 											"if": {"PathIs": "/users/outgoing"},
-											"then": {"Common": {
+											"then": {"Function": {
 												"name": "url_from_query_param_or_query",
 												"args": {"vars": {"param": "url"}}
 											}}
@@ -984,13 +984,7 @@
 										}}},
 										"emjcd.com": {"All": [
 											"RemoveQuery",
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"fans.ly": {"SetHost": "fansly.com"},
 										"fansly.com": {"If": {
@@ -1007,9 +1001,17 @@
 													{"PathSegmentIs": {"index": 0, "value": "s"}},
 													{"PartMatches": {"part": "PathSegments", "matcher": "IsNumber"}}
 												]},
-												"then": {"ExpandRedirect": {
-													"headers": {
-														"user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
+												"then": {"Function": {
+													"name": "expand_redirect",
+													"args": {
+														"maps": {
+															"headers": {
+																"map": {
+																	"user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
+																	
+																}
+															}
+														}
 													}
 												}}
 											}}
@@ -1017,13 +1019,7 @@
 										"global.temu.com": {"SetHost": "www.temu.com"},
 										"go.bsky.app": {"TryElse": {
 											"try": {"GetUrlFromQueryParam": "u"},
-											"else": {"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											"else": {"Function": "expand_redirect"}
 										}},
 										"go.shopyourlikes.com": {"If": {
 											"if": {"PathSegmentIs": {
@@ -1032,15 +1028,22 @@
 											}},
 											"then": {"All": [
 												{"AllowQueryParam": "afId"},
-												"ExpandRedirect"
+												{"Function": "expand_redirect"}
 											]}
 										}},
 										"go.skimresources.com": {"GetUrlFromQueryParam": "url"},
 										"gznmedia.go2cloud.org": {"All": [
 											{"AllowQueryParams": ["campaign_id", "aff_id", "aff_sub2"]},
-											{"ExpandRedirect": {
-												"headers": {
-													"user-agent": "FireFox"
+											{"Function": {
+												"name": "expand_redirect",
+												"args": {
+													"maps": {
+														"headers": {
+															"map": {
+																"user-agent": "FireFox"
+															}
+														}
+													}
 												}
 											}}
 										]},
@@ -1048,7 +1051,7 @@
 											"if": {"PathIs": "/gp/r.html"},
 											"then": {"GetUrlFromQueryParam": "U"}
 										}},
-										"gprivate.com": {"Common": {
+										"gprivate.com": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -1085,10 +1088,7 @@
 												"param": "bt_ts",
 												"value": "1000"
 											}},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": "ExpandRedirect"
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"link.blissy.com": {"SetHost": "gznmedia.go2cloud.org"},
 										"link.sfchronicle.com": {"All": [
@@ -1151,13 +1151,7 @@
 										"o93x.net": {"GetUrlFromQueryParam": "u"},
 										"open-api.tiktok.com": {"All": [
 											{"AllowQueryParam": "open_id"},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": {"All": [
-													{"Common": "universal"},
-													"ExpandRedirect"
-												]}
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"open.substack.com": {"If": {
 											"if": {"PathStartsWith": "/pub/"},
@@ -1169,14 +1163,11 @@
 										"out.reddit.com": {"GetUrlFromQueryParam": "url"},
 										"p.liadm.com": {"All": [
 											{"AllowQueryParams": ["p", "s", "m", "sh2", "sh"]},
-											{"If": {
-												"if": {"FlagIsNotSet": "no_network"},
-												"then": "ExpandRedirect"
-											}}
+											{"Function": "expand_redirect"}
 										]},
 										"pixiv.net": {"If": {
 											"if": {"PathIs": "/jump.php"},
-											"then": {"Common": {
+											"then": {"Function": {
 												"name": "url_from_query_param_or_query",
 												"args": {"vars": {"param": "url"}}
 											}}
@@ -1188,7 +1179,7 @@
 											]
 										}}},
 										"proxy.notsobot.com": {"GetUrlFromQueryParam": "url"},
-										"qr1.be": {"Common": {
+										"qr1.be": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -1203,7 +1194,7 @@
 												}
 											}
 										}},
-										"qrcc.me": {"Common": {
+										"qrcc.me": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -1215,7 +1206,7 @@
 												}
 											}
 										}},
-										"qrcodes.pro": {"Common": {
+										"qrcodes.pro": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -1238,7 +1229,7 @@
 											"try": {"GetUrlFromQueryParam": "u"},
 											"else": {"GetUrlFromQueryParam": "out"}
 										}},
-										"reurl.cc": {"CacheUrl": {
+										"reurl.cc": {"Cache": {
 											"subject": "redirect",
 											"action": {"If": {
 												"if": {"FlagIsNotSet": "no_network"},
@@ -1259,7 +1250,7 @@
 												}}},
 												{"All": [
 													{"AllowQueryParams": ["d", "b", "u", "m"]},
-													{"Common": {
+													{"Function": {
 														"name": "extract_from_page",
 														"args": {
 															"string_modifications": {
@@ -1291,7 +1282,7 @@
 												{"All": [
 													{"SetHost": "shareasale-analytics.com"},
 													{"AllowQueryParams": ["d", "b", "u", "m"]},
-													{"Common": {
+													{"Function": {
 														"name": "extract_from_page",
 														"args": {
 															"string_modifications": {
@@ -1309,7 +1300,7 @@
 											{"SetHost": "sketchfab.com"},
 											{"InsertPathSegment": {"index": 0, "value": "s"}}
 										]},
-										"smarturl.it": {"Common": {
+										"smarturl.it": {"Function": {
 											"name": "extract_from_page",
 											"args": {
 												"string_modifications": {
@@ -1323,7 +1314,7 @@
 										"smartyt.ag": {"SetHost": "smartytags.com"},
 										"smartytags.com": {"All": [
 											{"SetScheme": "http"},
-											{"Common": {
+											{"Function": {
 												"name": "extract_from_page",
 												"args": {
 													"string_modifications": {
@@ -1383,26 +1374,16 @@
 													}}},
 													"else": {"All": [
 														"RemoveQuery",
-														{"If": {
-															"if": {"FlagIsNotSet": "no_network"},
-															"then": {"All": [
-																{"Common": "universal"},
-																"ExpandRedirect"
-															]}
-														}}
+														{"Function": "expand_redirect"}
 													]}
 												}}
 											}
 										}},
 										"t.umblr.com": {"GetUrlFromQueryParam": "z"},
-										"tee.pub": {"If": {
-											"if": {"FlagIsNotSet": "no_network"},
-											"then": {"All": [
-												{"SetHost": "www.teepublic.com"},
-												{"Common": "universal"},
-												"ExpandRedirect"
-											]}
-										}},
+										"tee.pub": {"All": [
+											{"SetHost": "www.teepublic.com"},
+											{"Function": "expand_redirect"}
+										]},
 										"than.gs": {"SetHost": "thangs.com"},
 										"tinyurl.com": {"All": [
 											{"PartMap": {
@@ -1413,7 +1394,7 @@
 												},
 												"else": {"InsertPathSegment": {"index": 0, "value": "preview"}}
 											}},
-											{"Common": {
+											{"Function": {
 												"name": "extract_from_page",
 												"args": {
 													"string_modifications": {
@@ -1437,13 +1418,18 @@
 												"modification": "PercentDecode"
 											}}}
 										}},
-										"u.afp.com": {"ExpandRedirect": {
-											"headers": {
-												"user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-												"accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-												"accept-language": "en-US,en;q=0.5",
-												"accept-encoding": "gzip, deflate, br, zstd",
-												"cookie": "AKA_A2=A"
+										"u.afp.com": {"Function": {
+											"name": "expand_redirect",
+											"args": {
+												"maps": {
+													"headers": {
+														"map": {
+															"user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+															"accept-encoding": "gzip, deflate, br, zstd",
+															"sec-fetch-dest": "document"
+														}
+													}
+												}
 											}
 										}},
 										"urldefense.com": {"If": {
@@ -1588,59 +1574,6 @@
 									"https://google.com/search?q=",
 									{"Part": {"RawQueryParam": "q"}}
 								]
-							}}}
-						}}
-					}
-				}},
-
-
-
-				{"StringPartitioning": {
-					"value": {"JobSourceHostPart": "NormalizedHost"},
-					"partitioning": "nh_categories",
-					"map": {
-						"alibaba": {"RemoveQueryParams": ["spm", "file"]},
-						"furaffinity": {"If": {
-							"if": {"StringIsSome": {"Var": {"TaskContext": "contact_info_site_name"}}},
-							"then": {"SetWhole": {"Modified": {
-								"value": {"Var": {"TaskContext": "link_text"}},
-								"modification": {"Map": {
-									"value": {"Modified": {"value": {"Var": {"TaskContext": "contact_info_site_name"}}, "modification": "Lowercase"}},
-									"map": {
-										"website"       : "None",
-										"ao3"           : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)archiveofourown\\.org)?/?(?:users/)?@?([^/]+)"  , "replace": "https://archiveofourown.org/users/$1"}},
-										"bluesky"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?bsky\\.app/profile)?/?@?([^/]+)$"              , "replace": "https://bsky.app/profile/$1"         }},
-										"cara"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?cara\\.app)?/?@?([^/]+)/?$"                    , "replace": "https://cara.app/$1"                 }},
-										"dealer's den"  : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?thedealersden\\.com/store)?/?@?([^/]+)$"       , "replace": "https://thedealersden.com/store/$1"  }},
-										"deviantart"    : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:deviantart\\.com)?/?@?([^/]*)$" , "replace": "https://deviantart.com/$1$2"         }},
-										"etsy"          : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?etsy\\.com/shop)?/?@?([^/]+)$"                 , "replace": "https://etsy.com/shop/$1"            }},
-										"facebook"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?facebook\\.com)?/?@?([^/]+)$"                  , "replace": "https://facebook.com/$1"             }},
-										"fanfiction.net": {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?fanfiction\\.net)?/?(?:u?/)?@?([^/]+)/?$"      , "replace": "https://fanfiction.net/u/$1"         }},
-										"furry network" : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?furrynetwork\\.com)?/?@?([^/]+)$"              , "replace": "https://furrynetwork.com/$1"         }},
-										"inkbunny"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?inkbunny\\.net)?/?([^/]+)$"                    , "replace": "https://inkbunny.net/$1"             }},
-										"itaku"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?itaku\\.ee/profile)?/?([^/]+)$"                , "replace": "https://itaku.ee/profile/$1"         }},
-										"ko-fi"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?ko-fi\\.com)?/?([^/]+)$"                       , "replace": "https://ko-fi.com/$1"                }},
-										"patreon"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?patreon\\.com)?/?([^/]+)$"                     , "replace": "https://patreon.com/$1"              }},
-										"picarto"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?picarto\\.tv)?/?@?([^/]+)$"                    , "replace": "https://picarto.tv/$1"               }},
-										"piczel"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?piczel\\.tv/watch)?/?@?([^/]+)$"               , "replace": "https://piczel.tv/watch/$1"          }},
-										"pixiv"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?pixiv\\.net/(?:[a-z-]+/)?users)?/?@?([^/]+)/?$", "replace": "https://pixiv.net/en/users/$1"       }},
-										"reddit"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?reddit\\.com)?/?(?:u?/)?@?([^/]+)/?$"          , "replace": "https://reddit.com/u/$1"             }},
-										"sofurry"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?([^.]+)(?:\\.sofurry\\.com/?)?$"                  , "replace": "https://$1.sofurry.com"              }},
-										"steam"         : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?steamcommunity\\.com/id)?/?@?([^/]+)$"         , "replace": "https://steamcommunity.com/id/$1"    }},
-										"telegram"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:t\\.me)?/?@?([^/]+)$"                          , "replace": "https://t.me/$1"                     }},
-										"tiktok"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?tiktok.com)?/?@?([^/]+)/?$"                    , "replace": "https://tiktok.com/@$1"              }},
-										"toyhou.se"     : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?toyhou\\.se)?/?@?([^/]+)/?$"                   , "replace": "https://toyhou.se/$1"                }},
-										"transfur"      : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?transfur\\.com)?/?(?:(?:users)?/)?@?([^/]+)$"  , "replace": "https://transfur.com/users/$1"       }},
-										"tumblr"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:www\\.)?(?:([^.]+)\\.)?(?:tumblr\\.com)?/?@?([^/]*)$"     , "replace": "https://$1$2.tumblr.com"             }},
-										"twitch"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?twitch\\.tv)?/?@?([^/]+)$"                     , "replace": "https://twitch.tv/$1"                }},
-										"twitter"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
-										"wattpad"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)wattpad\\.com/users)?/?@?([^/]+)/?$"            , "replace": "https://wattpad.com/user/$1"         }},
-										"weasyl"        : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?weasyl\\.com)?/?@?~?([^/]+)$"                  , "replace": "https://weasyl.com/~$1"              }},
-										"x"             : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?(?:twitter|x)\\.com)?/?@?([^/]+)$"             , "replace": "https://x.com/$1"                    }},
-										"youtube"       : {"RegexReplaceOne": {"regex": "^(?:https?://)?(?:(?:www\\.)?youtube\\.com)?/?@?([^/]+)$"                   , "replace": "https://youtube.com/$1"              }}
-									},
-									"else": {"Error": "Unknown Furaffinity contact info field."}
-								}}
 							}}}
 						}}
 					}
@@ -1816,14 +1749,8 @@
 						"nature.com": {"RemoveQueryParam": "sharing_token"},
 						"nytimes.com": {"RemoveQueryParams": ["smid", "smtyp"]},
 						"overpass-turbo.eu": {"If": {
-							"if": {"All": [
-								{"PathStartsWith": "/s/"},
-								{"FlagIsNotSet": "no_network"}
-							]},
-							"then": {"All": [
-								{"Common": "universal"},
-								"ExpandRedirect"
-							]}
+							"if": {"PathStartsWith": "/s/"},
+							"then": {"Function": "expand_redirect"}
 						}},
 						"patreon.com": {"RemoveQueryParams": ["redirect_uri", "fan_landing", "fromConcierge", "redirect"]},
 						"pawoo.net": {"RemoveQueryParam": "provider"},
@@ -1917,14 +1844,8 @@
 						]}},
 						"tumblr.com": {"All": [
 							{"If": {
-								"if": {"All": [
-									{"SubdomainIs": "at"},
-									{"FlagIsNotSet": "no_network"}
-								]},
-								"then": {"All": [
-									{"Common": "universal"},
-									"ExpandRedirect"
-								]}
+								"if": {"SubdomainIs": "at"},
+								"then": {"Function": "expand_redirect"}
 							}},
 							{"If": {
 								"if": {"HasQueryParam": "redirect_to"},
@@ -2097,7 +2018,7 @@
 							"then": {"RemoveQueryParam": "hss_channel"}
 						}},
 						"ledauphine.com": {"RemoveQueryParamsMatching": {"StartsWith": "at_"}},
-						"l.mlive.com": {"Common": {
+						"l.mlive.com": {"Function": {
 							"name": "extract_from_page",
 							"args": {
 								"string_modifications": {
@@ -2275,7 +2196,7 @@
 
 
 
-				{"Common": "universal"}
+				{"Function": "universal"}
 			]}
 		}}
 	]

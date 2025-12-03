@@ -2,6 +2,7 @@
 
 mod macros;
 pub(crate) use macros::*;
+mod docs;
 mod suitability;
 pub(crate) use suitability::*;
 mod serde_helpers;

@@ -21,12 +21,12 @@ pub enum StringModification {
     /// Doesn't do any modification.
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::None.apply(&mut to, &task_state_view).unwrap();
+    /// doc_test!(apply, Ok, StringModification::None, &mut to, &ts);
     ///
     /// assert_eq!(to, Some("abc".into()));
     /// ```
@@ -51,12 +51,12 @@ pub enum StringModification {
     /// Always returns the error [`StringModificationError::ExplicitError`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::Error("...".into()).apply(&mut to, &task_state_view).unwrap_err();
+    /// doc_test!(apply, Err, StringModification::Error("...".into()), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("abc".into()));
     /// ```
@@ -66,12 +66,12 @@ pub enum StringModification {
     /// Does not revert any successful calls to [`Self::apply`]. For that, also use [`Self::RevertOnError`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::IgnoreError(Box::new(StringModification::Error("...".into()))).apply(&mut to, &task_state_view).unwrap();
+    /// doc_test!(apply, Ok, StringModification::IgnoreError(Box::new(StringModification::Error("...".into()))), &mut to, &ts);
     /// ```
     IgnoreError(Box<Self>),
     /// If the contained [`Self`] returns an error, revert the string to its previous value then return the error.
@@ -79,15 +79,15 @@ pub enum StringModification {
     #[doc = edoc!(applyerr(Self))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::RevertOnError(Box::new(StringModification::All(vec![
+    /// doc_test!(apply, Err, StringModification::RevertOnError(Box::new(StringModification::All(vec![
     ///     StringModification::Set("def".into()),
     ///     StringModification::Error("...".into())
-    /// ]))).apply(&mut to, &task_state_view).unwrap_err();
+    /// ]))), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("abc".into()));
     /// ```
@@ -99,15 +99,15 @@ pub enum StringModification {
     #[doc = edoc!(applyerrte(Self, StringModification))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::TryElse {
+    /// doc_test!(apply, Ok, StringModification::TryElse {
     ///     r#try : Box::new(StringModification::Error("...".into())),
     ///     r#else: Box::new(StringModification::Set("def".into()))
-    /// }.apply(&mut to, &task_state_view);
+    /// }, &mut to, &ts);
     /// ```
     TryElse {
         /// The [`Self`] to try first.
@@ -122,15 +122,15 @@ pub enum StringModification {
     #[doc = edoc!(applyerr(Self, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::All(vec![
+    /// doc_test!(apply, Err, StringModification::All(vec![
     ///     StringModification::Append("def".into()),
     ///     StringModification::Error("...".into())
-    /// ]).apply(&mut to, &task_state_view).unwrap_err();
+    /// ]), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("abcdef".into()));
     /// ```
@@ -142,15 +142,15 @@ pub enum StringModification {
     #[doc = edoc!(applyerrfne(Self, StringModification))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::FirstNotError(vec![
+    /// doc_test!(apply, Ok, StringModification::FirstNotError(vec![
     ///     StringModification::Append("def".into()),
     ///     StringModification::Error("...".into())
-    /// ]).apply(&mut to, &task_state_view).unwrap();
+    /// ]), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("abcdef".into()));
     /// ```
@@ -301,12 +301,12 @@ pub enum StringModification {
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::KeepBefore("b".into()).apply(&mut to, &task_state_view).unwrap();
+    /// doc_test!(apply, Ok, StringModification::KeepBefore("b".into()), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("a".into()));
     /// ```
@@ -320,12 +320,12 @@ pub enum StringModification {
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::StripBefore("b".into()).apply(&mut to, &task_state_view).unwrap();
+    /// doc_test!(apply, Ok, StringModification::StripBefore("b".into()), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("bc".into()));
     /// ```
@@ -350,12 +350,12 @@ pub enum StringModification {
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::StripAfter("b".into()).apply(&mut to, &task_state_view).unwrap();
+    /// doc_test!(apply, Ok, StringModification::StripAfter("b".into()), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("ab".into()));
     /// ```
@@ -369,12 +369,12 @@ pub enum StringModification {
     /// If the specified substring isn't found, returns the error [`StringModificationError::SubstringNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("abc".into());
     ///
-    /// StringModification::KeepAfter("b".into()).apply(&mut to, &task_state_view).unwrap();
+    /// doc_test!(apply, Ok, StringModification::KeepAfter("b".into()), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("c".into()));
     /// ```
@@ -519,35 +519,35 @@ pub enum StringModification {
     /// If the range isn't found, returns the error [`StringModificationError::SegmentRangeNotFound`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state_view);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("a/b/c/d/e".into());
     ///
-    /// StringModification::KeepSegmentRange {
+    /// doc_test!(apply, Ok, StringModification::KeepSegmentRange {
     ///     split: "/".into(),
     ///     start: 1,
     ///     end: Some(4),
     ///     join: None
-    /// }.apply(&mut to, &task_state_view).unwrap();
+    /// }, &mut to, &ts);
     ///
     /// assert_eq!(to, Some("b/c/d".into()));
     ///
-    /// StringModification::KeepSegmentRange {
+    /// doc_test!(apply, Ok, StringModification::KeepSegmentRange {
     ///     split: "/".into(),
     ///     start: 0,
     ///     end: Some(-1),
     ///     join: None
-    /// }.apply(&mut to, &task_state_view).unwrap();
+    /// }, &mut to, &ts);
     ///
     /// assert_eq!(to, Some("b/c".into()));
     ///
-    /// StringModification::KeepSegmentRange {
+    /// doc_test!(apply, Ok, StringModification::KeepSegmentRange {
     ///     split: "/".into(),
     ///     start: 0,
     ///     end: None,
     ///     join: Some("-".into())
-    /// }.apply(&mut to, &task_state_view).unwrap();
+    /// }, &mut to, &ts);
     ///
     /// assert_eq!(to, Some("b-c".into()));
     /// ```
@@ -591,28 +591,28 @@ pub enum StringModification {
     /// If [`Self::KeepModifiedSegments::join`] is [`None`], joins on the same value as [`Self::KeepModifiedSegments::split`].
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("a/b/c".into());
     ///
-    /// StringModification::KeepModifiedSegments {
+    /// doc_test!(apply, Ok, StringModification::KeepModifiedSegments {
     ///     split: "/".into(),
     ///     indices: vec![-1, 0],
     ///     modification: Box::new(StringModification::Uppercase),
     ///     join: None
-    /// }.apply(&mut to, &task_state).unwrap();
+    /// }, &mut to, &ts);
     ///
     /// assert_eq!(to, Some("A/C".into()));
     ///
     /// let mut to = Some("a/b/c".into());
     ///
-    /// StringModification::KeepModifiedSegments {
+    /// doc_test!(apply, Ok, StringModification::KeepModifiedSegments {
     ///     split: "/".into(),
     ///     indices: vec![-1, 0],
     ///     modification: Box::new(StringModification::Lowercase),
     ///     join: Some("-".into())
-    /// }.apply(&mut to, &task_state).unwrap();
+    /// }, &mut to, &ts);
     ///
     /// assert_eq!(to, Some("a-c".into()));
     /// ```
@@ -639,15 +639,15 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification), callerr(get_js_string_literal_prefix))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some(r#"let destination = "https:\/\/example.com";"#.into());
     ///
-    /// StringModification::All(vec![
+    /// doc_test!(apply, Ok, StringModification::All(vec![
     ///     StringModification::KeepAfter("let destination = ".into()),
     ///     StringModification::GetJsStringLiteralPrefix
-    /// ]).apply(&mut to, &task_state).unwrap();;
+    /// ]), &mut to, &ts);;
     ///
     /// assert_eq!(to, Some("https://example.com".into()));
     /// ```
@@ -663,15 +663,15 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification), geterr(StringSource), callerr(get_html_attribute))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some(r#"Redirecting you to <a id="destination" href="https://example.com?a=2&amp;b=3">example.com</a>..."#.into());
     ///
-    /// StringModification::All(vec![
+    /// doc_test!(apply, Ok, StringModification::All(vec![
     ///     StringModification::StripBefore(r#"<a id="destination""#.into()),
     ///     StringModification::GetHtmlAttribute("href".into())
-    /// ]).apply(&mut to, &task_state).unwrap();
+    /// ]), &mut to, &ts);
     ///
     /// assert_eq!(to, Some("https://example.com?a=2&b=3".into()));
     /// ```
@@ -753,7 +753,7 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// assert_eq!(serde_json::from_str::<StringModification>(r#""PercentEncode""#).unwrap(), StringModification::PercentEncode(Default::default()));
     /// ```
@@ -780,7 +780,7 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Encode""#).unwrap(), StringModification::Base64Encode(Default::default()));
     /// ```
@@ -792,7 +792,7 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification), callerr(::base64::engine::GeneralPurpose::decode), callerr(String::from_utf8))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
     /// assert_eq!(serde_json::from_str::<StringModification>(r#""Base64Decode""#).unwrap(), StringModification::Base64Decode(Default::default()));
     /// ```
@@ -807,16 +807,18 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification), checkerr(StringMatcher, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
     ///
-    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
+    /// doc_test!(apply, Ok, StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))), &mut to, &ts);
     /// assert_eq!(to, Some("b=3&c=5".into()));
-    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
+    ///
+    /// doc_test!(apply, Ok, StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))), &mut to, &ts);
     /// assert_eq!(to, Some("c=5".into()));
-    /// StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("c".into()))).apply(&mut to, &task_state).unwrap();
+    ///
+    /// doc_test!(apply, Ok, StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("c".into()))), &mut to, &ts);
     /// assert_eq!(to, None);
     /// ```
     RemoveQueryParamsMatching(Box<StringMatcher>),
@@ -825,30 +827,27 @@ pub enum StringModification {
     #[doc = edoc!(stringisnone(StringModification), checkerr(StringMatcher, 3))]
     /// # Examples
     /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// use url_cleaner_engine::docs::*;
     ///
-    /// tsv!(task_state);
+    /// doc_test!(task_state, ts);
     /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
     ///
-    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))).apply(&mut to, &task_state).unwrap();
+    /// doc_test!(apply, Ok, StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))), &mut to, &ts);
     /// assert_eq!(to, Some("a=2&%61=4".into()));
-    /// StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))).apply(&mut to, &task_state).unwrap();
+    ///
+    /// doc_test!(apply, Ok, StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))), &mut to, &ts);
     /// assert_eq!(to, None);
     /// ```
     AllowQueryParamsMatching(Box<StringMatcher>),
 
 
 
-    /// Gets a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Uses a [`Self`] from [`Cleaner::functions`].
     /// # Errors
-    #[doc = edoc!(ageterr(StringSource, CommonCallConfig::name), agetnone(StringSource, StringModification, CommonCallConfig::name), commonnotfound(Self, StringModification), callerr(CommonArgsConfig::make), applyerr(Self))]
-    Common(CommonCallConfig),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::string_modifications`] and applies it.
-    /// # Errors
-    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringModificationError::NotInCommonContext`].
-    ///
-    #[doc = edoc!(commoncallargnotfound(Self, StringModification), applyerr(Self))]
-    CommonCallArg(StringSource),
+    #[doc = edoc!(functionnotfound(Self, StringModification), applyerr(Self))]
+    Function(Box<FunctionCall>),
+    #[doc = edoc!(callargfunctionnotfound(Self, StringModification), applyerr(Self))]
+    CallArg(StringSource),
     /// Calls the contained function.
     ///
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
@@ -858,7 +857,7 @@ pub enum StringModification {
     #[doc = edoc!(callerr(Self::Custom::0))]
     #[suitable(never)]
     #[serde(skip)]
-    Custom(fn(&mut Option<Cow<'_, str>>, &TaskStateView) -> Result<(), StringModificationError>)
+    Custom(for<'j, 't> fn(&mut Option<Cow<'t, str>>, &'t TaskState<'j>) -> Result<(), StringModificationError>)
 }
 
 string_or_struct_magic!(StringModification);
@@ -1018,18 +1017,13 @@ pub enum StringModificationError {
     #[error(transparent)]
     Base64DecodeError(#[from] base64::DecodeError),
 
-    /// Returned when a [`MakeCommonArgsError`] is encountered.
-    #[error(transparent)]
-    MakeCommonArgsError(#[from] MakeCommonArgsError),
-    /// Returned when a [`StringModification`] with the specified name isn't found in the [`Commons::string_modifications`].
-    #[error("A StringModification with the specified name wasn't found in the Commons::string_modifications.")]
-    CommonStringModificationNotFound,
-    /// Returned when trying to use [`StringModification::CommonCallArg`] outside of a common context.
-    #[error("Tried to use StringModification::CommonCallArg outside of a common context.")]
-    NotInCommonContext,
-    /// Returned when the [`StringModification`] requested from a [`StringModification::CommonCallArg`] isn't found.
-    #[error("The StringModification requested from a StringModification::CommonCallArg wasn't found.")]
-    CommonCallArgStringModificationNotFound,
+    /// Returned when a [`StringModification`] with the specified name isn't found in the [`Functions::string_modifications`].
+    #[error("A StringModification with the specified name wasn't found in the Functions::string_modifications.")]
+    FunctionNotFound,
+    #[error("TODO")]
+    NotInFunction,
+    #[error("TODO")]
+    CallArgFunctionNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringModification::Custom`].
     #[error(transparent)]
@@ -1053,7 +1047,7 @@ impl StringModification {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn apply(&self, to: &mut Option<Cow<'_, str>>, task_state: &TaskStateView) -> Result<(), StringModificationError> {
+    pub fn apply<'j: 't, 't>(&'j self, to: &mut Option<Cow<'t, str>>, task_state: &'t TaskState<'j>) -> Result<(), StringModificationError> {
         match self {
             Self::None => {},
             Self::Error(msg) => Err(StringModificationError::ExplicitError(msg.clone()))?,
@@ -1523,26 +1517,16 @@ impl StringModification {
 
 
 
-            Self::Common(common_call) => {
-                task_state.commons.string_modifications.get(get_str!(common_call.name, task_state, StringModificationError)).ok_or(StringModificationError::CommonStringModificationNotFound)?.apply(
-                    to,
-                    &TaskStateView {
-                        common_args: Some(&common_call.args.make(task_state)?),
-                        url        : task_state.url,
-                        scratchpad : task_state.scratchpad,
-                        context    : task_state.context,
-                        job_context: task_state.job_context,
-                        params     : task_state.params,
-                        commons    : task_state.commons,
-                        unthreader : task_state.unthreader,
-                        #[cfg(feature = "cache")]
-                        cache      : task_state.cache,
-                        #[cfg(feature = "http")]
-                        http_client: task_state.http_client
-                    }
-                )?;
+            Self::Function(call) => {
+                let func = task_state.job.cleaner.functions.string_modifications.get(&call.name).ok_or(StringModificationError::FunctionNotFound)?;
+                let old_args = task_state.call_args.replace(Some(&call.args));
+                let ret = func.apply(to, task_state);
+                task_state.call_args.replace(old_args);
+                ret?
             },
-            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringModificationError::NotInCommonContext)?.string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CommonCallArgStringModificationNotFound)?.apply(to, task_state)?,
+            Self::CallArg(name) => task_state.call_args.get().ok_or(StringModificationError::NotInFunction)?
+                .string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CallArgFunctionNotFound)?
+                .apply(to, task_state)?,
             Self::Custom(function) => function(to, task_state)?
         };
         Ok(())

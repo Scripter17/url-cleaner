@@ -119,7 +119,7 @@ impl JsonSource {
     /// See each variant of [`Self`] for when each variant returns an error.
     ///
     /// But TL;DR: If any call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn make(&self, task_state: &TaskStateView) -> Result<Value, StringSourceError> {
+    pub fn make<'j>(&'j self, task_state: &TaskState<'j>) -> Result<Value, StringSourceError> {
         Ok(match self {
             Self::Null      => Value::Null,
             Self::Bool  (x) => Value::Bool(*x),

@@ -22,7 +22,7 @@ impl<'a> ProfiledCleanerConfig<'a> {
         ProfiledCleaner {
             unprofiled_cleaner: UnprofiledCleaner {
                 docs   : self.cleaner.docs,
-                commons: self.cleaner.commons,
+                functions: self.cleaner.functions,
                 actions: self.cleaner.actions
             },
             profiles: self.profiles_config.make(self.cleaner.params)
@@ -34,7 +34,7 @@ impl<'a> ProfiledCleanerConfig<'a> {
         Some(Cleaner {
             docs   : self.cleaner.docs,
             params : self.profiles_config.into_profile(name, self.cleaner.params)?.params,
-            commons: self.cleaner.commons,
+            functions: self.cleaner.functions,
             actions: self.cleaner.actions
         })
     }

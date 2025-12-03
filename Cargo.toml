@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = ["engine", "cli", "site-types", "site", "discord-app", "better-url", "benchmarking", "testing"]
+default-members = ["engine", "cli", "site-types", "site", "discord-app", "better-url", "testing"]
 
 [workspace.lints.rust]
-missing_docs = "warn"
 missing_debug_implementations = "deny"
 unused_import_braces = "warn"
 unpredictable_function_pointer_comparisons = "allow"

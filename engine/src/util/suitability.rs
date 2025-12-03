@@ -19,6 +19,12 @@ pub(crate) trait Suitability: Debug {
     fn assert_suitability(&self, cleaner: &Cleaner);
 }
 
+impl<T: Suitability> Suitability for &T {
+    fn assert_suitability(&self, cleaner: &Cleaner) {
+        T::assert_suitability(self, cleaner)
+    }
+}
+
 /// Generate [`Suitability`] impls for types that are always suitable for use in the bundled cleaner.
 macro_rules! always_suitable {
     ($($t:ty),+) => {
@@ -28,6 +34,30 @@ macro_rules! always_suitable {
 
 always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, url::Url, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration, BetterPosition);
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
+
+/// Macro for generating Suitability impls for tuples.
+macro_rules! suitable_tuple {
+    ($($t:ident),+) => {
+        impl<$($t: Suitability, )+> Suitability for ($($t, )+) {
+            fn assert_suitability(&self, cleaner: &Cleaner) {
+                #[allow(non_snake_case, reason = "Declarative macros can't fix it.")]
+                let ($($t, )+) = self;
+                $($t.assert_suitability(cleaner);)+
+            }
+        }
+    };
+}
+
+/// Macro for generating Suitability impls for tuples and... subtuples?
+macro_rules! suitable_tuples {
+    () => {};
+    ($t:ident$(, $rest:ident)*) => {
+        suitable_tuple!($t$(, $rest)*);
+        suitable_tuples!($($rest),*);
+    };
+}
+
+suitable_tuples! {A, B, C, D, E, F, G, H, I, J, K, L}
 
 /// Suitability helper function to check that a set is documented.
 pub(crate) fn set_is_documented(name: &StringSource, cleaner: &Cleaner) {

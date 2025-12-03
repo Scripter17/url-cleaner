@@ -27,10 +27,12 @@ pub mod prelude {
     #[cfg(feature = "http" )] pub use super::http::prelude::*;
     #[cfg(feature = "cache")] pub use super::cache::prelude::*;
 
-    pub use super::task_state as ts;
-    pub use super::task_state_view as tsv;
-    pub use super::task;
-
     pub(crate) use better_url::*;
     pub(crate) use super::util::*;
+}
+
+pub mod docs {
+    pub use super::prelude::*;
+
+    pub use super::doc_test;
 }

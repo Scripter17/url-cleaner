@@ -82,6 +82,7 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 
 #### Vars
 
-- `contact_info_site_name`: The name oe the website this URL is contact info for.
-- `link_text`: The text of the link the job came from.
+- `unmangle_mode`: The unmangle mode to use.
+- `site`: The name of the website used in the parse_contact_field prelude
+- `text`: The text of the link used in the parse_contact_field prelude
 <!--/cmd-->

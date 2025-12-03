@@ -10,9 +10,9 @@ use url_cleaner_engine::prelude::*;
 use crate::prelude::*;
 
 /// Clean a message's URLs.
-pub async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: &Cleaner<'_>) -> Result<(), serenity::Error> {
-    let job_config = JobConfig {
-        context: &Default::default(),
+pub async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: Cleaner<'_>) -> Result<(), serenity::Error> {
+    let job = &Job {
+        context: Default::default(),
         cleaner,
         unthreader: &Unthreader::default(),
         #[cfg(feature = "cache")]
@@ -36,7 +36,7 @@ pub async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: &Clea
 
         for node in root.descendants() {
             if let NodeValue::Link(ref link) = node.data.borrow().value {
-                match job_config.do_lazy_task_config(&link.url) {
+                match job.r#do(&link.url) {
                     Ok (x) => writeln!(ret, "{x}"   ).expect("This to always work."),
                     Err(e) => writeln!(ret, "-{e:?}").expect("This to always work.")
                 }

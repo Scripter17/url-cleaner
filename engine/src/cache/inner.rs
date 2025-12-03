@@ -2,7 +2,6 @@
 
 use std::time::Duration;
 use std::sync::OnceLock;
-use std::path::PathBuf;
 
 use rusqlite::{Connection, OptionalExtension};
 use parking_lot::{ReentrantMutex, ReentrantMutexGuard, MappedReentrantMutexGuard};
@@ -104,16 +103,10 @@ impl InnerCache {
     }
 }
 
-impl From<PathBuf> for InnerCache {
-    fn from(path: PathBuf) -> Self {
-        CacheLocation::from(path).into()
-    }
-}
-
-impl From<CacheLocation> for InnerCache {
-    fn from(location: CacheLocation) -> Self {
+impl<T: Into<CacheLocation>> From<T> for InnerCache {
+    fn from(location: T) -> Self {
         Self {
-            location,
+            location: location.into(),
             ..Default::default()
         }
     }

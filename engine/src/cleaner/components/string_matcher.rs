@@ -285,18 +285,13 @@ pub enum StringMatcher {
     #[doc = edoc!(stringisnone(StringMatcher), geterr(LazyRegex))]
     Regex(LazyRegex),
 
-    // Common/Custom
+    // Function/Custom
 
-    /// Gets a [`Self`] from [`TaskStateView::commons`]'s [`Commons::string_modifications`] and applies it.
+    /// Uses a [`Self`] from [`Cleaner::functions`].
     /// # Errors
-    #[doc = edoc!(ageterr(StringSource, CommonCallConfig::name), agetnone(StringSource, StringMatcher, CommonCallConfig::name), commonnotfound(Self, StringMatcher), callerr(CommonArgsConfig::make), checkerr(Self))]
-    Common(CommonCallConfig),
-    /// Gets a [`Self`] from [`TaskStateView::common_args`]'s [`CommonArgs::string_matchers`] and applies it.
-    /// # Errors
-    /// If [`TaskStateView::common_args`] is [`None`], returns the error [`StringMatcherError::NotInCommonContext`].
-    ///
-    #[doc = edoc!(commoncallargnotfound(Self, StringMatcher), checkerr(Self))]
-    CommonCallArg(StringSource),
+    #[doc = edoc!(functionnotfound(Self, StringMatcher), checkerr(Self))]
+    Function(Box<FunctionCall>),
+    CallArg(StringSource),
     /// Calls the contained function.
     ///
     /// Because this uses function pointers, this plays weirdly with [`PartialEq`]/[`Eq`].
@@ -306,7 +301,7 @@ pub enum StringMatcher {
     #[doc = edoc!(callerr(Self::Custom::0))]
     #[suitable(never)]
     #[serde(skip)]
-    Custom(fn(Option<&str>, &TaskStateView) -> Result<bool, StringMatcherError>)
+    Custom(for<'j> fn(Option<&str>, &TaskState<'j>) -> Result<bool, StringMatcherError>)
 }
 
 impl From<LazyRegex> for StringMatcher {
@@ -372,18 +367,13 @@ pub enum StringMatcherError {
     #[error(transparent)]
     RegexError(#[from] regex::Error),
 
-    /// Returned when a [`MakeCommonArgsError`] is encountered.
-    #[error(transparent)]
-    MakeCommonArgsError(#[from] MakeCommonArgsError),
-    /// Returned when a [`StringMatcher`] with the specified name isn't found in the [`Commons::string_matchers`].
-    #[error("A StringMatcher with the specified name wasn't found in the Commons::string_matchers.")]
-    CommonStringMatcherNotFound,
-    /// Returned when trying to use [`StringMatcher::CommonCallArg`] outside of a common context.
-    #[error("Tried to use StringMatcher::CommonCallArg outside of a common context.")]
-    NotInCommonContext,
-    /// Returned when the [`StringMatcher`] requested from a [`StringMatcher::CommonCallArg`] isn't found.
-    #[error("The StringMatcher requested from a StringMatcher::CommonCallArg wasn't found.")]
-    CommonCallArgStringMatcherNotFound,
+    /// Returned when a [`StringMatcher`] with the specified name isn't found in the [`Functions::string_matchers`].
+    #[error("A StringMatcher with the specified name wasn't found in the Functions::string_matchers.")]
+    FunctionNotFound,
+    #[error("TODO")]
+    NotInFunction,
+    #[error("TODO")]
+    CallArgFunctionNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringMatcher::Custom`].
     #[error(transparent)]
@@ -394,7 +384,7 @@ impl StringMatcher {
     /// Returns [`true`] if `haystack` satisfies `self`.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn check(&self, haystack: Option<&str>, task_state: &TaskStateView) -> Result<bool, StringMatcherError> {
+    pub fn check<'j>(&'j self, haystack: Option<&str>, task_state: &TaskState<'j>) -> Result<bool, StringMatcherError> {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
@@ -446,7 +436,7 @@ impl StringMatcher {
 
             Self::Is(value) => haystack == get_option_str!(value, task_state),
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
-            Self::IsInSet(name) => task_state.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
+            Self::IsInSet(name) => task_state.job.cleaner.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
 
             // Containment
 
@@ -467,7 +457,7 @@ impl StringMatcher {
             },
             Self::ContainsAnyInList {at, list} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
-                for x in task_state.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
+                for x in task_state.job.cleaner.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
                     if at.check(haystack, x)? {
                         return Ok(true);
                     }
@@ -548,28 +538,18 @@ impl StringMatcher {
 
             Self::Regex(regex) => regex.get()?.is_match(haystack.ok_or(StringMatcherError::StringIsNone)?),
 
-            // Common/Custom
+            // Function/Custom
 
-            Self::Common(common_call) => {
-                task_state.commons.string_matchers.get(get_str!(common_call.name, task_state, StringSourceError)).ok_or(StringMatcherError::CommonStringMatcherNotFound)?.check(
-                    haystack,
-                    &TaskStateView {
-                        common_args: Some(&common_call.args.make(task_state)?),
-                        url        : task_state.url,
-                        scratchpad : task_state.scratchpad,
-                        context    : task_state.context,
-                        job_context: task_state.job_context,
-                        params     : task_state.params,
-                        commons    : task_state.commons,
-                        unthreader : task_state.unthreader,
-                        #[cfg(feature = "cache")]
-                        cache      : task_state.cache,
-                        #[cfg(feature = "http")]
-                        http_client: task_state.http_client
-                    }
-                )?
+            Self::Function(call) => {
+                let func = task_state.job.cleaner.functions.string_matchers.get(&call.name).ok_or(StringMatcherError::FunctionNotFound)?;
+                let old_args = task_state.call_args.replace(Some(&call.args));
+                let ret = func.check(haystack, task_state);
+                task_state.call_args.replace(old_args);
+                ret?
             },
-            Self::CommonCallArg(name) => task_state.common_args.ok_or(StringMatcherError::NotInCommonContext)?.string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CommonCallArgStringMatcherNotFound)?.check(haystack, task_state)?,
+            Self::CallArg(name) => task_state.call_args.get().ok_or(StringMatcherError::NotInFunction)?
+                .string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CallArgFunctionNotFound)?
+                .check(haystack, task_state)?,
             Self::Custom(function) => function(haystack, task_state)?,
         })
     }

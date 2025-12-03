@@ -13,18 +13,11 @@ use crate::prelude::*;
 pub enum FlagSource {
     /// Get it from [`Params::flags`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, GetFlagError))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, FlagSourceError))]
     Params(StringSource),
-    /// Get it from [`Scratchpad::flags`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, GetFlagError))]
-    Scratchpad(StringSource),
-    /// Get it from [`CommonArgs::flags`].
-    /// # Errors
-    /// If the [`TaskStateView::common_args`] is [`None`], returns the error [`GetFlagError::NotInCommonContext`].
-    ///
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, GetFlagError))]
-    CommonArg(StringSource)    
+    TaskContext(StringSource),
+    JobContext(StringSource),
+    CallArg(StringSource)
 }
 
 string_or_struct_magic!(FlagSource);
@@ -33,11 +26,12 @@ impl FlagSource {
     /// Get the flag.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get(&self, task_state: &TaskStateView) -> Result<bool, GetFlagError> {
+    pub fn get<'j>(&'j self, task_state: &TaskState<'j>) -> Result<bool, FlagSourceError> {
         Ok(match self {
-            Self::Params    (name) => task_state.params    .flags.contains(get_str!(name, task_state, GetFlagError)),
-            Self::Scratchpad(name) => task_state.scratchpad.flags.contains(get_str!(name, task_state, GetFlagError)),
-            Self::CommonArg (name) => task_state.common_args.ok_or(GetFlagError::NotInCommonContext)?.flags.contains(get_str!(name, task_state, GetFlagError))
+            Self::Params     (name) => task_state.job.cleaner.params.flags                                    .contains(get_str!(name, task_state, FlagSourceError)),
+            Self::TaskContext(name) => task_state.context.flags                                               .contains(get_str!(name, task_state, FlagSourceError)),
+            Self::JobContext (name) => task_state.job.context.flags                                           .contains(get_str!(name, task_state, FlagSourceError)),
+            Self::CallArg    (name) => task_state.call_args.get().ok_or(FlagSourceError::NotInFunction)?.flags.contains(get_str!(name, task_state, FlagSourceError)),
         })
     }
 }
@@ -70,19 +64,19 @@ impl From<StringSource> for FlagSource {
 
 /// The enum of errors [`FlagSource::get`] can return.
 #[derive(Debug, Error)]
-pub enum GetFlagError {
+pub enum FlagSourceError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
     /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
-    /// Returned when trying to use [`FlagSource::CommonArg`] outside of a common context.
-    #[error("Tried to use FlagSource::CommonArg outside of a common context.")]
-    NotInCommonContext
+
+    #[error("TOOD")]
+    NotInFunction
 }
 
-impl From<StringSourceError> for GetFlagError {
+impl From<StringSourceError> for FlagSourceError {
     fn from(value: StringSourceError) -> Self {
         Self::StringSourceError(Box::new(value))
     }

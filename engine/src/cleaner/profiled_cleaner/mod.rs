@@ -84,25 +84,8 @@ pub mod prelude {
 ///
 /// let profiled_cleaner = ProfiledCleanerConfig {cleaner, profiles_config}.make();
 ///
-/// // Test the base profile.
-///
-/// assert_eq!(
-///     task!(
-///         "https://x.com/user/status/1",
-///         cleaner = &profiled_cleaner.get(None).unwrap()
-///     ).r#do().unwrap(),
-///     "https://x.com/user/status/1"
-/// );
-///
-/// // Test the "Embed compatibility" profile.
-///
-/// assert_eq!(
-///     task!(
-///         "https://x.com/user/status/1",
-///         cleaner = &profiled_cleaner.get(Some("Embed compatibility")).unwrap()
-///     ).r#do().unwrap(),
-///     "https://vxtwitter.com/user/status/1"
-/// );
+/// assert!(!profiled_cleaner.get(None                       ).unwrap().params.flags.contains("embed_compatibility"));
+/// assert!( profiled_cleaner.get(Some("Embed compatibility")).unwrap().params.flags.contains("embed_compatibility"));
 /// ```
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProfiledCleaner<'a> {

@@ -11,7 +11,7 @@ use crate::*;
 
 /// The `/clean_ws` route.
 #[get("/clean_ws")]
-pub async fn clean_ws(state: &State<&'static ServerState>, config: CleanConfig, ws: ws::WebSocket) -> Result<ws::Channel<'static>, CleanError> {
+pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws: ws::WebSocket) -> Result<ws::Channel<'static>, CleanError> {
     let state = *state.inner();
 
     let Some(mut cleaner) = state.config.profiled_cleaner.get(config.profile.as_deref()) else {
@@ -23,9 +23,9 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: CleanConfig, 
     }
 
     Ok(ws.channel(move |mut stream| Box::pin(async move {
-        let job_config = JobConfig {
-            context: &config.context,
-            cleaner: &cleaner,
+        let job = &Job {
+            context: config.context,
+            cleaner,
             unthreader: state.unthreader.filter(config.unthread),
             #[cfg(feature = "cache")]
             cache: Cache {
@@ -43,21 +43,37 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: CleanConfig, 
         while let Some(message) = stream.next().await {
             match message? {
                 ws::Message::Text(text) => {
-                    let mut ret = String::with_capacity(64 * text.len().checked_ilog2().unwrap_or(0).pow(2) as usize);
-                    for line in text.lines() {
-                        match job_config.do_lazy_task_config(line) {
-                            Ok (x) => writeln!(ret, "{x}"   ).expect("This to always work."),
-                            Err(e) => writeln!(ret, "-{e:?}").expect("This to always work.")
+                    let mut ret = String::new();
+                    let mut lines = text.lines();
+                    if let Some(line) = lines.next() {
+                        match job.r#do(line) {
+                            Ok (x) => ret = x.into(),
+                            Err(e) => ret = format!("-{e:?}")
+                        }
+                    }
+                    for line in lines {
+                        ret.push('\n');
+                        match job.r#do(line) {
+                            Ok (x) => ret.push_str(x.as_str()),
+                            Err(e) => write!(ret, "-{e:?}").expect("This to always work.")
                         }
                     }
                     stream.send(ret.into()).await?;
                 },
                 ws::Message::Binary(bytes) => {
-                    let mut ret = String::with_capacity(64 * bytes.len().checked_ilog2().unwrap_or(0).pow(2) as usize);
-                    for line in crate::util::ByteLines::new(&bytes) {
-                        match job_config.do_lazy_task_config(line) {
-                            Ok (x) => writeln!(ret, "{x}").expect("This to always work."),
-                            Err(e) => writeln!(ret, "-{e:?}").expect("This to always work.")
+                    let mut ret = String::new();
+                    let mut lines = crate::util::ByteLines(&bytes);
+                    if let Some(line) = lines.next() {
+                        match job.r#do(line) {
+                            Ok (x) => ret = x.into(),
+                            Err(e) => ret = format!("-{e:?}")
+                        }
+                    }
+                    for line in lines {
+                        ret.push('\n');
+                        match job.r#do(line) {
+                            Ok (x) => ret.push_str(x.as_str()),
+                            Err(e) => write!(ret, "-{e:?}").expect("This to always work.")
                         }
                     }
                     stream.send(ret.into()).await?;
