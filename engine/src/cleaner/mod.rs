@@ -17,6 +17,7 @@ pub mod params;
 pub mod params_diff;
 pub mod docs;
 pub mod functions;
+pub mod function_call;
 pub mod call_args;
 pub mod components;
 
@@ -27,6 +28,7 @@ pub mod prelude {
     pub use super::params_diff::*;
     pub use super::docs::*;
     pub use super::functions::*;
+    pub use super::function_call::*;
     pub use super::call_args::*;
     pub use super::components::prelude::*;
 
@@ -63,7 +65,7 @@ pub struct Cleaner<'a> {
     ///
     /// Defaults to an empty [`Vec`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub actions: Cow<'a, [Action]>
+    pub action: Cow<'a, Action>
 }
 
 /// The JSON text of the bundled cleaner.
@@ -89,7 +91,7 @@ impl<'a> Cleaner<'a> {
             docs     : Cow::Borrowed(&*self.docs),
             params   : self.params.borrowed(),
             functions: Cow::Borrowed(&*self.functions),
-            actions  : Cow::Borrowed(&*self.actions)
+            action   : Cow::Borrowed(&*self.action)
         }
     }
 
@@ -99,7 +101,7 @@ impl<'a> Cleaner<'a> {
             docs     : Cow::Owned(self.docs.into_owned()),
             params   : self.params.into_owned(),
             functions: Cow::Owned(self.functions.into_owned()),
-            actions  : Cow::Owned(self.actions.into_owned())
+            action   : Cow::Owned(self.action.into_owned())
         }
     }
 
@@ -211,13 +213,11 @@ impl<'a> Cleaner<'a> {
 }
 
 impl<'j> Cleaner<'j> {
-    /// [`Action::apply`]s each [`Action`] in [`Self::actions`] in order.
+    /// [`Action::apply`]s [`Self::action`].
     /// # Errors
     #[doc = edoc!(applyerr(Action, 3))]
     pub fn apply(&'j self, task_state: &mut TaskState<'j>) -> Result<(), ApplyCleanerError> {
-        for action in &*self.actions {
-            action.apply(task_state)?;
-        }
+        self.action.apply(task_state)?;
         Ok(())
     }
 }

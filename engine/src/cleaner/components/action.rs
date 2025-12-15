@@ -1,11 +1,12 @@
 //! [`Action`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use std::str::{FromStr, Utf8Error};
 use std::collections::HashSet;
 use std::borrow::Cow;
 
 use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, SetPreventDuplicates};
 use thiserror::Error;
 #[expect(unused_imports, reason = "Used in doc comment.")]
 use url::{Url, PathSegmentsMut};
@@ -33,8 +34,7 @@ use crate::prelude::*;
 /// This is because reverting on an error requires keeping a copy of the input state, which is very expensive and, if the error is just going to be returned as the result of the [`Task`], not useful.
 ///
 /// If you need to revert the [`TaskState`] when an error is returned, use [`Self::RevertOnError`] to revert the effects but still return the error, and optionally [`Self::IgnoreError`] to ignore the error.
-#[serde_as]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub enum Action {
@@ -49,6 +49,7 @@ pub enum Action {
     ///
     /// assert_eq!(ts.url, "https://example.com/");
     /// ```
+    #[default]
     None,
     /// Always returns the error [`ActionError::ExplicitError`] with the included message.
     /// # Errors
@@ -704,7 +705,7 @@ pub enum Action {
     /// doc_test!(apply, Ok, Action::RemoveQueryParams(["c".to_string()].into()), &mut ts);
     /// assert_eq!(ts.url.query(), None);
     /// ```
-    RemoveQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    RemoveQueryParams(HashSet<String>),
     /// Keeps only query params with names in the specified [`HashSet`].
     ///
     /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
@@ -720,7 +721,7 @@ pub enum Action {
     /// doc_test!(apply, Ok, Action::AllowQueryParams(["c".to_string()].into()), &mut ts);
     /// assert_eq!(ts.url.query(), None);
     /// ```
-    AllowQueryParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    AllowQueryParams(HashSet<String>),
     /// Removes all query params with names matching the specified [`StringMatcher`].
     ///
     /// For performance reasons, if the resulting query is empty, this instead sets it to [`None`].
@@ -815,11 +816,11 @@ pub enum Action {
     /// Removes all fragment params with names in the specified [`HashSet`].
     ///
     /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
-    RemoveFragmentParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    RemoveFragmentParams(HashSet<String>),
     /// Keeps only fragment params with names in the specified [`HashSet`].
     ///
     /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
-    AllowFragmentParams(#[serde_as(as = "SetPreventDuplicates<_>")] HashSet<String>),
+    AllowFragmentParams(HashSet<String>),
     /// Removes all fragment params with names matching the specified [`StringMatcher`].
     ///
     /// For performance reasons, if the resulting fragment is empty, this instead sets it to [`None`].
@@ -980,9 +981,7 @@ pub enum Action {
     Function(Box<FunctionCall>),
     /// Uses a [`Self`] from [`TaskState::call_args`].
     /// # Errors
-    /// If [`TaskState::call_args`] is [`None`], returns the error [`ActionError::NotInFunction`].
-    ///
-    #[doc = edoc!(callargfunctionnotfound(Self, Action), applyerr(Self))]
+    #[doc = edoc!(notinfunction(Action), callargfunctionnotfound(Self, Action), applyerr(Self))]
     CallArg(StringSource),
     /// Calls the specified function and returns its value.
     ///
@@ -1226,9 +1225,11 @@ pub enum ActionError {
     /// Returned when a [`Action`] with the specified name isn't found in the [`Functions::actions`].
     #[error("An Action with the specified name wasn't found in the Functions::actions.")]
     FunctionNotFound,
-    #[error("TODO")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction,
-    #[error("TODO")]
+    /// Returned when a [`CallArgs`] function ins't found.
+    #[error("A CallArgs function wasn't found.")]
     CallArgFunctionNotFound,
     /// An arbitrary [`std::error::Error`] returned by [`Action::Custom`].
     #[error(transparent)]
@@ -1243,7 +1244,7 @@ impl Action {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn apply<'j>(&'j self, task_state: &mut TaskState<'j>) -> Result<(), ActionError> {
-        match self {
+        debug!(Action::apply, self, task_state.url; Ok(match self {
             // Debug/constants
 
             Self::None => {},
@@ -1296,12 +1297,8 @@ impl Action {
                 }
             },
             Self::Repeat{actions, limit} => {
-                for action in actions {
-                    action.apply(task_state)?;
-                }
-                let mut previous_url;
-                for _ in 1..*limit {
-                    previous_url = task_state.url.clone();
+                for _ in 0..*limit {
+                    let previous_url = task_state.url.clone();
                     for action in actions {
                         action.apply(task_state)?;
                     }
@@ -1694,6 +1691,8 @@ impl Action {
                 if let Some(new_fragment) = new_fragment {task_state.url.set_fragment(new_fragment.as_deref());}
             },
 
+
+
             #[cfg(feature = "cache")]
             Self::Cache {subject, action} => {
                 let _unthread_handle = task_state.job.unthreader.unthread();
@@ -1725,7 +1724,6 @@ impl Action {
                 .actions.get(get_str!(name, task_state, ActionError)).ok_or(ActionError::CallArgFunctionNotFound)?
                 .apply(task_state)?,
             Self::Custom(function) => function(task_state)?
-        };
-        Ok(())
+        }))
     }
 }

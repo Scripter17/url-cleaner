@@ -66,6 +66,9 @@ pub enum ListSource {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ListSourceError))]
     Params(StringSource),
+    /// Get a list from [`CallArgs::lists`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ListSourceError))]
     CallArg(StringSource)
 }
 
@@ -106,7 +109,8 @@ pub enum ListSourceError {
     #[error(transparent)]
     ConditionError(#[from] Box<ConditionError>),
 
-    #[error("TOOD")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction
 }
 

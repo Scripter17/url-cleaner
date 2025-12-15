@@ -1,0 +1,46 @@
+//! Callgrind.
+
+use super::prelude::*;
+
+/// Callgrind.
+#[derive(Debug, Parser)]
+pub struct Args {
+    /// The name of the benchmark.
+    #[arg(long)]
+    pub name: String,
+    /// The task line.
+    #[arg(long)]
+    pub task: String,
+    /// The number to clean per run.
+    #[arg(long)]
+    pub num: usize
+}
+
+/// The output directory.
+const OUT: &str = "urlc-tool/bench/out/cli/callgrind/";
+
+impl Args {
+    /// Do the command.
+    pub fn r#do(self) -> String {
+        std::fs::create_dir_all(OUT).unwrap();
+
+        let stdin = crate::bench::make_stdin(&self.task, self.num);
+
+        let out = format!("{OUT}/callgrind.out-{}-{}", self.name, self.num);
+
+        assert_eq!(Command::new("valgrind")
+            .args([
+                "-q",
+                "--tool=callgrind",
+                "--separate-threads=yes",
+                &format!("--callgrind-out-file={out}"),
+                "target/release/url-cleaner"
+            ])
+            .stdin(File::open(stdin.path()).unwrap())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn().unwrap().wait().unwrap().code(), Some(0));
+
+        out
+    }
+}

@@ -136,6 +136,7 @@ fn thing2(span: Span, name: &str, args: &[Arg]) -> Result<String> {
 
         ("notfound"               , [pa, epa                                 ]) => format!("If the [`{pa}`] isn't found, returns the error [`{epa}Error::{pa}NotFound`]."),
         ("functionnotfound"       , [pa, epa                                 ]) => format!("If the function [`{pa}`] isn't found, returns the error [`{epa}Error::FunctionNotFound`]."),
+        ("notinfunction"          , [    epa                                 ]) => format!("If the used outside a function, returns the error [`{epa}Error::CallArgFunctionNotFound`]."),
         ("callargfunctionnotfound", [pa, epa                                 ]) => format!("If the call arg function [`{pa}`] isn't found, returns the error [`{epa}Error::CallArgFunctionNotFound`]."),
 
         ("stringisnone"           , [epa                                     ]) => format!("If the string is [`None`], returns the error [`{epa}Error::StringIsNone`]"),

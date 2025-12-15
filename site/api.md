@@ -19,7 +19,9 @@ pub struct ServerInfo {
     /// The version.
     pub version: String,
     /// The max payload size.
-    pub max_payload: u64
+    pub max_payload: u64,
+    /// Whether or not you need a password to clean URLs.
+    pub password_required: bool
 }
 ```
 <!--/cmd-->
@@ -70,6 +72,10 @@ pub struct CleanError {
 
 /// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
 pub struct JobConfig {
+    /// The password to use.
+    ///
+    /// Defaults to [`None`].
+    pub password: Option<String>,
     /// The [`JobContext`] to use.
     ///
     /// Defaults to [`JobContext::default`].

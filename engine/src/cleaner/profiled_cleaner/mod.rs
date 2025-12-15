@@ -41,15 +41,13 @@ pub mod prelude {
 ///
 /// let cleaner = serde_json::from_str::<Cleaner>(r#"
 /// {
-///     "actions": [
-///         {"If": {
-///             "if": {"All": [
-///                 {"FlagIsSet": "embed_compatibility"},
-///                 {"NormalizedHostIs": "x.com"}
-///             ]},
-///             "then": {"SetHost": "vxtwitter.com"}
-///         }}
-///     ]
+///     "action": {"If": {
+///         "if": {"All": [
+///             {"FlagIsSet": "embed_compatibility"},
+///             {"NormalizedHostIs": "x.com"}
+///         ]},
+///         "then": {"SetHost": "vxtwitter.com"}
+///     }}
 /// }
 /// "#).unwrap();
 ///

@@ -1,5 +1,7 @@
 //! [`StringSource`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use std::str::FromStr;
 use std::convert::Infallible;
 use std::borrow::Cow;
@@ -524,9 +526,7 @@ pub enum StringSource {
     Function(Box<FunctionCall>),
     /// Uses a [`Self`] from [`TaskState::call_args`].
     /// # Errors
-    /// If [`TaskState::call_args`] is [`None`], returns the error [`StringSourceError::NotInFunction`].
-    ///
-    #[doc = edoc!(callargfunctionnotfound(Self, StringSource), geterr(Self))]
+    #[doc = edoc!(notinfunction(StringSource), callargfunctionnotfound(Self, StringSource), geterr(Self))]
     CallArg(Box<StringSource>),
     /// Calls the contained function and returns what it does.
     ///
@@ -666,16 +666,16 @@ pub enum StringSourceError {
     /// Returned when a [`StringSource::AssertMatches`]'s assertion fails.
     #[error("AssertMatches failed: {0}")]
     AssertMatchesFailed(String),
-    /// Returned when both [`StringModification`]s in a [`StringModification::TryElse`] return errors.
-    #[error("Both StringModifications in a StringModification::TryElse returned errors.")]
+    /// Returned when both [`StringSource`]s in a [`StringSource::TryElse`] return errors.
+    #[error("Both StringSources in a StringSource::TryElse returned errors.")]
     TryElseError {
-        /// The error returned by [`StringModification::TryElse::try`].
+        /// The error returned by [`StringSource::TryElse::try`].
         try_error: Box<Self>,
-        /// The error returned by [`StringModification::TryElse::else`].
+        /// The error returned by [`StringSource::TryElse::else`].
         else_error: Box<Self>
     },
-    /// Returned when all [`StringModification`]s in a [`StringModification::FirstNotError`] error.
-    #[error("All StringModifications in a StringModification::FirstNotError errored.")]
+    /// Returned when all [`StringSource`]s in a [`StringSource::FirstNotError`] error.
+    #[error("All StringSources in a StringSource::FirstNotError errored.")]
     FirstNotErrorErrors(Vec<Self>),
 
     /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
@@ -713,11 +713,11 @@ pub enum StringSourceError {
     /// Returned when a [`DoHttpRequestError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
-    DoHttpRequestError(#[from] DoHttpRequestError),
-    /// Returned when a [`ResponseHandlerError`] is encountered.
+    DoHttpRequestError(#[from] Box<DoHttpRequestError>),
+    /// Returned when a [`HttpResponseHandlerError`] is encountered.
     #[cfg(feature = "http")]
     #[error(transparent)]
-    ResponseHandlerError(#[from] ResponseHandlerError),
+    HttpResponseHandlerError(#[from] Box<HttpResponseHandlerError>),
     #[cfg(feature = "http")]
     /// Returned when a [`reqwest::header::ToStrError`] is encountered.
     #[error(transparent)]
@@ -734,9 +734,11 @@ pub enum StringSourceError {
     /// Returned when the requested [`Functions::string_sources`] isn't found.
     #[error("The requested function StringSource was not found.")]
     FunctionNotFound,
-    #[error("TODO")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction,
-    #[error("TODO")]
+    /// Returned when a [`CallArgs`] function ins't found.
+    #[error("A CallArgs function wasn't found.")]
     CallArgFunctionNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringSource::Custom`].
@@ -750,6 +752,20 @@ impl From<StringMatcherError> for StringSourceError {
     }
 }
 
+#[cfg(feature = "http")]
+impl From<DoHttpRequestError> for StringSourceError {
+    fn from(value: DoHttpRequestError) -> Self {
+        Self::DoHttpRequestError(Box::new(value))
+    }
+}
+
+#[cfg(feature = "http")]
+impl From<HttpResponseHandlerError> for StringSourceError {
+    fn from(value: HttpResponseHandlerError) -> Self {
+        Self::HttpResponseHandlerError(Box::new(value))
+    }
+}
+
 impl StringSource {
     /// "Deref patterns at home" for internal macros.
     pub(crate) fn get_self(&self) -> &Self {
@@ -760,8 +776,8 @@ impl StringSource {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>) -> Result<Option<Cow<'t, str>>, StringSourceError> {
-        Ok(match self {
-            Self::String(string) => Some(Cow::Borrowed(string)),
+        debug!(StringSource::get, self; Ok(match self {
+            Self::String(string) => Some(Cow::Borrowed(&**string)),
             Self::None => None,
             Self::Error(msg) => Err(StringSourceError::ExplicitError(msg.clone()))?,
             Self::TryElse{r#try, r#else} => match r#try.get(task_state) {
@@ -846,7 +862,7 @@ impl StringSource {
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
                 let _unthread_handle = task_state.job.unthreader.unthread();
-                Some(Cow::Owned(response.handle(task_state.job.http_client.get_response(request, task_state)?, task_state)?))
+                response.handle(&mut task_state.job.http_client.get_response(request, task_state)?, task_state)?.map(Cow::Owned)
             },
 
 
@@ -881,6 +897,6 @@ impl StringSource {
                 .string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CallArgFunctionNotFound)?
                 .get(task_state)?,
             Self::Custom(function) => function(task_state)?
-        })
+        }))
     }
 }

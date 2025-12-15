@@ -11,15 +11,12 @@ macro_rules! group {
         }
     }
 }
-pub(crate) use group;
-
 macro_rules! group_mods {
     ($name:ident, $($mods:ident),+) => {
         $(mod $mods;)+
         group!($name, $($mods::$mods),+);
     }
 }
-pub(crate) use group_mods;
 
 group_mods!(all, segments);
 

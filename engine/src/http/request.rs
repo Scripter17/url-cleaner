@@ -24,6 +24,8 @@ pub struct HttpRequestConfig {
     pub method: StringSource,
     /// The headers to send that never change.
     ///
+    /// If [`None`], does nothing.
+    ///
     /// [`Map::if_none`] and [`Map::else`] are ignored.
     ///
     /// Defaults to [`MapSource::None`].

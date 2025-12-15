@@ -6,62 +6,54 @@ Where applicable, other frontends should try to mimic this format.
 
 ## Lines
 
-Lines are defined per Rust's [`str::lines`](https://doc.rust-lang.org/nightly/std/primitive.str.html#method.lines) with the exception that the treatment of carriage returns not succeeded by newlines is undefined.
+A series of UTF-8 bytes is split into lines by `\r\n` and `\n`, whichever comes first, and with no requirement that all lines be separated by the same separator.
 
-For example, while `1\r\n2` contains the lines `1` and `2`, `1\r\n2\r` may contain the lines `1` and `2` or the lines `1` and `2\r`.
+For example, `1\r2\r\n3\n\n4\n` becomes the lines `1\r2`, `3`, an empty line, `4`, and an empty line.
 
-`1\r\n2\n`, while the line delimination is inconsistent, always contains the lines `1` and `2`.
+Whether or not the empty string is treated as one empty line or zero lines is undefined and made irrelevant by empty lines being ignored.
 
-``, the empty string, is treated as zero lines. This is a pain to ensure in languages that disagree but it is important.
+## Input
 
-## Tasks
+Frontends consume a series of [lines](#lines).
 
-Tasks are given to URL Cleaner frontends as a series of of lines ("task lines").
+For each line:
 
-For how lines are processed into `TaskConfig`s, see `LazyTaskConfig::Str`/`LazyTaskConfig::ByteSlice`.
+- If it is empty, it is ignored.
 
-Of note, lines starting with `{` or `"` are treated as JSON with no need for frontends to do manual conversion.
+- If it starts with `{`, `"`, or an ASCII letter, it is a task config.
 
-If a JSON encoded line would contain only a URL, clients should try to send it as such.
-For example both `{"url":"https://example.com"}` and `"https://example.com"` should be sent as just `https://example.com`.
-JSON encoding and decoding is expensive and should be reserved only for when a `TaskContext` contains stuff.
+  - If it starts with an ASCII letter it is parsed as a URL.
 
-Frontends may allow otherwise invalid task lines, such as those starting with `/`, `!`, etc. for any purpose such as commands.
+  - If it starts with `{` it parsed as a JSON encoded `Task` struct.
 
-If practical, frontends should not require clients to provide custom lines.
+  - If it starts with `"` it parsed as a JSON encoded task config.
 
-If practical, frontends should ignore unknown custom lines.
+- Otherwise, behavior is frontend-defined.
 
-## Results
+## Output
 
-Results are returned as a series of lines ("result lines") returned in the same order as their corresponding tasks.
+Frontends output a series of [lines](#lines).
 
-For example, a tasks A then B will never be returned as B then A.
+For each line:
 
-If the stream ends in either `\n` or `\r\n`, treat it as if it didn't. For example, `1\n2`, `1\n2\n`, and `1\n2\r\n` are equivalent.
+- If it is empty, it is ignored.
 
-If a line starts with a `-` then it represents an error. The rest of the line is a string of unspecified format that describes the error.
+- If it starts with `-` or an ASCII letter, it is a result.
 
-If a line starts with an ASCII letter then it represents a success and is a valid URL.
+  - If it starts with an ASCII letter it is a success result and the whole line is the cleaned URL.
 
-Frontends may allow otherwise invalid result lines, such as those starting with `/`, `!`, etc. for any purpose such as debugging info or command results.
+  - If it starts with `-` it is an error result and the rest of the line is a string of unspecified format describing the error.
 
-If practical, frontends should not require clients to handle custom lines.
+- Otherwise, meaning is frontend-defined.
 
-If practical, clients should ignore unknown custom lines.
+Additionally:
 
-## Streaming
+- There are exactly as many results as task configs.
 
-For APIs that allow streaming tasks and results, each individual message follows the above format.
+- Results are in the exact same order as their tasks.
 
-No effort to have any concattenation of consecutive messages be a valid result stream is required.
+## Chunking
 
-For example, the messages `1` and `2` are equivalent to the messages `1` and `2\n`, `1\n` and `2`, and `1\n` and `2\n`.
+Some APIs use protocols that expose an explicit notion of chunking, such as WebSocket.
 
-The number of lines in a result message is not defined to correlate at all with the numbers of lines in task messages.
-
-For example, separate task messages `1`, `2`, and `3` may be returned as `1\n2\n3`, `1` and `2\n3`, `1\n2` and `3`, `1`, `2`, and `3`, or any other combination.
-
-The order of lines is still defined to be first in first out. `2\n1\n3` is an invalid response to `1`, `2`, and `3`.
-
-Individual frontends may provide stricter guarantees but clients should carefully consider whether relying on those guarantees is a good idea (it usually isn't).
+A stream of chunks is treated as a stream of each chunk's [lines](#lines).

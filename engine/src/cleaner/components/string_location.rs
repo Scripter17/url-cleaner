@@ -1,5 +1,7 @@
 //! [`StringLocation`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use std::ops::Bound;
 
 use serde::{Serialize, Deserialize};

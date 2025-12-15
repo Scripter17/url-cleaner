@@ -17,8 +17,17 @@ pub enum VarSource {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, VarSourceError))]
     Params(StringSource),
+    /// Get it from [`TaskContext::vars`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, VarSourceError))]
     TaskContext(StringSource),
+    /// Get it from [`JobContext::vars`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, VarSourceError))]
     JobContext(StringSource),
+    /// Get it from [`CallArgs::vars`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, VarSourceError))]
     CallArg(StringSource),
     /// Get it from [`std::env::var`].
     ///
@@ -103,7 +112,8 @@ pub enum VarSourceError {
     #[error("The value of the environment variable wasn't valid UTF-8")]
     EnvVarIsNotUtf8,
 
-    #[error("TOOD")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction
 }
 

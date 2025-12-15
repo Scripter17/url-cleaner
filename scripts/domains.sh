@@ -4,7 +4,7 @@
 
 cd $(dirname "$0")/..
 
-cat engine/default-cleaner.json |\
+cat engine/src/cleaner/bundled-cleaner.json |\
   jq '
     (.actions | .. | objects | select(.part | try test("Domain|Host")).map | try keys[]),
     (.actions | .. | objects | to_entries[] | select(.key | test("^Set(Host|Domain)$")).value),

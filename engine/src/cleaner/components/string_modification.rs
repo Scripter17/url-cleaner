@@ -1,5 +1,7 @@
 //! [`StringModification`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use std::borrow::Cow;
 use std::str::FromStr;
 
@@ -846,7 +848,9 @@ pub enum StringModification {
     /// # Errors
     #[doc = edoc!(functionnotfound(Self, StringModification), applyerr(Self))]
     Function(Box<FunctionCall>),
-    #[doc = edoc!(callargfunctionnotfound(Self, StringModification), applyerr(Self))]
+    /// Uses a [`Self`] from [`TaskState::call_args`].
+    /// # Errors
+    #[doc = edoc!(notinfunction(StringModification), callargfunctionnotfound(Self, StringModification), applyerr(Self))]
     CallArg(StringSource),
     /// Calls the contained function.
     ///
@@ -1020,9 +1024,11 @@ pub enum StringModificationError {
     /// Returned when a [`StringModification`] with the specified name isn't found in the [`Functions::string_modifications`].
     #[error("A StringModification with the specified name wasn't found in the Functions::string_modifications.")]
     FunctionNotFound,
-    #[error("TODO")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction,
-    #[error("TODO")]
+    /// Returned when a [`CallArgs`] function ins't found.
+    #[error("A CallArgs function wasn't found.")]
     CallArgFunctionNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringModification::Custom`].
@@ -1048,7 +1054,7 @@ impl StringModification {
     /// See each variant of [`Self`] for when each variant returns an error.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn apply<'j: 't, 't>(&'j self, to: &mut Option<Cow<'t, str>>, task_state: &'t TaskState<'j>) -> Result<(), StringModificationError> {
-        match self {
+        debug!(StringModification::apply, self, to; Ok(match self {
             Self::None => {},
             Self::Error(msg) => Err(StringModificationError::ExplicitError(msg.clone()))?,
             Self::Debug(modification) => {
@@ -1528,7 +1534,6 @@ impl StringModification {
                 .string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CallArgFunctionNotFound)?
                 .apply(to, task_state)?,
             Self::Custom(function) => function(to, task_state)?
-        };
-        Ok(())
+        }))
     }
 }

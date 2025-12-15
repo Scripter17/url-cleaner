@@ -66,6 +66,9 @@ pub enum MapSource {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, MapSourceError))]
     Params(StringSource),
+    /// Get a map from [`CallArgs::maps`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, MapSourceError))]
     CallArg(StringSource)
 }
 
@@ -106,7 +109,8 @@ pub enum MapSourceError {
     #[error(transparent)]
     ConditionError(#[from] Box<ConditionError>),
 
-    #[error("TODO")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction
 }
 

@@ -1,5 +1,7 @@
 //! [`CharMatcher`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use std::collections::HashSet;
 
 use serde::{Serialize, Deserialize};

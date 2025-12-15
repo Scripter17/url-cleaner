@@ -66,6 +66,9 @@ pub enum SetSource {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, SetSourceError))]
     Params(StringSource),
+    /// Get a set from [`CallArgs::sets`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, SetSourceError))]
     CallArg(StringSource)
 }
 
@@ -106,7 +109,8 @@ pub enum SetSourceError {
     #[error(transparent)]
     ConditionError(#[from] Box<ConditionError>),
 
-    #[error("TOOD")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction
 }
 

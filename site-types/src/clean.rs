@@ -22,6 +22,10 @@ pub struct CleanError {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobConfig {
+    /// The password to use.
+    ///
+    /// Defaults to [`None`].
+    pub password: Option<String>,
     /// The [`JobContext`] to use.
     ///
     /// Defaults to [`JobContext::default`].

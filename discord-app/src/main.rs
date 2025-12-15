@@ -61,11 +61,6 @@ struct Args {
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
 
-    /// The proxy to use for HTTP/HTTPS requests.
-    #[cfg(feature = "http")]
-    #[arg(long, verbatim_doc_comment)]
-    proxy: Option<HttpProxyConfig>,
-
     /// The path cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, verbatim_doc_comment, value_name = "PATH", default_value = "url-cleaner-discord-app-cache.sqlite")]
@@ -112,8 +107,6 @@ async fn main() {
 
     println!("{INFO}");
 
-    let mut commands = vec![help(), clean_url()];
-
     #[cfg(feature = "bundled-cleaner")]
     let cleaner_string = match args.cleaner {
         Some(path) => std::fs::read_to_string(path).expect("The Cleaner file to be readable."),
@@ -136,16 +129,18 @@ async fn main() {
         profiled_cleaner,
         #[cfg(feature = "cache")]
         cache: Cache {
+            inner: Box::leak(Box::new(args.cache.into())),
             config: CacheConfig {
                 read : !args.no_read_cache,
                 write: !args.no_write_cache,
                 delay:  args.cache_delay
-            },
-            inner: Box::leak(Box::new(args.cache.into()))
+            }
         },
         #[cfg(feature = "http")]
-        http_client: HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid."))
+        http_client: HttpClient::new()
     };
+
+    let mut commands = vec![help(), clean_url()];
 
     for (name, cleaner) in state.profiled_cleaner.get_each() {
         commands.push(poise::Command {

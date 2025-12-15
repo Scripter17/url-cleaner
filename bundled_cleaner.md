@@ -83,6 +83,6 @@ And yes I know the environment vars section shouldn't be listed under params. I 
 #### Vars
 
 - `unmangle_mode`: The unmangle mode to use.
-- `site`: The name of the website used in the parse_contact_field prelude
-- `text`: The text of the link used in the parse_contact_field prelude
+- `site`: The name of the website used in the contact_info unmangle_mode.
+- `text`: The text of the link used in the contact_info unmangle_mode.
 <!--/cmd-->

@@ -10,7 +10,24 @@ use crate::prelude::*;
 
 /// A type that can be made into a [`Task`].
 ///
-/// Please see [`Task`] for details on how exactly strings and byte slices are parsed.
+/// The implementations for the vairious string and byte slice types parses them as individual task lines per the standard format.
+/// # Tests
+/// ```
+/// use url_cleaner_engine::prelude::*;
+///
+///         r#"https://example.com"#   .make_task().unwrap();
+///        r#""https://example.com""#  .make_task().unwrap();
+/// r#"{"url":"https://example.com"}"# .make_task().unwrap();
+///
+///         br#"https://example.com"#  .make_task().unwrap();
+///        br#""https://example.com""# .make_task().unwrap();
+/// br#"{"url":"https://example.com"}"#.make_task().unwrap();
+///
+/// serde_json::json!{          "https://example.com"   }.make_task().unwrap();
+/// serde_json::json!{       r#""https://example.com""# }.make_task().unwrap();
+/// serde_json::json!{   {"url":"https://example.com"}  }.make_task().unwrap();
+/// serde_json::json!{r#"{"url":"https://example.com"}"#}.make_task().unwrap();
+/// ```
 pub trait TaskConfig {
     /// Make a [`Task`].
     ///
@@ -53,6 +70,12 @@ pub enum MakeTaskError {
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a line that was meant to be ignored is't.
+    #[error("A line that was meant to be ignored wasn't.")]
+    IgnoreLineNotIgnored,
+    /// Returned when a line is otherwise invalid.
+    #[error("A line was otherwise invalid.")]
+    OtherwiseInvalid,
     /// Any other [`Error`].
     #[error(transparent)]
     Other(#[from] Box<dyn Error + Send + Sync>)

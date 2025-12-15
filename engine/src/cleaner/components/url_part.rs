@@ -1,5 +1,7 @@
 //! [`UrlPart`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use std::borrow::Cow;
 
 use thiserror::Error;

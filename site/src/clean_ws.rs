@@ -14,6 +14,13 @@ use crate::*;
 pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws: ws::WebSocket) -> Result<ws::Channel<'static>, CleanError> {
     let state = *state.inner();
 
+    match (&state.config.passwords, &config.password) {
+        (None           , None          ) => {},
+        (None           , Some(_)       ) => Err(CleanError {status: 400, message: "This instance requires no password.".into()})?,
+        (Some(_)        , None          ) => Err(CleanError {status: 401, message: "Password required.".into()})?,
+        (Some(passwords), Some(password)) => if !passwords.contains(password) {Err(CleanError {status: 401, message: "Invalid password".into()})?}
+    }
+
     let Some(mut cleaner) = state.config.profiled_cleaner.get(config.profile.as_deref()) else {
         Err(CleanError {status: 400, message: format!("Unknown profile: {:?}", config.profile)})?
     };
@@ -44,7 +51,7 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws
             match message? {
                 ws::Message::Text(text) => {
                     let mut ret = String::new();
-                    let mut lines = text.lines();
+                    let mut lines = text.lines().filter(|line| !line.is_empty());
                     if let Some(line) = lines.next() {
                         match job.r#do(line) {
                             Ok (x) => ret = x.into(),
@@ -62,7 +69,7 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws
                 },
                 ws::Message::Binary(bytes) => {
                     let mut ret = String::new();
-                    let mut lines = crate::util::ByteLines(&bytes);
+                    let mut lines = crate::util::ByteLines(&bytes).filter(|line| !line.is_empty());
                     if let Some(line) = lines.next() {
                         match job.r#do(line) {
                             Ok (x) => ret = x.into(),

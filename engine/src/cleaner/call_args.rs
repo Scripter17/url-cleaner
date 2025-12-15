@@ -1,9 +1,12 @@
+//! [`CallArgs`].
+
 use std::collections::{HashSet, HashMap};
 
 use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
+/// The arguments to a [`FunctionCall`].
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct CallArgs {

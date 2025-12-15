@@ -1,7 +1,5 @@
 use criterion::Criterion;
 
-use crate::*;
-
 group!(segments, set_segment, insert_segment);
 
 const STRINGS: [&str; 3] = [

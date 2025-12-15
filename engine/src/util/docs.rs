@@ -37,7 +37,7 @@ macro_rules! doc_test {
                         docs: Default::default(),
                         params,
                         functions: std::borrow::Cow::Owned(functions),
-                        actions: Default::default()
+                        action: Default::default()
                     },
                     unthreader: &$crate::prelude::Unthreader::r#if(unthread),
                     #[cfg(feature = "cache")]

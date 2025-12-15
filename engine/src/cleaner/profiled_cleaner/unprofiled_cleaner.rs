@@ -26,7 +26,7 @@ pub struct UnprofiledCleaner<'a> {
     ///
     /// Defaults to an empty [`Vec`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub actions: Cow<'a, [Action]>
+    pub action: Cow<'a, Action>
 }
 
 impl<'a> UnprofiledCleaner<'a> {
@@ -35,7 +35,7 @@ impl<'a> UnprofiledCleaner<'a> {
         Self {
             docs   : Cow::Borrowed(&*self.docs),
             functions: Cow::Borrowed(&*self.functions),
-            actions: Cow::Borrowed(&*self.actions)
+            action: Cow::Borrowed(&*self.action)
         }
     }
 
@@ -45,7 +45,7 @@ impl<'a> UnprofiledCleaner<'a> {
             docs   : self.docs,
             params : profile.into(),
             functions: self.functions,
-            actions: self.actions
+            action: self.action
         }
     }
 }

@@ -13,7 +13,8 @@
 
 window.config = {
 	instance: "ws://localhost:9149/clean_ws", // Make sure to keep synced with the above `@connect` host.
-	payload_config: {
+	job_config: {
+		password   : null, // The password        (default: null)
 		profile    : null, // The Profile name    (default: null)
 		params_diff: null, // The ParamsDiff      (default: null)
 		unthread   : true, // Enable unthreading  (default: true)
@@ -24,7 +25,7 @@ window.config = {
 	debug: false
 };
 
-(() => {
+function urlc_main() {
 	console.log(`[URLC] URL Cleaner Site Userscript ${GM.info.script.version}
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
@@ -34,40 +35,63 @@ ${GM.info.script.namespace}`);
 		console.debug("[URLC] The config is", window.config);
 	}
 
-	// A map of elements to the URL they were at when last handled.
-	// Either the cleaned URL or, if cleaning returned an error, the URL it was at beforehand.
-	// Used to not immediately re-queue elements because a MutationObserver saw it get cleaned.
-	let handled = new WeakMap();
-	// The list of elements currently being cleaned, in the order they were sent to URL Cleaner Site.
+	// A WeakSet of elements that were cleaned but whose href attribute mutation hasn't been observed yet.
+	// Elements removed from the document but not dropped (probably) have their cleanings added to the set but not noticed by the MutationObserver.
+	// So having it be a FIFO queue wouln't work.
+	let just_cleaned = new WeakSet();
+	// A FIFO queue for elements sent to URL Cleaner Site whose results are not yet recieved.
+	// Contains [WeakRef<HTMLElement>, String]s, where the string is the element's href at the time it was sent to URL Cleaner Site.
 	let queue = [];
 	// When an element is unclean when clicked, stop the click and put it here to click it once cleaned.
 	// currently there doesn't seem to be a way to do the same for middle clicks.
-	// Maybe should be a queue.
 	let click_on_clean = null;
 	// `true` if the socket ever had an `open` event.
 	// Used to provide extra debug info if the socket couldn't be opened.
 	let socket_ever_opened = false;
 
+	// Allows running the getter only once, improving performance.
+	let hostname = window.location.hostname;
+
 	// Set up the URL for the socket.
 	let socket_url = new URL(window.config.instance);
-	let config = {...window.config.payload_config};
-	config.context = {...config.context, "source_host": window.location.hostname};
+	let config = {...window.config.job_config};
+	config.context = {...config.context, "source_host": hostname};
 	socket_url.searchParams.append("config", JSON.stringify(config));
 
 	if (window.config.debug) {
 		console.debug("[URLC] The WebSocket URL is", socket_url);
 	}
 
-	// If applicable, add an element to the queue and send its task to URL Cleaner Site.
-	function queue_element(element) {
-		// If it's a Node that isn't an HTMLElement, ignore it.
-		// Comes up when MutationObserver sees some other type of node (like a text node) was added.
-		if (element.nodeType !== 1) {
-			if (window.config.debug) {
-				console.debug("[URLC] Ignoring non-element node", element);
-			}
-			return;
+	// Used to decide which per-site unmangling/shortcuts to do.
+	let host_category;
+
+	if (/(?:^|\.)furaffinity\.net\.?$/.test(hostname)) {
+		host_category = "furaffinity";
+	} else if (/(?:^|\.)x\.com\.?$/g         .test(hostname)) {
+		host_category = "twitter";
+	} else if (/(?:^|\.)allmylinks\.com\.?$/g.test(hostname)) {
+		host_category = "allmylinks";
+	} else if (/(?:^|\.)bsky\.app\.?$/g      .test(hostname)) {
+		host_category = "bluesky";
+	} else if (/(?:^|\.)saucenao\.com\.?$/g  .test(hostname)) {
+		host_category = "saucenao";
+	} else if (/(?:^|\.)duckduckgo\.com\.?$/g.test(hostname)) {
+		host_category = "duckduckgo";
+	}
+
+	if (window.config.debug) {
+		console.debug("[URLC] The host category is", host_category);
+	}
+
+	// If applicable, send an element's task to URL Cleaner Site and add it to the queue.
+	function urlc_queue_element(element) {
+
+		if (window.config.debug) {
+			console.debug("[URLC] Maybe queueing", element);
 		}
+
+		// Sometimes the code that get elements to clean finds elements that can't and/or shouldn't be cleaned.
+		// Due to javascript's abysmal type system, not manually discovering and detecting these cases can result in the userscript ending up in invalid states.
 
 		// Mimic document.links.
 		// Yeah turns out `<area>` is an element that exists. Who knew?
@@ -78,37 +102,34 @@ ${GM.info.script.namespace}`);
 			return;
 		}
 
-		// If the element is null/undefined or somehow not a string, just ignore it.
-		// Fun fact: `use` elements have hrefs that aren't strings.
-		if (typeof element.href !== "string") {
+		// Allows running the getter only once, improving performance.
+		let href = element.href;
+
+		// If the element is null/undefined/otherwise not a string, just ignore it.
+		// This comes up in `use` elements in SVG... markup?
+		if (typeof href !== "string") {
 			if (window.config.debug) {
 				console.debug("[URLC] Ignoring non-string href", element);
 			}
 			return;
 		}
 
-		// Ignore anchors.
-		// TODO: In theory, this could filter out legitimately unclean URLs. I need to fix that.
-		if (element.getAttribute("href").startsWith("#")) {
+		// Ignore empty anchors to break fewer websites.
+		// Some websites use href="#" to make a link element look like a link but work like a button.
+		// In any anchors that would get cleaned (some websites put tracking parameters in them) are unlikely to break stuff when cleaned.
+		if (href.includes("#") && element.getAttribute("href") === "#") {
 			if (window.config.debug) {
 				console.debug("[URLC] Ignoring anchor link", element);
 			}
 			return;
 		}
 
-		// Ignores elements a MutationObserver just saw get cleaned.
-		if (element.href === handled.get(element)) {
-			if (window.config.debug) {
-				console.debug("[URLC] Ignoring already handled link", element);
-			}
-			return;
-		}
-
 		// Some websites have links that are best cleaned using details from places other than just their URL.
 
-		let task = element.href;
+		// The variable the task is eventually put in.
+		let task;
 
-		if (/(^|\.)furaffinity\.net\.?$/.test(window.location.hostname) && element.matches(".user-contact-user-info a")) {
+		if (host_category === "furaffinity" && element.matches(".user-contact-user-info a")) {
 			// If a contact info field has more of the URL than expected, such as `https://x.com/user` instead of just `user`,
 			// the URL of the link is incoherent and very hard to unmangle.
 			// For that the bundled cleaner just parses the link's text and extracts just the expected part.
@@ -122,76 +143,90 @@ ${GM.info.script.namespace}`);
 					}
 				}
 			});
-		} else if (/(^|\.)x\.com\.?$/.test(window.location.hostname) && element.href.startsWith("https://t.co/") && element.innerText.startsWith("http")) {
+		} else if (host_category === "twitter" && href.startsWith("https://t.co/") && element.innerText.startsWith("http")) {
 			// Even when a link in a tweet is shown as `https://example.com/really-long-...`, twitter still puts the full `really-long-url` in the HTML.
 			// By getting it from there, we can skip an HTTP request to t.co.
-
 			task = element.childNodes[0].innerText + element.childNodes[1].textContent + (element.childNodes[2]?.innerText ?? "");
-		} else if (/(^|\.)allmylinks\.com\.?$/.test(window.location.hostname) && element.pathname === "/link/out" && element.title.startsWith("http")) {
+		} else if (host_category === "allmylinks" && element.pathname === "/link/out" && element.title.startsWith("http")) {
 			// Same idea as above.
-
 			task = element.title;
-		} else if (/(^|\.)bsky\.app\.?$/.test(window.location.hostname) && element.href.startsWith("/profile/did:plc:") && element.innerText.startsWith("@")) {
+		} else if (host_category === "bluesky" && href.startsWith("/profile/did:plc:") && element.innerText.startsWith("@")) {
 			// Replaces `/profile/did:plc:` URLs with `/profile/example.com`, as it should be.
-
-			task = eleement.href.replace(/did:plc:[^/]+/g, element.innerText.replace("@", ""))
-		} else if (/(^|\.)saucenao\.com\.?$/.test(window.location.hostname) && /^https:\/\/(www\.)?(x|twitter)\.com\//.test(element.href)) {
+			task = href.replace(/did:plc:[^/]+/g, element.innerText.replace("@", ""))
+		} else if (host_category === "saucenao" && /^https:\/\/(?:www\.)?(?:x|twitter)\.com\//.test(href)) {
 			// Replaces `/i/web/1234` and `/i/user/1234` in twitter links with their normal forms.
-
-			task = element.href.replace(/i\/web|i\/user\/\d+/g, element.parentElement.querySelector("[href*='/i/user/']").innerHTML.replace("@", ""));
+			task = href.replace(/i\/web|i\/user\/\d+/g, element.parentElement.querySelector("[href*='/i/user/']").innerHTML.replace("@", ""));
+		} else if (host_category === "duckduckgo" && window.location.pathname == "/" && /[?&]q=/g.test(window.location.search) && element.matches("[data-testid^=result-]")) {
+			// % incorrectly gets percent encded.
+			task = element.closest("li").querySelector("a p").textContent.replaceAll(/\s\u203a\s/g, "/");
+		} else {
+			// For any other case, assume the element's href is sufficient.
+			task = href;
 		}
 
 		if (window.config.debug) {
 			console.debug("[URLC] Sending task", task, "for element", element);
 		}
 
-		queue.push(element);
 		socket.send(task);
+		queue.push([new WeakRef(element), href]);
 	}
 
-	// When an element is clicked while in the queue (and the socket is open), block clicks until it's been cleaned.
-	function dirty_click_delayer(e) {
-		if (socket.readyState === 1 && queue.indexOf(e.target) !== -1) {
+	// Delay clicks on dirty links until they're cleaned.
+
+	function urlc_dirty_click_delayer(e) {
+		if (socket.readyState === 1 && queue.includes(e.target)) {
 			if (window.config.debug) {
-				console.debug("[URLC] Delaying click for unclean element", e);
+				console.debug("[URLC] Delaying click for dirty element", e);
 			}
 			e.preventDefault();
 			click_on_clean = e.target;
 		}
 	}
+	window.addEventListener("click", urlc_dirty_click_delayer);
 
-	// Attach the dirty click delayer.
-	window.addEventListener("click", dirty_click_delayer);
+	// Listen for changes to changes to any element's href attribute.
 
-	// Observing changes to href attributes.
-	let attribute_observer = new MutationObserver(function(mutations) {
-		for (let mutation of mutations) {
-			queue_element(mutation.target);
+	function urlc_mutation_href(mutations) {
+		if (window.config.debug) {
+			console.debug("[URLC] Attribute mutations", mutations);
 		}
-	});
+		for (let mutation of mutations) {
+			if (!just_cleaned.delete(mutation.target)) {
+				urlc_queue_element(mutation.target);
+			}
+		}
+	}
+	let href_attribute_observer = new MutationObserver(urlc_mutation_href);
 
-	// Observing changes to the node tree.
-	let tree_observer = new MutationObserver(function(mutations) {
+	// Listen for changes to the node tree.
+
+	function urlc_tree_mutation(mutations) {
+		if (window.config.debug) {
+			console.debug("[URLC] Tree mutations", mutations);
+		}
 		for (let mutation of mutations) {
 			for (let node of mutation.addedNodes) {
-				// More thorough filtering is done inside `queue_element`.
 				if (node.nodeType === 1) {
 					if (node.href) {
-						queue_element(node);
+						urlc_queue_element(element);
 					}
-					for (element of node.querySelectorAll("[href]")) {
-						queue_element(element);
+					for (let element of node.querySelectorAll("[href]")) {
+						urlc_queue_element(element);
 					}
 				}
 			}
 		}
-	});
+	}
+	let child_list_observer = new MutationObserver(urlc_tree_mutation);
 
 	// Make the socket.
+
 	let socket = new WebSocket(socket_url);
 
-	// When the socket opens, set up observers and queue existing links.
-	socket.addEventListener("open", function() {
+	// When the socket is open, start cleaning.
+
+	function urlc_socket_open() {
 		if (window.config.debug) {
 			console.debug("[URLC] Opened socket to", socket_url.href);
 		}
@@ -201,48 +236,57 @@ ${GM.info.script.namespace}`);
 		// The observers must be attached after the socket is open.
 
 		// Watch changes to any href attribute.
-		attribute_observer.observe(document.documentElement, {
-			attributes: true,
+		href_attribute_observer.observe(document.documentElement, {
 			attributeFilter: ["href"],
 			subtree: true
 		});
 
 		// Watch changes to the node tree.
-		tree_observer.observe(document.documentElement, {
-			subtree: true,
-			childList: true
+		child_list_observer.observe(document.documentElement, {
+			childList: true,
+			subtree: true
 		});
 
 		// Clean all existing links.
 		for (element of document.links) {
-			queue_element(element);
+			urlc_queue_element(element);
 		}
-	});
+	}
+	socket.addEventListener("open", urlc_socket_open);
 
-	// When getting a message, apply the clean.
-	socket.addEventListener("message", function(message) {
+	// The handler for the socket's message event.
+	function urlc_socket_message(message) {
 		// Ignore pings, pongs, etc. and get only return frames, which are always strings.
 		if (typeof message.data === "string") {
-			let lines = message.data.split("\n");
-			if (lines[lines.length - 1] === "") {lines.pop();}
+			for (line of message.data.split(/\r\n|\n/g)) {
+				// Ignore empty lines.
+				if (line === "") {continue;}
 
-			// Gotta remove the trailing newline.
-			for (line of lines) {
+				// Ignore lines of unknown format.
+				if (!/^[-a-zA-Z]/g.test(line)) {
+					console.warn("[URLC] Unknown output line:", line);
+					continue;
+				}
+
 				// Get the element this line is for.
-				let element = queue.shift();
+				var [element, old_href] = queue.shift();
+
+				element = element.deref();
+
+				// The element was garbage collected and thus doesn't need to be cleaned.
+				if (element === undefined) {continue;}
 
 				if (line.startsWith("-")) {
 					// Lines that start with `-` are errors.
-					console.error("[URLC] Got error", line, "for element", element);
-					handled.set(element, element.href);
+					console.error("[URLC] Got error", line.replace("-", ""), "for element", element);
 				} else {
 					// Lines that don't start with `-` are successes.
 					if (window.config.debug) {
 						console.debug("[URLC] Got success", line, "for element", element);
 					}
-					handled.set(element, line);
 					// If the URL is unchanged, don't risk breaking a website's internal state for no reason.
-					if (element.href !== line) {
+					if (old_href !== line) {
+							just_cleaned.add(element);
 							element.href = line;
 					}
 				}
@@ -258,36 +302,45 @@ ${GM.info.script.namespace}`);
 				}
 			}
 		}
-	});
+	}
+	socket.addEventListener("message", urlc_socket_message);
 
-	// Print a message when the socket is closing.
-	socket.addEventListener("close", function(e) {
+	// When the socket is closing, print a message and clean up.
+
+	function urlc_socket_close(e) {
 		if (window.config.debug) {
 			console.debug("[URLC] Closing socket", e);
 		}
-		attribute_observer.disconnect();
-		tree_observer.disconnect();
-		window.removeEventListener("click", dirty_click_delayer);
-	});
+		href_attribute_observer.disconnect();
+		child_list_observer.disconnect();
+		window.removeEventListener("click", urlc_dirty_click_delayer);
+	}
+	socket.addEventListener("close", urlc_socket_close);
 
-	// Print a message when the socket errors.
-	socket.addEventListener("error", function(e) {
+	// When the socket errors, print a message and clean up.
+
+	function urlc_socket_error(e) {
 		console.error("[URLC] Socket error", e);
 		if (!socket_ever_opened) {
 			console.error(`[URLC] It seems the socket couldn't be opened.
 The server might be unreachable, you might have bad credentials, or if you're using TLS/HTTPS, your OS/browser might not trust your certificate.
 For information on how to install/trust your certificate, see the docs: https://github.com/Scripter17/url-cleaner/blob/main/site/server.md#installing-the-certificate`);
 		}
-		attribute_observer.disconnect();
-		tree_observer.disconnect();
-		window.removeEventListener("click", dirty_click_delayer);
-	});
+		href_attribute_observer.disconnect();
+		child_list_observer.disconnect();
+		window.removeEventListener("click", urlc_dirty_click_delayer);
+	}
+	socket.addEventListener("error", urlc_socket_error);
 
-	// When leaving a webpage, do cleanup like closing the socket.
-	window.addEventListener("beforeunload", (e) => {
+	// When leaving a webpage, do cleanup.
+
+	function urlc_beforeunload(e) {
 		if (window.config.debug) {
 			console.debug("[URLC] Doing beforeunload cleanup", e);
 		}
 		socket.close();
-	});
-})();
+	}
+	window.addEventListener("beforeunload", urlc_beforeunload);
+}
+
+urlc_main();

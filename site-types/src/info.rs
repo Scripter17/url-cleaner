@@ -10,5 +10,7 @@ pub struct ServerInfo {
     /// The version.
     pub version: String,
     /// The max payload size.
-    pub max_payload: u64
+    pub max_payload: u64,
+    /// Whether or not you need a password to clean URLs.
+    pub password_required: bool
 }

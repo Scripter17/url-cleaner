@@ -1,5 +1,7 @@
 //! [`Condition`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 use thiserror::Error;
 use serde::{Serialize, Deserialize};
 #[expect(unused_imports, reason = "Used in doc comments.")]
@@ -1337,9 +1339,7 @@ pub enum Condition {
     Function(Box<FunctionCall>),
     /// Uses a [`Self`] from [`TaskState::call_args`].
     /// # Errors
-    /// If [`TaskState::call_args`] is [`None`], returns the error [`ConditionError::NotInFunction`].
-    ///
-    #[doc = edoc!(callargfunctionnotfound(Self, Condition), checkerr(Self))]
+    #[doc = edoc!(notinfunction(Condition), callargfunctionnotfound(Self, Condition), checkerr(Self))]
     CallArg(StringSource),
     /// Calls the specified function and returns its value.
     ///
@@ -1457,9 +1457,11 @@ pub enum ConditionError {
     /// Returned when a [`Condition`] with the specified name isn't found in the [`Functions::conditions`].
     #[error("A Condition with the specified name wasn't found in the Functions::conditions.")]
     FunctionNotFound,
-    #[error("TODO")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction,
-    #[error("TODO")]
+    /// Returned when a [`CallArgs`] function ins't found.
+    #[error("A CallArgs function wasn't found.")]
     CallArgFunctionNotFound,
     /// An arbitrary [`std::error::Error`] returned by [`Condition::Custom`].
     #[error(transparent)]
@@ -1473,7 +1475,7 @@ impl Condition {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check<'j>(&'j self, task_state: &TaskState<'j>) -> Result<bool, ConditionError> {
-        Ok(match self {
+        debug!(Condition::check, self; Ok(match self {
             // Debug/constants
 
             Self::Always => true,
@@ -1729,6 +1731,6 @@ impl Condition {
                 .conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CallArgFunctionNotFound)?
                 .check(task_state)?,
             Self::Custom(function) => function(task_state)?
-        })
+        }))
     }
 }

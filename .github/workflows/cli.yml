@@ -55,3 +55,8 @@ jobs:
         )
 
         diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')
+
+    - name: 'Check bundled cleaner'
+      run: |
+        set -euo pipefail
+        cargo run -p urlc-tool -- test --filter '^offline'

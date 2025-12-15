@@ -79,6 +79,24 @@ jobs:
           echo 'https://m.youtube.com/watch?v=abc'
         )
 
-        ! curl -sf "http://127.0.0.1:9148/clean" -H 'X-Config: {"profile":"notfound"}' --data-binary ""
+        ! curl -sf "http://127.0.0.1:9149/clean" -H 'X-Config: {"profile":"notfound"}' --data-binary ""
 
         kill $site
+
+    - name: Passwords
+      run: |
+        PASSWORDS='["test"]'
+
+        ./urlcs --passwords <(echo "$PASSWORDS") &
+        sleep 1
+
+        ! curl -sf 'http://127.0.0.1:9149/clean'                                               --data-binary ''
+        ! curl -sf 'http://127.0.0.1:9149/clean'                                               --data-binary ''
+        ! curl -sf 'http://127.0.0.1:9149/clean' --url-query   'config={}'                     --data-binary ''
+        ! curl -sf 'http://127.0.0.1:9149/clean' -H          'X-Config={}'                     --data-binary ''
+          curl -sf 'http://127.0.0.1:9149/clean' --url-query   'config={"password":"test"}'    --data-binary ''
+          curl -sf 'http://127.0.0.1:9149/clean' -H          'X-Config={"password":"test"}'    --data-binary ''
+        ! curl -sf 'http://127.0.0.1:9149/clean' --url-query   'config={"password":"invalid"}' --data-binary ''
+        ! curl -sf 'http://127.0.0.1:9149/clean' -H          'X-Config={"password":"invalid"}' --data-binary ''
+
+        kill $!

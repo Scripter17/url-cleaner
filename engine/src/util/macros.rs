@@ -4,7 +4,6 @@
 use std::str::FromStr;
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::borrow::Cow;
-use crate::prelude::*;
 
 /// Helper macro to make serde use [`FromStr`] to deserialize strings.
 ///

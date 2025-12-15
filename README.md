@@ -39,6 +39,8 @@ URL Cleaner and co. will never contain any telemetry. If I ever add it, you are 
 
 However, the Bundled Cleaner will by default expand and cache known redirects by sending HTTP requests and writing a SQLite database to disk.
 
+To use proxies, see [reqwest's documentation](https://docs.rs/reqwest/latest/reqwest/#proxies).
+
 To disable network access, set the `no_network` flag.
 
 To disable reading from the cache, use `--no-read-cache`.

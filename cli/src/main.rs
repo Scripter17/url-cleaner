@@ -82,11 +82,6 @@ struct Args {
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     job_context: Option<PathBuf>,
 
-    /// The proxy to use for HTTP/HTTPS requests.
-    #[cfg(feature = "http")]
-    #[arg(long, verbatim_doc_comment)]
-    proxy: Option<HttpProxyConfig>,
-
     /// The path of the cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, verbatim_doc_comment, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
@@ -143,10 +138,7 @@ pub enum CliError {
     #[error(transparent)] CantParseJobContext(serde_json::Error),
     /// Returned when the requested [`Profile`] isn't found.
     #[error("The requested Profile wasn't found.")]
-    ProfileNotFound,
-    /// Returned when a [`MakeHttpProxyError`] is encountered.
-    #[cfg(feature = "http")]
-    #[error(transparent)] MakeHttpProxyError(#[from] MakeHttpProxyError)
+    ProfileNotFound
 }
 
 fn main() -> Result<(), CliError> {
@@ -199,7 +191,7 @@ fn main() -> Result<(), CliError> {
         1.. => args.threads
     };
 
-    let (in_senders    , in_recievers    ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, (Vec<u8>, std::io::Error)>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (in_senders    , in_recievers    ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, std::io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
     let (out_senders   , out_recievers   ) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
 
@@ -217,16 +209,16 @@ fn main() -> Result<(), CliError> {
             }
         },
         #[cfg(feature = "http")]
-        http_client: &HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>()?)
+        http_client: &HttpClient::new()
     };
-
-    let mut buffers = args.tasks.len() as u64;
 
     std::thread::scope(|s| {
 
         // Task getter thread.
 
+        let brs = buf_ret_sender.clone();
         std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, move || {
+            let mut buffer_count = args.tasks.len() as u64;
             let mut in_senders = in_senders.iter().cycle();
 
             for (url, is) in args.tasks.into_iter().zip(&mut in_senders) {
@@ -242,19 +234,35 @@ fn main() -> Result<(), CliError> {
                     // If there are no buffers available within the ratelimit, makea a new one.
                     // The ratelimit can reduce memory usage by up to 10x with, if properly tuned, minimal performance impact.
 
-                    let mut buf = match buf_ret_reciever.recv_timeout(Duration::from_nanos(buffers / 8)) {
+                    let mut buf = match buf_ret_reciever.recv_timeout(Duration::from_nanos(buffer_count / 8)) {
                         Ok(buf) => buf,
                         Err(RecvTimeoutError::Timeout) => {
-                            buffers += 1;
+                            buffer_count += 1;
                             Vec::new()
                         },
                         Err(RecvTimeoutError::Disconnected) => panic!("Expected buffer return senders to stay open while needed.")
                     };
 
+                    buf.clear();
+
                     match stdin.read_until(b'\n', &mut buf) {
                         Ok (0) => break,
-                        Ok (_) => is.send(Ok ( buf    )).expect("The current buffer in reciever to stay open while needed."),
-                        Err(e) => is.send(Err((buf, e))).expect("The current buffer in reciever to stay open while needed.")
+                        Ok (_) => {
+                            if buf.ends_with(b"\n") {
+                                buf.pop();
+                                if buf.ends_with(b"\r") {
+                                    buf.pop();
+                                }
+                            }
+                            if buf.is_empty() {
+                                continue;
+                            }
+                            is.send(Ok(buf)).expect("The current buffer in reciever to stay open while needed.")
+                        },
+                        Err(e) => {
+                            brs.send(buf).expect("The buffer return channel to be open.");
+                            is.send(Err(e)).expect("The current buffer in reciever to stay open while needed.")
+                        }
                     }
                 }
             }
@@ -267,26 +275,15 @@ fn main() -> Result<(), CliError> {
             std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
                 while let Ok(x) = bir.recv() {
                     let ret = match x {
-                        Ok(mut buf) => {
-                            if buf.ends_with(b"\n") {
-                                buf.pop();
-                                if buf.ends_with(b"\r") {
-                                    buf.pop();
-                                }
-                            }
+                        Ok(buf) => {
                             let task = (&buf).make_task();
-                            buf.clear();
                             let _ = brs.send(buf); // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
                             match job_config.r#do(task) {
                                 Ok(x) => x.into(),
                                 Err(e) => format!("-{e:?}")
                             }
                         },
-                        Err((mut buf, e)) => {
-                            buf.clear();
-                            let _ = brs.send(buf);
-                            format!("-{:?}", e)
-                        }
+                        Err(e) => format!("-{e:?}")
                     };
 
                     os.send(ret.into_boxed_str()).expect("The result out reciever to stay open while needed.");

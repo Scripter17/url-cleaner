@@ -1,10 +1,13 @@
 //! [`StringMatcher`].
 
+#![allow(unused_assignments, reason = "False positive.")]
+
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::borrow::Cow;
 
+use url::Host;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 #[expect(unused_imports, reason = "Used in docs.")]
@@ -157,6 +160,106 @@ pub enum StringMatcher {
 
     // Char matching
 
+    /// Passes if every character is [`char::is_alphabetic`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAlphabetic,
+    /// Passes if every character is [`char::is_alphanumeric`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAlphanumeric,
+    /// Passes if every character is [`char::is_ascii`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAscii,
+    /// Passes if every character is [`char::is_ascii_alphabetic`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiAlphabetic,
+    /// Passes if every character is [`char::is_ascii_alphanumeric`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiAlphanumeric,
+    /// Passes if every character is [`char::is_ascii_control`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiControl,
+    /// Passes if every character is [`char::is_ascii_digit`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiDigit,
+    /// Passes if every character is [`char::is_ascii_graphic`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiGraphic,
+    /// Passes if every character is [`char::is_ascii_hexdigit`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiHexdigit,
+    /// Passes if every character is [`char::is_ascii_lowercase`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiLowercase,
+    // /// Passes if every character is [`char::is_ascii_octdigit`].
+    // AllAsciiOctdigit,
+    /// Passes if every character is [`char::is_ascii_punctuation`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiPunctuation,
+    /// Passes if every character is [`char::is_ascii_uppercase`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiUppercase,
+    /// Passes if every character is [`char::is_ascii_whitespace`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllAsciiWhitespace,
+    /// Passes if every character is [`char::is_control`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllControl,
+    /// Passes if every character is [`char::is_digit`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    ///
+    /// If [`Self::AllDigit::0`] is greater than 36, returns the error [`StringMatcherError::InvalidRadix`].
+    AllDigit(u32),
+    /// Passes if every character is [`char::is_lowercase`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllLowercase,
+    /// Passes if every character is [`char::is_numeric`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllNumeric,
+    /// Passes if every character is [`char::is_uppercase`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllUppercase,
+    /// Passes if every character is [`char::is_whitespace`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    AllWhitespace,
+    /// Passes if parsing the string as a [`Host`] returns [`Ok`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsHost,
+    /// Passes if parsing the string as a [`Host`] returns a [`Host::Domain`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsDomainHost,
+    /// Passes if parsing the string as a [`Host`] returns a [`Host::Ipv4`] or [`Host::Ipv6`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsIpHost,
+    /// Passes if parsing the string as a [`Host`] returns a [`Host::Ipv4`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsIpv4Host,
+    /// Passes if parsing the string as a [`Host`] returns a [`Host::Ipv6`].
+    /// # Errors
+    #[doc = edoc!(stringisnone(StringMatcher))]
+    IsIpv6Host,
     /// Satisfied if all [`char`]s in the string are in the specified [`HashSet`].
     /// # Errors
     #[doc = edoc!(stringisnone(StringMatcher))]
@@ -291,6 +394,9 @@ pub enum StringMatcher {
     /// # Errors
     #[doc = edoc!(functionnotfound(Self, StringMatcher), checkerr(Self))]
     Function(Box<FunctionCall>),
+    /// Uses a [`Self`] from [`TaskState::call_args`].
+    /// # Errors
+    #[doc = edoc!(notinfunction(StringMatcher), callargfunctionnotfound(Self, StringMatcher), checkerr(Self))]
     CallArg(StringSource),
     /// Calls the contained function.
     ///
@@ -301,7 +407,7 @@ pub enum StringMatcher {
     #[doc = edoc!(callerr(Self::Custom::0))]
     #[suitable(never)]
     #[serde(skip)]
-    Custom(for<'j> fn(Option<&str>, &TaskState<'j>) -> Result<bool, StringMatcherError>)
+    Custom(fn(Option<&str>, &TaskState) -> Result<bool, StringMatcherError>)
 }
 
 impl From<LazyRegex> for StringMatcher {
@@ -370,9 +476,11 @@ pub enum StringMatcherError {
     /// Returned when a [`StringMatcher`] with the specified name isn't found in the [`Functions::string_matchers`].
     #[error("A StringMatcher with the specified name wasn't found in the Functions::string_matchers.")]
     FunctionNotFound,
-    #[error("TODO")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction,
-    #[error("TODO")]
+    /// Returned when a [`CallArgs`] function ins't found.
+    #[error("A CallArgs function wasn't found.")]
     CallArgFunctionNotFound,
 
     /// An arbitrary [`std::error::Error`] for use with [`StringMatcher::Custom`].
@@ -385,7 +493,7 @@ impl StringMatcher {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn check<'j>(&'j self, haystack: Option<&str>, task_state: &TaskState<'j>) -> Result<bool, StringMatcherError> {
-        Ok(match self {
+        debug!(StringMatcher, self, haystack; Ok(match self {
             Self::Always => true,
             Self::Never => false,
             Self::Error(msg) => Err(StringMatcherError::ExplicitError(msg.clone()))?,
@@ -467,6 +575,31 @@ impl StringMatcher {
 
             // Char matcher
 
+            Self::AllAlphabetic        => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_alphabetic()),
+            Self::AllAlphanumeric      => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_alphanumeric()),
+            Self::AllAscii             => haystack.ok_or(StringMatcherError::StringIsNone)?.is_ascii(),
+            Self::AllAsciiAlphabetic   => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_alphabetic()),
+            Self::AllAsciiAlphanumeric => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_alphanumeric()),
+            Self::AllAsciiControl      => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_control()),
+            Self::AllAsciiDigit        => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_digit()),
+            Self::AllAsciiGraphic      => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_graphic()),
+            Self::AllAsciiHexdigit     => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_hexdigit()),
+            Self::AllAsciiLowercase    => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_lowercase()),
+            // Self::AllAsciiOctdigit     => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_octdigit()),
+            Self::AllAsciiPunctuation  => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_punctuation()),
+            Self::AllAsciiUppercase    => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_uppercase()),
+            Self::AllAsciiWhitespace   => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_ascii_whitespace()),
+            Self::AllControl           => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_control()),
+            Self::AllDigit(radix)      => if *radix <= 36 {haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_digit(*radix))} else {Err(StringMatcherError::InvalidRadix(*radix))?},
+            Self::AllLowercase         => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_lowercase()),
+            Self::AllNumeric           => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_numeric()),
+            Self::AllUppercase         => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_uppercase()),
+            Self::AllWhitespace        => haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| c.is_whitespace()),
+            Self::IsHost               => Host::parse(haystack.ok_or(StringMatcherError::StringIsNone)?).is_ok(),
+            Self::IsDomainHost         => matches!(Host::parse(haystack.ok_or(StringMatcherError::StringIsNone)?), Ok(Host::Domain(_))),
+            Self::IsIpHost             => matches!(Host::parse(haystack.ok_or(StringMatcherError::StringIsNone)?), Ok(Host::Ipv4(_) | Host::Ipv6(_))),
+            Self::IsIpv4Host           => matches!(Host::parse(haystack.ok_or(StringMatcherError::StringIsNone)?), Ok(Host::Ipv4(_))),
+            Self::IsIpv6Host           => matches!(Host::parse(haystack.ok_or(StringMatcherError::StringIsNone)?), Ok(Host::Ipv6(_))),
             Self::AllCharsAreOneOf(chars) =>  haystack.ok_or(StringMatcherError::StringIsNone)?.chars().all(|c| chars.contains(&c)),
             Self::AnyCharIsOneOf  (chars) =>  haystack.ok_or(StringMatcherError::StringIsNone)?.chars().any(|c| chars.contains(&c)),
             Self::NoCharIsOneOf   (chars) => !haystack.ok_or(StringMatcherError::StringIsNone)?.chars().any(|c| chars.contains(&c)),
@@ -551,6 +684,6 @@ impl StringMatcher {
                 .string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CallArgFunctionNotFound)?
                 .check(haystack, task_state)?,
             Self::Custom(function) => function(haystack, task_state)?,
-        })
+        }))
     }
 }

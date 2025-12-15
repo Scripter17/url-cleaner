@@ -3,4 +3,5 @@ target
 bacon.toml
 logs
 /reddit-*
-/benchmark-results/
+/urlc-tool/out/
+/urlc-tool/tmp/

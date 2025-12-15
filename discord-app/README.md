@@ -10,7 +10,7 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 ## Usage
 
-On startup, URCDA uses `URLCDA_TOKEN` environment variable to login and prints basic info such as servier invite and user install links.
+On startup, URLCDA uses the `URLCDA_TOKEN` environment variable to login and prints basic info such as servier invite and user install links.
 
 To clean the URLs in a message, right click the message, click "apps", then choose your desired "Clean URLs" commands.
 

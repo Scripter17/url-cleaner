@@ -9,30 +9,7 @@ use crate::prelude::*;
 
 /// A task for a [`Job`] to [`Job::do`].
 ///
-/// String and byte types are first attempted to be parsed as JSON.
-///
-/// That is, if a string given to [`TaskConfig::make_task`] begins with a `{` or `"`, it is parsed as JSON.
-///
-/// Otherwise, they are parsed as plain URLs.
-///
-/// [`FromStr`], [`Deserialize`], and the various [`TryFrom`] implementations all agree on this.
-/// # Tests
-/// ```
-/// use url_cleaner_engine::prelude::*;
-///
-///         r#"https://example.com"#   .make_task().unwrap();
-///        r#""https://example.com""#  .make_task().unwrap();
-/// r#"{"url":"https://example.com"}"# .make_task().unwrap();
-///
-///         br#"https://example.com"#  .make_task().unwrap();
-///        br#""https://example.com""# .make_task().unwrap();
-/// br#"{"url":"https://example.com"}"#.make_task().unwrap();
-///
-/// serde_json::json!{        r#"https://example.com"#  }.make_task().unwrap();
-/// serde_json::json!{       r#""https://example.com""# }.make_task().unwrap();
-/// serde_json::json!{r#"{"url":"https://example.com"}"#}.make_task().unwrap();
-/// serde_json::json!{   {"url":"https://example.com"}  }.make_task().unwrap();
-/// ```
+/// See [`TaskConfig`] for how to make these.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
@@ -67,10 +44,11 @@ impl FromStr for Task {
     type Err = MakeTaskError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(if s.starts_with(['{', '"']) {
-            serde_json::from_str(s)?
-        } else {
-            Url::parse(s)?.into()
+        Ok(match s.as_bytes().first() {
+            Some(b'{' | b'"'                  ) => serde_json::from_str(s)?,
+            Some(b'a' ..= b'z' | b'A' ..= b'Z') => Url::parse(s)?.into(),
+            None => Err(MakeTaskError::IgnoreLineNotIgnored)?,
+            _    => Err(MakeTaskError::OtherwiseInvalid)?
         })
     }
 }
@@ -90,10 +68,11 @@ impl TryFrom<&[u8]> for Task {
     type Error = MakeTaskError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Ok(if value.starts_with(b"{") || value.starts_with(b"\"") {
-            serde_json::from_slice(value)?
-        } else {
-            Url::parse(str::from_utf8(value)?)?.into()
+        Ok(match value.first() {
+            Some(b'{' | b'"'                  ) => serde_json::from_slice(value)?,
+            Some(b'a' ..= b'z' | b'A' ..= b'Z') => Url::parse(str::from_utf8(value)?)?.into(),
+            None => Err(MakeTaskError::IgnoreLineNotIgnored)?,
+            _    => Err(MakeTaskError::OtherwiseInvalid)?
         })
     }
 }

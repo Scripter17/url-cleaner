@@ -114,21 +114,12 @@ impl<'a> Params<'a> {
     /// Become an owned [`Self`], cloning only what's needed.
     pub fn into_owned(self) -> Params<'static> {
         Params {
-            flags        : Cow::Owned(self.flags.into_owned()),
-            vars         : Cow::Owned(self.vars.into_owned()),
-            sets         : Cow::Owned(self.sets.into_owned()),
-            lists        : Cow::Owned(self.lists.into_owned()),
-            maps         : Cow::Owned(self.maps.into_owned()),
+            flags        : Cow::Owned(self.flags        .into_owned()),
+            vars         : Cow::Owned(self.vars         .into_owned()),
+            sets         : Cow::Owned(self.sets         .into_owned()),
+            lists        : Cow::Owned(self.lists        .into_owned()),
+            maps         : Cow::Owned(self.maps         .into_owned()),
             partitionings: Cow::Owned(self.partitionings.into_owned())
         }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.flags.is_empty() &&
-            self.vars .is_empty() &&
-            self.sets .is_empty() &&
-            self.lists.is_empty() &&
-            self.maps .is_empty() &&
-            self.partitionings.is_empty()
     }
 }

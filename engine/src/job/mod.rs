@@ -5,6 +5,7 @@ pub mod task;
 pub mod task_context;
 pub mod task_config;
 pub mod task_state;
+pub mod unthreader;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
@@ -13,6 +14,7 @@ pub mod prelude {
     pub use super::task_context::*;
     pub use super::task_config::*;
     pub use super::task_state::*;
+    pub use super::unthreader::*;
 
     pub use super::Job;
 }

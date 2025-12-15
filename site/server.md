@@ -8,7 +8,13 @@ Please note that URL Cleaner Site does not have any authentication/account syste
 
 If you plan to open your instance of URL Cleaner Site to other computers (for example, by binding to IP `0.0.0.0` instead) you should at least use firewalls to stop unauthorized access.
 
-For an overly annoying but theoretically sound account-style system, [mTLS](#mtls) can be used on top of [TLS](#tls) to make it impossible for unauthorized clients to connect to the server.
+## Passwords
+
+You can block access to cleaning URLs by providing `--passwords` with a JSON file containing an array of strings.
+
+If no password file is provided, users must not attempt to clean URLs using any password.
+
+If a password file is provided, users must provided a password in the file to clean URLs.
 
 ## TLS
 

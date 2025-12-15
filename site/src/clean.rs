@@ -9,6 +9,13 @@ use crate::*;
 pub async fn clean(state: &State<&'static ServerState>, config: JobConfig, tasks: &[u8]) -> Result<String, CleanError> {
     let state = *state.inner();
 
+    match (&state.config.passwords, &config.password) {
+        (None           , None          ) => {},
+        (None           , Some(_)       ) => Err(CleanError {status: 400, message: "This instance requires no password.".into()})?,
+        (Some(_)        , None          ) => Err(CleanError {status: 401, message: "Password required.".into()})?,
+        (Some(passwords), Some(password)) => if !passwords.contains(password) {Err(CleanError {status: 401, message: "Invalid password".into()})?}
+    }
+
     let Some(mut cleaner) = state.config.profiled_cleaner.get(config.profile.as_deref()) else {
         Err(CleanError {status: 400, message: format!("Unknown profile: {:?}", config.profile)})?
     };
@@ -39,7 +46,7 @@ pub async fn clean(state: &State<&'static ServerState>, config: JobConfig, tasks
 
     std::thread::scope(|s| {
         std::thread::Builder::new().name("Task collector".into()).spawn_scoped(s, move || {
-            for (in_sender, lazy_task_config) in {in_senders}.iter().cycle().zip(crate::util::ByteLines(tasks)) {
+            for (in_sender, lazy_task_config) in {in_senders}.iter().cycle().zip(crate::util::ByteLines(tasks).filter(|line| !line.is_empty())) {
                 in_sender.send(lazy_task_config).expect("The in reciever to still exist.");
             }
         }).expect("Spawning a thread to work fine.");

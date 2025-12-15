@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::fs::read_to_string;
 use std::str::FromStr;
 use std::num::NonZero;
+use std::collections::HashSet;
 
 #[macro_use] extern crate rocket;
 use rocket::{
@@ -64,9 +65,12 @@ struct Args {
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
-    /// The ProfilesConfig file.
+    /// The ProfilesConfig file to use.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
+    /// The passwords file to use.
+    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    passwords: Option<PathBuf>,
     /// The IP to listen to.
     #[arg(long, verbatim_doc_comment, default_value = DEFAULT_IP)]
     ip: IpAddr,
@@ -76,10 +80,6 @@ struct Args {
     /// The max size of a POST request to the `/clean` endpoint.
     #[arg(long, verbatim_doc_comment, default_value = DEFAULT_MAX_PAYLOAD, value_parser = parse_byte_unit)]
     max_payload: rocket::data::ByteUnit,
-    /// The proxy to use for HTTP/HTTPS requests.
-    #[cfg(feature = "http")]
-    #[arg(long, verbatim_doc_comment)]
-    proxy: Option<HttpProxyConfig>,
     /// The cache to use.
     #[cfg(feature = "cache")]
     #[arg(long, verbatim_doc_comment, default_value = "url-cleaner-site-cache.sqlite", value_name = "PATH")]
@@ -108,6 +108,8 @@ struct ServerConfig {
     profiled_cleaner: ProfiledCleaner<'static>,
     /// The string [`ProfilesConfig`] used.
     profiles_config_string: String,
+    /// The passwords.
+    passwords: Option<HashSet<String>>,
     /// The number of threads to spawn for clean.
     threads: NonZero<usize>,
     /// The max size for a clean payload.
@@ -149,11 +151,14 @@ async fn rocket() -> _ {
     let profiles_config = serde_json::from_str::<ProfilesConfig>(&profiles_config_string).expect("The ProfilesConfig to be a valid ProfilesConfig.");
     let profiled_cleaner = ProfiledCleanerConfig { cleaner, profiles_config }.make();
 
+    let passwords = args.passwords.map(|path| serde_json::from_str(&std::fs::read_to_string(path).expect("The passwords file to be readable.")).expect("The passwords file to be valid."));
+
     let state: &'static ServerState = Box::leak(Box::new(ServerState {
         config: ServerConfig {
             cleaner_string,
             profiled_cleaner,
             profiles_config_string,
+            passwords,
             threads: NonZero::new(args.threads).unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
             max_payload: args.max_payload
         },
@@ -161,7 +166,7 @@ async fn rocket() -> _ {
         #[cfg(feature = "cache")]
         inner_cache: args.cache.into(),
         #[cfg(feature = "http")]
-        http_client: HttpClient::new(args.proxy.into_iter().map(|proxy| proxy.make()).collect::<Result<Vec<_>, _>>().expect("The proxies to be valid.")),
+        http_client: HttpClient::new(),
     }));
 
     let tls = match (args.key, args.cert) {

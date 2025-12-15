@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, ser::Serializer, Deserialize, de::{self, Deserializer, Visitor, MapAccess}};
 use thiserror::Error;
 
 use crate::prelude::*;
@@ -15,12 +15,27 @@ pub enum FlagSource {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, FlagSourceError))]
     Params(StringSource),
+    /// Get it from [`TaskContext::flags`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, FlagSourceError))]
     TaskContext(StringSource),
+    /// Get it from [`JobContext::flags`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, FlagSourceError))]
     JobContext(StringSource),
-    CallArg(StringSource)
+    /// Get it from [`CallArgs::flags`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, FlagSourceError))]
+    CallArg(StringSource),
+    /// Get it from the contained [`bool`].
+    Literal(bool)
 }
 
-string_or_struct_magic!(FlagSource);
+impl Default for FlagSource {
+    fn default() -> Self {
+        Self::Literal(false)
+    }
+}
 
 impl FlagSource {
     /// Get the flag.
@@ -32,6 +47,7 @@ impl FlagSource {
             Self::TaskContext(name) => task_state.context.flags                                               .contains(get_str!(name, task_state, FlagSourceError)),
             Self::JobContext (name) => task_state.job.context.flags                                           .contains(get_str!(name, task_state, FlagSourceError)),
             Self::CallArg    (name) => task_state.call_args.get().ok_or(FlagSourceError::NotInFunction)?.flags.contains(get_str!(name, task_state, FlagSourceError)),
+            Self::Literal    (x   ) => *x
         })
     }
 }
@@ -72,12 +88,57 @@ pub enum FlagSourceError {
     #[error("The specified StringSource returned None where it had to be Some.")]
     StringSourceIsNone,
 
-    #[error("TOOD")]
+    /// Returned when attempting to use [`CallArgs`] outside a function.
+    #[error("Attempted to use CallArgs outside a function.")]
     NotInFunction
 }
 
 impl From<StringSourceError> for FlagSourceError {
     fn from(value: StringSourceError) -> Self {
         Self::StringSourceError(Box::new(value))
+    }
+}
+
+impl Serialize for FlagSource {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        Ok(match self {
+            Self::Literal(x) => serializer.serialize_bool(*x)?,
+            Self::Params(StringSource::String(x)) => serializer.serialize_str(x)?,
+            _ => Self::serialize(self, serializer)?
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for FlagSource {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        deserializer.deserialize_any(FlagSourceVisitor)
+    }
+}
+
+/// [`Visitor`] for [`FlagSource`].
+#[derive(Debug)]
+struct FlagSourceVisitor;
+
+impl<'de> Visitor<'de> for FlagSourceVisitor {
+    type Value = FlagSource;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "a list, null, or another variant written normally.")
+    }
+
+    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+        Ok(Self::Value::Params(v.into()))
+    }
+
+    fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
+        Ok(Self::Value::Params(v.into()))
+    }
+
+    fn visit_bool<E: de::Error>(self, x: bool) -> Result<Self::Value, E> {
+        Ok(Self::Value::Literal(x))
+    }
+
+    fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
+        Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
     }
 }

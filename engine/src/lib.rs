@@ -9,12 +9,12 @@ use prelude::*;
 
 pub mod job;
 pub mod cleaner;
-pub mod unthreader;
 
 #[cfg(feature = "http" )] pub mod http;
 #[cfg(feature = "cache")] pub mod cache;
 
 pub(crate) mod util;
+pub(crate) mod debug;
 
 /// A prelude module to make importing all the various types nicer.
 ///
@@ -22,15 +22,18 @@ pub(crate) mod util;
 pub mod prelude {
     pub use super::job::prelude::*;
     pub use super::cleaner::prelude::*;
-    pub use super::unthreader::*;
 
     #[cfg(feature = "http" )] pub use super::http::prelude::*;
     #[cfg(feature = "cache")] pub use super::cache::prelude::*;
 
     pub(crate) use better_url::*;
     pub(crate) use super::util::*;
+    pub(crate) use super::debug::debug;
 }
 
+/// A prelude module for specifically doc comments.
+///
+/// Definitely not meant for external use.
 pub mod docs {
     pub use super::prelude::*;
 
