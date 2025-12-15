@@ -43,8 +43,11 @@ impl Args {
         wait_for_server();
 
         assert_eq!(Command::new("websocat")
-            .arg(format!("readfile:{}", stdin.path()))
-            .arg("ws://127.0.0.1:9148/clean_ws")
+            .args([
+                "--text",
+                &format!("readfile:{}", stdin.path()),
+                "ws://127.0.0.1:9148/clean_ws"
+            ])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .spawn().unwrap().wait().unwrap().code(), Some(0));

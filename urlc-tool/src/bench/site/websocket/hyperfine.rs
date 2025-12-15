@@ -54,7 +54,7 @@ impl Args {
 
         command.args([
             "--",
-            &format!("websocat readfile:{} ws://127.0.0.1:9148/clean_ws", stdin.path())
+            &format!("websocat --text readfile:{} ws://127.0.0.1:9148/clean_ws", stdin.path())
         ]);
 
         assert_eq!(command
