@@ -106,10 +106,6 @@ pub enum HttpResponseHandler {
     Header(StringSource),
     /// Get the final URL.
     Url,
-    /// Get the specified cookie.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, HttpResponseHandlerError))]
-    Cookie(StringSource),
 
     /// Applies [`Self::Modified::modification`] to [`Self::Modified::handler`].
     /// # Erorrs
@@ -343,10 +339,6 @@ impl HttpResponseHandler {
                 None => None
             },
             Self::Url => Some(response.url().as_str().to_string()),
-            Self::Cookie(source) => {
-                let name = get_string!(source, task_state, HttpResponseHandlerError);
-                response.cookies().find(|cookie| cookie.name()==name).map(|x| x.value().to_string())
-            },
 
             Self::Modified {handler, modification} => {
                 let mut temp = handler.handle(response, task_state)?.map(Cow::Owned);

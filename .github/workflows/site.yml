@@ -19,14 +19,15 @@ jobs:
         cargo build -p url-cleaner-site
         cp target/debug/url-cleaner-site urlcs
 
-    - name: Order
+    - name: 'HTTP Output'
       run: |
         ./urlcs &
         sleep 1
-        seq -f 'https://%0.0f.com' 127 | curl -f http://localhost:9149/clean --data-binary @- | sort -Vc
+        in=$(seq -f "https://%0.0f.com/" 127)
+        [[ "$(echo "$in" | curl -f http://localhost:9149/clean --data-binary @- | grep .)" == "$in" ]]
         kill $!
 
-    - name: Profiles
+    - name: 'HTTP Profiles'
       run: |
         PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
 
@@ -83,7 +84,7 @@ jobs:
 
         kill $site
 
-    - name: Passwords
+    - name: 'HTTP Passwords'
       run: |
         PASSWORDS='["test"]'
 
@@ -96,3 +97,23 @@ jobs:
         ! curl -sf 'http://127.0.0.1:9149/clean' --url-query 'config={"password":"invalid"}' --data-binary ''
 
         kill $!
+
+    - name: 'Load WebSocat from cache'
+      id: websocat-cache
+      uses: actions/cache@v4
+      with:
+        key: websocat-v4.0.0-alpha2
+        path: ./websocat
+
+    - name: 'Downlaod WebSocat from github'
+      if: steps.websocat-cache.outputs.cache-hit != 'true'
+      run: |
+        curl 'https://github.com/vi/websocat/releases/download/v4.0.0-alpha2/websocat.x86_64-unknown-linux-musl' -Lo ./websocat
+        chmod +x ./websocat
+
+    - name: 'WebSocket Output'
+      run: |
+        ./urlcs &
+        sleep 1
+        in=$(seq -f "https://%0.0f.com/" 127)
+        [[ "$(echo "$in" | ./websocat ws://127.0.0.1:9149/clean_ws | grep .)" == "$in" ]]

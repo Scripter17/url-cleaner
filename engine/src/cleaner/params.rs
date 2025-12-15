@@ -57,7 +57,7 @@ use crate::prelude::*;
 ///
 /// params_diff.apply(&mut borrowed_params);
 /// ```
-#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Params<'a> {
     /// Flags allow enabling and disabling certain behavior.
@@ -121,5 +121,16 @@ impl<'a> Params<'a> {
             maps         : Cow::Owned(self.maps         .into_owned()),
             partitionings: Cow::Owned(self.partitionings.into_owned())
         }
+    }
+}
+
+impl Suitability for Params<'_> {
+    fn assert_suitability(&self, cleaner: &Cleaner<'_>) {
+        for flag         in self.flags        .iter() {assert!(cleaner.docs.flags        .contains_key(flag        ), "Undocumented flag {flag:?}");}
+        for var          in self.vars         .keys() {assert!(cleaner.docs.vars         .contains_key(var         ), "Undocumented var {var:?}");}
+        for set          in self.sets         .keys() {assert!(cleaner.docs.sets         .contains_key(set         ), "Undocumented set {set:?}");}
+        for list         in self.lists        .keys() {assert!(cleaner.docs.lists        .contains_key(list        ), "Undocumented list {list:?}");}
+        for map          in self.maps         .keys() {assert!(cleaner.docs.maps         .contains_key(map         ), "Undocumented map {map:?}");}
+        for partitioning in self.partitionings.keys() {assert!(cleaner.docs.partitionings.contains_key(partitioning), "Undocumented partitioning {partitioning:?}");}
     }
 }

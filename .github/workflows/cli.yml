@@ -16,10 +16,10 @@ jobs:
     - name: Setup
       run: |
         set -euo pipefail
-        cargo build -p url-cleaner
+        cargo build --bin url-cleaner
         cp target/debug/url-cleaner urlc
 
-    - name: Order
+    - name: Output
       run: |
         in=$(seq -f "https://%0.0f.com/" 127)
 
@@ -59,4 +59,4 @@ jobs:
     - name: 'Check bundled cleaner'
       run: |
         set -euo pipefail
-        cargo run -p urlc-tool -- test --filter '^offline'
+        cargo run --bin urlc-tool -- test --filter '^offline' --assert-suitability

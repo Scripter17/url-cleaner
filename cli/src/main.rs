@@ -116,7 +116,13 @@ struct Args {
     /// When STDOUT is a terminal, defaults to 0.
     /// Otherwise defaults to 8192.
     #[arg(long, verbatim_doc_comment)]
-    output_buffer: Option<usize>
+    output_buffer: Option<usize>,
+
+    /// If set, check that the loaded Cleaner (+ParamsDiff and ProfilesConfig and whatnot) is "suitable" to be the Bundled Cleaner.
+    /// If it is, exit without doing anything else. If it isn't panic with a message.
+    /// Used for intenal testing; Exact details are unstable.
+    #[arg(long, verbatim_doc_comment)]
+    assert_suitability: bool
 }
 
 /// The enum of errors [`main`] can return.
@@ -149,19 +155,62 @@ fn main() -> Result<(), CliError> {
     #[cfg(not(feature = "bundled-cleaner"))]
     let mut cleaner = Cleaner::load_from_file(&args.cleaner)?;
 
-    // Get and apply [`ParamsDiff`]s.
+    let profiles_config: Option<ProfilesConfig> = match args.profiles {
+        Some(path) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfiles)?).map_err(CliError::CantParseProfiles)?,
+        None => Default::default()
+    };
 
-    if let Some(path) = args.profiles {
+    let params_diff: Option<ParamsDiff> = match args.params_diff {
+        Some(path) => Some(serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiff)?).map_err(CliError::CantParseParamsDiff)?),
+        None => None
+    };
+
+    if args.assert_suitability {
+        let profiled_cleaner = ProfiledCleanerConfig {
+            cleaner,
+            profiles_config: profiles_config.unwrap_or_default()
+        }.make();
+
+        let extra_params_diff = match (&*args.flag, &*args.var) {
+            ([], []) => None,
+            _ => Some(ParamsDiff {
+                flags: args.flag.into_iter().collect(),
+                #[allow(clippy::indexing_slicing, reason = "Clap should ensure there's exactly 2.")]
+                vars: args.var.into_iter().map(|kv| <(_, _)>::from(<[String; 2]>::try_from(kv).expect("Clap to work."))).collect(),
+                ..Default::default()
+            })
+        };
+
+        for (name, mut cleaner) in profiled_cleaner.get_each() {
+            eprintln!("Testing profile {name:?}");
+
+            cleaner.assert_suitability();
+
+            if let Some(params_diff) = params_diff.clone() {
+                eprintln!("  Testing with --params-diff");
+                params_diff.apply(&mut cleaner.params);
+                cleaner.assert_suitability();
+            }
+
+            if let Some(extra_params_diff) = extra_params_diff.clone() {
+                eprintln!("  Testing with --flag, --var, etc.");
+                extra_params_diff.apply(&mut cleaner.params);
+                cleaner.assert_suitability();
+            }
+        }
+
+        return Ok(());
+    }
+
+    if let Some(profiles_config) = profiles_config {
         cleaner = ProfiledCleanerConfig {
             cleaner,
-            profiles_config: serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfiles)?).map_err(CliError::CantParseProfiles)?
+            profiles_config
         }.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
     }
 
-    if let Some(path) = args.params_diff {
-        serde_json::from_str::<ParamsDiff>(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiff)?)
-            .map_err(CliError::CantParseParamsDiff)?
-            .apply(&mut cleaner.params);
+    if let Some(params_diff) = params_diff {
+        params_diff.apply(&mut cleaner.params);
     }
 
     cleaner.params.flags.to_mut().extend(args.flag);

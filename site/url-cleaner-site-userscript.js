@@ -114,6 +114,15 @@ ${GM.info.script.namespace}`);
 			return;
 		}
 
+		// Link elements with no href attribute have a href property of "".
+		// If you saw the nonsense I tried to do to fix the desync caused by not knowing this you'd stop using my code.
+		if (href === "") {
+			if (window.config.debug) {
+				console.debug("[URLC] Ignoring empty string href", element);
+			}
+			return;
+		}
+
 		// Ignore empty anchors to break fewer websites.
 		// Some websites use href="#" to make a link element look like a link but work like a button.
 		// In any anchors that would get cleaned (some websites put tracking parameters in them) are unlikely to break stuff when cleaned.

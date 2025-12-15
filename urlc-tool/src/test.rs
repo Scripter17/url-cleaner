@@ -13,9 +13,9 @@ pub struct Args {
     /// The filter.
     #[arg(long)]
     pub filter: Option<String>,
-    /// The path of URL Cleaner CLI.
-    #[arg(long, default_value = "target/debug/url-cleaner")]
-    pub bin: String
+    /// Assert the cleaner's suitability.
+    #[arg(long)]
+    pub assert_suitability: bool
 }
 
 /// The bundled tests.
@@ -57,6 +57,12 @@ impl Args {
     pub fn r#do(self) {
         std::fs::create_dir_all(TMP).unwrap();
 
+        if self.assert_suitability {
+            assert_eq!(Command::new("target/debug/url-cleaner")
+                .arg("--assert-suitability")
+                .spawn().unwrap().wait().unwrap().code(), Some(0));
+        }
+
         let tests_string = match self.tests {
             Some(path) => Cow::Owned(std::fs::read_to_string(path).unwrap()),
             None => Cow::Borrowed(BUNDLED_TESTS)
@@ -70,7 +76,7 @@ impl Args {
                 continue;
             }
 
-            let mut command = Command::new(&self.bin);
+            let mut command = Command::new("target/debug/url-cleaner");
 
             command.args([
                 "--output-buffer", "0",
