@@ -4,6 +4,8 @@
 use std::str::FromStr;
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::borrow::Cow;
+#[expect(unused_imports, reason = "Used in a doc comment.")]
+use crate::prelude::*;
 
 /// Helper macro to make serde use [`FromStr`] to deserialize strings.
 ///
@@ -115,6 +117,7 @@ macro_rules! get_cow {
 pub(crate) use string_or_struct_magic;
 pub(crate) use get_str;
 pub(crate) use get_new_str;
+#[allow(unused_imports, reason = "Used when some features are enabled.")]
 pub(crate) use get_string;
 pub(crate) use get_cow;
 pub(crate) use get_option_str;
