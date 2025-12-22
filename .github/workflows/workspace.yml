@@ -23,17 +23,6 @@ jobs:
           exit 1
         fi
 
-  mds:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: 'Check MDs'
-      run: |
-        set -euo pipefail
-        old=$(cat *.md */*.md)
-        scripts/fill-mds.sh
-        test "$old" == "$(cat *.md */*.md)"
-
   msrv:
     runs-on: ubuntu-latest
     steps:
@@ -71,4 +60,4 @@ jobs:
     - name: Clippy
       run: |
         set -euo pipefail
-        cargo hack clippy --feature-powerset --benches --clean-per-run -- -D warnings
+        cargo hack clippy --feature-powerset --clean-per-run -- -D warnings

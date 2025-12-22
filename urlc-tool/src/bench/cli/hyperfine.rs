@@ -45,10 +45,7 @@ impl Args {
         if let Some(runs  ) = self.runs   {command.args(["--runs"  , &runs  .to_string()]);}
         if let Some(warmup) = self.warmup {command.args(["--warmup", &warmup.to_string()]);}
 
-        command.args([
-            "--",
-            "target/release/url-cleaner"
-        ]);
+        command.arg(BINDIR.join("url-cleaner"));
 
         assert_eq!(command
             .stdout(std::process::Stdio::null())

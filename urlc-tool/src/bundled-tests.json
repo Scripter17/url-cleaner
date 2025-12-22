@@ -279,7 +279,13 @@
 				{"task": "https://tinyurl.com/wp-tinyurl"                           , "expect": "https://en.wikipedia.org/wiki/TinyURL"                                                                                      },
 				{"task": "https://u.afp.com/SdEU"                                   , "expect": "https://www.yahoo.com/news/articles/south-korean-women-sue-us-062831445.html"                                               },
 				{"task": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre", "expect": "https://open.spotify.com/album/76qQt7n5SKtIa38BmZxvl4"                                                                      },
-        {"task": "https://qrcodes.pro/L1izR3"                               , "expect": "https://deckstore.ca/retail/"                                                                                               }
+        {"task": "https://qrcodes.pro/L1izR3"                               , "expect": "https://deckstore.ca/retail/"                                                                                               },
+
+				{
+					"task": "https://get-bandlab.app.link/invite-link?$canonical_url=https://www.bandlab.com/join/s1vcb9n&$fallback_url=https://www.bandlab.com/join/s1vcb9n",
+					"expect": "https://www.bandlab.com/join/s1vcb9n"
+				},
+        {"task": "https://upside.app.link/EL6543", "expect": "https://www.getupside.com/"}
       ]
     }
   ]

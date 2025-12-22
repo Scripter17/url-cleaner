@@ -11,58 +11,40 @@
 // @connect      localhost
 // ==/UserScript==
 
-window.config = {
-	instance: "ws://localhost:9149/clean_ws", // Make sure to keep synced with the above `@connect` host.
-	job_config: {
-		password   : null, // The password        (default: null)
-		profile    : null, // The Profile name    (default: null)
-		params_diff: null, // The ParamsDiff      (default: null)
-		unthread   : true, // Enable unthreading  (default: true)
-		read_cache : true, // Read from the cache (default: true)
-		write_cache: true, // Write to the cache  (default: true)
-		cache_delay: true, // Enable cache delay  (default: true)
-	},
-	debug: false
-};
-
 function urlc_main() {
-	console.log(`[URLC] URL Cleaner Site Userscript ${GM.info.script.version}
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
-https://www.gnu.org/licenses/agpl-3.0.html
-${GM.info.script.namespace}`);
+	let config = {
+		instance: "ws://localhost:9149/clean_ws", // Make sure to keep synced with the above `@connect` host.
+		job_config: {
+			context: {
+				source_host: window.location.hostname // Used for per-site processing.
+			},
+			// password   : null, // The password        (default: null )
+			// profile    : null, // The Profile name    (default: null )
+			// params_diff: null, // The ParamsDiff      (default: null )
+			   unthread   : true, // Enable unthreading  (default: false)
+			// read_cache : true, // Read from the cache (default: true )
+			// write_cache: true, // Write to the cache  (default: true )
+			   cache_delay: true, // Enable cache delay  (default: false)
+		},
+		debug: false
+	};
 
-	if (window.config.debug) {
-		console.debug("[URLC] The config is", window.config);
-	}
-
-	// A WeakSet of elements that were cleaned but whose href attribute mutation hasn't been observed yet.
-	// Elements removed from the document but not dropped (probably) have their cleanings added to the set but not noticed by the MutationObserver.
-	// So having it be a FIFO queue wouln't work.
-	let just_cleaned = new WeakSet();
+	// A map of elements to the last URL they were cleaned to.
+	// Allows avoiding double cleans most of the time, but isn't meant to be infallible.
+	let cleans = new WeakMap();
 	// A FIFO queue for elements sent to URL Cleaner Site whose results are not yet recieved.
 	// Contains [WeakRef<HTMLElement>, String]s, where the string is the element's href at the time it was sent to URL Cleaner Site.
 	let queue = [];
 	// When an element is unclean when clicked, stop the click and put it here to click it once cleaned.
 	// currently there doesn't seem to be a way to do the same for middle clicks.
-	let click_on_clean = null;
+	let reclick_once_clean = null;
 	// `true` if the socket ever had an `open` event.
 	// Used to provide extra debug info if the socket couldn't be opened.
 	let socket_ever_opened = false;
 
-	// Allows running the getter only once, improving performance.
+	// Sent to URL Cleaner Site for doing cleanings/unmangling that only apply on certain websites.
 	let hostname = window.location.hostname;
-
-	// Set up the URL for the socket.
-	let socket_url = new URL(window.config.instance);
-	let config = {...window.config.job_config};
-	config.context = {...config.context, "source_host": hostname};
-	socket_url.searchParams.append("config", JSON.stringify(config));
-
-	if (window.config.debug) {
-		console.debug("[URLC] The WebSocket URL is", socket_url);
-	}
-
-	// Used to decide which per-site unmangling/shortcuts to do.
+	// Used by urlc_queue_element to do shortcuts and send additional info.
 	let host_category;
 
 	if (/(?:^|\.)furaffinity\.net\.?$/.test(hostname)) {
@@ -79,14 +61,26 @@ ${GM.info.script.namespace}`);
 		host_category = "duckduckgo";
 	}
 
-	if (window.config.debug) {
-		console.debug("[URLC] The host category is", host_category);
-	}
+	// Set up the URL for the socket.
+	let socket_url = new URL(config.instance);
+	socket_url.searchParams.append("config", JSON.stringify(config.job_config));
+
+	console.log(`[URLC] URL Cleaner Site Userscript ${GM.info.script.version}
+Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+https://www.gnu.org/licenses/agpl-3.0.html
+${GM.info.script.namespace}`,
+			"\nConfig:"       , config,
+			"\nSocket URL:"   , socket_url,
+			"\nHost:"         , hostname,
+			"\nHost category:", host_category,
+			"\nCleans:"       , cleans,
+			"\nQueue:"        , queue
+	);
 
 	// If applicable, send an element's task to URL Cleaner Site and add it to the queue.
 	function urlc_queue_element(element) {
 
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Maybe queueing", element);
 		}
 
@@ -95,30 +89,18 @@ ${GM.info.script.namespace}`);
 
 		// Mimic document.links.
 		// Yeah turns out `<area>` is an element that exists. Who knew?
-		if (element.tagName !== "A" && element.tagName !== "AREA") {
-			if (window.config.debug) {
-				console.debug("[URLC] Ignoring non-link element", element);
+		if (!(element instanceof HTMLAnchorElement || element instanceof HTMLAreaElement)) {
+			if (config.debug) {
+				console.debug("[URLC] Ignoring: Not a link.");
 			}
 			return;
 		}
 
-		// Allows running the getter only once, improving performance.
-		let href = element.href;
+		let hrefattr = element.getAttribute("href");
 
-		// If the element is null/undefined/otherwise not a string, just ignore it.
-		// This comes up in `use` elements in SVG... markup?
-		if (typeof href !== "string") {
-			if (window.config.debug) {
-				console.debug("[URLC] Ignoring non-string href", element);
-			}
-			return;
-		}
-
-		// Link elements with no href attribute have a href property of "".
-		// If you saw the nonsense I tried to do to fix the desync caused by not knowing this you'd stop using my code.
-		if (href === "") {
-			if (window.config.debug) {
-				console.debug("[URLC] Ignoring empty string href", element);
+		if (hrefattr === null) {
+			if (config.debug) {
+				console.debug("[URLC] Ignoring: No href.");
 			}
 			return;
 		}
@@ -126,9 +108,19 @@ ${GM.info.script.namespace}`);
 		// Ignore empty anchors to break fewer websites.
 		// Some websites use href="#" to make a link element look like a link but work like a button.
 		// In any anchors that would get cleaned (some websites put tracking parameters in them) are unlikely to break stuff when cleaned.
-		if (href.includes("#") && element.getAttribute("href") === "#") {
-			if (window.config.debug) {
-				console.debug("[URLC] Ignoring anchor link", element);
+		if (hrefattr === "#") {
+			if (config.debug) {
+				console.debug("[URLC] Ignoring: Href is \"#\".");
+			}
+			return;
+		}
+
+		let href = element.href;
+
+		// Note that this check probably isn't perfect. It's just here to minimize the risk of double cleans.
+		if (cleans.get(element) === href) {
+			if (config.debug) {
+				console.debug("[URLC] Ignoring: Already clean.")
 			}
 			return;
 		}
@@ -173,7 +165,7 @@ ${GM.info.script.namespace}`);
 			task = href;
 		}
 
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Sending task", task, "for element", element);
 		}
 
@@ -184,12 +176,17 @@ ${GM.info.script.namespace}`);
 	// Delay clicks on dirty links until they're cleaned.
 
 	function urlc_dirty_click_delayer(e) {
-		if (socket.readyState === 1 && queue.includes(e.target)) {
-			if (window.config.debug) {
-				console.debug("[URLC] Delaying click for dirty element", e);
+		if (socket.readyState === 1) {
+			for (let [queued_element, _] of queue) {
+				if (queued_element.deref() == e.target) {
+					if (config.debug) {
+						console.debug("[URLC] Delaying click for dirty element", e);
+					}
+					e.preventDefault();
+					reclick_once_clean = e.target;
+					return;
+				}
 			}
-			e.preventDefault();
-			click_on_clean = e.target;
 		}
 	}
 	window.addEventListener("click", urlc_dirty_click_delayer);
@@ -197,13 +194,11 @@ ${GM.info.script.namespace}`);
 	// Listen for changes to changes to any element's href attribute.
 
 	function urlc_mutation_href(mutations) {
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Attribute mutations", mutations);
 		}
 		for (let mutation of mutations) {
-			if (!just_cleaned.delete(mutation.target)) {
-				urlc_queue_element(mutation.target);
-			}
+			urlc_queue_element(mutation.target);
 		}
 	}
 	let href_attribute_observer = new MutationObserver(urlc_mutation_href);
@@ -211,15 +206,13 @@ ${GM.info.script.namespace}`);
 	// Listen for changes to the node tree.
 
 	function urlc_tree_mutation(mutations) {
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Tree mutations", mutations);
 		}
 		for (let mutation of mutations) {
 			for (let node of mutation.addedNodes) {
 				if (node.nodeType === 1) {
-					if (node.href) {
-						urlc_queue_element(element);
-					}
+					urlc_queue_element(element);
 					for (let element of node.querySelectorAll("[href]")) {
 						urlc_queue_element(element);
 					}
@@ -236,7 +229,7 @@ ${GM.info.script.namespace}`);
 	// When the socket is open, start cleaning.
 
 	function urlc_socket_open() {
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Opened socket to", socket_url.href);
 		}
 
@@ -290,24 +283,24 @@ ${GM.info.script.namespace}`);
 					console.error("[URLC] Got error", line.replace("-", ""), "for element", element);
 				} else {
 					// Lines that don't start with `-` are successes.
-					if (window.config.debug) {
+					if (config.debug) {
 						console.debug("[URLC] Got success", line, "for element", element);
 					}
 					// If the URL is unchanged, don't risk breaking a website's internal state for no reason.
 					if (old_href !== line) {
-							just_cleaned.add(element);
-							element.href = line;
+						cleans.set(element, line);
+						element.href = line;
 					}
 				}
 
 				// If the element was clicked when dirty (and thus had the click intercepted), click it.
 				// See the function `dirty_click_delayer` for details.
-				if (element === click_on_clean) {
-					if (window.config.debug) {
+				if (element === reclick_once_clean) {
+					if (config.debug) {
 						console.debug("[URLC] Redoing delayed click for now clean element", element);
 					}
 					element.click();
-					click_on_clean = null;
+					reclick_once_clean = null;
 				}
 			}
 		}
@@ -317,7 +310,7 @@ ${GM.info.script.namespace}`);
 	// When the socket is closing, print a message and clean up.
 
 	function urlc_socket_close(e) {
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Closing socket", e);
 		}
 		href_attribute_observer.disconnect();
@@ -344,7 +337,7 @@ For information on how to install/trust your certificate, see the docs: https://
 	// When leaving a webpage, do cleanup.
 
 	function urlc_beforeunload(e) {
-		if (window.config.debug) {
+		if (config.debug) {
 			console.debug("[URLC] Doing beforeunload cleanup", e);
 		}
 		socket.close();

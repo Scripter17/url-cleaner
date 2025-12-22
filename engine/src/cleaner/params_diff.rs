@@ -3,9 +3,13 @@
 use std::collections::{HashMap, HashSet};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::borrow::Cow;
+use std::io;
+use std::path::Path;
+use std::fs::read_to_string;
 
 use serde::{Serialize, Deserialize};
 use serde_with::serde_as;
+use thiserror::Error;
 
 use crate::prelude::*;
 
@@ -46,6 +50,13 @@ pub struct ParamsDiff {
 }
 
 impl ParamsDiff {
+    /// Load [`Self`] from a JSON file.
+    /// # Errors
+    #[doc = edoc!(callerr(std::fs::read_to_string), callerr(serde_json::from_str))]
+    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<ParamsDiff, GetParamsDiffError> {
+        serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
+    }
+
     /// Applies each difference, only calling [`Cow::to_mut`] on fields that are actually modified.
     ///
     /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
@@ -89,4 +100,15 @@ impl ParamsDiff {
             }
         }
     }
+}
+
+/// The enum of errors that can happen when loading a [`ParamsDiff`].
+#[derive(Debug, Error)]
+pub enum GetParamsDiffError {
+    /// Returned when loading a [`ParamsDiff`] fails.
+    #[error(transparent)]
+    CantLoadParamsDiff(#[from] io::Error),
+    /// Returned when deserializing a [`ParamsDiff`] fails.
+    #[error(transparent)]
+    CantParseParamsDiff(#[from] serde_json::Error),
 }

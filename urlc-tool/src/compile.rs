@@ -27,7 +27,8 @@ impl Args {
     pub fn r#do(self) {
         let mut cmd = Command::new("cargo");
 
-        cmd.args(["+stable", "build", "-r", "--config", "profile.release.strip=false", "--config", "profile.release.debug=2"]);
+        cmd.args(["build", "--config", "profile.release.strip=false", "--config", "profile.release.debug=2"]);
+        if !DEBUG.get().unwrap() {cmd.arg("-r");}
         cmd.stdout(std::io::stderr());
         cmd.stderr(std::io::stderr());
 

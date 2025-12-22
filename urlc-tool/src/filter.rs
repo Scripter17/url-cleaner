@@ -27,8 +27,7 @@ impl Args {
         let (in_read, mut in_write) = pipe().unwrap();
         let (out_read, out_write) = pipe().unwrap();
 
-        let _child = TerminateOnDrop(Command::new("target/release/url-cleaner")
-            .args(["--output-buffer", "0"])
+        let _child = TerminateOnDrop(Command::new(BINDIR.join("url-cleaner"))
             .args(self.last)
             .stdin(in_read)
             .stdout(out_write)

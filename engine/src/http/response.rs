@@ -4,7 +4,6 @@
 
 use std::borrow::Cow;
 use std::io::Read;
-use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -116,37 +115,24 @@ pub enum HttpResponseHandler {
         /// The [`StringModification`] to apply.
         modification: StringModification
     },
-    /// Searches the first [`Self::ExtractFromBody::limit`] bytes of the body for [`Self::ExtractFromBody::prefix`] and [`Self::ExtractFromBody::suffix`], optionally stripping the prefix and/or suffix from the output.
+    /// Searches the body until one of the [`HttpBodyExtractor::prefix`]es is found, then processes it and the remainder of the body per that [`HttpBodyExtractor`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 2))]
+    #[doc = edoc!(geterr(StringSource, 3))]
     ///
-    /// If the prefix isn't found, returns the error [`HttpResponseHandlerError::PrefixNotFound`].
+    /// If no extractors are given, returns the error [`HttpResponseHandlerError::NoExtractors`].
     ///
-    /// If the suffix isn't found, returns the error [`HttpResponseHandlerError::SuffixNotFound`].
+    #[doc = edoc!(callerr(std::io::Bytes::next, 3))]
     ///
-    /// If the limit is reached, returns the error [`HttpResponseHandlerError::LimitReached`].
+    /// If no prefix is found, returns the error [`HttpResponseHandlerError::PrefixNotFound`].
+    ///
+    /// If the selected extractor's suffix isn't found, returns the error [`HttpResponseHandlerError::SuffixNotFound`].
+    ///
+    /// If [`Self::ExtractFromBody::limit`] bytes are read without finding a match, returns the error [`HttpResponseHandlerError::LimitReached`].
+    ///
+    #[doc = edoc!(callerr(String::try_from), applyerr(StringModification))]
     ExtractFromBody {
-        /// The prefix to search for.
-        ///
-        /// If [`None`], none of the body is skipped.
-        prefix: StringSource,
-        /// The suffix to search for.
-        ///
-        /// If [`None`], the entire body is read.
-        ///
-        /// Defaults to [`StringSource::None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        suffix: StringSource,
-        /// If [`true`], remove the prefix from the result.
-        ///
-        /// Defaults to [`false`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        strip_prefix: FlagSource,
-        /// If [`true`], remove the suffix from the result.
-        ///
-        /// Defaults to [`false`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        strip_suffix: FlagSource,
+        /// The extractors to use.
+        extractors: Vec<HttpBodyExtractor>,
         /// The maximum number of bytes to search.
         ///
         /// Defaults to 8MiB.
@@ -174,6 +160,37 @@ pub enum HttpResponseHandler {
     /// # Errors
     /// If the response has a non-5xx status code, returns the error [`HttpResponseHandlerError::Required5xx`].
     Require5xx(Box<Self>),
+}
+
+/// An HTTP body extractor.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+pub struct HttpBodyExtractor {
+    /// The prefix to search for.
+    ///
+    /// If [`None`], none of the body is skipped.
+    pub prefix: StringSource,
+    /// The suffix to search for.
+    ///
+    /// If [`None`], the entire body is read.
+    ///
+    /// Defaults to [`StringSource::None`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub suffix: StringSource,
+    /// If [`true`], remove the prefix from the result.
+    ///
+    /// Defaults to [`false`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub strip_prefix: FlagSource,
+    /// If [`true`], remove the suffix from the result.
+    ///
+    /// Defaults to [`false`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub strip_suffix: FlagSource,
+    /// The [`StringModification`] to use to parse the extracted segment.
+    ///
+    /// Defaults to [`StringModification::None`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub parser: StringModification
 }
 
 /// Serder helper function.
@@ -241,6 +258,9 @@ pub enum HttpResponseHandlerError {
     /// Returned when a limit of [`Self::LimitReached::0`] is reached.
     #[error("The limit of {0} bytes was reached.")]
     LimitReached(usize),
+    /// Returned when [`HttpResponseHandler::ExtractFromBody`] is used with zero extractors.
+    #[error("ExtractFromBody was used with zero extractors.")]
+    NoExtractors,
 
     /// Returned when a 1xx status code is required but got [`Self::Required1xx::0`].
     #[error("A 1xx status code was required but got {0}.")]
@@ -345,56 +365,64 @@ impl HttpResponseHandler {
                 modification.apply(&mut temp, task_state)?;
                 temp.map(Cow::into_owned)
             },
-            Self::ExtractFromBody {prefix, suffix, strip_prefix, strip_suffix, limit} => {
+            Self::ExtractFromBody {extractors, limit} => {
                 let mut ret = Vec::new();
                 let mut bytes = Read::bytes(response);
                 let mut total_read = 0;
 
-                let prefix = get_option_cow!(prefix, task_state);
-                let suffix = get_option_cow!(suffix, task_state);
+                let prefixes = extractors.iter().map(|x| x.prefix.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.ok_or(HttpResponseHandlerError::StringSourceIsNone)?;
 
-                if let Some(prefix) = prefix {
-                    let mut window = VecDeque::with_capacity(prefix.len());
-                    while window != prefix.as_bytes() {
-                        if total_read == *limit {
-                            Err(HttpResponseHandlerError::LimitReached(total_read))?
-                        }
-                        if window.len() == window.capacity() {
-                            window.pop_front();
-                        }
-                        window.push_back(bytes.next().ok_or(HttpResponseHandlerError::PrefixNotFound)??);
-                        total_read += 1;
-                    }
-                    if !strip_prefix.get(task_state)? {
-                        ret = window.into();
-                    }
-                };
+                let mut window = Vec::with_capacity(prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoExtractors)?);
 
-                match suffix {
-                    None => for byte in bytes {
-                        if total_read == *limit {
-                            Err(HttpResponseHandlerError::LimitReached(total_read))?
-                        }
-                        ret.push(byte?);
-                        total_read += 1;
-                    },
-                    Some(suffix) => {
-                        let mut extend = Vec::new();
-                        while !extend.ends_with(suffix.as_bytes()) {
-                            if total_read == *limit {
-                                Err(HttpResponseHandlerError::LimitReached(total_read))?
+                loop {
+                    for (prefix, extractor) in prefixes.iter().zip(extractors) {
+                        if window.ends_with(prefix.as_bytes()) {
+                            if !extractor.strip_prefix.get(task_state)? {
+                                ret = prefix.clone().into_owned().into();
                             }
-                            extend.push(bytes.next().ok_or(HttpResponseHandlerError::SuffixNotFound)??);
-                            total_read += 1;
-                        }
-                        if strip_suffix.get(task_state)? {
-                            extend.truncate(extend.len() - suffix.len());
-                        }
-                        ret.extend(extend);
-                    }
-                }
 
-                Some(ret.try_into()?)
+                            let suffix = extractor.suffix.get(task_state)?;
+
+                            match suffix {
+                                None => for byte in bytes {
+                                    if total_read == *limit {
+                                        Err(HttpResponseHandlerError::LimitReached(total_read))?
+                                    }
+                                    ret.push(byte?);
+                                    total_read += 1;
+                                },
+                                Some(suffix) => {
+                                    let mut extend = Vec::new();
+                                    while !extend.ends_with(suffix.as_bytes()) {
+                                        if total_read == *limit {
+                                            Err(HttpResponseHandlerError::LimitReached(total_read))?
+                                        }
+                                        extend.push(bytes.next().ok_or(HttpResponseHandlerError::SuffixNotFound)??);
+                                        total_read += 1;
+                                    }
+                                    if extractor.strip_suffix.get(task_state)? {
+                                        extend.truncate(extend.len() - suffix.len());
+                                    }
+                                    ret.extend(extend);
+                                }
+                            }
+
+                            let mut temp = Some(Cow::Owned(String::try_from(ret)?));
+
+                            extractor.parser.apply(&mut temp, task_state)?;
+
+                            return Ok(temp.map(Cow::into_owned));
+                        }
+                    }
+                    if total_read == *limit {
+                        Err(HttpResponseHandlerError::LimitReached(total_read))?
+                    }
+                    if window.len() == window.capacity() {
+                        window.remove(0);
+                    }
+                    window.push(bytes.next().ok_or(HttpResponseHandlerError::PrefixNotFound)??);
+                    total_read += 1;
+                }
             },
 
             Self::Require1xx(handler) => if response.status().is_informational() {handler.handle(response, task_state)?} else {Err(HttpResponseHandlerError::Required1xx(response.status()))?},

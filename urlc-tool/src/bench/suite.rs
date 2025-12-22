@@ -11,6 +11,9 @@ pub struct Args {
     /// The regex to filter names with.
     #[arg(long, default_value = "")]
     pub filter: String,
+    /// Disable compiling the frontends.
+    #[arg(long)]
+    pub no_compile: bool,
 
     /// CLI.
     #[arg(long)]
@@ -33,7 +36,7 @@ pub struct Args {
     pub massif: bool,
 
     /// Hyperfine nums.
-    #[arg(long, requires = "hyperfine", num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000])]
+    #[arg(long, requires = "hyperfine", num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
     pub hyperfine_nums: Vec<usize>,
     /// callgrind nums.
     #[arg(long, requires = "callgrind", num_args = 1.., default_values_t = [0, 10_000])]
@@ -98,12 +101,14 @@ impl Args {
         let callgrind_table_header = table_header(&self.callgrind_nums);
         let massif_table_header    = table_header(&self.massif_nums   );
 
-        crate::compile::Args {
-            frontends: crate::compile::Frontends {
-                cli: self.cli,
-                site: self.site_http || self.site_ws
-            }
-        }.r#do();
+        if !self.no_compile {
+            crate::compile::Args {
+                frontends: crate::compile::Frontends {
+                    cli: self.cli,
+                    site: self.site_http || self.site_ws
+                }
+            }.r#do();
+        }
 
         println!("# Benchmarks");
         println!();

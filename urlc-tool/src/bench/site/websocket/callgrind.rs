@@ -33,8 +33,7 @@ impl Args {
                 "-q",
                 "--tool=callgrind",
                 "--separate-threads=yes",
-                &format!("--callgrind-out-file={out}"),
-                "target/release/url-cleaner-site",
+                BINDIR.join("url-cleaner-site").to_str().unwrap(),
                 "--port", "9148"
             ])
             .stdout(std::process::Stdio::null())

@@ -93,43 +93,42 @@
 			"nh_keep_http": ["cos.lv", "localhost", "orteil.dashnet.org", "smartytags.com"],
 
 			"utps": [
-				"", "a8", "a_aid", "acm", "ActionID", "action_object_map", "action_ref_map", "action_type_map", "adc_publisher", "adcref", "adc_token", "adfrom", "adj_campaign",
-				"adj_creative", "adj_label", "adj_t", "adjust_adgroup", "adjust_campaign", "adjust_creative", "adjust_referrer", "adjust_tracker", "adjust_tracker_limit",
-				"admitad_uid", "adobe_mc_ref", "adobe_mc_sdid", "adsterra_clid", "adsterra_placement_id", "af_ad", "af_adset", "af_click_lookback", "AffiliateID",
-				"af_force_deeplink", "afid", "af_xp", "aiad_clid", "aid", "asc_campaign", "asc_refurl", "asc_source", "asgtbndr", "at_campaign", "at_campaign_type",
-				"at_creation", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id", "at_recipient_list",
-				"at_send_date", "awc", "bbeml", "_bdadid", "bemobdata", "beyond_uzcvid", "beyond_uzmcvid", "_bhlid", "bid", "_branch_match_id", "_branch_referrer",
-				"bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", "bsft_mid", "bsft_uid", "btag", "campid", "cid", "cjdata", "cjevent", "_clde", "_cldee", "clickTrackInfo",
-				"clid", "cm_cr", "cm_me", "cmpid", "cooper", "cstrackid", "cuid", "cvid", "cvrid", "cvrpid", "cvrsid", "cx_click", "cx_recsOrder", "cx_recsWidget", "cxt",
-				"dclid", "dmmref", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", "dt_dapp", "ebisAdID", "ebisOther1", "ebisOther2", "ebisOther3", "ebisOther4",
-				"ebisOther5", "embeds_referring_euri", "embeds_referring_origin", "emcs_t", "ems_dl", "epi", "erid", "et_rid", "external_click_id", "famad_xuid",
-				"fb_action_ids", "fb_action_types", "fbadid", "fbclid", "fb_comment_id", "fb_ref", "fb_source", "frm", "from", "from_country", "_ga", "gad_source", "gbraid",
-				"gci", "gclid", "gclsrc", "_gl", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la",
-				"hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt", "hsa_ver", "hsCtaTracking", "_hsenc", "__hsfp", "_hsmi", "__hssc", "__hstc", "i3_ord", "i3_ref", "ici",
-				"iclid", "igshid", "int_campaign", "int_content", "int_medium", "int_source", "int_term", "__io_lv", "_io_session_id", "ir_adid", "ir_campaignid", "irclickid",
-				"irgwc", "ir_partnerid", "is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "_kx", "laz_trackid", "l-id",
-				"line_uid", "loclid", "maf", "mallCode", "mbid", "mc_cid", "mc_eid", "mindbox-click-id", "mindbox-message-key", "mkttid", "mkt_tok", "ml_subscriber",
-				"ml_subscriber_hash", "msclkid", "mt_adset", "mt_campaign", "mt_click_id", "mt_creative", "mt_link_id", "mtm_campaign", "mtm_cid", "mtm_content", "mt_medium",
-				"mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "mt_network", "mt_sub1", "mt_sub2", "mt_sub3", "mt_sub4", "mt_sub5", "NaPm", "naver",
-				"nb_expid_meta", "nb_placement", "nclid", "newsstand", "ns_campaign", "ns_fee", "ns_linkname", "ns_mchannel", "ns_source", "nv", "nx_source", "ocid", "oft_c",
-				"oft_ck", "oft_d", "oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "_ope", "_openstat", "oprtrack", "oref", "OutLink",
-				"personaclick_input_query", "personaclick_search_query", "pg", "phfp", "phone_code", "pk_campaign", "pk_cid", "pk_medium", "pk_source", "pk_vid", "plink",
-				"promotionId", "publish_id", "rb_clickid", "recom", "recommended_by", "recommended_code", "ref", "ref_src", "refsrc", "ref_type", "ref_url", "rtkcid", "__s",
-				"sc", "sc_customer", "sc_eh", "s_cid", "scid", "scm", "sc_uid", "search_domain", "search_source", "_sgm_action", "_sgm_campaign", "_sgm_pinned", "_sgm_source",
-				"_sgm_term", "s-id", "sms_click", "sms_source", "sms_uph", "source_ve_path", "sp_atk", "spm", "spot_im_redirect_source", "src_module", "src_tab_page_id",
-				"srsltid", "sscid", "ss_email_id", "stm_medium", "stm_source", "sub_rt", "tag3", "Tcsack", "tduid", "trackcode", "trafficFrom", "ttclid", "twclid",
-				"tw_medium", "tw_profile_id", "tw_source", "unicorn_click_id", "union_lens", "urrad", "user_email_address", "usqp", "utm_ad", "utm_adgroup", "utm_adset",
-				"utm_affiliate", "utm_brand", "utm_campaign", "utm_campaignid", "utm_campaign_name", "utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid",
-				"utm_emmid", "utm_id", "utm_id_", "utm_journey_id", "utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader",
-				"utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_source_code",
-				"utm_source_platform", "utm_supplier", "utm_swu", "utm_tag", "utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "uzcid", "vc_lpp", "vero_conv", "vero_id",
-				"vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wgexpiry", "wgu", "wickedid", "wt_mc", "xmt", "xptdk", "xtor", "yclid", "ymclid", "ymid", "ysclid",
-				"_zucks_suid"
+				"", "ActionID", "AffiliateID", "NaPm", "OutLink", "Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_bdadid", "_bhlid", "_branch_match_id", 
+				"_branch_referrer", "_clde", "_cldee", "_ga", "_gl", "_hsenc", "_hsmi", "_io_session_id", "_kx", "_ope", "_openstat", "_sgm_action", "_sgm_campaign", 
+				"_sgm_pinned", "_sgm_source", "_sgm_term", "_zucks_suid", "a8", "a_aid", "acm", "action_object_map", "action_ref_map", "action_type_map", "adc_publisher", 
+				"adc_token", "adcref", "adfrom", "adj_campaign", "adj_creative", "adj_label", "adj_t", "adjust_adgroup", "adjust_campaign", "adjust_creative", "adjust_referrer", 
+				"adjust_tracker", "adjust_tracker_limit", "admitad_uid", "adobe_mc_ref", "adobe_mc_sdid", "adsterra_clid", "adsterra_placement_id", "af_ad", "af_adset", 
+				"af_click_lookback", "af_force_deeplink", "af_xp", "afid", "aiad_clid", "aid", "asc_campaign", "asc_refurl", "asc_source", "asgtbndr", "at_campaign", 
+				"at_campaign_type", "at_creation", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id", 
+				"at_recipient_list", "at_send_date", "awc", "bbeml", "bemobdata", "beyond_uzcvid", "beyond_uzmcvid", "bid", "bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", 
+				"bsft_mid", "bsft_uid", "btag", "campid", "cid", "cjdata", "cjevent", "clickTrackInfo", "clid", "cm_cr", "cm_me", "cmpid", "cooper", "cstrackid", "cuid", "cvid", 
+				"cvrid", "cvrpid", "cvrsid", "cx_click", "cx_recsOrder", "cx_recsWidget", "cxt", "dclid", "dmmref", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", 
+				"dt_dapp", "ebisAdID", "ebisOther1", "ebisOther2", "ebisOther3", "ebisOther4", "ebisOther5", "embeds_referring_euri", "embeds_referring_origin", "emcs_t", 
+				"ems_dl", "epi", "erid", "et_rid", "external_click_id", "famad_xuid", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref", "fb_source", "fbadid", 
+				"fbclid", "frm", "from", "from_country", "gad_source", "gbraid", "gci", "gclid", "gclsrc", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig", 
+				"hsCtaTracking", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt", "hsa_ver", "i3_ord", 
+				"i3_ref", "ici", "iclid", "igshid", "int_campaign", "int_content", "int_medium", "int_source", "int_term", "ir_adid", "ir_campaignid", "ir_partnerid", 
+				"irclickid", "irgwc", "is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "l-id", "laz_trackid", "line_uid", 
+				"loclid", "maf", "mallCode", "mbid", "mc_cid", "mc_eid", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "mkttid", "ml_subscriber", "ml_subscriber_hash", 
+				"msclkid", "mt_adset", "mt_campaign", "mt_click_id", "mt_creative", "mt_link_id", "mt_medium", "mt_network", "mt_sub1", "mt_sub2", "mt_sub3", "mt_sub4", 
+				"mt_sub5", "mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "naver", "nb_expid_meta", 
+				"nb_placement", "nclid", "newsstand", "ns_campaign", "ns_fee", "ns_linkname", "ns_mchannel", "ns_source", "nv", "nx_source", "ocid", "oft_c", "oft_ck", "oft_d", 
+				"oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "oref", "personaclick_input_query", "personaclick_search_query", "pg", 
+				"phfp", "phone_code", "pk_campaign", "pk_cid", "pk_medium", "pk_source", "pk_vid", "plink", "promotionId", "publish_id", "rb_clickid", "recom", "recommended_by", 
+				"recommended_code", "ref", "ref_src", "ref_type", "ref_url", "refsrc", "rtkcid", "s-id", "s_cid", "sc", "sc_customer", "sc_eh", "sc_uid", "scid", "scm", 
+				"search_domain", "search_source", "sms_click", "sms_source", "sms_uph", "source_ve_path", "sp_atk", "spm", "spot_im_redirect_source", "src_module", 
+				"src_tab_page_id", "srsltid", "ss_email_id", "sscid", "stm_medium", "stm_source", "sub_rt", "tag3", "tduid", "trackcode", "trafficFrom", "ttclid", "tw_medium", 
+				"tw_profile_id", "tw_source", "twclid", "unicorn_click_id", "union_lens", "urrad", "user_email_address", "usqp", "utm_ad", "utm_adgroup", "utm_adset", 
+				"utm_affiliate", "utm_brand", "utm_campaign", "utm_campaign_name", "utm_campaignid", "utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid", 
+				"utm_emmid", "utm_id", "utm_id_", "utm_journey_id", "utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader", 
+				"utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_source_code", 
+				"utm_source_platform", "utm_supplier", "utm_swu", "utm_tag", "utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "uzcid", "vc_lpp", "vero_conv", "vero_id", 
+				"vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wgexpiry", "wgu", "wickedid", "wt_mc", "xmt", "xptdk", "xtor", "yclid", "ymclid", "ymid", "ysclid"
 			]
 		},
 		"lists": {
 			"utp_prefixes": [
-				"at_custom", "cm_mmc", "mkt_tok", "__s", "utm_", "_utm"
+				"__s", "_utm", "at_custom", "cm_mmc", "mkt_tok", "utm_"
 			]
 		},
 		"partitionings": {
@@ -140,13 +139,13 @@
 				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 
 				"breezewiki": [
-					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org", "breezewiki.catsarch.com", "breezewiki.com",
-					"breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net",
-					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe", "bw.artemislena.eu",
+					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org", "breezewiki.catsarch.com", "breezewiki.com", 
+					"breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net", 
+					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe", "bw.artemislena.eu", 
 					"bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion", "nerd.whatever.social", "z.opnxng.com"
 				],
 				"invidious": [
-					"invidious.nerdvpn.de", "inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "yewtu.be",
+					"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be", 
 					"zzlsbhhfvwg3oh36tcvx4r7n6jrw7zibvyvfxqlodcwn3mfrvzuq.b32.i2p"
 				],
 				"nitter": [
@@ -179,7 +178,7 @@
 					        "vfaomgh4jxphpbdfizkm5gbtjahmei234giqj4facbwhrfjtcldauqad.onion",        "wiio4sgs4247brk7hj6qck2jxnvldwfdbguigc5ivpxrsegnliyfvuqd.onion"
 				],
 
-				"alibaba": ["1688.com", "alibaba.com", "aliexpress.com", "m.1688.com"],
+				"alibaba": ["1688.com", "alibaba.com", "aliexpress.com", "m.1688.com", "sale.alibaba.com"],
 				"bluesky": ["bsky.app"],
 				"discord_external": [
 					"images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net", "images-ext-4.discordapp.net", "images-ext-5.discordapp.net"
@@ -195,24 +194,39 @@
 
 			"rd_www_subdomain": {
 				"ensure": [
-					"1688.com", "9news.com.au", "acer.com", "alibaba.com", "amtrak.com", "apple.co", "apple.com", "atom.bio", "bbc.com", "bell.ca", "boot.dev", "boycat.io",
-					"browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com", "crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "entripy.com",
-					"etsy.com", "facebook.com", "fandom.com", "fiverr.com", "flyac.ca", "furaffinity.net", "go.com", "gofundme.com", "goodreads.com", "history.com", "hp.com",
-					"hulu.com", "iana.org", "icloud.com", "instagram.com", "leaffilter.ca", "ledauphine.com", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com",
-					"mediafire.com", "minds.com", "mondly.com", "mozilla.org", "mydealz.de", "nature.com", "ndw.jp", "nytimes.com", "obo.de", "onet.pl", "patreon.com",
-					"pcoptimum.ca", "phoronix.com", "pixiv.net", "razer.com", "reddit.com", "reuters.com", "snapchat.com", "spotify.com", "sub2get.com", "teepublic.com",
-					"temu.com", "theguardian.com", "threads.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "unlock.com",
-					"washingtonpost.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
+					"1688.com", "9news.com.au", "abc.net.au", "adjust.com", "afp.com", "agorapulse.com", "alibaba.com", "animaapp.com", "anrdoezrs.net", "apple.com", "bbc.com", 
+					"behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com", 
+					"crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "elsevier.com", "emjcd.com", "entripy.com", "etsy.com", "euronews.com", "facebook.com", 
+					"fandom.com", "fiverr.com", "forbes.com", "france24.com", "ft.com", "furaffinity.net", "go.com", "go2cloud.org", "gofundme.com", "goodreads.com", "google.com", 
+					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com", 
+					"mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de", "ojrq.net", 
+					"onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reuters.com", 
+					"sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com", "theguardian.com", 
+					"threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com", 
+					"whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
 				],
 				"remove": [
-					"7ny.tv", "abc7.la", "abc7ne.ws", "a.co", "adfoc.us", "allegro.pl", "antifandom.com", "apexgamingpcs.com", "bambulab.com", "beacons.ai", "bit.ly", "bitly.com",
-					"bityl.co", "boost.ink", "boosty.to", "booth.pm", "breezewiki.com", "bugzilla.mozilla.org", "buymeacoffee.com", "bw.artemislena.eu", "bw.hamstro.dev",
-					"carleton.ca", "carrd.co", "carrd.com", "cash.app", "cutt.ly", "dis.gd", "drinkctrl.com", "drive.google.com", "duckduckgo.com", "fansly.com", "flip.it",
-					"g.co", "gelbooru.com", "gum.co", "howl.link", "href.li", "hulu.tv", "ift.tt", "inkbunny.net", "invidious.nerdvpn.de", "linktr.ee", "lmddgtfy.net", "loom.ly",
-					"mboost.me", "melscience.com", "metafy.gg", "nitter.net", "nitter.tiekoetter.com", "people.com", "pixiv.me", "qr.io", "qr.link", "shor.tf", "sketchfab.com",
-					"smartadserver.com", "socialwolvez.com", "stackoverflow.com", "steamcommunity.com", "sub2unlock.io", "sub4unlock.io", "subscribestar.adult", "substack.com",
-					"supernote.com", "support.google.com", "thangs.com", "theonion.com", "throne.com", "tinyurl.com", "t.ly", "toyhou.se", "twitter.com", "unes.co", "ur0.link",
-					"visitlink.me", "vk.com", "xcancel.com", "yewtu.be", "zionism.observer", "z.opnxng.com"
+					"2kgam.es", "ab.co", "abcnews.link", "acer.com", "adfoc.us", "adguardteam.github.io", "admiregirls-byme.com", "adobe.ly", "aje.io", "all-fans.online", 
+					"allegro.pl", "amn.st", "amzn.to", "antifandom.com", "apexpartner.app", "artemislena.eu", "b23.tv", "badgirlsdrop.com", "bambulab.com", "bbc.in", "beacons.ai", 
+					"bfy.tw", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boost.ink", "boosty.to", "breezewiki.com", "bsky.app", "buff.ly", 
+					"bugzil.la", "buymeacoffee.com", "bzfd.it", "carleton.ca", "carrd.co", "cash.app", "catsarch.com", "cbsn.ws", "cemendemons.com", "cfl.re", "chn.ge", "chng.it", 
+					"chtbl.com", "click.fan", "cnb.cx", "cnn.it", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "depravityweb.co", "dotomi.com", "duckduckgo.com", 
+					"econ.st", "eepurl.com", "etsy.me", "fal.cn", "fansly.com", "fansmega.com", "fdip.fr", "firefox.dev", "forms.gle", "free-leaks.com", "frontendfriendly.xyz", 
+					"fxbsky.app", "g.co", "gelbooru.com", "girlcockx.com", "glo.bo", "goldmega.online", "goo.gle", "goo.su", "goodsmile.link", "got.cr", "gumroad.com", 
+					"hamstro.dev", "hmstr.fr", "hotstars-leaks.com", "href.li", "hubs.la", "hulu.tv", "hyperreal.coffee", "ift.tt", "inkbunny.net", "intel.ly", "interc.pt", 
+					"iwe.one", "j.mp", "ja.ma", "jbgm.es", "k00.fr", "kavin.rocks", "kck.st", "kre.pe", "kylrth.com", "l8r.it", "leakutopia.site", "linkr.bio", "linkr.com", 
+					"links-loot.com", "linksloot.net", "linktr.ee", "lmddgtfy.net", "lmgtfy.app", "lmgtfy.com", "lnkd.in", "loot-link.com", "loot-links.com", "lootdest.com", 
+					"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "lunar.icu", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com", "melscience.com", 
+					"metafy.gg", "mint.lgbt", "mol.im", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "newsociety0.co", "nine.social", "ninten.do", 
+					"nitter.net", "nohost.network", "nvda.ws", "nyti.ms", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "opnxng.com", "ow.ly", "paster.so", "pawoo.net", 
+					"people.com", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pnp-drops.me", "poast.org", "politi.co", "premiumstashdrop.com", "prn.to", 
+					"propub.li", "pussthecat.org", "py.pl", "qr.io", "qr.link", "qr1.be", "qrco.de", "qrcodes.pro", "rareofhub.com", "rawbit.ninja", "rdbl.co", "rdcu.be", "redd.it", 
+					"reurl.cc", "reut.rs", "s.team", "s76.co", "sbuxjoin.com", "scim.ag", "secretpack-links.com", "sendgrid.net", "shor.tf", "sketchfab.com", "socialwolvez.com", 
+					"sou42.co", "sponsr.is", "spoti.fi", "spotify.link", "sqex.to", "square.link", "st.news", "stackoverflow.com", "steamcommunity.com", "stupidpenisx.com", 
+					"sub2unlock.com", "sub2unlock.io", "sub4unlock.io", "subscribestar.adult", "substack.com", "t.co", "t.ly", "tavernleaks.com", "tee.pub", "than.gs", "thangs.com", 
+					"theatln.tc", "thecut.io", "theonion.com", "throne.com", "tinylf.com", "tinyurl.com", "tmblr.co", "toyhou.se", "tpu.me", "tr.ee", "umblr.com", "unf.pa", 
+					"uni.cf", "ur0.link", "urldefense.com", "visitlink.me", "w.wiki", "whatever.social", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "x.com", "x.gd", "xcancel.com", 
+					"xhslink.com", "xnaas.github.io", "xprmpacks.com", "yewtu.be", "yiffx.com", "zionism.observer"
 				]
 			},
 			"dm_www_subdomain": {
@@ -228,59 +242,58 @@
 			},
 			"nh_expand_mode": {
 				"bypass_vip": [
-					"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "booo.st", "boost.ink", "bst.gg", "cemendemons.com", "depravityweb.co",
-					"fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com",
-					"lootdest.com", "lootdest.info", "lootdest.org", "loot-link.com", "lootlink.org", "lootlinks.co", "loot-links.com", "mboost.me", "megadropz.com",
-					"megadumpz.com", "mega-guy.com", "newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com",
-					"rareofhub.com", "rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com", "sub2unlock.io",
-					"sub2unlock.net", "sub4unlock.io", "tavernleaks.com", "thepremium.online", "tinylink.onl", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf",
-					"work.ink", "xprmpacks.com"
+					"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "booo.st", "boost.ink", "bst.gg", "cemendemons.com", "depravityweb.co", 
+					"fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com", 
+					"loot-link.com", "loot-links.com", "lootdest.com", "lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", 
+					"megadumpz.com", "newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com", 
+					"rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com", "sub2unlock.io", "sub2unlock.net", 
+					"sub4unlock.io", "tavernleaks.com", "thepremium.online", "tinylink.onl", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", 
+					"xprmpacks.com"
 				],
 				"redirect": [
-					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "abc7.la", "abc7ne.ws", "abcnews.link", "ab.co", "a.co", "adobe.ly", "aje.io", "amn.st", "amzn.asia",
-					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bityl.co", "blizz.ly",
-					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
-					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cnn.it", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me",
-					"diplo.de", "dis.gd", "dlvr.it", "econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co",
-					"glo.bo", "go.forbes.com", "go.france24.com", "gofund.me", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "goodsmile.link", "goo.gl",
-					"goo.gle", "goo.su", "got.cr", "go.undp.org", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt",
-					"iwe.one", "ja.ma", "jbgm.es", "j.mp", "k00.fr", "kck.st", "kre.pe", "l8r.it", "l.euronews.com", "line.ee", "link.animaapp.com", "link.chtbl.com", "linkr.it",
-					"link.space", "l.ledauphine.com", "l.leparisien.fr", "loom.ly", "lpc.ca", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io", "m.sesame.org", "msft.it",
-					"msi.gm", "mzl.la", "nbc4i.co", "nine.social", "ninten.do", "n.opn.tl", "n.pr", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de", "ojrq.net",
-					"on.forbes.com", "on.ft.com", "on.kff.org", "onl.bz", "onl.la", "onl.sc", "onl.tw", "on.nyc.gov", "on.wsj.com", "operagx.gg", "opr.as", "orlo.uk",
-					"peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pl.go-ga.me", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qrco.de", "qr.paps.jp",
-					"rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s76.co", "sbuxjoin.com",
-					"scanqr.to", "scim.ag", "s.click.aliexpress.com", "s.goodsmile.link", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", "shrsl.com",
-					"sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "s.team", "t.co", "thecut.io", "thef.pub", "thrn.co",
-					"tiny.cc", "tinylf.com", "t.ly", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "trib.al", "u.jd.com", "unes.co", "unf.pa", "uniceflink.org", "uni.cf",
-					"ur0.link", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "wccf.tech", "wlgrn.com", "wn.nr", "wp.me", "wwdc.io", "w.wiki", "x.alibaba.com", "xbx.ly",
-					"x.gd", "xhslink.com", "zurl.co"
+					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia", 
+					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bityl.co", "blizz.ly", 
+					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co", 
+					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", 
+					"dis.gd", "dlvr.it", "econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co", "glo.bo", 
+					"go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me", "goo.gl", "goo.gle", 
+					"goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "iwe.one", 
+					"j.mp", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.euronews.com", "l.ledauphine.com", "l.leparisien.fr", "l8r.it", "line.ee", "link.animaapp.com", 
+					"link.chtbl.com", "link.space", "linkr.it", "loom.ly", "lpc.ca", "m.sesame.org", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io", "msft.it", "msi.gm", 
+					"mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de", "ojrq.net", "on.fb.me", 
+					"on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.wsj.com", "onl.bz", "onl.la", "onl.sc", "onl.tw", "operagx.gg", "opr.as", "orlo.uk", "peoplem.ag", 
+					"perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qrco.de", "rb.gy", 
+					"rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s.click.aliexpress.com", 
+					"s.goodsmile.link", "s.spr.ly", "s.team", "s76.co", "sbuxjoin.com", "scanqr.to", "scim.ag", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", 
+					"shrsl.com", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc", "thecut.io", 
+					"thef.pub", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", 
+					"ur0.link", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wlgrn.com", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", 
+					"xhslink.com", "zurl.co"
 				],
 				"sometimes_redirect": [
-					"allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "facebook.com", "gumroad.com", "hisubway.com", "mydealz.de", "old.reddit.com", "ow.ly",
-					"pawoo.net", "qr.io", "qudsnen.co", "reddit.com", "shareasale-analytics.com", "shareasale.com", "sketchfab.com", "snapchat.com", "t2m.io", "teepublic.com",
-					"thangs.com"
+					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "facebook.com", "gumroad.com", "hisubway.com", "mydealz.de", 
+					"old.reddit.com", "ow.ly", "pawoo.net", "qr.io", "qudsnen.co", "reddit.com", "sketchfab.com", "snapchat.com", "t2m.io", "teepublic.com", "thangs.com"
 				],
 				"special": [
-					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw",
-					"bugzil.la", "buymeacoff.ee", "cj.dotomi.com", "click.notification.elsevier.com", "cos.lv", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
-					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "emjcd.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com",
-					"fiverr.com", "global.temu.com", "go.bsky.app", "goodreads.com", "go.shopyourlikes.com", "go.skimresources.com", "goto.walmart.com", "gprivate.com",
-					"gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "lego.com", "li.cnn.com", "link.blissy.com", "linkprotect.cudasvc.com", "link.sfchronicle.com",
-					"l.instagram.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "l.threads.com", "mel.sc", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st", "o93x.net",
-					"on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "pixiv.net", "p.liadm.com", "preview.tinyurl.com",
-					"proxy.notsobot.com", "qr1.be", "qrcc.me", "qrcodes.pro", "qr.link", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc",
-					"ro.blox.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com",
-					"subscribestar.adult", "substack.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tmz.me", "toyhou.se", "tpu.me", "t.umblr.com", "twpf.jp", "u.afp.com",
-					"urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
+					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", 
+					"bugzil.la", "buymeacoff.ee", "cj.dotomi.com", "click.notification.elsevier.com", "cnn.it", "cos.lv", "deviantart.com", "drinkctrl.com", "duckduckgo.com", 
+					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "emjcd.com", "fans.ly", "fansly.com", 
+					"fiverr.com", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com", "gprivate.com", 
+					"gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com", 
+					"link.sfchronicle.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "mel.sc", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st", 
+					"o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com", 
+					"proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", 
+					"ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com", "spotify.link", "ss3.shipstation.com", 
+					"star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tmz.me", 
+					"toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
 				]
 			},
 			"rd_expand_mode": {
-				"redirect": ["a9yw.net", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "visitlink.me"],
+				"redirect": ["a9yw.net", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "visitlink.me", "trib.al"],
 				"sometimes_redirect": ["cmail20.com", "sendgrid.net"],
 				"special": [
-					"alibaba.com", "adj.st", "app.link", "awstrack.me", "carleton.ca", "digidip.net", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "onelink.me", "pulse.ly",
-					"smartadserver.com", "sng.link", "vk.com", "nbcla.com"
+					"adj.st", "alibaba.com", "app.link", "awstrack.me", "carleton.ca", "digidip.net", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "nbcla.com", "onelink.me", 
+					"pulse.ly", "smartadserver.com", "sng.link", "vk.com"
 				]
 			},
 
@@ -288,7 +301,7 @@
 
 			"mobilizer": {
 				"sd_m"              : ["facebook.com", "twitch.tv", "vk.com", "youtube.com"],
-				"sd_mobile"         : [],
+				"sd_mobile"         : ["abc.net.au"],
 				"if_sd_sds_0_m"     : ["bulbagarden.net"],
 				"if_sd_sds_0_mobile": [],
 				"if_sd_sds_1_m"     : ["wikipedia.org"],
@@ -329,21 +342,23 @@
 					{"SetWhole": {"Cache": {
 						"subject": "redirect",
 						"key": {"Part": "Whole"},
-						"value": {"Modified": {
-							"value": {"HttpRequest": {
-								"request": {
-									"const_headers": {"CallArg": "headers"}
-								},
-								"response": {"ExtractFromBody": {
-									"prefix": {"CallArg": "prefix"},
-									"suffix": {"CallArg": "suffix"},
-									"strip_prefix": {"CallArg": "strip_prefix"},
-									"strip_suffix": {"CallArg": "strip_suffix"}
-								}}
-							}},
-							"modification": {"CallArg": "parser"}
-						}}}
-					}}
+						"value": {"HttpRequest": {
+							"request": {
+								"const_headers": {"CallArg": "headers"}
+							},
+							"response": {"ExtractFromBody": {
+								"extractors": [
+									{
+										"prefix": {"CallArg": "prefix"},
+										"suffix": {"CallArg": "suffix"},
+										"strip_prefix": {"CallArg": "strip_prefix"},
+										"strip_suffix": {"CallArg": "strip_suffix"},
+										"parser": {"CallArg": "parser"}
+									}
+								]
+							}}
+						}}
+					}}}
 				]}
 			}},
 
@@ -359,7 +374,8 @@
 					]},
 					"then": {"SetScheme": "https"}
 				}},
-				{"RemoveUTPs": {
+				{"HandleParams": {
+					"fragment": true,
 					"names": "utps",
 					"prefixes": "utp_prefixes",
 					"except_names": {"PartMap": {
@@ -494,11 +510,11 @@
 							}},
 							"ps_0_mobile": {"If": {
 								"if": {"Not": {"PathSegmentIs": {"index": 0, "value": "mobile"}}},
-								"then": {"InsertPathSegment": {"index": 0, "value": "mobile"}}
+								"then": {"InsertPathSegment"  : {"index": 0, "value": "mobile"}}
 							}},
 							"ps_1_mobile": {"If": {
 								"if": {"Not": {"PathSegmentIs": {"index": 1, "value": "mobile"}}},
-								"then": {"InsertPathSegment": {"index": 1, "value": "mobile"}}
+								"then": {"InsertPathSegment"  : {"index": 1, "value": "mobile"}}
 							}},
 
 							"special_1688": {"SetSubdomain": "m"}
@@ -533,10 +549,7 @@
 						}
 					}}
 				}},
-				{"If": {
-					"if": "HostIsFqdn",
-					"then": "RemoveFqdnPeriod"
-				}}
+				{"IgnoreError": "RemoveFqdnPeriod"}
 			]},
 
 
@@ -673,9 +686,12 @@
 										]}
 									}},
 									"app.link": {"All": [
-										"RemoveQuery",
+										{"AllowQueryParam": "$fallback_url"},
 										{"ModifySubdomain": {"StripMaybeSuffix": "-alternate"}},
-										{"ModifyPath": {"StripMaybePrefix": "/e/"}},
+										{"If": {
+											"if": {"Not": {"PathStartsWith": "/e/"}},
+											"then": {"InsertPathSegment": {"index": 0, "value": "e"}}
+										}},
 										{"If": {
 											"if": {"FlagIsNotSet": "no_network"},
 											"then": {"All": [
@@ -693,12 +709,24 @@
 														},
 														"response": {"NoneTo": {
 															"handler": {"Header": "location"},
-															"if_none": {"Modified": {
-																"handler": {"ExtractFromBody": {
-																	"prefix": "<meta property=\"og:url\"",
-																	"suffix": ">"
-																}},
-																"modification": {"GetHtmlAttribute": "content"}
+															"if_none": {"ExtractFromBody": {
+																"extractors": [
+																	{
+																		"prefix": "<meta property=\"og:url\"",
+																		"suffix": ">",
+																		"parser": {"GetHtmlAttribute": "content"}
+																	},
+																	{
+																		"prefix": "<a class=\"secondary-action\"",
+																		"suffix": ">",
+																		"parser": {"GetHtmlAttribute": "href"}
+																	},
+																	{
+																		"prefix": "<div class=\"form-get-the-app\">",
+																		"suffix": "",
+																		"parser": {"Set": {"Part": "Whole"}}
+																	}
+																]
 															}}
 														}}
 													}}}
@@ -784,6 +812,10 @@
 											}
 										}}
 									]},
+									"twitch.com": {"All": [
+										{"SetHost": "www.twitch.tv"},
+										{"RemoveQueryParam": "desktop-redirect"}
+									]},
 									"vk.com": {"If": {
 										"if": {"PathIs": "/away.php"},
 										"then": {"GetUrlFromQueryParam": "to"}
@@ -836,6 +868,7 @@
 								"if": {"PartMap": {
 									"part": "NormalizedHost",
 									"map": {
+										"abc.net.au"              : {"All": [{"PathStartsWith": "/news/"}, {"PathSegmentMatches": {"index": 1, "matcher": "AllAsciiDigit"}}]},
 										"allmylinks.com"          : {"PathIs": "/link/out"},
 										"apexpartner.app"         : {"PathStartsWith": "/redirect/"},
 										"api.pinterest.com"       : {"PathStartsWith": "/url_shortener/"},
@@ -915,10 +948,10 @@
 												"name": "expand_redirect",
 												"args": {
 													"actions": {
-														"after": {"RemoveQueryParamsMatching": {"Any": [
-															{"IsOneOf": ["source", "awc", "sv1", "sv_campaign_id"]},
-															{"StartsWith": "awin_"}
-														]}}
+														"after": {"HandleParams": {
+															"names": ["source", "awc", "sv1", "sv_campaign_id"],
+															"prefixes": ["awin_"]
+														}}
 													}
 												}
 											}}
@@ -953,6 +986,10 @@
 									"buymeacoff.ee": {"SetHost": "buymeacoffee.com"},
 									"cash.me": {"SetHost": "cash.app"},
 									"cj.dotomi.com": {"All": [
+										"RemoveQuery",
+										{"Function": "expand_redirect"}
+									]},
+									"cnn.it": {"All": [
 										"RemoveQuery",
 										{"Function": "expand_redirect"}
 									]},
@@ -1064,7 +1101,6 @@
 														"headers": {
 															"map": {
 																"user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
-																
 															}
 														}
 													}
@@ -1144,24 +1180,43 @@
 												"subject": "redirect",
 												"key": {"Part": "Whole"},
 												"value": {"HttpRequest": {
-													"response": {"TryThenModifiedOrElse": {
-														"try": {"ExtractFromBody": {
-															"prefix": "<br />",
-															"suffix": "</",
-															"strip_prefix": true,
-															"strip_suffix": true
-														}},
-														"modification": {"TryElse": {
-															"try": {"GetHtmlAttribute": "href"},
-															"else": "UnescapeHtml"
-														}},
-														"else": {"Header": "location"}
+													"response": {"NoneTo": {
+														"handler": {"Header": "location"},
+														"if_none": {"ExtractFromBody": {
+															"extractors": [
+																{
+																	"prefix": "<br />",
+																	"suffix": "</",
+																	"strip_prefix": true,
+																	"strip_suffix": true,
+																	"parser": {"TryElse": {
+																		"try": {"GetHtmlAttribute": "href"},
+																		"else": "UnescapeHtml"
+																	}}
+																}
+															]
+														}}
 													}}
 												}}
 											}}}
 										]}
 									}},
 									"l.instagram.com": {"GetUrlFromQueryParam": "u"},
+									"l.mlive.com": {"Function": {
+										"name": "extract_from_body",
+										"args": {
+											"string_sources": {
+												"prefix": "<meta http-equiv=\"refresh\"",
+												"suffix": ">"
+											},
+											"string_modifications": {
+												"parser": {"All": [
+													{"GetHtmlAttribute": "content"},
+													{"KeepAfter": "url="}
+												]}
+											}
+										}
+									}},
 									"l.threads.com": {"GetUrlFromQueryParam": "u"},
 									"lego.com": {"If": {
 										"if": {"All": [
@@ -1329,15 +1384,19 @@
 												"subject": "redirect",
 												"key": {"Part": "Whole"},
 												"value": {"HttpRequest": {
-													"response": {"TryThenModifiedOrElse": {
+													"response": {"TryElse": {
 														"try": {"ExtractFromBody": {
-															"prefix": "<meta http-equiv",
-															"suffix": ">"
+															"extractors": [
+																{
+																	"prefix": "<meta http-equiv",
+																	"suffix": ">",
+																	"parser": {"All": [
+																		{"GetHtmlAttribute": "content"},
+																		{"StripPrefix": "0; url = "}
+																	]}
+																}
+															]
 														}},
-														"modification": {"All": [
-															{"GetHtmlAttribute": "content"},
-															{"StripPrefix": "0; url = "}
-														]},
 														"else": "Url"
 													}}
 												}}
@@ -1400,6 +1459,14 @@
 										}
 									}},
 									"ro.blox.com": {"GetUrlFromQueryParam": "af_web_dp"},
+									"shareasale-analytics.com": {"SetHost": "shareasale.com"},
+									"shareasale.com": {"TryElse": {
+										"try": {"GetUrlFromQueryParam": "urllink"},
+										"else": {"All": [
+											{"AllowQueryParams": ["b", "u", "m"]},
+											{"Function": "expand_redirect"}
+										]}
+									}},
 									"skfb.ly": {"All": [
 										{"SetHost": "sketchfab.com"},
 										{"InsertPathSegment": {"index": 0, "value": "s"}}
@@ -1673,7 +1740,10 @@
 					}},
 					"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
 					"instagram": {"All": [
-						{"RemoveQueryParams": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl"]},
+						{"HandleParams": {
+							"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
+							"prefixes": ["xmt=", "source_", "igsh"]
+						}},
 						{"If": {
 							"if": {"RegDomainIs": "threads.net"},
 							"then": {"SetHost": "www.threads.com"}
@@ -1696,23 +1766,23 @@
 			{"PartMap": {
 				"part": "RegDomain",
 				"map": {
-					"acer.com": {"RemoveQueryParamsMatching": {"StartsWith": "internal_"}},
+					"acer.com": {"HandleParams": {"prefixes": ["internal_"]}},
 					"addons.mozilla.org": {"RemoveQueryParams": ["platform", "appver"]},
 					"amtrak.com": {"RemoveQueryParams": ["atv", "cmp"]},
 					"apexgamingpcs.com": {"RemoveQueryParams": ["linkId", "affluencerId"]},
 					"atom.bio": {"RemoveQueryParam": "menu_origin"},
-					"bbc.com": {"RemoveQueryParamsMatching": {"StartsWith": "at_"}},
+					"bbc.com": {"HandleParams": {"prefixes": ["at_"]}},
 					"be.net": {"SetHost": "www.behance.net"},
-					"beacons.ai": {"RemoveQueryParamsMatching": {"Any": [
-						{"StartsWith": "refer"},
-						{"IsOneOf": ["pageViewSource", "show_back_button"]}
-					]}},
+					"beacons.ai": {"HandleParams": {
+						"names": ["pageViewSource", "show_back_button"],
+						"prefixes": ["refer"]
+					}},
 					"bell.ca": {"If": {
 						"if": {"PathIs": "/incrediblebundle"},
 						"then": {"SetWhole": "https://www.bell.ca/Bell-Promotions/Promo-code"},
 						"else": {"All": [
-							{"RemoveQueryParams": ["INT", "EXT"]},
-							{"RemoveFragmentParams": ["INT", "EXT"]}
+							{"RemoveFragmentParams": ["INT", "EXT"]},
+							{"RemoveQueryParams": ["INT", "EXT"]}
 						]}
 					}},
 					"boosty.to": {"RemoveQueryParam": "share"},
@@ -1727,7 +1797,7 @@
 					"cbsnews.com": {"RemoveQueryParams": ["ftag", "linkId"]},
 					"change.org": {"All": [
 						{"ModifyPath": {"KeepMaybeBefore": "/exp/"}},
-						{"RemoveQueryParamsMatching": {"StartsWith": "recruit"}}
+						{"HandleParams": {"prefixes": ["recruit"]}}
 					]},
 					"cnbc.com": {"RemoveQueryParam": "par"},
 					"cnn.com": {"All": [
@@ -1809,7 +1879,7 @@
 						"then": {"RemoveQueryParam": "tags"}
 					}},
 					"go.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
-					"gofundme.com": {"RemoveQueryParams": ["attribution_id", "ts", "v"]},
+					"gofundme.com": {"RemoveQueryParams": ["attribution_id", "ts", "v", "lang"]},
 					"goodreads.com": {"If": {
 						"if": {"PathStartsWith": "/book/show/"},
 						"then": "RemoveQuery",
@@ -1819,10 +1889,10 @@
 						"if": {"FragmentIsSomeAndStartsWith": "link_time"},
 						"then": "RemoveFragment"
 					}},
-					"hp.com": {"RemoveQueryParamsMatching": {"Any": [
-						{"IsOneOf": ["jumpid", "_its", "adcampaigngroup", "campaignID", "source", "subacctid", "subacctname"]},
-						{"StartsWith": "sv_"}
-					]}},
+					"hp.com": {"HandleParams": {
+						"names": ["jumpid", "_its", "adcampaigngroup", "campaignID", "source", "subacctid", "subacctname"],
+						"prefixes": ["sv_"]
+					}},
 					"hulu.com": {"RemoveQueryParam": "from"},
 					"inkbunny.net": {"If": {
 						"if": {"PathIs": "/submissionsviewall.php"},
@@ -1839,6 +1909,7 @@
 						"if": {"PathStartsWith": "/petition/"},
 						"then": "RemoveQuery"
 					}},
+					"kff.org": {"RemoveQueryParams": ["campaign_id", "emc", "instance_id", "nl", "regi_id", "segment_id", "te", "user_id"]},
 					"lego.com": {"All": [
 						{"If": {
 							"if": {"FlagIsNotSet": "keep_affiliate"},
@@ -1849,17 +1920,24 @@
 							"then": {"SetHost": "www.lego.com"}
 						}}
 					]},
-					"lenovo.com": {"RemoveQueryParams": ["IPromoID", "orgRef"]},
-					"linktr.ee": {"RemoveQueryParamsMatching": {"Any": [
-						{"IsOneOf": ["ltsid"]},
-						{"StartsWith": "lt_utm"}
-					]}},
+					"lenovo.com": {"If": {
+						"if": {"FlagIsSet": "keep_affiliate"},
+						"then": {"RemoveQueryParams": ["IPromoID", "orgRef", "gad_campaignid", "s_kwcid", "ef_id", "Program", "pid"]},
+						"else": {"RemoveQueryParams": ["IPromoID", "orgRef", "gad_campaignid", "s_kwcid", "ef_id", "Program", "pid", "acid"]}
+					}},
+					"linktr.ee": {"HandleParams": {
+						"names": ["ltsid"],
+						"prefixes": ["lt_utm"]
+					}},
 					"loblaws.ca": {"RemoveQueryParams": ["navid", "icid", "icta"]},
 					"marshmallow-qa.com": {"RemoveQueryParam": "t"},
 					"marvel.com": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
 					"minds.com": {"RemoveQueryParam": "referrer"},
 					"nature.com": {"RemoveQueryParam": "sharing_token"},
-					"nytimes.com": {"RemoveQueryParams": ["smid", "smtyp"]},
+					"nytimes.com": {"HandleParams": {
+						"names": ["smid", "smtyp", "source", "campaign_id", "emc", "instance_id", "nl", "regi_id", "user_id"],
+						"prefixes": ["source"]
+					}},
 					"overpass-turbo.eu": {"If": {
 						"if": {"PathStartsWith": "/s/"},
 						"then": {"Function": "expand_redirect"}
@@ -1911,7 +1989,7 @@
 						]},
 						"then": {"RemoveQueryParam": "tags"}
 					}},
-					"snapchat.com": {"RemoveQueryParams": ["purpose", "sp", "invite_id", "share_id", "sid"]},
+					"snapchat.com": {"RemoveQueryParams": ["purpose", "sp", "invite_id", "share_id", "sid", "sender_web_id", "device_type", "is_copy_url"]},
 					"spotify.com": {"All": [
 						{"If": {
 							"if": {"PathSegmentIs": {"index": 1, "value": "album"}},
@@ -1949,10 +2027,10 @@
 						{"SetHost": "throne.com"},
 						{"RemovePathSegment": 0}
 					]},
-					"tiktok.com": {"RemoveQueryParamsMatching": {"Any": [
-						{"IsOneOf": ["checksum", "source", "u_code", "timestamp", "user_id", "enable_checksum"]},
-						{"ContainsAny": {"values": ["_", "sec_", "ug", "is_from", "sender", "share", "social_"], "at": "Start"}}
-					]}},
+					"tiktok.com": {"HandleParams": {
+						"names": ["checksum", "source", "u_code", "timestamp", "user_id", "enable_checksum", "web_id", "lang"],
+						"prefixes": ["_", "sec_", "ug", "is_from", "sender", "share", "social_"]
+					}},
 					"tumblr.com": {"All": [
 						{"If": {
 							"if": {"SubdomainIs": "at"},
@@ -2000,6 +2078,7 @@
 							]}
 						}}
 					]},
+					"twitch.tv": {"RemoveQueryParam": "desktop-redirect"},
 					"twitter.com": {"SetHost": "x.com"},
 					"washingtonpost.com": {"All": [
 						{"If": {
@@ -2011,10 +2090,9 @@
 							{"Contains": {"value": " "}}
 						]}}
 					]},
-					"xiaohongshu.com": {"RemoveQueryParamsMatching": {"ContainsAny": {
-						"values": ["xsec", "xhs", "app", "share", "author_share"],
-						"at": "Start"
-					}}},
+					"xiaohongshu.com": {"HandleParams": {
+						"prefixes": ["xsec", "xhs", "app", "share", "author_share"]
+					}},
 					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
 					"youtu.be": {"All": [
 						{"RemoveQueryParams": ["si", "feature", "pp"]},
@@ -2071,6 +2149,7 @@
 			{"PartMap": {
 				"part": "NormalizedHost",
 				"map": {
+					"abc.net.au": {"RemoveQueryParam": "future"},
 					"abc7ny.com": {"RemoveQueryParams": ["ex_cid", "taid"]},
 					"actionnetwork.org": {"RemoveQueryParam": "source"},
 					"aliexpress.com": {"If": {
@@ -2090,16 +2169,19 @@
 									"index": 1,
 									"matcher": {"All": [
 										{"Not": {"EndsWith": ".bsky.social"}},
-										{"ErrorToSatisfied": {"Modified": {
-											"modification": {"KeepAfter": "."},
-											"matcher": {"IsPrefixOf": "bsky.social"}
-										}}}
+										{"Modified": {
+											"modification": {"TryElse": {
+												"try": {"StripBefore": "."},
+												"else": {"Set": ""}
+											}},
+											"matcher": {"IsPrefixOf": ".bsky.social"}
+										}}
 									]}
 								}},
 								"then": {"ModifyPathSegment": {
 									"index": 1,
 									"modification": {"All": [
-										{"IgnoreError": {"KeepBefore": "."}},
+										{"KeepMaybeBefore": "."},
 										{"Append": ".bsky.social"}
 									]}
 								}}
@@ -2128,21 +2210,9 @@
 						"if": {"FlagIsNotSet": "keep_affiliate"},
 						"then": {"RemoveQueryParam": "hss_channel"}
 					}},
-					"ledauphine.com": {"RemoveQueryParamsMatching": {"StartsWith": "at_"}},
-					"l.mlive.com": {"Function": {
-						"name": "extract_from_body",
-						"args": {
-							"string_sources": {
-								"prefix": "<meta http-equiv=\"refresh\"",
-								"suffix": ">"
-							},
-							"string_modifications": {
-								"parser": {"All": [
-									{"GetHtmlAttribute": "content"},
-									{"KeepAfter": "url="}
-								]}
-							}
-						}
+					"ledauphine.com": {"HandleParams": {
+						"names": "__twitter_impression",
+						"prefixes": ["at_"]
 					}},
 					"leaffilter.ca": {"If": {
 						"if": {"PathIs": "/fvoautumn"},
@@ -2169,6 +2239,7 @@
 						}}
 					]},
 					"reuters.com": {"RemoveQueryParam": "taid"},
+					"sfchronicle.com": {"RemoveQueryParams": ["hash", "time", "rid", "sid", "ss", "st_rid", "sharecount"]},
 					"stackoverflow.com": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"SetPath": "/questions"}
@@ -2188,9 +2259,11 @@
 							{"Part": "Path"}
 						]
 					}}},
-					"twitch.com": {"SetHost": "www.twitch.tv"},
 					"wh.gov": {"SetHost": "www.whitehouse.gov"},
-					"wsj.com": {"RemoveQueryParam": "mod"},
+					"wsj.com": {"HandleParams": {
+						"names": ["mod", "reflink", "locale"],
+						"prefixes": ["gaa_"]
+					}},
 					"x.com": {"All": [
 						{"If": {
 							"if": {"PathIs": "/i/flow/login"},
@@ -2228,54 +2301,44 @@
 			{"PartMap": {
 				"part": "DomainMiddle",
 				"map": {
-					"amazon": {"If": {
-						"if": {"PathContains": {"value": "/dp/"}},
-						"then": {"All": [
-							{"If": {
-								"if": {"FlagIsSet": "keep_affiliate"},
-								"then": {"AllowQueryParams": ["aod", "tag"]},
-								"else": {"AllowQueryParam": "aod"}
-							}},
-							{"ModifyPath": {"All": [
-								{"StripBefore": "/dp/"},
-								{"KeepMaybeBefore": "/ref="}
-							]}}
-						]},
-						"else": {"All": [
-							{"If": {
-								"if": {"PathSegmentStartsWith": {
-									"index": -1,
-									"value": "ref="
+					"amazon": {"All": [
+						{"ModifyPath": {"All": [
+							{"StripMaybeBefore": "/dp/"},
+							{"KeepMaybeBefore": "/ref="}
+						]}},
+						{"PartMap": {
+							"part": {"PathSegment": 0},
+							"map": {
+								"amazonprime": "RemoveQuery",
+								"dp": {"If": {
+									"if": {"FlagIsSet": "keep_affiliate"},
+									"then": {"AllowQueryParams": ["aod", "tag"]},
+									"else": {"AllowQueryParam": "aod"}
 								}},
-								"then": {"RemovePathSegment": -1}
-							}},
-							{"PartMap": {
-								"part": "Path",
-								"map": {
-									"/s": {"AllowQueryParams": ["k", "i", "rh", "bbn", "me"]},
-									"/gp/buyagain": {"AllowQueryParam": "ats"},
-									"/gp/customer-reviews": "RemoveQuery",
-									"/amazonprime": "RemoveQuery"
-								},
-								"else": {"If": {
-									"if": {"PathStartsWith": "/gp/offer-listing/"},
-									"then": {"All": [
-										{"ModifyPath": {"Replacen": {
+								"gp": {"PartMap": {
+									"part": {"PathSegment": 1},
+									"map": {
+										"buyagain": {"AllowQueryParam": "ats"},
+										"customer-reviews": "RemoveQuery",
+										"offer-listing": {"All": [
+											{"SetQuery": "aod=1"},
+											{"ModifyPath": {"Replacen": {
 												"find": "gp/offer-listing",
 												"replace": "dp",
 												"count": 1
-										}}},
-										{"SetQuery": "aod=1"}
-									]},
-									"else": {"RemoveQueryParamsMatching": {"Any": [
-										{"IsOneOf": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref", "lp_context_asin"]},
-										{"StartsWith": "pd_"},
-										{"StartsWith": "pf_"}
-									]}}
-								}}
+											}}}
+										]}
+									}
+								}},
+								"s": {"AllowQueryParams": ["k", "i", "rh", "bbn", "me"]},
+								"stores": "RemoveQuery"
+							},
+							"else": {"HandleParams": {
+								"names": ["ref", "ref_", "ie", "_encoding", "content-id", "store_ref", "lp_context_asin"],
+								"prefixes": ["pd_", "pf_"]
 							}}
-						]}
-					}},
+						}}
+					]},
 					"bestbuy": {"RemoveQueryParam": "icmp"},
 					"ebay": {"If": {
 						"if": {"PathStartsWith": "/itm/"},
@@ -2285,7 +2348,10 @@
 						{"PartMap": {
 							"part": "Path",
 							"map": {
-								"/search": {"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs", "nfpr", "start"]},
+								"/search": {"All": [
+									{"AllowQueryParams": ["hl", "q", "tbm", "p", "udm", "filter", "vsrid", "vsdim", "vsint", "ins_vfs", "nfpr", "start"]},
+									{"RemoveFragmentParam": "sv"}
+								]},
 								"/setprefs": {"RemoveQueryParams": ["sa", "ved", "sca_esv", "usp"]}
 							},
 							"else": {"RemoveQueryParams": ["sca_esv", "usp"]}

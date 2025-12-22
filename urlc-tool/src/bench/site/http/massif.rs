@@ -33,7 +33,7 @@ impl Args {
                 "-q",
                 "--tool=massif",
                 &format!("--massif-out-file={out}"),
-                "target/release/url-cleaner-site",
+                BINDIR.join("url-cleaner-site").to_str().unwrap(),
                 "--port", "9148",
                 "--max-payload", "1GiB"
             ])

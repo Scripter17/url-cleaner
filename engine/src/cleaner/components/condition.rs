@@ -1483,7 +1483,7 @@ impl Condition {
             Self::Error(msg) => Err(ConditionError::ExplicitError(msg.clone()))?,
             Self::Debug(condition) => {
                 let is_satisfied = condition.check(task_state);
-                eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
+                eprintln!("=== Condition::Debug ===\nCondition: {condition:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
 

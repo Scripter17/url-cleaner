@@ -35,7 +35,7 @@ impl Args {
 
         let out = format!("{OUT}/hyperfine.out-{}-{}.json", self.name, self.num);
 
-        let _server = TerminateOnDrop(Command::new("target/release/url-cleaner-site")
+        let _server = TerminateOnDrop(Command::new(BINDIR.join("url-cleaner-site"))
             .args(["--port", "9148"])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())

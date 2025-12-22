@@ -113,10 +113,8 @@ struct Args {
     threads: usize,
 
     /// The size of the STDOUT buffer.
-    /// When STDOUT is a terminal, defaults to 0.
-    /// Otherwise defaults to 8192.
-    #[arg(long, verbatim_doc_comment)]
-    output_buffer: Option<usize>,
+    #[arg(long, verbatim_doc_comment, default_value_t = 0)]
+    output_buffer: usize,
 
     /// If set, check that the loaded Cleaner (+ParamsDiff and ProfilesConfig and whatnot) is "suitable" to be the Bundled Cleaner.
     /// If it is, exit without doing anything else. If it isn't panic with a message.
@@ -130,18 +128,12 @@ struct Args {
 pub enum CliError {
     /// Returned when a [`GetCleanerError`] is encountered.
     #[error(transparent)] GetCleanerError(#[from] GetCleanerError),
-    /// Returned when unable to load a [`ParamsDiff`] file.
-    #[error(transparent)] CantLoadProfiles(std::io::Error),
-    /// Returned when unable to parse a [`ParamsDiff`] file.
-    #[error(transparent)] CantParseProfiles(serde_json::Error),
-    /// Returned when unable to load a [`ParamsDiff`] file.
-    #[error(transparent)] CantLoadParamsDiff(std::io::Error),
-    /// Returned when unable to parse a [`ParamsDiff`] file.
-    #[error(transparent)] CantParseParamsDiff(serde_json::Error),
-    /// Returned when unable to load a [`JobContext`] file.
-    #[error(transparent)] CantLoadJobContext(std::io::Error),
-    /// Returned when unable to parse a [`JobContext`] file.
-    #[error(transparent)] CantParseJobContext(serde_json::Error),
+    /// Returned when a [`GetParamsDiffError`] is encountered.
+    #[error(transparent)] GetParamsDiffError(#[from] GetParamsDiffError),
+    /// Returned when a [`GetProfilesConfigError`] is encountered.
+    #[error(transparent)] GetProfilesConfigError(#[from] GetProfilesConfigError),
+    /// Returned when a [`GetJobContextError`] is encountered.
+    #[error(transparent)] GetJobContextError(#[from] GetJobContextError),
     /// Returned when the requested [`Profile`] isn't found.
     #[error("The requested Profile wasn't found.")]
     ProfileNotFound
@@ -151,19 +143,13 @@ fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
     #[cfg(feature = "bundled-cleaner")]
-    let mut cleaner = Cleaner::load_or_get_bundled_no_cache(args.cleaner.as_deref())?;
+    let mut cleaner = Cleaner::load_or_get_bundled_no_cache(args.cleaner)?;
     #[cfg(not(feature = "bundled-cleaner"))]
-    let mut cleaner = Cleaner::load_from_file(&args.cleaner)?;
+    let mut cleaner = Cleaner::load_from_file(args.cleaner)?;
 
-    let profiles_config: Option<ProfilesConfig> = match args.profiles {
-        Some(path) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadProfiles)?).map_err(CliError::CantParseProfiles)?,
-        None => Default::default()
-    };
-
-    let params_diff: Option<ParamsDiff> = match args.params_diff {
-        Some(path) => Some(serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadParamsDiff)?).map_err(CliError::CantParseParamsDiff)?),
-        None => None
-    };
+    let profiles_config = args.profiles   .map(ProfilesConfig::load_from_file).transpose()?;
+    let params_diff     = args.params_diff.map(ParamsDiff    ::load_from_file).transpose()?;
+    let job_context     = args.job_context.map(JobContext    ::load_from_file).transpose()?.unwrap_or_default();
 
     if args.assert_suitability {
         let profiled_cleaner = ProfiledCleanerConfig {
@@ -219,11 +205,6 @@ fn main() -> Result<(), CliError> {
         cleaner.params.vars.to_mut().insert(name, value);
     }
 
-    let job_context = match args.job_context {
-        Some(path) => serde_json::from_str(&std::fs::read_to_string(path).map_err(CliError::CantLoadJobContext)?).map_err(CliError::CantParseJobContext)?,
-        None => Default::default()
-    };
-
     // Do the job.
 
     // The general idea is:
@@ -244,7 +225,7 @@ fn main() -> Result<(), CliError> {
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
     let (out_senders   , out_recievers   ) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
 
-    let job_config = &Job {
+    let job = &Job {
         context: job_context,
         cleaner,
         unthreader: &Unthreader::r#if(args.unthread),
@@ -327,7 +308,7 @@ fn main() -> Result<(), CliError> {
                         Ok(buf) => {
                             let task = (&buf).make_task();
                             let _ = brs.send(buf); // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
-                            match job_config.r#do(task) {
+                            match job.r#do(task) {
                                 Ok(x) => x.into(),
                                 Err(e) => format!("-{e:?}")
                             }
@@ -342,16 +323,7 @@ fn main() -> Result<(), CliError> {
 
         // Stdout stuff.
 
-        let stdout = std::io::stdout().lock();
-        let buffer_size = match args.output_buffer {
-            Some(x) => x,
-            None => if stdout.is_terminal() {
-                0
-            } else {
-                8192
-            }
-        };
-        let mut stdout = BufWriter::with_capacity(buffer_size, stdout);
+        let mut stdout = BufWriter::with_capacity(args.output_buffer, std::io::stdout().lock());
 
         for or in {out_recievers}.iter().cycle() {
             match or.recv() {

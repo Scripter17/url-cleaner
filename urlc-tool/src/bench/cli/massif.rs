@@ -32,9 +32,9 @@ impl Args {
             .args([
                 "-q",
                 "--tool=massif",
-                &format!("--massif-out-file={out}"),
-                "target/release/url-cleaner"
+                &format!("--massif-out-file={out}")
             ])
+            .arg(BINDIR.join("url-cleaner"))
             .stdin(File::open(stdin.path()).unwrap())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())

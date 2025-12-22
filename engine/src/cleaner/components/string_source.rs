@@ -799,7 +799,7 @@ impl StringSource {
             },
             Self::Debug(source) => {
                 let ret = source.get(task_state);
-                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\ntask_state: {task_state:?}\nret: {ret:?}");
+                eprintln!("=== StringSource::Debug ===\nSource: {source:?}\nret: {ret:?}");
                 ret?
             },
             Self::NoneTo {value, if_none} => match value.get(task_state)? {

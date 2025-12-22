@@ -4,14 +4,18 @@
 #![allow(clippy::indexing_slicing  , reason = "Internal tool. I can fix it when it breads.")]
 #![allow(clippy::missing_panics_doc, reason = "Internal tool. I can fix it when it breads.")]
 
+pub mod compile;
+pub mod doc;
+pub mod test;
+pub mod bench;
+pub mod foldent;
+pub mod domains;
+pub mod www;
+pub mod get;
+pub mod filter;
 pub mod fs;
 pub mod command;
 pub mod util;
-pub mod compile;
-pub mod get;
-pub mod filter;
-pub mod bench;
-pub mod test;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
@@ -20,6 +24,7 @@ pub mod prelude {
     pub use std::io::{Write, BufReader, BufRead};
     pub use std::process::Command;
     pub use std::borrow::Cow;
+    pub use std::sync::{OnceLock, LazyLock};
 
     pub use regex::Regex;
     pub use num_format::{Locale, ToFormattedString};
@@ -28,34 +33,69 @@ pub mod prelude {
     pub use super::fs::*;
     pub use super::command::*;
     pub use super::util::*;
+
+    pub use super::{BINDIR, DEBUG};
 }
 
 use prelude::*;
 
+/// The directory of the binaries.
+pub static BINDIR: LazyLock<PathBuf> = LazyLock::new(|| {
+    let mut ret = std::env::current_exe().unwrap();
+    ret.pop();
+    ret.pop();
+    ret.push(if *DEBUG.get().unwrap() {"debug"} else {"release"});
+    ret
+});
+
+/// Whether to use debug mode.
+pub static DEBUG: OnceLock<bool> = OnceLock::new();
+
 /// Internal tool to develop URL Cleaner.
 ///
-/// Very fragile.
+/// Very fragile; Don't expect things to handle edge cases at all.
 #[allow(clippy::missing_docs_in_private_items, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
-enum Args {
+struct Args {
+    /// Use debug builds.
+    #[arg(long)]
+    debug: bool,
+    #[command(subcommand)]
+    subcommand: Subcommand
+}
+
+/// The command to do.
+#[allow(clippy::missing_docs_in_private_items, reason = "Makes clap inherit the docs.")]
+#[derive(Debug, Parser)]
+enum Subcommand {
     Compile(compile::Args),
+    Doc(doc::Args),
+    Test(test::Args),
+    #[command(subcommand)]
+    Bench(bench::Args),
+    Foldent(foldent::Args),
+    Domains(domains::Args),
+    Www(www::Args),
     #[command(subcommand)]
     Get(get::Args),
     Filter(filter::Args),
-    #[command(subcommand)]
-    Bench(bench::Args),
-    Test(test::Args)
 }
 
 impl Args {
     /// Do the command.
     fn r#do(self) {
-        match self {
-            Args::Compile(args) => args.r#do(),
-            Args::Get    (args) => args.r#do(),
-            Args::Filter (args) => args.r#do(),
-            Args::Bench  (args) => args.r#do(),
-            Args::Test   (args) => args.r#do()
+        DEBUG.set(self.debug).unwrap();
+
+        match self.subcommand {
+            Subcommand::Compile(args) => args.r#do(),
+            Subcommand::Doc    (args) => args.r#do(),
+            Subcommand::Test   (args) => args.r#do(),
+            Subcommand::Bench  (args) => args.r#do(),
+            Subcommand::Foldent(args) => args.r#do(),
+            Subcommand::Domains(args) => args.r#do(),
+            Subcommand::Www    (args) => args.r#do(),
+            Subcommand::Get    (args) => args.r#do(),
+            Subcommand::Filter (args) => args.r#do()
         }
     }
 }

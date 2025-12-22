@@ -58,8 +58,11 @@ impl Args {
         std::fs::create_dir_all(TMP).unwrap();
 
         if self.assert_suitability {
-            assert_eq!(Command::new("target/debug/url-cleaner")
-                .arg("--assert-suitability")
+            assert_eq!(Command::new(BINDIR.join("url-cleaner"))
+                .args([
+                    "--assert-suitability",
+                    "--cleaner", "engine/src/cleaner/bundled-cleaner.json"
+                ])
                 .spawn().unwrap().wait().unwrap().code(), Some(0));
         }
 
@@ -76,10 +79,9 @@ impl Args {
                 continue;
             }
 
-            let mut command = Command::new("target/debug/url-cleaner");
+            let mut command = Command::new(BINDIR.join("url-cleaner"));
 
             command.args([
-                "--output-buffer", "0",
                 "--no-read-cache",
                 "--no-write-cache",
                 "--cleaner", "engine/src/cleaner/bundled-cleaner.json"

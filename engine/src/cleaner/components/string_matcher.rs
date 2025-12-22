@@ -499,7 +499,7 @@ impl StringMatcher {
             Self::Error(msg) => Err(StringMatcherError::ExplicitError(msg.clone()))?,
             Self::Debug(matcher) => {
                 let is_satisfied=matcher.check(haystack, task_state);
-                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\ntask_state: {task_state:?}\nSatisfied?: {is_satisfied:?}");
+                eprintln!("=== StringMatcher::Debug ===\nMatcher: {matcher:?}\nHaystack: {haystack:?}\nSatisfied?: {is_satisfied:?}");
                 is_satisfied?
             },
 

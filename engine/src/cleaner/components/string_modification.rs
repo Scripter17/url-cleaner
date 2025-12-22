@@ -16,11 +16,15 @@ use percent_encoding::percent_decode_str as pds;
 use crate::prelude::*;
 
 /// Modify a string.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
+///
+/// Defaults to [`Self::None`].
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Suitability)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub enum StringModification {
     /// Doesn't do any modification.
+    ///
+    /// The default variant.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::docs::*;
@@ -32,6 +36,7 @@ pub enum StringModification {
     ///
     /// assert_eq!(to, Some("abc".into()));
     /// ```
+    #[default]
     None,
 
 
@@ -1060,7 +1065,7 @@ impl StringModification {
             Self::Debug(modification) => {
                 let to_before_mapper=to.clone();
                 let modification_result=modification.apply(to, task_state);
-                eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\ntask_state: {task_state:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
+                eprintln!("=== StringModification::Debug ===\nModification: {modification:?}\nString before mapper: {to_before_mapper:?}\nModification return value: {modification_result:?}\nString after mapper: {to:?}");
                 modification_result?;
             },
             Self::IgnoreError(modification) => {let _=modification.apply(to, task_state);},

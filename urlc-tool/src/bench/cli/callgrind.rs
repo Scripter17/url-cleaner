@@ -33,9 +33,9 @@ impl Args {
                 "-q",
                 "--tool=callgrind",
                 "--separate-threads=yes",
-                &format!("--callgrind-out-file={out}"),
-                "target/release/url-cleaner"
+                &format!("--callgrind-out-file={out}")
             ])
+            .arg(BINDIR.join("url-cleaner"))
             .stdin(File::open(stdin.path()).unwrap())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())

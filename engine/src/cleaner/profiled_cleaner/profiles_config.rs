@@ -1,8 +1,12 @@
 //! [`ProfilesConfig`].
 
 use std::collections::HashMap;
+use std::io;
+use std::path::Path;
+use std::fs::read_to_string;
 
 use serde::{Serialize, Deserialize};
+use thiserror::Error;
 
 use crate::prelude::*;
 
@@ -28,6 +32,13 @@ pub struct ProfilesConfig {
 }
 
 impl ProfilesConfig {
+    /// Load [`Self`] from a JSON file.
+    /// # Errors
+    #[doc = edoc!(callerr(std::fs::read_to_string), callerr(serde_json::from_str))]
+    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<ProfilesConfig, GetProfilesConfigError> {
+        serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
+    }
+
     /// Get the specified [`ProfileConfig`].
     pub fn get<'a>(&'a self, name: Option<&str>) -> Option<&'a ProfileConfig> {
         match name {
@@ -53,4 +64,15 @@ impl ProfilesConfig {
             base
         }
     }
+}
+
+/// The enum of errors that can happen when loading a [`ProfilesConfig`].
+#[derive(Debug, Error)]
+pub enum GetProfilesConfigError {
+    /// Returned when loading a [`ProfilesConfig`] fails.
+    #[error(transparent)]
+    CantLoadProfilesConfig(#[from] io::Error),
+    /// Returned when deserializing a [`ProfilesConfig`] fails.
+    #[error(transparent)]
+    CantParseProfilesConfig(#[from] serde_json::Error),
 }

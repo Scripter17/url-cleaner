@@ -925,26 +925,43 @@ pub enum Action {
 
     // Misc.
 
-    /// Remove parameters from both the query and fragment.
-    ///
-    /// For each parameter, if its name is in [`Self::RemoveUTPs::names`] or starts with a string in [`Self::RemoveUTPs::prefixes`] and neither is in [`Self::RemoveUTPs::except_names`] or starts with a value in [`Self::RemoveUTPs::except_prefixes`], remove the segment.
-    ///
-    /// The exception stuff is because certain websites use parameters that are normall for tracking for actual features.
-    ///
-    /// Treats [`SetSource::get`]/[`ListSource::get`] returning [`None`] as if they returned an empty set/list.
+    /// Select query and/or fragment parameters to remove/keep by name and prefix.
     /// # Errors
     #[doc = edoc!(geterr(SetSource, 2), geterr(ListSource, 2))]
-    RemoveUTPs {
-        /// The names of segments to remove.
+    HandleParams {
+        /// The mode to use.
+        ///
+        /// Defaults to [`HandleParamsMode::Remove`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        mode: HandleParamsMode,
+        /// If [`true`], handle query parameters.
+        ///
+        /// Defaults to [`true`].
+        #[serde(default = "get_true", skip_serializing_if = "is_true")]
+        query: bool,
+        /// If [`true`], handle fragment parameters.
+        ///
+        /// Defaults to [`false`].
+        #[serde(default, skip_serializing_if = "is_default")]
+        fragment: bool,
+        /// The names of segments to match.
+        ///
+        /// Defaults to [`SetSource::None`].
         #[serde(default, skip_serializing_if = "is_default")]
         names: SetSource,
-        /// The prefixes of segments to remove.
+        /// The prefixes of segments to match.
+        ///
+        /// Defaults to [`ListSource::None`].
         #[serde(default, skip_serializing_if = "is_default")]
         prefixes: ListSource,
-        /// The names of segments to not remove.
+        /// The names of segments to not match.
+        ///
+        /// Defaults to [`SetSource::None`].
         #[serde(default, skip_serializing_if = "is_default")]
         except_names: SetSource,
-        /// The prefixes of segments to not remove.
+        /// The prefixes of segments to not match.
+        ///
+        /// Defaults to [`ListSource::None`].
         #[serde(default, skip_serializing_if = "is_default")]
         except_prefixes: ListSource
     },
@@ -1008,6 +1025,20 @@ pub enum Action {
 }
 
 string_or_struct_magic!(Action);
+
+/// Decides if [`HandleParamsMode`] should remove matching parameters or keep only matching parameters.
+///
+/// Defaults to [`Self::Remove`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+pub enum HandleParamsMode {
+    /// Remove matching parameters.
+    ///
+    /// The default.
+    #[default]
+    Remove,
+    /// Keep only matching parameters.
+    Keep
+}
 
 /// The error returned when trying to deserialize a [`StringModification`] variant with fields that aren't all defaultable.
 #[derive(Debug, Error)]
@@ -1647,7 +1678,7 @@ impl Action {
 
             // Misc.
 
-            Self::RemoveUTPs {names, prefixes, except_names, except_prefixes} => if task_state.url.query().is_some() || task_state.url.fragment().is_some() {
+            Self::HandleParams {mode, query, fragment, names, prefixes, except_names, except_prefixes} => if (*query && task_state.url.query().is_some()) || (*fragment && task_state.url.fragment().is_some()) {
                 let default_list = Default::default();
                 let default_set = Default::default();
 
@@ -1665,30 +1696,37 @@ impl Action {
                 let except_prefixes = except_prefixes.get(task_state)?.unwrap_or(&default_list);
                 let excepts = !except_names.is_empty() || !except_prefixes.is_empty();
 
-                let new_query = task_state.url.query().map(|query| {
-                    let mut new = String::with_capacity(query.len());
-                    for param in query.split('&') {
-                        let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
-                        if !(names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix))) || (excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix)))) {
-                            if !new.is_empty() {new.push('&');}
-                            new.push_str(param);
-                        }
-                    }
-                    if new.is_empty() {None} else {Some(new)}
-                });
-                let new_fragment = task_state.url.fragment().map(|fragment| {
+                if *fragment && let Some(fragment) = task_state.url.fragment() {
                     let mut new = String::with_capacity(fragment.len());
                     for param in fragment.split('&') {
                         let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
-                        if !(names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix))) || (excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix)))) {
+
+                        let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
+                            && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
+
+                        if matches!((mode, matches), (HandleParamsMode::Keep, true) | (HandleParamsMode::Remove, false)) {
                             if !new.is_empty() {new.push('&');}
                             new.push_str(param);
                         }
                     }
-                    if new.is_empty() {None} else {Some(new)}
-                });
-                if let Some(new_query   ) = new_query    {task_state.url.set_query   (new_query   .as_deref());}
-                if let Some(new_fragment) = new_fragment {task_state.url.set_fragment(new_fragment.as_deref());}
+                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                }
+
+                if *query && let Some(query) = task_state.url.query() {
+                    let mut new = String::with_capacity(query.len());
+                    for param in query.split('&') {
+                        let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
+
+                        let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
+                            && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
+
+                        if matches!((mode, matches), (HandleParamsMode::Keep, true) | (HandleParamsMode::Remove, false)) {
+                            if !new.is_empty() {new.push('&');}
+                            new.push_str(param);
+                        }
+                    }
+                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                }
             },
 
 
