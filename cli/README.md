@@ -10,6 +10,15 @@ Licensed under the Affero General Public License V3 or later.
 
 https://www.gnu.org/licenses/agpl-3.0.html
 
-## Formatting
+## Format
 
-See [`formatting.md`](../formatting.md) for details on how tasks and results are formatted.
+URL Cleaner CLI uses [the standard format](../format.md) with the following additional guarantees:
+
+For results:
+
+- Every result line is succeeded by a line separator (either `\r\n` or just `\n`).
+
+- Every line separator (either `\r\n` or just `\n`) is precceded by a result line.
+
+- Result lines never require the next task to be done before being printed.
+  - Giving a task line, waiting for a result line, then giving another task line will never deadlock.

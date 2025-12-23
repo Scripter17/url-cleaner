@@ -15,7 +15,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 rocket = { version = "0.5.1", optional = true, features = ["json"] }
-serde_json = { version = "1.0.145", optional = true }
+serde_json = { version = "1.0.146", optional = true }
 
 [features]
 rocket = ["dep:rocket", "dep:serde_json"]

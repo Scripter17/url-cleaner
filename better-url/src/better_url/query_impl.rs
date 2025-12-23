@@ -57,7 +57,9 @@ pub enum RenameQueryParamError {
 impl BetterUrl {
     /// [`Url::set_query`].
     pub fn set_query(&mut self, query: Option<&str>) {
-        self.url.set_query(query)
+        if self.query() != query {
+            self.url.set_query(query)
+        }
     }
 
     /// [`Url::query_pairs_mut`].

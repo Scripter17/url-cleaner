@@ -9,44 +9,41 @@
 			"keep_affiliate": "Don't remove affiliate info from affiliate links.",
 
 			"bypass_vip"                : "Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.",
-			"embed_compatibility"       : "Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.",
 			"keep_http"                 : "Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.",
 			"no_network"                : "Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.",
 			"remove_unused_search_query": "Remove search queries from URLs that aren't search results (for example, posts).",
 			"tor2web2tor"               : "Change `**.onion.**` hosts to `**.onion`.",
-			"unmobile"                  : "Remove parts of URLs that tell websites to expect you to be on a mobile device.",
-			"mobile"                    : "The inverse of the `unmobile` flag. Sets parts of URLs that tell websites to expect you to be on a mobile device.",
 
-			"breezewiki"  : "Change fandom/known Breezewiki hosts to the `breezewiki_host` var.",
-			"unbreezewiki": "Change known Breezewiki hosts to `fandom.com`.",
-			"invidious"   : "Change youtube/known Invidious hosts to the `invidious_host` var.",
-			"uninvidious" : "Change known Invidious hosts to `youtube.com`.",
-			"nitter"      : "Change twitter/known Nitter hosts `nitter_host` var.",
-			"unnitter"    : "Change known Nitter hosts to `x.com`.",
-
-			"discord_unexternal"             : "Change `images-ext-*.discordapp.net` URLs to the original images they refer to.",
-			"furaffinity_sfw"                : "Change `furaffinity.net` to `sfw.furaffinity.net`.",
-			"furaffinity_unsfw"              : "Change `sfw.furaffinity.net` to `furaffinity.net`.",
-			"instagram_unprofilecard"        : "Change `instagram.com/username/profilecard` to `instagram.com/username`.",
-			"reddit_new"                     : "Change `old.reddit.com` to `www.reddit.com`.",
-			"reddit_old"                     : "Change `www.reddit.com` and `new.reddit.com` to `old.reddit.com`",
-			"tumblr_unsubdomain_blog"        : "Change `blog.tumblr.com` to `tumblr.com/blog`.",
-			"youtube_remove_sub_confirmation": "Remove the `sub_confirmation` query paramerer in `youtube.com` URLs.",
-			"youtube_unembed"                : "Change `youtube.com/embed/abc` to `youtube.com/watch?v=abc`.",
-			"youtube_unlive"                 : "Change `youtube.com/live/abc` to `youtube.com/watch?v=abc`.",
-			"youtube_unshort"                : "Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`.",
-			"youtube_unplaylist"             : "Remove the `list` query param from `youtube.com/watch` URLs."
+			"discord_unexternal"     : "Change `images-ext-*.discordapp.net` URLs to the original images they refer to.",
+			"instagram_unprofilecard": "Change `instagram.com/username/profilecard` to `instagram.com/username`.",
+			"tumblr_unsubdomain_blog": "Change `blog.tumblr.com` to `tumblr.com/blog`.",
+			"youtube_unplaylist"     : "Remove the `list` query param from `youtube.com/watch` URLs.",
+			"youtube_unshort"        : "Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`."
 		},
 		"vars": {
-			"bluesky_embed_host": "The host to use for Bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.",
-			"pixiv_embed_host"  : "The host to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.",
-			"twitter_embed_host": "The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `fixupx.com`.",
+			"client_type"       : "Whether the client is a desktop or mobile device.\n  - Unset to keep URLs as-is.\n  - `desktop` to change mobile URLs to desktop URLs.\n  - `mobile` to change dekstop URLs to mobile URLs.",
 
-			"breezewiki_host"   : "The host to replace fandom/known Breezewiki hosts with when the `breezewiki` flag is enabled. Defaults to `breezewiki.com`.",
-			"invidious_host"    : "The host to replace youtube/known Invidious hosts with when the `invidious` flag is enabled. Defaults to `yewtu.be`.",
-			"nitter_host"       : "The host to replace twitter/known Nitter hosts with when the `nitter` flag is enabled. Defaults to `nitter.net`.",
+			"bypass_vip_api_key": "The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var.",
 
-			"bypass_vip_api_key": "The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var."
+			"bluesky_mode"      : "Decides what host to replace Bluesky/Bluesky embed hosts with.\n  - Unset to set Bluesky and Bluesky embed hosts to `bsky.app`.\n  - `canon` to always set it to `bsky.app`.\n  - `embed` to always set it to the `bluesky_embed_host` var.",
+			"bluesky_embed_host": "The Bluesky embed host to use. Defaults to `fxbsky.com`.",
+
+			"fandom_mode"       : "Decides what to replace Fandom/Breezewiki URLs with.\n  - Unset to keep fandom URLs as-is and change Breezewiki URLs to the `breezewiki_host` var.\n  - `canon` to set to fandom.\n  - `breezewiki` to set to the `breezewiki_host` var.",
+			"breezewiki_host"   : "The Breezewiki host to use. Defaults to `breezewiki.com`.",
+
+			"furaffinity_mode"  : "Decides what host to replace reddit hosts with.\n  - Unset to keep as-is.\n  - `canon` to set to `furaffinity.net`.\n  - `sfw` to set to `sfw.furaffinity.net`.\n  - `nsfw` to set to `www.furaffinity.net`.",
+
+			"pixiv_mode"        : "Decides what host to replace pixiv/pixiv embed hosts with.\n  - Unset to set pixiv and pixiv embed hosts to `www.pixiv.net`.\n  - `canon` to always set it to `www.pixiv.net`.\n  - `embed` to always set it to the `pixiv_embed_host` var.",
+			"pixiv_embed_host"  : "The pixiv embed host to use. Defaults to `phixiv.com`.",
+
+			"reddit_mode"       : "Decides what host to replace reddit hosts with.\n  - Unset to keep as-is.\n  - `old` to set to `old.reddit.com`.\n  - `new` to set to `www.reddit.com`.",
+
+			"twitter_mode"      : "Decides what host to replace twitter/twitter embed/Nitter hosts with.\n  - Unset to set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.\n  - `canon` to always set it to `x.com`.\n  - `embed` to always set it to the `twitter_embed_host` var.\n  - `nitter` to always set it to the `nitter_host` var. Defaults to unset.",
+			"twitter_embed_host": "The twitter embed host to use.. Defaults to `fixupx.com`.",
+			"nitter_host"       : "The Nitter host to use. Defaults to `nitter.net`.",
+
+			"youtube_mode"      : "Decides what host to replace youtube/Invidious hosts with.\n  - Unset to set youtube hosts to `www.youtube.com` and Invidious hosts to the `invidious_host` var.\n  - `canon` to always set it to `www.youtube.com`.\n  - `invidious` to always set it to the `invidious_host` var.",
+			"invidious_host"    : "The Invidious host to use. Defaults to `yewtu.be`."
 		},
 		"environment_vars": {
 			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip). Can be overridden with the `bypass_vip_api_key` var."
@@ -133,21 +130,16 @@
 		},
 		"partitionings": {
 			"nh_categories": {
+				"bluesky": ["bsky.app"],
 				"bluesky_embed_hosts": ["fxbsky.app"],
-				"deviantart_embed_hosts": ["fxdeviantart.com"],
-				"pixiv_embed_hosts": ["phixiv.net"],
-				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 
-				"breezewiki": [
-					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org", "breezewiki.catsarch.com", "breezewiki.com", 
-					"breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net", 
-					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe", "bw.artemislena.eu", 
-					"bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion", "nerd.whatever.social", "z.opnxng.com"
-				],
-				"invidious": [
-					"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be", 
-					"zzlsbhhfvwg3oh36tcvx4r7n6jrw7zibvyvfxqlodcwn3mfrvzuq.b32.i2p"
-				],
+				"deviantart_embed_hosts": ["fxdeviantart.com"],
+
+				"pixiv": ["pixiv.net"],
+				"pixiv_embed_hosts": ["phixiv.net"],
+
+				"twitter": ["x.com", "twitter.com"],
+				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 				"nitter": [
 					"bird.habedieeh.re", "nitter.holo-mix.com", "nitter.io.lol", "nitter.kavin.rocks", "nitter.kylrth.com", "nitter.lucabased.xyz", "nitter.lunar.icu",
 					"nitter.moomoo.me", "nitter.net", "nitter.poast.org", "nitter.privacydev.net", "nitter.priv.loki", "nitter.qwik.space", "nitter.rawbit.ninja",
@@ -178,16 +170,28 @@
 					        "vfaomgh4jxphpbdfizkm5gbtjahmei234giqj4facbwhrfjtcldauqad.onion",        "wiio4sgs4247brk7hj6qck2jxnvldwfdbguigc5ivpxrsegnliyfvuqd.onion"
 				],
 
+				"youtube": ["youtube.com", "m.youtube.com"],
+				"youtu_be": ["youtu.be"],
+				"invidious": [
+					"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be", 
+					"zzlsbhhfvwg3oh36tcvx4r7n6jrw7zibvyvfxqlodcwn3mfrvzuq.b32.i2p"
+				],
+
+				"breezewiki": [
+					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org", "breezewiki.catsarch.com", "breezewiki.com", 
+					"breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net", 
+					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe", "bw.artemislena.eu", 
+					"bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion", "nerd.whatever.social", "z.opnxng.com"
+				],
+
 				"alibaba": ["1688.com", "alibaba.com", "aliexpress.com", "m.1688.com", "sale.alibaba.com"],
-				"bluesky": ["bsky.app"],
 				"discord_external": [
 					"images-ext-1.discordapp.net", "images-ext-2.discordapp.net", "images-ext-3.discordapp.net", "images-ext-4.discordapp.net", "images-ext-5.discordapp.net"
 				],
 				"disney": ["disney.com", "marvel.com"],
 				"furaffinity": ["furaffinity.net", "sfw.furaffinity.net"],
 				"instagram": ["instagram.com", "threads.com", "threads.net"],
-				"lmgtfy": ["letmegoogleforyou.com", "letmegooglethat.com", "lmgt.org", "lmgtfy.app", "lmgtfy.click", "lmgtfy.com"],
-				"twitter": ["twitter.com", "x.com"]
+				"lmgtfy": ["letmegoogleforyou.com", "letmegooglethat.com", "lmgt.org", "lmgtfy.app", "lmgtfy.click", "lmgtfy.com"]
 			},
 
 
@@ -413,113 +417,112 @@
 						}
 					}}
 				}},
-				{"If": {
-					"if": {"FlagIsSet": "unmobile"},
-					"then": {"FirstMatchingPartPartitioning": {
-						"parts": ["NormalizedHost", "RegDomain"],
-						"partitioning": "mobilizer",
-						"map": {
-							"sd_m": {"If": {
-								"if"  : {"SubdomainIs" : "m"},
-								"then": {"SetSubdomain": null}
-							}},
-							"sd_mobile": {"If": {
-								"if"  : {"SubdomainIs" : "mobile"},
-								"then": {"SetSubdomain": null}
-							}},
-							"if_sd_sds_0_m": {"If": {
-								"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "m"}},
-								"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
-							}},
-							"if_sd_sds_0_mobile": {"If": {
-								"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "mobile"}},
-								"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
-							}},
-							"if_sd_sds_1_m": {"If": {
-								"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "m"}},
-								"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
-							}},
-							"if_sd_sds_1_mobile": {"If": {
-								"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "mobile"}},
-								"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
-							}},
-							"qp_m_1"     : {"SetQueryParam": {"param": "m"     , "value": null}},
-							"qp_mobile_1": {"SetQueryParam": {"param": "mobile", "value": null}},
-							"ps_0_mobile": {"If": {
-								"if"  : {"PathSegmentIs" : {"index": 0, "value": "mobile"}},
-								"then": {"SetPathSegment": {"index": 0, "value": null}}
-							}},
-							"ps_1_mobile": {"If": {
-								"if"  : {"PathSegmentIs" : {"index": 1, "value": "mobile"}},
-								"then": {"SetPathSegment": {"index": 1, "value": null}}
-							}},
+				{"StringMap": {
+					"value": {"Var": "client_type"},
+					"map": {
+						"desktop": {"FirstMatchingPartPartitioning": {
+							"parts": ["NormalizedHost", "RegDomain"],
+							"partitioning": "mobilizer",
+							"map": {
+								"sd_m": {"If": {
+									"if"  : {"SubdomainIs" : "m"},
+									"then": {"SetSubdomain": null}
+								}},
+								"sd_mobile": {"If": {
+									"if"  : {"SubdomainIs" : "mobile"},
+									"then": {"SetSubdomain": null}
+								}},
+								"if_sd_sds_0_m": {"If": {
+									"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "m"}},
+									"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
+								}},
+								"if_sd_sds_0_mobile": {"If": {
+									"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "mobile"}},
+									"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
+								}},
+								"if_sd_sds_1_m": {"If": {
+									"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "m"}},
+									"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
+								}},
+								"if_sd_sds_1_mobile": {"If": {
+									"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "mobile"}},
+									"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
+								}},
+								"qp_m_1"     : {"SetQueryParam": {"param": "m"     , "value": null}},
+								"qp_mobile_1": {"SetQueryParam": {"param": "mobile", "value": null}},
+								"ps_0_mobile": {"If": {
+									"if"  : {"PathSegmentIs" : {"index": 0, "value": "mobile"}},
+									"then": {"SetPathSegment": {"index": 0, "value": null}}
+								}},
+								"ps_1_mobile": {"If": {
+									"if"  : {"PathSegmentIs" : {"index": 1, "value": "mobile"}},
+									"then": {"SetPathSegment": {"index": 1, "value": null}}
+								}},
 
-							"special_1688": {"SetSubdomain": "detail"}
-						}
-					}}
-				}},
-				{"If": {
-					"if": {"FlagIsSet": "mobile"},
-					"then": {"FirstMatchingPartPartitioning": {
-						"parts": ["NormalizedHost", "RegDomain"],
-						"partitioning": "mobilizer",
-						"map": {
-							"sd_m": {"If": {
-								"if": {"SubdomainIsOneOf": ["www", null]},
-								"then": {"SetSubdomain": "m"}
-							}},
-							"sd_mobile": {"If": {
-								"if": {"SubdomainIsOneOf": ["www", null]},
-								"then": {"SetSubdomain": "mobile"}
-							}},
-							"if_sd_sds_0_m": {"If": {
-								"if": {"Not": {"Any": [
-									{"SubdomainIs": null},
-									{"SubdomainSegmentIs": {"index": 0, "value": "m"}}
-								]}},
-								"then": {"InsertSubdomainSegment": {"index": 0, "value": "m"}}
-							}},
-							"if_sd_sds_0_mobile": {"If": {
-								"if": {"Not": {"Any": [
-									{"SubdomainIs": null},
-									{"SubdomainSegmentIs": {"index": 0, "value": "mobile"}}
-								]}},
-								"then": {"InsertSubdomainSegment": {"index": 0, "value": "mobile"}}
-							}},
-							"if_sd_sds_1_m": {"If": {
-								"if": {"Not": {"Any": [
-									{"SubdomainIs": null},
-									{"SubdomainSegmentIs": {"index": 1, "value": "m"}}
-								]}},
-								"then": {"InsertSubdomainSegment": {"index": 1, "value": "m"}}
-							}},
-							"if_sd_sds_1_mobile": {"If": {
-								"if": {"Not": {"Any": [
-									{"SubdomainIs": null},
-									{"SubdomainSegmentIs": {"index": 1, "value": "mobile"}}
-								]}},
-								"then": {"InsertSubdomainSegment": {"index": 1, "value": "mobile"}}
-							}},
-							"qp_m_1": {"If": {
-								"if"  : {"QueryParamIs" : {"param": "m", "value": null}},
-								"then": {"SetQueryParam": {"param": "m", "value": "1"}}
-							}},
-							"qp_mobile_1": {"If": {
-								"if"  : {"QueryParamIs" : {"param": "mobile", "value": null}},
-								"then": {"SetQueryParam": {"param": "mobile", "value": "1"}}
-							}},
-							"ps_0_mobile": {"If": {
-								"if": {"Not": {"PathSegmentIs": {"index": 0, "value": "mobile"}}},
-								"then": {"InsertPathSegment"  : {"index": 0, "value": "mobile"}}
-							}},
-							"ps_1_mobile": {"If": {
-								"if": {"Not": {"PathSegmentIs": {"index": 1, "value": "mobile"}}},
-								"then": {"InsertPathSegment"  : {"index": 1, "value": "mobile"}}
-							}},
+								"special_1688": {"SetSubdomain": "detail"}
+							}
+						}},
+						"mobile": {"FirstMatchingPartPartitioning": {
+							"parts": ["NormalizedHost", "RegDomain"],
+							"partitioning": "mobilizer",
+							"map": {
+								"sd_m": {"If": {
+									"if": {"SubdomainIsOneOf": ["www", null]},
+									"then": {"SetSubdomain": "m"}
+								}},
+								"sd_mobile": {"If": {
+									"if": {"SubdomainIsOneOf": ["www", null]},
+									"then": {"SetSubdomain": "mobile"}
+								}},
+								"if_sd_sds_0_m": {"If": {
+									"if": {"Not": {"Any": [
+										{"SubdomainIs": null},
+										{"SubdomainSegmentIs": {"index": 0, "value": "m"}}
+									]}},
+									"then": {"InsertSubdomainSegment": {"index": 0, "value": "m"}}
+								}},
+								"if_sd_sds_0_mobile": {"If": {
+									"if": {"Not": {"Any": [
+										{"SubdomainIs": null},
+										{"SubdomainSegmentIs": {"index": 0, "value": "mobile"}}
+									]}},
+									"then": {"InsertSubdomainSegment": {"index": 0, "value": "mobile"}}
+								}},
+								"if_sd_sds_1_m": {"If": {
+									"if": {"Not": {"Any": [
+										{"SubdomainIs": null},
+										{"SubdomainSegmentIs": {"index": 1, "value": "m"}}
+									]}},
+									"then": {"InsertSubdomainSegment": {"index": 1, "value": "m"}}
+								}},
+								"if_sd_sds_1_mobile": {"If": {
+									"if": {"Not": {"Any": [
+										{"SubdomainIs": null},
+										{"SubdomainSegmentIs": {"index": 1, "value": "mobile"}}
+									]}},
+									"then": {"InsertSubdomainSegment": {"index": 1, "value": "mobile"}}
+								}},
+								"qp_m_1": {"If": {
+									"if"  : {"QueryParamIs" : {"param": "m", "value": null}},
+									"then": {"SetQueryParam": {"param": "m", "value": "1"}}
+								}},
+								"qp_mobile_1": {"If": {
+									"if"  : {"QueryParamIs" : {"param": "mobile", "value": null}},
+									"then": {"SetQueryParam": {"param": "mobile", "value": "1"}}
+								}},
+								"ps_0_mobile": {"If": {
+									"if": {"Not": {"PathSegmentIs": {"index": 0, "value": "mobile"}}},
+									"then": {"InsertPathSegment"  : {"index": 0, "value": "mobile"}}
+								}},
+								"ps_1_mobile": {"If": {
+									"if": {"Not": {"PathSegmentIs": {"index": 1, "value": "mobile"}}},
+									"then": {"InsertPathSegment"  : {"index": 1, "value": "mobile"}}
+								}},
 
-							"special_1688": {"SetSubdomain": "m"}
-						}
-					}}
+								"special_1688": {"SetSubdomain": "m"}
+							}
+						}}
+					}
 				}},
 				{"PartPartitioning": {
 					"part": "RegDomain",
@@ -564,6 +567,120 @@
 					"value": {"Part": "Query"},
 					"modification": "PercentDecode"
 				}}}
+			]},
+
+
+
+			"twitter": {"All": [
+				{"If": {
+					"if": {"PathIs": "/i/flow/login"},
+					"then": {"Join": {"Part": {"QueryParam": "redirect_after_login"}}}
+				}},
+				{"PartMap": {
+					"part": {"PathSegment": 0},
+					"map": {
+						"intent": {"AllowQueryParams": ["screen_name", "tweet_id", "text"]},
+						"search": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
+					},
+					"else": "RemoveQuery"
+				}},
+				{"StringMap": {
+					"value": {"Var": "twitter_mode"},
+					"map": {
+						"canon" : {"SetHost": "x.com"},
+						"embed" : {"SetHost": {"Var": "twitter_embed_host"}},
+						"nitter": {"SetHost": {"Var": "nitter_host"}}
+					},
+					"if_none": {"SetHost": {"CallArg": "default_host"}}
+				}}
+			]},
+
+
+
+			"pixiv": {"StringMap": {
+				"value": {"Var": "pixiv_mode"},
+				"map": {
+					"canon": {"SetHost": "www.pixiv.net"},
+					"embed": {"SetHost": {"Var": "pixiv_embed_host"}}
+				},
+				"if_none": {"SetHost": {"CallArg": "default_host"}}
+			}},
+
+
+
+			"bluesky": {"All": [
+				{"If": {
+					"if": {"PathStartsWith": "/profile/"},
+					"then": {"All": [
+						{"If": {
+							"if": {"PathSegmentMatches": {
+								"index": 1,
+								"matcher": {"All": [
+									{"Not": {"EndsWith": ".bsky.social"}},
+									{"Modified": {
+										"modification": {"TryElse": {
+											"try": {"StripBefore": "."},
+											"else": {"Set": ""}
+										}},
+										"matcher": {"IsPrefixOf": ".bsky.social"}
+									}}
+								]}
+							}},
+							"then": {"ModifyPathSegment": {
+								"index": 1,
+								"modification": {"All": [
+									{"KeepMaybeBefore": "."},
+									{"Append": ".bsky.social"}
+								]}
+							}}
+						}}
+					]}
+				}},
+				{"StringMap": {
+					"value": {"Var": "bluesky_mode"},
+					"map": {
+						"embed": {"SetHost": {"Var": "bluesky_embed_host"}}
+					},
+					"if_none": {"SetHost": "bsky.app"}
+				}}
+			]},
+
+
+
+			"youtube": {"All": [
+				{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel", "pbjreload"]},
+				{"If": {
+					"if": {"PartMap": {
+						"part": {"PathSegment": 0},
+						"map": {
+							"shorts": {"FlagIsSet": "youtube_unshort"},
+							"live"  : "Always",
+							"embed" : "Always"
+						}
+					}},
+					"then": {"All": [
+						{"CopyPart": {
+							"from": {"PathSegment": 1},
+							"to": {"QueryParam": "v"}
+						}},
+						{"SetPath": "/watch"}
+					]}
+				}},
+				{"If": {
+					"if": {"All": [
+						{"FlagIsSet": "youtube_unplaylist"},
+						{"PathStartsWith": "/watch"}
+					]},
+					"then": {"RemoveQueryParam": "list"}
+				}},
+				{"StringMap": {
+					"value": {"Var": "youtube_mode"},
+					"map": {
+						"canon"    : {"SetHost": "www.youtube.com"},
+						"invidious": {"SetHost": {"Var": "invidious_host"}}
+					},
+					"if_none": {"SetHost": {"CallArg": "default_host"}}
+				}}
 			]}
 		}
 	},
@@ -1650,15 +1767,13 @@
 				"part": "NormalizedHost",
 				"partitioning": "nh_categories",
 				"map": {
-					"bluesky_embed_hosts": {"If": {
-						"if": {"PathIs": "/"},
-						"then": {"PartMap": {
-							"part": "NormalizedHost",
-							"map": {
-								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
+					"pixiv": {"Function": {
+						"name": "pixiv",
+						"args": {
+							"string_sources": {
+								"default_host": "www.pixiv.net"
 							}
-						}},
-						"else": {"SetHost": "bsky.app"}
+						}
 					}},
 					"pixiv_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
@@ -1668,7 +1783,25 @@
 								"phixiv.net": {"SetWhole": "https://github.com/thelaao/phixiv"}
 							}
 						}},
-						"else": {"SetHost": "www.pixiv.net"}
+						"else": {"Function": {
+							"name": "pixiv",
+							"args": {
+								"string_sources": {
+									"default_host": {"Var": "pixiv_embed_host"}
+								}
+							}
+						}}
+					}},
+
+
+
+					"twitter": {"Function": {
+						"name": "twitter",
+						"args": {
+							"string_sources": {
+								"default_host": "x.com"
+							}
+						}
 					}},
 					"twitter_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
@@ -1676,61 +1809,118 @@
 							"part": "NormalizedHost",
 							"map": {
 								"vxtwitter.com"   : {"SetWhole": "https://github.com/dylanpdx/BetterTwitFix"},
+								"fixupx.com"      : {"SetWhole": "https://github.com/FxEmbed/FxEmbed"       },
 								"fixvx.com"       : {"SetWhole": "https://github.com/dylanpdx/BetterTwitFix"},
 								"stupidpenisx.com": {"SetWhole": "https://github.com/dylanpdx/BetterTwitFix"}
 							}
 						}},
-						"else": {"SetHost": "x.com"}
+						"else": {"Function": {
+							"name": "twitter",
+							"args": {
+								"string_sources": {
+									"default_host": "x.com"
+								}
+							}
+						}}
+					}},
+					"nitter": {"Function": {
+						"name": "twitter",
+						"args": {
+							"string_sources": {
+								"default_host": {"Var": "nitter_host"}
+							}
+						}
 					}},
 
-					"breezewiki": {"If": {
-						"if": {"All": [
-							{"FlagIsSet": "unbreezewiki"},
-							{"Not": {"PathIs": "/"}}
-						]},
-						"then": {"All": [
-							{"SetHost": {"Join": {
-								"values": [{"Part": {"PathSegment": 0}}, ".fandom.com"]
-							}}},
-							{"PartMap": {
-								"part": {"PathSegment": 1},
-								"map": {
-									"search": {"All": [
-										{"SetPath": "/wiki/Special:Search"},
-										{"SetQuery": {"Join": {
-											"values": ["query=", {"Part": {"RawQueryParam": "q"}}]
-										}}}
-									]}
-								},
-								"else": {"TryElse": {
-									"try": {"RemovePathSegment": 0},
-									"else": {"SetPath": "/"}
-								}}
-							}}
-						]},
-						"else": {"SetHost": {"Var": "breezewiki_host"}}
+
+
+					"bluesky": {"Function": "bluesky"},
+					"bluesky_embed_hosts": {"If": {
+						"if": {"PathIs": "/"},
+						"then": {"PartMap": {
+							"part": "NormalizedHost",
+							"map": {
+								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
+							}
+						}},
+						"else": {"Function": "bluesky"}
 					}},
-					"invidious": {"If": {
-						"if": {"All": [
-							{"FlagIsSet": "uninvidious"},
-							{"PathSegmentIsOneOf": {"index": 0, "values": ["channel", "search", "watch"]}}
-						]},
-						"then": {"SetHost": "www.youtube.com"},
-						"else": {"SetHost": {"Var": "invidious_host"}}
+
+
+
+					"youtube": {"Function": {
+						"name": "youtube",
+						"args": {
+							"string_sources": {
+								"default_host": {"Part": "Host"}
+							}
+						}
 					}},
-					"nitter": {"If": {
-						"if": {"All": [
-							{"FlagIsSet": "unnitter"},
-							{"Not": {"PathIs": "/"}}
-						]},
-						"then": {"SetHost": "x.com"},
-						"else": {"SetHost": {"Var": "nitter_host"}}
+					"youtu_be": {"All": [
+						{"SetWhole": {"Join": {
+							"values": [
+								"https://www.youtube.com/watch?v=",
+								{"Part": {"PathSegment": 0}}
+							]
+						}}},
+						{"Function": {
+							"name": "youtube",
+							"args": {
+								"string_sources": {
+									"default_host": "www.youtube.com"
+								}
+							}
+						}}
+					]},
+					"invidious": {"Function": {
+						"name": "youtube",
+						"args": {
+							"string_sources":{
+								"default_host": {"Var": "invidious_host"}
+							}
+						}
+					}},
+
+
+
+					"deviantart_embed_hosts": {"SetRegDomain": "deviantart.com"},
+
+
+
+					"breezewiki": {"StringMap": {
+						"value": {"Var": "fandom_mode"},
+						"map": {
+							"canon": {"If": {
+								"if": {"Not": {"PathIs": "/"}},
+								"then": {"All": [
+									{"SetHost": {"Join": {
+										"values": [{"Part": {"PathSegment": 0}}, ".fandom.com"]
+									}}},
+									{"PartMap": {
+										"part": {"PathSegment": 1},
+										"map": {
+											"search": {"All": [
+												{"SetPath": "/wiki/Special:Search"},
+												{"SetQuery": {"Join": {
+													"values": ["query=", {"Part": {"RawQueryParam": "q"}}]
+												}}}
+											]}
+										},
+										"else": {"TryElse": {
+											"try": {"RemovePathSegment": 0},
+											"else": {"SetPath": "/"}
+										}}
+									}}
+								]}
+							}},
+							"breezewiki": {"SetHost": {"Var": "breezewiki_host"}}
+						},
+						"if_none": {"SetHost": {"Var": "breezewiki_host"}}
 					}},
 					"alibaba": {"RemoveQueryParams": [
 						"callByHgJs", "cardType", "forcePC", "fsb", "ncms_spm", "path", "prefetchKey", "ptow", "__removesafearea__", "selectedCarrierCode", "spm", "src_cna",
 						"tracelog", "wx_navbar_tramsparent", "wx_navbar_transparent", "wx_xpage", "from", "ckvia"
 					]},
-					"deviantart_embed_hosts": {"SetRegDomain": "deviantart.com"},
 					"discord_external": {"If": {
 						"if": {"FlagIsSet": "discord_unexternal"},
 						"then": {"ModifyPart": {
@@ -1790,7 +1980,9 @@
 					"browserstack.com": {"RemoveFragmentParams": ["ref", "source"]},
 					"bsky.social": {"If": {
 						"if": {"Not": {"SubdomainIsOneOf": ["www", null]}},
-						"then": {"SetWhole": {"Join": {"values": ["https://bsky.app/profile/", {"Part": "Domain"}]}}}
+						"then": {"SetWhole": {"Join": {
+							"values": ["https://bsky.app/profile/", {"Part": "Host"}]
+						}}}
 					}},
 					"carrd.com": {"SetRegDomain": "carrd.co"},
 					"cbc.ca": {"RemoveQueryParam": "__vfz"},
@@ -1830,50 +2022,44 @@
 								"Special:Search": {"RemoveQueryParams": ["scope", "navigationSearch"]}
 							}
 						}},
-						{"If": {
-							"if": {"FlagIsSet": "breezewiki"},
-							"then": {"PartMap": {
-								"part": {"PathSegment": 1},
-								"map": {
-									"Special:Search": {"All": [
-										{"SetPart": {
-											"part": {"QueryParam": "q"},
-											"value": {"NoneTo": {
-												"value": {"EmptyToNone": {"Part": {"PathSegmentsAfterFirstN": 2}}},
-												"if_none": {"Part": {"QueryParam": "query"}}
-											}}
-										}},
-										{"RemoveQueryParam": "query"},
-										{"SetPath": {"Join": {
-											"values": [{"Part": "Subdomain"}, "/search"]
-										}}},
+						{"StringMap": {
+							"value": {"Var": "fandom_mode"},
+							"map": {
+								"breezewiki": {"PartMap": {
+									"part": {"PathSegment": 1},
+									"map": {
+										"Special:Search": {"All": [
+											{"SetPart": {
+												"part": {"QueryParam": "q"},
+												"value": {"NoneTo": {
+													"value": {"EmptyToNone": {"Part": {"PathSegmentsAfterFirstN": 2}}},
+													"if_none": {"Part": {"QueryParam": "query"}}
+												}}
+											}},
+											{"RemoveQueryParam": "query"},
+											{"SetPath": {"Join": {
+												"values": [{"Part": "Subdomain"}, "/search"]
+											}}},
+											{"SetHost": {"Var": "breezewiki_host"}}
+										]}
+									},
+									"else": {"All": [
+										{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
 										{"SetHost": {"Var": "breezewiki_host"}}
 									]}
-								},
-								"else": {"All": [
-									{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
-									{"SetHost": {"Var": "breezewiki_host"}}
-								]}
-							}}
+								}}
+							}
 						}}
 					]},
 					"fori.io": {"SetHost": "www.foriio.com"},
-					"furaffinity.net": {"All": [
-						{"If": {
-							"if": {"All": [
-								{"FlagIsSet": "furaffinity_sfw"},
-								{"SubdomainIsOneOf": ["www", null]}
-							]},
-							"then": {"SetSubdomain": "sfw"}}
-						},
-						{"If": {
-							"if": {"All": [
-								{"FlagIsSet": "furaffinity_unsfw"},
-								{"SubdomainIs": "sfw"}
-							]},
-							"then": {"SetSubdomain": "www"}
-						}}
-					]},
+					"furaffinity.net": {"StringMap": {
+						"value": {"Var": "furaffinity_mode"},
+						"map": {
+							"canon": {"SetHost": "www.furaffinity.net"},
+							"sfw"  : {"SetHost": "sfw.furaffinity.net"},
+							"nsfw" : {"SetHost": "www.furaffinity.net"}
+						}
+					}},
 					"gelbooru.com": {"If": {
 						"if": {"QueryParamIs": {"param": "page", "value": "post"}},
 						"then": {"RemoveQueryParam": "tags"}
@@ -1960,26 +2146,12 @@
 								"domain": {"AllowQueryParams": ["count", "after"]}
 							}
 						}},
-						{"PartMap": {
-							"part": "Subdomain",
+						{"StringMap": {
+							"value": {"Var": "reddit_mode"},
 							"map": {
-								"www": {"If": {
-									"if": {"FlagIsSet": "reddit_old"},
-									"then": {"SetSubdomain": "old"}
-								}},
-								"new": {"If": {
-									"if": {"FlagIsSet": "reddit_old"},
-									"then": {"SetSubdomain": "old"}
-								}},
-								"old": {"If": {
-									"if": {"FlagIsSet": "reddit_new"},
-									"then": {"SetSubdomain": "www"}
-								}}
-							},
-							"if_none": {"If": {
-								"if": {"FlagIsSet": "reddit_old"},
-								"then": {"SetSubdomain": "old"}
-							}}
+								"old": {"SetSubdomain": "old"},
+								"new": {"SetSubdomain": "www"}
+							}
 						}}
 					]},
 					"rule34.xxx": {"If": {
@@ -2079,7 +2251,6 @@
 						}}
 					]},
 					"twitch.tv": {"RemoveQueryParam": "desktop-redirect"},
-					"twitter.com": {"SetHost": "x.com"},
 					"washingtonpost.com": {"All": [
 						{"If": {
 							"if": {"FragmentIsSomeAndStartsWith": "link"},
@@ -2093,51 +2264,7 @@
 					"xiaohongshu.com": {"HandleParams": {
 						"prefixes": ["xsec", "xhs", "app", "share", "author_share"]
 					}},
-					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]},
-					"youtu.be": {"All": [
-						{"RemoveQueryParams": ["si", "feature", "pp"]},
-						{"SetHost" : "www.youtube.com"},
-						{"CopyPart": {
-							"from": {"PathSegment": 0},
-							"to": {"QueryParam": "v"}
-						}},
-						{"SetPath" : "/watch"}
-					]},
-					"youtube.com": {"All": [
-						{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel", "pbjreload"]},
-						{"If": {
-							"if": {"PartMap": {
-								"part": {"PathSegment": 0},
-								"map": {
-									"shorts": {"FlagIsSet": "youtube_unshort"},
-									"live"  : {"FlagIsSet": "youtube_unlive"},
-									"embed" : {"FlagIsSet": "youtube_unembed"}
-								}
-							}},
-							"then": {"All": [
-								{"CopyPart": {
-									"from": {"PathSegment": 1},
-									"to": {"QueryParam": "v"}
-								}},
-								{"SetPath": "/watch"}
-							]}
-						}},
-						{"If": {
-							"if": {"All": [
-								{"FlagIsSet": "youtube_unplaylist"},
-								{"PathStartsWith": "/watch"}
-							]},
-							"then": {"RemoveQueryParam": "list"}
-						}},
-						{"If": {
-							"if": {"FlagIsSet": "youtube_remove_sub_confirmation"},
-							"then": {"RemoveQueryParam": "sub_confirmation"}
-						}},
-						{"If": {
-							"if": {"FlagIsSet": "invidious"},
-							"then": {"SetHost": {"Var": "invidious_host"}}
-						}}
-					]}
+					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]}
 				}
 			}},
 			{"PartMap": {
@@ -2160,40 +2287,6 @@
 					"boot.dev": {"If": {
 						"if": {"FlagIsNotSet": "keep_affiliate"},
 						"then": {"RemoveQueryParam": "promo"}
-					}},
-					"bsky.app": {"If": {
-						"if": {"PathStartsWith": "/profile/"},
-						"then": {"All": [
-							{"If": {
-								"if": {"PathSegmentMatches": {
-									"index": 1,
-									"matcher": {"All": [
-										{"Not": {"EndsWith": ".bsky.social"}},
-										{"Modified": {
-											"modification": {"TryElse": {
-												"try": {"StripBefore": "."},
-												"else": {"Set": ""}
-											}},
-											"matcher": {"IsPrefixOf": ".bsky.social"}
-										}}
-									]}
-								}},
-								"then": {"ModifyPathSegment": {
-									"index": 1,
-									"modification": {"All": [
-										{"KeepMaybeBefore": "."},
-										{"Append": ".bsky.social"}
-									]}
-								}}
-							}},
-							{"If": {
-								"if": {"All": [
-									{"FlagIsSet": "embed_compatibility"},
-									{"PathSegmentIs": {"index": 2, "value": "post"}}
-								]},
-								"then": {"SetHost": "fxbsky.app"}
-							}}
-						]}
 					}},
 					"danbooru.donmai.us": {"If": {
 						"if": {"All": [
@@ -2264,37 +2357,6 @@
 						"names": ["mod", "reflink", "locale"],
 						"prefixes": ["gaa_"]
 					}},
-					"x.com": {"All": [
-						{"If": {
-							"if": {"PathIs": "/i/flow/login"},
-							"then": {"SetWhole": {"Join": {
-								"values": [
-									"https://x.com",
-									{"Part": {"QueryParam": "redirect_after_login"}}
-								]
-							}}}
-						}},
-						{"PartMap": {
-							"part": {"PathSegment": 0},
-							"map": {
-								"i": "RemoveQuery",
-								"intent": {"AllowQueryParams": ["screen_name", "tweet_id", "text"]},
-								"search": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
-							},
-							"else": "RemoveQuery"
-						}},
-						{"If": {
-							"if": {"All": [
-								{"FlagIsSet": "embed_compatibility"},
-								{"PathSegmentIs": {"index": 1, "value": "status"}}
-							]},
-							"then": {"SetHost": {"Var": "twitter_embed_host"}}
-						}},
-						{"If": {
-							"if": {"FlagIsSet": "nitter"},
-							"then": {"SetHost": {"Var": "nitter_host"}}
-						}}
-					]},
 					"xp-pen.com": {"RemoveQueryParams": ["channel", "papClickId"]}
 				}
 			}},

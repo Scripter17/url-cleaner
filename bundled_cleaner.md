@@ -8,43 +8,61 @@ Licensed under the AGPL 3.0 or later.
 
 ### Flags
 
-- `breezewiki`: Change fandom/known Breezewiki hosts to the `breezewiki_host` var.
-- `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
-- `discord_unexternal`: Change `images-ext-*.discordapp.net` URLs to the original images they refer to.
-- `embed_compatibility`: Replace twitter, bluesky, and pixiv hosts with their respective `*_embed_host` vars.
-- `furaffinity_sfw`: Change `furaffinity.net` to `sfw.furaffinity.net`.
-- `furaffinity_unsfw`: Change `sfw.furaffinity.net` to `furaffinity.net`.
-- `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
-- `invidious`: Change youtube/known Invidious hosts to the `invidious_host` var.
 - `keep_affiliate`: Don't remove affiliate info from affiliate links.
+- `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
 - `keep_http`: Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.
-- `mobile`: The inverse of the `unmobile` flag. Sets parts of URLs that tell websites to expect you to be on a mobile device.
-- `nitter`: Change twitter/known Nitter hosts `nitter_host` var.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
-- `reddit_new`: Change `old.reddit.com` to `www.reddit.com`.
-- `reddit_old`: Change `www.reddit.com` and `new.reddit.com` to `old.reddit.com`
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
+- `discord_unexternal`: Change `images-ext-*.discordapp.net` URLs to the original images they refer to.
+- `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
 - `tumblr_unsubdomain_blog`: Change `blog.tumblr.com` to `tumblr.com/blog`.
-- `unbreezewiki`: Change known Breezewiki hosts to `fandom.com`.
-- `uninvidious`: Change known Invidious hosts to `youtube.com`.
-- `unmobile`: Remove parts of URLs that tell websites to expect you to be on a mobile device.
-- `unnitter`: Change known Nitter hosts to `x.com`.
-- `youtube_remove_sub_confirmation`: Remove the `sub_confirmation` query paramerer in `youtube.com` URLs.
-- `youtube_unembed`: Change `youtube.com/embed/abc` to `youtube.com/watch?v=abc`.
-- `youtube_unlive`: Change `youtube.com/live/abc` to `youtube.com/watch?v=abc`.
 - `youtube_unplaylist`: Remove the `list` query param from `youtube.com/watch` URLs.
 - `youtube_unshort`: Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`.
 
 ### Vars
 
-- `bluesky_embed_host`: The host to use for Bluesky when the `embed_compatibility` flag is set. Defaults to `fxbsky.com`.
-- `breezewiki_host`: The host to replace fandom/known Breezewiki hosts with when the `breezewiki` flag is enabled. Defaults to `breezewiki.com`.
+- `client_type`: Whether the client is a desktop or mobile device.
+  - Unset to keep URLs as-is.
+  - `desktop` to change mobile URLs to desktop URLs.
+  - `mobile` to change dekstop URLs to mobile URLs.
 - `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var.
-- `invidious_host`: The host to replace youtube/known Invidious hosts with when the `invidious` flag is enabled. Defaults to `yewtu.be`.
-- `nitter_host`: The host to replace twitter/known Nitter hosts with when the `nitter` flag is enabled. Defaults to `nitter.net`.
-- `pixiv_embed_host`: The host to use for pixiv when the `embed_compatibility` flag is set. Defaults to `phixiv.com`.
-- `twitter_embed_host`: The host to use for twitter when the `embed_compatibility` flag is set. Defaults to `fixupx.com`.
+- `bluesky_mode`: Decides what host to replace Bluesky/Bluesky embed hosts with.
+  - Unset to set Bluesky and Bluesky embed hosts to `bsky.app`.
+  - `canon` to always set it to `bsky.app`.
+  - `embed` to always set it to the `bluesky_embed_host` var.
+- `bluesky_embed_host`: The Bluesky embed host to use. Defaults to `fxbsky.com`.
+- `fandom_mode`: Decides what to replace Fandom/Breezewiki URLs with.
+  - Unset to keep fandom URLs as-is and change Breezewiki URLs to the `breezewiki_host` var.
+  - `canon` to set to fandom.
+  - `breezewiki` to set to the `breezewiki_host` var.
+- `breezewiki_host`: The Breezewiki host to use. Defaults to `breezewiki.com`.
+- `furaffinity_mode`: Decides what host to replace reddit hosts with.
+  - Unset to keep as-is.
+  - `canon` to set to `furaffinity.net`.
+  - `sfw` to set to `sfw.furaffinity.net`.
+  - `nsfw` to set to `www.furaffinity.net`.
+- `pixiv_mode`: Decides what host to replace pixiv/pixiv embed hosts with.
+  - Unset to set pixiv and pixiv embed hosts to `www.pixiv.net`.
+  - `canon` to always set it to `www.pixiv.net`.
+  - `embed` to always set it to the `pixiv_embed_host` var.
+- `pixiv_embed_host`: The pixiv embed host to use. Defaults to `phixiv.com`.
+- `reddit_mode`: Decides what host to replace reddit hosts with.
+  - Unset to keep as-is.
+  - `old` to set to `old.reddit.com`.
+  - `new` to set to `www.reddit.com`.
+- `twitter_mode`: Decides what host to replace twitter/twitter embed/Nitter hosts with.
+  - Unset to set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.
+  - `canon` to always set it to `x.com`.
+  - `embed` to always set it to the `twitter_embed_host` var.
+  - `nitter` to always set it to the `nitter_host` var. Defaults to unset.
+- `twitter_embed_host`: The twitter embed host to use.. Defaults to `fixupx.com`.
+- `nitter_host`: The Nitter host to use. Defaults to `nitter.net`.
+- `youtube_mode`: Decides what host to replace youtube/Invidious hosts with.
+  - Unset to set youtube hosts to `www.youtube.com` and Invidious hosts to the `invidious_host` var.
+  - `canon` to always set it to `www.youtube.com`.
+  - `invidious` to always set it to the `invidious_host` var.
+- `invidious_host`: The Invidious host to use. Defaults to `yewtu.be`.
 
 ### Environment Vars
 
@@ -52,8 +70,8 @@ Licensed under the AGPL 3.0 or later.
 
 ### Sets
 
-- `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
 - `utps`: Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
+- `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
 
 ### Lists
 
@@ -64,13 +82,13 @@ Licensed under the AGPL 3.0 or later.
 
 ### Partitionings
 
-- `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
-- `dm_www_subdomain`: The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.
-- `mobilizer`: Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL.
 - `nh_categories`: Categories of similar websites with shared cleaning methods.
+- `rd_www_subdomain`: The `RegDomain`s to ensure/remove `www` `Subdomain`s.
+- `dm_www_subdomain`: The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.
+- `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
 - `nh_expand_mode`: How to handle redirect `NormalizedHost`s.
 - `rd_expand_mode`: How to handle redirect `RegDomain`s,
-- `rd_www_subdomain`: The `RegDomain`s to ensure/remove `www` `Subdomain`s.
+- `mobilizer`: Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL.
 
 ## Job context
 
@@ -89,6 +107,6 @@ Licensed under the AGPL 3.0 or later.
 
 ### Vars
 
+- `unmangle_mode`: The unmangle mode to use.
 - `site`: The name of the website used in the contact_info unmangle_mode.
 - `text`: The text of the link used in the contact_info unmangle_mode.
-- `unmangle_mode`: The unmangle mode to use.

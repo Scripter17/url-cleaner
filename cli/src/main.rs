@@ -2,9 +2,8 @@
 //!
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
-
 use std::path::PathBuf;
-use std::io::{IsTerminal, BufRead, Write, BufWriter};
+use std::io::{IsTerminal, BufRead, Write};
 use std::fmt::Debug;
 use std::time::Duration;
 use std::sync::mpsc::RecvTimeoutError;
@@ -112,10 +111,6 @@ struct Args {
     #[arg(long, verbatim_doc_comment, default_value_t = 0)]
     threads: usize,
 
-    /// The size of the STDOUT buffer.
-    #[arg(long, verbatim_doc_comment, default_value_t = 0)]
-    output_buffer: usize,
-
     /// If set, check that the loaded Cleaner (+ParamsDiff and ProfilesConfig and whatnot) is "suitable" to be the Bundled Cleaner.
     /// If it is, exit without doing anything else. If it isn't panic with a message.
     /// Used for intenal testing; Exact details are unstable.
@@ -152,6 +147,8 @@ fn main() -> Result<(), CliError> {
     let job_context     = args.job_context.map(JobContext    ::load_from_file).transpose()?.unwrap_or_default();
 
     if args.assert_suitability {
+        println!("Asserting the suitability of the loaded Cleaner, ProfilesConfig, and ParamsDiffs.");
+        
         let profiled_cleaner = ProfiledCleanerConfig {
             cleaner,
             profiles_config: profiles_config.unwrap_or_default()
@@ -168,18 +165,18 @@ fn main() -> Result<(), CliError> {
         };
 
         for (name, mut cleaner) in profiled_cleaner.get_each() {
-            eprintln!("Testing profile {name:?}");
+            println!("  Testing profile {name:?}");
 
             cleaner.assert_suitability();
 
             if let Some(params_diff) = params_diff.clone() {
-                eprintln!("  Testing with --params-diff");
+                println!("    Testing with --params-diff");
                 params_diff.apply(&mut cleaner.params);
                 cleaner.assert_suitability();
             }
 
             if let Some(extra_params_diff) = extra_params_diff.clone() {
-                eprintln!("  Testing with --flag, --var, etc.");
+                println!("    Testing with --flag, --var, etc.");
                 extra_params_diff.apply(&mut cleaner.params);
                 cleaner.assert_suitability();
             }
@@ -323,12 +320,42 @@ fn main() -> Result<(), CliError> {
 
         // Stdout stuff.
 
-        let mut stdout = BufWriter::with_capacity(args.output_buffer, std::io::stdout().lock());
+        let mut stdout = std::io::stdout().lock();
+
+        let mut buffer = String::new();
 
         for or in {out_recievers}.iter().cycle() {
-            match or.recv() {
-                Ok(x) => writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail."),
-                Err(_) => break
+            match or.recv_timeout(std::time::Duration::from_nanos(10)) {
+                Ok(x) => {
+                    if buffer.len() + x.len() < 65536 {
+                        if !buffer.is_empty() {
+                            buffer.push('\n');
+                        }
+                        buffer.push_str(&x);
+                    } else {
+                        if !buffer.is_empty() {
+                            writeln!(stdout, "{buffer}").expect("Writing to STDOUT to never fail.");
+                            buffer = String::new();
+                        }
+                        writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail.");
+                    }
+                },
+                Err(RecvTimeoutError::Timeout) => {
+                    if !buffer.is_empty() {
+                        writeln!(stdout, "{buffer}").expect("Writing to STDOUT to never fail.");
+                        buffer = String::new();
+                    }
+                    match or.recv() {
+                        Ok(x) => writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail."),
+                        Err(_) => break
+                    }
+                },
+                Err(RecvTimeoutError::Disconnected) => {
+                    if !buffer.is_empty() {
+                        writeln!(stdout, "{buffer}").expect("Writing to STDOUT to never fail.");
+                    }
+                    break
+                }
             }
         }
     });

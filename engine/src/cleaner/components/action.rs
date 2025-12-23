@@ -1339,8 +1339,8 @@ impl Action {
 
             // Maps
 
-            Self::PartMap   {part , map} => if let Some(action) = map.get(part .get(&task_state.url      ) ) {action.apply(task_state)?;},
-            Self::StringMap {value, map} => if let Some(action) = map.get(value.get(task_state)?) {action.apply(task_state)?;},
+            Self::PartMap   {part , map} => if let Some(action) = map.get(part .get(&task_state.url) ) {action.apply(task_state)?;},
+            Self::StringMap {value, map} => if let Some(action) = map.get(value.get( task_state    )?) {action.apply(task_state)?;},
 
             Self::PartPartitioning   {partitioning, part , map} => if let Some(action) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(part.get(&task_state.url).as_deref())) {action.apply(task_state)?;}
             Self::FirstMatchingPartPartitioning {partitioning, parts, map} => {
@@ -1492,9 +1492,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowQueryParam(name) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1505,9 +1503,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1517,9 +1513,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1529,9 +1523,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1541,9 +1533,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
@@ -1553,9 +1543,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != query.len() {
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RenameQueryParam {from, to} => task_state.url.rename_query_param(&from.name, from.index, get_new_str!(to, task_state, ActionError))?,
 
@@ -1579,9 +1567,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowFragmentParam(name) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
@@ -1592,9 +1578,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RemoveFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
@@ -1604,9 +1588,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
@@ -1616,9 +1598,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::RemoveFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
@@ -1628,9 +1608,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
             },
             Self::AllowFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
@@ -1640,9 +1618,7 @@ impl Action {
                         new.push_str(param);
                     }
                 }
-                if new.len() != fragment.len() {
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-                }
+                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
             },
 
             // General parts

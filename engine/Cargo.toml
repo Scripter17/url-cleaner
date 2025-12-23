@@ -12,7 +12,7 @@ rust-version = "1.88.0"
 
 [dependencies]
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
+serde_json = "1.0.146"
 serde_with = "3.16.1"
 thiserror = "2.0.17"
 url = { version = "2.5.7", features = ["serde"] }
@@ -22,7 +22,7 @@ better-url = { version = "0.12.0-beta", path = "../better-url", features = ["ser
 url-cleaner-macros = { version = "0.12.0-beta", path = "../macros" }
 regex    = "1.12.2"
 base64   = "0.22.1"
-reqwest  = { optional = true, version = "0.12.26", features = ["blocking", "socks", "json"] }
+reqwest  = { optional = true, version = "0.12.28", features = ["blocking", "socks", "json"] }
 http     = { optional = true, version = "1.4.0" }
 rusqlite = { optional = true, version = "0.37.0", features = ["bundled"] }
 

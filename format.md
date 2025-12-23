@@ -4,6 +4,8 @@ For simplicity, URL Cleaner CLI and URL Cleaner Site's HTTP and WebSocket fronte
 
 Where applicable, other frontends should try to mimic this format.
 
+Frontends may make additional guarantees as desired, but clients should try to not rely on them if practical.
+
 ## Lines
 
 A series of UTF-8 bytes is split into lines by `\r\n` and `\n`, whichever comes first, and with no requirement that all lines be separated by the same separator.

@@ -183,8 +183,10 @@ impl BetterUrl {
     /// # Errors
     /// If the call to [`Url::set_host`] returns an error, the error is returned..
     pub fn set_host(&mut self, host: Option<&str>) -> Result<(), SetHostError> {
-        self.url.set_host(host)?;
-        self.host_details = self.url.host().map(|host| HostDetails::from_host(&host));
+        if self.host_str() != host {
+            self.url.set_host(host)?;
+            self.host_details = self.url.host().map(|host| HostDetails::from_host(&host));
+        }
         Ok(())
     }
 
@@ -206,7 +208,9 @@ impl BetterUrl {
 
     /// [`Url::set_fragment`].
     pub fn set_fragment(&mut self, fragment: Option<&str>) {
-        self.url.set_fragment(fragment)
+        if self.fragment() != fragment {
+            self.url.set_fragment(fragment)
+        }
     }
 }
 

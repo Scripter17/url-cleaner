@@ -14,6 +14,9 @@ pub struct Args {
     /// Disable compiling the frontends.
     #[arg(long)]
     pub no_compile: bool,
+    /// The number locale.
+    #[arg(long, default_value = "en")]
+    pub number_locale: Locale,
 
     /// CLI.
     #[arg(long)]
@@ -97,11 +100,11 @@ impl Args {
             .filter(|Benchmark {name, ..}| filter.find(name).is_some())
             .collect::<Vec<Benchmark<'_>>>();
 
-        let hyperfine_table_header = table_header(&self.hyperfine_nums);
-        let callgrind_table_header = table_header(&self.callgrind_nums);
-        let massif_table_header    = table_header(&self.massif_nums   );
+        let hyperfine_table_header = table_header(&self.hyperfine_nums, &self.number_locale);
+        let callgrind_table_header = table_header(&self.callgrind_nums, &self.number_locale);
+        let massif_table_header    = table_header(&self.massif_nums   , &self.number_locale);
 
-        if !self.no_compile {
+        if !self.no_compile && (self.cli || self.site_http || self.site_ws) {
             crate::compile::Args {
                 frontends: crate::compile::Frontends {
                     cli: self.cli,
@@ -112,9 +115,15 @@ impl Args {
 
         println!("# Benchmarks");
         println!();
-        println!("As measured on a thinkpad T460s (from 2016) running Kubuntu.");
+        println!("Measurements of how fast URL Cleaner's frontends are, as seen on the following hardware:");
         println!();
-        println!("## Benchmarks");
+        println!("```");
+        assert_eq!(Command::new("neofetch")
+            .args(["distro", "kernel", "model", "cpu", "memory"])
+            .spawn().unwrap().wait().unwrap().code(), Some(0));
+        println!("```");
+        println!();
+        println!("## Tasks");
         println!();
         println!("The tasks that are benchmarked.");
         println!();
@@ -187,7 +196,7 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
-                        }.r#do());
+                        }.r#do(), &self.number_locale);
                     }
                     println!();
                 }
@@ -200,7 +209,23 @@ impl Args {
             println!();
             println!("The max payload was increased from 25MiB to 1GiB.");
             println!();
-            println!("While a million of the baseline task does fit in the 25MiB, the rest of the extreme numbers don't happen.");
+            println!("Below is a table of how many of each task can actually fit in the default and increased limits.");
+            println!();
+            println!("|Name|Bytes|Lines in 25MiB|Lines in 1GiB|");
+            println!("|:--|--:|--:|--:|");
+            for benchmark in &benchmarks {
+                // Assuming line separator of `\n` and no trailing empty line.
+                // size = num * ( len + 1 ) - 1
+                // num  = ( size + 1 ) / ( len + 1 )
+
+                println!(
+                    "|{}|`{}`|`{}`|`{}`|",
+                    benchmark.name,
+                    benchmark.task.len().to_formatted_string(&self.number_locale),
+                    ((  25 * 1024 * 1024 + 1) / (benchmark.task.len() + 1)).to_formatted_string(&self.number_locale),
+                    ((1024 * 1024 * 1024 + 1) / (benchmark.task.len() + 1)).to_formatted_string(&self.number_locale)
+                );
+            }
             println!();
 
             if self.hyperfine {
@@ -261,7 +286,7 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
-                        }.r#do());
+                        }.r#do(), &self.number_locale);
                     }
                     println!();
                 }
@@ -331,7 +356,7 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
-                        }.r#do());
+                        }.r#do(), &self.number_locale);
                     }
                     println!();
                 }
@@ -342,10 +367,10 @@ impl Args {
 }
 
 /// Generate a table header.
-pub fn table_header(nums: &[usize]) -> String {
+pub fn table_header(nums: &[usize], number_locale: &Locale) -> String {
     let mut ret = "|Name|".to_string();
     for num in nums {
-        ret.push_str(&num.to_formatted_string(&Locale::en));
+        ret.push_str(&num.to_formatted_string(number_locale));
         ret.push('|');
     }
     ret.push_str("\n|:--|");
@@ -368,7 +393,7 @@ fn print_callgrind_entry<P: AsRef<Path>>(_: P) {
 }
 
 /// Print a Massif entry.
-fn print_massif_entry<P: AsRef<Path>>(path: P) {
+fn print_massif_entry<P: AsRef<Path>>(path: P, number_locale: &Locale) {
     let mut max = 0;
 
     for line in BufReader::new(File::open(path).unwrap()).lines() {
@@ -377,5 +402,5 @@ fn print_massif_entry<P: AsRef<Path>>(path: P) {
         }
     }
 
-    printflush!("`{}`|", max.to_formatted_string(&Locale::en));
+    printflush!("`{}`|", max.to_formatted_string(number_locale));
 }

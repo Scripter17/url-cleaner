@@ -32,6 +32,25 @@ jobs:
         set -euo pipefail
         [[ "$(cat */Cargo.toml | grep -oP '(?<=^rust-version = \")[\d.]+' | sort -u | wc -l)" == 1 ]]
 
+  fresh_benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: 'Check that benchmarks.md is fresh'
+      run: |
+        set -euo pipefail
+        shopt -s globstar
+        [[ "$(ls -t benchmarks.md */src/**/*.* | head -n 1)" == "benchmarks.md" ]]
+
+  fresh_docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: 'Check that bundled_cleaner.md is fresh'
+      run: |
+        set -euo pipefail
+        [[ "$(cargo run --bin urlc-tool -- doc)" == "$(cat bundled_cleaner.md)" ]]
+
   test:
     runs-on: ubuntu-latest
     steps:

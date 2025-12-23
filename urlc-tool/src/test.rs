@@ -79,6 +79,12 @@ impl Args {
                 continue;
             }
 
+            println!("Job");
+            println!("  Name: {}", job.name);
+            if let Some(ref job_context) = job.job_context {println!("  Job context: {}", serde_json::to_string(&job_context).unwrap());}
+            if let Some(ref params_diff) = job.params_diff {println!("  Params diff: {}", serde_json::to_string(&params_diff).unwrap());}
+            println!("  Tests:");
+
             let mut command = Command::new(BINDIR.join("url-cleaner"));
 
             command.args([
@@ -114,8 +120,15 @@ impl Args {
             let mut results = BufReader::new(stdout_read).lines();
 
             for test in job.tests {
+                println!("    {}", serde_json::to_string(&test).unwrap());
+                
                 writeln!(stdin_write, "{}", test.task).unwrap();
-                assert_eq!(results.next().unwrap().unwrap(), test.expect, "Task failed: {}", test.task);
+                let result1 = results.next().unwrap().unwrap();
+                assert_eq!(result1, test.expect, "Test failed");
+
+                writeln!(stdin_write, "{}", result1).unwrap();
+                let result2 = results.next().unwrap().unwrap();
+                assert_eq!(result1, result2, "Idempotence failed");
             }
         }
     }

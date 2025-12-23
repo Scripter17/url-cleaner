@@ -114,30 +114,40 @@
 
 
 		{
-			"name": "offline-unbreezewiki",
-			"params_diff": {
-				"flags": ["unbreezewiki"]
-			},
+			"name": "offline-fandom_mode-unset",
 			"tests": [
-				{"task": "https://antifandom.com/tardis/wiki/Genocide", "expect": "https://tardis.fandom.com/wiki/Genocide"},
-
-				{"task": "https://breezewiki.com/minecraft/search?q=abc", "expect": "https://minecraft.fandom.com/wiki/Special:Search?query=abc"},
-				{"task": "https://breezewiki.com/minecraft/search?%71=abc", "expect": "https://minecraft.fandom.com/wiki/Special:Search?query=abc"},
-				{"task": "https://breezewiki.com/minecraft", "expect": "https://minecraft.fandom.com/"}
+				{"task": "https://antifandom.com/tardis/wiki/Genocide"                                                      , "expect": "https://breezewiki.com/tardis/wiki/Genocide"},
+				{"task": "https://tardis.fandom.com/wiki/Genocide"                                                          , "expect": "https://tardis.fandom.com/wiki/Genocide"},
+				{"task": "https://minecraft.fandom.com/wiki/Special:Search?scope=internal&navigationSearch=true&query=abc"  , "expect": "https://minecraft.fandom.com/wiki/Special:Search?query=abc"},
+				{"task": "https://minecraft.fandom.com/wiki/Special:Search/?scope=internal&navigationSearch=true&query=abc" , "expect": "https://minecraft.fandom.com/wiki/Special:Search/?query=abc"},
+				{"task": "https://minecraft.fandom.com/wiki/Special:Search/a?scope=internal&navigationSearch=true&query=abc", "expect": "https://minecraft.fandom.com/wiki/Special:Search/a?query=abc"}
 			]
 		},
-
-
-
 		{
-			"name": "offline-breezewiki",
+			"name": "offline-fandom_mode-canon",
 			"params_diff": {
-				"flags": ["breezewiki"]
+				"vars": {
+					"fandom_mode": "canon"
+				}
 			},
 			"tests": [
-				{"task": "https://antifandom.com/tardis/wiki/Genocide", "expect": "https://breezewiki.com/tardis/wiki/Genocide"},
-				{"task": "https://tardis.fandom.com/wiki/Genocide"    , "expect": "https://breezewiki.com/tardis/wiki/Genocide"},
-
+				{"task": "https://antifandom.com/tardis/wiki/Genocide"                                                      , "expect": "https://tardis.fandom.com/wiki/Genocide"},
+				{"task": "https://tardis.fandom.com/wiki/Genocide"                                                          , "expect": "https://tardis.fandom.com/wiki/Genocide"},
+				{"task": "https://minecraft.fandom.com/wiki/Special:Search?scope=internal&navigationSearch=true&query=abc"  , "expect": "https://minecraft.fandom.com/wiki/Special:Search?query=abc"},
+				{"task": "https://minecraft.fandom.com/wiki/Special:Search/?scope=internal&navigationSearch=true&query=abc" , "expect": "https://minecraft.fandom.com/wiki/Special:Search/?query=abc"},
+				{"task": "https://minecraft.fandom.com/wiki/Special:Search/a?scope=internal&navigationSearch=true&query=abc", "expect": "https://minecraft.fandom.com/wiki/Special:Search/a?query=abc"}
+			]
+		},
+		{
+			"name": "offline-fandom_mode-breezewiki",
+			"params_diff": {
+				"vars": {
+					"fandom_mode": "breezewiki"
+				}
+			},
+			"tests": [
+				{"task": "https://antifandom.com/tardis/wiki/Genocide"                                                      , "expect": "https://breezewiki.com/tardis/wiki/Genocide"},
+				{"task": "https://tardis.fandom.com/wiki/Genocide"                                                          , "expect": "https://breezewiki.com/tardis/wiki/Genocide"},
 				{"task": "https://minecraft.fandom.com/wiki/Special:Search?scope=internal&navigationSearch=true&query=abc"  , "expect": "https://breezewiki.com/minecraft/search?q=abc"},
 				{"task": "https://minecraft.fandom.com/wiki/Special:Search/?scope=internal&navigationSearch=true&query=abc" , "expect": "https://breezewiki.com/minecraft/search?q=abc"},
 				{"task": "https://minecraft.fandom.com/wiki/Special:Search/a?scope=internal&navigationSearch=true&query=abc", "expect": "https://breezewiki.com/minecraft/search?q=a"}
@@ -147,36 +157,57 @@
 
 
 		{
-			"name": "offline-unmobile",
+			"name": "offline-client_type-unset",
+			"tests": [
+				{"task": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"  , "expect": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task": "https://en.wikipedia.org/wiki/Gaza_genocide"                      , "expect": "https://en.wikipedia.org/wiki/Gaza_genocide"},
+				{"task": "https://en.wikipedia.org/wiki/Zionism"                            , "expect": "https://en.wikipedia.org/wiki/Zionism"},
+				{"task": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "expect": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task": "https://en.m.wikipedia.org/wiki/Gaza_genocide"                    , "expect": "https://en.m.wikipedia.org/wiki/Gaza_genocide"},
+				{"task": "https://en.m.wikipedia.org/wiki/Zionism"                          , "expect": "https://en.m.wikipedia.org/wiki/Zionism"}
+			]
+		},
+		{
+			"name": "offline-client_type-desktop",
 			"params_diff": {
-				"flags": ["unmobile"]
+				"vars": {
+					"client_type": "desktop"
+				}
 			},
 			"tests": [
+				{"task": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"  , "expect": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task": "https://en.wikipedia.org/wiki/Gaza_genocide"                      , "expect": "https://en.wikipedia.org/wiki/Gaza_genocide"},
+				{"task": "https://en.wikipedia.org/wiki/Zionism"                            , "expect": "https://en.wikipedia.org/wiki/Zionism"},
 				{"task": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "expect": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
 				{"task": "https://en.m.wikipedia.org/wiki/Gaza_genocide"                    , "expect": "https://en.wikipedia.org/wiki/Gaza_genocide"},
 				{"task": "https://en.m.wikipedia.org/wiki/Zionism"                          , "expect": "https://en.wikipedia.org/wiki/Zionism"}
 			]
 		},
-
-
-
 		{
-			"name": "offline-mobile",
+			"name": "offline-client_type-mobile",
 			"params_diff": {
-				"flags": ["mobile"]
+				"vars": {
+					"client_type": "mobile"
+				}
 			},
 			"tests": [
-				{"task": "https://wikipedia.org"   , "expect": "https://wikipedia.org/"     },
-				{"task": "https://en.wikipedia.org", "expect": "https://en.m.wikipedia.org/"}
+				{"task": "https://en.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"  , "expect": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task": "https://en.wikipedia.org/wiki/Gaza_genocide"                      , "expect": "https://en.m.wikipedia.org/wiki/Gaza_genocide"},
+				{"task": "https://en.wikipedia.org/wiki/Zionism"                            , "expect": "https://en.m.wikipedia.org/wiki/Zionism"},
+				{"task": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell", "expect": "https://en.m.wikipedia.org/wiki/Self-immolation_of_Aaron_Bushnell"},
+				{"task": "https://en.m.wikipedia.org/wiki/Gaza_genocide"                    , "expect": "https://en.m.wikipedia.org/wiki/Gaza_genocide"},
+				{"task": "https://en.m.wikipedia.org/wiki/Zionism"                          , "expect": "https://en.m.wikipedia.org/wiki/Zionism"}
 			]
 		},
 
 
 
 		{
-			"name": "offline-embed_compatibility",
+			"name": "offline-bluesky_mode-embed",
 			"params_diff": {
-				"flags": ["embed_compatibility"]
+				"vars": {
+					"bluesky_mode": "embed"
+				}
 			},
 			"tests": [
 				{"task": "https://bsky.app/profile/abc.bsky.social/post/123"  , "expect": "https://fxbsky.app/profile/abc.bsky.social/post/123"},
@@ -187,26 +218,71 @@
 
 
 		{
-			"name": "offline-invidious",
-			"params_diff": {
-				"flags": ["invidious"]
-			},
+			"name": "offline-furaffinity_mode-unset",
 			"tests": [
-				{"task": "https://youtube.com/watch?v=12345", "expect": "https://yewtu.be/watch?v=12345"},
-				{"task": "https://yewtu.be/watch?v=12345"   , "expect": "https://yewtu.be/watch?v=12345"}
+				{"task": "https://furaffinity.net"    , "expect": "https://www.furaffinity.net/"},
+				{"task": "https://www.furaffinity.net", "expect": "https://www.furaffinity.net/"},
+				{"task": "https://sfw.furaffinity.net", "expect": "https://sfw.furaffinity.net/"}
 			]
 		},
-
-
-
 		{
-			"name": "offline-uninvidious",
+			"name": "offline-furaffinity_mode-canon",
 			"params_diff": {
-				"flags": ["uninvidious"]
+				"vars": {
+					"furaffinity_mode": "canon"
+				}
 			},
 			"tests": [
-				{"task": "https://youtube.com/watch?v=12345", "expect": "https://www.youtube.com/watch?v=12345"},
-				{"task": "https://yewtu.be/watch?v=12345"   , "expect": "https://www.youtube.com/watch?v=12345"}
+				{"task": "https://furaffinity.net"    , "expect": "https://www.furaffinity.net/"},
+				{"task": "https://www.furaffinity.net", "expect": "https://www.furaffinity.net/"},
+				{"task": "https://sfw.furaffinity.net", "expect": "https://www.furaffinity.net/"}
+			]
+		},
+		{
+			"name": "offline-furaffinity_mode-sfw",
+			"params_diff": {
+				"vars": {
+					"furaffinity_mode": "sfw"
+				}
+			},
+			"tests": [
+				{"task": "https://furaffinity.net"    , "expect": "https://sfw.furaffinity.net/"},
+				{"task": "https://www.furaffinity.net", "expect": "https://sfw.furaffinity.net/"},
+				{"task": "https://sfw.furaffinity.net", "expect": "https://sfw.furaffinity.net/"}
+			]
+		},
+		{
+			"name": "offline-furaffinity_mode-nsfw",
+			"params_diff": {
+				"vars": {
+					"furaffinity_mode": "nsfw"
+				}
+			},
+			"tests": [
+				{"task": "https://furaffinity.net"    , "expect": "https://www.furaffinity.net/"},
+				{"task": "https://www.furaffinity.net", "expect": "https://www.furaffinity.net/"},
+				{"task": "https://sfw.furaffinity.net", "expect": "https://www.furaffinity.net/"}
+			]
+		},
+		{
+			"name": "offline-furaffinity-unmangle",
+			"job_context": {
+				"source_host": "furaffinity.net"
+			},
+			"tests": [
+				{
+					"task": {
+						"url": "https://twitter.com/not-actually-important",
+						"context": {
+							"vars": {
+								"unmangle_mode": "contact_info",
+								"site": "twitter",
+								"text": "@example"
+							}
+						}
+					},
+					"expect": "https://x.com/example"
+				}
 			]
 		},
 
@@ -227,24 +303,95 @@
 
 
 		{
-			"name": "offline-furaffinity",
-			"job_context": {
-				"source_host": "furaffinity.net"
+			"name": "offline-twitter_mode-unset",
+			"tests": [
+				{"task": "https://twitter.com/username/status/1" , "expect": "https://x.com/username/status/1"},
+				{"task": "https://x.com/username/status/1"       , "expect": "https://x.com/username/status/1"},
+				{"task": "https://fixupx.com/username/status/1"  , "expect": "https://x.com/username/status/1"},
+				{"task": "https://nitter.net/username/status/1"  , "expect": "https://nitter.net/username/status/1"},
+				{"task": "https://xcancel.com/username/status/1" , "expect": "https://nitter.net/username/status/1"}
+			]
+		},
+		{
+			"name": "offline-twitter_mode-canon",
+			"params_diff": {
+				"vars": {
+					"twitter_mode": "canon"
+				}
 			},
 			"tests": [
-				{
-					"task": {
-						"url": "https://twitter.com/not-actually-important",
-						"context": {
-							"vars": {
-								"unmangle_mode": "contact_info",
-								"site": "twitter",
-								"text": "@example"
-							}
-						}
-					},
-					"expect": "https://x.com/example"
+				{"task": "https://twitter.com/username/status/1" , "expect": "https://x.com/username/status/1"},
+				{"task": "https://x.com/username/status/1"       , "expect": "https://x.com/username/status/1"},
+				{"task": "https://fixupx.com/username/status/1"  , "expect": "https://x.com/username/status/1"},
+				{"task": "https://nitter.net/username/status/1"  , "expect": "https://x.com/username/status/1"},
+				{"task": "https://xcancel.com/username/status/1" , "expect": "https://x.com/username/status/1"}
+			]
+		},
+		{
+			"name": "offline-twitter_mode-embed",
+			"params_diff": {
+				"vars": {
+					"twitter_mode": "embed"
 				}
+			},
+			"tests": [
+				{"task": "https://twitter.com/username/status/1" , "expect": "https://fixupx.com/username/status/1"},
+				{"task": "https://x.com/username/status/1"       , "expect": "https://fixupx.com/username/status/1"},
+				{"task": "https://fixupx.com/username/status/1"  , "expect": "https://fixupx.com/username/status/1"},
+				{"task": "https://nitter.net/username/status/1"  , "expect": "https://fixupx.com/username/status/1"},
+				{"task": "https://xcancel.com/username/status/1" , "expect": "https://fixupx.com/username/status/1"}
+			]
+		},
+		{
+			"name": "offline-twitter_mode-nitter",
+			"params_diff": {
+				"vars": {
+					"twitter_mode": "nitter"
+				}
+			},
+			"tests": [
+				{"task": "https://twitter.com/username/status/1" , "expect": "https://nitter.net/username/status/1"},
+				{"task": "https://x.com/username/status/1"       , "expect": "https://nitter.net/username/status/1"},
+				{"task": "https://fixupx.com/username/status/1"  , "expect": "https://nitter.net/username/status/1"},
+				{"task": "https://nitter.net/username/status/1"  , "expect": "https://nitter.net/username/status/1"},
+				{"task": "https://xcancel.com/username/status/1" , "expect": "https://nitter.net/username/status/1"}
+			]
+		},
+
+
+
+		{
+			"name": "offline-youtube_mode-unset",
+			"tests": [
+				{"task": "https://youtube.com/watch?v=12345"   , "expect": "https://www.youtube.com/watch?v=12345"},
+				{"task": "https://yewtu.be/watch?v=12345"      , "expect": "https://yewtu.be/watch?v=12345"       },
+				{"task": "https://inv.nadeko.net/watch?v=12345", "expect": "https://yewtu.be/watch?v=12345"       }
+			]
+		},
+		{
+			"name": "offline-youtube_mode-canon",
+			"params_diff": {
+				"vars": {
+					"youtube_mode": "canon"
+				}
+			},
+			"tests": [
+				{"task": "https://youtube.com/watch?v=12345"   , "expect": "https://www.youtube.com/watch?v=12345"},
+				{"task": "https://yewtu.be/watch?v=12345"      , "expect": "https://www.youtube.com/watch?v=12345"},
+				{"task": "https://inv.nadeko.net/watch?v=12345", "expect": "https://www.youtube.com/watch?v=12345"}
+			]
+		},
+		{
+			"name": "offline-youtube_mode-invidious",
+			"params_diff": {
+				"vars": {
+					"youtube_mode": "invidious"
+				}
+			},
+			"tests": [
+				{"task": "https://youtube.com/watch?v=12345"   , "expect": "https://yewtu.be/watch?v=12345"},
+				{"task": "https://yewtu.be/watch?v=12345"      , "expect": "https://yewtu.be/watch?v=12345"},
+				{"task": "https://inv.nadeko.net/watch?v=12345", "expect": "https://yewtu.be/watch?v=12345"}
 			]
 		},
 
