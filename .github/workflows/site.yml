@@ -29,10 +29,25 @@ jobs:
 
     - name: 'HTTP Profiles'
       run: |
-        PROFILES='{"base":{"params_diff":{"flags":["unmobile"]}},"named":{"youtube_unshort":{"params_diff":{"flags":["youtube_unshort"]}}}}'
-
-        PARAMS_DIFF1='{"unflags":["unmobile"]}'
-        PARAMS_DIFF2='{"unflags":["unmobile"],"flags":["mobile"]}'
+        PROFILES='
+        {
+          "base": {
+            "params_diff": {
+              "vars": {
+                "client_type": "desktop"
+              }
+            }
+          },
+          "named": {
+            "youtube_unshort": {
+              "params_diff": {
+                "flags": ["youtube_unshort"]
+              }
+            }
+          }
+        }'
+        PARAMS_DIFF1='{"unvars": ["client_type"]}'
+        PARAMS_DIFF2='{"vars": {"client_type": "mobile"}}'
 
         ./urlcs --profiles <(echo "$PROFILES") &
         site=$!
