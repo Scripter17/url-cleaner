@@ -137,70 +137,58 @@ pub enum CliError {
 fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
-    #[cfg(feature = "bundled-cleaner")]
-    let mut cleaner = Cleaner::load_or_get_bundled_no_cache(args.cleaner)?;
-    #[cfg(not(feature = "bundled-cleaner"))]
-    let mut cleaner = Cleaner::load_from_file(args.cleaner)?;
+    let mut profiled_cleaner_config = ProfiledCleanerConfig {
+        #[cfg(    feature = "bundled-cleaner") ] cleaner: Cleaner::load_or_get_bundled_no_cache(args.cleaner)?,
+        #[cfg(not(feature = "bundled-cleaner"))] cleaner: Cleaner::load_from_file(args.cleaner)?,
+        profiles_config: args.profiles.map(ProfilesConfig::load_from_file).transpose()?.unwrap_or_default()
+    };
 
-    let profiles_config = args.profiles   .map(ProfilesConfig::load_from_file).transpose()?;
-    let params_diff     = args.params_diff.map(ParamsDiff    ::load_from_file).transpose()?;
-    let job_context     = args.job_context.map(JobContext    ::load_from_file).transpose()?.unwrap_or_default();
+    let pd_file = args.params_diff.map(ParamsDiff::load_from_file).transpose()?.unwrap_or_default();
+    let pd_args = ParamsDiff {
+        flags: args.flag.into_iter().collect(),
+        vars: args.var.into_iter().map(|mut kv| (kv.remove(0), kv.remove(0))).collect(),
+        ..Default::default()
+    };
 
     if args.assert_suitability {
-        println!("Asserting the suitability of the loaded Cleaner, ProfilesConfig, and ParamsDiffs.");
-        
-        let profiled_cleaner = ProfiledCleanerConfig {
-            cleaner,
-            profiles_config: profiles_config.unwrap_or_default()
-        }.make();
+        for (name, mut profile) in profiled_cleaner_config.profiles_config.clone().into_each() {
+            let name = name.as_deref().unwrap_or("Base");
 
-        let extra_params_diff = match (&*args.flag, &*args.var) {
-            ([], []) => None,
-            _ => Some(ParamsDiff {
-                flags: args.flag.into_iter().collect(),
-                #[allow(clippy::indexing_slicing, reason = "Clap should ensure there's exactly 2.")]
-                vars: args.var.into_iter().map(|kv| <(_, _)>::from(<[String; 2]>::try_from(kv).expect("Clap to work."))).collect(),
-                ..Default::default()
-            })
-        };
+            profile.params_diff.merge(pd_file.clone());
+            profiled_cleaner_config.profiles_config.named.insert(format!("{name} + ParamsDiff file"), profile.clone());
 
-        for (name, mut cleaner) in profiled_cleaner.get_each() {
-            println!("  Testing profile {name:?}");
-
-            cleaner.assert_suitability();
-
-            if let Some(params_diff) = params_diff.clone() {
-                println!("    Testing with --params-diff");
-                params_diff.apply(&mut cleaner.params);
-                cleaner.assert_suitability();
-            }
-
-            if let Some(extra_params_diff) = extra_params_diff.clone() {
-                println!("    Testing with --flag, --var, etc.");
-                extra_params_diff.apply(&mut cleaner.params);
-                cleaner.assert_suitability();
-            }
+            profile.params_diff.merge(pd_args.clone());
+            profiled_cleaner_config.profiles_config.named.insert(format!("{name} + ParamsDiff file + ParamsDiff args"), profile);
         }
+
+        profiled_cleaner_config.make().assert_suitability();
 
         return Ok(());
     }
 
-    if let Some(profiles_config) = profiles_config {
-        cleaner = ProfiledCleanerConfig {
-            cleaner,
-            profiles_config
-        }.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
-    }
+    let job_context = args.job_context.map(JobContext::load_from_file).transpose()?.unwrap_or_default();
 
-    if let Some(params_diff) = params_diff {
-        params_diff.apply(&mut cleaner.params);
-    }
+    let mut cleaner = profiled_cleaner_config.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
 
-    cleaner.params.flags.to_mut().extend(args.flag);
-    for var in args.var {
-        let [name, value] = var.try_into().expect("The clap parser to work");
-        cleaner.params.vars.to_mut().insert(name, value);
-    }
+    pd_file.apply(&mut cleaner.params);
+    pd_args.apply(&mut cleaner.params);
+
+    let job = &Job {
+        context: job_context,
+        cleaner,
+        unthreader: &Unthreader::r#if(args.unthread),
+        #[cfg(feature = "cache")]
+        cache: Cache {
+            inner: &args.cache.into(),
+            config: CacheConfig {
+                read : !args.no_read_cache,
+                write: !args.no_write_cache,
+                delay:  args.cache_delay,
+            }
+        },
+        #[cfg(feature = "http")]
+        http_client: &HttpClient::new()
+    };
 
     // Do the job.
 
@@ -221,23 +209,6 @@ fn main() -> Result<(), CliError> {
     let (in_senders    , in_recievers    ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, std::io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
     let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
     let (out_senders   , out_recievers   ) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
-
-    let job = &Job {
-        context: job_context,
-        cleaner,
-        unthreader: &Unthreader::r#if(args.unthread),
-        #[cfg(feature = "cache")]
-        cache: Cache {
-            inner: &args.cache.into(),
-            config: CacheConfig {
-                read : !args.no_read_cache,
-                write: !args.no_write_cache,
-                delay:  args.cache_delay,
-            }
-        },
-        #[cfg(feature = "http")]
-        http_client: &HttpClient::new()
-    };
 
     std::thread::scope(|s| {
 

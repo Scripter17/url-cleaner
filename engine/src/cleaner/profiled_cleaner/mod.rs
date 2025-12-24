@@ -156,4 +156,47 @@ impl<'a> ProfiledCleaner<'a> {
             self.profiles.named.into_iter().map(move |(name, profile)| (name, self.unprofiled_cleaner.clone().with_profile(profile)))
         )
     }
+
+    /// Asserts the suitability of each [`Cleaner`].
+    /// # Panics
+    /// If any call to [`Cleaner::assert_suitability`] panics, continues the panic with added context.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::prelude::*;
+    ///
+    /// std::panic::catch_unwind(|| serde_json::from_str::<ProfiledCleanerConfig>(r#"
+    ///     {
+    ///         "cleaner": {
+    ///             "docs": {
+    ///                 "params": {
+    ///                     "flags": {
+    ///                         "documented": "docs"
+    ///                     }
+    ///                 }
+    ///             }
+    ///         },
+    ///         "profiles_config": {
+    ///             "base": {
+    ///                 "params_diff": {
+    ///                     "flags": ["documented"]
+    ///                 }
+    ///             },
+    ///             "named": {
+    ///                 "unsuitable": {
+    ///                     "params_diff": {
+    ///                         "flags": ["undocumented"]
+    ///                     }
+    ///                 }
+    ///             }
+    ///         }
+    ///     }"#).unwrap().make().assert_suitability()).unwrap_err();
+    /// ```
+    pub fn assert_suitability(&self) {
+        for (name, cleaner) in self.get_each() {
+            if let Err(e) = std::panic::catch_unwind(|| cleaner.assert_suitability()) {
+                eprintln!("Unsuitable profile: {name:?}");
+                std::panic::resume_unwind(e);
+            }
+        }
+    }
 }

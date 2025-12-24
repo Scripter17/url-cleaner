@@ -24,8 +24,8 @@ jobs:
         ./urlcs &
         sleep 1
         in=$(seq -f "https://%0.0f.com/" 127)
-        [[ "$(echo "$in" | curl -f http://localhost:9149/clean --data-binary @- | grep .)" == "$in" ]]
-        kill $!
+        diff <(echo "$in" | curl -f http://localhost:9149/clean --data-binary @- | grep .) <(echo "$in" | grep .)
+        kill %1
 
     - name: 'HTTP Profiles'
       run: |
@@ -50,7 +50,6 @@ jobs:
         PARAMS_DIFF2='{"vars": {"client_type": "mobile"}}'
 
         ./urlcs --profiles <(echo "$PROFILES") &
-        site=$!
         sleep 1
 
         diff -y <(
@@ -97,7 +96,7 @@ jobs:
 
         ! curl -sf "http://127.0.0.1:9149/clean" -H 'X-Config: {"profile":"notfound"}' --data-binary ""
 
-        kill $site
+        kill %1
 
     - name: 'HTTP Passwords'
       run: |
@@ -131,4 +130,5 @@ jobs:
         ./urlcs &
         sleep 1
         in=$(seq -f "https://%0.0f.com/" 127)
-        [[ "$(echo "$in" | ./websocat ws://127.0.0.1:9149/clean_ws | grep .)" == "$in" ]]
+        diff <(echo "$in" | ./websocat ws://127.0.0.1:9149/clean_ws | grep .) <(echo "$in" | grep .)
+        kill %1

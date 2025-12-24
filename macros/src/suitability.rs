@@ -59,7 +59,7 @@ pub(crate) fn suitability_derive(input: TokenStream) -> TokenStream {
                     match get_suitability_override(&attrs) {
                         Ok(Some(SuitabilityOverride::Never))        => quote!{panic!("{} is never suitable", stringify!(#name.#member));},
                         Ok(Some(SuitabilityOverride::Always))       => quote!{},
-                        Ok(Some(SuitabilityOverride::Assert(func))) => quote!{#func(self.#member, config);},
+                        Ok(Some(SuitabilityOverride::Assert(func))) => quote!{#func(&self.#member, config);},
                         Ok(None)                                    => quote!{self.#member.assert_suitability(config);},
                         Err(e)                                      => e.into_compile_error()
                     }

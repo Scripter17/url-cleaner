@@ -19,7 +19,10 @@ pub struct Frontends {
     pub cli: bool,
     /// Site.
     #[arg(long)]
-    pub site: bool
+    pub site: bool,
+    /// Discord.
+    #[arg(long)]
+    pub discord: bool
 }
 
 impl Args {
@@ -32,8 +35,9 @@ impl Args {
         cmd.stdout(std::io::stderr());
         cmd.stderr(std::io::stderr());
 
-        if self.frontends.cli  {cmd.args(["--bin", "url-cleaner"     ]);}
-        if self.frontends.site {cmd.args(["--bin", "url-cleaner-site"]);}
+        if self.frontends.cli     {cmd.args(["--bin", "url-cleaner"            ]);}
+        if self.frontends.site    {cmd.args(["--bin", "url-cleaner-site"       ]);}
+        if self.frontends.discord {cmd.args(["--bin", "url-cleaner-discord-app"]);}
 
         assert_eq!(cmd.spawn().unwrap().wait().unwrap().code(), Some(0));
     }

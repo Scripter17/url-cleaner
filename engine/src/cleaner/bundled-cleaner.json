@@ -5,68 +5,154 @@
 			"The bundled cleaner; Meant for general purpose every day URL Cleaning.",
 			"Licensed under the AGPL 3.0 or later."
 		],
-		"flags": {
-			"keep_affiliate": "Don't remove affiliate info from affiliate links.",
+		"params": {
+			"flags": {
+				"keep_affiliate": "Don't remove affiliate info from affiliate links.",
 
-			"bypass_vip"                : "Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.",
-			"keep_http"                 : "Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.",
-			"no_network"                : "Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.",
-			"remove_unused_search_query": "Remove search queries from URLs that aren't search results (for example, posts).",
-			"tor2web2tor"               : "Change `**.onion.**` hosts to `**.onion`.",
+				"bypass_vip"                : "Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.",
+				"keep_http"                 : "Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.",
+				"no_network"                : "Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.",
+				"remove_unused_search_query": "Remove search queries from URLs that aren't search results (for example, posts).",
+				"tor2web2tor"               : "Change `**.onion.**` hosts to `**.onion`.",
 
-			"discord_unexternal"     : "Change `images-ext-*.discordapp.net` URLs to the original images they refer to.",
-			"instagram_unprofilecard": "Change `instagram.com/username/profilecard` to `instagram.com/username`.",
-			"tumblr_unsubdomain_blog": "Change `blog.tumblr.com` to `tumblr.com/blog`.",
-			"youtube_unplaylist"     : "Remove the `list` query param from `youtube.com/watch` URLs.",
-			"youtube_unshort"        : "Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`."
-		},
-		"vars": {
-			"client_type"       : "Whether the client is a desktop or mobile device.\n  - Unset to keep URLs as-is.\n  - `desktop` to change mobile URLs to desktop URLs.\n  - `mobile` to change dekstop URLs to mobile URLs.",
+				"discord_unexternal"     : "Change `images-ext-*.discordapp.net` URLs to the original images they refer to.",
+				"instagram_unprofilecard": "Change `instagram.com/username/profilecard` to `instagram.com/username`.",
+				"tumblr_unsubdomain_blog": "Change `blog.tumblr.com` to `tumblr.com/blog`.",
+				"youtube_unplaylist"     : "Remove the `list` query param from `youtube.com/watch` URLs.",
+				"youtube_unshort"        : "Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`."
+			},
+			"vars": {
+				"client_type": {
+					"desc": "Whether the client is a desktop or mobile device.",
+					"required": false,
+					"unset": "Keep URLs as-is.",
+					"variants": {
+						"desktop": "to change mobile URLs to desktop URLs.",
+						"mobile" : "to change dekstop URLs to mobile URLs."
+					}
+				},
 
-			"bypass_vip_api_key": "The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var.",
+				"bypass_vip_api_key": {
+					"desc": "The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var.",
+					"required": false
+				},
 
-			"bluesky_mode"      : "Decides what host to replace Bluesky/Bluesky embed hosts with.\n  - Unset to set Bluesky and Bluesky embed hosts to `bsky.app`.\n  - `canon` to always set it to `bsky.app`.\n  - `embed` to always set it to the `bluesky_embed_host` var.",
-			"bluesky_embed_host": "The Bluesky embed host to use. Defaults to `fxbsky.com`.",
+				"bluesky_mode": {
+					"desc": "Decides what host to replace Bluesky/Bluesky embed hosts with.",
+					"required": false,
+					"unset": "Set Bluesky and Bluesky embed hosts to `bsky.app`.",
+					"variants": {
+						"canon": "Always set it to `bsky.app`.",
+						"embed": "Always set it to the `bluesky_embed_host` var."
+					}
+				},
+				"bluesky_embed_host": {
+					"desc": "The Bluesky embed host to use.",
+					"required": true
+				},
 
-			"fandom_mode"       : "Decides what to replace Fandom/Breezewiki URLs with.\n  - Unset to keep fandom URLs as-is and change Breezewiki URLs to the `breezewiki_host` var.\n  - `canon` to set to fandom.\n  - `breezewiki` to set to the `breezewiki_host` var.",
-			"breezewiki_host"   : "The Breezewiki host to use. Defaults to `breezewiki.com`.",
+				"fandom_mode": {
+					"desc": "Decides what to replace Fandom/Breezewiki URLs with.",
+					"required": false,
+					"unset": "Keep fandom URLs as-is and change Breezewiki URLs to the `breezewiki_host` var.",
+					"variants": {
+						"canon"     : "Set to fandom.",
+						"breezewiki": "Set to the `breezewiki_host` var."
+					}
+				},
+				"breezewiki_host": {
+					"desc": "The Breezewiki host to use.",
+					"required": true
+				},
 
-			"furaffinity_mode"  : "Decides what host to replace reddit hosts with.\n  - Unset to keep as-is.\n  - `canon` to set to `furaffinity.net`.\n  - `sfw` to set to `sfw.furaffinity.net`.\n  - `nsfw` to set to `www.furaffinity.net`.",
+				"furaffinity_mode": {
+					"desc": "Decides what host to replace reddit hosts with.",
+					"required": false,
+					"unset": "Keep as-is.",
+					"variants": {
+						"canon": "Set to `furaffinity.net`.",
+						"sfw"  : "Set to `sfw.furaffinity.net`.",
+						"nsfw" : "Set to `www.furaffinity.net`."
+					}
+				},
 
-			"pixiv_mode"        : "Decides what host to replace pixiv/pixiv embed hosts with.\n  - Unset to set pixiv and pixiv embed hosts to `www.pixiv.net`.\n  - `canon` to always set it to `www.pixiv.net`.\n  - `embed` to always set it to the `pixiv_embed_host` var.",
-			"pixiv_embed_host"  : "The pixiv embed host to use. Defaults to `phixiv.com`.",
+				"pixiv_mode": {
+					"desc": "Decides what host to replace pixiv/pixiv embed hosts with.",
+					"required": false,
+					"unset": "Set pixiv and pixiv embed hosts to `www.pixiv.net`.",
+					"variants": {
+						"canon": "Always set it to `www.pixiv.net`.",
+						"embed": "Always set it to the `pixiv_embed_host` var."
+					}
+				},
+				"pixiv_embed_host": {
+					"desc": "The pixiv embed host to use.",
+					"required": true
+				},
 
-			"reddit_mode"       : "Decides what host to replace reddit hosts with.\n  - Unset to keep as-is.\n  - `old` to set to `old.reddit.com`.\n  - `new` to set to `www.reddit.com`.",
+				"reddit_mode": {
+					"desc": "Decides what host to replace reddit hosts with.",
+					"required": false,
+					"unset": "Keep as-is.",
+					"variants": {
+						"old": "Set to `old.reddit.com`.",
+						"new": "Set to `www.reddit.com`."
+					}
+				},
 
-			"twitter_mode"      : "Decides what host to replace twitter/twitter embed/Nitter hosts with.\n  - Unset to set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.\n  - `canon` to always set it to `x.com`.\n  - `embed` to always set it to the `twitter_embed_host` var.\n  - `nitter` to always set it to the `nitter_host` var. Defaults to unset.",
-			"twitter_embed_host": "The twitter embed host to use.. Defaults to `fixupx.com`.",
-			"nitter_host"       : "The Nitter host to use. Defaults to `nitter.net`.",
+				"twitter_mode": {
+					"desc": "Decides what host to replace twitter/twitter embed/Nitter hosts with.",
+					"required": false,
+					"unset": "Set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.",
+					"variants": {
+						"canon" : "Always set it to `x.com`.",
+						"embed" : "Always set it to the `twitter_embed_host` var.",
+						"nitter": "Always set it to the `nitter_host` var. Defaults to unset."
+					}
+				},
+				"twitter_embed_host": {
+					"desc": "The twitter embed host to use.",
+					"required": true
+				},
+				"nitter_host": {
+					"desc": "The Nitter host to use.",
+					"required": true
+				},
 
-			"youtube_mode"      : "Decides what host to replace youtube/Invidious hosts with.\n  - Unset to set youtube hosts to `www.youtube.com` and Invidious hosts to the `invidious_host` var.\n  - `canon` to always set it to `www.youtube.com`.\n  - `invidious` to always set it to the `invidious_host` var.",
-			"invidious_host"    : "The Invidious host to use. Defaults to `yewtu.be`."
-		},
-		"environment_vars": {
-			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip). Can be overridden with the `bypass_vip_api_key` var."
-		},
-		"sets": {
-			"utps": "Universal tracking parameters to remove from all URLs whose RegDomain isn't in the `rd_keep_utps` set. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.",
+				"youtube_mode": {
+					"desc": "Decides what host to replace youtube/Invidious hosts with.",
+					"required": false,
+					"unset": "Set youtube hosts to `www.youtube.com` and Invidious hosts to the `invidious_host` var.",
+					"variants": {
+						"canon"    : "Always set it to `www.youtube.com`.",
+						"invidious": "Always set it to the `invidious_host` var."
+					}
+				},
+				"invidious_host": {
+					"desc": "The Invidious host to use.",
+					"required": true
+				}
+			},
+			"sets": {
+				"utps": "Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.",
 
-			"nh_keep_http": "The `NormalizedHost`s to not upgrade from `http` to `https`."
-		},
-		"lists": {
-			"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."
-		},
-		"partitionings": {
-			"nh_categories": "Categories of similar websites with shared cleaning methods.",
+				"nh_keep_http": "The `NormalizedHost`s to not upgrade from `http` to `https`."
+			},
+			"lists": {
+				"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."
+			},
+			"partitionings": {
+				"nh_categories": "Categories of similar websites with shared cleaning methods.",
 
-			"rd_www_subdomain": "The `RegDomain`s to ensure/remove `www` `Subdomain`s.",
-			"dm_www_subdomain": "The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.",
+				"rd_www_subdomain": "The `RegDomain`s to ensure/remove `www` `Subdomain`s.",
+				"dm_www_subdomain": "The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.",
 
-			"dm_expand_mode": "How to handle redirect `DomainMiddle`s.",
-			"nh_expand_mode": "How to handle redirect `NormalizedHost`s.",
-			"rd_expand_mode": "How to handle redirect `RegDomain`s,",
+				"dm_expand_mode": "How to handle redirect `DomainMiddle`s.",
+				"nh_expand_mode": "How to handle redirect `NormalizedHost`s.",
+				"rd_expand_mode": "How to handle redirect `RegDomain`s,",
 
-			"mobilizer": "Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL."
+				"mobilizer": "Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL."
+			}
 		},
 		"task_context": {
 			"vars": {
@@ -74,6 +160,9 @@
 				"site": "The name of the website used in the contact_info unmangle_mode.",
 				"text": "The text of the link used in the contact_info unmangle_mode."
 			}
+		},
+		"environment_vars": {
+			"URL_CLEANER_BYPASS_VIP_API_KEY": "The API key used for [bypass.vip](https://bypass.vip). Can be overridden with the `bypass_vip_api_key` var."
 		}
 	},
 	"params": {
@@ -90,36 +179,36 @@
 			"nh_keep_http": ["cos.lv", "localhost", "orteil.dashnet.org", "smartytags.com"],
 
 			"utps": [
-				"", "ActionID", "AffiliateID", "NaPm", "OutLink", "Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_bdadid", "_bhlid", "_branch_match_id", 
-				"_branch_referrer", "_clde", "_cldee", "_ga", "_gl", "_hsenc", "_hsmi", "_io_session_id", "_kx", "_ope", "_openstat", "_sgm_action", "_sgm_campaign", 
-				"_sgm_pinned", "_sgm_source", "_sgm_term", "_zucks_suid", "a8", "a_aid", "acm", "action_object_map", "action_ref_map", "action_type_map", "adc_publisher", 
-				"adc_token", "adcref", "adfrom", "adj_campaign", "adj_creative", "adj_label", "adj_t", "adjust_adgroup", "adjust_campaign", "adjust_creative", "adjust_referrer", 
-				"adjust_tracker", "adjust_tracker_limit", "admitad_uid", "adobe_mc_ref", "adobe_mc_sdid", "adsterra_clid", "adsterra_placement_id", "af_ad", "af_adset", 
-				"af_click_lookback", "af_force_deeplink", "af_xp", "afid", "aiad_clid", "aid", "asc_campaign", "asc_refurl", "asc_source", "asgtbndr", "at_campaign", 
-				"at_campaign_type", "at_creation", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id", 
-				"at_recipient_list", "at_send_date", "awc", "bbeml", "bemobdata", "beyond_uzcvid", "beyond_uzmcvid", "bid", "bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek", 
-				"bsft_mid", "bsft_uid", "btag", "campid", "cid", "cjdata", "cjevent", "clickTrackInfo", "clid", "cm_cr", "cm_me", "cmpid", "cooper", "cstrackid", "cuid", "cvid", 
-				"cvrid", "cvrpid", "cvrsid", "cx_click", "cx_recsOrder", "cx_recsWidget", "cxt", "dclid", "dmmref", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source", 
-				"dt_dapp", "ebisAdID", "ebisOther1", "ebisOther2", "ebisOther3", "ebisOther4", "ebisOther5", "embeds_referring_euri", "embeds_referring_origin", "emcs_t", 
-				"ems_dl", "epi", "erid", "et_rid", "external_click_id", "famad_xuid", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref", "fb_source", "fbadid", 
-				"fbclid", "frm", "from", "from_country", "gad_source", "gbraid", "gci", "gclid", "gclsrc", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig", 
-				"hsCtaTracking", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt", "hsa_ver", "i3_ord", 
-				"i3_ref", "ici", "iclid", "igshid", "int_campaign", "int_content", "int_medium", "int_source", "int_term", "ir_adid", "ir_campaignid", "ir_partnerid", 
-				"irclickid", "irgwc", "is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "l-id", "laz_trackid", "line_uid", 
-				"loclid", "maf", "mallCode", "mbid", "mc_cid", "mc_eid", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "mkttid", "ml_subscriber", "ml_subscriber_hash", 
-				"msclkid", "mt_adset", "mt_campaign", "mt_click_id", "mt_creative", "mt_link_id", "mt_medium", "mt_network", "mt_sub1", "mt_sub2", "mt_sub3", "mt_sub4", 
-				"mt_sub5", "mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "naver", "nb_expid_meta", 
-				"nb_placement", "nclid", "newsstand", "ns_campaign", "ns_fee", "ns_linkname", "ns_mchannel", "ns_source", "nv", "nx_source", "ocid", "oft_c", "oft_ck", "oft_d", 
-				"oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "oref", "personaclick_input_query", "personaclick_search_query", "pg", 
-				"phfp", "phone_code", "pk_campaign", "pk_cid", "pk_medium", "pk_source", "pk_vid", "plink", "promotionId", "publish_id", "rb_clickid", "recom", "recommended_by", 
-				"recommended_code", "ref", "ref_src", "ref_type", "ref_url", "refsrc", "rtkcid", "s-id", "s_cid", "sc", "sc_customer", "sc_eh", "sc_uid", "scid", "scm", 
-				"search_domain", "search_source", "sms_click", "sms_source", "sms_uph", "source_ve_path", "sp_atk", "spm", "spot_im_redirect_source", "src_module", 
-				"src_tab_page_id", "srsltid", "ss_email_id", "sscid", "stm_medium", "stm_source", "sub_rt", "tag3", "tduid", "trackcode", "trafficFrom", "ttclid", "tw_medium", 
-				"tw_profile_id", "tw_source", "twclid", "unicorn_click_id", "union_lens", "urrad", "user_email_address", "usqp", "utm_ad", "utm_adgroup", "utm_adset", 
-				"utm_affiliate", "utm_brand", "utm_campaign", "utm_campaign_name", "utm_campaignid", "utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid", 
-				"utm_emmid", "utm_id", "utm_id_", "utm_journey_id", "utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader", 
-				"utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_source_code", 
-				"utm_source_platform", "utm_supplier", "utm_swu", "utm_tag", "utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "uzcid", "vc_lpp", "vero_conv", "vero_id", 
+				"", "ActionID", "AffiliateID", "NaPm", "OutLink", "Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_bdadid", "_bhlid", "_branch_match_id",
+				"_branch_referrer", "_clde", "_cldee", "_ga", "_gl", "_hsenc", "_hsmi", "_io_session_id", "_kx", "_ope", "_openstat", "_sgm_action", "_sgm_campaign",
+				"_sgm_pinned", "_sgm_source", "_sgm_term", "_zucks_suid", "a8", "a_aid", "acm", "action_object_map", "action_ref_map", "action_type_map", "adc_publisher",
+				"adc_token", "adcref", "adfrom", "adj_campaign", "adj_creative", "adj_label", "adj_t", "adjust_adgroup", "adjust_campaign", "adjust_creative", "adjust_referrer",
+				"adjust_tracker", "adjust_tracker_limit", "admitad_uid", "adobe_mc_ref", "adobe_mc_sdid", "adsterra_clid", "adsterra_placement_id", "af_ad", "af_adset",
+				"af_click_lookback", "af_force_deeplink", "af_xp", "afid", "aiad_clid", "aid", "asc_campaign", "asc_refurl", "asc_source", "asgtbndr", "at_campaign",
+				"at_campaign_type", "at_creation", "at_emailtype", "at_link", "at_link_id", "at_link_origin", "at_link_type", "at_medium", "at_ptr_name", "at_recipient_id",
+				"at_recipient_list", "at_send_date", "awc", "bbeml", "bemobdata", "beyond_uzcvid", "beyond_uzmcvid", "bid", "bsft_aaid", "bsft_clkid", "bsft_eid", "bsft_ek",
+				"bsft_mid", "bsft_uid", "btag", "campid", "cid", "cjdata", "cjevent", "clickTrackInfo", "clid", "cm_cr", "cm_me", "cmpid", "cooper", "cstrackid", "cuid", "cvid",
+				"cvrid", "cvrpid", "cvrsid", "cx_click", "cx_recsOrder", "cx_recsWidget", "cxt", "dclid", "dmmref", "dpg_campaign", "dpg_content", "dpg_medium", "dpg_source",
+				"dt_dapp", "ebisAdID", "ebisOther1", "ebisOther2", "ebisOther3", "ebisOther4", "ebisOther5", "embeds_referring_euri", "embeds_referring_origin", "emcs_t",
+				"ems_dl", "epi", "erid", "et_rid", "external_click_id", "famad_xuid", "fb_action_ids", "fb_action_types", "fb_comment_id", "fb_ref", "fb_source", "fbadid",
+				"fbclid", "frm", "from", "from_country", "gad_source", "gbraid", "gci", "gclid", "gclsrc", "gps_adid", "guccounter", "guce_referrer", "guce_referrer_sig",
+				"hsCtaTracking", "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw", "hsa_la", "hsa_mt", "hsa_net", "hsa_ol", "hsa_src", "hsa_tgt", "hsa_ver", "i3_ord",
+				"i3_ref", "ici", "iclid", "igshid", "int_campaign", "int_content", "int_medium", "int_source", "int_term", "ir_adid", "ir_campaignid", "ir_partnerid",
+				"irclickid", "irgwc", "is_retargeting", "itm_campaign", "itm_content", "itm_medium", "itm_source", "itm_term", "jmtyClId", "l-id", "laz_trackid", "line_uid",
+				"loclid", "maf", "mallCode", "mbid", "mc_cid", "mc_eid", "mindbox-click-id", "mindbox-message-key", "mkt_tok", "mkttid", "ml_subscriber", "ml_subscriber_hash",
+				"msclkid", "mt_adset", "mt_campaign", "mt_click_id", "mt_creative", "mt_link_id", "mt_medium", "mt_network", "mt_sub1", "mt_sub2", "mt_sub3", "mt_sub4",
+				"mt_sub5", "mtm_campaign", "mtm_cid", "mtm_content", "mtm_group", "mtm_keyword", "mtm_medium", "mtm_placement", "mtm_source", "naver", "nb_expid_meta",
+				"nb_placement", "nclid", "newsstand", "ns_campaign", "ns_fee", "ns_linkname", "ns_mchannel", "ns_source", "nv", "nx_source", "ocid", "oft_c", "oft_ck", "oft_d",
+				"oft_id", "oft_ids", "oft_k", "oft_lk", "oft_sk", "oly_anon_id", "oly_enc_id", "oprtrack", "oref", "personaclick_input_query", "personaclick_search_query", "pg",
+				"phfp", "phone_code", "pk_campaign", "pk_cid", "pk_medium", "pk_source", "pk_vid", "plink", "promotionId", "publish_id", "rb_clickid", "recom", "recommended_by",
+				"recommended_code", "ref", "ref_src", "ref_type", "ref_url", "refsrc", "rtkcid", "s-id", "s_cid", "sc", "sc_customer", "sc_eh", "sc_uid", "scid", "scm",
+				"search_domain", "search_source", "sms_click", "sms_source", "sms_uph", "source_ve_path", "sp_atk", "spm", "spot_im_redirect_source", "src_module",
+				"src_tab_page_id", "srsltid", "ss_email_id", "sscid", "stm_medium", "stm_source", "sub_rt", "tag3", "tduid", "trackcode", "trafficFrom", "ttclid", "tw_medium",
+				"tw_profile_id", "tw_source", "twclid", "unicorn_click_id", "union_lens", "urrad", "user_email_address", "usqp", "utm_ad", "utm_adgroup", "utm_adset",
+				"utm_affiliate", "utm_brand", "utm_campaign", "utm_campaign_name", "utm_campaignid", "utm_channel", "utm_cid", "utm_content", "utm_creative", "utm_emcid",
+				"utm_emmid", "utm_id", "utm_id_", "utm_journey_id", "utm_keyword", "utm_medium", "utm_name", "utm_place", "utm_product", "utm_pubreferrer", "utm_reader",
+				"utm_referrer", "utm_serial", "utm_servlet", "utm_session", "utm_siteid", "utm_social", "utm_social-type", "utm_source", "utm_source_code",
+				"utm_source_platform", "utm_supplier", "utm_swu", "utm_tag", "utm_term", "utm_umguk", "utm_userid", "utm_viz_id", "uzcid", "vc_lpp", "vero_conv", "vero_id",
 				"vgo_ee", "vsm_cid", "vsm_pid", "vsm_type", "wbraid", "wgexpiry", "wgu", "wickedid", "wt_mc", "xmt", "xptdk", "xtor", "yclid", "ymclid", "ymid", "ysclid"
 			]
 		},
@@ -173,14 +262,14 @@
 				"youtube": ["youtube.com", "m.youtube.com"],
 				"youtu_be": ["youtu.be"],
 				"invidious": [
-					"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be", 
+					"inv.nadeko.net", "inv.nadekonw7plitnjuawu6ytjsl7jlglk2t6pyq6eftptmiv3dvqndwvyd.onion", "invidious.nerdvpn.de", "yewtu.be",
 					"zzlsbhhfvwg3oh36tcvx4r7n6jrw7zibvyvfxqlodcwn3mfrvzuq.b32.i2p"
 				],
 
 				"breezewiki": [
-					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org", "breezewiki.catsarch.com", "breezewiki.com", 
-					"breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net", 
-					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe", "bw.artemislena.eu", 
+					"antifandom.com", "breeze.hostux.net", "breeze.mint.lgbt", "breeze.nohost.network", "breeze.whateveritworks.org", "breezewiki.catsarch.com", "breezewiki.com",
+					"breezewiki.frontendfriendly.xyz", "breezewiki.hyperreal.coffee", "breezewiki.nadeko.net",
+					"breezewiki.nadekonfkhwlxwwk4ycbvq42zvcjmvo5iakl4tajojjwxd4a5dcetuyd.onion", "breezewiki.pussthecat.org", "breezewiki.woodland.cafe", "bw.artemislena.eu",
 					"bw.hamstro.dev", "bw.projectsegfau.lt", "bw.skunky7dhv7nohsoalpwe3sxfz3fbkad7r3wk632riye25vqm3meqead.onion", "nerd.whatever.social", "z.opnxng.com"
 				],
 
@@ -198,38 +287,38 @@
 
 			"rd_www_subdomain": {
 				"ensure": [
-					"1688.com", "9news.com.au", "abc.net.au", "adjust.com", "afp.com", "agorapulse.com", "alibaba.com", "animaapp.com", "anrdoezrs.net", "apple.com", "bbc.com", 
-					"behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com", 
-					"crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "elsevier.com", "emjcd.com", "entripy.com", "etsy.com", "euronews.com", "facebook.com", 
-					"fandom.com", "fiverr.com", "forbes.com", "france24.com", "ft.com", "furaffinity.net", "go.com", "go2cloud.org", "gofundme.com", "goodreads.com", "google.com", 
-					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com", 
-					"mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de", "ojrq.net", 
-					"onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reuters.com", 
-					"sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com", "theguardian.com", 
-					"threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com", 
+					"1688.com", "9news.com.au", "abc.net.au", "adjust.com", "afp.com", "agorapulse.com", "alibaba.com", "animaapp.com", "anrdoezrs.net", "apple.com", "bbc.com",
+					"behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com",
+					"crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "elsevier.com", "emjcd.com", "entripy.com", "etsy.com", "euronews.com", "facebook.com",
+					"fandom.com", "fiverr.com", "forbes.com", "france24.com", "ft.com", "furaffinity.net", "go.com", "go2cloud.org", "gofundme.com", "goodreads.com", "google.com",
+					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com",
+					"mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de", "ojrq.net",
+					"onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reuters.com",
+					"sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com", "theguardian.com",
+					"threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com",
 					"whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
 				],
 				"remove": [
-					"2kgam.es", "ab.co", "abcnews.link", "acer.com", "adfoc.us", "adguardteam.github.io", "admiregirls-byme.com", "adobe.ly", "aje.io", "all-fans.online", 
-					"allegro.pl", "amn.st", "amzn.to", "antifandom.com", "apexpartner.app", "artemislena.eu", "b23.tv", "badgirlsdrop.com", "bambulab.com", "bbc.in", "beacons.ai", 
-					"bfy.tw", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boost.ink", "boosty.to", "breezewiki.com", "bsky.app", "buff.ly", 
-					"bugzil.la", "buymeacoffee.com", "bzfd.it", "carleton.ca", "carrd.co", "cash.app", "catsarch.com", "cbsn.ws", "cemendemons.com", "cfl.re", "chn.ge", "chng.it", 
-					"chtbl.com", "click.fan", "cnb.cx", "cnn.it", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "depravityweb.co", "dotomi.com", "duckduckgo.com", 
-					"econ.st", "eepurl.com", "etsy.me", "fal.cn", "fansly.com", "fansmega.com", "fdip.fr", "firefox.dev", "forms.gle", "free-leaks.com", "frontendfriendly.xyz", 
-					"fxbsky.app", "g.co", "gelbooru.com", "girlcockx.com", "glo.bo", "goldmega.online", "goo.gle", "goo.su", "goodsmile.link", "got.cr", "gumroad.com", 
-					"hamstro.dev", "hmstr.fr", "hotstars-leaks.com", "href.li", "hubs.la", "hulu.tv", "hyperreal.coffee", "ift.tt", "inkbunny.net", "intel.ly", "interc.pt", 
-					"iwe.one", "j.mp", "ja.ma", "jbgm.es", "k00.fr", "kavin.rocks", "kck.st", "kre.pe", "kylrth.com", "l8r.it", "leakutopia.site", "linkr.bio", "linkr.com", 
-					"links-loot.com", "linksloot.net", "linktr.ee", "lmddgtfy.net", "lmgtfy.app", "lmgtfy.com", "lnkd.in", "loot-link.com", "loot-links.com", "lootdest.com", 
-					"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "lunar.icu", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com", "melscience.com", 
-					"metafy.gg", "mint.lgbt", "mol.im", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "newsociety0.co", "nine.social", "ninten.do", 
-					"nitter.net", "nohost.network", "nvda.ws", "nyti.ms", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "opnxng.com", "ow.ly", "paster.so", "pawoo.net", 
-					"people.com", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pnp-drops.me", "poast.org", "politi.co", "premiumstashdrop.com", "prn.to", 
-					"propub.li", "pussthecat.org", "py.pl", "qr.io", "qr.link", "qr1.be", "qrco.de", "qrcodes.pro", "rareofhub.com", "rawbit.ninja", "rdbl.co", "rdcu.be", "redd.it", 
-					"reurl.cc", "reut.rs", "s.team", "s76.co", "sbuxjoin.com", "scim.ag", "secretpack-links.com", "sendgrid.net", "shor.tf", "sketchfab.com", "socialwolvez.com", 
-					"sou42.co", "sponsr.is", "spoti.fi", "spotify.link", "sqex.to", "square.link", "st.news", "stackoverflow.com", "steamcommunity.com", "stupidpenisx.com", 
-					"sub2unlock.com", "sub2unlock.io", "sub4unlock.io", "subscribestar.adult", "substack.com", "t.co", "t.ly", "tavernleaks.com", "tee.pub", "than.gs", "thangs.com", 
-					"theatln.tc", "thecut.io", "theonion.com", "throne.com", "tinylf.com", "tinyurl.com", "tmblr.co", "toyhou.se", "tpu.me", "tr.ee", "umblr.com", "unf.pa", 
-					"uni.cf", "ur0.link", "urldefense.com", "visitlink.me", "w.wiki", "whatever.social", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "x.com", "x.gd", "xcancel.com", 
+					"2kgam.es", "ab.co", "abcnews.link", "acer.com", "adfoc.us", "adguardteam.github.io", "admiregirls-byme.com", "adobe.ly", "aje.io", "all-fans.online",
+					"allegro.pl", "amn.st", "amzn.to", "antifandom.com", "apexpartner.app", "artemislena.eu", "b23.tv", "badgirlsdrop.com", "bambulab.com", "bbc.in", "beacons.ai",
+					"bfy.tw", "bgfn.sh", "bitly.com", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boost.ink", "boosty.to", "breezewiki.com", "bsky.app", "buff.ly",
+					"bugzil.la", "buymeacoffee.com", "bzfd.it", "carleton.ca", "carrd.co", "cash.app", "catsarch.com", "cbsn.ws", "cemendemons.com", "cfl.re", "chn.ge", "chng.it",
+					"chtbl.com", "click.fan", "cnb.cx", "cnn.it", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "depravityweb.co", "dotomi.com", "duckduckgo.com",
+					"econ.st", "eepurl.com", "etsy.me", "fal.cn", "fansly.com", "fansmega.com", "fdip.fr", "firefox.dev", "forms.gle", "free-leaks.com", "frontendfriendly.xyz",
+					"fxbsky.app", "g.co", "gelbooru.com", "girlcockx.com", "glo.bo", "goldmega.online", "goo.gle", "goo.su", "goodsmile.link", "got.cr", "gumroad.com",
+					"hamstro.dev", "hmstr.fr", "hotstars-leaks.com", "href.li", "hubs.la", "hulu.tv", "hyperreal.coffee", "ift.tt", "inkbunny.net", "intel.ly", "interc.pt",
+					"iwe.one", "j.mp", "ja.ma", "jbgm.es", "k00.fr", "kavin.rocks", "kck.st", "kre.pe", "kylrth.com", "l8r.it", "leakutopia.site", "linkr.bio", "linkr.com",
+					"links-loot.com", "linksloot.net", "linktr.ee", "lmddgtfy.net", "lmgtfy.app", "lmgtfy.com", "lnkd.in", "loot-link.com", "loot-links.com", "lootdest.com",
+					"lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "lunar.icu", "mboost.me", "mega-guy.com", "megadropz.com", "megadumpz.com", "melscience.com",
+					"metafy.gg", "mint.lgbt", "mol.im", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.pr", "nas.cr", "nbc4i.co", "newsociety0.co", "nine.social", "ninten.do",
+					"nitter.net", "nohost.network", "nvda.ws", "nyti.ms", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "opnxng.com", "ow.ly", "paster.so", "pawoo.net",
+					"people.com", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "play.st", "pnp-drops.me", "poast.org", "politi.co", "premiumstashdrop.com", "prn.to",
+					"propub.li", "pussthecat.org", "py.pl", "qr.io", "qr.link", "qr1.be", "qrco.de", "qrcodes.pro", "rareofhub.com", "rawbit.ninja", "rdbl.co", "rdcu.be", "redd.it",
+					"reurl.cc", "reut.rs", "s.team", "s76.co", "sbuxjoin.com", "scim.ag", "secretpack-links.com", "sendgrid.net", "shor.tf", "sketchfab.com", "socialwolvez.com",
+					"sou42.co", "sponsr.is", "spoti.fi", "spotify.link", "sqex.to", "square.link", "st.news", "stackoverflow.com", "steamcommunity.com", "stupidpenisx.com",
+					"sub2unlock.com", "sub2unlock.io", "sub4unlock.io", "subscribestar.adult", "substack.com", "t.co", "t.ly", "tavernleaks.com", "tee.pub", "than.gs", "thangs.com",
+					"theatln.tc", "thecut.io", "theonion.com", "throne.com", "tinylf.com", "tinyurl.com", "tmblr.co", "toyhou.se", "tpu.me", "tr.ee", "umblr.com", "unf.pa",
+					"uni.cf", "ur0.link", "urldefense.com", "visitlink.me", "w.wiki", "whatever.social", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "x.com", "x.gd", "xcancel.com",
 					"xhslink.com", "xnaas.github.io", "xprmpacks.com", "yewtu.be", "yiffx.com", "zionism.observer"
 				]
 			},
@@ -246,49 +335,49 @@
 			},
 			"nh_expand_mode": {
 				"bypass_vip": [
-					"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "booo.st", "boost.ink", "bst.gg", "cemendemons.com", "depravityweb.co", 
-					"fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com", 
-					"loot-link.com", "loot-links.com", "lootdest.com", "lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com", 
-					"megadumpz.com", "newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com", 
-					"rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com", "sub2unlock.io", "sub2unlock.net", 
-					"sub4unlock.io", "tavernleaks.com", "thepremium.online", "tinylink.onl", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink", 
+					"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "booo.st", "boost.ink", "bst.gg", "cemendemons.com", "depravityweb.co",
+					"fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com",
+					"loot-link.com", "loot-links.com", "lootdest.com", "lootdest.info", "lootdest.org", "lootlink.org", "lootlinks.co", "mboost.me", "mega-guy.com", "megadropz.com",
+					"megadumpz.com", "newsociety0.co", "ofpacksmega.com", "only-fun.xyz", "onlymega.co", "paster.so", "pnp-drops.me", "premiumstashdrop.com", "rareofhub.com",
+					"rekonise.com", "secret-links.com", "secretpack-links.com", "socialwolvez.com", "st.news", "sub2get.com", "sub2unlock.com", "sub2unlock.io", "sub2unlock.net",
+					"sub4unlock.io", "tavernleaks.com", "thepremium.online", "tinylink.onl", "tomxcontent.com", "unlock.com", "unlocknow.net", "v.gd", "wc.wtf", "work.ink",
 					"xprmpacks.com"
 				],
 				"redirect": [
-					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia", 
-					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bityl.co", "blizz.ly", 
-					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co", 
-					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "diplo.de", 
-					"dis.gd", "dlvr.it", "econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co", "glo.bo", 
-					"go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me", "goo.gl", "goo.gle", 
-					"goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "iwe.one", 
-					"j.mp", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.euronews.com", "l.ledauphine.com", "l.leparisien.fr", "l8r.it", "line.ee", "link.animaapp.com", 
-					"link.chtbl.com", "link.space", "linkr.it", "loom.ly", "lpc.ca", "m.sesame.org", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io", "msft.it", "msi.gm", 
-					"mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de", "ojrq.net", "on.fb.me", 
-					"on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.wsj.com", "onl.bz", "onl.la", "onl.sc", "onl.tw", "operagx.gg", "opr.as", "orlo.uk", "peoplem.ag", 
-					"perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qrco.de", "rb.gy", 
-					"rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s.click.aliexpress.com", 
-					"s.goodsmile.link", "s.spr.ly", "s.team", "s76.co", "sbuxjoin.com", "scanqr.to", "scim.ag", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", 
-					"shrsl.com", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc", "thecut.io", 
-					"thef.pub", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org", 
-					"ur0.link", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wlgrn.com", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", 
+					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia",
+					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bityl.co", "blizz.ly",
+					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
+					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "diplo.de",
+					"dis.gd", "dlvr.it", "econ.st", "eepurl.com", "etsy.me", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flyac.ca", "forms.gle", "g.co", "glo.bo",
+					"go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me", "goo.gl", "goo.gle",
+					"goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "iwe.one",
+					"j.mp", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.euronews.com", "l.ledauphine.com", "l.leparisien.fr", "l8r.it", "line.ee", "link.animaapp.com",
+					"link.chtbl.com", "link.space", "linkr.it", "loom.ly", "lpc.ca", "m.sesame.org", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io", "msft.it", "msi.gm",
+					"mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de", "ojrq.net", "on.fb.me",
+					"on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.wsj.com", "onl.bz", "onl.la", "onl.sc", "onl.tw", "operagx.gg", "opr.as", "orlo.uk", "peoplem.ag",
+					"perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qrco.de", "rb.gy",
+					"rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s.click.aliexpress.com",
+					"s.goodsmile.link", "s.spr.ly", "s.team", "s76.co", "sbuxjoin.com", "scanqr.to", "scim.ag", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at",
+					"shrsl.com", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc", "thecut.io",
+					"thef.pub", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org",
+					"ur0.link", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wlgrn.com", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly",
 					"xhslink.com", "zurl.co"
 				],
 				"sometimes_redirect": [
-					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "facebook.com", "gumroad.com", "hisubway.com", "mydealz.de", 
+					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "facebook.com", "gumroad.com", "hisubway.com", "mydealz.de",
 					"old.reddit.com", "ow.ly", "pawoo.net", "qr.io", "qudsnen.co", "reddit.com", "sketchfab.com", "snapchat.com", "t2m.io", "teepublic.com", "thangs.com"
 				],
 				"special": [
-					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", 
-					"bugzil.la", "buymeacoff.ee", "cj.dotomi.com", "click.notification.elsevier.com", "cnn.it", "cos.lv", "deviantart.com", "drinkctrl.com", "duckduckgo.com", 
-					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "emjcd.com", "fans.ly", "fansly.com", 
-					"fiverr.com", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com", "gprivate.com", 
-					"gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com", 
-					"link.sfchronicle.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "mel.sc", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st", 
-					"o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com", 
-					"proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", 
-					"ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com", "spotify.link", "ss3.shipstation.com", 
-					"star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tmz.me", 
+					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw",
+					"bugzil.la", "buymeacoff.ee", "cj.dotomi.com", "click.notification.elsevier.com", "cnn.it", "cos.lv", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
+					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "emjcd.com", "fans.ly", "fansly.com",
+					"fiverr.com", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com", "gprivate.com",
+					"gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com",
+					"link.sfchronicle.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "mel.sc", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st",
+					"o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com",
+					"proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc",
+					"ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com", "spotify.link", "ss3.shipstation.com",
+					"star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tmz.me",
 					"toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
 				]
 			},
@@ -296,7 +385,7 @@
 				"redirect": ["a9yw.net", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "visitlink.me", "trib.al"],
 				"sometimes_redirect": ["cmail20.com", "sendgrid.net"],
 				"special": [
-					"adj.st", "alibaba.com", "app.link", "awstrack.me", "carleton.ca", "digidip.net", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "nbcla.com", "onelink.me", 
+					"adj.st", "alibaba.com", "app.link", "awstrack.me", "carleton.ca", "digidip.net", "dw.com", "fb.watch", "list-manage.com", "lnk.to", "nbcla.com", "onelink.me",
 					"pulse.ly", "smartadserver.com", "sng.link", "vk.com"
 				]
 			},

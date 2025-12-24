@@ -39,7 +39,7 @@ jobs:
     - name: 'Check that bundled_cleaner.md is fresh'
       run: |
         set -euo pipefail
-        [[ "$(cargo run --bin urlc-tool -- doc)" == "$(cat bundled_cleaner.md)" ]]
+        diff <(cargo run --bin urlc-tool -- doc) bundled_cleaner.md
 
   test:
     runs-on: ubuntu-latest

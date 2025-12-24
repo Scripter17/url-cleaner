@@ -17,7 +17,7 @@ pub struct Args {
 }
 
 /// The output directory.
-const OUT: &str = "urlc-tool/bench/out/cli/callgrind/";
+const OUT: &str = "urlc-tool/out/bench/cli/callgrind/";
 
 impl Args {
     /// Do the command.

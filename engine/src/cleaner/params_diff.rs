@@ -36,17 +36,23 @@ pub struct ParamsDiff {
 
     /// Values to insert into [`Params::sets`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_sets: HashMap<String, Vec<Option<String>>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_sets: HashMap<String, HashSet<Option<String>>>,
     /// Values to remove from [`Params::sets`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, Vec<Option<String>>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_sets: HashMap<String, HashSet<Option<String>>>,
 
     /// Entries to insert into [`Params::maps`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, Map<String>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub insert_into_maps: HashMap<String, HashMap<String, String>>,
     /// Entries to remove from [`Params::maps`].
     #[serde_with = "MapPreventDuplicates<_, _>"]
-    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, HashSet<Option<String>>>,
+    #[serde(default, skip_serializing_if = "is_default")] pub remove_from_maps: HashMap<String, HashSet<String>>,
+    /// Sets [`Params::maps`]'s [`Map::if_none`]s.
+    #[serde_with = "MapPreventDuplicates<_, _>"]
+    #[serde(default, skip_serializing_if = "is_default")] pub set_map_if_none : HashMap<String, Option<String>>,
+    /// Sets [`Params::maps`]'s [`Map::else`]s.
+    #[serde_with = "MapPreventDuplicates<_, _>"]
+    #[serde(default, skip_serializing_if = "is_default")] pub set_map_else    : HashMap<String, Option<String>>
 }
 
 impl ParamsDiff {
@@ -61,6 +67,10 @@ impl ParamsDiff {
     ///
     /// Exact order is not guaranteed to be stable, but currently removals/deletions happen after inittings/insertions/settings.
     pub fn apply(self, to: &mut Params) {
+        if self.is_empty() {
+            return;
+        }
+
         // Flags
         if !self.flags.is_empty() {
             to.flags.to_mut().extend(self.flags);
@@ -87,18 +97,214 @@ impl ParamsDiff {
 
         // Maps
         for (k, v) in self.insert_into_maps {
-            let map = to.maps.to_mut().entry(k).or_default();
-            map.map.extend(v.map);
-            map.if_none = v.if_none;
-            map.r#else = v.r#else;
+            to.maps.to_mut().entry(k).or_default().map.extend(v);
         }
         for (m, vs) in self.remove_from_maps {
             if let Some(x) = to.maps.to_mut().get_mut(&m) {
                 for v in vs {
-                    x.remove(v.as_ref());
+                    x.map.remove(&v);
                 }
             }
         }
+
+        for (k, v) in self.set_map_if_none {
+            to.maps.to_mut().entry(k).or_default().if_none = v;
+        }
+        for (k, v) in self.set_map_else {
+            to.maps.to_mut().entry(k).or_default().r#else = v;
+        }
+    }
+
+    /// Modifies `self` such that [`Self::apply`]ing it effectively also then [`Self::apply`]s `other`.
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::prelude::*;
+    ///
+    /// let mut base = serde_json::from_str::<ParamsDiff>(r#"
+    ///     {
+    ///         "flags"  : ["a", "b"],
+    ///         "unflags": ["c", "d"],
+    ///
+    ///         "vars": {
+    ///             "a": "1",
+    ///             "b": "2"
+    ///         },
+    ///         "unvars": ["c", "d"],
+    ///
+    ///         "insert_into_sets": {
+    ///             "a": ["1", "2"],
+    ///             "b": ["1", "2"]
+    ///         },
+    ///         "remove_from_sets": {
+    ///             "c": ["1", "2"],
+    ///             "d": ["1", "2"]
+    ///         },
+    ///
+    ///         "insert_into_maps": {
+    ///             "a": {
+    ///                 "1": "1",
+    ///                 "2": "2"
+    ///             },
+    ///             "b": {
+    ///                 "1": "1",
+    ///                 "2": "2"
+    ///             }
+    ///         },
+    ///         "remove_from_maps": {
+    ///             "c": ["1"],
+    ///             "d": ["1"]
+    ///         }
+    ///     }
+    /// "#).unwrap();
+    ///
+    /// let with = serde_json::from_str::<ParamsDiff>(r#"
+    ///     {
+    ///         "flags"  : ["c"],
+    ///         "unflags": ["a"],
+    ///
+    ///         "vars": {
+    ///             "c": "3"
+    ///         },
+    ///         "unvars": ["a"],
+    ///
+    ///         "insert_into_sets": {
+    ///             "c": ["1", "2"]
+    ///         },
+    ///         "remove_from_sets": {
+    ///             "a": ["1"],
+    ///             "d": ["1", "2"]
+    ///         },
+    /// 
+    ///         "insert_into_maps": {
+    ///             "c": {
+    ///                 "1": "1"
+    ///             }
+    ///         },
+    ///         "remove_from_maps": {
+    ///             "a": ["1"]
+    ///         }
+    ///     }
+    /// "#).unwrap();
+    ///
+    /// base.merge(with);
+    /// base.normalize();
+    ///
+    /// assert_eq!(base, serde_json::from_str::<ParamsDiff>(r#"
+    ///     {
+    ///         "flags": ["b", "c"],
+    ///         "unflags": ["a", "d"],
+    ///
+    ///         "vars": {
+    ///             "b": "2",
+    ///             "c": "3"
+    ///         },
+    ///         "unvars": ["a", "d"],
+    ///
+    ///         "insert_into_sets": {
+    ///             "a": ["2"],
+    ///             "b": ["1", "2"],
+    ///             "c": ["1", "2"]
+    ///         },
+    ///         "remove_from_sets": {
+    ///             "a": ["1"],
+    ///             "d": ["1", "2"]
+    ///         },
+    ///
+    ///         "insert_into_maps": {
+    ///             "a": {
+    ///                 "2": "2"
+    ///             },
+    ///             "b": {
+    ///                 "1": "1",
+    ///                 "2": "2"
+    ///             },
+    ///             "c": {
+    ///                 "1": "1"
+    ///             }
+    ///         },
+    ///         "remove_from_maps": {
+    ///             "a": ["1"],
+    ///             "d": ["1"]
+    ///         }
+    ///     }
+    /// "#).unwrap());
+    /// ```
+    pub fn merge(&mut self, with: Self) {
+        if with.is_empty() {
+            return;
+        }
+
+        self.unflags.retain(|flag| !with.flags.contains(flag));
+        self.flags.extend(with.flags);
+
+        self.flags.retain(|flag| !with.unflags.contains(flag));
+        self.unflags.extend(with.unflags);
+
+
+
+        self.unvars.retain(|var| !with.vars.contains_key(var));
+        self.vars.extend(with.vars);
+
+        self.vars.retain(|var, _| !with.unvars.contains(var));
+        self.unvars.extend(with.unvars);
+
+
+
+        for (name, set) in with.insert_into_sets {
+            if let Some(x) = self.remove_from_sets.get_mut(&name) {
+                x.retain(|element| !set.contains(element));
+            }
+            self.insert_into_sets.entry(name).or_default().extend(set)
+        }
+
+
+        for (name, set) in with.remove_from_sets {
+            if let Some(x) = self.insert_into_sets.get_mut(&name) {
+                x.retain(|element| !set.contains(element));
+            }
+            self.remove_from_sets.entry(name).or_default().extend(set)
+        }
+
+
+
+        for (name, map) in with.insert_into_maps {
+            if let Some(x) = self.remove_from_maps.get_mut(&name) {
+                x.retain(|k| !map.contains_key(k));
+            }
+            self.insert_into_maps.entry(name).or_default().extend(map);
+        }
+
+        for (name, map) in with.remove_from_maps {
+            if let Some(x) = self.insert_into_maps.get_mut(&name) {
+                x.retain(|k, _| !map.contains(k));
+            }
+            self.remove_from_maps.entry(name).or_default().extend(map);
+        }
+
+        self.set_map_if_none.extend(with.set_map_if_none);
+        self.set_map_else   .extend(with.set_map_else   );
+    }
+
+    /// Check if `self` is "empty", meaning [`Self::apply`] and [`Self::merge`] have no effect.
+    pub fn is_empty(&self) -> bool {
+        self.flags.is_empty() &&
+            self.unflags.is_empty() &&
+            self.vars   .is_empty() &&
+            self.unvars .is_empty() &&
+            self.insert_into_sets.is_empty() &&
+            self.remove_from_sets.is_empty() &&
+            self.insert_into_maps.is_empty() &&
+            self.remove_from_maps.is_empty() &&
+            self.set_map_if_none .is_empty() &&
+            self.set_map_else    .is_empty()
+    }
+
+    /// Remove empty entries in [`Self::insert_into_sets`], [`Self::remove_from_sets`], [`Self::insert_into_maps`], and [`Self::remove_from_maps`].
+    pub fn normalize(&mut self) {
+        self.insert_into_sets.retain(|_, x| !x.is_empty());
+        self.remove_from_sets.retain(|_, x| !x.is_empty());
+        self.insert_into_maps.retain(|_, x| !x.is_empty());
+        self.remove_from_maps.retain(|_, x| !x.is_empty());
     }
 }
 

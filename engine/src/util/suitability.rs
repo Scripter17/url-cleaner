@@ -63,21 +63,21 @@ suitable_tuples! {A, B, C, D, E, F, G, H, I, J, K, L}
 pub(crate) fn set_is_documented(name: &StringSource, cleaner: &Cleaner) {
     if let StringSource::String(name) = name {
         assert!(cleaner.params.sets.contains_key(name), "Unset Set: {name}");
-        assert!(cleaner.docs.sets.contains_key(name), "Undocumented Set: {name}");
+        assert!(cleaner.docs.params.sets.contains_key(name), "Undocumented Set: {name}");
     }
 }
 /// Suitability helper function to check that a map is documented.
 pub(crate) fn map_is_documented(name: &StringSource, cleaner: &Cleaner) {
     if let StringSource::String(name) = name {
         assert!(cleaner.params.maps.contains_key(name), "Unset Map: {name}");
-        assert!(cleaner.docs.maps.contains_key(name), "Undocumented Map: {name}");
+        assert!(cleaner.docs.params.maps.contains_key(name), "Undocumented Map: {name}");
     }
 }
 /// Suitability helper function to check that a named partitioning is documented.
 pub(crate) fn partitioning_is_documented(name: &StringSource, cleaner: &Cleaner) {
     if let StringSource::String(name) = name {
         assert!(cleaner.params.partitionings.contains_key(name), "Unset Partitioning: {name}");
-        assert!(cleaner.docs.partitionings.contains_key(name), "Undocumented Partitioning: {name}");
+        assert!(cleaner.docs.params.partitionings.contains_key(name), "Undocumented Partitioning: {name}");
     }
 }
 

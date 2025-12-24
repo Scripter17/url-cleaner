@@ -126,11 +126,17 @@ impl<'a> Params<'a> {
 
 impl Suitability for Params<'_> {
     fn assert_suitability(&self, cleaner: &Cleaner<'_>) {
-        for flag         in self.flags        .iter() {assert!(cleaner.docs.flags        .contains_key(flag        ), "Undocumented flag {flag:?}");}
-        for var          in self.vars         .keys() {assert!(cleaner.docs.vars         .contains_key(var         ), "Undocumented var {var:?}");}
-        for set          in self.sets         .keys() {assert!(cleaner.docs.sets         .contains_key(set         ), "Undocumented set {set:?}");}
-        for list         in self.lists        .keys() {assert!(cleaner.docs.lists        .contains_key(list        ), "Undocumented list {list:?}");}
-        for map          in self.maps         .keys() {assert!(cleaner.docs.maps         .contains_key(map         ), "Undocumented map {map:?}");}
-        for partitioning in self.partitionings.keys() {assert!(cleaner.docs.partitionings.contains_key(partitioning), "Undocumented partitioning {partitioning:?}");}
+        for flag         in self.flags        .iter() {assert!(cleaner.docs.params.flags        .contains_key(flag        ), "Undocumented flag {flag:?}");}
+        for var          in self.vars         .keys() {assert!(cleaner.docs.params.vars         .contains_key(var         ), "Undocumented var {var:?}");}
+        for set          in self.sets         .keys() {assert!(cleaner.docs.params.sets         .contains_key(set         ), "Undocumented set {set:?}");}
+        for list         in self.lists        .keys() {assert!(cleaner.docs.params.lists        .contains_key(list        ), "Undocumented list {list:?}");}
+        for map          in self.maps         .keys() {assert!(cleaner.docs.params.maps         .contains_key(map         ), "Undocumented map {map:?}");}
+        for partitioning in self.partitionings.keys() {assert!(cleaner.docs.params.partitionings.contains_key(partitioning), "Undocumented partitioning {partitioning:?}");}
+
+        for (k, v) in self.vars.iter() {
+            if let Some(ref variants) = cleaner.docs.params.vars.get(k).expect("The var to have already been confirmed to be documented.").variants {
+                assert!(variants.keys().any(|variant| v == variant), "Undocumented variant of var {k:?}: {v:?}.");
+            }
+        }
     }
 }

@@ -108,7 +108,8 @@ impl Args {
             crate::compile::Args {
                 frontends: crate::compile::Frontends {
                     cli: self.cli,
-                    site: self.site_http || self.site_ws
+                    site: self.site_http || self.site_ws,
+                    discord: false
                 }
             }.r#do();
         }

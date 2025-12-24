@@ -23,9 +23,9 @@ jobs:
       run: |
         in=$(seq -f "https://%0.0f.com/" 127)
 
-        [[ "$(echo "$in" | ./urlc    )" == "$in" ]]
-        [[ "$(             ./urlc $in)" == "$in" ]]
-        [[ "$(echo "$in" | ./urlc $in)" == "$(echo -ne "$in\n$in")" ]]
+        diff <(echo "$in" | ./urlc    ) <(echo "$in")
+        diff <(             ./urlc $in) <(echo "$in")
+        diff <(echo "$in" | ./urlc $in) <(echo -e "$in\n$in")
 
     - name: Profiles
       run: |

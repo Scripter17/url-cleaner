@@ -31,6 +31,7 @@ impl Args {
                 buf.push(' ');
             }
             if item.len() + buf.len() + 1 >= 160 {
+                buf.pop();
                 buf2.push_str(a);
                 buf2.push_str(&buf);
                 buf2.push('\n');
