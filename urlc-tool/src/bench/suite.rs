@@ -304,6 +304,12 @@ impl Args {
                 println!();
                 println!("Measured in milliseconds.");
                 println!();
+                println!("It seems this being so much slower than CLI is due to WebSocat sending each task line as its own message.");
+                println!();
+                println!("Using `--binary` gives very similar timings but is inadmissable here because it doesn't always chunk on line separators.");
+                println!();
+                println!("When making a client for Site WebSocket, you should try to send multiple task lines per message to reduce the overhead.");
+                println!();
 
                 println!("{hyperfine_table_header}");
                 for benchmark in &benchmarks {

@@ -18,13 +18,13 @@ function urlc_main() {
 			context: {
 				source_host: window.location.hostname // Used for per-site processing.
 			},
-			// password   : null, // The password        (default: null )
-			// profile    : null, // The Profile name    (default: null )
-			// params_diff: null, // The ParamsDiff      (default: null )
-			   unthread   : true, // Enable unthreading  (default: false)
-			// read_cache : true, // Read from the cache (default: true )
-			// write_cache: true, // Write to the cache  (default: true )
-			   cache_delay: true, // Enable cache delay  (default: false)
+			// password   : null, // The password        (Site default: null                           )
+			// profile    : null, // The Profile name    (Site default: null                           )
+			// params_diff: null, // The ParamsDiff      (Site default: null                           )
+			   unthread   : true, // Enable unthreading  (Site default: false, Userscript default: true)
+			// read_cache : true, // Read from the cache (Site default: true                           )
+			// write_cache: true, // Write to the cache  (Site default: true                           )
+			   cache_delay: true, // Enable cache delay  (Site default: false, Userscript default: true)
 		},
 		debug: false
 	};
@@ -32,6 +32,11 @@ function urlc_main() {
 	// A map of elements to the last URL they were cleaned to.
 	// Allows avoiding double cleans most of the time, but isn't meant to be infallible.
 	let cleans = new WeakMap();
+	// A buffer of tasks to send to Site in bulk to reducce the overhead from WebSocket.
+	// Bundling tasks reduces the overhead of WebSockets.
+	let tasks = "";
+	// The ID of the setTimeout that sends `tasks` so it can be cancelled and the tasks sent when `tasks` reaches a certain size.
+	let send_tasks_timeout_id = null;
 	// A FIFO queue for elements sent to URL Cleaner Site whose results are not yet recieved.
 	// Contains [WeakRef<HTMLElement>, String]s, where the string is the element's href at the time it was sent to URL Cleaner Site.
 	let queue = [];
@@ -89,7 +94,7 @@ ${GM.info.script.namespace}`,
 
 		// Mimic document.links.
 		// Yeah turns out `<area>` is an element that exists. Who knew?
-		if (!(element instanceof HTMLAnchorElement || element instanceof HTMLAreaElement)) {
+		if (!(element?.tagName === "A" || element?.tagName === "AREA")) {
 			if (config.debug) {
 				console.debug("[URLC] Ignoring: Not a link.");
 			}
@@ -115,14 +120,20 @@ ${GM.info.script.namespace}`,
 			return;
 		}
 
-		let href = element.href;
-
 		// Note that this check probably isn't perfect. It's just here to minimize the risk of double cleans.
-		if (cleans.get(element) === href) {
+		if (cleans.get(element) === hrefattr) {
 			if (config.debug) {
 				console.debug("[URLC] Ignoring: Already clean.")
 			}
 			return;
+		}
+
+		// If `href` is absolute, use it instead of making `element.href` compute it.
+		let href;
+		if (/^https?:\/\//gi.test(hrefattr)) {
+			href = hrefattr;
+		} else {
+			href = element.href;
 		}
 
 		// Some websites have links that are best cleaned using details from places other than just their URL.
@@ -169,8 +180,21 @@ ${GM.info.script.namespace}`,
 			console.debug("[URLC] Sending task", task, "for element", element);
 		}
 
-		socket.send(task);
 		queue.push([new WeakRef(element), href]);
+		if (tasks.length === 0) {
+			send_tasks_timeout_id = setTimeout(urlc_send_queue, 10);
+		}
+		tasks += task;
+		tasks += "\n";
+		if (tasks.length >= 65536) {
+			urlc_send_queue();
+			clearTimeout(send_tasks_timeout_id);
+		}
+	}
+
+	function urlc_send_queue() {
+		socket.send(tasks);
+		tasks = "";
 	}
 
 	// Delay clicks on dirty links until they're cleaned.
@@ -212,7 +236,7 @@ ${GM.info.script.namespace}`,
 		for (let mutation of mutations) {
 			for (let node of mutation.addedNodes) {
 				if (node.nodeType === 1) {
-					urlc_queue_element(element);
+					urlc_queue_element(node);
 					for (let element of node.querySelectorAll("[href]")) {
 						urlc_queue_element(element);
 					}

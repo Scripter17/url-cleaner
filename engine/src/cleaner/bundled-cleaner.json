@@ -661,10 +661,6 @@
 
 
 			"twitter": {"All": [
-				{"If": {
-					"if": {"PathIs": "/i/flow/login"},
-					"then": {"Join": {"Part": {"QueryParam": "redirect_after_login"}}}
-				}},
 				{"PartMap": {
 					"part": {"PathSegment": 0},
 					"map": {

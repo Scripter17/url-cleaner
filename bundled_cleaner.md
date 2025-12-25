@@ -22,9 +22,9 @@ Licensed under the AGPL 3.0 or later.
 
 ### Vars
 
-Please note that the presence of required vars and validity of varianted vars is only checked when asserting suitability.
+Please note that the presence of required vars and validity of varianted vars are only checked when asserting suitability.
 
-Cleaners that break the "invariants" here can be parsed as used, but will likely exhibit unintended behavior.
+Cleaners that break the "invariants" here can be parsed and used, but will likely exhibit unintended behavior.
 
 - `client_type`: Whether the client is a desktop or mobile device.
   - Required: false.

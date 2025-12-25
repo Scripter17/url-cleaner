@@ -154,10 +154,10 @@ fn main() -> Result<(), CliError> {
         for (name, mut profile) in profiled_cleaner_config.profiles_config.clone().into_each() {
             let name = name.as_deref().unwrap_or("Base");
 
-            profile.params_diff.merge(pd_file.clone());
+            profile.params_diff.with_then(pd_file.clone());
             profiled_cleaner_config.profiles_config.named.insert(format!("{name} + ParamsDiff file"), profile.clone());
 
-            profile.params_diff.merge(pd_args.clone());
+            profile.params_diff.with_then(pd_args.clone());
             profiled_cleaner_config.profiles_config.named.insert(format!("{name} + ParamsDiff file + ParamsDiff args"), profile);
         }
 

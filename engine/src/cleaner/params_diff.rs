@@ -157,7 +157,7 @@ impl ParamsDiff {
     ///     }
     /// "#).unwrap();
     ///
-    /// let with = serde_json::from_str::<ParamsDiff>(r#"
+    /// let layer = serde_json::from_str::<ParamsDiff>(r#"
     ///     {
     ///         "flags"  : ["c"],
     ///         "unflags": ["a"],
@@ -186,7 +186,7 @@ impl ParamsDiff {
     ///     }
     /// "#).unwrap();
     ///
-    /// base.merge(with);
+    /// base.with_then(layer);
     /// base.normalize();
     ///
     /// assert_eq!(base, serde_json::from_str::<ParamsDiff>(r#"
@@ -229,28 +229,28 @@ impl ParamsDiff {
     ///     }
     /// "#).unwrap());
     /// ```
-    pub fn merge(&mut self, with: Self) {
-        if with.is_empty() {
-            return;
+    pub fn with_then(&mut self, layer: Self) -> &mut Self {
+        if layer.is_empty() {
+            return self;
         }
 
-        self.unflags.retain(|flag| !with.flags.contains(flag));
-        self.flags.extend(with.flags);
+        self.unflags.retain(|flag| !layer.flags.contains(flag));
+        self.flags.extend(layer.flags);
 
-        self.flags.retain(|flag| !with.unflags.contains(flag));
-        self.unflags.extend(with.unflags);
-
-
-
-        self.unvars.retain(|var| !with.vars.contains_key(var));
-        self.vars.extend(with.vars);
-
-        self.vars.retain(|var, _| !with.unvars.contains(var));
-        self.unvars.extend(with.unvars);
+        self.flags.retain(|flag| !layer.unflags.contains(flag));
+        self.unflags.extend(layer.unflags);
 
 
 
-        for (name, set) in with.insert_into_sets {
+        self.unvars.retain(|var| !layer.vars.contains_key(var));
+        self.vars.extend(layer.vars);
+
+        self.vars.retain(|var, _| !layer.unvars.contains(var));
+        self.unvars.extend(layer.unvars);
+
+
+
+        for (name, set) in layer.insert_into_sets {
             if let Some(x) = self.remove_from_sets.get_mut(&name) {
                 x.retain(|element| !set.contains(element));
             }
@@ -258,7 +258,7 @@ impl ParamsDiff {
         }
 
 
-        for (name, set) in with.remove_from_sets {
+        for (name, set) in layer.remove_from_sets {
             if let Some(x) = self.insert_into_sets.get_mut(&name) {
                 x.retain(|element| !set.contains(element));
             }
@@ -267,25 +267,146 @@ impl ParamsDiff {
 
 
 
-        for (name, map) in with.insert_into_maps {
+        for (name, map) in layer.insert_into_maps {
             if let Some(x) = self.remove_from_maps.get_mut(&name) {
                 x.retain(|k| !map.contains_key(k));
             }
             self.insert_into_maps.entry(name).or_default().extend(map);
         }
 
-        for (name, map) in with.remove_from_maps {
+        for (name, map) in layer.remove_from_maps {
             if let Some(x) = self.insert_into_maps.get_mut(&name) {
                 x.retain(|k, _| !map.contains(k));
             }
             self.remove_from_maps.entry(name).or_default().extend(map);
         }
 
-        self.set_map_if_none.extend(with.set_map_if_none);
-        self.set_map_else   .extend(with.set_map_else   );
+        self.set_map_if_none.extend(layer.set_map_if_none);
+        self.set_map_else   .extend(layer.set_map_else   );
+
+        self
     }
 
-    /// Check if `self` is "empty", meaning [`Self::apply`] and [`Self::merge`] have no effect.
+    /// A consuming [`Self::with_then`].
+    /// # Examples
+    /// ```
+    /// use url_cleaner_engine::prelude::*;
+    ///
+    /// let base = serde_json::from_str::<ParamsDiff>(r#"
+    ///     {
+    ///         "flags"  : ["a", "b"],
+    ///         "unflags": ["c", "d"],
+    ///
+    ///         "vars": {
+    ///             "a": "1",
+    ///             "b": "2"
+    ///         },
+    ///         "unvars": ["c", "d"],
+    ///
+    ///         "insert_into_sets": {
+    ///             "a": ["1", "2"],
+    ///             "b": ["1", "2"]
+    ///         },
+    ///         "remove_from_sets": {
+    ///             "c": ["1", "2"],
+    ///             "d": ["1", "2"]
+    ///         },
+    ///
+    ///         "insert_into_maps": {
+    ///             "a": {
+    ///                 "1": "1",
+    ///                 "2": "2"
+    ///             },
+    ///             "b": {
+    ///                 "1": "1",
+    ///                 "2": "2"
+    ///             }
+    ///         },
+    ///         "remove_from_maps": {
+    ///             "c": ["1"],
+    ///             "d": ["1"]
+    ///         }
+    ///     }
+    /// "#).unwrap();
+    ///
+    /// let layer = serde_json::from_str::<ParamsDiff>(r#"
+    ///     {
+    ///         "flags"  : ["c"],
+    ///         "unflags": ["a"],
+    ///
+    ///         "vars": {
+    ///             "c": "3"
+    ///         },
+    ///         "unvars": ["a"],
+    ///
+    ///         "insert_into_sets": {
+    ///             "c": ["1", "2"]
+    ///         },
+    ///         "remove_from_sets": {
+    ///             "a": ["1"],
+    ///             "d": ["1", "2"]
+    ///         },
+    /// 
+    ///         "insert_into_maps": {
+    ///             "c": {
+    ///                 "1": "1"
+    ///             }
+    ///         },
+    ///         "remove_from_maps": {
+    ///             "a": ["1"]
+    ///         }
+    ///     }
+    /// "#).unwrap();
+    ///
+    /// let mut merged = base.then(layer);
+    /// merged.normalize();
+    ///
+    /// assert_eq!(merged, serde_json::from_str::<ParamsDiff>(r#"
+    ///     {
+    ///         "flags": ["b", "c"],
+    ///         "unflags": ["a", "d"],
+    ///
+    ///         "vars": {
+    ///             "b": "2",
+    ///             "c": "3"
+    ///         },
+    ///         "unvars": ["a", "d"],
+    ///
+    ///         "insert_into_sets": {
+    ///             "a": ["2"],
+    ///             "b": ["1", "2"],
+    ///             "c": ["1", "2"]
+    ///         },
+    ///         "remove_from_sets": {
+    ///             "a": ["1"],
+    ///             "d": ["1", "2"]
+    ///         },
+    ///
+    ///         "insert_into_maps": {
+    ///             "a": {
+    ///                 "2": "2"
+    ///             },
+    ///             "b": {
+    ///                 "1": "1",
+    ///                 "2": "2"
+    ///             },
+    ///             "c": {
+    ///                 "1": "1"
+    ///             }
+    ///         },
+    ///         "remove_from_maps": {
+    ///             "a": ["1"],
+    ///             "d": ["1"]
+    ///         }
+    ///     }
+    /// "#).unwrap());
+    /// ```
+    pub fn then(mut self, layer: Self) -> Self{
+        self.with_then(layer);
+        self
+    }
+
+    /// Check if `self` is "empty", meaning [`Self::apply`], [`Self::with_then`], and [`Self::then`] have no effect.
     pub fn is_empty(&self) -> bool {
         self.flags.is_empty() &&
             self.unflags.is_empty() &&

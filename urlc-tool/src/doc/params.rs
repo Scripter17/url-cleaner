@@ -49,9 +49,9 @@ impl ParamsDocs {
         if !self.vars.is_empty() {
             println!("### Vars");
             println!();
-            println!("Please note that the presence of required vars and validity of varianted vars is only checked when asserting suitability.");
+            println!("Please note that the presence of required vars and validity of varianted vars are only checked when asserting suitability.");
             println!();
-            println!("Cleaners that break the \"invariants\" here can be parsed as used, but will likely exhibit unintended behavior.");
+            println!("Cleaners that break the \"invariants\" here can be parsed and used, but will likely exhibit unintended behavior.");
             println!();
             for (name, VarDoc {desc, required, unset, variants}) in &self.vars {
                 println!("- `{name}`: {desc}");
