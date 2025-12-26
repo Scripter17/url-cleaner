@@ -46,7 +46,7 @@ pub async fn clean(state: &State<&'static ServerState>, config: JobConfig, tasks
 
     std::thread::scope(|s| {
         std::thread::Builder::new().name("Task collector".into()).spawn_scoped(s, move || {
-            for (in_sender, lazy_task_config) in {in_senders}.iter().cycle().zip(crate::util::ByteLines(tasks).filter(|line| !line.is_empty())) {
+            for (in_sender, lazy_task_config) in {in_senders}.iter().cycle().zip(tasks.split(|x| *x == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)).filter(|x| !x.is_empty())) {
                 in_sender.send(lazy_task_config).expect("The in reciever to still exist.");
             }
         }).expect("Spawning a thread to work fine.");

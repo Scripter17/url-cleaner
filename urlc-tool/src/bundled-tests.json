@@ -289,6 +289,56 @@
 
 
 		{
+			"name": "offline-reddit_mode-unset",
+			"tests": [
+				{"task": "https://reddit.com"    , "expect": "https://www.reddit.com/"},
+				{"task": "https://old.reddit.com", "expect": "https://old.reddit.com/"},
+				{"task": "https://new.reddit.com", "expect": "https://new.reddit.com/"}
+			]
+		},
+		{
+			"name": "offline-reddit_mode-canon",
+			"params_diff": {
+				"vars": {
+					"reddit_mode": "canon"
+				}
+			},
+			"tests": [
+				{"task": "https://reddit.com"    , "expect": "https://www.reddit.com/"},
+				{"task": "https://old.reddit.com", "expect": "https://www.reddit.com/"},
+				{"task": "https://new.reddit.com", "expect": "https://www.reddit.com/"}
+			]
+		},
+		{
+			"name": "offline-reddit_mode-old",
+			"params_diff": {
+				"vars": {
+					"reddit_mode": "old"
+				}
+			},
+			"tests": [
+				{"task": "https://reddit.com"    , "expect": "https://old.reddit.com/"},
+				{"task": "https://old.reddit.com", "expect": "https://old.reddit.com/"},
+				{"task": "https://new.reddit.com", "expect": "https://old.reddit.com/"}
+			]
+		},
+		{
+			"name": "offline-reddit_mode-new",
+			"params_diff": {
+				"vars": {
+					"reddit_mode": "new"
+				}
+			},
+			"tests": [
+				{"task": "https://reddit.com"    , "expect": "https://www.reddit.com/"},
+				{"task": "https://old.reddit.com", "expect": "https://www.reddit.com/"},
+				{"task": "https://new.reddit.com", "expect": "https://www.reddit.com/"}
+			]
+		},
+
+
+
+		{
 			"name": "offline-tumblr_unsubdomain_blog",
 			"params_diff": {
 				"flags": ["tumblr_unsubdomain_blog"]
@@ -400,6 +450,7 @@
     {
 			"name": "online",
       "tests": [
+      	{"task": "https://link.europa.eu/NtMX4K"                            , "expect": "https://ec.europa.eu/commission/presscorner/detail/en/statement_25_3160"                                                    },
 				{"task": "https://406q7-alternate.app.link/5uDpsIQcwUb"             , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
 				{"task": "https://406q7.app.link/e/5uDpsIQcwUb"                     , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
 				{"task": "https://a.co/dNfiRDX"                                     , "expect": "https://www.amazon.com/hz/wishlist/ls/2RBVWN4SJEAJ4"                                                                        },
@@ -437,4 +488,3 @@
     }
   ]
 }
-

@@ -25,7 +25,7 @@ impl Args {
     pub fn r#do(self) -> String {
         match self {
             Args::Hyperfine(args) => args.r#do(),
-            Args::Massif(args) => args.r#do(),
+            Args::Massif   (args) => args.r#do(),
             Args::Callgrind(args) => args.r#do()
         }
     }

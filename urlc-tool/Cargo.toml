@@ -15,9 +15,5 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.147", features = ["preserve_order"] }
 serde_with = "3.16.1"
 
-[features]
-default = ["bench"]
-bench = []
-
 [lints]
 workspace = true

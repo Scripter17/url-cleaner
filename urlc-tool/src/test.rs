@@ -10,7 +10,7 @@ pub struct Args {
     /// The tests file.
     #[arg(long)]
     pub tests: Option<PathBuf>,
-    /// The filter.
+    /// The filter to decide which jobs to do.
     #[arg(long)]
     pub filter: Option<String>,
     /// Assert the cleaner's suitability.
@@ -121,7 +121,7 @@ impl Args {
 
             for test in job.tests {
                 println!("    {}", serde_json::to_string(&test).unwrap());
-                
+
                 writeln!(stdin_write, "{}", test.task).unwrap();
                 let result1 = results.next().unwrap().unwrap();
                 assert_eq!(result1, test.expect, "Test failed");

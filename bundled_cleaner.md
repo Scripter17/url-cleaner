@@ -52,7 +52,7 @@ Cleaners that break the "invariants" here can be parsed and used, but will likel
 - `furaffinity_mode`: Decides what host to replace reddit hosts with.
   - Required: false.
   - Unset: Keep as-is.
-  - `canon`: Set to `furaffinity.net`.
+  - `canon`: Set to `www.furaffinity.net`.
   - `sfw`: Set to `sfw.furaffinity.net`.
   - `nsfw`: Set to `www.furaffinity.net`.
 - `pixiv_mode`: Decides what host to replace pixiv/pixiv embed hosts with.
@@ -66,6 +66,7 @@ Cleaners that break the "invariants" here can be parsed and used, but will likel
 - `reddit_mode`: Decides what host to replace reddit hosts with.
   - Required: false.
   - Unset: Keep as-is.
+  - `canon`: Set to `www.reddit.com`.
   - `old`: Set to `old.reddit.com`.
   - `new`: Set to `www.reddit.com`.
 - `twitter_mode`: Decides what host to replace twitter/twitter embed/Nitter hosts with.
@@ -91,7 +92,7 @@ Cleaners that break the "invariants" here can be parsed and used, but will likel
 
 ### Sets
 
-- `utps`: Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.
+- `utps`: Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` list for a list of prefixes only used for universal tracking parameters.
 - `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
 
 ### Lists

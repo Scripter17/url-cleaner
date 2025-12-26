@@ -70,7 +70,7 @@
 					"required": false,
 					"unset": "Keep as-is.",
 					"variants": {
-						"canon": "Set to `furaffinity.net`.",
+						"canon": "Set to `www.furaffinity.net`.",
 						"sfw"  : "Set to `sfw.furaffinity.net`.",
 						"nsfw" : "Set to `www.furaffinity.net`."
 					}
@@ -95,8 +95,9 @@
 					"required": false,
 					"unset": "Keep as-is.",
 					"variants": {
-						"old": "Set to `old.reddit.com`.",
-						"new": "Set to `www.reddit.com`."
+						"canon": "Set to `www.reddit.com`.",
+						"old"  : "Set to `old.reddit.com`.",
+						"new"  : "Set to `www.reddit.com`."
 					}
 				},
 
@@ -134,7 +135,7 @@
 				}
 			},
 			"sets": {
-				"utps": "Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` for a list of prefixes only used for universal tracking parameters.",
+				"utps": "Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` list for a list of prefixes only used for universal tracking parameters.",
 
 				"nh_keep_http": "The `NormalizedHost`s to not upgrade from `http` to `https`."
 			},
@@ -293,7 +294,7 @@
 					"fandom.com", "fiverr.com", "forbes.com", "france24.com", "ft.com", "furaffinity.net", "go.com", "go2cloud.org", "gofundme.com", "goodreads.com", "google.com",
 					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com",
 					"mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de", "ojrq.net",
-					"onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reuters.com",
+					"onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reddit.com", "reuters.com",
 					"sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com", "theguardian.com",
 					"threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com",
 					"whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
@@ -344,7 +345,7 @@
 					"xprmpacks.com"
 				],
 				"redirect": [
-					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia",
+					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia", "link.europa.eu",
 					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bityl.co", "blizz.ly",
 					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
 					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "diplo.de",
@@ -733,7 +734,7 @@
 
 
 			"youtube": {"All": [
-				{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel", "pbjreload"]},
+				{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel", "pbjreload", "sub_confirmation"]},
 				{"If": {
 					"if": {"PartMap": {
 						"part": {"PathSegment": 0},
@@ -2227,15 +2228,16 @@
 						{"PartMap": {
 							"part": {"PathSegment": 0},
 							"map": {
-								"search": {"RemoveQueryParams": ["cid", "share_id"]},
 								"domain": {"AllowQueryParams": ["count", "after"]}
-							}
+							},
+							"else": {"RemoveQueryParams": ["cid", "share_id"]}
 						}},
 						{"StringMap": {
 							"value": {"Var": "reddit_mode"},
 							"map": {
-								"old": {"SetSubdomain": "old"},
-								"new": {"SetSubdomain": "www"}
+								"canon": {"SetHost": "www.reddit.com"},
+								"old"  : {"SetHost": "old.reddit.com"},
+								"new"  : {"SetHost": "www.reddit.com"}
 							}
 						}}
 					]},

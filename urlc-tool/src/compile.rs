@@ -20,6 +20,9 @@ pub struct Frontends {
     /// Site.
     #[arg(long)]
     pub site: bool,
+    /// Site WebSocket Client.
+    #[arg(long)]
+    pub site_ws_client: bool,
     /// Discord.
     #[arg(long)]
     pub discord: bool
@@ -35,9 +38,10 @@ impl Args {
         cmd.stdout(std::io::stderr());
         cmd.stderr(std::io::stderr());
 
-        if self.frontends.cli     {cmd.args(["--bin", "url-cleaner"            ]);}
-        if self.frontends.site    {cmd.args(["--bin", "url-cleaner-site"       ]);}
-        if self.frontends.discord {cmd.args(["--bin", "url-cleaner-discord-app"]);}
+        if self.frontends.cli            {cmd.args(["--bin", "url-cleaner"               ]);}
+        if self.frontends.site           {cmd.args(["--bin", "url-cleaner-site"          ]);}
+        if self.frontends.site_ws_client {cmd.args(["--bin", "url-cleaner-site-ws-client"]);}
+        if self.frontends.discord        {cmd.args(["--bin", "url-cleaner-discord-app"   ]);}
 
         assert_eq!(cmd.spawn().unwrap().wait().unwrap().code(), Some(0));
     }

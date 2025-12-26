@@ -112,23 +112,14 @@ jobs:
 
         kill $!
 
-    - name: 'Load WebSocat from cache'
-      id: websocat-cache
-      uses: actions/cache@v4
-      with:
-        key: websocat-v4.0.0-alpha2
-        path: ./websocat
-
-    - name: 'Downlaod WebSocat from github'
-      if: steps.websocat-cache.outputs.cache-hit != 'true'
+    - name: 'Build Site WebSocket Client'
       run: |
-        curl 'https://github.com/vi/websocat/releases/download/v4.0.0-alpha2/websocat.x86_64-unknown-linux-musl' -Lo ./websocat
-        chmod +x ./websocat
+        cargo build --bin url-cleaner-site-ws-client
 
     - name: 'WebSocket Output'
       run: |
         ./urlcs &
         sleep 1
         in=$(seq -f "https://%0.0f.com/" 127)
-        diff <(echo "$in" | ./websocat ws://127.0.0.1:9149/clean_ws | grep .) <(echo "$in" | grep .)
+        diff <(echo "$in" | target/debug/url-cleaner-site-ws-client ws://127.0.0.1:9149/clean_ws | grep .) <(echo "$in" | grep .)
         kill %1

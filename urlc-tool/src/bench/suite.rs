@@ -109,6 +109,7 @@ impl Args {
                 frontends: crate::compile::Frontends {
                     cli: self.cli,
                     site: self.site_http || self.site_ws,
+                    site_ws_client: self.site_ws,
                     discord: false
                 }
             }.r#do();
@@ -298,17 +299,15 @@ impl Args {
         if self.site_ws {
             println!("## Site WebSocket");
             println!();
+            println!("Please note that a custom client is used to send multiple task configs per message, unlike WebSocat which can only do 1 per message.");
+            println!();
+            println!("This reduces the overhead of using WebSockets DRAMATICALLY. If your client isn't bundling tasks it'll likely be several times slower.");
+            println!();
 
             if self.hyperfine {
                 println!("### Speed");
                 println!();
                 println!("Measured in milliseconds.");
-                println!();
-                println!("It seems this being so much slower than CLI is due to WebSocat sending each task line as its own message.");
-                println!();
-                println!("Using `--binary` gives very similar timings but is inadmissable here because it doesn't always chunk on line separators.");
-                println!();
-                println!("When making a client for Site WebSocket, you should try to send multiple task lines per message to reduce the overhead.");
                 println!();
 
                 println!("{hyperfine_table_header}");

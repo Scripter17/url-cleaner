@@ -24,7 +24,7 @@ pub struct Args {
 }
 
 /// The output directory.
-const OUT: &str = "urlc-tool/out/bench/site-ws/hyperfine/";
+const OUT: &str = "urlc-tool/out/bench/site-ws/hyperfine";
 
 impl Args {
     /// Do the command.
@@ -54,7 +54,7 @@ impl Args {
 
         command.args([
             "--",
-            &format!("websocat --text readfile:{} ws://127.0.0.1:9148/clean_ws", stdin.path())
+            &format!("{} ws://127.0.0.1:9148/clean_ws --input {} --silent", BINDIR.join("url-cleaner-site-ws-client").display(), stdin.path())
         ]);
 
         assert_eq!(command

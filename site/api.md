@@ -57,3 +57,10 @@ A WebSocket endpoint.
 - The `CleanConfig` is sent in the `config` query parameter. Unfortunately WebSocket doesn't support custom headers.
 
 - The body of each message follow [the standard format](../format.md) with no additional guarantees.
+
+In general, multiple tasks should be sent per message to reduce the overhead from using WebSockets.
+
+Responses are similarly bundled, with results preceeding long running tasks returned early to reduce latency.
+
+For example, while a message with tasks `A`, `B`, and `C` will usually return a message with results `A`, `B`, and `C`,
+if `B` is a redirect, it may instead return a message containing just `A` then a message containing `B` and `C`.

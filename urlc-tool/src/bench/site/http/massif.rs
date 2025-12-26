@@ -17,7 +17,7 @@ pub struct Args {
 }
 
 /// The output directory.
-const OUT: &str = "urlc-tool/out/bench/site-http/massif/";
+const OUT: &str = "urlc-tool/out/bench/site-http/massif";
 
 impl Args {
     /// Do the command.

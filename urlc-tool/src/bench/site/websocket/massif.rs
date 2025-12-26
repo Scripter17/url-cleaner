@@ -17,7 +17,7 @@ pub struct Args {
 }
 
 /// The output directory.
-const OUT: &str = "urlc-tool/out/bench/site-ws/massif/";
+const OUT: &str = "urlc-tool/out/bench/site-ws/massif";
 
 impl Args {
     /// Do the command.
@@ -42,11 +42,10 @@ impl Args {
 
         wait_for_server();
 
-        assert_eq!(Command::new("websocat")
+        assert_eq!(Command::new(BINDIR.join("url-cleaner-site-ws-client"))
             .args([
-                "--text",
-                &format!("readfile:{}", stdin.path()),
-                "ws://127.0.0.1:9148/clean_ws"
+                "ws://127.0.0.1:9148/clean_ws",
+                "--input", stdin.path()
             ])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())

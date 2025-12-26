@@ -26,7 +26,6 @@ mod cleaner;
 mod profiles;
 mod clean;
 mod clean_ws;
-mod util;
 
 /// The default max size of a payload to the [`clean`] route.
 const DEFAULT_MAX_PAYLOAD: &str = "25MiB";

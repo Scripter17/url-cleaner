@@ -24,7 +24,7 @@ pub struct Args {
 }
 
 /// The output directory.
-const OUT: &str = "urlc-tool/out/bench/cli/hyperfine/";
+const OUT: &str = "urlc-tool/out/bench/cli/hyperfine";
 
 impl Args {
     /// Do the command.

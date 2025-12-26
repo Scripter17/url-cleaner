@@ -17,7 +17,7 @@ pub struct Args {
 }
 
 /// The output directory.
-const OUT: &str = "urlc-tool/out/bench/site-ws/callgrind/";
+const OUT: &str = "urlc-tool/out/bench/site-ws/callgrind";
 
 impl Args {
     /// Do the command.
@@ -33,6 +33,7 @@ impl Args {
                 "-q",
                 "--tool=callgrind",
                 "--separate-threads=yes",
+                &format!("--callgrind-out-file={out}"),
                 BINDIR.join("url-cleaner-site").to_str().unwrap(),
                 "--port", "9148"
             ])
@@ -42,11 +43,10 @@ impl Args {
 
         wait_for_server();
 
-        assert_eq!(Command::new("websocat")
+        assert_eq!(Command::new(BINDIR.join("url-cleaner-site-ws-client"))
             .args([
-                "--text",
-                &format!("readfile:{}", stdin.path()),
-                "ws://127.0.0.1:9148/clean_ws"
+                "ws://127.0.0.1:9148/clean_ws",
+                "--input", stdin.path()
             ])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
