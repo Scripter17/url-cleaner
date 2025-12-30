@@ -16,14 +16,15 @@ use tokio::io::{AsyncRead, AsyncBufReadExt, BufReader};
 #[derive(Debug, Parser)]
 pub struct Args {
     /// The instance.
+    #[arg(default_value = "ws://127.0.0.1:9149/clean_ws")]
     pub instance: String,
     /// The JobConfig.
     #[arg(long)]
     pub config: Option<String>,
-    /// The input.
+    /// The file to read task lines from instead of STDIN.
     #[arg(long)]
     pub input: Option<PathBuf>,
-    /// The size after which to send the buffer.
+    /// Once the buffer is at least this large, send it.
     #[arg(long, default_value_t = 65536)]
     pub buffer: usize,
     /// Disable output.
@@ -54,7 +55,12 @@ impl Args {
                 while buf.len() < self.buffer {
                     tokio::select! {
                         x = input.read_until(b'\n', &mut buf) => if x.unwrap() == 0 {break;},
-                        _ = tokio::time::sleep(std::time::Duration::from_nanos(10)) => {break;}
+                        _ = tokio::time::sleep(std::time::Duration::from_nanos(10)) => {
+                            if !buf.ends_with(b"\n") {
+                                input.read_until(b'\n', &mut buf).await.unwrap();
+                            }
+                            break;
+                        }
                     };
                 }
 

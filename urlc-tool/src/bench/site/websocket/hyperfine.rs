@@ -45,6 +45,7 @@ impl Args {
 
         let mut command = Command::new("hyperfine");
         command.args([
+            "--style", "none",
             "--command-name", &self.name,
             "--export-json", &out
         ]);

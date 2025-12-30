@@ -7,6 +7,24 @@ use url_cleaner_engine::prelude::*;
 
 use crate::*;
 
+/// Either a task from a message or a marker that the message is done.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum TaskStreamThing {
+    /// A task.
+    Task(Vec<u8>),
+    /// A marker that the message is done.
+    DoneMessage
+}
+
+/// Either a result from a task or a marker that the the message the last result came from is done.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ResultStreamThing {
+    /// A result.
+    Result(String),
+    /// A marker that the message the last result came from is done.
+    DoneMessage
+}
+
 /// The `/clean_ws` route.
 #[get("/clean_ws")]
 pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws: ws::WebSocket) -> Result<ws::Channel<'static>, CleanError> {
@@ -28,8 +46,9 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws
     }
 
     Ok(ws.channel(move |mut stream| Box::pin(async move {
-        let (ms, mut mr) = tokio::sync::mpsc::channel::<Vec<u8>>(8);
-        let (rs, mut rr) = tokio::sync::mpsc::channel::<Option<String>>(128);
+        let (ms , mut mr ) = tokio::sync::mpsc::channel::<Vec<u8>>(8);
+        let (iss,     irs) = (0..state.config.threads.get()).map(|_| std  ::sync::mpsc::channel::<TaskStreamThing  >(   )).collect::<(Vec<_>, Vec<_>)>();
+        let (oss, mut ors) = (0..state.config.threads.get()).map(|_| tokio::sync::mpsc::channel::<ResultStreamThing>(128)).collect::<(Vec<_>, Vec<_>)>();
 
         std::thread::spawn(move || {
             let job = &Job {
@@ -49,39 +68,32 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws
                 http_client: &state.http_client
             };
 
-            let (iss, irs) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel()).collect::<(Vec<_>, Vec<_>)>();
-            let (oss, ors) = (0..state.config.threads.get()).map(|_| std::sync::mpsc::channel()).collect::<(Vec<_>, Vec<_>)>();
-
-            std::thread::scope(|s| {
-                s.spawn(move || {
-                    let mut isi = iss.iter().cycle();
-                    while let Some(message) = mr.blocking_recv() {
-                        for (line, is) in message.split(|x| *x == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)).filter(|x| !x.is_empty()).zip(&mut isi) {
-                            is.send(Some(line.to_owned())).expect("???");
-                        }
-                        isi.next().expect("???").send(None).expect("???");
-                    }
-                });
-
+            std::thread::scope(move |s| {
                 for (ir, os) in irs.into_iter().zip(oss) {
                     s.spawn(move || {
                         while let Ok(task) = ir.recv() {
-                            os.send(task.map(|task| match job.r#do(task) {
-                                Ok (x) => x.into(),
-                                Err(e) => format!("-{e:?}")
-                            })).expect("???");
+                            os.blocking_send(match task {
+                                TaskStreamThing::Task(task) => ResultStreamThing::Result(match job.r#do(task) {
+                                    Ok (x) => x.into(),
+                                    Err(e) => format!("-{e:?}")
+                                }),
+                                TaskStreamThing::DoneMessage => ResultStreamThing::DoneMessage
+                            }).expect("???");
                         }
                     });
                 }
 
-                for or in ors.iter().cycle() {
-                    match or.recv() {
-                        Ok (x) => rs.blocking_send(x).expect("???"),
-                        Err(_) => break
+                let mut isi = iss.iter().cycle();
+                while let Some(message) = mr.blocking_recv() {
+                    for (line, is) in message.split(|x| *x == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)).filter(|x| !x.is_empty()).zip(&mut isi) {
+                        is.send(TaskStreamThing::Task(line.to_owned())).expect("???");
                     }
+                    isi.next().expect("???").send(TaskStreamThing::DoneMessage).expect("???");
                 }
             });
         });
+
+        let mut i = (0..ors.len()).cycle();
 
         while let Some(message) = stream.next().await {
             let message = match message? {
@@ -91,27 +103,29 @@ pub async fn clean_ws(state: &State<&'static ServerState>, config: JobConfig, ws
             };
 
             ms.send(message).await.expect("???");
+            let mut next = Box::pin(ors.get_mut(i.next().expect("???")).expect("???").recv());
 
             let mut buf = String::new();
+
             loop {
-                tokio::select! {
-                    result = rr.recv() => match result.flatten() {
-                        Some(x) => {
-                            if !buf.is_empty() {buf.push('\n');}
-                            buf.push_str(&x);
-                            if buf.len() > 65536 {
-                                stream.send(buf.into()).await?;
-                                buf = String::new();
-                            }
-                        },
-                        None => {
-                            if !buf.is_empty() {
-                                stream.send(buf.into()).await?;
-                            }
-                            break;
+                match tokio::time::timeout(std::time::Duration::from_millis(10), &mut next).await {
+                    Ok(Some(ResultStreamThing::Result(x))) => {
+                        if !buf.is_empty() {buf.push('\n');}
+                        buf.push_str(&x);
+                        if buf.len() > 65536 {
+                            stream.send(buf.into()).await?;
+                            buf = String::new();
                         }
+                        drop(next);
+                        next = Box::pin(ors.get_mut(i.next().expect("???")).expect("???").recv());
                     },
-                    _ = tokio::time::sleep(std::time::Duration::from_nanos(10)) => if !buf.is_empty() {
+                    Ok(None | Some(ResultStreamThing::DoneMessage)) => {
+                        if !buf.is_empty() {
+                            stream.send(buf.into()).await?;
+                        }
+                        break;
+                    },
+                    Err(_) => if !buf.is_empty() {
                         stream.send(buf.into()).await?;
                         buf = String::new();
                     }

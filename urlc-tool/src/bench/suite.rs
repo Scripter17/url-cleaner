@@ -299,9 +299,9 @@ impl Args {
         if self.site_ws {
             println!("## Site WebSocket");
             println!();
-            println!("Please note that a custom client is used to send multiple task configs per message, unlike WebSocat which can only do 1 per message.");
+            println!("Please note that [URL Cleaner Site WebSocket Client](site-ws-client) is used to send multiple task configs per message.");
             println!();
-            println!("This reduces the overhead of using WebSockets DRAMATICALLY. If your client isn't bundling tasks it'll likely be several times slower.");
+            println!("This dramatically reduces the overhead of using WebSockets, to the point of making large jobs several times faster.");
             println!();
 
             if self.hyperfine {

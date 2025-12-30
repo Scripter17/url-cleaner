@@ -292,12 +292,12 @@
 					"behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com",
 					"crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "elsevier.com", "emjcd.com", "entripy.com", "etsy.com", "euronews.com", "facebook.com",
 					"fandom.com", "fiverr.com", "forbes.com", "france24.com", "ft.com", "furaffinity.net", "go.com", "go2cloud.org", "gofundme.com", "goodreads.com", "google.com",
-					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "marvel.com",
-					"mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de", "ojrq.net",
-					"onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reddit.com", "reuters.com",
-					"sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com", "theguardian.com",
-					"threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com",
-					"whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
+					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "lovense",
+					"marvel.com", "mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de",
+					"ojrq.net", "onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reddit.com",
+					"reuters.com", "sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com",
+					"theguardian.com", "threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org",
+					"unlock.com", "walmart.com", "whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
 				],
 				"remove": [
 					"2kgam.es", "ab.co", "abcnews.link", "acer.com", "adfoc.us", "adguardteam.github.io", "admiregirls-byme.com", "adobe.ly", "aje.io", "all-fans.online",
@@ -345,7 +345,7 @@
 					"xprmpacks.com"
 				],
 				"redirect": [
-					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia", "link.europa.eu",
+					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "amn.st", "amzn.asia",
 					"amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly", "bityl.co", "blizz.ly",
 					"blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it", "clckhl.co",
 					"click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "db.tt", "dcdr.me", "diplo.de",
@@ -353,16 +353,16 @@
 					"go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me", "goo.gl", "goo.gle",
 					"goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt", "iwe.one",
 					"j.mp", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.euronews.com", "l.ledauphine.com", "l.leparisien.fr", "l8r.it", "line.ee", "link.animaapp.com",
-					"link.chtbl.com", "link.space", "linkr.it", "loom.ly", "lpc.ca", "m.sesame.org", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io", "msft.it", "msi.gm",
-					"mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de", "ojrq.net", "on.fb.me",
-					"on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.wsj.com", "onl.bz", "onl.la", "onl.sc", "onl.tw", "operagx.gg", "opr.as", "orlo.uk", "peoplem.ag",
-					"perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly", "py.pl", "qr.paps.jp", "qrco.de", "rb.gy",
-					"rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s.click.aliexpress.com",
-					"s.goodsmile.link", "s.spr.ly", "s.team", "s76.co", "sbuxjoin.com", "scanqr.to", "scim.ag", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at",
-					"shrsl.com", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc", "thecut.io",
-					"thef.pub", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org",
-					"ur0.link", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wlgrn.com", "wn.nr", "wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly",
-					"xhslink.com", "zurl.co"
+					"link.chtbl.com", "link.europa.eu", "link.space", "linkr.it", "lmg.gg", "loom.ly", "lovense.com", "lpc.ca", "m.sesame.org", "mavelyinfluencer.com", "mol.im",
+					"mondly.app", "mply.io", "msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms",
+					"nyto.ms", "obo.de", "ojrq.net", "on.fb.me", "on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.wsj.com", "onl.bz", "onl.la", "onl.sc", "onl.tw",
+					"operagx.gg", "opr.as", "orlo.uk", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly",
+					"py.pl", "qr.paps.jp", "qrco.de", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly", "redirect.global.commerce-connector.com", "reut.rs", "rog.gg",
+					"rzr.to", "s.click.aliexpress.com", "s.goodsmile.link", "s.spr.ly", "s.team", "s76.co", "sbuxjoin.com", "scanqr.to", "scim.ag", "share.firefox.dev",
+					"share.temu.com", "shor.tf", "shorturl.at", "shrsl.com", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh",
+					"t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "u.jd.com", "unes.co",
+					"unf.pa", "uni.cf", "uniceflink.org", "ur0.link", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wlgrn.com", "wn.nr", "wp.me",
+					"wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "zurl.co"
 				],
 				"sometimes_redirect": [
 					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "facebook.com", "gumroad.com", "hisubway.com", "mydealz.de",
@@ -1015,10 +1015,7 @@
 											}
 										}}
 									]},
-									"twitch.com": {"All": [
-										{"SetHost": "www.twitch.tv"},
-										{"RemoveQueryParam": "desktop-redirect"}
-									]},
+									"twitch.com": {"SetHost": "www.twitch.tv"},
 									"vk.com": {"If": {
 										"if": {"PathIs": "/away.php"},
 										"then": {"GetUrlFromQueryParam": "to"}
@@ -2337,7 +2334,10 @@
 							]}
 						}}
 					]},
-					"twitch.tv": {"RemoveQueryParam": "desktop-redirect"},
+					"twitch.tv": {"HandleParams": {
+						"names": ["desktop-redirect"],
+						"prefixes": ["tt_"]
+					}},
 					"washingtonpost.com": {"All": [
 						{"If": {
 							"if": {"FragmentIsSomeAndStartsWith": "link"},
