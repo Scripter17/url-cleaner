@@ -1,6 +1,15 @@
 //! Segment utilities.
 
-use crate::util::*;
+/// Simulates Python's indexing to allow using `-1` to mean the last element.
+const fn neg_index(index: isize, len: usize) -> Option<usize> {
+    if index < 0 {
+        len.checked_add_signed(index)
+    } else if (index as usize) < len {
+        Some(index as usize)
+    } else {
+        None
+    }
+}
 
 /// Set the `index`th segment to `value`.
 /// # Errors
@@ -29,6 +38,9 @@ pub fn set_segment<E>(segments: &str, split: &str, index: isize, value: Option<&
     })
 }
 
+/// Set the `index`th segme to `key=value`.
+/// # Errors
+/// If `index` is out of range, returns `segment_not_found` as an error.
 pub fn set_key_value<E>(segments: &str, split: &str, index: isize, key: &str, value: Option<&str>, segment_not_found: E) -> Result<String, E> {
     let mut x = segments.split(split);
     let len = x.clone().count();
@@ -73,6 +85,9 @@ pub fn insert_segment<E>(segments: &str, split: &str, index: isize, value: &str,
     })
 }
 
+/// Insert a new segment such that the segment at `index` is `key=value`, assuming value doesn't contain `split`.
+/// # Errors
+/// If `index` is out of range, returns `segment_not_found` as an error.
 pub fn insert_key_value<E>(segments: &str, split: &str, index: isize, key: &str, value: Option<&str>, segment_not_found: E) -> Result<String, E> {
     let mut x = segments.split(split);
     let len = x.clone().count();
@@ -129,6 +144,19 @@ pub fn char_keep_last_n_segments(s: &str, split: char, n: usize) -> Option<&str>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn neg_index_test() {
+        assert_eq!(neg_index(-4, 3), None   );
+        assert_eq!(neg_index(-3, 3), Some(0));
+        assert_eq!(neg_index(-2, 3), Some(1));
+        assert_eq!(neg_index(-1, 3), Some(2));
+        assert_eq!(neg_index( 0, 3), Some(0));
+        assert_eq!(neg_index( 1, 3), Some(1));
+        assert_eq!(neg_index( 2, 3), Some(2));
+        assert_eq!(neg_index( 3, 3), None   );
+        assert_eq!(neg_index( 4, 3), None   );
+    }
 
     #[test]
     fn test_set_segment() {

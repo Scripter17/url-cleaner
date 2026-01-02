@@ -40,27 +40,18 @@ A GET endpoint that returns the loaded `ProfilesConfig`.
 
 A POST endpoint.
 
-- The `CleanConfig` is sent either in the `config` query parameter XOR the `X-Config` header.
+- The `CleanConfig` is sent in the `config` query parameter XOR the `X-Config` header.
 
-- The body of the request and response (if successful) follow [the standard format](../format.md) with no additional guarantees.
+- The response body is a stream of result lines if and only if the response status is 200.
 
-- If processing the request failed, a JSON encoded `CleanError` is returned instead.
-
-The maximum size of a body is set with the `--max-payload` CLI argument and exposed in the [`/info`](#info) endpoint under the `max_payload` field.
-
-By default this value is 25MiB.
+- The request and response are streamed in parallel with their bodies using implicit chunking.
 
 ### `/clean_ws`
 
 A WebSocket endpoint.
 
-- The `CleanConfig` is sent in the `config` query parameter. Unfortunately WebSocket doesn't support custom headers.
+- The `CleanConfig` is sent in the `config` query parameter.
 
-- The body of each message follow [the standard format](../format.md) with no additional guarantees.
+ - WebSockets does not formally support custom request headers. Setting `X-Config` anyway *may* work but may break at any time.
 
-In general, multiple tasks should be sent per message to reduce the overhead from using WebSockets.
-
-Responses are similarly bundled, with results preceeding long running tasks returned early to reduce latency.
-
-For example, while a message with tasks `A`, `B`, and `C` will usually return a message with results `A`, `B`, and `C`,
-if `B` is a redirect, it may instead return a message containing just `A` then a message containing `B` and `C`.
+- The request and response messages are streamed in parallel using explicit chunking.

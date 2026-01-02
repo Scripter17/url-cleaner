@@ -33,7 +33,7 @@ pub enum InsertDomainSegmentError {
 impl BetterUrl {
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///
@@ -67,7 +67,7 @@ impl BetterUrl {
     /// If the call to [`Self::set_domain`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://abc.def.example.co.uk").unwrap();
     ///

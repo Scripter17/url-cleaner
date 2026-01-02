@@ -15,6 +15,10 @@ pub struct Args {
     #[arg(long)]
     pub num: usize,
 
+    /// Enable TLS.
+    #[arg(long)]
+    pub tls: bool,
+
     /// The numer of runs to measure..
     #[arg(long)]
     pub runs: Option<usize>,
@@ -23,25 +27,42 @@ pub struct Args {
     pub warmup: Option<usize>
 }
 
-/// The output directory.
-const OUT: &str = "urlc-tool/out/bench/site-http/hyperfine";
-
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        std::fs::create_dir_all(OUT).unwrap();
+        let out = match self.tls {
+            false => "urlc-tool/out/bench/site-http/hyperfine",
+            true  => "urlc-tool/out/bench/site-https/hyperfine"
+        };
+
+        std::fs::create_dir_all(out).unwrap();
 
         let stdin = crate::bench::make_stdin(&self.task, self.num);
 
-        let out = format!("{OUT}/hyperfine.out-{}-{}.json", self.name, self.num);
+        let out = format!("{out}/hyperfine.out-{}-{}.json", self.name, self.num);
 
-        let _server = TerminateOnDrop(Command::new(BINDIR.join("url-cleaner-site"))
-            .args(["--port", "9148", "--max-payload", "1GiB"])
+        let mut server = Command::new(BINDIR.join("url-cleaner-site"));
+
+        server.args(["--port", "9148"]);
+
+        if self.tls {
+            server.args([
+                "--key" , "urlc-tool/example-urlcs.key",
+                "--cert", "urlc-tool/example-urlcs.crt"
+            ]);
+        }
+
+        let _server = TerminateOnDrop(server
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .spawn().unwrap());
 
         wait_for_server();
+
+        let instance = match self.tls {
+            false => "http://127.0.0.1:9148/clean",
+            true  => "https://127.0.0.1:9148/clean"
+        };
 
         let mut command = Command::new("hyperfine");
         command.args([
@@ -55,7 +76,7 @@ impl Args {
 
         command.args([
             "--",
-            &format!("curl http://127.0.0.1:9148/clean --data-binary @{}", stdin.path())
+            &format!("curl {instance} -H Expect: --data-binary @{}", stdin.path())
         ]);
 
         assert_eq!(command

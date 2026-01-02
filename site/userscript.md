@@ -9,7 +9,7 @@
 [Userscripts] (for [safari][us-s]),
 or any other userscript browser extension.
 
-URL Cleaner Site Userscript is tested specifically on the latest release of Mullvad Browser with Greasemonkey, but all of the above extensions should work. Please tell me if they don't.
+URL Cleaner Site Userscript is tested specifically on the latest release of Mullvad Browser with [Greasemonkey] and ios safari with [Userscripts], but all of the above extensions should work. Please tell me if they don't.
 
 [Greasemonkey]: https://www.greasespot.net/
 [gm-f]: https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/
@@ -40,20 +40,28 @@ Additionally, in the `instance` field of the `window.config`, change `ws://` to 
 
 ## Known problems
 
+### Firefox
+
 Please note that due to a bug in Greasemonkey, setting `about:config`'s `privacy.firstparty.isolate` to `true` (as is default in forks like Mullvad Browser) breaks the userscript.
 
 You can either set it to false in `about:config` or install a patched version of Greasemonkey, such as the one I submitted at <https://github.com/greasemonkey/greasemonkey/pull/3220>.
+
+### Ios
+
+Because apple doesn't know how to do anything, [Userscripts] is unable to connect to HTTP instances of URL Cleaner Site on HTTPS websites.
+
+The solution is to make URL Cleaner Site use HTTPS. Sorry.
 
 ## Privacy
 
 Please note that websites will be able to tell you're using URL Cleaner Site as well as which version of the Bundled Cleaner and what ParamsDiff you're using.
 
 Additionally, URL Cleaner Site Userscript currently will clean every link on every webpage you visit.
-Coupled with the Bundled Cleaner expanding all known redirects **unless the `no_network` flag is enabled, every website is able to send HTTP requests to bit.ly, t.co, etc. from your IP address**.
+Coupled with the Bundled Cleaner expanding all known redirects, **unless the `no_network` flag is enabled, every website is able to send HTTP requests to bit.ly, t.co, etc. from your IP address**.
 
 If this is a concern, there are several things you can do:
 
-1. Make URL Cleaner Site use Tor/a VPN. `--proxy socks5://127.0.0.1:9150` should work fine, though I haven't actually tested it.
+1. Make URL Cleaner Site use a proxy by setting the `ALL_PROXY` environment variable.
 
 2. Enable the `no_network` flag in a named profile and set URL Cleaner Site Userscript to use that profile.
 

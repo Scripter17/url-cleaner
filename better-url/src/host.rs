@@ -6,7 +6,7 @@ use std::borrow::Cow;
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Error}};
 
-use crate::*;
+use crate::prelude::*;
 
 /// A URL host and its details.
 #[derive(Debug, Clone)]

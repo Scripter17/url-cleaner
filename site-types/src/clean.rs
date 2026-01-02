@@ -2,19 +2,7 @@
 
 use serde::{Serialize, Deserialize};
 
-use url_cleaner_engine::prelude::*;
-
 use crate::prelude::*;
-
-/// The error state of doing a [`JobConfig`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct CleanError {
-    /// The HTTP status code.
-    pub status: u16,
-    /// The error message.
-    pub message: String
-}
 
 /// Config for a `/clean` or `/clean_ws` payload.
 ///
@@ -43,8 +31,8 @@ pub struct JobConfig {
     /// Applied after [`Self::profile`].
     ///
     /// Defaults to [`None`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub params_diff: Option<ParamsDiff>,
+    #[serde(default, skip_serializing_if = "ParamsDiff::is_empty")]
+    pub params_diff: ParamsDiff,
     /// If [`true`], enable reading from the cache.
     ///
     /// Exists unconditionally even when the URL Cleaner Site has the `cache` feature disabled.

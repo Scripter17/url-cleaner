@@ -10,7 +10,6 @@ use serde::{Serialize, Deserialize};
 use thiserror::Error;
 #[expect(unused_imports, reason = "Used in doc comment.")]
 use url::{Url, PathSegmentsMut};
-use percent_encoding::percent_decode_str as pds;
 
 use crate::prelude::*;
 
@@ -1487,7 +1486,7 @@ impl Action {
                 let mut new = String::with_capacity(query.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if pds(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
+                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1498,7 +1497,7 @@ impl Action {
                 let mut new = String::with_capacity(query.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if pds(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
+                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1508,7 +1507,7 @@ impl Action {
             Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if !names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
+                    if !names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1518,7 +1517,7 @@ impl Action {
             Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
+                    if names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1528,7 +1527,7 @@ impl Action {
             Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
+                    if !matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1538,7 +1537,7 @@ impl Action {
             Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
                 let mut new = String::with_capacity(query.len());
                 for param in query.split('&') {
-                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
+                    if matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1562,7 +1561,7 @@ impl Action {
                 let mut new = String::with_capacity(fragment.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in fragment.split('&') {
-                    if pds(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
+                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1573,7 +1572,7 @@ impl Action {
                 let mut new = String::with_capacity(fragment.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in fragment.split('&') {
-                    if pds(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
+                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1583,7 +1582,7 @@ impl Action {
             Self::RemoveFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 for param in fragment.split('&') {
-                    if !names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
+                    if !names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1593,7 +1592,7 @@ impl Action {
             Self::AllowFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 for param in fragment.split('&') {
-                    if names.contains(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()) {
+                    if names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1603,7 +1602,7 @@ impl Action {
             Self::RemoveFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 for param in fragment.split('&') {
-                    if !matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
+                    if !matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1613,7 +1612,7 @@ impl Action {
             Self::AllowFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
                 let mut new = String::with_capacity(fragment.len());
                 for param in fragment.split('&') {
-                    if matcher.check(Some(&*pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy()), task_state)? {
+                    if matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1675,7 +1674,7 @@ impl Action {
                 if *fragment && let Some(fragment) = task_state.url.fragment() {
                     let mut new = String::with_capacity(fragment.len());
                     for param in fragment.split('&') {
-                        let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
+                        let name = decode_query_part(param.split('=').next().expect("The first segment to always exist."));
 
                         let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
                             && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
@@ -1691,7 +1690,7 @@ impl Action {
                 if *query && let Some(query) = task_state.url.query() {
                     let mut new = String::with_capacity(query.len());
                     for param in query.split('&') {
-                        let name = pds(param.split('=').next().expect("The first segment to always exist.")).decode_utf8_lossy();
+                        let name = decode_query_part(param.split('=').next().expect("The first segment to always exist."));
 
                         let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
                             && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));

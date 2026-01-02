@@ -56,6 +56,10 @@ Additionally:
 
 ## Chunking
 
-Some APIs use protocols that expose an explicit notion of chunking, such as WebSocket.
+Some frontends may have an implicit notion of chunking, such as reading from a file.
+For these, a stream of chunks is treated as if no chunking were happening.
 
-A stream of chunks is treated as a stream of each chunk's [lines](#lines).
+However some frontends may have an explicit notion of chunking, such as a WebSocket stream.
+For these, a stream of chunks is treated as a stream of each chunk's [lines](#lines).
+
+Frontends where the explicitness of chunking is unclear should clarify their assumptions.

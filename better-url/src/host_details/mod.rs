@@ -10,7 +10,7 @@ use thiserror::Error;
 use url::Url;
 
 #[expect(unused_imports, reason = "Used in doc comments.")]
-use crate::*;
+use crate::prelude::*;
 
 mod domain;
 pub use domain::*;
@@ -110,7 +110,7 @@ impl HostDetails {
     /// If the call to [`url::Host::parse`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap(), HostDetails::Domain(_)));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap(), HostDetails::Ipv4  (_)));
@@ -126,7 +126,7 @@ impl HostDetails {
     /// # Examples
     /// ```
     /// use url::Host;
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert!(matches!(HostDetails::from_host(&Host::parse("example.com").unwrap()), HostDetails::Domain(_)));
     /// assert!(matches!(HostDetails::from_host(&Host::parse("127.0.0.1"  ).unwrap()), HostDetails::Ipv4  (_)));
@@ -148,7 +148,7 @@ impl HostDetails {
     /// If `self` is [`Self::Domain`], return it.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap().domain_details(), Some(_)));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().domain_details(), None   ));
@@ -173,7 +173,7 @@ impl HostDetails {
     /// If `self` is [`Self::Ipv4`], return it.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap().ipv4_details(), None   ));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv4_details(), Some(_)));
@@ -189,7 +189,7 @@ impl HostDetails {
     /// If `self` is [`Self::Ipv6`], return it.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert!(matches!(HostDetails::parse("example.com").unwrap().ipv6_details(), None   ));
     /// assert!(matches!(HostDetails::parse("127.0.0.1"  ).unwrap().ipv6_details(), None   ));

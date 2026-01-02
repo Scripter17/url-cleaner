@@ -26,7 +26,8 @@ pub mod prelude {
     #[cfg(feature = "http" )] pub use super::http::prelude::*;
     #[cfg(feature = "cache")] pub use super::cache::prelude::*;
 
-    pub(crate) use better_url::*;
+    pub use better_url::prelude::*;
+
     pub(crate) use super::util::*;
     pub(crate) use super::debug::debug;
 }

@@ -175,7 +175,7 @@ impl BetterUrl {
     /// If a segment contains a `/`, returns the error [`SetPathSegmentsError::PathSegmentCannotContainSlash`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
@@ -225,7 +225,7 @@ impl BetterUrl {
     /// If `iter` has a length of zero, returns the error [`SetPathSegmentsError::CannotHaveZeroPathSegments`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
@@ -273,7 +273,7 @@ impl BetterUrl {
     /// Gets the specified path segment.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c").unwrap();
     ///
@@ -296,7 +296,7 @@ impl BetterUrl {
     /// Gets an object that can mutate the segments of [`Self`]'s path.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     /// let mut url = BetterUrl::parse("https://example.com/a/b/c/").unwrap();
     ///
     /// url.path_segments_mut().unwrap().pop(); assert_eq!(url.path(), "/a/b/c");
@@ -323,7 +323,7 @@ impl BetterUrl {
     /// If the call to [`Self::set_raw_path_segment`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/aa/bb/cc").unwrap();
     ///
@@ -378,7 +378,7 @@ impl BetterUrl {
     /// If a segment contains a `/`, returns the error [`SetPathSegmentsError::PathSegmentCannotContainSlash`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/").unwrap();
     ///
@@ -413,7 +413,7 @@ impl BetterUrl {
     /// If the specified path segment isn't found, returns the error [`InsertPathSegmentError::SegmentNotFound`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/").unwrap();
     ///
@@ -470,7 +470,7 @@ impl BetterUrl {
     /// If there aren't enough path segments, returns the error [`SetFirstNPathSegmentsError::NotEnoughPathSegments`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
     ///
@@ -513,7 +513,7 @@ impl BetterUrl {
     /// If there aren't enough path segments, returns the error [`SetFirstNPathSegmentsError::NotEnoughPathSegments`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
     ///
@@ -555,7 +555,7 @@ impl BetterUrl {
     /// If there aren't enough path segments, returns the error [`SetLastNPathSegmentsError::NotEnoughPathSegments`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
     ///
@@ -598,7 +598,7 @@ impl BetterUrl {
     /// If there aren't enough path segments, returns the error [`SetLastNPathSegmentsError::NotEnoughPathSegments`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com/0/1/2/3/4/5").unwrap();
     ///

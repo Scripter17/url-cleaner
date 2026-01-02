@@ -3,7 +3,7 @@
 #[expect(unused_imports, reason = "Used in doc comments.")]
 use url::{Url, EncodingOverride, SyntaxViolation, ParseOptions, ParseError};
 
-use crate::*;
+use crate::prelude::*;
 
 /// [`url::ParseOptions`] with public fields and [`std::fmt::Debug`].
 #[derive(Clone, Copy, Default)]

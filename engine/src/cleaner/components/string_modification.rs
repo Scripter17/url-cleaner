@@ -11,7 +11,6 @@ use percent_encoding::{percent_decode_str, utf8_percent_encode};
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use regex::Regex;
 use base64::prelude::*;
-use percent_encoding::percent_decode_str as pds;
 
 use crate::prelude::*;
 
@@ -807,48 +806,6 @@ pub enum StringModification {
 
 
 
-    /// The same operation [`Action::RemoveQueryParamsMatching`] does to a [`UrlPart::Query`].
-    /// # Errors
-    /// If the string is [`None`], returns the error [`StringModificationError::StringIsNone`].
-    ///
-    #[doc = edoc!(stringisnone(StringModification), checkerr(StringMatcher, 3))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts);
-    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
-    ///
-    /// doc_test!(apply, Ok, StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))), &mut to, &ts);
-    /// assert_eq!(to, Some("b=3&c=5".into()));
-    ///
-    /// doc_test!(apply, Ok, StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))), &mut to, &ts);
-    /// assert_eq!(to, Some("c=5".into()));
-    ///
-    /// doc_test!(apply, Ok, StringModification::RemoveQueryParamsMatching(Box::new(StringMatcher::Is("c".into()))), &mut to, &ts);
-    /// assert_eq!(to, None);
-    /// ```
-    RemoveQueryParamsMatching(Box<StringMatcher>),
-    /// The same operation [`Action::AllowQueryParamsMatching`] does to a [`UrlPart::Query`].
-    /// # Errors
-    #[doc = edoc!(stringisnone(StringModification), checkerr(StringMatcher, 3))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts);
-    /// let mut to = Some("a=2&b=3&%61=4&c=5".into());
-    ///
-    /// doc_test!(apply, Ok, StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("a".into()))), &mut to, &ts);
-    /// assert_eq!(to, Some("a=2&%61=4".into()));
-    ///
-    /// doc_test!(apply, Ok, StringModification::AllowQueryParamsMatching(Box::new(StringMatcher::Is("b".into()))), &mut to, &ts);
-    /// assert_eq!(to, None);
-    /// ```
-    AllowQueryParamsMatching(Box<StringMatcher>),
-
-
-
     /// Uses a [`Self`] from [`Cleaner::functions`].
     /// # Errors
     #[doc = edoc!(functionnotfound(Self, StringModification), applyerr(Self))]
@@ -1497,33 +1454,6 @@ impl StringModification {
             Self::Base64Decode(config) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 *to = String::from_utf8(config.make().decode(to.as_bytes())?)?;
-            },
-
-
-
-            Self::RemoveQueryParamsMatching(matcher) => if let Some(inner) = to {
-                let mut new = String::with_capacity(inner.len());
-                for param in inner.split('&') {
-                    if !matcher.check(Some(&pds(param.split('=').next().expect("The first segment to always exist")).decode_utf8_lossy()), task_state)? {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != inner.len() {
-                    *to = Some(Cow::<str>::Owned(new)).filter(|new| !new.is_empty());
-                }
-            },
-            Self::AllowQueryParamsMatching(matcher) => if let Some(inner) = to {
-                let mut new = String::with_capacity(inner.len());
-                for param in inner.split('&') {
-                    if matcher.check(Some(&pds(param.split('=').next().expect("The first segment to always exist")).decode_utf8_lossy()), task_state)? {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                if new.len() != inner.len() {
-                    *to = Some(Cow::<str>::Owned(new)).filter(|new| !new.is_empty());
-                }
             },
 
 

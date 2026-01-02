@@ -9,7 +9,7 @@ use serde::{Serialize, Deserialize, ser::Serializer, de::Deserializer};
 use url::{Url, PathSegmentsMut, ParseError};
 use thiserror::Error;
 
-use crate::*;
+use crate::prelude::*;
 
 mod path_impl;
 pub use path_impl::*;
@@ -65,7 +65,7 @@ impl BetterUrl {
     /// If the call to [`Url::parse`] returns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     /// ```
     pub fn parse(value: &str) -> Result<Self, <Self as FromStr>::Err> {
@@ -83,7 +83,7 @@ impl BetterUrl {
     /// Get the contained [`HostDetails`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert!(matches!(url.host_details(), Some(HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}))));
@@ -102,7 +102,7 @@ impl BetterUrl {
 
     /// If [`Self::host_details`] returns [`HostDetails::Domain`], return it.
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     /// let url = BetterUrl::parse("https://example.com").unwrap();
     ///
     /// assert!(matches!(url.domain_details(), Some(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
@@ -120,7 +120,7 @@ impl BetterUrl {
 
     /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
     ///
     /// assert!(matches!(url.domain_details(), None));
@@ -133,7 +133,7 @@ impl BetterUrl {
 
     /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     /// let url = BetterUrl::parse("https://[::1]").unwrap();
     ///
     /// assert!(matches!(url.domain_details(), None));

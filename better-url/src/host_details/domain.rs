@@ -8,7 +8,7 @@ use std::borrow::Cow;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
-use crate::*;
+use crate::prelude::*;
 
 /// The details of a domain host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,7 +54,7 @@ impl DomainDetails {
     /// If the call to [`idna::domain_to_ascii_from_cow`] reutrns an error, that error is returned.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert_eq!(DomainDetails::parse(    "example.com"   ).unwrap(), DomainDetails {middle_start: Some(0), suffix_start: Some( 8), fqdn_period: None});
     /// assert_eq!(DomainDetails::parse("www.example.com"   ).unwrap(), DomainDetails {middle_start: Some(4), suffix_start: Some(12), fqdn_period: None});
@@ -85,7 +85,7 @@ impl DomainDetails {
     /// If you are at all possibly not working with a domain (like an IP host), please use [`Self::parse`] instead.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert_eq!(DomainDetails::parse_unchecked(    "example.com"   ), DomainDetails {middle_start: Some(0), suffix_start: Some( 8), fqdn_period: None});
     /// assert_eq!(DomainDetails::parse_unchecked("www.example.com"   ), DomainDetails {middle_start: Some(4), suffix_start: Some(12), fqdn_period: None});
@@ -109,7 +109,7 @@ impl DomainDetails {
     /// The location of the period between subdomain and domain middle.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert_eq!(DomainDetails::parse(    "example.com"   ).unwrap().subdomain_period(), None   );
     /// assert_eq!(DomainDetails::parse("www.example.com"   ).unwrap().subdomain_period(), Some(3));
@@ -126,7 +126,7 @@ impl DomainDetails {
     /// The location of the period between domain middle and domain suffix.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert_eq!(DomainDetails::parse(    "example.com"   ).unwrap().domain_suffix_period(), Some( 7));
     /// assert_eq!(DomainDetails::parse("www.example.com"   ).unwrap().domain_suffix_period(), Some(11));
@@ -146,7 +146,7 @@ impl DomainDetails {
     /// Notably does not include [`Self::fqdn_period`]
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let x =     "example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_bounds()],     "example.com"  );
     /// let x = "www.example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_bounds()], "www.example.com"  );
@@ -163,7 +163,7 @@ impl DomainDetails {
     /// The bounds of subdomain.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let x =     "example.com"   ; assert_eq!(   DomainDetails::parse(x).unwrap().subdomain_bounds()          , None );
     /// let x = "www.example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().subdomain_bounds().unwrap()], "www");
@@ -180,7 +180,7 @@ impl DomainDetails {
     /// The bounds of not domain suffix.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let x =     "example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().not_domain_suffix_bounds().unwrap()],     "example");
     /// let x = "www.example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().not_domain_suffix_bounds().unwrap()], "www.example");
@@ -197,7 +197,7 @@ impl DomainDetails {
     /// The bounds of domain middle.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let x =     "example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_middle_bounds().unwrap()], "example");
     /// let x = "www.example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_middle_bounds().unwrap()], "example");
@@ -216,7 +216,7 @@ impl DomainDetails {
     /// Notably does not include [`Self::fqdn_period`]
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let x =     "example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().reg_domain_bounds().unwrap()], "example.com"  );
     /// let x = "www.example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().reg_domain_bounds().unwrap()], "example.com"  );
@@ -235,7 +235,7 @@ impl DomainDetails {
     /// Notably does not include [`Self::fqdn_period`]
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let x =     "example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_suffix_bounds().unwrap()], "com"  );
     /// let x = "www.example.com"   ; assert_eq!(&x[DomainDetails::parse(x).unwrap().domain_suffix_bounds().unwrap()], "com"  );
@@ -252,7 +252,7 @@ impl DomainDetails {
     /// If [`Self`] describes a [fully qualified domain name](https://en.wikipedia.org/wiki/Fully_qualified_domain_name), return [`true`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// assert!(!DomainDetails::parse(    "example.com"   ).unwrap().is_fqdn());
     /// assert!(!DomainDetails::parse("www.example.com"   ).unwrap().is_fqdn());

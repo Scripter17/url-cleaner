@@ -8,7 +8,7 @@ use url::UrlQuery;
 #[expect(unused_imports, reason = "Used in doc comments.")]
 use url::Url;
 
-use crate::*;
+use crate::prelude::*;
 
 /// The enum of errors [`BetterUrl::set_query_param`] can return.
 #[derive(Debug, Error)]
@@ -70,7 +70,7 @@ impl BetterUrl {
     /// An iterator over query parameters without percent decoding anything.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
     ///
@@ -99,7 +99,7 @@ impl BetterUrl {
     /// For matching, the names are percent decoded. So a `%61=a` query parameter is selectable with a `name` of `a`.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3&b=%41&%62=%42&b=%43").unwrap();
     ///
@@ -111,7 +111,7 @@ impl BetterUrl {
     /// assert_eq!(url.raw_query_param("b", 2), Some(Some(Some("%43"))));
     /// ```
     pub fn raw_query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<&'a str>>> {
-        self.raw_query_pairs().map(|pairs| pairs.filter(|(x, _)| pdh(x) == name).nth(index).map(|(_, v)| v))
+        self.raw_query_pairs().map(|pairs| pairs.filter(|(x, _)| decode_query_part(x) == name).nth(index).map(|(_, v)| v))
     }
 
     /// Return [`true`] if [`Self::raw_query_param`] would return `Some(Some(_))`, but doesn't do any unnecessary computation.
@@ -119,7 +119,7 @@ impl BetterUrl {
     /// Please note that this returns [`true`] even if the query param has no value.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a&%61=4").unwrap();
     ///
@@ -140,7 +140,7 @@ impl BetterUrl {
     /// Please note that this returns [`true`] even if the query param has no value.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=1&%61=2&a&%61=4").unwrap();
     ///
@@ -151,7 +151,7 @@ impl BetterUrl {
     /// assert!(!url.has_query_param("a", 4));
     /// ```
     pub fn has_query_param(&self, name: &str, index: usize) -> bool {
-        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(key, _)| pdh(key) == name).nth(index).is_some())
+        self.raw_query_pairs().is_some_and(|pairs| pairs.filter(|(key, _)| decode_query_part(key) == name).nth(index).is_some())
     }
 
     /// Get the selected query parameter.
@@ -165,7 +165,7 @@ impl BetterUrl {
     /// Third [`Option`] is if it has a value.
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let url = BetterUrl::parse("https://example.com?a=2&b=3&a=4&c").unwrap();
     ///
@@ -192,9 +192,14 @@ impl BetterUrl {
     /// assert_eq!(url.query_param("b", 0), Some(Some(Some("A".into()))));
     /// assert_eq!(url.query_param("b", 1), Some(Some(Some("B".into()))));
     /// assert_eq!(url.query_param("b", 2), Some(Some(Some("C".into()))));
+    ///
+    ///
+    /// let url = BetterUrl::parse("https://example.com?a+b=2+3").unwrap();
+    ///
+    /// assert_eq!(url.query_param("a b", 0), Some(Some(Some("2 3".into()))));
     /// ```
     pub fn query_param<'a>(&'a self, name: &str, index: usize) -> Option<Option<Option<Cow<'a, str>>>> {
-        self.raw_query_param(name, index).map(|v| v.map(|v| v.map(|v| pdh(v))))
+        self.raw_query_param(name, index).map(|v| v.map(|v| v.map(|v| decode_query_part(v))))
     }
 
     /// Set the selected query parameter.
@@ -208,7 +213,7 @@ impl BetterUrl {
     /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
@@ -269,7 +274,7 @@ impl BetterUrl {
     /// If `index` is above the number of matched query params, returns the error [`SetQueryParamError::QueryParamIndexNotFound`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com").unwrap();
     ///
@@ -365,7 +370,7 @@ impl BetterUrl {
     /// If the specified query param isn't found, returns the error [`RenameQueryParamError::QueryParamNotFound`].
     /// # Examples
     /// ```
-    /// use better_url::*;
+    /// use better_url::prelude::*;
     ///
     /// let mut url = BetterUrl::parse("https://example.com?a=1&%61=2&a=3").unwrap();
     ///
@@ -391,7 +396,7 @@ impl BetterUrl {
                 Some((k, v)) => (k, Some(v)),
                 None => (param, None)
             };
-            if pdh(k) == name {
+            if decode_query_part(k) == name {
                 if found == index {
                     new.push_str(to);
                     if let Some(v) = v {

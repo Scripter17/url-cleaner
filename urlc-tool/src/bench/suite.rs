@@ -24,9 +24,15 @@ pub struct Args {
     /// Site HTTP.
     #[arg(long)]
     pub site_http: bool,
+    /// Site HTTPS.
+    #[arg(long)]
+    pub site_https: bool,
     /// Site WebSocket.
     #[arg(long)]
     pub site_ws: bool,
+    /// Site WebSocket Secure.
+    #[arg(long)]
+    pub site_wss: bool,
 
     /// Hyperfine.
     #[arg(long)]
@@ -104,11 +110,11 @@ impl Args {
         let callgrind_table_header = table_header(&self.callgrind_nums, &self.number_locale);
         let massif_table_header    = table_header(&self.massif_nums   , &self.number_locale);
 
-        if !self.no_compile && (self.cli || self.site_http || self.site_ws) {
+        if !self.no_compile && (self.cli || self.site_http || self.site_https || self.site_ws || self.site_wss) {
             crate::compile::Args {
                 frontends: crate::compile::Frontends {
                     cli: self.cli,
-                    site: self.site_http || self.site_ws,
+                    site: self.site_http || self.site_https || self.site_ws || self.site_wss,
                     site_ws_client: self.site_ws,
                     discord: false
                 }
@@ -209,25 +215,7 @@ impl Args {
         if self.site_http {
             println!("## Site HTTP");
             println!();
-            println!("The max payload was increased from 25MiB to 1GiB.");
-            println!();
-            println!("Below is a table of how many of each task can actually fit in the default and increased limits.");
-            println!();
-            println!("|Name|Bytes|Lines in 25MiB|Lines in 1GiB|");
-            println!("|:--|--:|--:|--:|");
-            for benchmark in &benchmarks {
-                // Assuming line separator of `\n` and no trailing empty line.
-                // size = num * ( len + 1 ) - 1
-                // num  = ( size + 1 ) / ( len + 1 )
-
-                println!(
-                    "|{}|`{}`|`{}`|`{}`|",
-                    benchmark.name,
-                    benchmark.task.len().to_formatted_string(&self.number_locale),
-                    ((  25 * 1024 * 1024 + 1) / (benchmark.task.len() + 1)).to_formatted_string(&self.number_locale),
-                    ((1024 * 1024 * 1024 + 1) / (benchmark.task.len() + 1)).to_formatted_string(&self.number_locale)
-                );
-            }
+            println!("Measured with `curl http://... -H Expect: --data-binary @stdin.txt`.");
             println!();
 
             if self.hyperfine {
@@ -246,6 +234,7 @@ impl Args {
                             num: *num,
                             runs: self.hyperfine_runs,
                             warmup: self.hyperfine_warmup,
+                            tls: false,
                         }.r#do());
                     }
                     println!();
@@ -267,6 +256,7 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
+                            tls: false,
                         }.r#do());
                     }
                     println!();
@@ -288,6 +278,82 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
+                            tls: false,
+                        }.r#do(), &self.number_locale);
+                    }
+                    println!();
+                }
+                println!();
+            }
+        }
+
+        if self.site_https {
+            println!("## Site HTTPS");
+            println!();
+            println!("Measured with `curl https://... -H Expect: --data-binary @stdin.txt`.");
+            println!();
+
+            if self.hyperfine {
+                println!("### Speed");
+                println!();
+                println!("Measured in milliseconds.");
+                println!();
+
+                println!("{hyperfine_table_header}");
+                for benchmark in &benchmarks {
+                    printflush!("|{}|", benchmark.name);
+                    for num in &self.hyperfine_nums {
+                        print_hyperfine_entry(crate::bench::site::http::hyperfine::Args {
+                            name: benchmark.name.to_owned(),
+                            task: benchmark.task.to_owned(),
+                            num: *num,
+                            runs: self.hyperfine_runs,
+                            warmup: self.hyperfine_warmup,
+                            tls: true,
+                        }.r#do());
+                    }
+                    println!();
+                }
+                println!();
+            }
+
+            if self.callgrind {
+                println!("### Callgrind");
+                println!();
+                println!("No info to show.");
+                println!();
+
+                println!("{callgrind_table_header}");
+                for benchmark in &benchmarks {
+                    printflush!("|{}|", benchmark.name);
+                    for num in &self.callgrind_nums {
+                        print_callgrind_entry(crate::bench::site::http::callgrind::Args {
+                            name: benchmark.name.to_owned(),
+                            task: benchmark.task.to_owned(),
+                            num: *num,
+                            tls: true,
+                        }.r#do());
+                    }
+                    println!();
+                }
+                println!();
+            }
+
+            if self.massif {
+                println!("### Peak memory usage");
+                println!();
+                println!("Measured in bytes.");
+                println!();
+
+                println!("{massif_table_header}");
+                for benchmark in &benchmarks {
+                    printflush!("|{}|", benchmark.name);
+                    for num in &self.massif_nums {
+                        print_massif_entry(crate::bench::site::http::massif::Args {
+                            name: benchmark.name.to_owned(),
+                            task: benchmark.task.to_owned(),
+                            num: *num,
+                            tls: true,
                         }.r#do(), &self.number_locale);
                     }
                     println!();
@@ -320,6 +386,7 @@ impl Args {
                             num: *num,
                             runs: self.hyperfine_runs,
                             warmup: self.hyperfine_warmup,
+                            tls: false,
                         }.r#do());
                     }
                     println!();
@@ -341,6 +408,7 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
+                            tls: false,
                         }.r#do());
                     }
                     println!();
@@ -362,6 +430,84 @@ impl Args {
                             name: benchmark.name.to_owned(),
                             task: benchmark.task.to_owned(),
                             num: *num,
+                            tls: false,
+                        }.r#do(), &self.number_locale);
+                    }
+                    println!();
+                }
+                println!();
+            }
+        }
+
+        if self.site_wss {
+            println!("## Site WebSocket Secure");
+            println!();
+            println!("Please note that [URL Cleaner Site WebSocket Client](site-ws-client) is used to send multiple task configs per message.");
+            println!();
+            println!("This dramatically reduces the overhead of using WebSockets, to the point of making large jobs several times faster.");
+            println!();
+
+            if self.hyperfine {
+                println!("### Speed");
+                println!();
+                println!("Measured in milliseconds.");
+                println!();
+
+                println!("{hyperfine_table_header}");
+                for benchmark in &benchmarks {
+                    printflush!("|{}|", benchmark.name);
+                    for num in &self.hyperfine_nums {
+                        print_hyperfine_entry(crate::bench::site::websocket::hyperfine::Args {
+                            name: benchmark.name.to_owned(),
+                            task: benchmark.task.to_owned(),
+                            num: *num,
+                            runs: self.hyperfine_runs,
+                            warmup: self.hyperfine_warmup,
+                            tls: true,
+                        }.r#do());
+                    }
+                    println!();
+                }
+                println!();
+            }
+
+            if self.callgrind {
+                println!("### Callgrind");
+                println!();
+                println!("No info to show.");
+                println!();
+
+                println!("{callgrind_table_header}");
+                for benchmark in &benchmarks {
+                    printflush!("|{}|", benchmark.name);
+                    for num in &self.callgrind_nums {
+                        print_callgrind_entry(crate::bench::site::websocket::callgrind::Args {
+                            name: benchmark.name.to_owned(),
+                            task: benchmark.task.to_owned(),
+                            num: *num,
+                            tls: true,
+                        }.r#do());
+                    }
+                    println!();
+                }
+                println!();
+            }
+
+            if self.massif {
+                println!("### Peak memory usage");
+                println!();
+                println!("Measured in bytes.");
+                println!();
+
+                println!("{massif_table_header}");
+                for benchmark in &benchmarks {
+                    printflush!("|{}|", benchmark.name);
+                    for num in &self.massif_nums {
+                        print_massif_entry(crate::bench::site::websocket::massif::Args {
+                            name: benchmark.name.to_owned(),
+                            task: benchmark.task.to_owned(),
+                            num: *num,
+                            tls: true,
                         }.r#do(), &self.number_locale);
                     }
                     println!();
