@@ -12,17 +12,17 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 ## Usage
 
-### Start URL Cleaner Site
-
-Once you've downloaded/compiled URL Cleaner Site, all you need to do is open it.
-
-For more advacned usage, please see [the server management guide](server.md)
+Please see [the server management guide](server.md)
 
 ### Userscript
 
 The main way to use URL Cleaner Site is with URL Cleaner Site Userscript to clean every URL on every webpage you visit.
 
 See [userscript.md](userscript.md) for details.
+
+### Site Client
+
+Altenratively, [URL Cleaner Site CLIent](../site-client) is available as an experimental CLI client for URL Cleaner Site.
 
 ### API
 

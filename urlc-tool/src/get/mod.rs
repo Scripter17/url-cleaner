@@ -7,20 +7,6 @@ pub mod reddit;
 /// Prelude module for importing everything here better.
 pub mod prelude {
     pub use super::super::prelude::*;
-
-    pub use super::Mode;
-}
-
-/// The mode.
-#[derive(Debug, Clone, Copy, Default, ValueEnum)]
-pub enum Mode {
-    /// Download all from reddit.
-    #[default]
-    Normal,
-    /// Download missing from reddit.
-    Continue,
-    /// Download nothing from reddit and ignore missing.
-    Regenerate
 }
 
 /// Get tasks from various sources.

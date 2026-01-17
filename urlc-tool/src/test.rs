@@ -7,6 +7,9 @@ use super::prelude::*;
 /// Do tests.
 #[derive(Debug, Parser)]
 pub struct Args {
+    /// Release mode.
+    #[arg(long)]
+    pub release: bool,
     /// The tests file.
     #[arg(long)]
     pub tests: Option<PathBuf>,
@@ -57,8 +60,13 @@ impl Args {
     pub fn r#do(self) {
         std::fs::create_dir_all(TMP).unwrap();
 
+        let bin = match self.release {
+            false => "target/debug/url-cleaner",
+            true  => "target/release/url-cleaner"
+        };
+
         if self.assert_suitability {
-            assert_eq!(Command::new(BINDIR.join("url-cleaner"))
+            assert_eq!(Command::new(bin)
                 .args([
                     "--assert-suitability",
                     "--cleaner", "engine/src/cleaner/bundled-cleaner.json"
@@ -85,7 +93,7 @@ impl Args {
             if let Some(ref params_diff) = job.params_diff {println!("  Params diff: {}", serde_json::to_string(&params_diff).unwrap());}
             println!("  Tests:");
 
-            let mut command = Command::new(BINDIR.join("url-cleaner"));
+            let mut command = Command::new(bin);
 
             command.args([
                 "--no-read-cache",

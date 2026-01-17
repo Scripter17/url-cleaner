@@ -66,7 +66,7 @@
 				},
 
 				"furaffinity_mode": {
-					"desc": "Decides what host to replace reddit hosts with.",
+					"desc": "Decides what host to replace furaffinity hosts with.",
 					"required": false,
 					"unset": "Keep as-is.",
 					"variants": {
@@ -295,8 +295,8 @@
 					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "lovense",
 					"marvel.com", "mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de",
 					"ojrq.net", "onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reddit.com",
-					"reuters.com", "sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com",
-					"theguardian.com", "threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org",
+					"reuters.com", "scan-safety.com", "sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com",
+					"temu.com", "theguardian.com", "threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org",
 					"unlock.com", "walmart.com", "whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
 				],
 				"remove": [
@@ -374,12 +374,12 @@
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "emjcd.com", "fans.ly", "fansly.com",
 					"fiverr.com", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com", "gprivate.com",
 					"gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com",
-					"link.sfchronicle.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "mel.sc", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st",
-					"o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com",
-					"proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc",
-					"ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com", "spotify.link", "ss3.shipstation.com",
-					"star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tmz.me",
-					"toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
+					"link.sfchronicle.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "media.igram.world", "mel.sc", "mfy.gg", "nas.cr",
+					"nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net",
+					"preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com",
+					"redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com",
+					"spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs",
+					"thr.cm", "tinyurl.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
 				]
 			},
 			"rd_expand_mode": {
@@ -1507,6 +1507,7 @@
 											}
 										}
 									}},
+									"media.igram.world": {"GetUrlFromQueryParam": "uri"},
 									"mel.sc": {"SetHost": "melscience.com"},
 									"mfy.gg": {"SetHost": "metafy.gg"},
 									"nas.cr": {"SetHost": "bit.ly"},
@@ -1850,6 +1851,96 @@
 				"part": "NormalizedHost",
 				"partitioning": "nh_categories",
 				"map": {
+					"alibaba": {"RemoveQueryParams": [
+						"callByHgJs", "cardType", "forcePC", "fsb", "ncms_spm", "path", "prefetchKey", "ptow", "__removesafearea__", "selectedCarrierCode", "spm", "src_cna",
+						"tracelog", "wx_navbar_tramsparent", "wx_navbar_transparent", "wx_xpage", "from", "ckvia"
+					]},
+
+					"bluesky": {"Function": "bluesky"},
+					"bluesky_embed_hosts": {"If": {
+						"if": {"PathIs": "/"},
+						"then": {"PartMap": {
+							"part": "NormalizedHost",
+							"map": {
+								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
+							}
+						}},
+						"else": {"Function": "bluesky"}
+					}},
+
+					"breezewiki": {"StringMap": {
+						"value": {"Var": "fandom_mode"},
+						"map": {
+							"canon": {"If": {
+								"if": {"Not": {"PathIs": "/"}},
+								"then": {"All": [
+									{"SetHost": {"Join": {
+										"values": [{"Part": {"PathSegment": 0}}, ".fandom.com"]
+									}}},
+									{"PartMap": {
+										"part": {"PathSegment": 1},
+										"map": {
+											"search": {"All": [
+												{"SetPath": "/wiki/Special:Search"},
+												{"SetQuery": {"Join": {
+													"values": ["query=", {"Part": {"RawQueryParam": "q"}}]
+												}}}
+											]}
+										},
+										"else": {"TryElse": {
+											"try": {"RemovePathSegment": 0},
+											"else": {"SetPath": "/"}
+										}}
+									}}
+								]}
+							}},
+							"breezewiki": {"SetHost": {"Var": "breezewiki_host"}}
+						},
+						"if_none": {"SetHost": {"Var": "breezewiki_host"}}
+					}},
+
+					"deviantart_embed_hosts": {"SetRegDomain": "deviantart.com"},
+
+					"discord_external": {"If": {
+						"if": {"FlagIsSet": "discord_unexternal"},
+						"then": {"ModifyPart": {
+							"part": "Whole",
+							"modification": {"RegexReplaceOne": {"regex": ".+?/(https?)/([^/]+)/([^?#]+)", "replace": "$1://$2/$3"}}
+						}}
+					}},
+
+					"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
+
+					"furaffinity": {"StringMap": {
+						"value": {"Var": "furaffinity_mode"},
+						"map": {
+							"canon": {"SetHost": "www.furaffinity.net"},
+							"sfw"  : {"SetHost": "sfw.furaffinity.net"},
+							"nsfw" : {"SetHost": "www.furaffinity.net"}
+						}
+					}},
+
+					"instagram": {"All": [
+						{"HandleParams": {
+							"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
+							"prefixes": ["xmt=", "source_", "igsh"]
+						}},
+						{"If": {
+							"if": {"RegDomainIs": "threads.net"},
+							"then": {"SetHost": "www.threads.com"}
+						}}
+					]},
+
+					"lmgtfy": {"If": {
+						"if": {"HasQueryParam": "q"},
+						"then": {"SetWhole": {"Join": {
+							"values": [
+								"https://google.com/search?q=",
+								{"Part": {"RawQueryParam": "q"}}
+							]
+						}}}
+					}},
+
 					"pixiv": {"Function": {
 						"name": "pixiv",
 						"args": {
@@ -1875,8 +1966,6 @@
 							}
 						}}
 					}},
-
-
 
 					"twitter": {"Function": {
 						"name": "twitter",
@@ -1915,22 +2004,6 @@
 						}
 					}},
 
-
-
-					"bluesky": {"Function": "bluesky"},
-					"bluesky_embed_hosts": {"If": {
-						"if": {"PathIs": "/"},
-						"then": {"PartMap": {
-							"part": "NormalizedHost",
-							"map": {
-								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
-							}
-						}},
-						"else": {"Function": "bluesky"}
-					}},
-
-
-
 					"youtube": {"Function": {
 						"name": "youtube",
 						"args": {
@@ -1962,74 +2035,6 @@
 								"default_host": {"Var": "invidious_host"}
 							}
 						}
-					}},
-
-
-
-					"deviantart_embed_hosts": {"SetRegDomain": "deviantart.com"},
-
-
-
-					"breezewiki": {"StringMap": {
-						"value": {"Var": "fandom_mode"},
-						"map": {
-							"canon": {"If": {
-								"if": {"Not": {"PathIs": "/"}},
-								"then": {"All": [
-									{"SetHost": {"Join": {
-										"values": [{"Part": {"PathSegment": 0}}, ".fandom.com"]
-									}}},
-									{"PartMap": {
-										"part": {"PathSegment": 1},
-										"map": {
-											"search": {"All": [
-												{"SetPath": "/wiki/Special:Search"},
-												{"SetQuery": {"Join": {
-													"values": ["query=", {"Part": {"RawQueryParam": "q"}}]
-												}}}
-											]}
-										},
-										"else": {"TryElse": {
-											"try": {"RemovePathSegment": 0},
-											"else": {"SetPath": "/"}
-										}}
-									}}
-								]}
-							}},
-							"breezewiki": {"SetHost": {"Var": "breezewiki_host"}}
-						},
-						"if_none": {"SetHost": {"Var": "breezewiki_host"}}
-					}},
-					"alibaba": {"RemoveQueryParams": [
-						"callByHgJs", "cardType", "forcePC", "fsb", "ncms_spm", "path", "prefetchKey", "ptow", "__removesafearea__", "selectedCarrierCode", "spm", "src_cna",
-						"tracelog", "wx_navbar_tramsparent", "wx_navbar_transparent", "wx_xpage", "from", "ckvia"
-					]},
-					"discord_external": {"If": {
-						"if": {"FlagIsSet": "discord_unexternal"},
-						"then": {"ModifyPart": {
-							"part": "Whole",
-							"modification": {"RegexReplaceOne": {"regex": ".+?/(https?)/([^/]+)/([^?#]+)", "replace": "$1://$2/$3"}}
-						}}
-					}},
-					"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
-					"instagram": {"All": [
-						{"HandleParams": {
-							"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
-							"prefixes": ["xmt=", "source_", "igsh"]
-						}},
-						{"If": {
-							"if": {"RegDomainIs": "threads.net"},
-							"then": {"SetHost": "www.threads.com"}
-						}}
-					]},
-					"lmgtfy": {"If": {
-						"if": {"HasQueryParam": "q"},
-						"then": {"SetWhole": {"Join": {
-							"values": [
-								"https://google.com/search?q=",
-								{"Part": {"RawQueryParam": "q"}}
-							]
-						}}}
 					}}
 				}
 			}},
@@ -2135,14 +2140,6 @@
 						}}
 					]},
 					"fori.io": {"SetHost": "www.foriio.com"},
-					"furaffinity.net": {"StringMap": {
-						"value": {"Var": "furaffinity_mode"},
-						"map": {
-							"canon": {"SetHost": "www.furaffinity.net"},
-							"sfw"  : {"SetHost": "sfw.furaffinity.net"},
-							"nsfw" : {"SetHost": "www.furaffinity.net"}
-						}
-					}},
 					"gelbooru.com": {"If": {
 						"if": {"QueryParamIs": {"param": "page", "value": "post"}},
 						"then": {"RemoveQueryParam": "tags"}
@@ -2211,7 +2208,7 @@
 						"if": {"PathStartsWith": "/s/"},
 						"then": {"Function": "expand_redirect"}
 					}},
-					"patreon.com": {"RemoveQueryParams": ["redirect_uri", "fan_landing", "fromConcierge", "redirect"]},
+					"patreon.com": {"RemoveQueryParams": ["redirect_uri", "fan_landing", "fromConcierge", "redirect", "source"]},
 					"pawoo.net": {"RemoveQueryParam": "provider"},
 					"pixiv.net": {"If": {
 						"if": {"PathIs": "/member.php"},
@@ -2399,7 +2396,6 @@
 						"then": {"SetWhole": "https://www.leaffilter.ca/promo/ready-for-fall/"},
 						"else": {"RemoveQueryParams": ["if_dc", "map_phone"]}
 					}},
-					"media.igram.world": {"GetUrlFromQueryParam": "uri"},
 					"mondly.com": {"If": {
 						"if": {"All": [
 							{"PathStartsWith": "/offer/"},
@@ -2424,7 +2420,6 @@
 						"if": {"PathIs": "/"},
 						"then": {"SetPath": "/questions"}
 					}},
-					"support.google.com": {"RemoveQueryParam": "ref_topic"},
 					"temu.com": {"PartMap": {
 						"part": "Path",
 						"map": {

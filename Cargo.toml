@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["engine", "cli", "site-types", "site", "discord-app", "better-url", "urlc-tool", "site-ws-client"]
+members = ["engine", "cli", "site-types", "site", "discord", "better-url", "urlc-tool", "site-client"]
 
 [workspace.lints.rust]
 missing_docs = "warn"

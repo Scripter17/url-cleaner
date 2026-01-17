@@ -10,6 +10,5 @@ impl std::ops::Drop for TerminateOnDrop {
             libc::kill(self.0.id() as _, libc::SIGTERM);
         }
         self.0.wait().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }

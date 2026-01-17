@@ -1,558 +1,138 @@
 //! Suite.
 
-use super::prelude::*;
+pub use super::prelude::*;
 
-/// Generate benchmarks.md, writing to STDOUT.
+/// Generate a markdown document of benchmark details.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The benchmarks file.
-    #[arg(long)]
-    pub benchmarks: Option<PathBuf>,
-    /// The regex to filter names with.
-    #[arg(long, default_value = "")]
-    pub filter: String,
-    /// Disable compiling the frontends.
-    #[arg(long)]
-    pub no_compile: bool,
-    /// The number locale.
-    #[arg(long, default_value = "en")]
-    pub number_locale: Locale,
+    /// The targets to benchmark.
+    #[arg(long, num_args = 1.., default_values = ["cli", "http", "https", "ws", "wss"])]
+    pub targets: Vec<Target>,
+    /// The tools to benchmark with.
+    #[arg(long, num_args = 1.., default_values = ["hyperfine", "massif"])]
+    pub tools: Vec<Tool>,
+    /// The nums to use.
+    #[arg(long, num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
+    pub nums: Vec<u64>,
 
-    /// CLI.
+    /// The regex to filter task names with.
     #[arg(long)]
-    pub cli: bool,
-    /// Site HTTP.
-    #[arg(long)]
-    pub site_http: bool,
-    /// Site HTTPS.
-    #[arg(long)]
-    pub site_https: bool,
-    /// Site WebSocket.
-    #[arg(long)]
-    pub site_ws: bool,
-    /// Site WebSocket Secure.
-    #[arg(long)]
-    pub site_wss: bool,
-
-    /// Hyperfine.
-    #[arg(long)]
-    pub hyperfine: bool,
-    /// Callgrind.
-    #[arg(long)]
-    pub callgrind: bool,
-    /// massif.
-    #[arg(long)]
-    pub massif: bool,
-
-    /// Hyperfine nums.
-    #[arg(long, requires = "hyperfine", num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
-    pub hyperfine_nums: Vec<usize>,
-    /// callgrind nums.
-    #[arg(long, requires = "callgrind", num_args = 1.., default_values_t = [0, 10_000])]
-    pub callgrind_nums: Vec<usize>,
-    /// Massif nums.
-    #[arg(long, requires = "massif"   , num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
-    pub massif_nums: Vec<usize>,
-
-    /// Hyperfine runs.
-    #[arg(long, requires = "hyperfine")]
-    pub hyperfine_runs: Option<usize>,
-    /// Hyperfine warmup.
-    #[arg(long, requires = "hyperfine")]
-    pub hyperfine_warmup: Option<usize>,
+    pub filter: Option<String>
 }
 
-/// A benchmark.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Benchmark<'a> {
-    /// The name.
-    name: &'a str,
-    /// The description.
-    desc: &'a str,
-    /// The task.
-    task: &'a str
-}
-
-/// The bundled benchmarks.
-const BUNDLED_BENCHMARKS: &str = include_str!("bundled-benchmarks.txt");
-
-/// Print to and flsuh STDOUT.
-macro_rules! printflush {
-    ($($x:tt)*) => {
-        print!($($x)*);
-        std::io::stdout().flush().unwrap();
-    }
-}
+/// The tasks to benchmark with.
+pub const TASKS: &[(&str, &str)] = &[
+    ("Baseline", "https://example.com"),
+    ("UTPs"    , "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id"),
+    ("Amazon"  , "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8"),
+    ("Google"  , "https://www.google.com/search?q=url+cleaner&sca_esv=de6549fe37924183&ei=eRAYabb6O7Gb4-EP79Xe6A8&ved=0ahUKEwj2mqWLt_OQAxWxzTgGHe-qF_0Q4dUDCBE&oq=url+cleaner&gs_lp=Egxnd3Mtd2l6LXNlcnAiC3VybCBjbGVhbmVySABQAFgAcAB4AZABAJgBAKABAKoBALgBDMgBAJgCAKACAJgDAJIHAKAHALIHALgHAMIHAMgHAA&sclient=gws-wiz-serp"),
+];
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let benchmarks_string = match self.benchmarks {
-            Some(path) => Cow::Owned(std::fs::read_to_string(path).unwrap()),
-            None => Cow::Borrowed(BUNDLED_BENCHMARKS)
-        };
+        let mut bins = Vec::new();
 
-        let filter = Regex::new(&self.filter).unwrap();
+        if self.targets.iter().any(|target| matches!(target, Target::Cli    )) {bins.push(Bin::Cli );                            }
+        if self.targets.iter().any(|target| matches!(target, Target::Site(_))) {bins.push(Bin::Site); bins.push(Bin::SiteClient);}
 
-        let benchmarks = benchmarks_string.lines()
-            .map(|line| {
-                let mut parts = line.splitn(3, '\t');
-                Benchmark {
-                    name: parts.next().unwrap(),
-                    desc: parts.next().unwrap(),
-                    task: parts.next().unwrap()
-                }
-            })
-            .filter(|Benchmark {name, ..}| filter.find(name).is_some())
-            .collect::<Vec<Benchmark<'_>>>();
+        crate::build::Args {
+            bins,
+            no_compile: false,
+            debug: false
+        }.r#do();
 
-        let hyperfine_table_header = table_header(&self.hyperfine_nums, &self.number_locale);
-        let callgrind_table_header = table_header(&self.callgrind_nums, &self.number_locale);
-        let massif_table_header    = table_header(&self.massif_nums   , &self.number_locale);
+        let filter = Regex::new(&self.filter.unwrap_or_default()).unwrap();
 
-        if !self.no_compile && (self.cli || self.site_http || self.site_https || self.site_ws || self.site_wss) {
-            crate::compile::Args {
-                frontends: crate::compile::Frontends {
-                    cli: self.cli,
-                    site: self.site_http || self.site_https || self.site_ws || self.site_wss,
-                    site_ws_client: self.site_ws,
-                    discord: false
-                }
-            }.r#do();
-        }
+        let tasks = TASKS.iter().filter(|(name, _)| filter.find(name).is_some()).collect::<Vec<_>>();
 
         println!("# Benchmarks");
         println!();
-        println!("Measurements of how fast URL Cleaner's frontends are, as seen on the following hardware:");
+
+        println!("[Hyperfine]: https://github.com/sharkdp/hyperfine");
+        println!("[Valgrind]: https://valgrind.org");
+        println!("[Callgrind]: https://valgrind.org/info/tools.html#callgrind");
+        println!("[Massif]: https://valgrind.org/info/tools.html#massif");
         println!();
+
+        println!("## System info");
+        println!();
+
         println!("```");
         assert_eq!(Command::new("neofetch")
             .args(["distro", "kernel", "model", "cpu", "memory"])
             .spawn().unwrap().wait().unwrap().code(), Some(0));
         println!("```");
         println!();
+
         println!("## Tasks");
         println!();
-        println!("The tasks that are benchmarked.");
-        println!();
-        println!("|Name|Description|Task|");
-        println!("|:--|:--|:--|");
-        for Benchmark {name, desc, task} in &benchmarks {
-            println!("|{name}|{desc}|`{task}`|");
+
+        println!("|Name|Task|");
+        println!("|:--|:--|");
+        for (name, task) in &tasks {
+            println!("|{name}|`{task}`|");
         }
         println!();
 
-        if self.cli {
-            println!("## Cli");
+        for target in self.targets {
+            match target {
+                Target::Cli => println!("## CLI"),
+                Target::Site(api) => {
+                    println!("## Site {}", api.name());
+                    println!();
+                    println!("Measured using [URL Cleaner Site Client](./site-client/)");
+                }
+            }
             println!();
 
-            if self.hyperfine {
-                println!("### Speed");
-                println!();
-                println!("Measured in milliseconds.");
-                println!();
-
-                println!("{hyperfine_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.hyperfine_nums {
-                        print_hyperfine_entry(crate::bench::cli::hyperfine::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            runs: self.hyperfine_runs,
-                            warmup: self.hyperfine_warmup,
-                        }.r#do());
-                    }
-                    println!();
+            for tool in self.tools.iter().copied() {
+                match tool {
+                    Tool::Hyperfine => {println!("### Speed"    ); println!(); println!("Average milliseconds. Measured by [Hyperfine]."       )},
+                    Tool::Massif    => {println!("### Memory"   ); println!(); println!("Peak memory usage. Measured by [Valgrind]'s [Massif].")},
+                    Tool::Callgrind => {println!("### Callgrind"); println!(); println!("Callgrind info. Measured by [Valgrind]'s [Callgrind].")}
                 }
                 println!();
-            }
 
-            if self.callgrind {
-                println!("### Callgrind");
-                println!();
-                println!("No info to show.");
-                println!();
-
-                println!("{callgrind_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.callgrind_nums {
-                        print_callgrind_entry(crate::bench::cli::callgrind::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                        }.r#do());
-                    }
-                    println!();
+                print!("|Name|");
+                for num in self.nums.iter() {
+                    print!("{}|", num.to_formatted_string(&Locale::en));
                 }
                 println!();
-            }
 
-            if self.massif {
-                println!("### Peak memory usage");
-                println!();
-                println!("Measured in bytes.");
-                println!();
-
-                println!("{massif_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.massif_nums {
-                        print_massif_entry(crate::bench::cli::massif::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                        }.r#do(), &self.number_locale);
-                    }
-                    println!();
+                print!("|:--|");
+                for _ in 0..self.nums.len() {
+                    print!("--:|");
                 }
                 println!();
-            }
-        }
 
-        if self.site_http {
-            println!("## Site HTTP");
-            println!();
-            println!("Measured with `curl http://... -H Expect: --data-binary @stdin.txt`.");
-            println!();
+                for (name, task) in &tasks {
+                    print!("|{name}|");
+                    std::io::stdout().flush().unwrap();
 
-            if self.hyperfine {
-                println!("### Speed");
-                println!();
-                println!("Measured in milliseconds.");
-                println!();
+                    for num in self.nums.iter().copied() {
+                        print!("{}|", tool.get_entry(&match target {
+                            Target::Cli => super::cli::Args {
+                                name: name.to_string(),
+                                job_config: JobConfig { task: task.to_string(), num },
+                                tool
+                            }.r#do(),
+                            Target::Site(api) => super::site::Args {
+                                name: name.to_string(),
+                                job_config: JobConfig { task: task.to_string(), num },
+                                tool,
+                                api
+                            }.r#do()
+                        }));
 
-                println!("{hyperfine_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.hyperfine_nums {
-                        print_hyperfine_entry(crate::bench::site::http::hyperfine::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            runs: self.hyperfine_runs,
-                            warmup: self.hyperfine_warmup,
-                            tls: false,
-                        }.r#do());
+                        std::io::stdout().flush().unwrap();
                     }
+
                     println!();
                 }
-                println!();
-            }
 
-            if self.callgrind {
-                println!("### Callgrind");
-                println!();
-                println!("No info to show.");
-                println!();
-
-                println!("{callgrind_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.callgrind_nums {
-                        print_callgrind_entry(crate::bench::site::http::callgrind::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: false,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.massif {
-                println!("### Peak memory usage");
-                println!();
-                println!("Measured in bytes.");
-                println!();
-
-                println!("{massif_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.massif_nums {
-                        print_massif_entry(crate::bench::site::http::massif::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: false,
-                        }.r#do(), &self.number_locale);
-                    }
-                    println!();
-                }
-                println!();
-            }
-        }
-
-        if self.site_https {
-            println!("## Site HTTPS");
-            println!();
-            println!("Measured with `curl https://... -H Expect: --data-binary @stdin.txt`.");
-            println!();
-
-            if self.hyperfine {
-                println!("### Speed");
-                println!();
-                println!("Measured in milliseconds.");
-                println!();
-
-                println!("{hyperfine_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.hyperfine_nums {
-                        print_hyperfine_entry(crate::bench::site::http::hyperfine::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            runs: self.hyperfine_runs,
-                            warmup: self.hyperfine_warmup,
-                            tls: true,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.callgrind {
-                println!("### Callgrind");
-                println!();
-                println!("No info to show.");
-                println!();
-
-                println!("{callgrind_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.callgrind_nums {
-                        print_callgrind_entry(crate::bench::site::http::callgrind::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: true,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.massif {
-                println!("### Peak memory usage");
-                println!();
-                println!("Measured in bytes.");
-                println!();
-
-                println!("{massif_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.massif_nums {
-                        print_massif_entry(crate::bench::site::http::massif::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: true,
-                        }.r#do(), &self.number_locale);
-                    }
-                    println!();
-                }
-                println!();
-            }
-        }
-
-        if self.site_ws {
-            println!("## Site WebSocket");
-            println!();
-            println!("Please note that [URL Cleaner Site WebSocket Client](site-ws-client) is used to send multiple task configs per message.");
-            println!();
-            println!("This dramatically reduces the overhead of using WebSockets, to the point of making large jobs several times faster.");
-            println!();
-
-            if self.hyperfine {
-                println!("### Speed");
-                println!();
-                println!("Measured in milliseconds.");
-                println!();
-
-                println!("{hyperfine_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.hyperfine_nums {
-                        print_hyperfine_entry(crate::bench::site::websocket::hyperfine::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            runs: self.hyperfine_runs,
-                            warmup: self.hyperfine_warmup,
-                            tls: false,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.callgrind {
-                println!("### Callgrind");
-                println!();
-                println!("No info to show.");
-                println!();
-
-                println!("{callgrind_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.callgrind_nums {
-                        print_callgrind_entry(crate::bench::site::websocket::callgrind::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: false,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.massif {
-                println!("### Peak memory usage");
-                println!();
-                println!("Measured in bytes.");
-                println!();
-
-                println!("{massif_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.massif_nums {
-                        print_massif_entry(crate::bench::site::websocket::massif::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: false,
-                        }.r#do(), &self.number_locale);
-                    }
-                    println!();
-                }
-                println!();
-            }
-        }
-
-        if self.site_wss {
-            println!("## Site WebSocket Secure");
-            println!();
-            println!("Please note that [URL Cleaner Site WebSocket Client](site-ws-client) is used to send multiple task configs per message.");
-            println!();
-            println!("This dramatically reduces the overhead of using WebSockets, to the point of making large jobs several times faster.");
-            println!();
-
-            if self.hyperfine {
-                println!("### Speed");
-                println!();
-                println!("Measured in milliseconds.");
-                println!();
-
-                println!("{hyperfine_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.hyperfine_nums {
-                        print_hyperfine_entry(crate::bench::site::websocket::hyperfine::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            runs: self.hyperfine_runs,
-                            warmup: self.hyperfine_warmup,
-                            tls: true,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.callgrind {
-                println!("### Callgrind");
-                println!();
-                println!("No info to show.");
-                println!();
-
-                println!("{callgrind_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.callgrind_nums {
-                        print_callgrind_entry(crate::bench::site::websocket::callgrind::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: true,
-                        }.r#do());
-                    }
-                    println!();
-                }
-                println!();
-            }
-
-            if self.massif {
-                println!("### Peak memory usage");
-                println!();
-                println!("Measured in bytes.");
-                println!();
-
-                println!("{massif_table_header}");
-                for benchmark in &benchmarks {
-                    printflush!("|{}|", benchmark.name);
-                    for num in &self.massif_nums {
-                        print_massif_entry(crate::bench::site::websocket::massif::Args {
-                            name: benchmark.name.to_owned(),
-                            task: benchmark.task.to_owned(),
-                            num: *num,
-                            tls: true,
-                        }.r#do(), &self.number_locale);
-                    }
-                    println!();
-                }
                 println!();
             }
         }
     }
-}
-
-/// Generate a table header.
-pub fn table_header(nums: &[usize], number_locale: &Locale) -> String {
-    let mut ret = "|Name|".to_string();
-    for num in nums {
-        ret.push_str(&num.to_formatted_string(number_locale));
-        ret.push('|');
-    }
-    ret.push_str("\n|:--|");
-    for _ in nums {
-        ret.push_str("--:|");
-    }
-    ret
-}
-
-/// Print a Hyperfine entry.
-fn print_hyperfine_entry<P: AsRef<Path>>(path: P) {
-    let data = std::fs::read_to_string(path).unwrap();
-    let data = serde_json::from_str::<serde_json::Value>(&data).unwrap()["results"][0].take();
-    printflush!("`{:.1}`|", data["mean"].as_f64().unwrap() * 1000.0);
-}
-
-/// Print a Callgrind entry.
-fn print_callgrind_entry<P: AsRef<Path>>(_: P) {
-    printflush!("`...`|");
-}
-
-/// Print a Massif entry.
-fn print_massif_entry<P: AsRef<Path>>(path: P, number_locale: &Locale) {
-    let mut max = 0;
-
-    for line in BufReader::new(File::open(path).unwrap()).lines() {
-        if let Some(num) = line.unwrap().strip_prefix("mem_heap_B=") {
-            max = max.max(num.parse().unwrap());
-        }
-    }
-
-    printflush!("`{}`|", max.to_formatted_string(number_locale));
 }

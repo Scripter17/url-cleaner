@@ -75,4 +75,4 @@ jobs:
     - name: 'Check bundled cleaner'
       run: |
         set -euo pipefail
-        cargo run --bin urlc-tool -- --debug test --filter '^offline' --assert-suitability
+        cargo run --bin urlc-tool -- test --filter '^offline' --assert-suitability

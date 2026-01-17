@@ -4,8 +4,10 @@
 #![allow(clippy::indexing_slicing  , reason = "Internal tool. I can fix it when it breads.")]
 #![allow(clippy::missing_panics_doc, reason = "Internal tool. I can fix it when it breads.")]
 
-pub mod compile;
+pub mod build;
+pub mod run;
 pub mod doc;
+pub mod normalize;
 pub mod test;
 pub mod bench;
 pub mod foldent;
@@ -25,51 +27,32 @@ pub mod prelude {
     pub use std::process::Command;
     pub use std::borrow::Cow;
     pub use std::sync::{OnceLock, LazyLock};
+    pub use std::str::FromStr;
 
     pub use regex::Regex;
     pub use num_format::{Locale, ToFormattedString};
-    pub use clap::{Parser, ValueEnum};
+    pub use clap::{Parser, ValueEnum, builder::PossibleValue};
+    pub use thiserror::Error;
 
     pub use super::fs::*;
     pub use super::command::*;
     pub use super::util::*;
-
-    pub use super::{BINDIR, DEBUG};
 }
 
 use prelude::*;
 
-/// The directory of the binaries.
-pub static BINDIR: LazyLock<PathBuf> = LazyLock::new(|| {
-    let mut ret = std::env::current_exe().unwrap();
-    ret.pop();
-    ret.pop();
-    ret.push(if *DEBUG.get().unwrap() {"debug"} else {"release"});
-    ret
-});
-
-/// Whether to use debug mode.
-pub static DEBUG: OnceLock<bool> = OnceLock::new();
-
 /// Internal tool to develop URL Cleaner.
 ///
 /// Very fragile; Don't expect things to handle edge cases at all.
+///
+/// Always assumes you're running in the root of the URL Cleaner git repository.
 #[allow(clippy::missing_docs_in_private_items, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
-struct Args {
-    /// Use debug builds.
-    #[arg(long)]
-    debug: bool,
-    #[command(subcommand)]
-    subcommand: Subcommand
-}
-
-/// The command to do.
-#[allow(clippy::missing_docs_in_private_items, reason = "Makes clap inherit the docs.")]
-#[derive(Debug, Parser)]
-enum Subcommand {
-    Compile(compile::Args),
+enum Args {
+    Build(build::Args),
+    Run(run::Args),
     Doc(doc::Args),
+    Normalize(normalize::Args),
     Test(test::Args),
     #[command(subcommand)]
     Bench(bench::Args),
@@ -84,18 +67,18 @@ enum Subcommand {
 impl Args {
     /// Do the command.
     fn r#do(self) {
-        DEBUG.set(self.debug).unwrap();
-
-        match self.subcommand {
-            Subcommand::Compile(args) => args.r#do(),
-            Subcommand::Doc    (args) => args.r#do(),
-            Subcommand::Test   (args) => args.r#do(),
-            Subcommand::Bench  (args) => args.r#do(),
-            Subcommand::Foldent(args) => args.r#do(),
-            Subcommand::Domains(args) => args.r#do(),
-            Subcommand::Www    (args) => args.r#do(),
-            Subcommand::Get    (args) => args.r#do(),
-            Subcommand::Filter (args) => args.r#do()
+        match self {
+            Self::Build    (args) => for path in args.r#do() {println!("{path}");},
+            Self::Run      (args) => args.r#do(),
+            Self::Doc      (args) => args.r#do(),
+            Self::Normalize(args) => args.r#do(),
+            Self::Test     (args) => args.r#do(),
+            Self::Bench    (args) => args.r#do(),
+            Self::Foldent  (args) => args.r#do(),
+            Self::Domains  (args) => args.r#do(),
+            Self::Www      (args) => args.r#do(),
+            Self::Get      (args) => args.r#do(),
+            Self::Filter   (args) => args.r#do()
         }
     }
 }

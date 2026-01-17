@@ -26,13 +26,13 @@ mod prelude {
 use prelude::*;
 
 /// The introduction to the /help message.
-const INFO: &str = concat!(r#"URL Cleaner Discord App
+const INFO: &str = concat!(r#"URL Cleaner Discord
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
 "#, env!("CARGO_PKG_REPOSITORY"));
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
-/// URL Cleaner Discord App - Explicit non-consent to URL spytext.
+/// URL Cleaner Discord - Explicit non-consent to URL spytext.
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
 /// https://github.com/Scripter17/url-cleaner
 ///
@@ -164,7 +164,7 @@ async fn main() {
         });
     }
 
-    let token = std::env::var("URLCDA_TOKEN").expect("No discord app token found in the URLCDA_TOKEN environment variable.");
+    let token = std::env::var("URLCD_TOKEN").expect("No discord app token found in the URLCD_TOKEN environment variable.");
     let intents = serenity::GatewayIntents::non_privileged();
 
     let framework = poise::Framework::builder()
@@ -184,5 +184,5 @@ async fn main() {
         .event_handler(ReadyHandler)
         .framework(framework)
         .await.expect("Making the client failed.")
-        .start().await.expect("Starting the app failed. Maybe the app token in the URLCDA_TOKEN environment variable was invalid?");
+        .start().await.expect("Starting the app failed. Maybe the app token in the URLCD_TOKEN environment variable was invalid?");
 }

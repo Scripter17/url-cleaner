@@ -5,7 +5,6 @@
 use std::path::PathBuf;
 use std::io::{IsTerminal, BufRead, Write};
 use std::fmt::Debug;
-use std::time::Duration;
 use std::sync::mpsc::RecvTimeoutError;
 
 use clap::Parser;
@@ -29,19 +28,7 @@ use url_cleaner_engine::prelude::*;
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[derive(Debug, Parser)]
 struct Args {
-    /// The tasks to clean before STDIN.
-    ///
-    /// The following are all equivalent:
-    ///
-    /// https://example.com
-    /// "https://example.com"
-    /// {"url": "https://example.com"}
-    /// {"url": "https://example.com", "context": {}}
-    /// {"url": "https://example.com", "context": {"vars": []}}
-    ///
-    /// The following also sets the TaskContext var `a` to `2`.
-    ///
-    /// {"url": "https://example.com", "context": {"vars": {"a": "2"}}}
+    /// Unvalidated task lines to do before STDIN.
     #[arg(verbatim_doc_comment)]
     tasks: Vec<String>,
 
@@ -192,35 +179,28 @@ fn main() -> Result<(), CliError> {
 
     // Do the job.
 
-    // The general idea is:
-    // 1. The getter thread, if needed, make a new buffer.
-    // 2. Write a line of STDIN to that buffer.
-    // 3. Send that buffer to a worker thread.
-    // 4. The worker thread makes a Task.
-    // 5. The worker thread returns the buffer to the task getter thread.
-    // 6. *Then* the worker thread does the Task.
-    // 7. The worker thread sends the Task's result to the output thread.
-
     let threads = match args.threads {
         0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
         1.. => args.threads
     };
 
-    let (in_senders    , in_recievers    ) = (0..threads).map(|_| std::sync::mpsc::channel::<Result<Vec<u8>, std::io::Error>>()).collect::<(Vec<_>, Vec<_>)>();
-    let (buf_ret_sender, buf_ret_reciever) = std::sync::mpsc::channel::<Vec<u8>>();
-    let (out_senders   , out_recievers   ) = (0..threads).map(|_| std::sync::mpsc::channel::<Box<str>>()).collect::<(Vec<_>, Vec<_>)>();
+    // "In" channels from the getter thread to the worker threads.
+    let (iss, irs) = (0..threads).map(|_| std::sync::mpsc::channel::<Vec<u8>>()).collect::<(Vec<_>, Vec<_>)>();
+    // "Recycling" channel used to avoid allocating new buffers for each task line.
+    // TODO: 512 seems to give good results but further testing is required.
+    let (rs, rr) = std::sync::mpsc::sync_channel::<Vec<u8>>(512);
+    // "Out" channels from the worker threads to the output thread.
+    let (oss, ors) = (0..threads).map(|_| std::sync::mpsc::channel::<String>()).collect::<(Vec<_>, Vec<_>)>();
 
     std::thread::scope(|s| {
 
-        // Task getter thread.
+        // Input thread.
 
-        let brs = buf_ret_sender.clone();
-        std::thread::Builder::new().name("LazyTaskConfig Getter".to_string()).spawn_scoped(s, move || {
-            let mut buffer_count = args.tasks.len() as u64;
-            let mut in_senders = in_senders.iter().cycle();
+        s.spawn(move || {
+            let mut iss = iss.iter().cycle();
 
-            for (url, is) in args.tasks.into_iter().zip(&mut in_senders) {
-                is.send(Ok(url.into())).expect("The current buffer in reciever to stay open while needed.");
+            for task in args.tasks.into_iter() {
+                iss.next().expect("???").send(task.into()).expect("The in receiver to still exist.");
             }
 
             let stdin = std::io::stdin();
@@ -228,104 +208,79 @@ fn main() -> Result<(), CliError> {
             if !stdin.is_terminal() {
                 let mut stdin = stdin.lock();
 
-                for is in in_senders {
-                    // If there are no buffers available within the ratelimit, makea a new one.
-                    // The ratelimit can reduce memory usage by up to 10x with, if properly tuned, minimal performance impact.
+                let mut buf = Vec::new();
 
-                    let mut buf = match buf_ret_reciever.recv_timeout(Duration::from_nanos(buffer_count / 8)) {
-                        Ok(buf) => buf,
-                        Err(RecvTimeoutError::Timeout) => {
-                            buffer_count += 1;
-                            Vec::new()
-                        },
-                        Err(RecvTimeoutError::Disconnected) => panic!("Expected buffer return senders to stay open while needed.")
-                    };
-
-                    buf.clear();
-
-                    match stdin.read_until(b'\n', &mut buf) {
-                        Ok (0) => break,
-                        Ok (_) => {
-                            if buf.ends_with(b"\n") {
-                                buf.pop();
-                                if buf.ends_with(b"\r") {
-                                    buf.pop();
-                                }
-                            }
-                            if buf.is_empty() {
-                                continue;
-                            }
-                            is.send(Ok(buf)).expect("The current buffer in reciever to stay open while needed.")
-                        },
-                        Err(e) => {
-                            brs.send(buf).expect("The buffer return channel to be open.");
-                            is.send(Err(e)).expect("The current buffer in reciever to stay open while needed.")
+                while stdin.read_until(b'\n', &mut buf).expect("Reading from STDIN to always work.") > 0 {
+                    if buf.ends_with(b"\n") {
+                        buf.pop();
+                        if buf.ends_with(b"\r") {
+                            buf.pop();
                         }
                     }
+
+                    if buf.is_empty() {
+                        continue;
+                    }
+
+                    iss.next().expect("???").send(buf).expect("The in receiver to still exist.");
+
+                    buf = rr.recv().expect("The recycle sender to still exist.");
+
+                    buf.clear();
                 }
             }
-        }).expect("Making threads to work fine.");
+        });
 
         // Worker threads.
 
-        for (i, (bir, os)) in in_recievers.into_iter().zip(out_senders).enumerate() {
-            let brs = buf_ret_sender.clone();
-            std::thread::Builder::new().name(format!("Worker {i}")).spawn_scoped(s, move || {
-                while let Ok(x) = bir.recv() {
-                    let ret = match x {
-                        Ok(buf) => {
-                            let task = (&buf).make_task();
-                            let _ = brs.send(buf); // The buffer return reciever will hang up when there's no more tasks to do, so this returning Err is expected.
-                            match job.r#do(task) {
-                                Ok(x) => x.into(),
-                                Err(e) => format!("-{e:?}")
-                            }
-                        },
+        for (ir, os) in irs.into_iter().zip(oss) {
+            let rs = rs.clone();
+            s.spawn(move || {
+                while let Ok(buf) = ir.recv() {
+                    let task = (&buf).make_task();
+                    let _ = rs.try_send(buf);
+                    os.send(match job.r#do(task) {
+                        Ok (x) => x.into(),
                         Err(e) => format!("-{e:?}")
-                    };
-
-                    os.send(ret.into_boxed_str()).expect("The result out reciever to stay open while needed.");
+                    }).expect("The out receiver to still exist.");
                 }
-            }).expect("Making threads to work fine.");
+            });
         }
 
-        // Stdout stuff.
+        // Output thread.
 
         let mut stdout = std::io::stdout().lock();
+        let mut buf    = String::new();
+        let mut ors    = ors.iter().cycle();
+        let mut or     = ors.next().expect("???");
 
-        let mut buffer = String::new();
-
-        for or in {out_recievers}.iter().cycle() {
-            match or.recv_timeout(std::time::Duration::from_nanos(10)) {
+        loop {
+            match or.recv_timeout(std::time::Duration::from_millis(1)) {
                 Ok(x) => {
-                    if buffer.len() + x.len() < 65536 {
-                        if !buffer.is_empty() {
-                            buffer.push('\n');
-                        }
-                        buffer.push_str(&x);
-                    } else {
-                        if !buffer.is_empty() {
-                            writeln!(stdout, "{buffer}").expect("Writing to STDOUT to never fail.");
-                            buffer = String::new();
-                        }
-                        writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail.");
+                    buf.push_str(&x);
+                    buf.push('\n');
+
+                    let _ = rs.try_send(x.into());
+
+                    if buf.len() >= 2usize.pow(20) {
+                        stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
+                        stdout.flush().expect("Flushing STDOUT to always work.");
+                        buf.clear();
                     }
-                },
-                Err(RecvTimeoutError::Timeout) => {
-                    if !buffer.is_empty() {
-                        writeln!(stdout, "{buffer}").expect("Writing to STDOUT to never fail.");
-                        buffer = String::new();
-                    }
-                    match or.recv() {
-                        Ok(x) => writeln!(stdout, "{x}").expect("Writing to STDOUT to never fail."),
-                        Err(_) => break
-                    }
+
+                    or = ors.next().expect("???");
                 },
                 Err(RecvTimeoutError::Disconnected) => {
-                    if !buffer.is_empty() {
-                        writeln!(stdout, "{buffer}").expect("Writing to STDOUT to never fail.");
+                    if !buf.is_empty() {
+                        stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
+                        stdout.flush().expect("Flushing STDOUT to always work.");
                     }
-                    break
+                    break;
+                },
+                Err(RecvTimeoutError::Timeout) => if !buf.is_empty() {
+                    stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
+                    stdout.flush().expect("Flushing STDOUT to always work.");
+                    buf.clear();
                 }
             }
         }

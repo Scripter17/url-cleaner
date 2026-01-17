@@ -1486,7 +1486,7 @@ impl Action {
                 let mut new = String::with_capacity(query.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
+                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1497,7 +1497,7 @@ impl Action {
                 let mut new = String::with_capacity(query.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in query.split('&') {
-                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
+                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1561,7 +1561,7 @@ impl Action {
                 let mut new = String::with_capacity(fragment.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in fragment.split('&') {
-                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
+                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }
@@ -1572,7 +1572,7 @@ impl Action {
                 let mut new = String::with_capacity(fragment.len());
                 let name = get_str!(name, task_state, ActionError);
                 for param in fragment.split('&') {
-                    if iter_decode_query_part(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
+                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
                         if !new.is_empty() {new.push('&');}
                         new.push_str(param);
                     }

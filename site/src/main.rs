@@ -10,7 +10,7 @@ use axum_server::tls_rustls::RustlsConfig;
 
 use clap::Parser;
 use axum::{
-    routing::{get, post},
+    routing::{get, any},
     Router,
     Json
 };
@@ -19,7 +19,6 @@ use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::prelude::*;
 
 mod clean;
-mod clean_ws;
 
 /// The verson.
 const VERSION   : &str = env!("CARGO_PKG_VERSION");
@@ -35,9 +34,9 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 {REPOSITORY}
 
-See /info     to get the Info.
-See /cleaner  to get the Cleaner.
-See /profiles to get the ProfilesConfig.
+GET /get-info     to get the Info.
+GET /get-cleaner  to get the Cleaner.
+GET /get-profiles to get the ProfilesConfig.
 "#);
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
@@ -128,6 +127,9 @@ struct State {
     /// The [`InnerCache`].
     #[cfg(feature = "cache")]
     inner_cache: InnerCache,
+    /// The [`HttpClient`].
+    #[cfg(feature = "http")]
+    http_client: HttpClient,
     /// The [`Unthreader`].
     unthreader: Unthreader,
     /// The number of worker threads to use.
@@ -166,6 +168,8 @@ async fn main() {
         profiles_string,
         #[cfg(feature = "cache")]
         inner_cache: args.cache.into(),
+        #[cfg(feature = "http")]
+        http_client: Default::default(),
         unthreader: Unthreader::on(),
         worker_threads: match args.worker_threads {
             WorkerThreads::CpuThreads => std::thread::available_parallelism().expect("To be able to get the available parallelism."),
@@ -176,15 +180,14 @@ async fn main() {
 
     let app = Router::new()
         .route("/"        , get(async || WELCOME))
-        .route("/info"    , get(async || Json(Info {
+        .route("/get-info"    , get(async || Json(Info {
             source_code: env!("CARGO_PKG_REPOSITORY").into(),
             version    : env!("CARGO_PKG_VERSION"   ).into(),
             password_required: false
         })))
-        .route("/cleaner" , get(async || &*state.cleaner_string))
-        .route("/profiles", get(async || &*state.profiles_string))
-        .route("/clean"   , post(clean::clean))
-        .route("/clean_ws", get(clean_ws::clean_ws))
+        .route("/get-cleaner" , get(async || &*state.cleaner_string))
+        .route("/get-profiles", get(async || &*state.profiles_string))
+        .route("/clean"   , any(clean::clean))
         .with_state(state);
 
     let addr = std::net::SocketAddr::new(args.ip, args.port);

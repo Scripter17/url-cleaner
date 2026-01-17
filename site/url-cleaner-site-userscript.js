@@ -13,7 +13,9 @@
 
 function urlc_main() {
 	let config = {
-		instance: "ws://localhost:9149/clean_ws", // Make sure to keep synced with the above `@connect` host.
+		// If using TLS, change `ws://` to `wss://`.
+		// If using a remote server, change both this `localhost` and the `@connect localhost` above to the same host.
+		instance: "ws://localhost:9149",
 		job_config: {
 			context: {
 				source_host: window.location.hostname // Used for per-site processing.
@@ -30,26 +32,26 @@ function urlc_main() {
 	};
 
 	// A map of elements to the last URL they were cleaned to.
-	// Allows avoiding double cleans most of the time, but isn't meant to be infallible.
+	// This allows for ignoring the mutation observed by normal cleaning.
 	let cleans = new WeakMap();
-	// A buffer of tasks to send to Site in bulk to reducce the overhead from WebSocket.
-	// Bundling tasks reduces the overhead of WebSockets.
+	// Tasks are queued then sent all at once when the buffer is "full" or there's a moment with no new tasks.
+	// This dramatically reduces the overhead of WebSockets by using far fewer messages.
 	let tasks = "";
-	// The ID of the setTimeout that sends `tasks` so it can be cancelled and the tasks sent when `tasks` reaches a certain size.
+	// When the first task is queued, a timer is set to send the queue even if it isn't "full" yet and the timer's ID is stored here.
+	// When the queue gets "full", this is used to stop the timer.
 	let send_tasks_timeout_id = null;
-	// A FIFO queue for elements sent to URL Cleaner Site whose results are not yet recieved.
-	// Contains [WeakRef<HTMLElement>, String]s, where the string is the element's href at the time it was sent to URL Cleaner Site.
+	// A queue of [WeakRef<HTMLElement>, String]s representing each element sent to URL Cleaner Site.
+	// The String is the element's href at the time it was sent. This allows not applying redundant cleans.
 	let queue = [];
-	// When an element is unclean when clicked, stop the click and put it here to click it once cleaned.
-	// currently there doesn't seem to be a way to do the same for middle clicks.
+	// If an element is clicked while in the queue, the click is blocked and redone once the element has been cleaned.
+	// This thwarts websites that dirty links as you click them. Unless you middle click. There seems to be no way to handle that.
 	let reclick_once_clean = null;
-	// `true` if the socket ever had an `open` event.
-	// Used to provide extra debug info if the socket couldn't be opened.
+	// If the socket ever actually opened, remember it so redundant debug info isn't logged.
 	let socket_ever_opened = false;
 
-	// Sent to URL Cleaner Site for doing cleanings/unmangling that only apply on certain websites.
+	// Used to allow URL Cleaner Site to do cleanings that only apply on certain websites.
 	let hostname = window.location.hostname;
-	// Used by urlc_queue_element to do shortcuts and send additional info.
+	// Used by urlc_queue_element to do shortcuts such as avoiding most redirects on twitter.
 	let host_category;
 
 	if (/(?:^|\.)furaffinity\.net\.?$/.test(hostname)) {
@@ -68,6 +70,7 @@ function urlc_main() {
 
 	// Set up the URL for the socket.
 	let socket_url = new URL(config.instance);
+	socket_url.pathname = "/clean";
 	socket_url.searchParams.append("config", JSON.stringify(config.job_config));
 
 	console.log(`[URLC] URL Cleaner Site Userscript ${GM.info.script.version}
@@ -89,8 +92,7 @@ ${GM.info.script.namespace}`,
 			console.debug("[URLC] Maybe queueing", element);
 		}
 
-		// Sometimes the code that get elements to clean finds elements that can't and/or shouldn't be cleaned.
-		// Due to javascript's abysmal type system, not manually discovering and detecting these cases can result in the userscript ending up in invalid states.
+		// Filter out elements that can't/shouldn't be cleaned.
 
 		// Mimic document.links.
 		// Yeah turns out `<area>` is an element that exists. Who knew?
@@ -101,8 +103,10 @@ ${GM.info.script.namespace}`,
 			return;
 		}
 
+		// `element.href` gets an absolute URL, which is not what we need and also expensive.
 		let hrefattr = element.getAttribute("href");
 
+		// If the element doesn't have a href there isn't a URL to clean.
 		if (hrefattr === null) {
 			if (config.debug) {
 				console.debug("[URLC] Ignoring: No href.");
@@ -110,9 +114,8 @@ ${GM.info.script.namespace}`,
 			return;
 		}
 
-		// Ignore empty anchors to break fewer websites.
-		// Some websites use href="#" to make a link element look like a link but work like a button.
-		// In any anchors that would get cleaned (some websites put tracking parameters in them) are unlikely to break stuff when cleaned.
+		// Plain `#` hrefs are used to turn links into buttons.
+		// Removing the empty fragment, while correct outside of a webpage, breaks stuff in webpages.
 		if (hrefattr === "#") {
 			if (config.debug) {
 				console.debug("[URLC] Ignoring: Href is \"#\".");
@@ -120,7 +123,7 @@ ${GM.info.script.namespace}`,
 			return;
 		}
 
-		// Note that this check probably isn't perfect. It's just here to minimize the risk of double cleans.
+		// If an element has been cleaned and hasn't been changed since its href attribute will be contained in `cleans`.
 		if (cleans.get(element) === hrefattr) {
 			if (config.debug) {
 				console.debug("[URLC] Ignoring: Already clean.")
@@ -138,13 +141,12 @@ ${GM.info.script.namespace}`,
 
 		// Some websites have links that are best cleaned using details from places other than just their URL.
 
-		// The variable the task is eventually put in.
 		let task;
 
 		if (host_category === "furaffinity" && element.matches(".user-contact-user-info a")) {
 			// If a contact info field has more of the URL than expected, such as `https://x.com/user` instead of just `user`,
 			// the URL of the link is incoherent and very hard to unmangle.
-			// For that the bundled cleaner just parses the link's text and extracts just the expected part.
+			// For that the bundled cleaner parses the link's text and extracts just the expected part.
 			task = JSON.stringify({
 				url: "https://example.com/", // The URL might be invalid so we need a dummy value.
 				context: {
@@ -181,18 +183,24 @@ ${GM.info.script.namespace}`,
 		}
 
 		queue.push([new WeakRef(element), href]);
+
+		// If the buffer isn't "full" within 10ms, just send it.
 		if (tasks.length === 0) {
-			send_tasks_timeout_id = setTimeout(urlc_send_queue, 10);
+			send_tasks_timeout_id = setTimeout(urlc_send_tasks, 10);
 		}
 		tasks += task;
 		tasks += "\n";
+		// If the buffer is "full", send it.
 		if (tasks.length >= 65536) {
-			urlc_send_queue();
-			clearTimeout(send_tasks_timeout_id);
+			urlc_send_tasks();
 		}
 	}
 
-	function urlc_send_queue() {
+	// Actually send the tasks.
+
+	function urlc_send_tasks() {
+		clearTimeout(send_tasks_timeout_id);
+		send_tasks_timeout_id = null;
 		socket.send(tasks);
 		tasks = "";
 	}
@@ -259,7 +267,8 @@ ${GM.info.script.namespace}`,
 
 		socket_ever_opened = true;
 
-		// The observers must be attached after the socket is open.
+		// Attempting to send tasks before the socket is open results in an error,
+		// so the MutationObservers have to be attached only when the socket is open.
 
 		// Watch changes to any href attribute.
 		href_attribute_observer.observe(document.documentElement, {
@@ -299,8 +308,10 @@ ${GM.info.script.namespace}`,
 
 				element = element.deref();
 
-				// The element was garbage collected and thus doesn't need to be cleaned.
-				if (element === undefined) {continue;}
+				// If the element was garbage collected it can't be cleaned.
+				if (element === undefined) {
+					continue;
+				}
 
 				if (line.startsWith("-")) {
 					// Lines that start with `-` are errors.
@@ -334,9 +345,7 @@ ${GM.info.script.namespace}`,
 	// When the socket is closing, print a message and clean up.
 
 	function urlc_socket_close(e) {
-		if (config.debug) {
-			console.debug("[URLC] Closing socket", e);
-		}
+		console.debug("[URLC] Socket closed", e);
 		href_attribute_observer.disconnect();
 		child_list_observer.disconnect();
 		window.removeEventListener("click", urlc_dirty_click_delayer);
@@ -361,9 +370,7 @@ For information on how to install/trust your certificate, see the docs: https://
 	// When leaving a webpage, do cleanup.
 
 	function urlc_beforeunload(e) {
-		if (config.debug) {
-			console.debug("[URLC] Doing beforeunload cleanup", e);
-		}
+		console.debug("[URLC] Doing beforeunload cleanup", e);
 		socket.close();
 	}
 	window.addEventListener("beforeunload", urlc_beforeunload);

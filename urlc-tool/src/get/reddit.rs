@@ -12,63 +12,42 @@ use super::prelude::*;
 #[derive(Debug, Parser)]
 pub struct Args {
     /// The number of pages to get.
-    #[arg(long, default_value_t = 1)]
-    pub pages: usize,
-    /// The mode.
-    #[arg(long, value_enum, default_value_t = Default::default())]
-    pub mode: Mode,
-    /// The format.
-    #[arg(long, value_enum, default_value_t = Default::default())]
-    pub format: Format
+    pub pages: usize
 }
-
-/// The temp directory.
-const TMP: &str = "urlc-tool/tmp/get/reddit/";
-/// The output directory.
-const OUT: &str = "urlc-tool/out/get/reddit/";
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        std::fs::create_dir_all(TMP).unwrap();
-        std::fs::create_dir_all(OUT).unwrap();
+        let client = reqwest::blocking::Client::builder()
+            .user_agent("Firefox")
+            .build().unwrap();
 
         for host in std::io::stdin().lock().lines().map(Result::unwrap) {
+            let out_dir = format!("urlc-tool/out/get/reddit/{host}");
+
+            std::fs::create_dir_all(&out_dir).unwrap();
+
             let mut after = String::new();
-            let mut i = 0;
 
             for page in 1..=self.pages {
-                let out = format!("{TMP}/{host}-{page}.json");
+                eprintln!("{host} - {page}");
 
-                let has_page = std::fs::exists(&out).unwrap() && std::fs::metadata(&out).unwrap().len() != 0;
+                let out = format!("{out_dir}/{page}.json");
 
-                match (self.mode, has_page) {
-                    (Mode::Normal, _) | (Mode::Continue, false) => {
-                        eprintln!("Getting {host} {page}");
+                if !std::fs::exists(&out).unwrap() || std::fs::metadata(&out).unwrap().len() == 0 {
+                    let mut file = std::fs::OpenOptions::new().read(true).write(true).create(true).truncate(true).open(&out).unwrap();
+                    let mut sleep = std::time::Duration::from_secs(1);
 
-                        let mut sleep = std::time::Duration::from_secs(10);
-
-                        loop {
-                            match Command::new("curl")
-                                .arg("-sf")
-                                .args(["-H", "User-Agent: Firefox"])
-                                .args(["-o", &out])
-                                .arg(format!("https://old.reddit.com/domain/{host}/.json?{after}limit=100"))
-                                .spawn().unwrap().wait().unwrap().code() {
-                                Some(0) => break,
-                                Some(22) => {
-                                    eprintln!("Error: Sleeping for {sleep:?}");
-                                    std::thread::sleep(sleep);
-                                    sleep += sleep;
-                                },
-                                x => panic!("Unknown curl exit code: {x:?}")
-                            }
+                    loop {
+                        match client.get(format!("https://old.reddit.com/domain/{host}/.json?{after}limit=100")).send() {
+                            Ok(mut res) => {
+                                res.copy_to(&mut file).unwrap();
+                                break;
+                            },
+                            Err(_) => sleep *= 2
                         }
-                    },
-                    (Mode::Continue | Mode::Regenerate, true) => eprintln!("Already have {host} {page}"),
-                    (Mode::Regenerate, false) => {
-                        eprintln!("Missing {host} {page}; Skipping");
-                        continue;
+                        eprintln!("Sleeping for {sleep:?}");
+                        std::thread::sleep(sleep);
                     }
                 }
 
@@ -87,11 +66,7 @@ impl Args {
                         unescaped.push(chars.next().unwrap());
                         escaped = chars.as_str();
                     }
-                    i+=1;
-                    match self.format {
-                        Format::Quick => println!("{unescaped}"),
-                        Format::Suite => println!("{host}-{i}\t\t{unescaped}")
-                    }
+                    println!("{unescaped}");
                 }
 
                 match data["data"]["after"].as_str() {

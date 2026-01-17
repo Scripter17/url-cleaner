@@ -25,7 +25,7 @@ jobs:
       run: set -euo pipefail
 
     - name: Build
-      run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-discord-app
+      run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-site-client --bin url-cleaner-discord
 
     - name: Upload
       if: runner.environment == 'github-hosted'
@@ -36,7 +36,8 @@ jobs:
         path: |
           target/release/url-cleaner${{ matrix.oses.extension }}
           target/release/url-cleaner-site${{ matrix.oses.extension }}
-          target/release/url-cleaner-discord-app${{ matrix.oses.extension }}
+          target/release/url-cleaner-site-client${{ matrix.oses.extension }}
+          target/release/url-cleaner-discord${{ matrix.oses.extension }}
           engine/src/cleaner/bundled-cleaner.json
           engine/src/cleaner/tests
           site/url-cleaner-site-userscript.js

@@ -49,7 +49,7 @@ Cleaners that break the "invariants" here can be parsed and used, but will likel
 - `breezewiki_host`: The Breezewiki host to use.
   - Required: true.
   - Default: `breezewiki.com`.
-- `furaffinity_mode`: Decides what host to replace reddit hosts with.
+- `furaffinity_mode`: Decides what host to replace furaffinity hosts with.
   - Required: false.
   - Unset: Keep as-is.
   - `canon`: Set to `www.furaffinity.net`.

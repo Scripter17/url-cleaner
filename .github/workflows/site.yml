@@ -16,18 +16,21 @@ jobs:
     - name: Setup
       run: |
         set -euo pipefail
-        cargo build -p url-cleaner-site
+        cargo build --bin url-cleaner-site --bin url-cleaner-site-client
         cp target/debug/url-cleaner-site urlcs
+        cp target/debug/url-cleaner-site-client urlcsc
 
-    - name: 'HTTP Output'
+    - name: 'Output'
       run: |
         ./urlcs &
         sleep 1
         in=$(seq -f "https://example.com/%0.0f" 127)
-        diff <(echo "$in" | curl -f http://localhost:9149/clean --data-binary @- | grep .) <(echo "$in" | grep .)
+        for scheme in http ws; do
+          diff <(echo "$in" | ./urlcsc clean $scheme://localhost:9149/clean | grep .) <(echo "$in" | grep .)
+        done
         kill %1
 
-    - name: 'HTTP Profiles'
+    - name: 'Profiles'
       run: |
         PROFILES='
         {
@@ -52,74 +55,45 @@ jobs:
         ./urlcs --profiles <(echo "$PROFILES") &
         sleep 1
 
-        diff -y <(
-          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={                             "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube unshort"                                 }' --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube unshort", "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
+        for scheme in http ws; do
+          diff -y <(
+            echo 'https://m.youtube.com/shorts/abc' | ./urlcsc clean "$scheme://127.0.0.1:9149/clean"
+            echo 'https://m.youtube.com/shorts/abc' | ./urlcsc clean "$scheme://127.0.0.1:9149/clean"                             --params-diff "$PARAMS_DIFF1"
+            echo 'https://m.youtube.com/shorts/abc' | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "youtube unshort"
+            echo 'https://m.youtube.com/shorts/abc' | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "youtube unshort" --params-diff "$PARAMS_DIFF1"
 
-          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={                             "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube unshort"                                 }' --data-binary 'https://youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" --url-query 'config={"profile":"youtube unshort", "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
+            echo 'https://youtube.com/shorts/abc'   | ./urlcsc clean "$scheme://127.0.0.1:9149/clean"
+            echo 'https://youtube.com/shorts/abc'   | ./urlcsc clean "$scheme://127.0.0.1:9149/clean"                             --params-diff "$PARAMS_DIFF2"
+            echo 'https://youtube.com/shorts/abc'   | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "youtube unshort"
+            echo 'https://youtube.com/shorts/abc'   | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "youtube unshort" --params-diff "$PARAMS_DIFF2"
+          ) <(
+            echo 'https://www.youtube.com/shorts/abc'
+            echo 'https://m.youtube.com/shorts/abc'
+            echo 'https://www.youtube.com/watch?v=abc'
+            echo 'https://m.youtube.com/watch?v=abc'
 
-          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {                             "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube unshort"                                 }' --data-binary 'https://m.youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube unshort", "params_diff":'"$PARAMS_DIFF1"'}' --data-binary 'https://m.youtube.com/shorts/abc'
+            echo 'https://www.youtube.com/shorts/abc'
+            echo 'https://m.youtube.com/shorts/abc'
+            echo 'https://www.youtube.com/watch?v=abc'
+            echo 'https://m.youtube.com/watch?v=abc'
+          )
 
-          curl -sf "http://127.0.0.1:9149/clean"                                                                                     --data-binary 'https://youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {                             "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube unshort"                                 }' --data-binary 'https://youtube.com/shorts/abc'
-          curl -sf "http://127.0.0.1:9149/clean" -H       'X-Config: {"profile":"youtube unshort", "params_diff":'"$PARAMS_DIFF2"'}' --data-binary 'https://youtube.com/shorts/abc'
-        ) <(
-          echo 'https://www.youtube.com/shorts/abc'
-          echo 'https://m.youtube.com/shorts/abc'
-          echo 'https://www.youtube.com/watch?v=abc'
-          echo 'https://m.youtube.com/watch?v=abc'
-
-          echo 'https://www.youtube.com/shorts/abc'
-          echo 'https://m.youtube.com/shorts/abc'
-          echo 'https://www.youtube.com/watch?v=abc'
-          echo 'https://m.youtube.com/watch?v=abc'
-
-          echo 'https://www.youtube.com/shorts/abc'
-          echo 'https://m.youtube.com/shorts/abc'
-          echo 'https://www.youtube.com/watch?v=abc'
-          echo 'https://m.youtube.com/watch?v=abc'
-
-          echo 'https://www.youtube.com/shorts/abc'
-          echo 'https://m.youtube.com/shorts/abc'
-          echo 'https://www.youtube.com/watch?v=abc'
-          echo 'https://m.youtube.com/watch?v=abc'
-        )
-
-        ! curl -sf "http://127.0.0.1:9149/clean" -H 'X-Config: {"profile":"notfound"}' --data-binary ""
+          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "Unknown"
+        done
 
         kill %1
 
-    - name: 'HTTP Passwords'
+    - name: 'Passwords'
       run: |
         PASSWORDS='["test"]'
 
         ./urlcs --passwords <(echo "$PASSWORDS") &
         sleep 1
 
-        ! curl -sf 'http://127.0.0.1:9149/clean'                                             --data-binary ''
-        ! curl -sf 'http://127.0.0.1:9149/clean' --url-query 'config={}'                     --data-binary ''
-          curl -sf 'http://127.0.0.1:9149/clean' --url-query 'config={"password":"test"}'    --data-binary ''
-        ! curl -sf 'http://127.0.0.1:9149/clean' --url-query 'config={"password":"invalid"}' --data-binary ''
+        for scheme in http ws; do
+          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149"
+            echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password test
+          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password invalid
+        done
 
         kill $!
-
-    - name: 'Build Site WebSocket Client'
-      run: |
-        cargo build --bin url-cleaner-site-ws-client
-
-    - name: 'WebSocket Output'
-      run: |
-        ./urlcs &
-        sleep 1
-        in=$(seq -f "https://example.com/%0.0f" 127)
-        diff <(echo "$in" | target/debug/url-cleaner-site-ws-client ws://127.0.0.1:9149/clean_ws --buffer 127 | grep .) <(echo "$in" | grep .)
-        kill %1

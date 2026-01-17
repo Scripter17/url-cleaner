@@ -6,11 +6,11 @@ The API is described in [api.md](api.md).
 
 ## Passwords
 
-You can block access to cleaning URLs by providing `--passwords` with a JSON file containing an array of strings.
+You can limit access to cleaning URLs by providing `--passwords` with a JSON file containing an array of strings.
 
-If no password file is provided, users must not attempt to clean URLs using any password.
+If no password file is provided, users must not provide a password.
 
-If a password file is provided, users must provided a password in the file to clean URLs.
+If a password file is provided, users must provided a password.
 
 ## TLS
 
@@ -53,11 +53,3 @@ sudo update-ca-certificates
 #### Firefox
 
 For some reason, at least on my computer, Firefox ignores the above Linux setup. Simply opening `https://localhost:9149`, clicking "Advanced...", then clicking "Accept the Risk and Continue" seems to work fine.
-
-Please note that due to a bug in Greasemonkey, setting `about:config`'s `privacy.firstparty.isolate` to `true` (as is default in forks like Mullvad Browser) breaks the userscript.
-
-### mTLS
-
-mTLS is an addition to TLS that lets servers require clients to have their own public/private key pair to prove their identity.
-
-While URL Cleaner Site *should* support mTLS, I've yet to do any proper testing because nothing makes it easy to use.

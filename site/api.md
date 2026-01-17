@@ -6,52 +6,38 @@ For a more detailed understanding of the types used, see the crate documentation
 
 For a typed API you can make clients with, see [URL Cleaner Site Types](../site-types).
 
-## `/info`
+## `/get-info`
 
 A GET endpoint that returns the following information as JSON.
 
-<!--cmd echo '```Rust'; cat site-types/src/info.rs | grep -vP '^\s*#' | grep -oPz '\n(///.+\n)+pub [\s\S]+?\}\n' | tail -n +2 | sed 's/\x00//g'; echo '```'-->
 ```Rust
 /// Info about a URL Cleaner Site server.
-pub struct ServerInfo {
+pub struct Info {
     /// The link to the source code.
     pub source_code: String,
     /// The version.
     pub version: String,
-    /// The max payload size.
-    pub max_payload: u64,
     /// Whether or not you need a password to clean URLs.
     pub password_required: bool
 }
 ```
-<!--/cmd-->
 
-## `/cleaner`
+## `/get-cleaner`
 
-A GET endpoint that returns the loaded `Cleaner` from before any profiles were applied.
+A GET endpoint that returns the loaded `Cleaner`.
 
-## `/profiles`
+## `/get-profiles`
 
 A GET endpoint that returns the loaded `ProfilesConfig`.
 
-## Cleaning
+## `/clean`
 
-### `/clean`
-
-A POST endpoint.
+Either a WebSocket or HTTP POST/PUT.
 
 - The `CleanConfig` is sent in the `config` query parameter XOR the `X-Config` header.
 
-- The response body is a stream of result lines if and only if the response status is 200.
+- The request and response messages/frames are streamed in parallel.
 
-- The request and response are streamed in parallel with their bodies using implicit chunking.
+- WebSocket messages use explicit chunking.
 
-### `/clean_ws`
-
-A WebSocket endpoint.
-
-- The `CleanConfig` is sent in the `config` query parameter.
-
- - WebSockets does not formally support custom request headers. Setting `X-Config` anyway *may* work but may break at any time.
-
-- The request and response messages are streamed in parallel using explicit chunking.
+- HTTP frames use implicit chunking.

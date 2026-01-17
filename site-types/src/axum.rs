@@ -34,12 +34,10 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         Ok(match (parts.uri.query(), parts.headers.get("x-config")) {
-            (Some(query), None) => serde_json::from_str(
-                // TODO: better_url::Query.
-                // Which would let BetterUrl query manipulation apply all at once by having f(&mut self) -> impl Drop.
-                &BetterUrl::parse(&format!("https://example.com?{query}")).expect("???")
-                    .query_param("config", 0).unwrap_or(None).unwrap_or(None).unwrap_or("{}".into())
-            )?,
+            (Some(query), None) => serde_json::from_str(&match BetterQuery(query).pairs().find(|(k, _)| k == "config") {
+                Some((_, Some(v))) => v,
+                _ => "{}".into()
+            })?,
             (None   , Some(config)) => serde_json::from_str(str::from_utf8(config.as_bytes())?)?,
             (None   , None        ) => Default::default(),
             (Some(_), Some(_)     ) => Err(GetJobConfigError::ConfigSetTwice)?

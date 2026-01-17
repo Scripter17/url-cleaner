@@ -3,8 +3,9 @@
 use super::prelude::*;
 
 use std::io::pipe;
+use std::io::{BufRead, BufReader};
 
-/// Filter failing benchmarks.
+/// Filter failing tasks.
 ///
 /// Reads lines from STDIN.
 ///
@@ -13,45 +14,66 @@ use std::io::pipe;
 /// Prints failing lines to STDERR.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The format of the lines being filtered.
-    #[arg(long, value_enum, default_value_t = Default::default())]
-    format: Format,
+    /// Don't compile CLI.
+    #[arg(long)]
+    pub no_compile: bool,
+    /// Compile in debug mode.
+    #[arg(long)]
+    pub debug: bool,
     /// Extra arguments to give URL Cleaner CLI.
     #[arg(last = true)]
-    last: Vec<String>
+    pub last: Vec<String>
 }
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let (in_read, mut in_write) = pipe().unwrap();
-        let (out_read, out_write) = pipe().unwrap();
+        let bin = crate::build::Args {
+            bins: vec![Bin::Cli],
+            no_compile: self.no_compile,
+            debug: self.debug
+        }.r#do()[0];
 
-        let _child = TerminateOnDrop(Command::new(BINDIR.join("url-cleaner"))
+        let (in_read , mut in_write ) = pipe().unwrap();
+        let (out_read,     out_write) = pipe().unwrap();
+
+        let mut out_read = BufReader::new(out_read);
+
+        let _child = TerminateOnDrop(Command::new(bin)
             .args(self.last)
             .stdin(in_read)
             .stdout(out_write)
             .spawn().unwrap());
 
-        let mut results = BufReader::new(out_read).lines();
+        let mut task   = Vec::new();
+        let mut result = Vec::new();
 
-        for line in BufReader::new(std::io::stdin()).lines().map(Result::unwrap) {
-            let mut parts = line.splitn(3, '\t');
+        let mut stdin  = std::io::stdin ().lock();
+        let mut stdout = std::io::stdout().lock();
+        let mut stderr = std::io::stderr().lock();
 
-            match self.format {
-                Format::Quick => {},
-                Format::Suite => {parts.next().unwrap(); parts.next().unwrap();}
+        while stdin.read_until(b'\n', &mut task).unwrap() > 0 {
+            in_write.write_all(&task).unwrap();
+            in_write.flush().unwrap();
+
+            if task.ends_with(b"\n") {
+                task.pop();
+                if task.ends_with(b"\r") {
+                    task.pop();
+                }
             }
+            task.push(b'\n');
 
-            let task = parts.next().unwrap();
+            assert_ne!(out_read.read_until(b'\n', &mut result).unwrap(), 0);
 
-            writeln!(in_write, "{task}").unwrap();
-
-            if results.next().unwrap().unwrap().starts_with('-') {
-                eprintln!("{line}");
+            if result.starts_with(b"-") {
+                stderr.write_all(&task).unwrap();
             } else {
-                println!("{line}");
+                stdout.write_all(&task).unwrap();
             }
+
+            task.clear();
+            result.clear();
         }
     }
 }
