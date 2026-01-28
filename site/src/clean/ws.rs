@@ -79,7 +79,7 @@ pub async fn clean_ws(State(state): State<&'static crate::State>, job: Job<'stat
 
                         let _ = rs.try_send(x.into());
 
-                        if buf.len() >= 2usize.pow(20) {
+                        if buf.len() >= 2usize.pow(18) {
                             socket.send(buf.into()).await.expect("Sending messages to work.");
                             buf = String::new();
                         }

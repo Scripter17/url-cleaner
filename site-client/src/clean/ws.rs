@@ -18,8 +18,8 @@ pub async fn r#do(instance: Url) {
         let stdin = &mut tokio::io::stdin();
         let mut buf  = Vec::new();
 
-        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(20)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
-            // To ensure we send only complete lines, we find the last newline and use everything after that as the buffer to append to.
+        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
+            // `i` is the index of the last `\n` plus one.
             if let Some(i) = buf.iter().rev().position(|b| *b == b'\n').map(|i| buf.len() - i) {
                 let temp = buf.split_off(i);
                 buf.pop();

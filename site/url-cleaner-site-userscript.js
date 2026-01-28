@@ -208,20 +208,17 @@ ${GM.info.script.namespace}`,
 	// Delay clicks on dirty links until they're cleaned.
 
 	function urlc_dirty_click_delayer(e) {
-		if (socket.readyState === 1) {
-			for (let [queued_element, _] of queue) {
-				if (queued_element.deref() == e.target) {
-					if (config.debug) {
-						console.debug("[URLC] Delaying click for dirty element", e);
-					}
-					e.preventDefault();
-					reclick_once_clean = e.target;
-					return;
+		for (let [queued_element, _] of queue) {
+			if (queued_element.deref() == e.target) {
+				if (config.debug) {
+					console.debug("[URLC] Delaying click for dirty element", e);
 				}
+				e.preventDefault();
+				reclick_once_clean = e.target;
+				return;
 			}
 		}
 	}
-	window.addEventListener("click", urlc_dirty_click_delayer);
 
 	// Listen for changes to changes to any element's href attribute.
 
@@ -281,6 +278,9 @@ ${GM.info.script.namespace}`,
 			childList: true,
 			subtree: true
 		});
+
+		// Listen for clicks on dirty links.
+		window.addEventListener("click", urlc_dirty_click_delayer);
 
 		// Clean all existing links.
 		for (element of document.links) {

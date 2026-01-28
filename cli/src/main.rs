@@ -184,13 +184,11 @@ fn main() -> Result<(), CliError> {
         1.. => args.threads
     };
 
-    // "In" channels from the getter thread to the worker threads.
     let (iss, irs) = (0..threads).map(|_| std::sync::mpsc::channel::<Vec<u8>>()).collect::<(Vec<_>, Vec<_>)>();
-    // "Recycling" channel used to avoid allocating new buffers for each task line.
-    // TODO: 512 seems to give good results but further testing is required.
-    let (rs, rr) = std::sync::mpsc::sync_channel::<Vec<u8>>(512);
-    // "Out" channels from the worker threads to the output thread.
+    let (rs, rr) = std::sync::mpsc::sync_channel::<Vec<u8>>(64);
     let (oss, ors) = (0..threads).map(|_| std::sync::mpsc::channel::<String>()).collect::<(Vec<_>, Vec<_>)>();
+
+    let queued = &std::sync::atomic::AtomicUsize::new(0);
 
     std::thread::scope(|s| {
 
@@ -224,7 +222,11 @@ fn main() -> Result<(), CliError> {
 
                     iss.next().expect("???").send(buf).expect("The in receiver to still exist.");
 
-                    buf = rr.recv().expect("The recycle sender to still exist.");
+                    if queued.fetch_add(1, std::sync::atomic::Ordering::Relaxed) >= 1023 {
+                        std::thread::sleep(std::time::Duration::from_millis(1));
+                    }
+
+                    buf = rr.try_recv().unwrap_or_default();
 
                     buf.clear();
                 }
@@ -237,6 +239,7 @@ fn main() -> Result<(), CliError> {
             let rs = rs.clone();
             s.spawn(move || {
                 while let Ok(buf) = ir.recv() {
+                    queued.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                     let task = (&buf).make_task();
                     let _ = rs.try_send(buf);
                     os.send(match job.r#do(task) {
@@ -262,7 +265,7 @@ fn main() -> Result<(), CliError> {
 
                     let _ = rs.try_send(x.into());
 
-                    if buf.len() >= 2usize.pow(20) {
+                    if buf.len() >= 2usize.pow(18) {
                         stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
                         stdout.flush().expect("Flushing STDOUT to always work.");
                         buf.clear();

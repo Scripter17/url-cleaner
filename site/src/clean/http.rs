@@ -75,7 +75,7 @@ pub async fn clean_http(State(state): State<&'static crate::State>, job: Job<'st
 
                     let _ = rs.try_send(x.into());
 
-                    if buf.len() >= 2usize.pow(20) {
+                    if buf.len() >= 2usize.pow(18) {
                         yield buf;
                         buf = String::new();
                     }

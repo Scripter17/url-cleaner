@@ -19,7 +19,7 @@ pub async fn r#do(instance: Url) {
         let stdin = &mut tokio::io::stdin();
         let mut buf = Vec::new();
 
-        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(20)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
+        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
             if !buf.is_empty() {
                 yield buf;
                 buf = Vec::new();
