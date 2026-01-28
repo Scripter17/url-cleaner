@@ -102,5 +102,5 @@ pub enum MakeTaskError {
     OtherwiseInvalid
 }
 
-/// Return [`true`] if `x` is [`T`]'s [`Default`].
+/// Return [`true`] if `x` is `T`'s [`Default`].
 fn is_default<T: PartialEq + Default>(x: &T) -> bool {x == &T::default()}
