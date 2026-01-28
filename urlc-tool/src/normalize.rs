@@ -41,6 +41,7 @@ impl Args {
     }
 }
 
+/// Normalize a task.
 fn normalize(b: &[u8]) -> Result<String, MakeTaskError> {
     Ok(match b[0] {
         b'"' => normalize(serde_json::from_slice::<String>(b)?.as_bytes())?,
