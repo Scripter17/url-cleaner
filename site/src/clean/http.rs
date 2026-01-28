@@ -14,10 +14,12 @@ use async_stream::stream;
 use url_cleaner_engine::prelude::*;
 
 /// `/clean` HTTP.
-pub async fn clean_http(State(state): State<&'static crate::State>, job: Arc<Job<'static>>, body: Body) -> Result<Response, (StatusCode, &'static str)> {
+pub async fn clean_http(State(state): State<&'static crate::State>, job: Job<'static>, body: Body) -> Result<Response, (StatusCode, &'static str)> {
     let (mut iss,     irs) = (0..state.worker_threads.get()).map(|_| tokio::sync::mpsc::channel::<Vec<u8>>(128)).collect::<(Vec<_>, Vec<_>)>();
     let (    rs , mut rr ) = tokio::sync::mpsc::channel::<Vec<u8>>(512);
     let (    oss, mut ors) = (0..state.worker_threads.get()).map(|_| tokio::sync::mpsc::channel::<String>(128)).collect::<(Vec<_>, Vec<_>)>();
+
+    let job = Arc::new(job);
 
     tokio::spawn(async move {
         let mut body = body.into_data_stream().map_err(std::io::Error::other).into_async_read();
@@ -25,7 +27,7 @@ pub async fn clean_http(State(state): State<&'static crate::State>, job: Arc<Job
 
         let mut buf = Vec::new();
 
-        while body.read_until(b'\n', &mut buf).await.expect("To be able to read a line from the body.") > 0 {
+        while matches!(body.read_until(b'\n', &mut buf).await, Ok(1..)) {
             if buf.ends_with(b"\n") {
                 buf.pop();
                 if buf.ends_with(b"\r") {
@@ -94,4 +96,3 @@ pub async fn clean_http(State(state): State<&'static crate::State>, job: Arc<Job
         }
     ).map(Ok::<_, std::convert::Infallible>)).into_response())
 }
-

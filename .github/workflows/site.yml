@@ -24,9 +24,12 @@ jobs:
       run: |
         ./urlcs &
         sleep 1
-        in=$(seq -f "https://example.com/%0.0f" 127)
         for scheme in http ws; do
-          diff <(echo "$in" | ./urlcsc clean $scheme://localhost:9149/clean | grep .) <(echo "$in" | grep .)
+          for num in 0 1 10 100 1000 10000 100000; do
+            diff\
+              <(seq -f "https://example.com/%0.0f" $num | ./urlcsc clean $scheme://localhost:9149/clean)\
+              <(seq -f "https://example.com/%0.0f" $num)
+          done
         done
         kill %1
 

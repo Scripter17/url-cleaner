@@ -1,18 +1,15 @@
 //! Do tests.
 
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 
 use super::prelude::*;
 
 /// Do tests.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// Release mode.
-    #[arg(long)]
-    pub release: bool,
     /// The tests file.
-    #[arg(long)]
-    pub tests: Option<PathBuf>,
+    #[arg(long, default_value = "urlc-tool/tests.json")]
+    pub tests: PathBuf,
     /// The filter to decide which jobs to do.
     #[arg(long)]
     pub filter: Option<String>,
@@ -21,31 +18,35 @@ pub struct Args {
     pub assert_suitability: bool
 }
 
-/// The bundled tests.
-const BUNDLED_TESTS: &str = include_str!("bundled-tests.json");
-
 /// A tests file.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Tests {
     /// The [`Job`]s to test.
     pub jobs: Vec<Job>
 }
 
 /// A job.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Job {
     /// The name of the job.
     pub name: String,
     /// The `--job-context`.
-    pub job_context: Option<serde_json::Value>,
+    #[serde(default = "empty_json_object")]
+    pub job_context: serde_json::Value,
     /// The `--params-diff`.
-    pub params_diff: Option<serde_json::Value>,
+    #[serde(default = "empty_json_object")]
+    pub params_diff: serde_json::Value,
     /// The [`Test`]s.
     pub tests: Vec<Test>
 }
 
+/// Get an empty [`serde_json::Value::Object`].
+fn empty_json_object() -> serde_json::Value {
+    serde_json::Value::Object(Default::default())
+}
+
 /// A test.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Test {
     /// The task.
     task: serde_json::Value,
@@ -53,91 +54,75 @@ pub struct Test {
     expect: String
 }
 
-const TMP: &str = "urlc-tool/tmp/test/";
-
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        std::fs::create_dir_all(TMP).unwrap();
-
-        let bin = match self.release {
-            false => "target/debug/url-cleaner",
-            true  => "target/release/url-cleaner"
-        };
-
         if self.assert_suitability {
-            assert_eq!(Command::new(bin)
-                .args([
-                    "--assert-suitability",
-                    "--cleaner", "engine/src/cleaner/bundled-cleaner.json"
-                ])
+            assert_eq!(Command::new("target/debug/url-cleaner")
+                .arg("--assert-suitability")
                 .spawn().unwrap().wait().unwrap().code(), Some(0));
         }
 
-        let tests_string = match self.tests {
-            Some(path) => Cow::Owned(std::fs::read_to_string(path).unwrap()),
-            None => Cow::Borrowed(BUNDLED_TESTS)
-        };
-
-        let tests: Tests = serde_json::from_str(&tests_string).unwrap();
-        let filter = Regex::new(self.filter.as_deref().unwrap_or_default()).unwrap();
+        let tests: Tests = serde_json::from_str(&std::fs::read_to_string(self.tests).unwrap()).unwrap();
+        let filter = Regex::new(&self.filter.unwrap_or_default()).unwrap();
 
         for job in tests.jobs {
             if filter.find(&job.name).is_none() {
                 continue;
             }
 
-            println!("Job");
+            let job_context = serde_json::to_string(&job.job_context).unwrap();
+            let params_diff = serde_json::to_string(&job.params_diff).unwrap();
+
+            println!("Job:");
             println!("  Name: {}", job.name);
-            if let Some(ref job_context) = job.job_context {println!("  Job context: {}", serde_json::to_string(&job_context).unwrap());}
-            if let Some(ref params_diff) = job.params_diff {println!("  Params diff: {}", serde_json::to_string(&params_diff).unwrap());}
+            println!("  Params diff: {params_diff}");
+            println!("  Job context: {job_context}");
             println!("  Tests:");
 
-            let mut command = Command::new(bin);
+            new_file("urlc-tool/tmp/test/job_context.json").write_all(job_context.as_bytes()).unwrap();
+            new_file("urlc-tool/tmp/test/params_diff.json").write_all(params_diff.as_bytes()).unwrap();
 
-            command.args([
+            let (ir, mut iw) = std::io::pipe().unwrap();
+            let (or,     ow) = std::io::pipe().unwrap();
+
+            let mut lines = BufReader::new(or).lines();
+
+            let mut child = Command::new("target/debug/url-cleaner");
+
+            child.args([
                 "--no-read-cache",
                 "--no-write-cache",
-                "--cleaner", "engine/src/cleaner/bundled-cleaner.json"
+                "--job-context", "urlc-tool/tmp/test/job_context.json",
+                "--params-diff", "urlc-tool/tmp/test/params_diff.json",
             ]);
 
-            let mut tmp_file_handles = Vec::new();
+            child.stdin(ir);
+            child.stdout(ow);
 
-            if let Some(job_context) = job.job_context {
-                let tmp_file = tmp_file(&format!("{TMP}/job_context.json"));
-                tmp_file.file().write_all(&serde_json::to_vec(&job_context).unwrap()).unwrap();
-                command.args(["--job-context", tmp_file.path()]);
-                tmp_file_handles.push(tmp_file);
-            }
-
-            if let Some(params_diff) = job.params_diff {
-                let tmp_file = tmp_file(&format!("{TMP}/params_diff.json"));
-                tmp_file.file().write_all(&serde_json::to_vec(&params_diff).unwrap()).unwrap();
-                command.args(["--params-diff", tmp_file.path()]);
-                tmp_file_handles.push(tmp_file);
-            }
-
-            let (stdin_read , mut stdin_write ) = std::io::pipe().unwrap();
-            let (stdout_read,     stdout_write) = std::io::pipe().unwrap();
-
-            command.stdin(stdin_read);
-            command.stdout(stdout_write);
-
-            let _child = TerminateOnDrop(command.spawn().unwrap());
-
-            let mut results = BufReader::new(stdout_read).lines();
+            let child = child.spawn().unwrap();
 
             for test in job.tests {
-                println!("    {}", serde_json::to_string(&test).unwrap());
+                let task = match test.task {
+                    serde_json::Value::String(x) => x,
+                    x => serde_json::to_string(&x).unwrap()
+                };
 
-                writeln!(stdin_write, "{}", test.task).unwrap();
-                let result1 = results.next().unwrap().unwrap();
-                assert_eq!(result1, test.expect, "Test failed");
+                println!("    {task}");
 
-                writeln!(stdin_write, "{}", result1).unwrap();
-                let result2 = results.next().unwrap().unwrap();
-                assert_eq!(result1, result2, "Idempotence failed");
+                writeln!(iw, "{task}").unwrap();
+                let result = lines.next().unwrap().unwrap();
+                assert_eq!(result, test.expect);
+
+                writeln!(iw, "{result}").unwrap();
+                let reresult = lines.next().unwrap().unwrap();
+                assert_eq!(result, reresult);
             }
+
+            child.terminate();
+
+            std::fs::remove_file("urlc-tool/tmp/test/job_context.json").unwrap();
+            std::fs::remove_file("urlc-tool/tmp/test/params_diff.json").unwrap();
         }
     }
 }

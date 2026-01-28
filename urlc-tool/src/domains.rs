@@ -1,7 +1,5 @@
 //! Domains.
 
-use std::collections::BTreeSet;
-
 use super::prelude::*;
 
 /// Get domains from a Cleaner.
@@ -10,7 +8,7 @@ pub struct Args {
     /// The Cleaner to use.
     #[arg(long, default_value = "engine/src/cleaner/bundled-cleaner.json")]
     pub cleaner: PathBuf,
-    /// Output only registerable domains.
+    /// Get RegDomains.
     #[arg(long)]
     pub reg_domains: bool
 }
@@ -23,28 +21,31 @@ impl Args {
     pub fn r#do(self) {
         let cleaner = serde_json::from_str::<serde_json::Value>(&std::fs::read_to_string(self.cleaner).unwrap()).unwrap();
 
-        let mut ret = BTreeSet::new();
+        let mut strings = Vec::new();
 
-        handle_layer(cleaner, self.reg_domains, &mut ret);
+        get_strings(&cleaner, &mut strings);
 
-        for domain in ret {
+        let domains_iter = strings.into_iter().filter(|string| FILTER.is_match(string));
+
+        let mut domains: Vec<_> = match self.reg_domains {
+            true  => domains_iter.filter_map(psl::domain_str).collect(),
+            false => domains_iter.collect()
+        };
+
+        domains.sort();
+
+        for domain in domains {
             println!("{domain}");
         }
     }
 }
 
 /// Handle a layer.
-fn handle_layer(layer: serde_json::Value, reg_domains: bool, ret: &mut BTreeSet<String>) {
+fn get_strings<'a>(layer: &'a serde_json::Value, out: &mut Vec<&'a str>) {
     match layer {
-        serde_json::Value::Array (x) => for y      in x {handle_layer(y, reg_domains, ret);},
-        serde_json::Value::Object(x) => for (_, v) in x {handle_layer(v, reg_domains, ret);},
-        serde_json::Value::String(x) => if FILTER.find(&x).is_some() {
-            if reg_domains && let Some(x) = psl::domain_str(&x) {
-                ret.insert(x.into());
-            } else {
-                ret.insert(x);
-            }
-        },
+        serde_json::Value::Array (x) => for     v  in x {             get_strings(v, out);},
+        serde_json::Value::Object(x) => for (k, v) in x {out.push(k); get_strings(v, out);},
+        serde_json::Value::String(x) => out.push(x),
         _ => {}
     }
 }

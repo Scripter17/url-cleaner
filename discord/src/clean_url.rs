@@ -9,7 +9,7 @@ use crate::prelude::*;
 /// Autocomplete for [`clean_url`]'s `profile` field.
 async fn profile_autocomplete<'a>(ctx: Context<'a>, partial: &str) -> serenity::CreateAutocompleteResponse {
     serenity::CreateAutocompleteResponse::new()
-        .set_choices(ctx.data().profiled_cleaner.names().filter(|name| name.starts_with(partial)).map(Into::into).collect())
+        .set_choices(ctx.data().profiled_cleaner.names().filter(|name| name.to_lowercase().replace(" ", "").contains(&partial.to_lowercase().replace(" ", ""))).map(Into::into).collect())
 }
 
 /// Clean a single URL.

@@ -228,7 +228,7 @@
 				"pixiv": ["pixiv.net"],
 				"pixiv_embed_hosts": ["phixiv.net"],
 
-				"twitter": ["x.com", "twitter.com"],
+				"twitter": ["x.com", "twitter.com", "mobile.x.com", "mobile.twitter.com"],
 				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 				"nitter": [
 					"bird.habedieeh.re", "nitter.holo-mix.com", "nitter.io.lol", "nitter.kavin.rocks", "nitter.kylrth.com", "nitter.lucabased.xyz", "nitter.lunar.icu",
@@ -374,12 +374,13 @@
 					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "emjcd.com", "fans.ly", "fansly.com",
 					"fiverr.com", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com", "gprivate.com",
 					"gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com",
-					"link.sfchronicle.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "media.igram.world", "mel.sc", "mfy.gg", "nas.cr",
-					"nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net",
-					"preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "rd.bizrate.com", "rd.goodreads.com",
-					"redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com",
-					"spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs",
-					"thr.cm", "tinyurl.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
+					"link.sfchronicle.com", "link.streamelements.com", "linkprotect.cudasvc.com", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "media.igram.world", "mel.sc",
+					"mfy.gg", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com",
+					"p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "r.amzlink.to",
+					"rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it",
+					"smartyt.ag", "smartytags.com", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "strms.net", "subscribestar.adult",
+					"substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "urldefense.com",
+					"v.redd.it", "wlo.link", "youtube.com"
 				]
 			},
 			"rd_expand_mode": {
@@ -1455,6 +1456,24 @@
 										}},
 										{"RemoveQueryParams": ["sid", "ss", "st_rid"]}
 									]},
+									"link.streamelements.com": {"All": [
+										{"Function": {
+											"name": "expand_redirect",
+											"args": {
+												"maps": {
+													"headers": {
+														"map": {
+															"user-agent": "curl/8.14.1"
+														}
+													}
+												}
+											}
+										}},
+										{"If": {
+											"if": {"FlagIsNotSet": "keep_affiliate"},
+											"then": {"RemoveQueryParams": ["c", "c_comms", "vs_campaign_id"]}
+										}}
+									]},
 									"linkprotect.cudasvc.com": {"GetUrlFromQueryParam": "a"},
 									"lmddgtfy.net": {"SetHost": "duckduckgo.com"},
 									"lmgtfy2.com": {"If": {
@@ -1633,6 +1652,7 @@
 											}
 										}
 									}},
+									"r.amzlink.to": {"GetUrlFromQueryParam": "btn_url"},
 									"qrtiger.com": {"SetHost": "qr1.be"},
 									"rd.bizrate.com": {"If": {
 										"if": {"PathIs": "/rd2"},
@@ -1720,6 +1740,7 @@
 										"if": {"PathStartsWith": "/linkfilter"},
 										"then": {"GetUrlFromQueryParam": "u"}
 									}},
+									"strms.net": {"SetHost": "link.streamelements.com"},
 									"subscribestar.adult": {"If": {
 										"if": {"PathIs": "/away"},
 										"then": {"SetWhole": {"Modified": {
@@ -2367,6 +2388,7 @@
 						"if": {"PathStartsWith": "/item/"},
 						"then": "RemoveQuery"
 					}},
+					"anker.com": {"RemoveQueryParam": "cnxclid"},
 					"apps.apple.com": {"RemoveQueryParams": ["pt", "ct", "mt"]},
 					"boot.dev": {"If": {
 						"if": {"FlagIsNotSet": "keep_affiliate"},
@@ -2380,6 +2402,10 @@
 						"then": {"RemoveQueryParam": "q"}
 					}},
 					"etsy.com": {"RemoveQueryParams": ["etsrc", "dd_referrer"]},
+					"factor75.com": {"If": {
+						"if": {"FlagIsNotSet": "keep_affiliate"},
+						"then": {"RemoveQueryParams": ["c", "c_comms", "vs_campaign_id"]}
+					}},
 					"in.blissy.com": "RemoveQuery",
 					"info.blissy.com": "RemoveQuery",
 					"jamanetwork.com": {"RemoveQueryParams": ["guestAccessKey", "linkId"]},

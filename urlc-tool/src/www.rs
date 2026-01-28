@@ -8,65 +8,78 @@ use super::prelude::*;
 #[derive(Debug, Parser)]
 pub struct Args {}
 
+/// Thing.
+enum Thing {
+    /// Stay.
+    Stay,
+    /// Swap.
+    Swap,
+    /// Error.
+    Error,
+    /// Other.
+    Other,
+}
+
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let client = reqwest::blocking::Client::new();
+        let client = reqwest::blocking::Client::builder().redirect(reqwest::redirect::Policy::none()).build().unwrap();
 
-        let mut adds = BTreeSet::new();
-        let mut dels = BTreeSet::new();
-
-        let mut err_without = BTreeSet::new();
-        let mut err_with = BTreeSet::new();
+        let mut removes  = BTreeSet::new();
+        let mut adds     = BTreeSet::new();
+        let mut invalids = BTreeSet::new();
+        let mut others   = BTreeSet::new();
 
         for domain in std::io::stdin().lines().map(Result::unwrap) {
-            match client.get(format!("https://{domain}")).send() {
-                Ok(response) => if response.url().host().unwrap().to_string() == format!("www.{domain}") {
-                    println!("Add: {domain}");
-                    adds.insert(domain.clone());
+            println!("{domain}");
+
+            let without = format!("https://{domain}/");
+            let with    = format!("https://www.{domain}/");
+
+            let a = match client.get(&without).send() {
+                Ok(res) => if let Some(location) = res.headers().get("location") {
+                    if location.as_bytes() == with.as_bytes() {
+                        Thing::Swap
+                    } else {
+                        Thing::Other
+                    }
+                } else if res.status().is_success() {
+                    Thing::Stay
+                } else {
+                    Thing::Error
                 },
-                Err(_) => {
-                    println!("Err without: {domain}");
-                    err_without.insert(domain.clone());
-                }
-            }
+                Err(_) => Thing::Error
+            };
 
-            match client.get(format!("https://www.{domain}")).send() {
-                Ok(response) => if response.url().host().unwrap().to_string() == domain {
-                    println!("Del: {domain}");
-                    dels.insert(domain);
+            let b = match client.get(&with).send() {
+                Ok(res) => if let Some(location) = res.headers().get("location") {
+                    if location.as_bytes() == without.as_bytes() {
+                        Thing::Swap
+                    } else {
+                        Thing::Other
+                    }
+                } else if res.status().is_success() {
+                    Thing::Stay
+                } else {
+                    Thing::Error
                 },
-                Err(_) => {
-                    println!("Err with: {domain}");
-                    err_with.insert(domain);
-                }
+                Err(_) => Thing::Error
+            };
+
+            match (a, b) {
+                (Thing::Stay               , Thing::Stay               ) => {},
+                (Thing::Stay               , Thing::Swap | Thing::Error) => {removes.insert(domain);},
+                (Thing::Swap | Thing::Error, Thing::Stay               ) => {adds.insert(domain);},
+                (Thing::Swap | Thing::Error, Thing::Swap | Thing::Error) => {invalids.insert(domain);},
+                (Thing::Other, _) | (_, Thing::Other) => {others.insert(domain);}
             }
         }
-
-        for item in &err_without {
-            if !err_with.contains(item) {
-                adds.insert(item.into());
-            }
-        }
-
-        for item in &err_with {
-            if !err_without.contains(item) {
-                dels.insert(item.into());
-            }
-        }
-
         println!();
 
-        println!("Adds:");
-        for domain in adds {
-            print!("{domain:?}, ");
-        }
-        println!();
-
-        println!("Dels:");
-        for domain in dels {
-            print!("{domain:?}, ");
-        }
+        println!("removes : {}", serde_json::to_string(&removes ).unwrap());
+        println!("adds    : {}", serde_json::to_string(&adds    ).unwrap());
+        println!("invalids: {}", serde_json::to_string(&invalids).unwrap());
+        println!("others  : {}", serde_json::to_string(&others  ).unwrap());
         println!();
     }
 }

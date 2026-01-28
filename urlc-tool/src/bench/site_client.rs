@@ -1,8 +1,8 @@
-//! Site.
+//! Site CLIent.
 
 use super::prelude::*;
 
-/// Site.
+/// Site CLIent.
 #[derive(Debug, Parser)]
 pub struct Args {
     /// The name of the job.
@@ -26,6 +26,8 @@ pub struct Args {
 /// The tool to measure with.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Tool {
+    /// Hyperfine.
+    Hyperfine,
     /// Massif.
     Massif,
     /// Callgrind.
@@ -52,26 +54,9 @@ impl Args {
             }
         }
 
-        let mut server = Command::new("valgrind");
-
-        match self.tool {
-            Tool::Massif => {
-                server.args([
-                    "--tool=massif",
-                    &format!("--massif-out-file={out}")
-                ]);
-            },
-            Tool::Callgrind => {
-                server.args([
-                    "--tool=callgrind",
-                    &format!("--callgrind-out-file={out}"),
-                    "--separate-threads=yes"
-                ]);
-            }
-        }
+        let mut server = Command::new("target/release/url-cleaner-site");
 
         server.args([
-            "target/release/url-cleaner-site",
             "--port", "9148"
         ]);
 
@@ -96,12 +81,45 @@ impl Args {
 
         write_stdin(&task, num);
 
-        let mut client = Command::new("target/release/url-cleaner-site-client");
-        client.args([
-            "clean",
-            &format!("{}://127.0.0.1:9148", self.protocol.scheme())
-        ]);
-        client.stdin (std::fs::File::open("urlc-tool/tmp/stdin.txt").unwrap());
+        let mut client = match self.tool {
+            Tool::Hyperfine => {
+                let mut client = Command::new("hyperfine");
+                client.args([
+                    "--style", "none",
+                    "--command-name", &name,
+                    "--export-json", &out,
+                    "--input", "urlc-tool/tmp/stdin.txt",
+                    &format!("target/release/url-cleaner-site-client clean {}://127.0.0.1:9148", self.protocol.scheme())
+                ]);
+                client
+            },
+            Tool::Massif => {
+                let mut client = Command::new("valgrind");
+                client.args([
+                    "--tool=massif",
+                    &format!("--massif-out-file={out}"),
+                    "target/release/url-cleaner-site-client",
+                    "clean",
+                    &format!("{}://127.0.0.1:9148", self.protocol.scheme())
+                ]);
+                client.stdin(File::open("urlc-tool/tmp/stdin.txt").unwrap());
+                client
+            },
+            Tool::Callgrind => {
+                let mut client = Command::new("valgrind");
+                client.args([
+                    "--tool=callgrind",
+                    &format!("--callgrind-out-file={out}"),
+                    "--separated-threads=yes",
+                    "target/release/url-cleaner-site-client",
+                    "clean",
+                    &format!("{}://127.0.0.1:9148", self.protocol.scheme())
+                ]);
+                client.stdin(File::open("urlc-tool/tmp/stdin.txt").unwrap());
+                client
+            }
+        };
+
         client.stdout(std::process::Stdio::null());
         client.stderr(std::process::Stdio::null());
 

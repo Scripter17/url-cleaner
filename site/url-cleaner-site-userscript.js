@@ -293,16 +293,7 @@ ${GM.info.script.namespace}`,
 	function urlc_socket_message(message) {
 		// Ignore pings, pongs, etc. and get only return frames, which are always strings.
 		if (typeof message.data === "string") {
-			for (line of message.data.split(/\r\n|\n/g)) {
-				// Ignore empty lines.
-				if (line === "") {continue;}
-
-				// Ignore lines of unknown format.
-				if (!/^[-a-zA-Z]/g.test(line)) {
-					console.warn("[URLC] Unknown output line:", line);
-					continue;
-				}
-
+			for (line of message.data.split("\n")) {
 				// Get the element this line is for.
 				var [element, old_href] = queue.shift();
 

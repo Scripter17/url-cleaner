@@ -1,7 +1,5 @@
 //! `/clean`.
 
-use std::sync::Arc;
-
 use axum::{
     http::StatusCode,
     extract::{State, Request, WebSocketUpgrade, FromRequest, FromRequestParts},
@@ -31,14 +29,14 @@ impl<S: Send + Sync> FromRequest<S> for CleanPayload {
         let (mut parts, body) = req.into_parts();
 
         Ok(match WebSocketUpgrade::from_request_parts(&mut parts, state).await {
-            Ok (wsu) => Self::Ws(wsu),
+            Ok (wsu) => Self::Ws  (wsu),
             Err(_  ) => Self::Http(body)
         })
     }
 }
 
 /// `/clean`.
-pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, x: CleanPayload) -> Result<Response, (StatusCode, &'static str)> {
+pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, clean_payload: CleanPayload) -> Result<Response, (StatusCode, &'static str)> {
     match (&state.passwords, job_config.password) {
         (None           , None          ) => {},
         (None           , Some(_       )) => Err((StatusCode::UNAUTHORIZED, "Requires no password"))?,
@@ -49,7 +47,7 @@ pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, x
     let mut cleaner = state.profiled_cleaner.get(job_config.profile.as_deref()).ok_or((StatusCode::BAD_REQUEST, "Unknown profile"))?;
     job_config.params_diff.apply(&mut cleaner.params);
 
-    let job = Arc::new(Job {
+    let job = Job {
         context: job_config.context,
         cleaner,
         unthreader: state.unthreader.filter(job_config.unthread),
@@ -64,11 +62,10 @@ pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, x
         },
         #[cfg(feature = "http")]
         http_client: &state.http_client
-    });
+    };
 
-    match x {
+    match clean_payload {
         CleanPayload::Ws  (wsu ) => ws  ::clean_ws  (state, job, wsu ).await,
         CleanPayload::Http(body) => http::clean_http(state, job, body).await,
     }
 }
-

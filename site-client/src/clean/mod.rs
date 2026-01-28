@@ -35,7 +35,7 @@ pub struct Args {
     /// Enable cache delay.
     #[arg(long, help_heading = "JobConfig args")]
     pub cache_delay: bool,
-    /// Enable unthreading
+    /// Enable unthreading.
     #[arg(long, help_heading = "JobConfig args")]
     pub unthread: bool
 }

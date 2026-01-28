@@ -5,16 +5,16 @@ edition = "2024"
 publish = false
 
 [dependencies]
-clap = { version = "4.5.54", features = ["derive"] }
+clap = { version = "4.5.55", features = ["derive"] }
 libc = "0.2.180"
 num-format = "0.4.4"
-psl = "2.1.179"
+psl = "2.1.183"
 regex = "1.12.2"
 reqwest = { version = "0.12.28", features = ["blocking"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.149", features = ["preserve_order"] }
 serde_with = "3.16.1"
-thiserror = "2.0.17"
+thiserror = "2.0.18"
 url = "2.5.8"
 
 [lints]

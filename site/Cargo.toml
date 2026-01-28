@@ -12,9 +12,10 @@ rust-version = "1.88.0"
 
 [dependencies]
 async-stream = "0.3.6"
-axum = { version = "0.8.8", features = ["http2", "json", "ws"] }
+axum = { version = "0.8.8", features = ["http2", "ws"] }
 axum-server = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
-clap = { version = "4.5.54", features = ["derive"] }
+bstr = "1.12.1"
+clap = { version = "4.5.55", features = ["derive"] }
 const-str = { version = "1.0.0", features = ["proc"] }
 futures-util = { version = "0.3.31", features = ["io"] }
 hyper-util = "0.1.19"

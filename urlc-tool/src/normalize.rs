@@ -6,7 +6,7 @@ use url::Url;
 
 /// Parse each line of STDIN as a URL and print it.
 ///
-/// STDOUT lines starting with - represent errors.
+/// Output lines starting with - represent errors.
 #[derive(Debug, Parser)]
 pub struct Args {}
 
@@ -24,12 +24,14 @@ impl Args {
                 }
             }
 
-            match str::from_utf8(&buf) {
-                Ok(x) => match Url::parse(x) {
-                    Ok(url) => println!("{url}"),
-                    Err(e) => println!("-{e:?}"),
-                },
-                Err(e) => println!("-{e:?}")
+            if buf.is_empty() {
+                continue;
+            }
+
+            match str::from_utf8(&buf).map(Url::parse) {
+                Ok(Ok(url)) => println!("{url}"),
+                Ok(Err(e))  => println!("-{e:?}"),
+                Err(e)      => println!("-{e:?}")
             }
 
             buf.clear();

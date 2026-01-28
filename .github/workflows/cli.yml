@@ -21,11 +21,13 @@ jobs:
 
     - name: Output
       run: |
-        in=$(seq -f "https://example.com/%0.0f" 127)
-
-        diff <(echo "$in" | ./urlc    ) <(echo "$in")
-        diff <(             ./urlc $in) <(echo "$in")
-        diff <(echo "$in" | ./urlc $in) <(echo -e "$in\n$in")
+        for args in 0 1 10; do
+          for stdin in 0 1 10 100 1000 10000 100000; do
+            diff\
+              <(seq -f "https://example.com/stdin/%0.0f" $stdin | ./urlc $(seq -f "https://example.com/arg/%0.0f" $args))\
+              <(seq -f "https://example.com/arg/%0.0f" $args; seq -f "https://example.com/stdin/%0.0f" $stdin)
+          done
+        done
 
     - name: Profiles
       run: |
@@ -73,6 +75,4 @@ jobs:
         diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')
 
     - name: 'Check bundled cleaner'
-      run: |
-        set -euo pipefail
-        cargo run --bin urlc-tool -- test --filter '^offline' --assert-suitability
+      run: cargo run --bin urlc-tool -- test --filter '^offline' --assert-suitability

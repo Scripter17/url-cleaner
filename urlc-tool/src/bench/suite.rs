@@ -1,52 +1,89 @@
 //! Suite.
 
-pub use super::prelude::*;
+use super::prelude::*;
 
 /// Generate a markdown document of benchmark details.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The targets to benchmark.
-    #[arg(long, num_args = 1.., default_values = ["cli", "http", "https", "ws", "wss"])]
-    pub targets: Vec<Target>,
-    /// The tools to benchmark with.
+    /// Don't compile stuff first.
+    #[arg(long)]
+    pub no_build: bool,
+    /// The benchmarks file.
+    #[arg(long, default_value = "urlc-tool/benchmarks.txt")]
+    pub benchmarks: PathBuf,
+
+    /// Benchmark CLI.
+    #[arg(long)]
+    pub cli: bool,
+    /// The tools to benchmark CLI with.
     #[arg(long, num_args = 1.., default_values = ["hyperfine", "massif"])]
-    pub tools: Vec<Tool>,
+    pub cli_tools: Vec<cli::Tool>,
+
+    /// Benchmark Site.
+    #[arg(long)]
+    pub site: bool,
+    /// The tools to benchmark Site with.
+    #[arg(long, num_args = 1.., default_values = ["massif"])]
+    pub site_tools: Vec<site::Tool>,
+
+    /// Benchmark Site CLIent.
+    #[arg(long)]
+    pub site_client: bool,
+    /// The tools to benchmark Site CLIent with.
+    #[arg(long, num_args = 1.., default_values = ["hyperfine", "massif"])]
+    pub site_client_tools: Vec<site_client::Tool>,
+
+    /// The protocols to benchmark Site and Site CLIent with.
+    #[arg(long, num_args = 1.., default_values = ["http", "https", "ws"])]
+    pub site_protocols: Vec<SiteProtocol>,
+
     /// The nums to use.
     #[arg(long, num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
     pub nums: Vec<u64>,
 
-    /// The regex to filter task names with.
+    /// The regex to filter benchmarks by name with.
     #[arg(long)]
     pub filter: Option<String>
 }
 
-/// The tasks to benchmark with.
-pub const TASKS: &[(&str, &str)] = &[
-    ("Baseline", "https://example.com"),
-    ("UTPs"    , "https://example.com?fb_action_ids&mc_eid&ml_subscriber_hash&oft_ck&s_cid&unicorn_click_id"),
-    ("Amazon"  , "https://www.amazon.ca/UGREEN-Charger-Compact-Adapter-MacBook/dp/B0C6DX66TN/ref=sr_1_5?crid=2CNEQ7A6QR5NM&keywords=ugreen&qid=1704364659&sprefix=ugreen%2Caps%2C139&sr=8-5&ufe=app_do%3Aamzn1.fos.b06bdbbe-20fd-4ebc-88cf-fa04f1ca0da8"),
-    ("Google"  , "https://www.google.com/search?q=url+cleaner&sca_esv=de6549fe37924183&ei=eRAYabb6O7Gb4-EP79Xe6A8&ved=0ahUKEwj2mqWLt_OQAxWxzTgGHe-qF_0Q4dUDCBE&oq=url+cleaner&gs_lp=Egxnd3Mtd2l6LXNlcnAiC3VybCBjbGVhbmVySABQAFgAcAB4AZABAJgBAKABAKoBALgBDMgBAJgCAKACAJgDAJIHAKAHALIHALgHAMIHAMgHAA&sclient=gws-wiz-serp"),
-];
-
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let mut bins = Vec::new();
+        if !self.cli && !self.site && !self.site_client {
+            panic!("You gotta benchmark something.");
+        }
 
-        if self.targets.iter().any(|target| matches!(target, Target::Cli    )) {bins.push(Bin::Cli );                            }
-        if self.targets.iter().any(|target| matches!(target, Target::Site(_))) {bins.push(Bin::Site); bins.push(Bin::SiteClient);}
+        if !self.no_build {
+            let mut bins = Vec::new();
 
-        crate::build::Args {
-            bins,
-            no_compile: false,
-            debug: false
-        }.r#do();
+            if self.cli {
+                bins.push(Bin::Cli);
+            }
 
+            if self.site || self.site_client {
+                bins.push(Bin::Site);
+                bins.push(Bin::SiteClient);
+            }
+
+            crate::build::Args {bins}.r#do();
+        }
+
+        let benchmarks_string = std::fs::read_to_string(self.benchmarks).unwrap();
+        let mut benchmarks = Vec::new();
         let filter = Regex::new(&self.filter.unwrap_or_default()).unwrap();
 
-        let tasks = TASKS.iter().filter(|(name, _)| filter.find(name).is_some()).collect::<Vec<_>>();
+        for (name, task) in benchmarks_string.lines().map(|line| line.split_once('\t').unwrap()) {
+            if filter.find(name).is_some() {
+                benchmarks.push((name, task));
+            }
+        }
 
         println!("# Benchmarks");
+        println!();
+
+        println!("[CLI]: cli");
+        println!("[Site]: site");
+        println!("[Site CLIent]: site-client");
         println!();
 
         println!("[Hyperfine]: https://github.com/sharkdp/hyperfine");
@@ -65,66 +102,38 @@ impl Args {
         println!("```");
         println!();
 
-        println!("## Tasks");
+        println!("## Benchmarks");
         println!();
 
         println!("|Name|Task|");
         println!("|:--|:--|");
-        for (name, task) in &tasks {
+        for (name, task) in &benchmarks {
             println!("|{name}|`{task}`|");
         }
         println!();
 
-        for target in self.targets {
-            match target {
-                Target::Cli => println!("## CLI"),
-                Target::Site(api) => {
-                    println!("## Site {}", api.name());
-                    println!();
-                    println!("Measured using [URL Cleaner Site Client](./site-client/)");
-                }
-            }
+        if self.cli {
+            println!("## [CLI]");
             println!();
 
-            for tool in self.tools.iter().copied() {
-                match tool {
-                    Tool::Hyperfine => {println!("### Speed"    ); println!(); println!("Average milliseconds. Measured by [Hyperfine]."       )},
-                    Tool::Massif    => {println!("### Memory"   ); println!(); println!("Peak memory usage. Measured by [Valgrind]'s [Massif].")},
-                    Tool::Callgrind => {println!("### Callgrind"); println!(); println!("Callgrind info. Measured by [Valgrind]'s [Callgrind].")}
-                }
+            for tool in self.cli_tools {
+                println!("### [{tool:?}]");
                 println!();
 
-                print!("|Name|");
-                for num in self.nums.iter() {
-                    print!("{}|", num.to_formatted_string(&Locale::en));
-                }
-                println!();
+                print!("|Name|"); for num in self.nums.iter() {print!("`{}`|", num.to_formatted_string(&Locale::en));} println!();
+                print!("|:--|" ); for _   in self.nums.iter() {print!("--:|");                                       } println!();
 
-                print!("|:--|");
-                for _ in 0..self.nums.len() {
-                    print!("--:|");
-                }
-                println!();
-
-                for (name, task) in &tasks {
+                for (name, task) in benchmarks.iter().copied() {
                     print!("|{name}|");
                     std::io::stdout().flush().unwrap();
 
                     for num in self.nums.iter().copied() {
-                        print!("{}|", tool.get_entry(&match target {
-                            Target::Cli => super::cli::Args {
-                                name: name.to_string(),
-                                job_config: JobConfig { task: task.to_string(), num },
-                                tool
-                            }.r#do(),
-                            Target::Site(api) => super::site::Args {
-                                name: name.to_string(),
-                                job_config: JobConfig { task: task.to_string(), num },
-                                tool,
-                                api
-                            }.r#do()
-                        }));
-
+                        print!("`{}`|", get_table_entry(cli::Args {
+                            name: name.into(),
+                            task: task.into(),
+                            num,
+                            tool
+                        }.r#do()));
                         std::io::stdout().flush().unwrap();
                     }
 
@@ -132,6 +141,82 @@ impl Args {
                 }
 
                 println!();
+            }
+        }
+
+        if self.site {
+            println!("## [Site]");
+            println!();
+
+            for protocol in self.site_protocols.iter().copied() {
+                println!("### {}", protocol.name());
+                println!();
+
+                for tool in self.site_tools.iter().copied() {
+                    println!("#### [{tool:?}]");
+                    println!();
+
+                    print!("|Name|"); for num in self.nums.iter() {print!("`{}`|", num.to_formatted_string(&Locale::en));} println!();
+                    print!("|:--|" ); for _   in self.nums.iter() {print!("--:|");                                       } println!();
+
+                    for (name, task) in benchmarks.iter().copied() {
+                        print!("|{name}|");
+                        std::io::stdout().flush().unwrap();
+
+                        for num in self.nums.iter().copied() {
+                            print!("`{}`|", get_table_entry(site::Args {
+                                name: name.into(),
+                                task: task.into(),
+                                num,
+                                tool,
+                                protocol,
+                            }.r#do()));
+                            std::io::stdout().flush().unwrap();
+                        }
+
+                        println!();
+                    }
+
+                    println!();
+                }
+            }
+        }
+
+        if self.site_client {
+            println!("## [Site CLIent]");
+            println!();
+
+            for protocol in self.site_protocols.iter().copied() {
+                println!("### {}", protocol.name());
+                println!();
+
+                for tool in self.site_client_tools.iter().copied() {
+                    println!("#### [{tool:?}]");
+                    println!();
+
+                    print!("|Name|"); for num in self.nums.iter() {print!("`{}`|", num.to_formatted_string(&Locale::en));} println!();
+                    print!("|:--|" ); for _   in self.nums.iter() {print!("--:|");                                       } println!();
+
+                    for (name, task) in benchmarks.iter().copied() {
+                        print!("|{name}|");
+                        std::io::stdout().flush().unwrap();
+
+                        for num in self.nums.iter().copied() {
+                            print!("`{}`|", get_table_entry(site_client::Args {
+                                name: name.into(),
+                                task: task.into(),
+                                num,
+                                tool,
+                                protocol,
+                            }.r#do()));
+                            std::io::stdout().flush().unwrap();
+                        }
+
+                        println!();
+                    }
+
+                    println!();
+                }
             }
         }
     }

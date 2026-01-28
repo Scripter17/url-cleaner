@@ -1,6 +1,6 @@
 # URL Cleaner
 
-[Engine](engine) | [CLI tool](cli) | [HTTP server and userscript](site) | [Discord app](discord-app)
+[Engine](engine) | [CLI](cli) | [Site and Site Userscript](site) | [Site CLIent](site-client) | [Discord](discord)
 
 Explicit non-consent to URL spytext.
 
@@ -18,8 +18,9 @@ If you are not already aware of why you should not let companies or your governm
 URL Cleaner currently has 3 official frontends:
 
 - [A CLI tool](cli)
-- [An HTTP server and userscript](site)
-- [A discord app/bot](discord-app)
+- [An HTTP/WebSocket server and userscript](site)
+  - [A CLI client for Site](site-client)
+- [A discord app/bot](discord)
 
 You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
 

@@ -121,6 +121,7 @@ pub struct VarDoc {
     pub variants: Option<HashMap<String, String>>
 }
 
+/// Assert all required vars exist.
 fn assert_required_vars_exist(x: &HashMap<String, VarDoc>, cleaner: &Cleaner<'_>) {
     for (name, VarDoc {required, ..}) in x {
         assert!(cleaner.params.vars.get(name).is_some() || !required, "Required var is missing: {name:?}.");

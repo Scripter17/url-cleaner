@@ -2,9 +2,7 @@
 
 A basic overview of the API of URL Cleaner Site's API.
 
-For a more detailed understanding of the types used, see the crate documentations for [URL Cleaner Engine](../engine) and [URL Cleaner Site Types](../site-types).
-
-For a typed API you can make clients with, see [URL Cleaner Site Types](../site-types).
+For a CLI client for Site, see [URL Cleaner Site CLIent](../site-client).
 
 ## `/get-info`
 
@@ -32,12 +30,26 @@ A GET endpoint that returns the loaded `ProfilesConfig`.
 
 ## `/clean`
 
-Either a WebSocket or HTTP POST/PUT.
+Either a WebSocket or HTTP POST/PUT duplex.
 
-- The `CleanConfig` is sent in the `config` query parameter XOR the `X-Config` header.
+- The `JobConfig` is sent in the `config` query parameter XOR the `X-Config` header.
 
-- The request and response messages/frames are streamed in parallel.
+### WebSocket
 
-- WebSocket messages use explicit chunking.
+- Task messages can be either binary or text.
 
-- HTTP frames use implicit chunking.
+- For complex performance reasons, each task message should contain multiple tasks.
+
+- Result messages are text.
+
+- There are no empty result messages.
+
+- Result messages contain no empty lines.
+
+- Result messages use only `\n` as a line separator.
+
+### HTTP
+
+- Each result line is succeeded by a `\n`.
+
+- Each `\n` is preceeded by a result line.

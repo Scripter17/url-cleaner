@@ -16,16 +16,16 @@ use hyper_tls::HttpsConnector;
 /// Do an HTTP connection.
 pub async fn r#do(instance: Url) {
     let body = Box::pin(StreamBody::new(stream!(
-        let mut stdin = tokio::io::stdin();
+        let stdin = &mut tokio::io::stdin();
+        let mut buf = Vec::new();
 
-        loop {
-            let mut buf = Vec::new();
-            if matches!(tokio::time::timeout(std::time::Duration::from_millis(1), (&mut stdin).take(2u64.pow(20)).read_to_end(&mut buf)).await, Ok(Ok(0))) {
-                break
+        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(20)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
+            if !buf.is_empty() {
+                yield buf;
+                buf = Vec::new();
             }
-            yield Ok::<_, Infallible>(Frame::data(Cursor::new(buf)));
         }
-    )));
+    ).map(|buf| Ok::<_, Infallible>(Frame::data(Cursor::new(buf))))));
 
     // Building an HttpsConnector is very expensive, and so should only be done when needed.
 

@@ -1,33 +1,45 @@
 //! CLI.
 
-pub use super::prelude::*;
+use super::prelude::*;
 
 /// CLI.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The name of the benchmark.
+    /// The name of the job.
     #[arg(long)]
     pub name: String,
-    /// The [`JobConfig`].
-    #[command(flatten)]
-    pub job_config: JobConfig,
+    /// The task of the job.
+    #[arg(long)]
+    pub task: String,
+    /// The number of tasks for the job.
+    #[arg(long)]
+    pub num: u64,
 
     /// The [`Tool`].
     #[arg(long)]
     pub tool: Tool
 }
 
+/// The tools to benchmark with.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Tool {
+    /// Hyperfine.
+    Hyperfine,
+    /// Massif.
+    Massif,
+    /// Callgrind.
+    Callgrind
+}
+
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        let name = &self.name;
-        let num = self.job_config.num;
+        let name = self.name;
+        let task = self.task;
+        let num  = self.num;
+        let tool = format!("{:?}", self.tool).to_lowercase();
 
-        let out = match self.tool {
-            Tool::Hyperfine => format!("urlc-tool/out/bench/cli/hyperfine/{name}/hyperfine.out-cli-{name}-{num}.json"),
-            Tool::Massif    => format!("urlc-tool/out/bench/cli/massif/{name}/massif.out-cli-{name}-{num}"),
-            Tool::Callgrind => format!("urlc-tool/out/bench/cli/callgrind/{name}/{num}/callgrind.out-cli-{name}-{num}")
-        };
+        let out = format!("urlc-tool/out/bench/cli/{tool}/{name}/{tool}.out-{name}-{num}");
 
         let (dir, prefix) = out.rsplit_once('/').unwrap();
 
@@ -39,38 +51,39 @@ impl Args {
             }
         }
 
-        self.job_config.make();
+        write_stdin(&task, num);
 
         let mut cmd = match self.tool {
             Tool::Hyperfine => {
                 let mut cmd = Command::new("hyperfine");
-
                 cmd.args([
                     "--style", "none",
-                    "--command-name", &self.name,
+                    "--command-name", &name,
                     "--export-json", &out,
                     "--input", "urlc-tool/tmp/stdin.txt",
                     "target/release/url-cleaner"
                 ]);
-
                 cmd
             },
-            tool @ (Tool::Massif | Tool::Callgrind) => {
+            Tool::Massif => {
                 let mut cmd = Command::new("valgrind");
-
                 cmd.args([
-                    &format!("--tool={tool}"),
-                    &format!("--{tool}-out-file={out}"),
+                    "--tool=massif",
+                    &format!("--massif-out-file={out}"),
+                    "target/release/url-cleaner"
                 ]);
-
-                if tool == Tool::Callgrind {
-                    cmd.arg("--separate-threads=yes");
-                }
-
-                cmd.arg("target/release/url-cleaner");
-
                 cmd.stdin(File::open("urlc-tool/tmp/stdin.txt").unwrap());
-
+                cmd
+            },
+            Tool::Callgrind => {
+                let mut cmd = Command::new("valgrind");
+                cmd.args([
+                    "--tool=callgrind",
+                    &format!("--callgrind-out-file={out}"),
+                    "--separate-threads=yes",
+                    "target/release/url-cleaner"
+                ]);
+                cmd.stdin(File::open("urlc-tool/tmp/stdin.txt").unwrap());
                 cmd
             }
         };

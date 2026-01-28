@@ -23,6 +23,7 @@ pub enum CacheLocation {
     Path(PathBuf)
 }
 
+/// Generate `From<T>` and `From<Option<T>>` for [`CacheLocation`].
 macro_rules! into_cache_location_impl {
     ($($t:ty),*) => {
         $(
