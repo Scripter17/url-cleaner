@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::io::{IsTerminal, BufRead, Write};
 use std::fmt::Debug;
 use std::sync::mpsc::RecvTimeoutError;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use clap::Parser;
 use thiserror::Error;
@@ -188,7 +189,7 @@ fn main() -> Result<(), CliError> {
     let (rs, rr) = std::sync::mpsc::sync_channel::<Vec<u8>>(64);
     let (oss, ors) = (0..threads).map(|_| std::sync::mpsc::channel::<String>()).collect::<(Vec<_>, Vec<_>)>();
 
-    let queued = &std::sync::atomic::AtomicUsize::new(0);
+    let queued = &AtomicUsize::new(0);
 
     std::thread::scope(|s| {
 
@@ -222,8 +223,8 @@ fn main() -> Result<(), CliError> {
 
                     iss.next().expect("???").send(buf).expect("The in receiver to still exist.");
 
-                    if queued.fetch_add(1, std::sync::atomic::Ordering::Relaxed) >= 1023 {
-                        std::thread::sleep(std::time::Duration::from_millis(1));
+                    if queued.fetch_add(1, Ordering::Relaxed) >= 1023 {
+                        std::thread::sleep(std::time::Duration::from_micros(200));
                     }
 
                     buf = rr.try_recv().unwrap_or_default();
@@ -239,7 +240,7 @@ fn main() -> Result<(), CliError> {
             let rs = rs.clone();
             s.spawn(move || {
                 while let Ok(buf) = ir.recv() {
-                    queued.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                    queued.fetch_sub(1, Ordering::Relaxed);
                     let task = (&buf).make_task();
                     let _ = rs.try_send(buf);
                     os.send(match job.r#do(task) {

@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-clap = { version = "4.5.55", features = ["derive"] }
+clap = { version = "4.5.56", features = ["derive"] }
 libc = "0.2.180"
 num-format = "0.4.4"
 psl = "2.1.183"
