@@ -13,6 +13,7 @@ pub struct JobConfig {
     /// The password to use.
     ///
     /// Defaults to [`None`].
+    #[serde(default, skip_serializing_if = "is_default")]
     pub password: Option<String>,
     /// The [`JobContext`] to use.
     ///

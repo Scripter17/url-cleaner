@@ -5,95 +5,90 @@ use super::prelude::*;
 /// CLI.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The name of the job.
+    /// The name
     #[arg(long)]
     pub name: String,
-    /// The task of the job.
+    /// The task.
     #[arg(long)]
     pub task: String,
-    /// The number of tasks for the job.
+    /// The num.
     #[arg(long)]
     pub num: u64,
-
-    /// The [`Tool`].
+    /// The tool.
     #[arg(long)]
-    pub tool: Tool
+    pub tool: Tool,
 }
 
-/// The tools to benchmark with.
-#[derive(Debug, Clone, Copy, ValueEnum)]
+/// The tool.
+#[derive(Debug, Clone, Copy, ValueEnum, Deserialize)]
 pub enum Tool {
     /// Hyperfine.
     Hyperfine,
     /// Massif.
     Massif,
     /// Callgrind.
-    Callgrind
+    Callgrind,
 }
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        let name = self.name;
-        let task = self.task;
-        let num  = self.num;
-        let tool = format!("{:?}", self.tool).to_lowercase();
+        let Self {name, task, num, tool} = self;
 
-        let out = format!("urlc-tool/out/bench/cli/{tool}/{name}/{tool}.out-{name}-{num}");
+        let out_dir = format!("urlc-tool/out/bench/cli/{tool:?}/{name}/{num}");
 
-        let (dir, prefix) = out.rsplit_once('/').unwrap();
+        let _ = std::fs::remove_dir_all(&out_dir);
+        std::fs::create_dir_all(&out_dir).unwrap();
 
-        std::fs::create_dir_all(dir).unwrap();
+        let _stdin_handle = write_stdin(&task, num);
 
-        for entry in std::fs::read_dir(dir).unwrap().map(Result::unwrap) {
-            if let Some(name) = entry.file_name().to_str() && name.starts_with(prefix) {
-                std::fs::remove_file(entry.path()).unwrap();
-            }
-        }
-
-        write_stdin(&task, num);
-
-        let mut cmd = match self.tool {
+        let (out, mut cmd) = match tool {
             Tool::Hyperfine => {
+                let out = format!("{out_dir}/hyperfine.json");
+
                 let mut cmd = Command::new("hyperfine");
+
                 cmd.args([
-                    "--style", "none",
-                    "--command-name", &name,
+                    "--show-output",
+                    "--input", STDIN,
                     "--export-json", &out,
-                    "--input", "urlc-tool/tmp/stdin.txt",
                     "target/release/url-cleaner"
                 ]);
-                cmd
+
+                (out, cmd)
             },
             Tool::Massif => {
+                let out = format!("{out_dir}/massif.out");
+
                 let mut cmd = Command::new("valgrind");
-                cmd.args([
-                    "--tool=massif",
-                    &format!("--massif-out-file={out}"),
-                    "target/release/url-cleaner"
-                ]);
-                cmd.stdin(File::open("urlc-tool/tmp/stdin.txt").unwrap());
-                cmd
+
+                cmd.args(["--tool=massif"]);
+                cmd.arg(format!("--massif-out-file={out}"));
+                cmd.arg("target/release/url-cleaner");
+
+                cmd.stdin(File::open(STDIN).unwrap());
+
+                (out, cmd)
             },
             Tool::Callgrind => {
+                let out = format!("{out_dir}/callgrind.out");
+
                 let mut cmd = Command::new("valgrind");
-                cmd.args([
-                    "--tool=callgrind",
-                    &format!("--callgrind-out-file={out}"),
-                    "--separate-threads=yes",
-                    "target/release/url-cleaner"
-                ]);
-                cmd.stdin(File::open("urlc-tool/tmp/stdin.txt").unwrap());
-                cmd
-            }
+
+                cmd.args(["--tool=callgrind", "--separate-threads=yes"]);
+                cmd.arg(format!("--callgrind-out-file={out}"));
+                cmd.arg("target/release/url-cleaner");
+
+                cmd.stdin(File::open(STDIN).unwrap());
+
+                (out, cmd)
+            },
         };
 
         cmd.stdout(std::process::Stdio::null());
-        cmd.stderr(std::process::Stdio::null());
+        cmd.stderr(new_file(format!("{out_dir}/stderr.txt")));
 
         assert_eq!(cmd.spawn().unwrap().wait().unwrap().code(), Some(0));
-
-        std::fs::remove_file("urlc-tool/tmp/stdin.txt").unwrap();
 
         out
     }

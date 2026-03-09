@@ -18,7 +18,7 @@ use crate::prelude::*;
 pub struct JobContext {
     /// The host of the page the tasks come from.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub source_host: Option<BetterHost<String>>,
+    pub source_host: Option<BetterHost>,
     /// The flags to use.
     ///
     /// Defaults to an empty [`HashSet`].

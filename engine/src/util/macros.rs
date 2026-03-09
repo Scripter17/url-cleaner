@@ -44,6 +44,7 @@ macro_rules! string_or_struct_magic {
 }
 
 /// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`String`].
+#[allow(unused_macros, reason = "Used when some features are enabled.")]
 macro_rules! get_option_string {
     ($value:expr, $task_state:expr) => {
         get_option_cow!($value, $task_state).map(std::borrow::Cow::into_owned)
@@ -65,6 +66,17 @@ macro_rules! get_new_option_str {
             StringSource::None => None,
             value => value.get($task_state)?.map(std::borrow::Cow::into_owned).map(Cow::Owned)
         }.as_deref()
+    }
+}
+
+/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
+macro_rules! get_new_option_cow {
+    ($value:expr, $task_state:expr) => {
+        match $value {
+            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
+            StringSource::None => None,
+            value => value.get($task_state)?.map(std::borrow::Cow::into_owned).map(Cow::Owned)
+        }
     }
 }
 
@@ -122,6 +134,8 @@ pub(crate) use get_string;
 pub(crate) use get_cow;
 pub(crate) use get_option_str;
 pub(crate) use get_new_option_str;
+pub(crate) use get_new_option_cow;
+#[allow(unused_imports, reason = "Used when some features are enabled.")]
 pub(crate) use get_option_string;
 pub(crate) use get_option_cow;
 pub(crate) use url_cleaner_macros::edoc;

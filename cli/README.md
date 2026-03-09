@@ -14,11 +14,8 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 URL Cleaner CLI uses [the standard format](../format.md) with the following additional guarantees:
 
-For results:
+- Each result line is succeeded by a `\n`.
 
-- Every result line is succeeded by a line separator (either `\r\n` or just `\n`).
+- Each `\n` is precceded by a result line.
 
-- Every line separator (either `\r\n` or just `\n`) is precceded by a result line.
-
-- Result lines never require the next task to be done before being printed.
-  - Giving a task line, waiting for a result line, then giving another task line will never deadlock.
+- Providing a task line, waiting for its result line, then providing another task line will never deadlock.

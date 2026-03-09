@@ -5,52 +5,47 @@ use std::collections::BTreeSet;
 
 use super::prelude::*;
 
-/// Take a JSON array from STDIN and fold it while keeping indentation.
+/// Fold a JSON array, ignoring and preserving indentation.
 #[derive(Debug, Parser)]
-pub struct Args {}
+pub struct Args {
+    /// The width to fold to before indenting.
+    #[arg(long, default_value_t = 160)]
+    pub width: usize
+}
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let mut text = String::new();
+        let mut string = String::new();
 
-        std::io::stdin().read_to_string(&mut text).unwrap();
+        std::io::stdin().read_to_string(&mut string).unwrap();
 
-        let a = Regex::new(r#"(\t*)""# ).unwrap().captures(&text).unwrap().get(1).unwrap().as_str();
-        let b = Regex::new(r#"(\t*)\]"#).unwrap().captures(&text).unwrap().get(1).unwrap().as_str();
+        let indent  = Regex::new(r#"\t+"#  ).unwrap().find(&string).unwrap().as_str();
+        let close   = Regex::new(r#"\t+\]"#).unwrap().find(&string).unwrap().as_str();
+        let strings = Regex::new(r#""(?:\\"|.)*?""#).unwrap().find_iter(&string).map(|string| string.as_str()).collect::<BTreeSet<_>>();
 
-        let items = serde_json::from_str::<BTreeSet<String>>(&text).unwrap();
+        let mut line_len = 0;
 
         println!("[");
 
-        let mut buf = String::new();
-        let mut buf2 = String::new();
+        for string in strings {
+            if line_len != 0 && line_len + 1 + string.len() >= self.width {
+                println!(",");
+                line_len = 0;
+            }
 
-        for item in items {
-            if !buf.is_empty() {
-                buf.push(' ');
+            if line_len == 0 {
+                print!("{indent}");
+            } else {
+                print!(", ");
+                line_len += 2;
             }
-            if item.len() + buf.len() + 1 >= 160 {
-                buf.pop();
-                buf2.push_str(a);
-                buf2.push_str(&buf);
-                buf2.push('\n');
-                buf.clear();
-            }
-            buf.push_str(&format!("{item:?},"));
+
+            print!("{string}");
+            line_len += string.len();
         }
 
-        if !buf.is_empty() {
-            buf2.push_str(a);
-            buf2.push_str(&buf);
-            buf2.push('\n');
-        }
-
-        buf2.pop();
-        buf2.pop();
-
-        println!("{buf2}");
-
-        println!("{b}]");
+        println!();
+        println!("{close}");
     }
 }

@@ -544,13 +544,13 @@ pub enum Action {
     ///
     /// If the resulting path would be [`None`], returns the error [`ActionError::PathCannotBeNone`].
     ModifyPath(StringModification),
-    /// Removes the specified [`UrlPart::PathSegment`].
+    /// Removes the specified path segment.
     /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::set_path_segment))]
+    #[doc = edoc!(callerr(BetterUrl::try_modify_path_segments), callerr(BetterPathSegments::remove))]
     RemovePathSegment(isize),
-    /// [`BetterUrl::set_path_segment`].
+    /// Set the specified path segment.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_path_segment))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::try_modify_path_segments), callerr(BetterPathSegments::set_or_insert_or_remove_segment))]
     SetPathSegment {
         /// The [`UrlPart::PathSegment`] to set.
         index: isize,
@@ -559,80 +559,44 @@ pub enum Action {
     },
     /// Apply [`Self::ModifyPathSegment::modification`] to the specified path segment.
     /// # Errors
-    /// If the call to [`BetterUrl::path_segment`] returns [`None`], returns the error [`ActionError::UrlDoesNotHavePathSegments`].
-    ///
-    /// If the call to [`BetterUrl::path_segment`] returns [`Some`] of [`None`], returns the error [`ActionError::PathSegmentNotFound`].
-    ///
-    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_path_segment))]
+    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), applyerr(StringModification), callerr(BetterUrl::try_modify_path_segments), callerr(BetterPathSegments::set_or_remove_raw_segment))]
     ModifyPathSegment {
         /// The path segment to modify.
         index: isize,
         /// The [`StringModification`] to apply.
         modification: StringModification
     },
-    /// [`BetterUrl::insert_path_segment`].
+    /// Insert the specified path segment.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::try_modify_path_segments), callerr(BetterPathSegments::insert_segment))]
     InsertPathSegment {
         /// The index to insert it at.
         index: isize,
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::set_path_segment`].
+    /// Set the specified path segment without encoding..
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_path_segment))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::try_modify_path_segments), callerr(BetterPathSegments::set_or_insert_or_remove_raw_segment))]
     SetRawPathSegment {
         /// The [`UrlPart::PathSegment`] to set.
         index: isize,
         /// The value to set it to.
         value: StringSource
     },
-    /// [`BetterUrl::insert_path_segment`].
+    /// Insert the specified path segment without encoding.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::insert_path_segment))]
+    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ActionError), callerr(BetterUrl::try_modify_path_segments), callerr(BetterPathSegments::insert_raw_segment))]
     InsertRawPathSegment {
         /// The index to insert it at.
         index: isize,
         /// The value to insert.
         value: StringSource
     },
-    /// [`PathSegmentsMut::pop_if_empty`].
+    /// Remove the last path segment if it's empty.
     /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::path_segments_mut))]
+    #[doc = edoc!(callerr(BetterUrl::try_modify_path_segments))]
     RemoveEmptyLastPathSegment,
-    /// Remove the first `n` path segments.
-    ///
-    /// The number of path segments after this succeeds is equal to the number of path segments before this is applied minus `n`.
-    ///
-    /// Because a path can't have zero segments, this means trying to remove all segments counts as not having enough segments. If this is a serious ergonomics issue for you, I'll prioritize making a workaround.
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::remove_first_n_path_segments))]
-    RemoveFirstNPathSegments(usize),
-    /// Keep the first `n` path segments.
-    ///
-    /// The number of path segments after this succeeds is equal to `n`.
-    ///
-    /// Because a path can't have zero segments, this means trying to keep zero segments always errors. This is easy to just not do.
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::keep_first_n_path_segments))]
-    KeepFirstNPathSegments(usize),
-    /// Remove the last `n` path segments.
-    ///
-    /// The number of path segments after this succeeds is equal to the number of path segments before this is applied minus `n`.
-    ///
-    /// Because a path can't have zero segments, this means trying to remove all segments counts as not having enough segments. If this is a serious ergonomics issue for you, I'll prioritize making a workaround.
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::remove_last_n_path_segments))]
-    RemoveLastNPathSegments(usize),
-    /// Keep the last `n` path segments.
-    ///
-    /// The number of path segments after this succeeds is equal to `n`.
-    ///
-    /// Because a path can't have zero segments, this means trying to keep zero segments always errors. This is easy to just not do.
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::keep_last_n_path_segments))]
-    KeepLastNPathSegments(usize),
 
 
 
@@ -640,9 +604,9 @@ pub enum Action {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_query))]
     SetQuery(StringSource),
-    /// [`BetterUrl::set_query_param`]
+    /// Set the specified query parameter.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_query_param))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterMaybeQuery::set_or_insert_pair))]
     SetQueryParam {
         /// The query param to set.
         param: QueryParamSelector,
@@ -674,13 +638,13 @@ pub enum Action {
     /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&a=4&c=5");
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParam("a".into()), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("b=3&c=5"));
+    /// assert_eq!(ts.url.query_str(), Some("b=3&c=5"));
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParam("b".into()), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("c=5"));
+    /// assert_eq!(ts.url.query_str(), Some("c=5"));
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParam("c".into()), &mut ts);
-    /// assert_eq!(ts.url.query(), None);
+    /// assert_eq!(ts.url.query_str(), None);
     /// ```
     RemoveQueryParam(StringSource),
     /// Keeps all query parameters with the specified name.
@@ -699,10 +663,10 @@ pub enum Action {
     /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParams(["a".to_string(), "b".to_string()].into()), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("c=5"));
+    /// assert_eq!(ts.url.query_str(), Some("c=5"));
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParams(["c".to_string()].into()), &mut ts);
-    /// assert_eq!(ts.url.query(), None);
+    /// assert_eq!(ts.url.query_str(), None);
     /// ```
     RemoveQueryParams(HashSet<String>),
     /// Keeps only query params with names in the specified [`HashSet`].
@@ -715,10 +679,10 @@ pub enum Action {
     /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// doc_test!(apply, Ok, Action::AllowQueryParams(["a".to_string(), "b".to_string()].into()), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("a=2&b=3&%61=4"));
+    /// assert_eq!(ts.url.query_str(), Some("a=2&b=3&%61=4"));
     ///
     /// doc_test!(apply, Ok, Action::AllowQueryParams(["c".to_string()].into()), &mut ts);
-    /// assert_eq!(ts.url.query(), None);
+    /// assert_eq!(ts.url.query_str(), None);
     /// ```
     AllowQueryParams(HashSet<String>),
     /// Removes all query params with names matching the specified [`StringMatcher`].
@@ -733,13 +697,13 @@ pub enum Action {
     /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParamsMatching(StringMatcher::Is("a".into())), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("b=3&c=5"));
+    /// assert_eq!(ts.url.query_str(), Some("b=3&c=5"));
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParamsMatching(StringMatcher::Is("b".into())), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("c=5"));
+    /// assert_eq!(ts.url.query_str(), Some("c=5"));
     ///
     /// doc_test!(apply, Ok, Action::RemoveQueryParamsMatching(StringMatcher::Is("c".into())), &mut ts);
-    /// assert_eq!(ts.url.query(), None);
+    /// assert_eq!(ts.url.query_str(), None);
     /// ```
     RemoveQueryParamsMatching(StringMatcher),
     /// Keeps only query params with names matching the specified [`StringMatcher`].
@@ -754,21 +718,12 @@ pub enum Action {
     /// doc_test!(task_state, ts, task = "https://example.com?a=2&b=3&%61=4&c=5");
     ///
     /// doc_test!(apply, Ok, Action::AllowQueryParamsMatching(StringMatcher::Is("a".into())), &mut ts);
-    /// assert_eq!(ts.url.query(), Some("a=2&%61=4"));
+    /// assert_eq!(ts.url.query_str(), Some("a=2&%61=4"));
     ///
     /// doc_test!(apply, Ok, Action::AllowQueryParamsMatching(StringMatcher::Is("b".into())), &mut ts);
-    /// assert_eq!(ts.url.query(), None);
+    /// assert_eq!(ts.url.query_str(), None);
     /// ```
     AllowQueryParamsMatching(StringMatcher),
-    /// Rename the specified query parameter to the specified name.
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::rename_query_param))]
-    RenameQueryParam {
-        /// The query parameter to rename.
-        from: QueryParamSelector,
-        /// The name to rename it to.
-        to: StringSource
-    },
 
     /// Sets [`UrlPart::Whole`] to the value of the first query parameter with a name determined by the [`TaskState`].
     /// # Errors
@@ -796,6 +751,19 @@ pub enum Action {
 
     // Fragment
 
+    /// [`BetterUrl::set_fragment`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_fragment))]
+    SetFragment(StringSource),
+    /// Set the specified fragment parameter.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterQuery::set_or_insert_pair))]
+    SetFragmentParam {
+        /// The fragment param to set.
+        param: QueryParamSelector,
+        /// The value to set it to.
+        value: StringSource
+    },
     /// Removes the [`UrlPart::Fragment`].
     RemoveFragment,
     /// If the [`Url::fragment`] is `Some("")`, set it to [`None`].
@@ -876,15 +844,6 @@ pub enum Action {
         /// The modification to apply to the part.
         modification: StringModification
     },
-    /// If the specified [`UrlPart`] is [`Some`], apply [`Self::ModifyPartIfSome::modification`].
-    /// # Errors
-    #[doc = edoc!(applyerr(StringModification), seterr(UrlPart))]
-    ModifyPartIfSome {
-        /// The [`UrlPart`] to modify.
-        part: UrlPart,
-        /// The [`StringModification`] to apply.
-        modification: StringModification
-    },
     /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], leaving [`Self::CopyPart::from`] unchanged.
     /// # Errors
     #[doc = edoc!(seterr(UrlPart))]
@@ -899,24 +858,6 @@ pub enum Action {
     /// ```
     CopyPart {
         /// The part whose value to copy.
-        from: UrlPart,
-        /// The part whose value to set.
-        to: UrlPart
-    },
-    /// Sets [`Self::CopyPart::to`] to the value of [`Self::CopyPart::from`], then sets [`Self::CopyPart::from`] to [`None`].
-    /// # Errors
-    #[doc = edoc!(seterr(UrlPart, 2))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com/abc#def");
-    ///
-    /// doc_test!(apply, Ok, Action::MovePart {from: UrlPart::Fragment, to: UrlPart::Path}, &mut ts);
-    /// assert_eq!(ts.url, "https://example.com/def");
-    /// ```
-    MovePart {
-        /// The part whose value to move.
         from: UrlPart,
         /// The part whose value to set.
         to: UrlPart
@@ -1165,33 +1106,12 @@ pub enum ActionError {
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
-    /// Returned when attempting to get the path segments of a URL with no path segments.
-    #[error("Attempted to get the path segments of a URL with no path segments.")]
-    UrlDoesNotHavePathSegments,
     /// Returned whem attempting to get a path segment that doesn't exist.
     #[error("Attempted to get a path segment that didn't exist.")]
     PathSegmentNotFound,
-    /// Returned when a [`SetPathSegmentError`] is encountered.
-    #[error(transparent)]
-    SetPathSegmentError(#[from] SetPathSegmentError),
-    /// Returned when a [`InsertPathSegmentError`] is encountered.
-    #[error(transparent)]
-    InsertPathSegmentError(#[from] InsertPathSegmentError),
     /// Returned when attempting to keep/remove more path segments than are available.
     #[error("Attempted to keep/remove more path segments than were available.")]
     NotEnoughPathSegments,
-    /// Returned when a [`RemoveFirstNPathSegmentsError`] is encountered.
-    #[error(transparent)]
-    RemoveFirstNPathSegmentsError(#[from] RemoveFirstNPathSegmentsError),
-    /// Returned when a [`KeepFirstNPathSegmentsError`] is encountered.
-    #[error(transparent)]
-    KeepFirstNPathSegmentsError(#[from] KeepFirstNPathSegmentsError),
-    /// Returned when a [`RemoveLastNPathSegmentsError`] is encountered.
-    #[error(transparent)]
-    RemoveLastNPathSegmentsError(#[from] RemoveLastNPathSegmentsError),
-    /// Returned when a [`KeepLastNPathSegmentsError`] is encountered.
-    #[error(transparent)]
-    KeepLastNPathSegmentsError(#[from] KeepLastNPathSegmentsError),
 
     /// Returned when attempting to get the value of a query param from a URL with no query.
     #[error("Attempted to get the value of a query param from a URL with no query.")]
@@ -1202,12 +1122,12 @@ pub enum ActionError {
     /// Returned when attempting to get the value of a query param that didn't have a value.
     #[error("Attempted to get the value of a query param that didn't have a value.")]
     QueryParamNoValue,
-    /// Returned when a [`RenameQueryParamError`] is encountered.
+    /// Returned when a [`SegmentNotFound`] is encountered.
     #[error(transparent)]
-    RenameQueryParamError(#[from] RenameQueryParamError),
-    /// Returned when a [`SetQueryParamError`] is encountered.
+    SegmentNotFound(#[from] SegmentNotFound),
+    /// Returned when a [`OpaquePath`] is encountered.
     #[error(transparent)]
-    SetQueryParamError(#[from] SetQueryParamError),
+    OpaquePath(#[from] OpaquePath),
 
     /// Returned when a [`url::ParseError`] is encountered.
     #[error(transparent)]
@@ -1239,6 +1159,22 @@ pub enum ActionError {
     #[error("A Set with the specified name wasn't found.")]
     SetNotFound,
 
+    /// Returned when a [`CantBeNone`] is encountered.
+    #[error(transparent)]
+    CantBeNone(#[from] CantBeNone),
+    /// Returned when a [`InsertNotFound`] is encountered.
+    #[error(transparent)]
+    InsertNotFound(#[from] InsertNotFound),
+    /// Returned when a [`RemoveError`] is encountered.
+    #[error(transparent)]
+    RemoveError(#[from] RemoveError),
+    /// Returned when a [`SetOrRemoveError`] is encountered.
+    #[error(transparent)]
+    SetOrRemoveError(#[from] SetOrRemoveError),
+    /// Returned when a [`SetOrInsertOrRemoveError`] is encountered.
+    #[error(transparent)]
+    SetOrInsertOrRemoveError(#[from] SetOrInsertOrRemoveError),
+
     /// Returned when attempting to get a URL from the cache but its value is [`None`].
     #[cfg(feature = "cache")]
     #[error("Attempted to get a URL from the cache but its value was None.")]
@@ -1264,6 +1200,15 @@ pub enum ActionError {
     /// An arbitrary [`std::error::Error`] returned by [`Action::Custom`].
     #[error(transparent)]
     Custom(Box<dyn std::error::Error + Send + Sync>)
+}
+
+/// Generate the "modify {part}" [`Action`]s.
+macro_rules! modify_part {
+    ($ts:expr, $mod:expr, $get:ident, $set:ident$(, $arg:expr)*) => {{
+        let mut x = $ts.url.$get($($arg),*).map(Cow::Borrowed);
+        $mod.apply(&mut x, $ts)?;
+        $ts.url.$set($($arg,)* x.map(Cow::into_owned).as_deref())?;
+    }};
 }
 
 impl Action {
@@ -1341,7 +1286,19 @@ impl Action {
             Self::PartMap   {part , map} => if let Some(action) = map.get(part .get(&task_state.url) ) {action.apply(task_state)?;},
             Self::StringMap {value, map} => if let Some(action) = map.get(value.get( task_state    )?) {action.apply(task_state)?;},
 
-            Self::PartPartitioning   {partitioning, part , map} => if let Some(action) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(part.get(&task_state.url).as_deref())) {action.apply(task_state)?;}
+            Self::PartPartitioning   {partitioning, part , map} => {
+                let partitioning = task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
+                if let Some(action) = map.get(partitioning.get(part.get(&task_state.url).as_deref())) {
+                    action.apply(task_state)?;
+                }
+            },
+            Self::StringPartitioning {partitioning, value, map} => {
+                let partitioning = task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
+                if let Some(action) = map.get(partitioning.get(get_option_str!(value, task_state))) {
+                    action.apply(task_state)?;
+                }
+            },
+
             Self::FirstMatchingPartPartitioning {partitioning, parts, map} => {
                 let partitioning = task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
                 for part in parts.iter() {
@@ -1349,8 +1306,7 @@ impl Action {
                         return action.apply(task_state);
                     }
                 }
-            }
-            Self::StringPartitioning {partitioning, value, map} => if let Some(action) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?.get(get_option_str!(value, task_state) )) {action.apply(task_state)?;}
+            },
             Self::FirstMatchingStringPartitioning {partitioning, values, map} => {
                 let partitioning = task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ActionError)).ok_or(ActionError::PartitioningNotFound)?;
                 for value in values.iter() {
@@ -1382,65 +1338,16 @@ impl Action {
             Self::SetSubdomainSegment   {index, value} => task_state.url.set_subdomain_segment    (*index, get_new_option_str!(value, task_state))?,
             Self::SetDomainSuffixSegment{index, value} => task_state.url.set_domain_suffix_segment(*index, get_new_option_str!(value, task_state))?,
 
-            Self::ModifyHost(modification) => {
-                let mut x = task_state.url.host_str().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_host(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifySubdomain(modification) => {
-                let mut x = task_state.url.subdomain().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_subdomain(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyRegDomain(modification) => {
-                let mut x = task_state.url.reg_domain().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_reg_domain(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyDomain(modification) => {
-                let mut x = task_state.url.domain().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_domain(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyDomainMiddle(modification) => {
-                let mut x = task_state.url.domain_middle().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_domain_middle(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyNotDomainSuffix(modification) => {
-                let mut x = task_state.url.not_domain_suffix().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_not_domain_suffix(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyDomainSuffix(modification) => {
-                let mut x = task_state.url.domain_suffix().map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_domain_suffix(x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyDomainSegment{index, modification} => {
-                let mut x = task_state.url.domain_segment(*index).map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_domain_segment(*index, x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifySubdomainSegment{index, modification} => {
-                let mut x = task_state.url.subdomain_segment(*index).map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_subdomain_segment(*index, x.map(Cow::into_owned).as_deref())?;
-            },
-
-            Self::ModifyDomainSuffixSegment{index, modification} => {
-                let mut x = task_state.url.domain_suffix_segment(*index).map(Cow::Borrowed);
-                modification.apply(&mut x, task_state)?;
-                task_state.url.set_domain_suffix_segment(*index, x.map(Cow::into_owned).as_deref())?;
-            },
+            Self::ModifyHost               (       modification) => modify_part!(task_state, modification, host_str             , set_host                         ),
+            Self::ModifySubdomain          (       modification) => modify_part!(task_state, modification, subdomain            , set_subdomain                    ),
+            Self::ModifyRegDomain          (       modification) => modify_part!(task_state, modification, reg_domain           , set_reg_domain                   ),
+            Self::ModifyDomain             (       modification) => modify_part!(task_state, modification, domain               , set_domain                       ),
+            Self::ModifyDomainMiddle       (       modification) => modify_part!(task_state, modification, domain_middle        , set_domain_middle                ),
+            Self::ModifyNotDomainSuffix    (       modification) => modify_part!(task_state, modification, not_domain_suffix    , set_not_domain_suffix            ),
+            Self::ModifyDomainSuffix       (       modification) => modify_part!(task_state, modification, domain_suffix        , set_domain_suffix                ),
+            Self::ModifyDomainSegment      {index, modification} => modify_part!(task_state, modification, domain_segment       , set_domain_segment       , *index),
+            Self::ModifySubdomainSegment   {index, modification} => modify_part!(task_state, modification, subdomain_segment    , set_subdomain_segment    , *index),
+            Self::ModifyDomainSuffixSegment{index, modification} => modify_part!(task_state, modification, domain_suffix_segment, set_domain_suffix_segment, *index),
 
 
             Self::InsertDomainSegment       {index, value} => task_state.url.insert_domain_segment       (*index, get_new_str!(value, task_state, ActionError))?,
@@ -1454,176 +1361,70 @@ impl Action {
 
             Self::SetPath(to) => task_state.url.set_path(get_new_str!(to, task_state, ActionError)),
             Self::ModifyPath(modification) => {
-                let mut path = Some(Cow::Borrowed(task_state.url.path()));
+                let mut path = Some(Cow::Borrowed(task_state.url.path_str()));
                 modification.apply(&mut path, task_state)?;
                 #[expect(clippy::unnecessary_to_owned, reason = "Borrow checker.")]
                 task_state.url.set_path(&path.ok_or(ActionError::PathCannotBeNone)?.into_owned());
             },
 
-            Self::RemovePathSegment(index       ) => task_state.url.set_path_segment(*index, None)?,
-            Self::SetPathSegment   {index, value} => task_state.url.set_path_segment(*index, get_new_option_str!(value, task_state))?,
+            Self::RemovePathSegment(index)   => task_state.url.try_modify_path_segments(|p| p.remove(*index))??,
+            Self::RemoveEmptyLastPathSegment => task_state.url.try_modify_path_segments(|p| p.pop_if_empty())??,
+
+            Self::SetPathSegment      {index, value} => { let value = get_new_option_cow!(value, task_state             ); task_state.url.try_modify_path_segments(|p| p.set_or_insert_or_remove_segment    (*index, value.as_deref()))??; },
+            Self::InsertPathSegment   {index, value} => { let value = get_new_str!       (value, task_state, ActionError); task_state.url.try_modify_path_segments(|p| p.insert_segment                     (*index, value           ))??; },
+            Self::SetRawPathSegment   {index, value} => { let value = get_new_option_cow!(value, task_state             ); task_state.url.try_modify_path_segments(|p| p.set_or_insert_or_remove_raw_segment(*index, value.as_deref()))??; },
+            Self::InsertRawPathSegment{index, value} => { let value = get_new_str!       (value, task_state, ActionError); task_state.url.try_modify_path_segments(|p| p.insert_raw_segment                 (*index, value           ))??; },
+
             Self::ModifyPathSegment {index, modification} => {
-                let mut path_segment = Some(Cow::Borrowed(task_state.url.path_segment(*index).ok_or(ActionError::UrlDoesNotHavePathSegments)?.ok_or(ActionError::PathSegmentNotFound)?));
-                modification.apply(&mut path_segment, task_state)?;
-                task_state.url.set_path_segment(*index, path_segment.map(Cow::into_owned).as_deref())?;
+                let mut value = task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).map(|x| Cow::Borrowed(x.as_str()));
+                modification.apply(&mut value, task_state)?;
+                let value = value.map(Cow::into_owned);
+                task_state.url.try_modify_path_segments(|p| p.set_or_remove_raw_segment(*index, value.as_deref()))??;
             },
-            Self::InsertPathSegment         {index, value} => task_state.url.insert_path_segment    (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::SetRawPathSegment         {index, value} => task_state.url.set_raw_path_segment   (*index, get_new_option_str!(value, task_state))?,
-            Self::InsertRawPathSegment      {index, value} => task_state.url.insert_raw_path_segment(*index, get_new_str!(value, task_state, ActionError))?,
-            Self::RemoveEmptyLastPathSegment => {task_state.url.path_segments_mut().ok_or(ActionError::UrlDoesNotHavePathSegments)?.pop_if_empty();},
-            Self::RemoveFirstNPathSegments(n) => task_state.url.remove_first_n_path_segments(*n)?,
-            Self::KeepFirstNPathSegments  (n) => task_state.url.keep_first_n_path_segments  (*n)?,
-            Self::RemoveLastNPathSegments (n) => task_state.url.remove_last_n_path_segments (*n)?,
-            Self::KeepLastNPathSegments   (n) => task_state.url.keep_last_n_path_segments   (*n)?,
 
             // Query
 
             Self::SetQuery(to) => task_state.url.set_query(get_new_option_str!(to, task_state)),
-            Self::SetQueryParam {param: QueryParamSelector {name, index}, value} => task_state.url.set_query_param(name, *index, get_new_option_str!(value, task_state).map(Some))?,
-            Self::RemoveQuery => task_state.url.set_query(None),
-            Self::RemoveEmptyQuery => if task_state.url.query() == Some("") {task_state.url.set_query(None)},
-            Self::RemoveQueryParam(name) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                let name = get_str!(name, task_state, ActionError);
-                for param in query.split('&') {
-                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+            Self::SetQueryParam {param: QueryParamSelector {name, index}, value} => {
+                let mut query = task_state.url.maybe_query();
+                query.set_or_insert_pair(name, *index, get_option_str!(value, task_state))?;
+                task_state.url.set_query(query.into_owned());
             },
-            Self::AllowQueryParam(name) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                let name = get_str!(name, task_state, ActionError);
-                for param in query.split('&') {
-                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::RemoveQueryParams(names) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                for param in query.split('&') {
-                    if !names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::AllowQueryParams(names) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                for param in query.split('&') {
-                    if names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::RemoveQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                for param in query.split('&') {
-                    if !matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::AllowQueryParamsMatching(matcher) => if let Some(query) = task_state.url.query() {
-                let mut new = String::with_capacity(query.len());
-                for param in query.split('&') {
-                    if matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::RenameQueryParam {from, to} => task_state.url.rename_query_param(&from.name, from.index, get_new_str!(to, task_state, ActionError))?,
+            Self::RemoveQuery                        => task_state.url.set_query(None::<&str>),
+            Self::RemoveEmptyQuery                   => if task_state.url.query_str() == Some("") {task_state.url.set_query(None::<&str>)},
+            Self::RemoveQueryParam         (name   ) => {let name = get_new_str!(name, task_state, ActionError); task_state.url.filter_query(|s| s.lazy_name() != name);},
+            Self::AllowQueryParam          (name   ) => {let name = get_new_str!(name, task_state, ActionError); task_state.url.filter_query(|s| s.lazy_name() == name);},
+            Self::RemoveQueryParams        (names  ) => task_state.url.filter_query(|s| !names.contains(&*s.name())),
+            Self::AllowQueryParams         (names  ) => task_state.url.filter_query(|s|  names.contains(&*s.name())),
+            Self::AllowQueryParamsMatching (matcher) => task_state.url.set_query(task_state.url.maybe_query().try_filtered(|s| matcher.check(Some(&s.name()), task_state)            )?.into_owned()),
+            Self::RemoveQueryParamsMatching(matcher) => task_state.url.set_query(task_state.url.maybe_query().try_filtered(|s| matcher.check(Some(&s.name()), task_state).map(|x| !x))?.into_owned()),
 
-            Self::GetUrlFromQueryParam(name) => match task_state.url.query_param(get_str!(name, task_state, ActionError), 0) {
-                Some(Some(Some(new_url))) => task_state.url = BetterUrl::parse(&new_url)?,
-                Some(Some(None))          => Err(ActionError::QueryParamNoValue)?,
-                Some(None)                => Err(ActionError::QueryParamNotFound)?,
-                None                      => Err(ActionError::NoQuery)?
+            Self::GetUrlFromQueryParam(name) => {
+                let name = get_str!(name, task_state, ActionError);
+                task_state.url = BetterUrl::parse(&task_state.url.maybe_query().find_value(name, 0).ok_or(ActionError::QueryParamNotFound)?.ok_or(ActionError::QueryParamNoValue)?)?;
             },
 
             // Fragment
 
-            Self::RemoveFragment => task_state.url.set_fragment(None),
-            Self::RemoveEmptyFragment => if task_state.url.fragment() == Some("") {task_state.url.set_fragment(None)},
-            Self::RemoveFragmentParam(name) => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                let name = get_str!(name, task_state, ActionError);
-                for param in fragment.split('&') {
-                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).ne(name.bytes()) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+            Self::SetFragment(to) => task_state.url.set_fragment(get_new_option_str!(to, task_state)),
+            Self::SetFragmentParam {param: QueryParamSelector {name, index}, value} => {
+                let mut fragment = task_state.url.maybe_fragment_query();
+                fragment.set_or_insert_pair(name, *index, get_option_str!(value, task_state))?;
+                task_state.url.set_fragment(fragment.into_owned());
             },
-            Self::AllowFragmentParam(name) => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                let name = get_str!(name, task_state, ActionError);
-                for param in fragment.split('&') {
-                    if query_part_decoded_bytes(param.split('=').next().expect("The first segment to always exist.")).eq(name.bytes()) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::RemoveFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                for param in fragment.split('&') {
-                    if !names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::AllowFragmentParams(names) => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                for param in fragment.split('&') {
-                    if names.contains(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))) {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::RemoveFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                for param in fragment.split('&') {
-                    if !matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-            },
-            Self::AllowFragmentParamsMatching(matcher) => if let Some(fragment) = task_state.url.fragment() {
-                let mut new = String::with_capacity(fragment.len());
-                for param in fragment.split('&') {
-                    if matcher.check(Some(&*decode_query_part(param.split('=').next().expect("The first segment to always exist."))), task_state)? {
-                        if !new.is_empty() {new.push('&');}
-                        new.push_str(param);
-                    }
-                }
-                task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
-            },
+            Self::RemoveFragment                        => task_state.url.set_fragment(None::<&str>),
+            Self::RemoveEmptyFragment                   => if task_state.url.fragment() == Some("") {task_state.url.set_fragment(None::<&str>)},
+            Self::RemoveFragmentParam         (name   ) => {let name = get_new_str!(name, task_state, ActionError); task_state.url.filter_fragment_query(|s| s.lazy_name() != name);},
+            Self::AllowFragmentParam          (name   ) => {let name = get_new_str!(name, task_state, ActionError); task_state.url.filter_fragment_query(|s| s.lazy_name() == name);},
+            Self::RemoveFragmentParams        (names  ) => task_state.url.filter_fragment_query(|s| !names.contains(&*s.name())),
+            Self::AllowFragmentParams         (names  ) => task_state.url.filter_fragment_query(|s|  names.contains(&*s.name())),
+            Self::AllowFragmentParamsMatching (matcher) => task_state.url.set_fragment(task_state.url.maybe_fragment_query().try_filtered(|s| matcher.check(Some(&s.name()), task_state)            )?.into_owned()),
+            Self::RemoveFragmentParamsMatching(matcher) => task_state.url.set_fragment(task_state.url.maybe_fragment_query().try_filtered(|s| matcher.check(Some(&s.name()), task_state).map(|x| !x))?.into_owned()),
 
             // General parts
 
             Self::SetPart {part, value} => {
-                let temp = get_option_string!(value, task_state);
+                let temp = get_new_option_cow!(value, task_state);
                 part.set(&mut task_state.url, temp.as_deref())?;
             },
 
@@ -1633,74 +1434,40 @@ impl Action {
                 let temp = temp.map(Cow::into_owned);
                 part.set(&mut task_state.url, temp.as_deref())?;
             },
-            Self::ModifyPartIfSome {part, modification} => {
-                if let mut temp @ Some(_) = part.get(&task_state.url) {
-                    modification.apply(&mut temp, task_state)?;
-                    let temp = temp.map(Cow::into_owned);
-                    part.set(&mut task_state.url, temp.as_deref())?;
-                }
-            },
 
             Self::CopyPart {from, to} => {
                 let temp = from.get(&task_state.url).map(Cow::into_owned);
                 to.set(&mut task_state.url, temp.as_deref())?;
             },
-            Self::MovePart {from, to} => {
-                let temp = from.get(&task_state.url).map(Cow::into_owned);
-                to.set(&mut task_state.url, temp.as_deref())?;
-                from.set(&mut task_state.url, None)?;
-            },
 
             // Misc.
 
             Self::HandleParams {mode, query, fragment, names, prefixes, except_names, except_prefixes} => if (*query && task_state.url.query().is_some()) || (*fragment && task_state.url.fragment().is_some()) {
-                let default_list = Default::default();
-                let default_set = Default::default();
+                let ds = Default::default();
+                let dl = Default::default();
 
-                let names = match names {
-                    SetSource::Params(StringSource::String(x)) => task_state.job.cleaner.params.sets.get(x),
-                    _ => names.get(task_state)?
-                }.unwrap_or(&default_set);
+                let names           = names          .get(task_state)?.unwrap_or(&ds);
+                let prefixes        = prefixes       .get(task_state)?.unwrap_or(&dl);
+                let except_names    = except_names   .get(task_state)?.unwrap_or(&ds);
+                let except_prefixes = except_prefixes.get(task_state)?.unwrap_or(&dl);
 
-                let prefixes = match prefixes {
-                    ListSource::Params(StringSource::String(x)) => task_state.job.cleaner.params.lists.get(x),
-                    _ => prefixes.get(task_state)?
-                }.unwrap_or(&default_list);
-
-                let except_names = except_names.get(task_state)?.unwrap_or(&default_set);
-                let except_prefixes = except_prefixes.get(task_state)?.unwrap_or(&default_list);
                 let excepts = !except_names.is_empty() || !except_prefixes.is_empty();
 
-                if *fragment && let Some(fragment) = task_state.url.fragment() {
-                    let mut new = String::with_capacity(fragment.len());
-                    for param in fragment.split('&') {
-                        let name = decode_query_part(param.split('=').next().expect("The first segment to always exist."));
+                let filter = |segment: RawQuerySegment<'_>| -> bool {
+                    let name = segment.name();
 
-                        let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
-                            && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
+                    let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
+                        && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
 
-                        if matches!((mode, matches), (HandleParamsMode::Keep, true) | (HandleParamsMode::Remove, false)) {
-                            if !new.is_empty() {new.push('&');}
-                            new.push_str(param);
-                        }
-                    }
-                    task_state.url.set_fragment(Some(&*new).filter(|x| !x.is_empty()));
+                    matches!((mode, matches), (HandleParamsMode::Keep, true) | (HandleParamsMode::Remove, false))
+                };
+
+                if *fragment {
+                    task_state.url.set_query(task_state.url.maybe_query().filtered(filter).into_owned());
                 }
 
-                if *query && let Some(query) = task_state.url.query() {
-                    let mut new = String::with_capacity(query.len());
-                    for param in query.split('&') {
-                        let name = decode_query_part(param.split('=').next().expect("The first segment to always exist."));
-
-                        let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
-                            && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
-
-                        if matches!((mode, matches), (HandleParamsMode::Keep, true) | (HandleParamsMode::Remove, false)) {
-                            if !new.is_empty() {new.push('&');}
-                            new.push_str(param);
-                        }
-                    }
-                    task_state.url.set_query(Some(&*new).filter(|x| !x.is_empty()));
+                if *query {
+                    task_state.url.set_fragment(task_state.url.maybe_fragment_query().filtered(filter).into_owned());
                 }
             },
 

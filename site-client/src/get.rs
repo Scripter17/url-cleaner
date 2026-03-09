@@ -13,18 +13,16 @@ use futures_util::StreamExt;
 #[derive(Debug, Parser)]
 #[allow(missing_docs, reason = "Makes clap inherit the docs.")]
 pub struct Args {
+    pub thing: Thing,
     /// The instance (HTTP or HTTPS)
     #[arg(default_value = "http://127.0.0.1:9149")]
     pub instance: String,
-    #[arg(long, default_value = "index")]
-    pub thing: Thing
 }
 
 /// What to get.
-#[derive(Debug, Default, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Thing {
     /// The Index.
-    #[default]
     Index,
     /// The Info.
     Info,
@@ -41,9 +39,9 @@ impl Args {
 
         instance.set_path(match self.thing {
             Thing::Index    => "/",
-            Thing::Info     => "/get-info",
-            Thing::Cleaner  => "/get-cleaner",
-            Thing::Profiles => "/get-profiles"
+            Thing::Info     => "/info",
+            Thing::Cleaner  => "/cleaner",
+            Thing::Profiles => "/profiles",
         });
 
         let res = match instance.scheme() {

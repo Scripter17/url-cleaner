@@ -14,17 +14,12 @@ Licensed under the AGPL 3.0 or later.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
-- `discord_unexternal`: Change `images-ext-*.discordapp.net` URLs to the original images they refer to.
 - `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
 - `tumblr_unsubdomain_blog`: Change `blog.tumblr.com` to `tumblr.com/blog`.
 - `youtube_unplaylist`: Remove the `list` query param from `youtube.com/watch` URLs.
 - `youtube_unshort`: Change `youtube.com/shorts/abc` to `youtube.com/watch?v=abc`.
 
 ### Vars
-
-Please note that the presence of required vars and validity of varianted vars are only checked when asserting suitability.
-
-Cleaners that break the "invariants" here can be parsed and used, but will likely exhibit unintended behavior.
 
 - `client_type`: Whether the client is a desktop or mobile device.
   - Required: false.
@@ -69,6 +64,14 @@ Cleaners that break the "invariants" here can be parsed and used, but will likel
   - `canon`: Set to `www.reddit.com`.
   - `old`: Set to `old.reddit.com`.
   - `new`: Set to `www.reddit.com`.
+- `tiktok_mode`: Decides what host to replace tiktok/tiktok embed hosts with.
+  - Required: false.
+  - Unset: Set tiktok and tiktok embed hosts to `tiktok.com`.
+  - `canon`: Always set to `www.tiktok.com`.
+  - `embed`: Always set to the `tiktok_embed_host` var.
+- `tiktok_embed_host`: The tiktok embed host to use.
+  - Required: true.
+  - Default: `www.tfxktok.com`.
 - `twitter_mode`: Decides what host to replace twitter/twitter embed/Nitter hosts with.
   - Required: false.
   - Unset: Set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.

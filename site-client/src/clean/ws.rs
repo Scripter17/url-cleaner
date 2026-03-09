@@ -5,6 +5,7 @@ use tokio_tungstenite::tungstenite;
 use tungstenite::Message;
 use futures_util::{StreamExt, SinkExt};
 use tokio::io::AsyncReadExt;
+use bytes::Bytes;
 
 /// Do a WebSocket connection.
 pub async fn r#do(instance: Url) {
@@ -14,9 +15,10 @@ pub async fn r#do(instance: Url) {
 
     let (mut sink, mut stream) = websocket.split();
 
-    let writer = tokio::spawn(async move {
+    let tasks = tokio::spawn(async move {
         let stdin = &mut tokio::io::stdin();
         let mut buf  = Vec::new();
+        let mut tasks = 0;
 
         while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
             // `i` is the index of the last `\n` plus one.
@@ -24,24 +26,34 @@ pub async fn r#do(instance: Url) {
                 let temp = buf.split_off(i);
                 buf.pop();
                 buf.pop_if(|b| *b == b'\r');
-                sink.send(buf.into()).await.unwrap();
+                tasks += buf.split(|b| *b == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)).filter(|line| !line.is_empty()).count();
+                sink.send(Bytes::from_owner(buf).into()).await.unwrap();
                 buf = temp;
             }
         }
 
         if !buf.is_empty() {
+            tasks += 1;
             sink.send(buf.into()).await.unwrap();
         }
 
         sink.close().await.unwrap();
         sink.flush().await.unwrap();
+
+        tasks
     });
 
+    let mut results = 0;
     while let Some(msg) = stream.next().await {
-        if let Message::Text(x) = msg.unwrap() {
-            println!("{x}");
+        match msg {
+            Err(tungstenite::error::Error::Protocol(tungstenite::error::ProtocolError::ResetWithoutClosingHandshake)) => break,
+            msg => if let Message::Text(x) = msg.unwrap() {
+                results += x.lines().count();
+                println!("{x}");
+            }
         }
+        
     }
 
-    writer.await.unwrap();
+    assert_eq!(tasks.await.unwrap(), results);
 }

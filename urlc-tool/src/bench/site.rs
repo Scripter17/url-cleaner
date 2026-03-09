@@ -1,115 +1,156 @@
-//! Site.
+//! Site HTTP.
 
 use super::prelude::*;
 
 /// Site.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The name of the job.
+    /// The name
     #[arg(long)]
     pub name: String,
-    /// The task of the job.
+    /// The task.
     #[arg(long)]
     pub task: String,
-    /// The number of tasks for the job.
+    /// The num.
     #[arg(long)]
     pub num: u64,
-
-    /// The [`Tool`].
+    /// The tool.
     #[arg(long)]
     pub tool: Tool,
-    /// The [`SiteProtocol`].
+    /// The client.
     #[arg(long)]
-    pub protocol: SiteProtocol
+    pub client: Client,
+    /// TLS.
+    #[arg(long)]
+    pub tls: bool,
+    /// The number of clients to use at once.
+    #[arg(long, default_value_t = 1)]
+    pub parallel: u64,
 }
 
 /// The tool to measure with.
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, Deserialize)]
 pub enum Tool {
     /// Massif.
     Massif,
     /// Callgrind.
-    Callgrind
+    Callgrind,
+}
+
+/// The client to use.
+#[derive(Debug, Clone, Copy, ValueEnum, Deserialize)]
+pub enum Client {
+    /// Site CLIent (HTTP).
+    SiteClientHttp,
+    /// Site CLIent (WebSocket).
+    SiteClientWs,
+    /// Curl.
+    Curl,
+    /// Websocat.
+    Websocat,
 }
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        let name = self.name;
-        let task = self.task;
-        let num  = self.num;
-        let tool = format!("{:?}", self.tool).to_lowercase();
+        let Self {name, task, num, tool, client, tls, parallel} = self;
 
-        let out = format!("urlc-tool/out/bench/cli/{tool}/{name}/{tool}.out-{name}-{num}");
+        let out_dir = format!("urlc-tool/out/bench/site/{tool:?}/{client:?}-{tls}/{name}/{num}");
 
-        let (dir, prefix) = out.rsplit_once('/').unwrap();
+        let _ = std::fs::remove_dir_all(&out_dir);
+        std::fs::create_dir_all(&out_dir).unwrap();
 
-        std::fs::create_dir_all(dir).unwrap();
+        let _stdin_handle = write_stdin(&task, num);
 
-        for entry in std::fs::read_dir(dir).unwrap().map(Result::unwrap) {
-            if let Some(name) = entry.file_name().to_str() && name.starts_with(prefix) {
-                std::fs::remove_file(entry.path()).unwrap();
-            }
-        }
+        assert_no_site();
 
-        let mut server = Command::new("valgrind");
+        let mut cmd = Command::new("valgrind");
 
-        match self.tool {
+        let out = match tool {
             Tool::Massif => {
-                server.args([
-                    "--tool=massif",
-                    &format!("--massif-out-file={out}")
-                ]);
+                let out = format!("{out_dir}/massif.out");
+
+                cmd.args(["--tool=massif", &format!("--massif-out-file={out}")]);
+
+                out
             },
             Tool::Callgrind => {
-                server.args([
-                    "--tool=callgrind",
-                    &format!("--callgrind-out-file={out}"),
-                    "--separate-threads=yes"
-                ]);
-            }
-        }
+                let out = format!("{out_dir}/callgrind.out");
 
-        server.args([
-            "target/release/url-cleaner-site",
-            "--port", "9148"
-        ]);
+                cmd.args(["--tool=callgrind", "--separate-threads=yes", &format!("--callgrind-out-file={out}")]);
 
-        if matches!(self.protocol, SiteProtocol::Https | SiteProtocol::Wss) {
-            server.args([
-                "--key", "urlc-tool/src/bench/tls.key",
-                "--cert", "urlc-tool/src/bench/tls.crt"
+                out
+            },
+        };
+
+        cmd.args(["target/release/url-cleaner-site", "--port", "9148"]);
+
+        if tls {
+            cmd.args([
+                "--key", "urlc-tool/src/bench/urlcs-bench.key",
+                "--cert", "urlc-tool/src/bench/urlcs-bench.crt",
             ]);
         }
 
-        server.stdout(std::process::Stdio::null());
-        server.stderr(std::process::Stdio::null());
+        cmd.stdout(std::process::Stdio::null());
+        cmd.stderr(new_file(format!("{out_dir}/site-stderr.txt")));
 
-        let mut server = server.spawn().unwrap();
+        let mut child = TerminateOnDrop(cmd.spawn().unwrap());
 
-        while std::net::TcpStream::connect("127.0.0.1:9148").is_err() {
-            if server.try_wait().unwrap().is_some() {
-                panic!("Site failed to start.");
-            }
-            std::thread::sleep(std::time::Duration::from_millis(10));
+        await_site(&mut child.0);
+
+        let tlss = match tls {
+            false => "",
+            true  => "s",
+        };
+
+        let mut cmd = match client {
+            Client::SiteClientHttp => {
+                let mut cmd = Command::new("target/release/url-cleaner-site-client");
+
+                cmd.arg("clean");
+                cmd.arg(format!("http{tlss}://127.0.0.1:9148"));
+
+                cmd
+            },
+            Client::SiteClientWs => {
+                let mut cmd = Command::new("target/release/url-cleaner-site-client");
+
+                cmd.arg("clean");
+                cmd.arg(format!("ws{tlss}://127.0.0.1:9148"));
+
+                cmd
+            },
+            Client::Curl => {
+                let mut cmd = Command::new("curl");
+
+                cmd.args(["-T", "-"]);
+                cmd.arg(format!("http{tlss}://127.0.0.1:9148/clean"));
+
+                cmd
+            },
+            Client::Websocat => {
+                let mut cmd = Command::new("websocat");
+
+                cmd.arg(format!("ws{tlss}://127.0.0.1:9148/clean"));
+
+                cmd
+            },
+        };
+
+        cmd.stdin(File::open(STDIN).unwrap());
+
+        let mut clients = Vec::new();
+
+        for i in 0..parallel {
+            cmd.stdout(std::process::Stdio::null());
+            cmd.stderr(new_file(format!("{out_dir}/client-{i}-stderr.txt")));
+            clients.push(TerminateOnDrop(cmd.spawn().unwrap()));
         }
 
-        write_stdin(&task, num);
-
-        let mut client = Command::new("target/release/url-cleaner-site-client");
-        client.args([
-            "clean",
-            &format!("{}://127.0.0.1:9148", self.protocol.scheme())
-        ]);
-        client.stdin (std::fs::File::open("urlc-tool/tmp/stdin.txt").unwrap());
-        client.stdout(std::process::Stdio::null());
-        client.stderr(std::process::Stdio::null());
-
-        assert_eq!(client.spawn().unwrap().wait().unwrap().code(), Some(0));
-
-        server.terminate();
-
-        std::fs::remove_file("urlc-tool/tmp/stdin.txt").unwrap();
+        for mut client in clients {
+            assert_eq!(client.0.wait().unwrap().code(), Some(0));
+        }
 
         out
     }

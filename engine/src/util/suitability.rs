@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 
+use indexmap::{IndexMap, IndexSet};
+
 use crate::prelude::*;
 
 pub(crate) use url_cleaner_macros::Suitability;
@@ -105,6 +107,23 @@ impl<T: Suitability> Suitability for HashSet<T> {
     }
 }
 
+impl<K: Suitability, V: Suitability> Suitability for IndexMap<K, V> {
+    fn assert_suitability(&self, cleaner: &Cleaner) {
+        for (k, v) in self.iter() {
+            k.assert_suitability(cleaner);
+            v.assert_suitability(cleaner);
+        }
+    }
+}
+
+impl<T: Suitability> Suitability for IndexSet<T> {
+    fn assert_suitability(&self, cleaner: &Cleaner) {
+        for x in self.iter() {
+            x.assert_suitability(cleaner)
+        }
+    }
+}
+
 impl<T: Suitability> Suitability for Vec<T> {
     fn assert_suitability(&self, cleaner: &Cleaner) {
         for x in self.iter() {
@@ -147,5 +166,15 @@ impl<T: Suitability + ?Sized> Suitability for Rc<T> {
 impl<T: Suitability + ?Sized> Suitability for Arc<T> {
     fn assert_suitability(&self, cleaner: &Cleaner) {
         (**self).assert_suitability(cleaner)
+    }
+}
+
+impl<T: Suitability> Suitability for std::ops::Bound<T> {
+    fn assert_suitability(&self, cleaner: &Cleaner) {
+        match self {
+            std::ops::Bound::Unbounded => {},
+            std::ops::Bound::Included(x) => x.assert_suitability(cleaner),
+            std::ops::Bound::Excluded(x) => x.assert_suitability(cleaner),
+        }
     }
 }

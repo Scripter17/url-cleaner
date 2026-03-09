@@ -3,13 +3,13 @@
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
 use std::path::PathBuf;
-use std::io::{IsTerminal, BufRead, Write};
+use std::io::IsTerminal;
 use std::fmt::Debug;
-use std::sync::mpsc::RecvTimeoutError;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use clap::Parser;
 use thiserror::Error;
+use bytes::Bytes;
+use tokio::io::AsyncReadExt;
 
 use url_cleaner_engine::prelude::*;
 
@@ -95,15 +95,8 @@ struct Args {
     unthread: bool,
     /// The number of worker threads to use.
     /// Zero uses the CPU's thread count.
-    /// So on a 2 core 4 thread system it uses 4 threads.
     #[arg(long, verbatim_doc_comment, default_value_t = 0)]
-    threads: usize,
-
-    /// If set, check that the loaded Cleaner (+ParamsDiff and ProfilesConfig and whatnot) is "suitable" to be the Bundled Cleaner.
-    /// If it is, exit without doing anything else. If it isn't panic with a message.
-    /// Used for intenal testing; Exact details are unstable.
-    #[arg(long, verbatim_doc_comment)]
-    assert_suitability: bool
+    workers: usize
 }
 
 /// The enum of errors [`main`] can return.
@@ -122,52 +115,40 @@ pub enum CliError {
     ProfileNotFound
 }
 
-fn main() -> Result<(), CliError> {
+#[tokio::main]
+async fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
-    let mut profiled_cleaner_config = ProfiledCleanerConfig {
-        #[cfg(    feature = "bundled-cleaner") ] cleaner: Cleaner::load_or_get_bundled_no_cache(args.cleaner)?,
-        #[cfg(not(feature = "bundled-cleaner"))] cleaner: Cleaner::load_from_file(args.cleaner)?,
-        profiles_config: args.profiles.map(ProfilesConfig::load_from_file).transpose()?.unwrap_or_default()
-    };
+    #[cfg(feature = "bundled-cleaner")]
+    let mut cleaner = Cleaner::load_or_get_bundled_no_cache(args.cleaner)?;
+    #[cfg(not(feature = "bundled-cleaner"))]
+    let mut cleaner = Cleaner::load_from_file(args.cleaner)?;
 
-    let pd_file = args.params_diff.map(ParamsDiff::load_from_file).transpose()?.unwrap_or_default();
-    let pd_args = ParamsDiff {
-        flags: args.flag.into_iter().collect(),
-        vars: args.var.into_iter().map(|mut kv| (kv.remove(0), kv.remove(0))).collect(),
-        ..Default::default()
-    };
-
-    if args.assert_suitability {
-        for (name, mut profile) in profiled_cleaner_config.profiles_config.clone().into_each() {
-            let name = name.as_deref().unwrap_or("Base");
-
-            profile.params_diff.with_then(pd_file.clone());
-            profiled_cleaner_config.profiles_config.named.insert(format!("{name} + ParamsDiff file"), profile.clone());
-
-            profile.params_diff.with_then(pd_args.clone());
-            profiled_cleaner_config.profiles_config.named.insert(format!("{name} + ParamsDiff file + ParamsDiff args"), profile);
-        }
-
-        profiled_cleaner_config.make().assert_suitability();
-
-        return Ok(());
+    if let Some(path) = args.profiles {
+        cleaner = ProfiledCleanerConfig {
+            cleaner,
+            profiles_config: ProfilesConfig::load_from_file(path)?
+        }.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
     }
 
-    let job_context = args.job_context.map(JobContext::load_from_file).transpose()?.unwrap_or_default();
+    if let Some(path) = args.params_diff {
+        ParamsDiff::load_from_file(path)?.apply(&mut cleaner.params);
+    }
 
-    let mut cleaner = profiled_cleaner_config.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
+    for flag in args.flag {
+        cleaner.params.flags.to_mut().insert(flag);
+    }
+    for mut x in args.var {
+        cleaner.params.vars.to_mut().insert(x.remove(0), x.remove(0));
+    }
 
-    pd_file.apply(&mut cleaner.params);
-    pd_args.apply(&mut cleaner.params);
-
-    let job = &Job {
-        context: job_context,
+    let job: &_ = Box::leak(Box::new(Job {
+        context: args.job_context.map(JobContext::load_from_file).transpose()?.unwrap_or_default(),
         cleaner,
-        unthreader: &Unthreader::r#if(args.unthread),
+        unthreader: Box::leak(Box::new(Unthreader::r#if(args.unthread))),
         #[cfg(feature = "cache")]
         cache: Cache {
-            inner: &args.cache.into(),
+            inner: Box::leak(Box::new(args.cache.into())),
             config: CacheConfig {
                 read : !args.no_read_cache,
                 write: !args.no_write_cache,
@@ -175,120 +156,101 @@ fn main() -> Result<(), CliError> {
             }
         },
         #[cfg(feature = "http")]
-        http_client: &HttpClient::new()
-    };
+        http_client: Box::leak(Box::new(HttpClient::new()))
+    }));
 
     // Do the job.
 
-    let threads = match args.threads {
+    let threads = match args.workers {
         0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
-        1.. => args.threads
+        x => x
     };
 
-    let (iss, irs) = (0..threads).map(|_| std::sync::mpsc::channel::<Vec<u8>>()).collect::<(Vec<_>, Vec<_>)>();
-    let (rs, rr) = std::sync::mpsc::sync_channel::<Vec<u8>>(64);
-    let (oss, ors) = (0..threads).map(|_| std::sync::mpsc::channel::<String>()).collect::<(Vec<_>, Vec<_>)>();
+    let (iss,     irs) = (0..threads).map(|_| tokio::sync::mpsc::channel::<Bytes >(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..threads).map(|_| tokio::sync::mpsc::channel::<String>(512)).collect::<(Vec<_>, Vec<_>)>();
 
-    let queued = &AtomicUsize::new(0);
+    let input = tokio::spawn(async move {
+        let mut isi = (0..iss.len()).cycle();
 
-    std::thread::scope(|s| {
-
-        // Input thread.
-
-        s.spawn(move || {
-            let mut iss = iss.iter().cycle();
-
-            for task in args.tasks.into_iter() {
-                iss.next().expect("???").send(task.into()).expect("The in receiver to still exist.");
-            }
-
-            let stdin = std::io::stdin();
-
-            if !stdin.is_terminal() {
-                let mut stdin = stdin.lock();
-
-                let mut buf = Vec::new();
-
-                while stdin.read_until(b'\n', &mut buf).expect("Reading from STDIN to always work.") > 0 {
-                    if buf.ends_with(b"\n") {
-                        buf.pop();
-                        if buf.ends_with(b"\r") {
-                            buf.pop();
-                        }
-                    }
-
-                    if buf.is_empty() {
-                        continue;
-                    }
-
-                    iss.next().expect("???").send(buf).expect("The in receiver to still exist.");
-
-                    if queued.fetch_add(1, Ordering::Relaxed) >= 1023 {
-                        std::thread::sleep(std::time::Duration::from_micros(200));
-                    }
-
-                    buf = rr.try_recv().unwrap_or_default();
-
-                    buf.clear();
-                }
-            }
-        });
-
-        // Worker threads.
-
-        for (ir, os) in irs.into_iter().zip(oss) {
-            let rs = rs.clone();
-            s.spawn(move || {
-                while let Ok(buf) = ir.recv() {
-                    queued.fetch_sub(1, Ordering::Relaxed);
-                    let task = (&buf).make_task();
-                    let _ = rs.try_send(buf);
-                    os.send(match job.r#do(task) {
-                        Ok (x) => x.into(),
-                        Err(e) => format!("-{e:?}")
-                    }).expect("The out receiver to still exist.");
-                }
-            });
+        for task in args.tasks.into_iter() {
+            iss.get(isi.next().expect("???")).expect("???").send(task.into()).await.expect("The in receiver to still exist.");
         }
 
-        // Output thread.
+        if !std::io::stdin().is_terminal() {
+            let stdin = &mut tokio::io::stdin();
+            let mut buf = Vec::new();
 
-        let mut stdout = std::io::stdout().lock();
-        let mut buf    = String::new();
-        let mut ors    = ors.iter().cycle();
-        let mut or     = ors.next().expect("???");
+            while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
+                if let Some(i) = buf.iter().rev().position(|b| *b == b'\n').map(|i| buf.len() - i) {
+                    let temp = buf.split_off(i);
+                    buf.pop();
+                    let bytes = Bytes::from_owner(buf);
+                    for line in bytes.split(|b| *b == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)) {
+                        if !line.is_empty() {
+                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.");
+                        }
+                    }
+                    buf = temp;
+                }
+            }
+
+            if buf.ends_with(b"\n") {
+                buf.pop();
+                buf.pop_if(|b| *b == b'\r');
+            }
+
+            if !buf.is_empty() {
+                iss.get(isi.next().expect("???")).expect("???").send(buf.into()).await.expect("The in receiver to still exist");
+            }
+        }
+    });
+
+    for (mut ir, os) in irs.into_iter().zip(oss) {
+        std::thread::spawn(move || {
+            while let Some(task) = ir.blocking_recv() {
+                os.blocking_send(match job.r#do(&*task) {
+                    Ok (x) => x.into(),
+                    Err(e) => format!("-{e:?}")
+                }).expect("The out receiver to still exist.");
+            }
+        });
+    }
+
+    let output = tokio::spawn(async move {
+        let mut buf = String::new();
+        let mut ori = (0..ors.len()).cycle();
+        let mut or  = ors.get_mut(ori.next().expect("???")).expect("???");
 
         loop {
-            match or.recv_timeout(std::time::Duration::from_millis(1)) {
-                Ok(x) => {
+            match tokio::time::timeout(std::time::Duration::from_millis(1), or.recv()).await {
+                Ok(Some(x)) => {
                     buf.push_str(&x);
                     buf.push('\n');
 
-                    let _ = rs.try_send(x.into());
-
                     if buf.len() >= 2usize.pow(18) {
-                        stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
-                        stdout.flush().expect("Flushing STDOUT to always work.");
+                        print!("{buf}");
                         buf.clear();
                     }
 
-                    or = ors.next().expect("???");
+                    or = ors.get_mut(ori.next().expect("???")).expect("???");
                 },
-                Err(RecvTimeoutError::Disconnected) => {
+                Ok(None) => {
                     if !buf.is_empty() {
-                        stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
-                        stdout.flush().expect("Flushing STDOUT to always work.");
+                        print!("{buf}");
                     }
                     break;
                 },
-                Err(RecvTimeoutError::Timeout) => if !buf.is_empty() {
-                    stdout.write_all(buf.as_bytes()).expect("Writing to STDOUT to always work.");
-                    stdout.flush().expect("Flushing STDOUT to always work.");
+                Err(_) => {
+                    if !buf.is_empty() {
+                        print!("{buf}");
+                    }
                     buf.clear();
                 }
             }
         }
     });
+
+    tokio::try_join!(input, output).expect("???");
 
     Ok(())
 }

@@ -4,7 +4,7 @@ A basic overview of the API of URL Cleaner Site's API.
 
 For a CLI client for Site, see [URL Cleaner Site CLIent](../site-client).
 
-## `/get-info`
+## `/info`
 
 A GET endpoint that returns the following information as JSON.
 
@@ -20,11 +20,11 @@ pub struct Info {
 }
 ```
 
-## `/get-cleaner`
+## `/cleaner`
 
 A GET endpoint that returns the loaded `Cleaner`.
 
-## `/get-profiles`
+## `/profiles`
 
 A GET endpoint that returns the loaded `ProfilesConfig`.
 
@@ -36,20 +36,22 @@ Either a WebSocket or HTTP POST/PUT duplex.
 
 ### WebSocket
 
+- Task and result messages contain only full lines.
+
 - Task messages can be either binary or text.
 
-- For complex performance reasons, each task message should contain multiple tasks.
+- For performance reasons, task messages should each contain multiple task lines.
 
 - Result messages are text.
 
 - There are no empty result messages.
 
-- Result messages contain no empty lines.
-
-- Result messages use only `\n` as a line separator.
+- Each `\n` is preceeded and proceeded by a result line.
 
 ### HTTP
 
 - Each result line is succeeded by a `\n`.
 
 - Each `\n` is preceeded by a result line.
+
+- Providing a task line, waiting for its result line, then providing another task line will never deadlock.

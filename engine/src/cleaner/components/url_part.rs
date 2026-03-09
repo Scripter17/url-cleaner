@@ -2,6 +2,7 @@
 
 #![allow(unused_assignments, reason = "False positive.")]
 
+use std::ops::Bound;
 use std::borrow::Cow;
 
 use thiserror::Error;
@@ -104,30 +105,31 @@ pub enum UrlPart {
 
 
 
-    /// [`Url::path`] and [`BetterUrl::set_path`].
+    /// [`BetterUrl::path_str`] and [`BetterUrl::set_path`].
     Path,
-    /// [`BetterUrl::path_segment`] and [`BetterUrl::set_path_segment`].
-    PathSegment(isize),
-    /// [`BetterUrl::path_segment`] and [`BetterUrl::set_raw_path_segment`].
-    RawPathSegment(isize),
-    /// [`BetterUrl::path_segments_str`] and [`BetterUrl::set_path_segments_str`]
+    /// [`BetterUrl::path_segments_str`] and [`BetterUrl::set_path_segments`]
     PathSegments,
-    /// [`BetterUrl::first_n_path_segments`] and [`BetterUrl::set_first_n_path_segments`].
-    FirstNPathSegments(usize),
-    /// [`BetterUrl::path_segments_after_first_n`] and [`BetterUrl::set_path_segments_after_first_n`]
-    PathSegmentsAfterFirstN(usize),
-    /// [`BetterUrl::last_n_path_segments`] and [`BetterUrl::set_last_n_path_segments`].
-    LastNPathSegments(usize),
-    /// [`BetterUrl::path_segments_before_last_n`] and [`BetterUrl::set_path_segments_before_last_n`].
-    PathSegmentsBeforeLastN(usize),
+    /// [`BetterRefPathSegments::get`] + [`RawPathSegment::decode`] and [`BetterPathSegments::set_segment`].
+    PathSegment(isize),
+    /// [`BetterRefPathSegments::get`] and [`BetterPathSegments::set_raw_segment`].
+    RawPathSegment(isize),
+    /// [`BetterRefPathSegments::get_range`] and [`BetterPathSegments::set_raw_range`].
+    RawPathSegmentRange {
+        /// The start of the range.
+        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
+        start: Bound<isize>,
+        /// The end of the range.
+        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
+        end: Bound<isize>
+    },
 
 
 
-    /// [`Url::query`] and [`BetterUrl::set_query`].
+    /// [`BetterUrl::query_str`] and [`BetterUrl::set_query`].
     Query,
-    /// [`BetterUrl::query_param`] and [`BetterUrl::set_query_param`]
+    /// [`BetterMaybeRefQuery::find_value`] and [`BetterQuery::set_or_insert_or_remove_pair`]
     QueryParam(QueryParamSelector),
-    /// [`BetterUrl::raw_query_param`] and [`BetterUrl::set_raw_query_param`]
+    /// [`BetterMaybeRefQuery::find_raw_value`] and [`BetterQuery::set_or_insert_or_remove_raw_pair`]
     RawQueryParam(QueryParamSelector),
 
 
@@ -163,6 +165,11 @@ pub enum UrlPart {
     }
 }
 
+/// Serde helper function.
+fn unbounded<T>() -> Bound<T> {Bound::Unbounded}
+/// Serde helper function.
+fn is_unbounded<T>(x: &Bound<T>) -> bool {matches!(x, Bound::Unbounded)}
+
 impl UrlPart {
     /// Gets the value.
     pub fn get<'a>(&self, url: &'a BetterUrl) -> Option<Cow<'a, str>> {
@@ -195,18 +202,15 @@ impl UrlPart {
 
             Self::Port => Cow::Owned(url.port()?.to_string()),
 
-            Self::Path => Cow::Borrowed(url.path()),
-            Self::PathSegment(index) => Cow::Borrowed(url.path_segment(*index)??),
-            Self::RawPathSegment(index) => Cow::Borrowed(url.path_segment(*index)??),
+            Self::Path         => Cow::Borrowed(url.path_str()),
             Self::PathSegments => Cow::Borrowed(url.path_segments_str()?),
-            Self::FirstNPathSegments(n) => Cow::Borrowed(url.first_n_path_segments(*n)??),
-            Self::PathSegmentsAfterFirstN(n) => Cow::Borrowed(url.path_segments_after_first_n(*n)??),
-            Self::LastNPathSegments(n) => Cow::Borrowed(url.last_n_path_segments(*n)??),
-            Self::PathSegmentsBeforeLastN(n) => Cow::Borrowed(url.path_segments_before_last_n(*n)??),
+            Self::PathSegment   (index) => url.ref_path_segments()?.get(*index)?.decode(),
+            Self::RawPathSegment(index) => Cow::Borrowed(url.ref_path_segments()?.get(*index)?.as_str()),
+            Self::RawPathSegmentRange {start, end} => Cow::Borrowed(url.ref_path_segments()?.get_range((*start, *end))?.as_str()),
 
-            Self::Query => Cow::Borrowed(url.query()?),
-            Self::QueryParam   (QueryParamSelector {name, index}) => url.query_param(name, *index)???,
-            Self::RawQueryParam(QueryParamSelector {name, index}) => Cow::Borrowed(url.raw_query_param(name, *index)???),
+            Self::Query => Cow::Borrowed(url.query_str()?),
+            Self::QueryParam   (QueryParamSelector {name, index}) => url.ref_query()?.find_value(name, *index)??,
+            Self::RawQueryParam(QueryParamSelector {name, index}) => Cow::Borrowed(url.ref_query()?.find(name, *index)?.raw_value()?),
 
             Self::Fragment => Cow::Borrowed(url.fragment()?),
 
@@ -254,18 +258,18 @@ impl UrlPart {
 
             (Self::Path, Some(to)) => url.set_path(to),
             (Self::Path, None    ) => Err(SetUrlPartError::PathCannotBeNone)?,
-            (Self::PathSegment(n), _) => url.set_path_segment(*n, to)?,
-            (Self::RawPathSegment(n), _) => url.set_raw_path_segment(*n, to)?,
-            (Self::PathSegments, Some(to)) => url.set_path_segments_str(to)?,
-            (Self::PathSegments, None) => Err(SetUrlPartError::CannotSetPathSegmentsToNone)?,
-            (Self::FirstNPathSegments(n), _) => url.set_first_n_path_segments(*n, to)?,
-            (Self::PathSegmentsAfterFirstN(n), _) => url.set_path_segments_after_first_n(*n, to)?,
-            (Self::LastNPathSegments(n), _) => url.set_last_n_path_segments(*n, to)?,
-            (Self::PathSegmentsBeforeLastN(n), _) => url.set_path_segments_before_last_n(*n, to)?,
+            (Self::PathSegments     , Some(to)) => url.set_path_segments(to)?,
+            (Self::PathSegments     , None    ) => Err(SetUrlPartError::PathCannotBeNone)?,
+            (Self::PathSegment   (n), Some(to)) => url.try_modify_path_segments(|x| x.set_segment(*n, to))??,
+            (Self::PathSegment   (n), None    ) => url.try_modify_path_segments(|x| x.remove(*n))??,
+            (Self::RawPathSegment(n), Some(to)) => url.try_modify_path_segments(|x| x.set_raw_segment(*n, to))??,
+            (Self::RawPathSegment(n), None    ) => url.try_modify_path_segments(|x| x.remove(*n))??,
+            (Self::RawPathSegmentRange {start, end}, Some(to)) => url.try_modify_path_segments(|p| p.set_raw_range((*start, *end), to))??,
+            (Self::RawPathSegmentRange {start, end}, None    ) => url.try_modify_path_segments(|p| p.remove_range((*start, *end)))??,
 
             (Self::Query, _) => url.set_query(to),
-            (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.set_query_param(name, *index, to.map(Some))?,
-            (Self::RawQueryParam(QueryParamSelector {name, index}), _) => url.set_raw_query_param(name, *index, to.map(Some))?,
+            (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_pair(name, *index, to.map(Some)))?,
+            (Self::RawQueryParam(QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_raw_pair(name, *index, to.map(Some)))?,
 
             (Self::Fragment, _) => url.set_fragment(to),
 
@@ -336,36 +340,35 @@ pub enum SetUrlPartError {
     #[error(transparent)]
     SetPortError(#[from] SetPortError),
 
-    /// Returned when a [`SetPathSegmentError`] is encountered.
-    #[error(transparent)]
-    SetPathSegmentError(#[from] SetPathSegmentError),
-    /// Returned when a [`SetPathSegmentsStrError`] is encountered.
-    #[error(transparent)]
-    SetPathSegmentsStrError(#[from] SetPathSegmentsStrError),
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
     PathCannotBeNone,
-    /// Returned when attempting to set [`UrlPart::PathSegments`] to [`None`].
-    ///
-    /// URLs with no path segments still have a path, therefore the operation is incoherent.
-    #[error("Cannot set path segments to None, even for URLs with no path segments because they still have a path.")]
-    CannotSetPathSegmentsToNone,
-    /// Returned when a [`SetFirstNPathSegmentsError`] is encountered.
+    /// Returned when a [`OpaquePath`] is encountered.
     #[error(transparent)]
-    SetFirstNPathSegmentsError(#[from] SetFirstNPathSegmentsError),
-    /// Returned when a [`SetPathSegmentsAfterFirstNError`] is encountered.
-    #[error(transparent)]
-    SetPathSegmentsAfterFirstNError(#[from] SetPathSegmentsAfterFirstNError),
-    /// Returned when a [`SetLastNPathSegmentsError`] is encountered.
-    #[error(transparent)]
-    SetLastNPathSegmentsError(#[from] SetLastNPathSegmentsError),
-    /// Returned when a [`SetPathSegmentsBeforeLastNError`] is encountered.
-    #[error(transparent)]
-    SetPathSegmentsBeforeLastNError(#[from] SetPathSegmentsBeforeLastNError),
+    OpaquePath(#[from] OpaquePath),
 
-    /// Returned when a [`SetQueryParamError`] is encountered.
+    /// Returned when a [`SegmentNotFound`] is encountered.
     #[error(transparent)]
-    SetQueryParamError(#[from] SetQueryParamError),
+    SegmentNotFound(#[from] SegmentNotFound),
+    /// Returned when a [`RemoveRangeError`] is encountered.
+    #[error(transparent)]
+    RemoveRangeError(#[from] RemoveRangeError),
+    /// Returned when a [`InsertNotFound`] is encountered.
+    #[error(transparent)]
+    InsertNotFound(#[from] InsertNotFound),
+    /// Returned when a [`SetOrRemoveError`] is encountered.
+    #[error(transparent)]
+    SetOrRemoveError(#[from] SetOrRemoveError),
+    /// Returned when a [`RangeNotFound`] is encountered.
+    #[error(transparent)]
+    RangeNotFound(#[from] RangeNotFound),
+    /// Returned when a [`SetOrInsertOrRemoveMaybeError`] is encountered.
+    #[error(transparent)]
+    SetOrInsertOrRemoveMaybeError(#[from] SetOrInsertOrRemoveMaybeError),
+
+    /// Returned when a [`RemoveError`] is encountered.
+    #[error(transparent)]
+    RemoveError(#[from] RemoveError),
 
     /// Returned when attempting to set a [`UrlPart::NormalizedHost`].
     #[error("Attempted to set a UrlPart::NormalizedHost.")]

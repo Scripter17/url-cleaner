@@ -4,7 +4,6 @@
 
 use std::net::IpAddr;
 use std::path::PathBuf;
-use std::num::NonZero;
 use std::collections::HashSet;
 use axum_server::tls_rustls::RustlsConfig;
 
@@ -34,9 +33,9 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 {REPOSITORY}
 
-GET /get-info     to get the Info.
-GET /get-cleaner  to get the Cleaner.
-GET /get-profiles to get the ProfilesConfig.
+GET /info     to get the Info.
+GET /cleaner  to get the Cleaner.
+GET /profiles to get the ProfilesConfig.
 "#);
 
 #[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
@@ -70,10 +69,10 @@ struct Args {
     #[arg(long, default_value = "url-cleaner-site-cache.sqlite")]
     #[cfg(feature = "cache")]
     cache: PathBuf,
-    /// The number of worker threads to use per job.
-    #[arg(long, default_value = "cpu-threads")]
-    worker_threads: WorkerThreads,
-    /// The passwords to use.
+    /// The number of worker threads to use. 0 = CPU thread count.
+    #[arg(long, default_value_t = 0)]
+    workers: usize,
+    /// The passwords to use. One line per password.
     #[arg(long)]
     passwords: Option<PathBuf>,
     /// The IP to bind to.
@@ -88,31 +87,6 @@ struct Args {
     /// The TLS certificate.
     #[arg(long, requires = "key")]
     cert: Option<PathBuf>
-}
-
-/// Configuration on how many worker threads to use.
-#[derive(Debug, Clone)]
-enum WorkerThreads {
-    /// Use as many as the CPU has threads.
-    ///
-    /// Parses from `cpu-threads`.
-    CpuThreads,
-    /// Use the specified amount.
-    ///
-    /// Parses from anything else.
-    Literal(NonZero<usize>)
-}
-
-impl std::str::FromStr for WorkerThreads {
-    type Err = std::num::ParseIntError;
-
-    /// Parses `cpu-threads` to [`Self::CpuThreads`] and everything else to [`Self::Literal`].
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "cpu-threads" => Self::CpuThreads,
-            _             => Self::Literal(s.parse()?)
-        })
-    }
 }
 
 /// The state of the server.
@@ -133,7 +107,7 @@ struct State {
     /// The [`Unthreader`].
     unthreader: Unthreader,
     /// The number of worker threads to use.
-    worker_threads: NonZero<usize>,
+    workers: usize,
     /// The passwords.
     passwords: Option<HashSet<String>>
 }
@@ -171,22 +145,22 @@ async fn main() {
         #[cfg(feature = "http")]
         http_client: Default::default(),
         unthreader: Unthreader::on(),
-        worker_threads: match args.worker_threads {
-            WorkerThreads::CpuThreads => std::thread::available_parallelism().expect("To be able to get the available parallelism."),
-            WorkerThreads::Literal(x) => x
+        workers: match args.workers {
+            0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").into(),
+            x => x
         },
-        passwords: args.passwords.map(|path| serde_json::from_str::<HashSet<String>>(&std::fs::read_to_string(path).expect("The passwords file to be readable.")).expect("The passwords file to be valid")),
+        passwords: args.passwords.map(|path| std::fs::read_to_string(path).expect("The passwords file to be readable.").lines().map(ToString::to_string).collect()),
     }));
 
     let app = Router::new()
         .route("/"        , get(async || WELCOME))
-        .route("/get-info"    , get(async || Json(Info {
+        .route("/info"    , get(async || Json(Info {
             source_code: env!("CARGO_PKG_REPOSITORY").into(),
             version    : env!("CARGO_PKG_VERSION"   ).into(),
-            password_required: false
+            password_required: state.passwords.is_some()
         })))
-        .route("/get-cleaner" , get(async || &*state.cleaner_string))
-        .route("/get-profiles", get(async || &*state.profiles_string))
+        .route("/cleaner" , get(async || &*state.cleaner_string))
+        .route("/profiles", get(async || &*state.profiles_string))
         .route("/clean"   , any(clean::clean))
         .with_state(state);
 

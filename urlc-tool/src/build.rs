@@ -10,19 +10,6 @@ pub struct Args {
     pub bins: Vec<Bin>,
 }
 
-/// The bin to run.
-#[derive(Debug, Clone, Copy, ValueEnum)]
-pub enum Bin {
-    /// CLI
-    Cli,
-    /// Site
-    Site,
-    /// Site Client
-    SiteClient,
-    /// Discord
-    Discord
-}
-
 impl Args {
     /// Do the command.
     pub fn r#do(self) {

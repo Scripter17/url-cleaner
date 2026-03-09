@@ -20,7 +20,7 @@ pub struct QueryParamSelector {
     ///
     /// Defaults to `0`.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub index: usize
+    pub index: isize
 }
 
 string_or_struct_magic!(QueryParamSelector);

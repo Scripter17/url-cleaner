@@ -34,7 +34,7 @@ pub async fn clean_url(
                 http_client: &ctx.data().http_client
             };
 
-            let ret = match job.r#do(url) {
+            let ret = match job.r#do(&*url) {
                 Ok (x) => String::from(x),
                 Err(e) => format!("-{e:?}")
             };

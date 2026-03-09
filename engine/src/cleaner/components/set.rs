@@ -96,7 +96,7 @@ impl<T: Hash + Eq> Set<T> {
 
     /// If the set is empty.
     pub fn is_empty(&self) -> bool {
-        self.set.is_empty() || self.if_none
+        self.set.is_empty() && !self.if_none
     }
 }
 

@@ -15,12 +15,12 @@ pub enum GetJobConfigError {
     /// Returned when a [`serde_json::Error`] is encountered.
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when an [`std::str::Utf8Error`] is encountered.
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
+    /// Returned when a request has a `config` query param with no value.
+    #[error("The request had a `config` query param with no value.")]
+    EmptyConfigParam,
     /// Returned when a request attempted to set the [`JobConfig`] twice.
     #[error("The request attempted to set the JobConfig twice.")]
-    ConfigSetTwice
+    ConfigSetTwice,
 }
 
 impl IntoResponse for GetJobConfigError {
@@ -33,14 +33,12 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
     type Rejection = GetJobConfigError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        Ok(match (parts.uri.query(), parts.headers.get("x-config")) {
-            (Some(query), None) => serde_json::from_str(&match BetterQuery(query).pairs().find(|(k, _)| k == "config") {
-                Some((_, Some(v))) => v,
-                _ => "{}".into()
-            })?,
-            (None   , Some(config)) => serde_json::from_str(str::from_utf8(config.as_bytes())?)?,
-            (None   , None        ) => Default::default(),
-            (Some(_), Some(_)     ) => Err(GetJobConfigError::ConfigSetTwice)?
+        Ok(match (BetterMaybeRefQuery::from(parts.uri.query()).find_value("config", 0), parts.headers.get("x-config")) {
+            (Some(Some(config)), None        ) => serde_json::from_str(&config)?,
+            (None              , Some(config)) => serde_json::from_slice(config.as_bytes())?,
+            (None              , None        ) => Default::default(),
+            (Some(None)        , _           ) => Err(GetJobConfigError::EmptyConfigParam)?,
+            (Some(_)           , Some(_)     ) => Err(GetJobConfigError::ConfigSetTwice)?,
         })
     }
 }

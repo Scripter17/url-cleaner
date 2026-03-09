@@ -1,9 +1,8 @@
 //! [`Docs`].
 
-use std::collections::HashMap;
-
 use serde::{Serialize, Deserialize};
 use serde_with::*;
+use indexmap::IndexMap;
 
 use crate::prelude::*;
 
@@ -29,10 +28,9 @@ pub struct Docs {
     /// The [`TaskContextDocs`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub task_context: TaskContextDocs,
-    /// The documentation of the environment variables used.
-    #[serde_with = "MapPreventDuplicates<_, _>"]
+    /// The [`EnvironmentVarsDocs`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub environment_vars: HashMap<String, String>
+    pub environment_vars: EnvironmentVarsDocs
 }
 
 /// Documentation for a [`Cleaner`].
@@ -43,30 +41,24 @@ pub struct Docs {
 #[serde(deny_unknown_fields)]
 pub struct ParamsDocs {
     /// The documentation of the flags in [`Params::flags`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: HashMap<String, String>,
+    pub flags: IndexMap<String, String>,
     /// The documentation of the cars in [`Params::vars`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
     #[suitable(assert = "assert_required_vars_exist")]
-    pub vars: HashMap<String, VarDoc>,
+    pub vars: IndexMap<String, VarDoc>,
     /// The documentation of the sets in [`Params::sets`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub sets: HashMap<String, String>,
+    pub sets: IndexMap<String, String>,
     /// The documentation of the lists in [`Params::lists`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub lists: HashMap<String, String>,
+    pub lists: IndexMap<String, String>,
     /// The documentation of the maps in [`Params::maps`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub maps: HashMap<String, String>,
+    pub maps: IndexMap<String, String>,
     /// The documentation of the named partitionings in [`Params::partitionings`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub partitionings: HashMap<String, String>
+    pub partitionings: IndexMap<String, String>
 }
 
 /// Documentation for the stuff used in [`JobContext`].
@@ -75,13 +67,11 @@ pub struct ParamsDocs {
 #[serde(deny_unknown_fields)]
 pub struct JobContextDocs {
     /// Documentation for the flags in [`JobContext::flags`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: HashMap<String, String>,
+    pub flags: IndexMap<String, String>,
     /// Documentation for the vars in [`JobContext::vars`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, String>
+    pub vars: IndexMap<String, String>
 }
 
 /// Documentation for the stuff used in [`TaskContext`].
@@ -90,18 +80,21 @@ pub struct JobContextDocs {
 #[serde(deny_unknown_fields)]
 pub struct TaskContextDocs {
     /// Documentation for the flags in [`TaskContext::flags`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: HashMap<String, String>,
+    pub flags: IndexMap<String, String>,
     /// Documentation for the vars in [`TaskContext::vars`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, String>
+    pub vars: IndexMap<String, String>
 }
+
+/// Documentation for the environment variables.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(transparent)]
+pub struct EnvironmentVarsDocs(pub IndexMap<String, String>);
 
 /// Documentation for a var.
 #[serde_as]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct VarDoc {
     /// The description.
@@ -116,14 +109,19 @@ pub struct VarDoc {
     /// If [`Some`], the map of valid values to their descriptions.
     ///
     /// Defaults to [`None`].
-    #[serde_with = "MapPreventDuplicates<_, _>"]
     #[serde(default, skip_serializing_if = "is_default")]
-    pub variants: Option<HashMap<String, String>>
+    pub variants: Option<IndexMap<String, String>>
 }
 
 /// Assert all required vars exist.
-fn assert_required_vars_exist(x: &HashMap<String, VarDoc>, cleaner: &Cleaner<'_>) {
-    for (name, VarDoc {required, ..}) in x {
-        assert!(cleaner.params.vars.get(name).is_some() || !required, "Required var is missing: {name:?}.");
+fn assert_required_vars_exist(x: &IndexMap<String, VarDoc>, cleaner: &Cleaner<'_>) {
+    for (name, doc) in x {
+        match (doc.required, cleaner.params.vars.get(name), &doc.variants) {
+            (false, None       , _             ) => {},
+            (false, Some(_)    , None          ) => {},
+            (true , None       , _             ) => panic!("Missing var: {name}"),
+            (true , Some(_)    , None          ) => {},
+            (_    , Some(value), Some(variants)) => assert!(variants.contains_key(value)),
+        }
     }
 }

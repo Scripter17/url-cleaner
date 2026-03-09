@@ -832,7 +832,7 @@ impl StringSource {
 
             Self::Part(part) => part.get(&task_state.url),
             Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| Cow::Owned(x.into_owned())),
-            Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host)).map(Cow::Borrowed),
+            Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host.borrowed())).map(Cow::Borrowed),
 
 
 

@@ -64,8 +64,8 @@ pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, c
         http_client: &state.http_client
     };
 
-    match clean_payload {
+    Ok(match clean_payload {
         CleanPayload::Ws  (wsu ) => ws  ::clean_ws  (state, job, wsu ).await,
         CleanPayload::Http(body) => http::clean_http(state, job, body).await,
-    }
+    })
 }

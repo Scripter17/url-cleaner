@@ -15,12 +15,13 @@ async-stream = "0.3.6"
 axum = { version = "0.8.8", features = ["http2", "ws"] }
 axum-server = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
 bstr = "1.12.1"
-clap = { version = "4.5.56", features = ["derive"] }
-const-str = { version = "1.0.0", features = ["proc"] }
-futures-util = { version = "0.3.31", features = ["io"] }
-hyper-util = "0.1.19"
+bytes = "1.11.1"
+clap = { version = "4.5.60", features = ["derive"] }
+const-str = { version = "1.1.0", features = ["proc"] }
+futures-util = { version = "0.3.32", features = ["io"] }
+hyper-util = "0.1.20"
 serde_json = "1.0.149"
-tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.50.0", features = ["io-std", "macros", "rt-multi-thread", "sync", "time"] }
 tokio-stream = "0.1.18"
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 url-cleaner-site-types = { path = "../site-types", version = "0.12.0-beta", features = ["axum"] }

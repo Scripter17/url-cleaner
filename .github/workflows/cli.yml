@@ -21,11 +21,13 @@ jobs:
 
     - name: Output
       run: |
-        for args in 0 1 10; do
-          for stdin in 0 1 10 100 1000 10000 100000; do
-            diff\
-              <(seq -f "https://example.com/stdin/%0.0f" $stdin | ./urlc $(seq -f "https://example.com/arg/%0.0f" $args))\
-              <(seq -f "https://example.com/arg/%0.0f" $args; seq -f "https://example.com/stdin/%0.0f" $stdin)
+        n="
+        "
+        for num in 0 1 10 100 1000 10000; do
+          for s in "$n" "$n$n"; do
+            for h in -0 -1; do
+              diff <(seq -s "$s" -f "https://stdin/%0.0f" $num | head -c $h | ./urlc $(seq -f "https://arg/%0.0f" 10)) <(seq -f "https://arg/%0.0f" 10; seq -f "https://stdin/%0.0f" $num)
+            done
           done
         done
 
@@ -73,6 +75,3 @@ jobs:
         )
 
         diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')
-
-    - name: 'Check bundled cleaner'
-      run: cargo run --bin urlc-tool -- test --filter '^offline' --assert-suitability

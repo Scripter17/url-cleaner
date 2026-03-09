@@ -89,11 +89,11 @@ impl From<&str> for VarSource {
 impl Suitability for VarSource {
     fn assert_suitability(&self, config: &Cleaner) {
         match self {
-            Self::Params     (StringSource::String(name)) => assert!(config.docs.params.vars      .contains_key(name), "Undocumented Var: {name}"),
-            Self::TaskContext(StringSource::String(name)) => assert!(config.docs.task_context.vars.contains_key(name), "Undocumented TaskContext var: {name}"),
-            Self::JobContext (StringSource::String(name)) => assert!(config.docs.job_context.vars .contains_key(name), "Undocumented JobContext var: {name}"),
+            Self::Params     (StringSource::String(name)) => assert!(config.docs.params.vars       .contains_key(name), "Undocumented Var: {name}"),
+            Self::TaskContext(StringSource::String(name)) => assert!(config.docs.task_context.vars .contains_key(name), "Undocumented TaskContext var: {name}"),
+            Self::JobContext (StringSource::String(name)) => assert!(config.docs.job_context.vars  .contains_key(name), "Undocumented JobContext var: {name}"),
             Self::CallArg(_) => {},
-            Self::Env        (StringSource::String(name)) => assert!(config.docs.environment_vars .contains_key(name), "Undocumented Env var: {name}"),
+            Self::Env        (StringSource::String(name)) => assert!(config.docs.environment_vars.0.contains_key(name), "Undocumented Env var: {name}"),
             _ => panic!("Unsuitable VarSource: {self:?}")
         }
     }

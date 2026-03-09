@@ -1,6 +1,5 @@
 //! HTTP.
 
-use std::io::Cursor;
 use std::convert::Infallible;
 
 use url::Url;
@@ -9,6 +8,7 @@ use hyper::{Request, body::Frame};
 use http_body_util::{StreamBody, BodyExt};
 use async_stream::stream;
 use futures_util::StreamExt;
+use bytes::Bytes;
 
 use hyper_util::{client::legacy::{Client, connect::HttpConnector}, rt::TokioExecutor};
 use hyper_tls::HttpsConnector;
@@ -25,7 +25,7 @@ pub async fn r#do(instance: Url) {
                 buf = Vec::new();
             }
         }
-    ).map(|buf| Ok::<_, Infallible>(Frame::data(Cursor::new(buf))))));
+    ).map(|buf| Ok::<_, Infallible>(Frame::data(Bytes::from_owner(buf))))));
 
     // Building an HttpsConnector is very expensive, and so should only be done when needed.
 

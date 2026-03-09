@@ -6,17 +6,16 @@ use std::ops::Deref;
 
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize, ser::Serializer, de::Deserializer};
-use url::{Url, PathSegmentsMut, ParseError};
+use url::{Url, ParseError};
 use thiserror::Error;
 
 use crate::prelude::*;
 
-mod path_impl;
-pub use path_impl::*;
+mod path;
+mod query;
+mod fragment;
 mod domain_impl;
 pub use domain_impl::*;
-mod query_impl;
-pub use query_impl::*;
 
 /// A wrapper around a [`Url`] with extra metadata.
 ///
@@ -73,9 +72,9 @@ impl BetterUrl {
     }
 
     /// Get a borrowing [`BetterHost`].
-    pub fn host(&self) -> Option<BetterHost<&str>> {
+    pub fn host<'a>(&'a self) -> Option<RefBetterHost<'a>> {
         match (self.host_str(), self.host_details()) {
-            (Some(string), Some(details)) => Some(BetterHost {string, details}),
+            (Some(string), Some(details)) => Some(RefBetterHost {string, details}),
             _ => None
         }
     }
@@ -204,13 +203,6 @@ impl BetterUrl {
     /// If the call to [`Url::set_port`] returns an error, returns the error [`SetPortError`].
     pub fn set_port(&mut self, port: Option<u16>) -> Result<(), SetPortError> {
         self.url.set_port(port).map_err(|()| SetPortError)
-    }
-
-    /// [`Url::set_fragment`].
-    pub fn set_fragment(&mut self, fragment: Option<&str>) {
-        if self.fragment() != fragment {
-            self.url.set_fragment(fragment)
-        }
     }
 }
 

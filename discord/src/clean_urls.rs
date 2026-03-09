@@ -36,7 +36,7 @@ pub async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: Clean
 
         for node in root.descendants() {
             if let NodeValue::Link(ref link) = node.data.borrow().value {
-                match job.r#do(&link.url) {
+                match job.r#do(&*link.url) {
                     Ok (x) => writeln!(ret, "{x}"   ).expect("This to always work."),
                     Err(e) => writeln!(ret, "-{e:?}").expect("This to always work.")
                 }

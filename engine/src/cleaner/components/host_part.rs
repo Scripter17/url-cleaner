@@ -28,7 +28,7 @@ pub enum HostPart {
 
 impl HostPart {
     /// Get the part.
-    pub fn get<'a, T: AsRef<str>>(&self, host: &'a BetterHost<T>) -> Option<&'a str> {
+    pub fn get<'a>(&self, host: RefBetterHost<'a>) -> Option<&'a str> {
         match self {
             Self::Host            => Some(host.as_str()),
             Self::NormalizedHost  => Some(host.normalized_host()),

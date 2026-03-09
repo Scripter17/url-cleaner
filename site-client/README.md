@@ -1,30 +1,26 @@
-# URL Cleaner Site Client
+# URL Cleaner Site CLIent
 
-An experimental CLI client for URL Cleaner Site.
+A CLI client for URL Cleaner Site.
 
 Supports HTTP, HTTPS, WS, and WSS.
 
-## Known issues
+## Why not Curl?
 
-For reasons beyond my understanding, WebSocket Secure (wss://) connections will sometimes get all results then panic about the connection closing wrongly.
+Previously Site didn't handle the `Expect: 100-continue` header correctly, making Curl wait 1 whole second before doing any of a job.
 
-You should stick to HTTPS for now.
+This has since been resolved, making `curl http://... -T tasks.txt` perfectly fine.
 
-## Why not just Curl?
-
-For large payloads, Curl expects an HTTP 100 early hint response thingy that Hyper, which Site uses internally, seems to not handle correctly.
-
-This means that, unless you pass `-H Expect:` to Curl, Curl will wait 1 whole second before sending the job, which is often longer than te job itself.
-
-If you must use Curl, my reccomendation is to do `print_job | curl http://.../clean -T - -H Expect:`.
+However, Site CLIent still has better ergonomics for sending the JobConfig.
 
 ## Why not just WebSocat?
 
-While WebSocat is great for general WebSocket usage, it has no way of bundling multiple full lines into each message.
+Due to usually-good-but-here-annoying design decisions in Tungstenite, the WebSocket library Site uses, Site can only process one message at a time and cannot support continuing lines between messages.
 
-For complex reasons that are mostly beyond my control, this limitation makes WebSocat usually dozens of times slower than Site Client.
+WebSocat currently only supports sending data as either one line per message or one arbitrarily split chunk per message.
 
-If you must use WebSocat, make sure it's using text mode so it doesn't split lines across multiple messages.
+In one line per meesage mode, Site cannot process tasks in parallel and also has to deal with a ton more overhead.
+
+In arbitrary chunk mode, tasks are often split across multiple messages, completely mangling both that task and the "nth line is the nth task" principle.
 
 ## Format
 

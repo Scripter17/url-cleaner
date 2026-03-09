@@ -1,6 +1,5 @@
 //! [`TaskConfig`].
 
-use std::borrow::Cow;
 use std::error::Error;
 
 use url::Url;
@@ -37,15 +36,8 @@ pub trait TaskConfig {
     fn make_task(self) -> Result<Task, MakeTaskError>;
 }
 
-impl TaskConfig for &'_ str       { fn make_task(self) -> Result<Task, MakeTaskError> {    self .try_into()} }
-impl TaskConfig for String        { fn make_task(self) -> Result<Task, MakeTaskError> {(&* self).try_into()} }
-impl TaskConfig for &'_ String    { fn make_task(self) -> Result<Task, MakeTaskError> {(&**self).try_into()} }
-impl TaskConfig for Cow<'_, str>  { fn make_task(self) -> Result<Task, MakeTaskError> {(&* self).try_into()} }
-impl TaskConfig for &'_ [u8]      { fn make_task(self) -> Result<Task, MakeTaskError> {    self .try_into()} }
-impl TaskConfig for Vec<u8>       { fn make_task(self) -> Result<Task, MakeTaskError> {(&* self).try_into()} }
-impl TaskConfig for &'_ Vec<u8>   { fn make_task(self) -> Result<Task, MakeTaskError> {(&**self).try_into()} }
-impl TaskConfig for Cow<'_, [u8]> { fn make_task(self) -> Result<Task, MakeTaskError> {(&* self).try_into()} }
-
+impl TaskConfig for &str      { fn make_task(self) -> Result<Task, MakeTaskError> {self.try_into()} }
+impl TaskConfig for &[u8]     { fn make_task(self) -> Result<Task, MakeTaskError> {self.try_into()} }
 impl TaskConfig for Task      { fn make_task(self) -> Result<Task, MakeTaskError> {Ok(self       )} }
 impl TaskConfig for Url       { fn make_task(self) -> Result<Task, MakeTaskError> {Ok(self.into())} }
 impl TaskConfig for BetterUrl { fn make_task(self) -> Result<Task, MakeTaskError> {Ok(self.into())} }
