@@ -1,6 +1,5 @@
-//! [`ParseOptions`].
+//! [`BetterParseOptions`].
 
-#[expect(unused_imports, reason = "Used in doc comments.")]
 use url::{Url, EncodingOverride, SyntaxViolation, ParseOptions, ParseError};
 
 use crate::prelude::*;
@@ -12,8 +11,8 @@ pub struct BetterParseOptions<'a> {
     pub base_url: Option<&'a Url>,
     /// [`ParseOptions::encoding_override`].
     pub encoding_override: EncodingOverride<'a>,
-    /// [`ParseOptions::violation_fn`].
-    pub violation_fn: Option<&'a dyn Fn(SyntaxViolation)>
+    /// [`ParseOptions::syntax_violation_callback`].
+    pub syntax_violation_callback: Option<&'a dyn Fn(SyntaxViolation)>
 }
 
 impl<'a> BetterParseOptions<'a> {
@@ -29,9 +28,9 @@ impl<'a> BetterParseOptions<'a> {
         self
     }
 
-    /// Set [`Self::violation_fn`].
-    pub fn violation_fn(mut self, violation_fn: Option<&'a dyn Fn(SyntaxViolation)>) -> Self {
-        self.violation_fn = violation_fn;
+    /// Set [`Self::syntax_violation_callback`].
+    pub fn syntax_violation_callback(mut self, syntax_violation_callback: Option<&'a dyn Fn(SyntaxViolation)>) -> Self {
+        self.syntax_violation_callback = syntax_violation_callback;
         self
     }
 
@@ -39,12 +38,18 @@ impl<'a> BetterParseOptions<'a> {
     /// # Errors
     /// If the call to [`ParseOptions::parse`] returns an error, that error is returned.
     pub fn parse(self, input: &str) -> Result<BetterUrl, ParseError> {
-        Url::options()
-            .base_url(self.base_url)
-            .encoding_override(self.encoding_override)
-            .syntax_violation_callback(self.violation_fn)
+        ParseOptions::from(self)
             .parse(input)
             .map(Into::into)
+    }
+}
+
+impl<'a> From<BetterParseOptions<'a>> for ParseOptions<'a> {
+    fn from(value: BetterParseOptions<'a>) -> Self {
+        Url::options()
+            .base_url(value.base_url)
+            .encoding_override(value.encoding_override)
+            .syntax_violation_callback(value.syntax_violation_callback)
     }
 }
 
@@ -56,7 +61,7 @@ impl std::fmt::Debug for BetterParseOptions<'_> {
                 Some(_) => "Some(_)",
                 None => "None"
             })
-            .field("violation_fn", &match self.violation_fn {
+            .field("syntax_violation_callback", &match self.syntax_violation_callback {
                 Some(_) => "Some(_)",
                 None => "None"
             })

@@ -11,7 +11,7 @@ use crate::prelude::*;
 /// Allows getting and setting specific instances of a query parameter.
 ///
 /// For example, it allows getting and setting the second `a` in `https://example.com?a=1&a=2`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub struct QueryParamSelector {
     /// The name of the query parameter to get.

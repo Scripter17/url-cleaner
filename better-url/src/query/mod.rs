@@ -2,32 +2,25 @@
 
 use std::borrow::Cow;
 
-pub mod cow;
-pub mod maybe_cow;
-pub mod r#ref;
-pub mod maybe_ref;
+mod cow;
+mod maybe_cow;
+mod r#ref;
+mod maybe_ref;
 
-pub mod raw_segment;
-pub mod encode;
-pub mod decode;
+mod raw_segment;
+mod encode;
+mod decode;
 
-/// Prelude module for importing everything here better.
-pub mod prelude {
-    pub use super::cow::*;
-    pub use super::maybe_cow::*;
-    pub use super::r#ref::*;
-    pub use super::maybe_ref::*;
+pub use cow::*;
+pub use maybe_cow::*;
+pub use r#ref::*;
+pub use maybe_ref::*;
 
-    pub use super::raw_segment::*;
-    pub use super::encode::*;
-    pub use super::decode::*;
+pub use raw_segment::*;
+pub use encode::*;
+pub use decode::*;
 
-    pub use super::AsQueryStr;
-}
-
-use prelude::*;
-
-/// A type that can be borrowed as an `Option<&str>` for setting a query.`
+/// A type that can be borrowed as an `Option<&str>` for setting a query.
 pub trait AsQueryStr {
     /// Borrow as an `Option<&str>`.
     fn as_query_str(&self) -> Option<&str>;

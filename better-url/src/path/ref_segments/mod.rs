@@ -14,7 +14,6 @@ mod remove;
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct BetterRefPathSegments<'a>(pub &'a str);
 
 impl<'a> BetterRefPathSegments<'a> {

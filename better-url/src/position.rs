@@ -1,14 +1,17 @@
-//! Wrapper around a [`Position`].
+//! [`BetterPosition`].
+
+use std::str::FromStr;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Visitor}};
+use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Error as _}};
 use url::Position;
+
+use crate::prelude::*;
 
 /// Wrapper around a [`Position`].
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
-pub struct BetterPosition(#[cfg_attr(feature = "serde", serde(serialize_with = "serialize", deserialize_with = "deserialize"))] pub Position);
+#[repr(transparent)]
+pub struct BetterPosition(pub Position);
 
 #[allow(non_upper_case_globals, reason = "Simulating enum variants.")]
 impl BetterPosition {
@@ -46,9 +49,66 @@ impl BetterPosition {
     pub const BeforeUsername: Self = Self(Position:: BeforeUsername);
 }
 
+impl BetterPosition {
+    /// Make a [`Self`].
+    /// # Errors
+    /// If `s` is an invalid [`Self`] variant, returns the error [`InvalidBetterPosition`].
+    pub fn parse(s: &str) -> Result<Self, InvalidBetterPosition> {
+        match s {
+            "BeforeScheme"   => Ok(Self::BeforeScheme  ),
+            "AfterScheme"    => Ok(Self::AfterScheme   ),
+            "BeforeUsername" => Ok(Self::BeforeUsername),
+            "AfterUsername"  => Ok(Self::AfterUsername ),
+            "BeforePassword" => Ok(Self::BeforePassword),
+            "AfterPassword"  => Ok(Self::AfterPassword ),
+            "BeforeHost"     => Ok(Self::BeforeHost    ),
+            "AfterHost"      => Ok(Self::AfterHost     ),
+            "BeforePort"     => Ok(Self::BeforePort    ),
+            "AfterPort"      => Ok(Self::AfterPort     ),
+            "BeforePath"     => Ok(Self::BeforePath    ),
+            "AfterPath"      => Ok(Self::AfterPath     ),
+            "BeforeQuery"    => Ok(Self::BeforeQuery   ),
+            "AfterQuery"     => Ok(Self::AfterQuery    ),
+            "BeforeFragment" => Ok(Self::BeforeFragment),
+            "AfterFragment"  => Ok(Self::AfterFragment ),
+            _ => Err(InvalidBetterPosition)
+        }
+    }
+
+    /// Get this as a string.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self(Position::BeforeScheme  ) => "BeforeScheme",
+            Self(Position::AfterScheme   ) => "AfterScheme",
+            Self(Position::BeforeUsername) => "BeforeUsername",
+            Self(Position::AfterUsername ) => "AfterUsername",
+            Self(Position::BeforePassword) => "BeforePassword",
+            Self(Position::AfterPassword ) => "AfterPassword",
+            Self(Position::BeforeHost    ) => "BeforeHost",
+            Self(Position::AfterHost     ) => "AfterHost",
+            Self(Position::BeforePort    ) => "BeforePort",
+            Self(Position::AfterPort     ) => "AfterPort",
+            Self(Position::BeforePath    ) => "BeforePath",
+            Self(Position::AfterPath     ) => "AfterPath",
+            Self(Position::BeforeQuery   ) => "BeforeQuery",
+            Self(Position::AfterQuery    ) => "AfterQuery",
+            Self(Position::BeforeFragment) => "BeforeFragment",
+            Self(Position::AfterFragment ) => "AfterFragment",
+        }
+    }
+}
+
 impl PartialEq for BetterPosition {
     fn eq(&self, other: &Self) -> bool {
-        match (self.0, other.0) {
+        *self == other.0
+    }
+}
+
+impl Eq for BetterPosition {}
+
+impl PartialEq<Position> for BetterPosition {
+    fn eq(&self, other: &Position) -> bool {
+        match (self.0, other) {
             (Position::AfterFragment , Position::AfterFragment ) => true,
             (Position::AfterHost     , Position::AfterHost     ) => true,
             (Position::AfterPassword , Position::AfterPassword ) => true,
@@ -70,95 +130,45 @@ impl PartialEq for BetterPosition {
     }
 }
 
-impl Eq for BetterPosition {}
-
-/// Serializer for [`BetterPosition`].
-#[cfg(feature = "serde")]
-fn serialize<S: Serializer>(value: &Position, serializer: S) -> Result<S::Ok, S::Error> {
-    serializer.serialize_str(match value {
-        Position::BeforeScheme   => "BeforeScheme",
-        Position::AfterScheme    => "AfterScheme",
-        Position::BeforeUsername => "BeforeUsername",
-        Position::AfterUsername  => "AfterUsername",
-        Position::BeforePassword => "BeforePassword",
-        Position::AfterPassword  => "AfterPassword",
-        Position::BeforeHost     => "BeforeHost",
-        Position::AfterHost      => "AfterHost",
-        Position::BeforePort     => "BeforePort",
-        Position::AfterPort      => "AfterPort",
-        Position::BeforePath     => "BeforePath",
-        Position::AfterPath      => "AfterPath",
-        Position::BeforeQuery    => "BeforeQuery",
-        Position::AfterQuery     => "AfterQuery",
-        Position::BeforeFragment => "BeforeFragment",
-        Position::AfterFragment  => "AfterFragment",
-    })
+impl std::hash::Hash for BetterPosition {
+    fn hash<H: std::hash::Hasher>(&self, hasher: &mut H) {
+        (self.0 as u8).hash(hasher)
+    }
 }
 
-/// Visitor for [`BetterPosition`].
-#[cfg(feature = "serde")]
-struct PositionVisitor;
+impl FromStr for BetterPosition {
+    type Err = InvalidBetterPosition;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse(s)
+    }
+}
+
+impl std::fmt::Display for BetterPosition {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}", self.as_str())
+    }
+}
 
 #[cfg(feature = "serde")]
-impl Visitor<'_> for PositionVisitor {
-    type Value = Position;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("A valid Position.")
-    }
-
-    fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
-        Ok(match value {
-            "BeforeScheme"   => Position::BeforeScheme,
-            "AfterScheme"    => Position::AfterScheme,
-            "BeforeUsername" => Position::BeforeUsername,
-            "AfterUsername"  => Position::AfterUsername,
-            "BeforePassword" => Position::BeforePassword,
-            "AfterPassword"  => Position::AfterPassword,
-            "BeforeHost"     => Position::BeforeHost,
-            "AfterHost"      => Position::AfterHost,
-            "BeforePort"     => Position::BeforePort,
-            "AfterPort"      => Position::AfterPort,
-            "BeforePath"     => Position::BeforePath,
-            "AfterPath"      => Position::AfterPath,
-            "BeforeQuery"    => Position::BeforeQuery,
-            "AfterQuery"     => Position::AfterQuery,
-            "BeforeFragment" => Position::BeforeFragment,
-            "AfterFragment"  => Position::AfterFragment,
-            _ => Err(E::custom("Expected a valid Position"))?
-        })
+impl Serialize for BetterPosition {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
     }
 }
 
-/// Deserializer for [`BetterPosition`].
 #[cfg(feature = "serde")]
-fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Position, D::Error> {
-    deserializer.deserialize_any(PositionVisitor)
-}
-
-impl From<Position> for BetterPosition {
-    fn from(value: Position) -> Self {
-        Self(value)
+impl<'de> Deserialize<'de> for BetterPosition {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        <&str>::deserialize(deserializer)?.parse().map_err(D::Error::custom)
     }
 }
 
-impl From<BetterPosition> for Position {
-    fn from(value: BetterPosition) -> Self {
-        value.0
-    }
-}
+impl From<Position      > for BetterPosition {fn from(value: Position      ) -> Self {Self(value)}}
+impl From<BetterPosition> for Position       {fn from(value: BetterPosition) -> Self {value.0}}
 
-impl AsRef<Position> for BetterPosition {
-    fn as_ref(&self) -> &Position {
-        &self.0
-    }
-}
-
-impl AsMut<Position> for BetterPosition {
-    fn as_mut(&mut self) -> &mut Position {
-        &mut self.0
-    }
-}
+impl AsRef<Position> for BetterPosition {fn as_ref(&self    ) -> &Position     {&self.0    }}
+impl AsMut<Position> for BetterPosition {fn as_mut(&mut self) -> &mut Position {&mut self.0}}
 
 impl std::ops::Deref for BetterPosition {
     type Target = Position;
@@ -173,27 +183,3 @@ impl std::ops::DerefMut for BetterPosition {
         &mut self.0
     }
 }
-
-impl std::fmt::Display for BetterPosition {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str(match self.0 {
-            Position::BeforeScheme   => "BeforeScheme",
-            Position::AfterScheme    => "AfterScheme",
-            Position::BeforeUsername => "BeforeUsername",
-            Position::AfterUsername  => "AfterUsername",
-            Position::BeforePassword => "BeforePassword",
-            Position::AfterPassword  => "AfterPassword",
-            Position::BeforeHost     => "BeforeHost",
-            Position::AfterHost      => "AfterHost",
-            Position::BeforePort     => "BeforePort",
-            Position::AfterPort      => "AfterPort",
-            Position::BeforePath     => "BeforePath",
-            Position::AfterPath      => "AfterPath",
-            Position::BeforeQuery    => "BeforeQuery",
-            Position::AfterQuery     => "AfterQuery",
-            Position::BeforeFragment => "BeforeFragment",
-            Position::AfterFragment  => "AfterFragment",
-        })
-    }
-}
-

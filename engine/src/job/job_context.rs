@@ -5,7 +5,7 @@ use std::io;
 use std::path::Path;
 use std::fs::read_to_string;
 
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, de::Deserializer};
 use thiserror::Error;
 
 use crate::prelude::*;
@@ -17,8 +17,8 @@ use crate::prelude::*;
 #[serde(deny_unknown_fields)]
 pub struct JobContext {
     /// The host of the page the tasks come from.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub source_host: Option<BetterHost>,
+    #[serde(default, skip_serializing_if = "is_default", deserialize_with = "deserialize_owned_better_host")]
+    pub source_host: Option<BetterHost<'static>>,
     /// The flags to use.
     ///
     /// Defaults to an empty [`HashSet`].
@@ -29,6 +29,11 @@ pub struct JobContext {
     /// Defaults to an empty [`HashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>
+}
+
+/// Deserialize an owned [`BetterHost`].
+fn deserialize_owned_better_host<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<BetterHost<'static>>, D::Error> {
+    <Option<BetterHost>>::deserialize(deserializer).map(|x| x.map(BetterHost::into_owned))
 }
 
 impl JobContext {

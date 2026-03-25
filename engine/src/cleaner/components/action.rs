@@ -209,7 +209,7 @@ pub enum Action {
     ///
     /// doc_test!(apply, Ok, Action::FirstMatchingPartPartitioning {
     ///     partitioning: "a".into(),
-    ///     parts: vec![UrlPart::NormalizedHost, UrlPart::RegDomain],
+    ///     parts: vec![UrlPart::NormalHost, UrlPart::DomainOrigin],
     ///     map: Box::new([
     ///         ("b".to_string(), Action::SetPath("/123".into()))
     ///     ].into()),
@@ -260,7 +260,7 @@ pub enum Action {
     ///
     /// doc_test!(apply, Ok, Action::FirstMatchingStringPartitioning {
     ///     partitioning: "a".into(),
-    ///     values: vec![StringSource::Part(UrlPart::NormalizedHost), StringSource::Part(UrlPart::RegDomain)],
+    ///     values: vec![StringSource::Part(UrlPart::NormalHost), StringSource::Part(UrlPart::DomainOrigin)],
     ///     map: Box::new([
     ///         ("b".to_string(), Action::SetPath("/123".into()))
     ///     ].into()),
@@ -392,51 +392,53 @@ pub enum Action {
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::set_host))]
     SetHost(StringSource),
-    /// [`BetterUrl::set_subdomain`].
+    /// [`BetterUrl::set_domain_prefix`].
     /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::set_subdomain))]
-    SetSubdomain(StringSource),
-    /// [`BetterUrl::set_reg_domain`].
+    #[doc = edoc!(callerr(BetterUrl::set_domain_prefix))]
+    SetDomainPrefix(StringSource),
+    /// [`BetterUrl::set_domain_origin`].
     /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::set_reg_domain))]
-    SetRegDomain(StringSource),
-    /// [`BetterUrl::set_domain`].
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::set_domain))]
-    SetDomain(StringSource),
+    #[doc = edoc!(callerr(BetterUrl::set_domain_origin))]
+    SetDomainOrigin(StringSource),
     /// [`BetterUrl::set_domain_middle`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::set_domain_middle))]
     SetDomainMiddle(StringSource),
-    /// [`BetterUrl::set_not_domain_suffix`].
-    /// # Errors
-    #[doc = edoc!(callerr(BetterUrl::set_not_domain_suffix))]
-    SetNotDomainSuffix(StringSource),
     /// [`BetterUrl::set_domain_suffix`].
     /// # Errors
     #[doc = edoc!(callerr(BetterUrl::set_domain_suffix))]
     SetDomainSuffix(StringSource),
-    /// [`BetterUrl::domain_segment`].
+
+    /// [`BetterUrl::set_domain_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::domain_segment))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_segment))]
     SetDomainSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::subdomain_segment`].
+    /// [`BetterUrl::set_domain_origin_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::subdomain_segment))]
-    SetSubdomainSegment {
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_origin_segment))]
+    SetDomainOriginSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::domain_suffix_segment`].
+    /// [`BetterUrl::set_domain_prefix_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::domain_suffix_segment))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_prefix_segment))]
+    SetDomainPrefixSegment {
+        /// The index to insert the segment at.
+        index: isize,
+        /// The value to insert.
+        value: StringSource
+    },
+    /// [`BetterUrl::set_domain_suffix_segment`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_suffix_segment))]
     SetDomainSuffixSegment {
         /// The index to insert the segment at.
         index: isize,
@@ -444,61 +446,68 @@ pub enum Action {
         value: StringSource
     },
 
+
+
     /// [`StringModification::apply`] and [`BetterUrl::set_host`].
     /// # Errors
     #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_host))]
     ModifyHost(StringModification),
-    /// [`StringModification::apply`] and [`BetterUrl::set_subdomain`].
+    /// [`StringModification::apply`] and [`BetterUrl::set_domain_prefix`].
     /// # Errors
-    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_subdomain))]
-    ModifySubdomain(StringModification),
-    /// [`StringModification::apply`] and [`BetterUrl::set_reg_domain`].
+    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_domain_prefix))]
+    ModifyDomainPrefix(StringModification),
+    /// [`StringModification::apply`] and [`BetterUrl::set_domain_origin`].
     /// # Errors
-    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_reg_domain))]
-    ModifyRegDomain(StringModification),
-    /// [`StringModification::apply`] and [`BetterUrl::set_domain`].
-    /// # Errors
-    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_domain))]
-    ModifyDomain(StringModification),
+    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_domain_origin))]
+    ModifyDomainOrigin(StringModification),
     /// [`StringModification::apply`] and [`BetterUrl::set_domain_middle`].
     /// # Errors
     #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_domain_middle))]
     ModifyDomainMiddle(StringModification),
-    /// [`StringModification::apply`] and [`BetterUrl::set_not_domain_suffix`].
-    /// # Errors
-    #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_not_domain_suffix))]
-    ModifyNotDomainSuffix(StringModification),
     /// [`StringModification::apply`] and [`BetterUrl::set_domain_suffix`].
     /// # Errors
     #[doc = edoc!(applyerr(StringModification), callerr(BetterUrl::set_domain_suffix))]
     ModifyDomainSuffix(StringModification),
-    /// [`StringModification::apply`] and [`BetterUrl::domain_segment`].
+
+    /// [`StringModification::apply`] and [`BetterUrl::set_domain_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::domain_segment))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_segment))]
     ModifyDomainSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The [`StringModification`] to apply..
         modification: StringModification
     },
-    /// [`StringModification::apply`] and [`BetterUrl::subdomain_segment`].
+    /// [`StringModification::apply`] and [`BetterUrl::set_domain_origin_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::subdomain_segment))]
-    ModifySubdomainSegment {
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_origin_segment))]
+    ModifyDomainOriginSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The [`StringModification`] to apply..
         modification: StringModification
     },
-    /// [`StringModification::apply`] and [`BetterUrl::domain_suffix_segment`].
+    /// [`StringModification::apply`] and [`BetterUrl::set_domain_prefix_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::domain_suffix_segment))]
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_prefix_segment))]
+    ModifyDomainPrefixSegment {
+        /// The index to insert the segment at.
+        index: isize,
+        /// The [`StringModification`] to apply..
+        modification: StringModification
+    },
+    /// [`StringModification::apply`] and [`BetterUrl::set_domain_suffix_segment`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::set_domain_suffix_segment))]
     ModifyDomainSuffixSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The [`StringModification`] to apply..
         modification: StringModification
     },
+
+
+
     /// [`BetterUrl::insert_domain_segment`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_segment))]
@@ -508,10 +517,19 @@ pub enum Action {
         /// The value to insert.
         value: StringSource
     },
-    /// [`BetterUrl::insert_subdomain_segment`].
+    /// [`BetterUrl::insert_domain_origin_segment`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_subdomain_segment))]
-    InsertSubdomainSegment {
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_origin_segment))]
+    InsertDomainOriginSegment {
+        /// The index to insert the segment at.
+        index: isize,
+        /// The value to insert.
+        value: StringSource
+    },
+    /// [`BetterUrl::insert_domain_prefix_segment`].
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource), callerr(BetterUrl::insert_domain_prefix_segment))]
+    InsertDomainPrefixSegment {
         /// The index to insert the segment at.
         index: isize,
         /// The value to insert.
@@ -1062,46 +1080,9 @@ pub enum ActionError {
     /// Returned when a [`SetHostError`] is encountered.
     #[error(transparent)]
     SetHostError(#[from] SetHostError),
-    /// Returned when a [`SetSubdomainError`] is encountered.
-    #[error(transparent)]
-    SetSubdomainError(#[from] SetSubdomainError),
-    /// Returned when a [`SetRegDomainError`] is encountered.
-    #[error(transparent)]
-    SetRegDomainError(#[from] SetRegDomainError),
     /// Returned when a [`SetDomainError`] is encountered.
     #[error(transparent)]
     SetDomainError(#[from] SetDomainError),
-    /// Returned when a [`SetDomainMiddleError`] is encountered.
-    #[error(transparent)]
-    SetDomainMiddleError(#[from] SetDomainMiddleError),
-    /// Returned when a [`SetNotDomainSuffixError`] is encountered.
-    #[error(transparent)]
-    SetNotDomainSuffixError(#[from] SetNotDomainSuffixError),
-    /// Returned when a [`SetDomainSuffixError`] is encountered.
-    #[error(transparent)]
-    SetDomainSuffixError(#[from] SetDomainSuffixError),
-    /// Returned when a [`SetFqdnError`] is encountered.
-    #[error(transparent)]
-    SetFqdnError(#[from] SetFqdnError),
-
-    /// Returned when a [`InsertDomainSegmentError`] is encountered.
-    #[error(transparent)]
-    InsertDomainSegmentError(#[from] InsertDomainSegmentError),
-    /// Returned when a [`InsertSubdomainSegmentError`] is encountered.
-    #[error(transparent)]
-    InsertSubdomainSegmentError(#[from] InsertSubdomainSegmentError),
-    /// Returned when a [`InsertDomainSuffixSegmentError`] is encountered.
-    #[error(transparent)]
-    InsertDomainSuffixSegmentError(#[from] InsertDomainSuffixSegmentError),
-    /// Returned when a [`SetDomainSegmentError`] is encountered.
-    #[error(transparent)]
-    SetDomainSegmentError(#[from] SetDomainSegmentError),
-    /// Returned when a [`SetSubdomainSegmentError`] is encountered.
-    #[error(transparent)]
-    SetSubdomainSegmentError(#[from] SetSubdomainSegmentError),
-    /// Returned when a [`SetDomainSuffixSegmentError`] is encountered.
-    #[error(transparent)]
-    SetDomainSuffixSegmentError(#[from] SetDomainSuffixSegmentError),
 
     /// Returned when attempting to set a URL's path to [`None`].
     #[error("Attempted to set the URL's path to None.")]
@@ -1327,31 +1308,31 @@ impl Action {
 
             // Domain
 
-            Self::SetHost               (       value) => task_state.url.set_host                 (        get_new_option_str!(value, task_state))?,
-            Self::SetSubdomain          (       value) => task_state.url.set_subdomain            (        get_new_option_str!(value, task_state))?,
-            Self::SetRegDomain          (       value) => task_state.url.set_reg_domain           (        get_new_option_str!(value, task_state))?,
-            Self::SetDomain             (       value) => task_state.url.set_domain               (        get_new_option_str!(value, task_state))?,
-            Self::SetDomainMiddle       (       value) => task_state.url.set_domain_middle        (        get_new_option_str!(value, task_state))?,
-            Self::SetNotDomainSuffix    (       value) => task_state.url.set_not_domain_suffix    (        get_new_option_str!(value, task_state))?,
-            Self::SetDomainSuffix       (       value) => task_state.url.set_domain_suffix        (        get_new_option_str!(value, task_state))?,
+            Self::SetHost        (value) => task_state.url.set_host         (get_new_option_str!(value, task_state))?,
+            Self::SetDomainPrefix(value) => task_state.url.set_domain_prefix(get_new_option_str!(value, task_state))?,
+            Self::SetDomainMiddle(value) => task_state.url.set_domain_middle(get_new_option_str!(value, task_state))?,
+            Self::SetDomainSuffix(value) => task_state.url.set_domain_suffix(get_new_option_str!(value, task_state))?,
+            Self::SetDomainOrigin(value) => task_state.url.set_domain_origin(get_new_option_str!(value, task_state))?,
+
             Self::SetDomainSegment      {index, value} => task_state.url.set_domain_segment       (*index, get_new_option_str!(value, task_state))?,
-            Self::SetSubdomainSegment   {index, value} => task_state.url.set_subdomain_segment    (*index, get_new_option_str!(value, task_state))?,
+            Self::SetDomainOriginSegment{index, value} => task_state.url.set_domain_origin_segment(*index, get_new_option_str!(value, task_state))?,
+            Self::SetDomainPrefixSegment{index, value} => task_state.url.set_domain_prefix_segment(*index, get_new_option_str!(value, task_state))?,
             Self::SetDomainSuffixSegment{index, value} => task_state.url.set_domain_suffix_segment(*index, get_new_option_str!(value, task_state))?,
 
-            Self::ModifyHost               (       modification) => modify_part!(task_state, modification, host_str             , set_host                         ),
-            Self::ModifySubdomain          (       modification) => modify_part!(task_state, modification, subdomain            , set_subdomain                    ),
-            Self::ModifyRegDomain          (       modification) => modify_part!(task_state, modification, reg_domain           , set_reg_domain                   ),
-            Self::ModifyDomain             (       modification) => modify_part!(task_state, modification, domain               , set_domain                       ),
-            Self::ModifyDomainMiddle       (       modification) => modify_part!(task_state, modification, domain_middle        , set_domain_middle                ),
-            Self::ModifyNotDomainSuffix    (       modification) => modify_part!(task_state, modification, not_domain_suffix    , set_not_domain_suffix            ),
-            Self::ModifyDomainSuffix       (       modification) => modify_part!(task_state, modification, domain_suffix        , set_domain_suffix                ),
+            Self::ModifyHost        (modification) => modify_part!(task_state, modification, host_str     , set_host         ),
+            Self::ModifyDomainPrefix(modification) => modify_part!(task_state, modification, domain_prefix, set_domain_prefix),
+            Self::ModifyDomainMiddle(modification) => modify_part!(task_state, modification, domain_middle, set_domain_middle),
+            Self::ModifyDomainSuffix(modification) => modify_part!(task_state, modification, domain_suffix, set_domain_suffix),
+            Self::ModifyDomainOrigin(modification) => modify_part!(task_state, modification, domain_origin, set_domain_origin),
+
             Self::ModifyDomainSegment      {index, modification} => modify_part!(task_state, modification, domain_segment       , set_domain_segment       , *index),
-            Self::ModifySubdomainSegment   {index, modification} => modify_part!(task_state, modification, subdomain_segment    , set_subdomain_segment    , *index),
+            Self::ModifyDomainOriginSegment{index, modification} => modify_part!(task_state, modification, domain_origin_segment, set_domain_origin_segment, *index),
+            Self::ModifyDomainPrefixSegment{index, modification} => modify_part!(task_state, modification, domain_prefix_segment, set_domain_prefix_segment, *index),
             Self::ModifyDomainSuffixSegment{index, modification} => modify_part!(task_state, modification, domain_suffix_segment, set_domain_suffix_segment, *index),
 
-
             Self::InsertDomainSegment       {index, value} => task_state.url.insert_domain_segment       (*index, get_new_str!(value, task_state, ActionError))?,
-            Self::InsertSubdomainSegment    {index, value} => task_state.url.insert_subdomain_segment    (*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainOriginSegment {index, value} => task_state.url.insert_domain_origin_segment(*index, get_new_str!(value, task_state, ActionError))?,
+            Self::InsertDomainPrefixSegment {index, value} => task_state.url.insert_domain_prefix_segment(*index, get_new_str!(value, task_state, ActionError))?,
             Self::InsertDomainSuffixSegment {index, value} => task_state.url.insert_domain_suffix_segment(*index, get_new_str!(value, task_state, ActionError))?,
 
             Self::EnsureFqdnPeriod => task_state.url.set_fqdn(true)?,
@@ -1463,11 +1444,11 @@ impl Action {
                 };
 
                 if *fragment {
-                    task_state.url.set_query(task_state.url.maybe_query().filtered(filter).into_owned());
+                    task_state.url.set_fragment(task_state.url.maybe_fragment_query().filtered(filter).into_owned());
                 }
 
                 if *query {
-                    task_state.url.set_fragment(task_state.url.maybe_fragment_query().filtered(filter).into_owned());
+                    task_state.url.set_query(task_state.url.maybe_query().filtered(filter).into_owned());
                 }
             },
 

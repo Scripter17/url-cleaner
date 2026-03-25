@@ -1,62 +1,29 @@
-//! A wrapper around [`url::Url`] with extra metadata.
+//! [`BetterUrl`].
 
-use std::net::IpAddr;
 use std::str::FromStr;
 use std::ops::Deref;
 
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize, ser::Serializer, de::Deserializer};
-use url::{Url, ParseError};
-use thiserror::Error;
+use url::Url;
 
 use crate::prelude::*;
 
+mod host;
 mod path;
 mod query;
 mod fragment;
-mod domain_impl;
-pub use domain_impl::*;
 
 /// A wrapper around a [`Url`] with extra metadata.
 ///
-/// Currently the only included metadata is a [`HostDetails`], which currently only caches [PSL](https://publicsuffix.org/) information for more efficient reg domain, domain suffix, etc..
-#[derive(Clone)]
+/// Currently the only included metadata is a [`HostDetails`], which currently only caches [PSL](https://publicsuffix.org/) information.
+#[derive(Debug, Clone)]
 pub struct BetterUrl {
     /// The [`Url`].
     url: Url,
     /// The [`HostDetails`] of [`Self::url`].
     host_details: Option<HostDetails>
 }
-
-/// The error [`BetterUrl::set_port`] returns when it fails.
-#[derive(Debug, Error)]
-#[error("Failed to set the port.")]
-pub struct SetPortError;
-
-/// The error [`BetterUrl::set_ip_host`] returns when it fails.
-#[derive(Debug, Error)]
-#[error("Failed to set the host to an IP.")]
-pub struct SetIpHostError;
-
-/// The error [`BetterUrl::set_password`] returns when it fails.
-#[derive(Debug, Error)]
-#[error("Failed to set the password.")]
-pub struct SetPasswordError;
-
-/// The error [`BetterUrl::set_username`] returns when it fails.
-#[derive(Debug, Error)]
-#[error("Failed to set the username.")]
-pub struct SetUsernameError;
-
-/// The error [`BetterUrl::set_scheme`] returns when it fails.
-#[derive(Debug, Error)]
-#[error("Failed to set the scheme.")]
-pub struct SetSchemeError;
-
-/// The error [`BetterUrl::set_host`] returns when it fails.
-#[derive(Debug, Error)]
-#[error(transparent)]
-pub struct SetHostError(#[from] pub ParseError);
 
 impl BetterUrl {
     /// Parse a URL.
@@ -69,85 +36,6 @@ impl BetterUrl {
     /// ```
     pub fn parse(value: &str) -> Result<Self, <Self as FromStr>::Err> {
         Self::from_str(value)
-    }
-
-    /// Get a borrowing [`BetterHost`].
-    pub fn host<'a>(&'a self) -> Option<RefBetterHost<'a>> {
-        match (self.host_str(), self.host_details()) {
-            (Some(string), Some(details)) => Some(RefBetterHost {string, details}),
-            _ => None
-        }
-    }
-
-    /// Get the contained [`HostDetails`].
-    /// # Examples
-    /// ```
-    /// use better_url::prelude::*;
-    /// let url = BetterUrl::parse("https://example.com").unwrap();
-    ///
-    /// assert!(matches!(url.host_details(), Some(HostDetails::Domain(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None}))));
-    ///
-    /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
-    ///
-    /// assert!(matches!(url.host_details(), Some(HostDetails::Ipv4(Ipv4Details {parsed: _}))));
-    ///
-    /// let url = BetterUrl::parse("https://[::1]").unwrap();
-    ///
-    /// assert!(matches!(url.host_details(), Some(HostDetails::Ipv6(Ipv6Details {parsed: _}))));
-    /// ```
-    pub fn host_details(&self) -> Option<HostDetails> {
-        self.host_details
-    }
-
-    /// If [`Self::host_details`] returns [`HostDetails::Domain`], return it.
-    /// ```
-    /// use better_url::prelude::*;
-    /// let url = BetterUrl::parse("https://example.com").unwrap();
-    ///
-    /// assert!(matches!(url.domain_details(), Some(DomainDetails {middle_start: Some(0), suffix_start: Some(8), fqdn_period: None})));
-    /// assert!(matches!(url.ipv4_details  (), None));
-    /// assert!(matches!(url.ipv6_details  (), None));
-    /// ```
-    pub fn domain_details(&self) -> Option<DomainDetails> {
-        self.host_details()?.domain_details()
-    }
-
-    /// If [`Self::host_details`] is [`HostDetails::Ipv4`] or [`HostDetails::Ipv6`], reutrn the equivalent [`IpDetails`].
-    pub fn ip_details(&self) -> Option<IpDetails> {
-        self.host_details()?.ip_details()
-    }
-
-    /// If [`Self::host_details`] returns [`HostDetails::Ipv4`], return it.
-    /// ```
-    /// use better_url::prelude::*;
-    /// let url = BetterUrl::parse("https://127.0.0.1").unwrap();
-    ///
-    /// assert!(matches!(url.domain_details(), None));
-    /// assert!(matches!(url.ipv4_details  (), Some(Ipv4Details {parsed: _})));
-    /// assert!(matches!(url.ipv6_details  (), None));
-    /// ```
-    pub fn ipv4_details(&self) -> Option<Ipv4Details> {
-        self.host_details()?.ipv4_details()
-    }
-
-    /// If [`Self::host_details`] returns [`HostDetails::Ipv6`], return it.
-    /// ```
-    /// use better_url::prelude::*;
-    /// let url = BetterUrl::parse("https://[::1]").unwrap();
-    ///
-    /// assert!(matches!(url.domain_details(), None));
-    /// assert!(matches!(url.ipv4_details  (), None));
-    /// assert!(matches!(url.ipv6_details  (), Some(Ipv6Details {parsed: _})));
-    /// ```
-    pub fn ipv6_details(&self) -> Option<Ipv6Details> {
-        self.host_details()?.ipv6_details()
-    }
-
-    /// [`Url::host_str`] with any `www.` prefix and `.` suffix removed.
-    pub fn normalized_host(&self) -> Option<&str> {
-        let x = self.host_str()?;
-        let x = x.strip_prefix("www.").unwrap_or(x);
-        Some(x.strip_suffix(".").unwrap_or(x))
     }
 
     /// [`Url::set_scheme`].
@@ -171,33 +59,6 @@ impl BetterUrl {
         self.url.set_password(password).map_err(|()| SetPasswordError)
     }
 
-    /// [`Self::set_host`] but use a precomputed [`HostDetails`].
-    fn set_host_with_known_details(&mut self, host: Option<&str>, host_details: Option<HostDetails>) -> Result<(), SetHostError> {
-        self.url.set_host(host)?;
-        self.host_details = host_details;
-        Ok(())
-    }
-
-    /// [`Url::set_host`].
-    /// # Errors
-    /// If the call to [`Url::set_host`] returns an error, the error is returned..
-    pub fn set_host(&mut self, host: Option<&str>) -> Result<(), SetHostError> {
-        if self.host_str() != host {
-            self.url.set_host(host)?;
-            self.host_details = self.url.host().map(|host| HostDetails::from_host(&host));
-        }
-        Ok(())
-    }
-
-    /// [`Url::set_ip_host`].
-    /// # Errors
-    /// If the call to [`Url::set_ip_host`] returns an error, returns the error [`SetIpHostError`].
-    pub fn set_ip_host(&mut self, address: IpAddr) -> Result<(), SetIpHostError> {
-        self.url.set_ip_host(address).map_err(|()| SetIpHostError)?;
-        self.host_details = Some(address.into());
-        Ok(())
-    }
-
     /// [`Url::set_port`].
     /// # Errors
     /// If the call to [`Url::set_port`] returns an error, returns the error [`SetPortError`].
@@ -206,15 +67,9 @@ impl BetterUrl {
     }
 }
 
-impl std::fmt::Debug for BetterUrl {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "{:?}", self.as_str())
-    }
-}
-
 impl std::fmt::Display for BetterUrl {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.url.fmt(formatter)
+        write!(formatter, "{}", self.url)
     }
 }
 
@@ -225,7 +80,6 @@ impl Deref for BetterUrl {
         &self.url
     }
 }
-
 
 impl PartialEq for BetterUrl {fn eq(&self, other: &Self) -> bool {self.url == other.url}}
 impl Eq for BetterUrl {}

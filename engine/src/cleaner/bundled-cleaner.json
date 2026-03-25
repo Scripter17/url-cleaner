@@ -150,7 +150,7 @@
 			"sets": {
 				"utps": "Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` list for a list of prefixes only used for universal tracking parameters.",
 
-				"nh_keep_http": "The `NormalizedHost`s to not upgrade from `http` to `https`."
+				"nh_keep_http": "The `NormalHost`s to not upgrade from `http` to `https`."
 			},
 			"lists": {
 				"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."
@@ -158,14 +158,14 @@
 			"partitionings": {
 				"nh_categories": "Categories of similar websites with shared cleaning methods.",
 
-				"rd_www_subdomain": "The `RegDomain`s to ensure/remove `www` `Subdomain`s.",
-				"dm_www_subdomain": "The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.",
+				"do_www_prefix": "The `DomainOrigin`s to ensure/remove `www` `DomainPrefix`s.",
+				"dm_www_prefix": "The `DomainMiddle`s to ensure/remove `www` `DomainPrefix`s.",
 
+				"nh_expand_mode": "How to handle redirect `NormalHost`s.",
+				"do_expand_mode": "How to handle redirect `DomainOrigin`s,",
 				"dm_expand_mode": "How to handle redirect `DomainMiddle`s.",
-				"nh_expand_mode": "How to handle redirect `NormalizedHost`s.",
-				"rd_expand_mode": "How to handle redirect `RegDomain`s,",
 
-				"mobilizer": "Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL."
+				"mobilizer": "Which part at which value makes a `NormalHost`/`DomainOrigin` a mobile URL."
 			}
 		},
 		"task_context": {
@@ -300,7 +300,7 @@
 
 
 
-			"rd_www_subdomain": {
+			"do_www_prefix": {
 				"ensure": [
 					"1688.com", "9news.com.au", "abc.net.au", "adjust.com", "afp.com", "agorapulse.com", "alibaba.com", "animaapp.com", "anrdoezrs.net", "apple.com", "bbc.com",
 					"behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com",
@@ -337,7 +337,7 @@
 					"xhslink.com", "xnaas.github.io", "xprmpacks.com", "yewtu.be", "yiffx.com", "zionism.observer"
 				]
 			},
-			"dm_www_subdomain": {
+			"dm_www_prefix": {
 				"ensure": ["amazon", "google"],
 				"remove": []
 			},
@@ -359,7 +359,7 @@
 					"xprmpacks.com"
 				],
 				"redirect": [
-					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.news", "amn.st",
+					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.news", "amn.st", "fn.gg",
 					"amzlink.to", "amzn.asia", "amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly",
 					"bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it",
 					"clckhl.co", "click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "dareqr.info", "db.tt",
@@ -399,7 +399,7 @@
 					"tmz.me", "toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "uqr.to", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
 				]
 			},
-			"rd_expand_mode": {
+			"do_expand_mode": {
 				"redirect": ["a9yw.net", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "visitlink.me", "trib.al"],
 				"sometimes_redirect": ["cmail20.com", "sendgrid.net"],
 				"special": [
@@ -411,12 +411,12 @@
 
 
 			"mobilizer": {
-				"sd_m"              : ["facebook.com", "twitch.tv", "vk.com", "youtube.com"],
-				"sd_mobile"         : ["abc.net.au"],
-				"if_sd_sds_0_m"     : ["bulbagarden.net"],
-				"if_sd_sds_0_mobile": [],
-				"if_sd_sds_1_m"     : ["wikipedia.org"],
-				"if_sd_sds_1_mobile": [],
+				"dp_m"              : ["facebook.com", "twitch.tv", "vk.com", "youtube.com"],
+				"dp_mobile"         : ["abc.net.au"],
+				"if_dp_sds_0_m"     : ["bulbagarden.net"],
+				"if_dp_sds_0_mobile": [],
+				"if_dp_sds_1_m"     : ["wikipedia.org"],
+				"if_dp_sds_1_mobile": [],
 				"qp_m_1"            : [],
 				"qp_mobile_1"       : [],
 				"ps_0_mobile"       : [],
@@ -481,7 +481,7 @@
 						{"SchemeIs": "http"},
 						{"FlagIsNotSet": "keep_http"},
 						{"Not": "HostIsIp"},
-						{"Not": {"NormalizedHostIsInSet": "nh_keep_http"}}
+						{"Not": {"NormalHostIsInSet": "nh_keep_http"}}
 					]},
 					"then": {"SetScheme": "https"}
 				}},
@@ -490,7 +490,7 @@
 					"names": "utps",
 					"prefixes": "utp_prefixes",
 					"except_names": {"PartMap": {
-						"part": "RegDomain",
+						"part": "DomainOrigin",
 						"map": {
 							"carrefourpl.snrpage.com"    : ["utm_source"],
 							"em.dynamicyield.com"        : ["cuid"],
@@ -526,32 +526,32 @@
 					"value": {"Var": "client_type"},
 					"map": {
 						"desktop": {"FirstMatchingPartPartitioning": {
-							"parts": ["NormalizedHost", "RegDomain"],
+							"parts": ["NormalHost", "DomainOrigin"],
 							"partitioning": "mobilizer",
 							"map": {
-								"sd_m": {"If": {
-									"if"  : {"SubdomainIs" : "m"},
-									"then": {"SetSubdomain": null}
+								"dp_m": {"If": {
+									"if"  : {"DomainPrefixIs" : "m"},
+									"then": {"SetDomainPrefix": null}
 								}},
-								"sd_mobile": {"If": {
-									"if"  : {"SubdomainIs" : "mobile"},
-									"then": {"SetSubdomain": null}
+								"dp_mobile": {"If": {
+									"if"  : {"DomainPrefixIs" : "mobile"},
+									"then": {"SetDomainPrefix": null}
 								}},
-								"if_sd_sds_0_m": {"If": {
-									"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "m"}},
-									"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
+								"if_dp_sds_0_m": {"If": {
+									"if"  : {"DomainPrefixSegmentIs" : {"index": 0, "value": "m"}},
+									"then": {"SetDomainPrefixSegment": {"index": 0, "value": null}}
 								}},
-								"if_sd_sds_0_mobile": {"If": {
-									"if"  : {"SubdomainSegmentIs" : {"index": 0, "value": "mobile"}},
-									"then": {"SetSubdomainSegment": {"index": 0, "value": null}}
+								"if_dp_sds_0_mobile": {"If": {
+									"if"  : {"DomainPrefixSegmentIs" : {"index": 0, "value": "mobile"}},
+									"then": {"SetDomainPrefixSegment": {"index": 0, "value": null}}
 								}},
-								"if_sd_sds_1_m": {"If": {
-									"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "m"}},
-									"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
+								"if_dp_sds_1_m": {"If": {
+									"if"  : {"DomainPrefixSegmentIs" : {"index": 1, "value": "m"}},
+									"then": {"SetDomainPrefixSegment": {"index": 1, "value": null}}
 								}},
-								"if_sd_sds_1_mobile": {"If": {
-									"if"  : {"SubdomainSegmentIs" : {"index": 1, "value": "mobile"}},
-									"then": {"SetSubdomainSegment": {"index": 1, "value": null}}
+								"if_dp_sds_1_mobile": {"If": {
+									"if"  : {"DomainPrefixSegmentIs" : {"index": 1, "value": "mobile"}},
+									"then": {"SetDomainPrefixSegment": {"index": 1, "value": null}}
 								}},
 								"qp_m_1"     : {"SetQueryParam": {"param": "m"     , "value": null}},
 								"qp_mobile_1": {"SetQueryParam": {"param": "mobile", "value": null}},
@@ -564,48 +564,48 @@
 									"then": {"SetPathSegment": {"index": 1, "value": null}}
 								}},
 
-								"special_1688": {"SetSubdomain": "detail"}
+								"special_1688": {"SetDomainPrefix": "detail"}
 							}
 						}},
 						"mobile": {"FirstMatchingPartPartitioning": {
-							"parts": ["NormalizedHost", "RegDomain"],
+							"parts": ["NormalHost", "DomainOrigin"],
 							"partitioning": "mobilizer",
 							"map": {
-								"sd_m": {"If": {
-									"if": {"SubdomainIsOneOf": ["www", null]},
-									"then": {"SetSubdomain": "m"}
+								"dp_m": {"If": {
+									"if": {"DomainPrefixIsOneOf": ["www", null]},
+									"then": {"SetDomainPrefix": "m"}
 								}},
-								"sd_mobile": {"If": {
-									"if": {"SubdomainIsOneOf": ["www", null]},
-									"then": {"SetSubdomain": "mobile"}
+								"dp_mobile": {"If": {
+									"if": {"DomainPrefixIsOneOf": ["www", null]},
+									"then": {"SetDomainPrefix": "mobile"}
 								}},
-								"if_sd_sds_0_m": {"If": {
+								"if_dp_sds_0_m": {"If": {
 									"if": {"Not": {"Any": [
-										{"SubdomainIs": null},
-										{"SubdomainSegmentIs": {"index": 0, "value": "m"}}
+										{"DomainPrefixIs": null},
+										{"DomainPrefixSegmentIs": {"index": 0, "value": "m"}}
 									]}},
-									"then": {"InsertSubdomainSegment": {"index": 0, "value": "m"}}
+									"then": {"InsertDomainPrefixSegment": {"index": 0, "value": "m"}}
 								}},
-								"if_sd_sds_0_mobile": {"If": {
+								"if_dp_sds_0_mobile": {"If": {
 									"if": {"Not": {"Any": [
-										{"SubdomainIs": null},
-										{"SubdomainSegmentIs": {"index": 0, "value": "mobile"}}
+										{"DomainPrefixIs": null},
+										{"DomainPrefixSegmentIs": {"index": 0, "value": "mobile"}}
 									]}},
-									"then": {"InsertSubdomainSegment": {"index": 0, "value": "mobile"}}
+									"then": {"InsertDomainPrefixSegment": {"index": 0, "value": "mobile"}}
 								}},
-								"if_sd_sds_1_m": {"If": {
+								"if_dp_sds_1_m": {"If": {
 									"if": {"Not": {"Any": [
-										{"SubdomainIs": null},
-										{"SubdomainSegmentIs": {"index": 1, "value": "m"}}
+										{"DomainPrefixIs": null},
+										{"DomainPrefixSegmentIs": {"index": 1, "value": "m"}}
 									]}},
-									"then": {"InsertSubdomainSegment": {"index": 1, "value": "m"}}
+									"then": {"InsertDomainPrefixSegment": {"index": 1, "value": "m"}}
 								}},
 								"if_sd_sds_1_mobile": {"If": {
 									"if": {"Not": {"Any": [
-										{"SubdomainIs": null},
-										{"SubdomainSegmentIs": {"index": 1, "value": "mobile"}}
+										{"DomainPrefixIs": null},
+										{"DomainPrefixSegmentIs": {"index": 1, "value": "mobile"}}
 									]}},
-									"then": {"InsertSubdomainSegment": {"index": 1, "value": "mobile"}}
+									"then": {"InsertDomainPrefixSegment": {"index": 1, "value": "mobile"}}
 								}},
 								"qp_m_1": {"If": {
 									"if"  : {"QueryParamIs" : {"param": "m", "value": null}},
@@ -624,35 +624,35 @@
 									"then": {"InsertPathSegment"  : {"index": 1, "value": "mobile"}}
 								}},
 
-								"special_1688": {"SetSubdomain": "m"}
+								"special_1688": {"SetDomainPrefix": "m"}
 							}
 						}}
 					}
 				}},
 				{"PartPartitioning": {
-					"part": "RegDomain",
-					"partitioning": "rd_www_subdomain",
+					"part": "DomainOrigin",
+					"partitioning": "do_www_prefix",
 					"map": {
 						"ensure": {"If": {
-							"if": {"SubdomainIs": null},
-							"then": {"SetSubdomain": "www"}
+							"if": {"DomainPrefixIs": null},
+							"then": {"SetDomainPrefix": "www"}
 						}},
 						"remove": {"If": {
-							"if": {"SubdomainIs": "www"},
-							"then": {"SetSubdomain": null}
+							"if": {"DomainPrefixIs": "www"},
+							"then": {"SetDomainPrefix": null}
 						}}
 					},
 					"else": {"PartPartitioning": {
 						"part": "DomainMiddle",
-						"partitioning": "dm_www_subdomain",
+						"partitioning": "dm_www_prefix",
 						"map": {
 							"ensure": {"If": {
-								"if": {"SubdomainIs": null},
-								"then": {"SetSubdomain": "www"}
+								"if": {"DomainPrefixIs": null},
+								"then": {"SetDomainPrefix": "www"}
 							}},
 							"remove": {"If": {
-								"if": {"SubdomainIs": "www"},
-								"then": {"SetSubdomain": null}
+								"if": {"DomainPrefixIs": "www"},
+								"then": {"SetDomainPrefix": null}
 							}}
 						}
 					}}
@@ -806,7 +806,7 @@
 		"if": {"SchemeIsOneOf": ["http", "https"]},
 		"then": {"All": [
 			{"StringPartitioning": {
-				"value": {"JobSourceHostPart": "NormalizedHost"},
+				"value": {"JobSourceHostPart": "NormalHost"},
 				"partitioning": "nh_categories",
 				"map": {
 					"alibaba": {"RemoveQueryParams": ["spf", "file"]},
@@ -886,13 +886,13 @@
 
 
 					{"PartPartitioning": {
-						"part": "RegDomain",
-						"partitioning": "rd_expand_mode",
+						"part": "DomainOrigin",
+						"partitioning": "do_expand_mode",
 						"map": {
 							"redirect": {"Function": "expand_redirect"},
 							"sometimes_redirect": {"If": {
 								"if": {"PartMap": {
-									"part": "RegDomain",
+									"part": "DomainOrigin",
 									"map": {
 										"cmail20.com": {"All": [
 											{"PathStartsWith": "/t/"},
@@ -907,7 +907,7 @@
 								"then": {"Function": "expand_redirect"}
 							}},
 							"special": {"PartMap": {
-								"part": "RegDomain",
+								"part": "DomainOrigin",
 								"map": {
 									"adj.st": {"TryElse": {
 										"try": {"GetUrlFromQueryParam": "adj_fallback"},
@@ -922,7 +922,7 @@
 									}},
 									"app.link": {"All": [
 										{"AllowQueryParam": "$fallback_url"},
-										{"ModifySubdomain": {"StripMaybeSuffix": "-alternate"}},
+										{"ModifyDomainPrefix": {"StripMaybeSuffix": "-alternate"}},
 										{"If": {
 											"if": {"Not": {"PathStartsWith": "/e/"}},
 											"then": {"InsertPathSegment": {"index": 0, "value": "e"}}
@@ -1053,7 +1053,7 @@
 										"then": {"GetUrlFromQueryParam": "to"}
 									}}
 								},
-								"else": {"Error": "Unhandled rd_expand_mode::special element."}
+								"else": {"Error": "Unhandled do_expand_mode::special element."}
 							}}
 						}
 					}},
@@ -1061,7 +1061,7 @@
 
 
 					{"PartPartitioning": {
-						"part": "NormalizedHost",
+						"part": "NormalHost",
 						"partitioning": "nh_expand_mode",
 						"map": {
 							"bypass_vip": {"If": {
@@ -1098,7 +1098,7 @@
 							"redirect": {"Function": "expand_redirect"},
 							"sometimes_redirect": {"If": {
 								"if": {"PartMap": {
-									"part": "NormalizedHost",
+									"part": "NormalHost",
 									"map": {
 										"abc.net.au"              : {"All": [{"PathStartsWith": "/news/"}, {"PathSegmentMatches": {"index": 1, "matcher": "AllAsciiDigit"}}]},
 										"allmylinks.com"          : {"PathIs": "/link/out"},
@@ -1129,7 +1129,7 @@
 								"then": {"Function": "expand_redirect"}
 							}},
 							"special": {"PartMap": {
-								"part": "NormalizedHost",
+								"part": "NormalHost",
 								"map": {
 									"1link.club": {"Function": {
 										"name": "extract_from_body",
@@ -1497,7 +1497,7 @@
 											{"StringIs": {
 												"left": {"ExtractPart": {
 													"value": {"Part": {"QueryParam": "url"}},
-													"part": "RegDomain"
+													"part": "DomainOrigin"
 												}},
 												"right": "lego.com"
 											}}
@@ -1975,7 +1975,7 @@
 
 
 			{"PartPartitioning": {
-				"part": "NormalizedHost",
+				"part": "NormalHost",
 				"partitioning": "nh_categories",
 				"map": {
 					"alibaba": {"RemoveQueryParams": [
@@ -1987,7 +1987,7 @@
 					"bluesky_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"PartMap": {
-							"part": "NormalizedHost",
+							"part": "NormalHost",
 							"map": {
 								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
 							}
@@ -2026,7 +2026,7 @@
 						"if_none": {"SetHost": {"Var": "breezewiki_host"}}
 					}},
 
-					"deviantart_embed_hosts": {"SetRegDomain": "deviantart.com"},
+					"deviantart_embed_hosts": {"SetDomainOrigin": "deviantart.com"},
 
 					"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
 
@@ -2045,7 +2045,7 @@
 							"prefixes": ["xmt=", "source_", "igsh"]
 						}},
 						{"If": {
-							"if": {"RegDomainIs": "threads.net"},
+							"if": {"DomainOriginIs": "threads.net"},
 							"then": {"SetHost": "www.threads.com"}
 						}}
 					]},
@@ -2071,7 +2071,7 @@
 					"pixiv_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"PartMap": {
-							"part": "NormalizedHost",
+							"part": "NormalHost",
 							"map": {
 								"phixiv.net": {"SetWhole": "https://github.com/thelaao/phixiv"}
 							}
@@ -2114,7 +2114,7 @@
 					"twitter_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"PartMap": {
-							"part": "NormalizedHost",
+							"part": "NormalHost",
 							"map": {
 								"vxtwitter.com"   : {"SetWhole": "https://github.com/dylanpdx/BetterTwitFix"},
 								"fixupx.com"      : {"SetWhole": "https://github.com/FxEmbed/FxEmbed"       },
@@ -2178,7 +2178,7 @@
 
 
 			{"PartMap": {
-				"part": "RegDomain",
+				"part": "DomainOrigin",
 				"map": {
 					"acer.com": {"HandleParams": {"prefixes": ["internal_"]}},
 					"addons.mozilla.org": {"RemoveQueryParams": ["platform", "appver"]},
@@ -2203,12 +2203,12 @@
 					"booth.pm": {"RemoveQueryParam": "_gl"},
 					"browserstack.com": {"RemoveFragmentParams": ["ref", "source"]},
 					"bsky.social": {"If": {
-						"if": {"Not": {"SubdomainIsOneOf": ["www", null]}},
+						"if": {"Not": {"DomainPrefixIsOneOf": ["www", null]}},
 						"then": {"SetWhole": {"Join": {
 							"values": ["https://bsky.app/profile/", {"Part": "Host"}]
 						}}}
 					}},
-					"carrd.com": {"SetRegDomain": "carrd.co"},
+					"carrd.com": {"SetDomainOrigin": "carrd.co"},
 					"cbc.ca": {"RemoveQueryParam": "__vfz"},
 					"cbsnews.com": {"RemoveQueryParams": ["ftag", "linkId"]},
 					"change.org": {"All": [
@@ -2225,10 +2225,10 @@
 					]},
 					"crunchyroll.com": {"RemoveQueryParam": "referrer"},
 					"deviantart.com": {"If": {
-						"if": {"Not": {"SubdomainIsOneOf": ["www", null]}},
+						"if": {"Not": {"DomainPrefixIsOneOf": ["www", null]}},
 						"then": {"All": [
-							{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
-							{"SetSubdomain": null}
+							{"InsertPathSegment": {"index": 0, "value": {"Part": "DomainPrefix"}}},
+							{"SetDomainPrefix": null}
 						]}
 					}},
 					"drinkctrl.com": {"RemoveQueryParams": ["ref", "tid"]},
@@ -2262,13 +2262,13 @@
 											}},
 											{"RemoveQueryParam": "query"},
 											{"SetPath": {"Join": {
-												"values": [{"Part": "Subdomain"}, "/search"]
+												"values": [{"Part": "DomainPrefix"}, "/search"]
 											}}},
 											{"SetHost": {"Var": "breezewiki_host"}}
 										]}
 									},
 									"else": {"All": [
-										{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
+										{"InsertPathSegment": {"index": 0, "value": {"Part": "DomainPrefix"}}},
 										{"SetHost": {"Var": "breezewiki_host"}}
 									]}
 								}}
@@ -2318,7 +2318,7 @@
 							"then": {"RemoveQueryParam": "CMP"}
 						}},
 						{"If": {
-							"if": {"SubdomainIs": "shop"},
+							"if": {"DomainPrefixIs": "shop"},
 							"then": {"SetHost": "www.lego.com"}
 						}}
 					]},
@@ -2418,7 +2418,7 @@
 					]},
 					"tumblr.com": {"All": [
 						{"If": {
-							"if": {"SubdomainIs": "at"},
+							"if": {"DomainPrefixIs": "at"},
 							"then": {"Function": "expand_redirect"}
 						}},
 						{"If": {
@@ -2448,9 +2448,9 @@
 							"if": {"All": [
 								{"FlagIsSet": "tumblr_unsubdomain_blog"},
 								{"Not": {"Any": [
-									{"SubdomainIsOneOf": ["at", "www", null]},
+									{"DomainPrefixIsOneOf": ["at", "www", null]},
 									{"PathStartsWith": "/archive/"},
-									{"PartContains": {"part": "Subdomain", "value": "."}}
+									{"PartContains": {"part": "DomainPrefix", "value": "."}}
 								]}}
 							]},
 							"then": {"All": [
@@ -2458,8 +2458,8 @@
 									"if": {"PathStartsWith": "/post/"},
 									"then": {"RemovePathSegment": 0}
 								}},
-								{"InsertPathSegment": {"index": 0, "value": {"Part": "Subdomain"}}},
-								{"SetSubdomain": null}
+								{"InsertPathSegment": {"index": 0, "value": {"Part": "DomainPrefix"}}},
+								{"SetDomainPrefix": null}
 							]}
 						}}
 					]},
@@ -2490,7 +2490,7 @@
 				}
 			}},
 			{"PartMap": {
-				"part": "NormalizedHost",
+				"part": "NormalHost",
 				"map": {
 					"abc.net.au": {"RemoveQueryParam": "future"},
 					"abc7ny.com": {"RemoveQueryParams": ["ex_cid", "taid"]},

@@ -96,7 +96,7 @@ Licensed under the AGPL 3.0 or later.
 ### Sets
 
 - `utps`: Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` list for a list of prefixes only used for universal tracking parameters.
-- `nh_keep_http`: The `NormalizedHost`s to not upgrade from `http` to `https`.
+- `nh_keep_http`: The `NormalHost`s to not upgrade from `http` to `https`.
 
 ### Lists
 
@@ -105,12 +105,12 @@ Licensed under the AGPL 3.0 or later.
 ### Partitionings
 
 - `nh_categories`: Categories of similar websites with shared cleaning methods.
-- `rd_www_subdomain`: The `RegDomain`s to ensure/remove `www` `Subdomain`s.
-- `dm_www_subdomain`: The `DomainMiddle`s to ensure/remove `www` `Subdomain`s.
+- `do_www_prefix`: The `DomainOrigin`s to ensure/remove `www` `DomainPrefix`s.
+- `dm_www_prefix`: The `DomainMiddle`s to ensure/remove `www` `DomainPrefix`s.
+- `nh_expand_mode`: How to handle redirect `NormalHost`s.
+- `do_expand_mode`: How to handle redirect `DomainOrigin`s,
 - `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
-- `nh_expand_mode`: How to handle redirect `NormalizedHost`s.
-- `rd_expand_mode`: How to handle redirect `RegDomain`s,
-- `mobilizer`: Which part at which value makes a `NormalizedHost`/`RegDomain` a mobile URL.
+- `mobilizer`: Which part at which value makes a `NormalHost`/`DomainOrigin` a mobile URL.
 
 ## Task context
 

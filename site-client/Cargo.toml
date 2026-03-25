@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 async-stream = "0.3.6"
 bytes = "1.11.1"
-clap = { version = "4.5.60", features = ["derive"] }
+clap = { version = "4.6.0", features = ["derive"] }
 futures-util = "0.3.32"
 http-body-util = "0.1.3"
 hyper = { version = "1.8.1", features = ["client", "http1"] }

@@ -3,15 +3,14 @@
 use std::borrow::Cow;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
 /// A borrowed path string.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BetterRefPath<'a>(pub &'a str);
 
 impl<'a> BetterRefPath<'a> {

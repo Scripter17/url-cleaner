@@ -1,26 +1,26 @@
-//! A wrapper around the [`url`] crate that provides higher level operations.
+//! A wrapper around the [`url`](::url) crate that provides higher level operations.
 
-pub mod errors;
-pub mod url;
+mod url;
+mod parse;
+mod position;
 pub mod host;
-pub mod ref_host;
-pub mod position;
-pub mod host_details;
 pub mod path;
 pub mod query;
-pub mod parse;
-pub(crate) mod util;
+pub mod errors;
+pub mod util;
+
+pub use url::*;
+pub use parse::*;
+pub use position::*;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
-    pub use super::errors::*;
     pub use super::url::*;
-    pub use super::host::*;
-    pub use super::ref_host::*;
     pub use super::position::*;
-    pub use super::host_details::*;
-    pub use super::path::prelude::*;
-    pub use super::query::prelude::*;
     pub use super::parse::*;
-    pub(crate) use super::util::prelude::*;
+    pub use super::host::prelude::*;
+    pub use super::path::*;
+    pub use super::query::*;
+    pub use super::errors::*;
+    pub use super::util::prelude::*;
 }

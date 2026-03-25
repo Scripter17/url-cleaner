@@ -3,18 +3,18 @@
 use std::borrow::Cow;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
 mod get;
 mod remove;
 
-/// A borrowed query string.
+/// A [`BetterRefQuery`] that might be [`None`].
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(deserialize = "'de: 'a")))]
 pub struct BetterMaybeRefQuery<'a>(pub Option<BetterRefQuery<'a>>);
 
 impl<'a> BetterMaybeRefQuery<'a> {

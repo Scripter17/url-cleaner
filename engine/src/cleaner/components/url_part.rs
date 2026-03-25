@@ -17,7 +17,7 @@ use crate::prelude::*;
 /// For most parts, setting a URL's part to a value then getting that same part returns the same value.
 ///
 /// Exceptions include setting part segments to values containing the split, `After`/`Before`/`Next` variants always returning [`None`], and probably some other things. I'll fix this doc later.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Suitability)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum UrlPart {
     /// Print debug information about the contained [`Self`].
@@ -54,34 +54,36 @@ pub enum UrlPart {
 
     /// [`Url::host`] and [`BetterUrl::set_host`].
     Host,
-    /// [`BetterUrl::normalized_host`].
+    /// [`BetterUrl::normal_host`].
     /// # Errors
-    /// Trying to set this part returns [`SetUrlPartError::CannotSetNormalizedHost`].
-    NormalizedHost,
+    /// Trying to set this part returns [`SetUrlPartError::CannotSetNormalHost`].
+    NormalHost,
+
+
+
+    /// [`BetterUrl::domain_str`] and [`BetterUrl::set_host`].
+    Domain,
+    /// [`BetterUrl::domain_labels`] and [`BetterUrl::set_domain_labels`].
+    DomainLabels,
+    /// [`BetterUrl::domain_origin`] and [`BetterUrl::set_domain_origin`].
+    DomainOrigin,
+    /// [`BetterUrl::domain_prefix`] and [`BetterUrl::set_domain_prefix`].
+    DomainPrefix,
+    /// [`BetterUrl::domain_middle`] and [`BetterUrl::set_domain_middle`].
+    DomainMiddle,
+    /// [`BetterUrl::domain_suffix`] and [`BetterUrl::set_domain_suffix`].
+    DomainSuffix,
 
 
 
     /// [`BetterUrl::domain_segment`] and [`BetterUrl::set_domain_segment`].
     DomainSegment(isize),
-    /// [`BetterUrl::subdomain_segment`] and [`BetterUrl::set_subdomain_segment`].
-    SubdomainSegment(isize),
+    /// [`BetterUrl::domain_origin_segment`] and [`BetterUrl::set_domain_origin_segment`].
+    DomainOriginSegment(isize),
+    /// [`BetterUrl::domain_prefix_segment`] and [`BetterUrl::set_domain_prefix_segment`].
+    DomainPrefixSegment(isize),
     /// [`BetterUrl::domain_suffix_segment`] and [`BetterUrl::set_domain_suffix_segment`].
     DomainSuffixSegment(isize),
-
-
-
-    /// [`BetterUrl::domain`] and [`BetterUrl::set_domain`].
-    Domain,
-    /// [`BetterUrl::subdomain`] and [`BetterUrl::set_subdomain`].
-    Subdomain,
-    /// [`BetterUrl::reg_domain`] and [`BetterUrl::set_reg_domain`].
-    RegDomain,
-    /// [`BetterUrl::not_domain_suffix`] and [`BetterUrl::set_not_domain_suffix`].
-    NotDomainSuffix,
-    /// [`BetterUrl::domain_middle`] and [`BetterUrl::set_domain_middle`].
-    DomainMiddle,
-    /// [`BetterUrl::domain_suffix`] and [`BetterUrl::set_domain_suffix`].
-    DomainSuffix,
 
 
 
@@ -186,19 +188,20 @@ impl UrlPart {
             Self::Username => Cow::Borrowed(url.username()),
             Self::Password => Cow::Borrowed(url.password()?),
 
-            Self::Host           => Cow::Borrowed(url.host_str()?),
-            Self::NormalizedHost => Cow::Borrowed(url.normalized_host()?),
+            Self::Host       => Cow::Borrowed(url.host_str()?),
+            Self::NormalHost => Cow::Borrowed(url.normal_host()?),
+
+            Self::Domain       => Cow::Borrowed(url.domain_str   ()?),
+            Self::DomainLabels => Cow::Borrowed(url.domain_labels()?),
+            Self::DomainOrigin => Cow::Borrowed(url.domain_origin()?),
+            Self::DomainPrefix => Cow::Borrowed(url.domain_prefix()?),
+            Self::DomainMiddle => Cow::Borrowed(url.domain_middle()?),
+            Self::DomainSuffix => Cow::Borrowed(url.domain_suffix()?),
 
             Self::DomainSegment      (index) => Cow::Borrowed(url.domain_segment       (*index)?),
-            Self::SubdomainSegment   (index) => Cow::Borrowed(url.subdomain_segment    (*index)?),
+            Self::DomainOriginSegment(index) => Cow::Borrowed(url.domain_origin_segment(*index)?),
+            Self::DomainPrefixSegment(index) => Cow::Borrowed(url.domain_prefix_segment(*index)?),
             Self::DomainSuffixSegment(index) => Cow::Borrowed(url.domain_suffix_segment(*index)?),
-
-            Self::Domain          => Cow::Borrowed(url.domain           ()?),
-            Self::Subdomain       => Cow::Borrowed(url.subdomain        ()?),
-            Self::RegDomain       => Cow::Borrowed(url.reg_domain       ()?),
-            Self::NotDomainSuffix => Cow::Borrowed(url.not_domain_suffix()?),
-            Self::DomainMiddle    => Cow::Borrowed(url.domain_middle    ()?),
-            Self::DomainSuffix    => Cow::Borrowed(url.domain_suffix    ()?),
 
             Self::Port => Cow::Owned(url.port()?.to_string()),
 
@@ -229,7 +232,7 @@ impl UrlPart {
                 part.set(url, to)?;
             },
 
-            (Self::Whole   , Some(to)) => *url=BetterUrl::parse(to)?,
+            (Self::Whole   , Some(to)) => *url = BetterUrl::parse(to)?,
             (Self::Whole   , None    ) => Err(SetUrlPartError::WholeCannotBeNone)?,
 
             (Self::Scheme  , Some(to)) => url.set_scheme(to)?,
@@ -241,18 +244,19 @@ impl UrlPart {
             (Self::Password, _       ) => url.set_password(to)?,
 
             (Self::Host , _) => url.set_host(to)?,
-            (Self::NormalizedHost, _) => Err(SetUrlPartError::CannotSetNormalizedHost)?,
+            (Self::NormalHost, _) => Err(SetUrlPartError::CannotSetNormalHost)?,
+
+            (Self::Domain      , _) => url.set_host         (to)?,
+            (Self::DomainLabels, _) => url.set_domain_labels(to)?,
+            (Self::DomainOrigin, _) => url.set_domain_origin(to)?,
+            (Self::DomainPrefix, _) => url.set_domain_prefix(to)?,
+            (Self::DomainMiddle, _) => url.set_domain_middle(to)?,
+            (Self::DomainSuffix, _) => url.set_domain_suffix(to)?,
 
             (Self::DomainSegment      (n), _) => url.set_domain_segment       (*n, to)?,
-            (Self::SubdomainSegment   (n), _) => url.set_subdomain_segment    (*n, to)?,
+            (Self::DomainOriginSegment(n), _) => url.set_domain_origin_segment(*n, to)?,
+            (Self::DomainPrefixSegment(n), _) => url.set_domain_prefix_segment(*n, to)?,
             (Self::DomainSuffixSegment(n), _) => url.set_domain_suffix_segment(*n, to)?,
-
-            (Self::Domain         , _) => url.set_domain           (to)?,
-            (Self::Subdomain      , _) => url.set_subdomain        (to)?,
-            (Self::RegDomain      , _) => url.set_reg_domain       (to)?,
-            (Self::NotDomainSuffix, _) => url.set_not_domain_suffix(to)?,
-            (Self::DomainMiddle   , _) => url.set_domain_middle    (to)?,
-            (Self::DomainSuffix   , _) => url.set_domain_suffix    (to)?,
 
             (Self::Port, _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetUrlPartError::InvalidPort)).transpose()?)?,
 
@@ -268,7 +272,7 @@ impl UrlPart {
             (Self::RawPathSegmentRange {start, end}, None    ) => url.try_modify_path_segments(|p| p.remove_range((*start, *end)))??,
 
             (Self::Query, _) => url.set_query(to),
-            (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_pair(name, *index, to.map(Some)))?,
+            (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_pair    (name, *index, to.map(Some)))?,
             (Self::RawQueryParam(QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_raw_pair(name, *index, to.map(Some)))?,
 
             (Self::Fragment, _) => url.set_fragment(to),
@@ -312,24 +316,8 @@ pub enum SetUrlPartError {
     #[error(transparent)] SetHostError(#[from] SetHostError),
     /// Returned when a [`SetIpHostError`] is encountered.
     #[error(transparent)] SetIpHostError(#[from] SetIpHostError),
-    /// Returned when a [`SetSubdomainError`] is encountered.
-    #[error(transparent)] SetSubdomainError(#[from] SetSubdomainError),
     /// Returned when a [`SetDomainError`] is encountered.
     #[error(transparent)] SetDomainError(#[from] SetDomainError),
-    /// Returned when a [`SetNotDomainSuffixError`] is encountered.
-    #[error(transparent)] SetNotDomainSuffixError(#[from] SetNotDomainSuffixError),
-    /// Returned when a [`SetDomainMiddleError`] is encountered.
-    #[error(transparent)] SetDomainMiddleError(#[from] SetDomainMiddleError),
-    /// Returned when a [`SetRegDomainError`] is encountered.
-    #[error(transparent)] SetRegDomainError(#[from] SetRegDomainError),
-    /// Returned when a [`SetDomainSuffixError`] is encountered.
-    #[error(transparent)] SetDomainSuffixError(#[from] SetDomainSuffixError),
-    /// Returned when a [`SetDomainSegmentError`] is encountered.
-    #[error(transparent)] SetDomainSegmentError(#[from] SetDomainSegmentError),
-    /// Returned when a [`SetSubdomainSegmentError`] is encountered.
-    #[error(transparent)] SetSubdomainSegmentError(#[from] SetSubdomainSegmentError),
-    /// Returned when a [`SetDomainSuffixSegmentError`] is encountered.
-    #[error(transparent)] SetDomainSuffixSegmentError(#[from] SetDomainSuffixSegmentError),
 
     // Post-host stuff.
 
@@ -370,9 +358,9 @@ pub enum SetUrlPartError {
     #[error(transparent)]
     RemoveError(#[from] RemoveError),
 
-    /// Returned when attempting to set a [`UrlPart::NormalizedHost`].
-    #[error("Attempted to set a UrlPart::NormalizedHost.")]
-    CannotSetNormalizedHost,
+    /// Returned when attempting to set a [`UrlPart::NormalHost`].
+    #[error("Attempted to set a UrlPart::NormalHost.")]
+    CannotSetNormalHost,
     /// Currently cannot set a UrlPart::PositionRange because it's complicated.
     #[error("Currently cannot set a UrlPart::PositionRange because it's complicated.")]
     CannotSetPositionRange

@@ -5,3 +5,4 @@ logs
 /reddit-*
 /urlc-tool/out/
 /urlc-tool/tmp/
+/bench

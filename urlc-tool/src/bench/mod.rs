@@ -7,37 +7,15 @@ pub mod cli;
 pub mod site;
 pub mod site_client;
 
+pub mod util;
+
 /// Prelude module for importing everything here better.
 pub mod prelude {
     pub use super::super::prelude::*;
 
     pub use super::{cli, site, site_client};
 
-    pub use super::{STDIN, write_stdin};
-}
-
-/// The path used to store STDIN.
-pub const STDIN: &str = "urlc-tool/tmp/bench/stdin.txt";
-
-/// Write the job to `urlc-tool/tmp/stdin.txt`.
-pub fn write_stdin(task: &str, num: u64) -> StdinHandle {
-    let mut file = new_file(STDIN);
-
-    for _ in 0..num {
-        writeln!(file, "{task}").unwrap();
-    }
-
-    StdinHandle
-}
-
-/// Deletes [`STDIN`] on [`std::ops::Drop`].
-#[derive(Debug)]
-pub struct StdinHandle;
-
-impl std::ops::Drop for StdinHandle {
-    fn drop(&mut self) {
-        std::fs::remove_file(STDIN).unwrap();
-    }
+    pub use super::util::prelude::*;
 }
 
 /// Benchmarking.

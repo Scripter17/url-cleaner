@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use crate::prelude::*;
 
@@ -13,8 +13,7 @@ mod remove;
 /// A borrowed query string.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BetterRefQuery<'a>(pub &'a str);
 
 impl<'a> BetterRefQuery<'a> {
