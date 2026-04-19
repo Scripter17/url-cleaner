@@ -11,8 +11,6 @@ use indexmap::{IndexMap, IndexSet};
 
 use crate::prelude::*;
 
-pub(crate) use url_cleaner_macros::Suitability;
-
 /// A trait for things that may or may not be suitable for use in the bundled cleaner.
 pub(crate) trait Suitability: Debug {
     /// If `self` is deemed unsuitable to be in the bundled cleaner, panics.
@@ -34,7 +32,7 @@ macro_rules! always_suitable {
     }
 }
 
-always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, url::Url, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration, BetterPosition);
+always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, url::Url, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration);
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
 
 /// Macro for generating Suitability impls for tuples.

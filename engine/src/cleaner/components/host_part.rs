@@ -7,27 +7,23 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
-/// A common API for getting various parts of [`BetterHost`]s.
+/// A common API for getting various parts of [`Host`]s.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum HostPart {
-    /// [`BetterRefHost::as_str`].
+    /// [`Host::as_str`].
     Host,
-    /// [`BetterRefHost::normal`].
-    NormalHost,
-    /// [`BetterRefDomainHost::as_str`].
-    Domain,
-    /// [`BetterRefDomainHost::prefix`].
+    /// [`DomainHost::prefix`].
     DomainPrefix,
-    /// [`BetterRefDomainHost::middle`].
+    /// [`DomainHost::middle`].
     DomainMiddle,
-    /// [`BetterRefDomainHost::suffix`].
+    /// [`DomainHost::suffix`].
     DomainSuffix,
-    /// [`BetterRefDomainHost::labels`].
+    /// [`DomainHost::labels`].
     DomainLabels,
-    /// [`BetterRefDomainHost::origin`].
+    /// [`DomainHost::origin`].
     DomainOrigin,
-    /// [`BetterRefDomainHost::normal`].
+    /// [`DomainHost::normal`].
     DomainNormal,
 }
 
@@ -38,8 +34,6 @@ impl HostPart {
     pub fn parse(s: &str) -> Result<Self, InvalidHostPart> {
         match s {
             "Host"         => Ok(Self::Host),
-            "NormalHost"   => Ok(Self::NormalHost),
-            "Domain"       => Ok(Self::Domain),
             "DomainPrefix" => Ok(Self::DomainPrefix),
             "DomainMiddle" => Ok(Self::DomainMiddle),
             "DomainSuffix" => Ok(Self::DomainSuffix),
@@ -54,8 +48,6 @@ impl HostPart {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Host         => "Host",
-            Self::NormalHost   => "NormalHost",
-            Self::Domain       => "Domain",
             Self::DomainPrefix => "DomainPrefix",
             Self::DomainMiddle => "DomainMiddle",
             Self::DomainSuffix => "DomainSuffix",
@@ -66,17 +58,15 @@ impl HostPart {
     }
 
     /// Get the part.
-    pub fn get<'a>(&self, host: BetterRefHost<'a>) -> Option<&'a str> {
+    pub fn get<'a>(self, host: &'a Host<'_>) -> Option<&'a str> {
         Some(match self {
             Self::Host         => host.as_str(),
-            Self::NormalHost   => host.normal(),
-            Self::Domain       => host.domain()?.as_str() ,
-            Self::DomainSuffix => host.domain()?.origin()?,
-            Self::DomainPrefix => host.domain()?.prefix()?,
-            Self::DomainMiddle => host.domain()?.middle()?,
-            Self::DomainLabels => host.domain()?.labels() ,
-            Self::DomainOrigin => host.domain()?.suffix() ,
-            Self::DomainNormal => host.domain()?.normal() ,
+            Self::DomainPrefix => host.domain_prefix()?,
+            Self::DomainMiddle => host.domain_middle()?,
+            Self::DomainSuffix => host.domain_suffix()?,
+            Self::DomainLabels => host.domain_labels()?,
+            Self::DomainOrigin => host.domain_origin()?,
+            Self::DomainNormal => host.domain_normal()?,
         })
     }
 }

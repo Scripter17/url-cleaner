@@ -1,33 +1,38 @@
-//! FQDN dot stuff.
+//! Fqddot stuff.
 
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainDetails::has_fqddot`].
+    /// If the domain has a FQDN dot.
     pub fn has_fqddot(&self) -> bool {
         self.domain_details().is_some_and(DomainDetails::has_fqddot)
     }
 
-    /// [`DomainDetails::is_fqdn`].
+    /// If the domain is an FQDN.
     pub fn is_fqdn(&self) -> bool {
         self.domain_details().is_some_and(DomainDetails::is_fqdn)
     }
 
-    /// [`BetterRefDomainHost::fqddot`].
+    /// The FQDN dot.
     pub fn fqddot(&self) -> Option<&str> {
-        self.ref_domain()?.fqddot()
+        Some(&self.host_str()?[self.domain_details()?.fqddot_range()?])
     }
 
-    /// [`BetterDomainHost::set_fqdn`].
+    /// [`DomainHost::set_fqdn`].
     /// # Errors
     /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///
-    /// If the call to [`Self::set_better_host`] reutrns an error, that error is returned.
+    /// If the call to [`DomainHost::set_fqdn`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
     pub fn set_fqdn(&mut self, value: bool) -> Result<(), SetDomainError> {
-        if self.is_fqdn() != value {
-            let mut domain = self.domain().ok_or(NoDomain)?;
-            domain.set_fqdn(value);
-            self.set_better_host(Some(domain.into_owned()))?;
+        if self.domain_details().ok_or(NoDomain)?.is_fqdn() == value {return Ok(());}
+
+        let mut domain = self.domain().ok_or(NoDomain)?;
+
+        if domain.is_fqdn() != value {
+            domain.set_fqdn(value)?;
+            self.set_host(Some(domain.into_owned()))?;
         }
 
         Ok(())

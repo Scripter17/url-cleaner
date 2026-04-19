@@ -1,8 +1,5 @@
 //! [`CowStrExt`].
 
-use std::borrow::Cow;
-use std::ops::{RangeBounds, Bound};
-
 use crate::prelude::*;
 
 /// Extension trait for `Cow<'_, str>`.

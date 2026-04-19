@@ -2,10 +2,10 @@
 
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::str::FromStr;
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use std::borrow::Cow;
 #[allow(unused_imports, reason = "Used in a doc comment.")]
 use crate::prelude::*;
+
+pub(crate) use url_cleaner_macros::*;
 
 /// Helper macro to make serde use [`FromStr`] to deserialize strings.
 ///
@@ -43,99 +43,4 @@ macro_rules! string_or_struct_magic {
     }
 }
 
-/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`String`].
-#[allow(unused_macros, reason = "Used when some features are enabled.")]
-macro_rules! get_option_string {
-    ($value:expr, $task_state:expr) => {
-        get_option_cow!($value, $task_state).map(std::borrow::Cow::into_owned)
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
-macro_rules! get_option_str {
-    ($value:expr, $task_state:expr) => {
-        get_option_cow!($value, $task_state).as_deref()
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
-macro_rules! get_new_option_str {
-    ($value:expr, $task_state:expr) => {
-        match $value {
-            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
-            StringSource::None => None,
-            value => value.get($task_state)?.map(std::borrow::Cow::into_owned).map(Cow::Owned)
-        }.as_deref()
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`str`].
-macro_rules! get_new_option_cow {
-    ($value:expr, $task_state:expr) => {
-        match $value {
-            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
-            StringSource::None => None,
-            value => value.get($task_state)?.map(std::borrow::Cow::into_owned).map(Cow::Owned)
-        }
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as an [`Option`] of a [`Cow`].
-macro_rules! get_option_cow {
-    ($value:expr, $task_state:expr) => {
-        match $value {
-            StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
-            StringSource::None => None,
-            value => value.get($task_state)?
-        }
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as a [`String`] or return an error if it's [`None`].
-#[allow(unused_macros, reason = "Used when some features are enabled.")]
-macro_rules! get_string {
-    ($value:expr, $task_state:expr, $error:ty) => {
-        get_cow!($value, $task_state, $error).into_owned()
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
-macro_rules! get_str {
-    ($value:expr, $task_state:expr, $error:ty) => {
-        &*get_cow!($value, $task_state, $error)
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as a [`str`] or return an error if it's [`None`].
-macro_rules! get_new_str {
-    ($value:expr, $task_state:expr, $error:ty) => {
-        &*match $value.get_self() {
-            StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
-            value => Cow::Owned(value.get($task_state)?.ok_or(<$error>::StringSourceIsNone)?.into_owned())
-        }
-    }
-}
-
-/// Helper macro to get a [`StringSource`]'s value as a [`Cow`] or return an error if it's [`None`].
-macro_rules! get_cow {
-    ($value:expr, $task_state:expr, $error:ty) => {
-        match $value.get_self() {
-            StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
-            value => value.get($task_state)?.ok_or(<$error>::StringSourceIsNone)?
-        }
-    }
-}
-
 pub(crate) use string_or_struct_magic;
-pub(crate) use get_str;
-pub(crate) use get_new_str;
-#[allow(unused_imports, reason = "Used when some features are enabled.")]
-pub(crate) use get_string;
-pub(crate) use get_cow;
-pub(crate) use get_option_str;
-pub(crate) use get_new_option_str;
-pub(crate) use get_new_option_cow;
-#[allow(unused_imports, reason = "Used when some features are enabled.")]
-pub(crate) use get_option_string;
-pub(crate) use get_option_cow;
-pub(crate) use url_cleaner_macros::edoc;

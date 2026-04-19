@@ -45,34 +45,34 @@ pub enum UrlPart {
 
     /// [`Url::scheme`] and [`BetterUrl::set_scheme`].
     Scheme,
-    /// [`Url::username`] and [`BetterUrl::set_username`].
+
+
+
+    /// [`BetterUrl::userinfo_str`] and [`BetterUrl::set_userinfo`].
+    Userinfo,
+    /// [`BetterUrl::username_str`] and [`BetterUrl::set_username`].
     Username,
-    /// [`Url::password`] and [`BetterUrl::set_password`].
+    /// [`BetterUrl::password_str`] and [`BetterUrl::set_password`].
     Password,
 
 
 
-    /// [`Url::host`] and [`BetterUrl::set_host`].
+    /// [`BetterUrl::host_str`] and [`BetterUrl::set_host`].
     Host,
-    /// [`BetterUrl::normal_host`].
-    /// # Errors
-    /// Trying to set this part returns [`SetUrlPartError::CannotSetNormalHost`].
-    NormalHost,
-
-
-
-    /// [`BetterUrl::domain_str`] and [`BetterUrl::set_host`].
-    Domain,
-    /// [`BetterUrl::domain_labels`] and [`BetterUrl::set_domain_labels`].
-    DomainLabels,
-    /// [`BetterUrl::domain_origin`] and [`BetterUrl::set_domain_origin`].
-    DomainOrigin,
     /// [`BetterUrl::domain_prefix`] and [`BetterUrl::set_domain_prefix`].
     DomainPrefix,
     /// [`BetterUrl::domain_middle`] and [`BetterUrl::set_domain_middle`].
     DomainMiddle,
     /// [`BetterUrl::domain_suffix`] and [`BetterUrl::set_domain_suffix`].
     DomainSuffix,
+    /// [`BetterUrl::domain_origin`] and [`BetterUrl::set_domain_origin`].
+    DomainOrigin,
+    /// [`BetterUrl::domain_labels`] and [`BetterUrl::set_domain_labels`].
+    DomainLabels,
+    /// [`BetterUrl::domain_normal`].
+    /// # Errors
+    /// Trying to set this part returns [`SetUrlPartError::CantSetDomainNormal`].
+    DomainNormal,
 
 
 
@@ -87,35 +87,22 @@ pub enum UrlPart {
 
 
 
-    /// [`Url::port`] and [`BetterUrl::set_port`], but using strings.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    /// use better_url::*;
-    ///
-    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
-    ///
-    /// assert_eq!(UrlPart::Port.get(&url), None);
-    ///
-    /// UrlPart::Port.set(&mut url, Some("443")).unwrap();
-    /// assert_eq!(UrlPart::Port.get(&url), None);
-    ///
-    /// UrlPart::Port.set(&mut url, Some("80")).unwrap();
-    /// assert_eq!(UrlPart::Port.get(&url), Some("80".into()));
-    /// ```
+    /// [`BetterUrl::port_str`] and [`BetterUrl::set_port`], but using strings.
     Port,
 
 
 
-    /// [`BetterUrl::path_str`] and [`BetterUrl::set_path`].
+    /// [`BetterUrl::path`] and [`BetterUrl::set_path`].
     Path,
-    /// [`BetterUrl::path_segments_str`] and [`BetterUrl::set_path_segments`]
-    PathSegments,
-    /// [`BetterRefPathSegments::get`] + [`RawPathSegment::decode`] and [`BetterPathSegments::set_segment`].
+    /// [`BetterUrl::path_segment`] and [`BetterUrl::set_path_segment`].
     PathSegment(isize),
-    /// [`BetterRefPathSegments::get`] and [`BetterPathSegments::set_raw_segment`].
+    /// [`BetterUrl::path_segment`]
+    /// # Errors
+    /// Trying to set this part returns the error [`SetUrlPartError::CantSetRawPathSegment`].
     RawPathSegment(isize),
-    /// [`BetterRefPathSegments::get_range`] and [`BetterPathSegments::set_raw_range`].
+    /// [`BetterUrl::path_segment_range`].
+    /// # Errors
+    /// Trying to set this part returns the error [`SetUrlPartError::CantSetRawPathSegmentRange`].
     RawPathSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -129,42 +116,23 @@ pub enum UrlPart {
 
     /// [`BetterUrl::query_str`] and [`BetterUrl::set_query`].
     Query,
-    /// [`BetterMaybeRefQuery::find_value`] and [`BetterQuery::set_or_insert_or_remove_pair`]
+    /// [`BetterUrl::query_param`] and [`BetterUrl::set_query_param`]
     QueryParam(QueryParamSelector),
-    /// [`BetterMaybeRefQuery::find_raw_value`] and [`BetterQuery::set_or_insert_or_remove_raw_pair`]
+    /// [`BetterUrl::query_param`].
+    /// # Errors
+    /// Trying to set this part returns the error [`SetUrlPartError::CantSetRawQueryParam`].
     RawQueryParam(QueryParamSelector),
 
 
 
-    /// [`Url::fragment`] and [`BetterUrl::set_fragment`].
+    /// [`BetterUrl::fragment`] and [`BetterUrl::set_fragment`].
     Fragment,
-
-
-
-    /// Uses [`BetterPosition`]s to get multiple adjacent parts at the same time.
+    /// [`BetterUrl::fragment_query_param`] and [`BetterUrl::set_fragment_query_param`]
+    FragmentParam(QueryParamSelector),
+    /// [`BetterUrl::fragment_query_param`].
     /// # Errors
-    /// Currently cannot set a UrlPart::PositionRange because it's complicated.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    /// use better_url::*;
-    ///
-    /// // Note that the `#1` at the end is the fragment, so just getting the query gives the wrong answer.
-    /// let url = BetterUrl::parse("https://href.li/?https://example.com/?abc=123&def=456#1").unwrap();
-    /// assert_eq!(
-    ///     UrlPart::PositionRange {
-    ///         start: BetterPosition::BeforeQuery,
-    ///         end: BetterPosition::AfterFragment
-    ///     }.get(&url),
-    ///     Some("https://example.com/?abc=123&def=456#1".into())
-    /// );
-    /// ```
-    PositionRange {
-        /// The start of the range to get/set.
-        start: BetterPosition,
-        /// The end of the range to get/set.
-        end: BetterPosition
-    }
+    /// Trying to set this part returns the error [`SetUrlPartError::CantSetRawQueryParam`].
+    RawFragmentParam(QueryParamSelector),
 }
 
 /// Serde helper function.
@@ -182,42 +150,41 @@ impl UrlPart {
                 ret?
             },
 
-            Self::Whole => Cow::Borrowed(url.as_str()),
+            Self::Whole => url.as_str().into(),
 
-            Self::Scheme   => Cow::Borrowed(url.scheme()),
-            Self::Username => Cow::Borrowed(url.username()),
-            Self::Password => Cow::Borrowed(url.password()?),
+            Self::Scheme => url.scheme().into_inner(),
 
-            Self::Host       => Cow::Borrowed(url.host_str()?),
-            Self::NormalHost => Cow::Borrowed(url.normal_host()?),
+            Self::Userinfo => url.userinfo().into_inner(),
+            Self::Username => url.username().into_inner(),
+            Self::Password => url.password().into_inner(),
 
-            Self::Domain       => Cow::Borrowed(url.domain_str   ()?),
-            Self::DomainLabels => Cow::Borrowed(url.domain_labels()?),
-            Self::DomainOrigin => Cow::Borrowed(url.domain_origin()?),
-            Self::DomainPrefix => Cow::Borrowed(url.domain_prefix()?),
-            Self::DomainMiddle => Cow::Borrowed(url.domain_middle()?),
-            Self::DomainSuffix => Cow::Borrowed(url.domain_suffix()?),
+            Self::Host         => url.host_str()?.into(),
+            Self::DomainPrefix => url.domain_prefix()?.into(),
+            Self::DomainMiddle => url.domain_middle()?.into(),
+            Self::DomainSuffix => url.domain_suffix()?.into(),
+            Self::DomainOrigin => url.domain_origin()?.into(),
+            Self::DomainLabels => url.domain_labels()?.into(),
+            Self::DomainNormal => url.domain_normal()?.into(),
 
-            Self::DomainSegment      (index) => Cow::Borrowed(url.domain_segment       (*index)?),
-            Self::DomainOriginSegment(index) => Cow::Borrowed(url.domain_origin_segment(*index)?),
-            Self::DomainPrefixSegment(index) => Cow::Borrowed(url.domain_prefix_segment(*index)?),
-            Self::DomainSuffixSegment(index) => Cow::Borrowed(url.domain_suffix_segment(*index)?),
+            Self::DomainSegment      (index) => url.domain_segment       (*index)?.into(),
+            Self::DomainOriginSegment(index) => url.domain_origin_segment(*index)?.into(),
+            Self::DomainPrefixSegment(index) => url.domain_prefix_segment(*index)?.into(),
+            Self::DomainSuffixSegment(index) => url.domain_suffix_segment(*index)?.into(),
 
-            Self::Port => Cow::Owned(url.port()?.to_string()),
+            Self::Port => url.port_str()?.into(),
 
-            Self::Path         => Cow::Borrowed(url.path_str()),
-            Self::PathSegments => Cow::Borrowed(url.path_segments_str()?),
-            Self::PathSegment   (index) => url.ref_path_segments()?.get(*index)?.decode(),
-            Self::RawPathSegment(index) => Cow::Borrowed(url.ref_path_segments()?.get(*index)?.as_str()),
-            Self::RawPathSegmentRange {start, end} => Cow::Borrowed(url.ref_path_segments()?.get_range((*start, *end))?.as_str()),
+            Self::Path                             => url.path              (              ) .into_inner(),
+            Self::PathSegment         (index     ) => url.path_segment      (*index        )?.decode    (),
+            Self::RawPathSegment      (index     ) => url.path_segment      (*index        )?.into_inner(),
+            Self::RawPathSegmentRange {start, end} => url.path_segment_range((*start, *end))?.into_inner(),
 
-            Self::Query => Cow::Borrowed(url.query_str()?),
-            Self::QueryParam   (QueryParamSelector {name, index}) => url.ref_query()?.find_value(name, *index)??,
-            Self::RawQueryParam(QueryParamSelector {name, index}) => Cow::Borrowed(url.ref_query()?.find(name, *index)?.raw_value()?),
+            Self::Query                => url.query().into_inner()?,
+            Self::QueryParam   (param) => url.query_param(&param.name, param.index)?.into_value    ()?,
+            Self::RawQueryParam(param) => url.query_param(&param.name, param.index)?.into_raw_value()?,
 
-            Self::Fragment => Cow::Borrowed(url.fragment()?),
-
-            Self::PositionRange {start, end} => Cow::Borrowed(&url[start.0..end.0])
+            Self::Fragment                => url.fragment().into_inner()?,
+            Self::FragmentParam   (param) => url.fragment_query_param(&param.name, param.index)?.into_value    ()?,
+            Self::RawFragmentParam(param) => url.fragment_query_param(&param.name, param.index)?.into_raw_value()?,
         })
     }
 
@@ -225,60 +192,50 @@ impl UrlPart {
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn set(&self, url: &mut BetterUrl, to: Option<&str>) -> Result<(), SetUrlPartError> {
-        match (self, to) {
-            (Self::Debug(part), _) => {
+        match self {
+            Self::Debug(part) => {
                 let old = part.get(url).to_owned();
                 eprintln!("=== UrlPart::Debug ===\nUrlPart: {part:?}\nOld value: {old:?}\nNew value: {to:?}");
                 part.set(url, to)?;
             },
 
-            (Self::Whole   , Some(to)) => *url = BetterUrl::parse(to)?,
-            (Self::Whole   , None    ) => Err(SetUrlPartError::WholeCannotBeNone)?,
+            Self::Whole    => *url = BetterUrl::parse(to.ok_or(SetUrlPartError::WholeCantBeNone)?)?,
 
-            (Self::Scheme  , Some(to)) => url.set_scheme(to)?,
-            (Self::Scheme  , None    ) => Err(SetUrlPartError::SchemeCannotBeNone)?,
+            Self::Scheme   => url.set_scheme(to.ok_or(SetUrlPartError::SchemeCantBeNone)?)?,
 
-            (Self::Username, Some(to)) => url.set_username(to)?,
-            (Self::Username, None    ) => Err(SetUrlPartError::UsernameCannotBeNone)?,
+            Self::Userinfo => url.set_userinfo(to.ok_or(SetUrlPartError::UserinfoCantBeNone)?)?,
+            Self::Username => url.set_username(to.ok_or(SetUrlPartError::UsernameCantBeNone)?)?,
+            Self::Password => url.set_password(to.ok_or(SetUrlPartError::PasswordCantBeNone)?)?,
 
-            (Self::Password, _       ) => url.set_password(to)?,
+            Self::Host         => url.set_host         (to)?,
+            Self::DomainPrefix => url.set_domain_prefix(to)?,
+            Self::DomainMiddle => url.set_domain_middle(to)?,
+            Self::DomainSuffix => url.set_domain_suffix(to)?,
+            Self::DomainOrigin => url.set_domain_origin(to)?,
+            Self::DomainLabels => url.set_domain_labels(to)?,
+            Self::DomainNormal => Err(SetUrlPartError::CantSetDomainNormal)?,
 
-            (Self::Host , _) => url.set_host(to)?,
-            (Self::NormalHost, _) => Err(SetUrlPartError::CannotSetNormalHost)?,
+            Self::DomainSegment      (n) => url.set_domain_segment       (*n, to)?,
+            Self::DomainOriginSegment(n) => url.set_domain_origin_segment(*n, to)?,
+            Self::DomainPrefixSegment(n) => url.set_domain_prefix_segment(*n, to)?,
+            Self::DomainSuffixSegment(n) => url.set_domain_suffix_segment(*n, to)?,
 
-            (Self::Domain      , _) => url.set_host         (to)?,
-            (Self::DomainLabels, _) => url.set_domain_labels(to)?,
-            (Self::DomainOrigin, _) => url.set_domain_origin(to)?,
-            (Self::DomainPrefix, _) => url.set_domain_prefix(to)?,
-            (Self::DomainMiddle, _) => url.set_domain_middle(to)?,
-            (Self::DomainSuffix, _) => url.set_domain_suffix(to)?,
+            Self::Port => url.set_port(to.map(|x| x.parse().map_err(|_| SetUrlPartError::InvalidPort)).transpose()?)?,
 
-            (Self::DomainSegment      (n), _) => url.set_domain_segment       (*n, to)?,
-            (Self::DomainOriginSegment(n), _) => url.set_domain_origin_segment(*n, to)?,
-            (Self::DomainPrefixSegment(n), _) => url.set_domain_prefix_segment(*n, to)?,
-            (Self::DomainSuffixSegment(n), _) => url.set_domain_suffix_segment(*n, to)?,
+            Self::Path                     => url.set_path(to.ok_or(SetUrlPartError::PathCantBeNone)?)?,
+            Self::PathSegment         (n)  => url.set_path_segment(*n, to)?,
+            Self::RawPathSegment      (_)  => Err(SetUrlPartError::CantSetRawPathSegment)?,
+            Self::RawPathSegmentRange {..} => Err(SetUrlPartError::CantSetRawPathSegmentRange)?,
 
-            (Self::Port, _) => url.set_port(to.map(|x| x.parse().map_err(|_| SetUrlPartError::InvalidPort)).transpose()?)?,
+            Self::Query                => {url.set_query(to)?;},
+            Self::QueryParam   (param) => {url.set_query_param(&param.name, param.index, to.map(Some))?;},
+            Self::RawQueryParam(_)     => Err(SetUrlPartError::CantSetRawQueryParam)?,
 
-            (Self::Path, Some(to)) => url.set_path(to),
-            (Self::Path, None    ) => Err(SetUrlPartError::PathCannotBeNone)?,
-            (Self::PathSegments     , Some(to)) => url.set_path_segments(to)?,
-            (Self::PathSegments     , None    ) => Err(SetUrlPartError::PathCannotBeNone)?,
-            (Self::PathSegment   (n), Some(to)) => url.try_modify_path_segments(|x| x.set_segment(*n, to))??,
-            (Self::PathSegment   (n), None    ) => url.try_modify_path_segments(|x| x.remove(*n))??,
-            (Self::RawPathSegment(n), Some(to)) => url.try_modify_path_segments(|x| x.set_raw_segment(*n, to))??,
-            (Self::RawPathSegment(n), None    ) => url.try_modify_path_segments(|x| x.remove(*n))??,
-            (Self::RawPathSegmentRange {start, end}, Some(to)) => url.try_modify_path_segments(|p| p.set_raw_range((*start, *end), to))??,
-            (Self::RawPathSegmentRange {start, end}, None    ) => url.try_modify_path_segments(|p| p.remove_range((*start, *end)))??,
-
-            (Self::Query, _) => url.set_query(to),
-            (Self::QueryParam   (QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_pair    (name, *index, to.map(Some)))?,
-            (Self::RawQueryParam(QueryParamSelector {name, index}), _) => url.try_modify_maybe_query(|q| q.set_or_insert_or_remove_raw_pair(name, *index, to.map(Some)))?,
-
-            (Self::Fragment, _) => url.set_fragment(to),
-
-            (Self::PositionRange {..}, _) => Err(SetUrlPartError::CannotSetPositionRange)?
+            Self::Fragment                => {url.set_fragment(to)?;},
+            Self::FragmentParam   (param) => {url.set_fragment_query_param(&param.name, param.index, to.map(Some))?;},
+            Self::RawFragmentParam(_)     => Err(SetUrlPartError::CantSetRawFragmentParam)?,
         }
+
         Ok(())
     }
 }
@@ -286,82 +243,93 @@ impl UrlPart {
 /// The enum of errors [`UrlPart::set`] can return.
 #[derive(Debug, Error)]
 pub enum SetUrlPartError {
-    /// Returned when a [`url::ParseError`] is encountered.
-    #[error(transparent)] UrlParseError(#[from] url::ParseError),
+    ///[`url::ParseError`].
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
     /// Returned when attempting to set [`UrlPart::Whole`] to [`None`].
     #[error("Attempted to set a whole URL to None.")]
-    WholeCannotBeNone,
+    WholeCantBeNone,
 
-    // Pre-host stuff.
+
 
     /// Returned when attempting to set a URL's scheme to [`None`].
     #[error("Attempted to set a URL's scheme to None.")]
-    SchemeCannotBeNone,
-    /// Returned when a [`SetSchemeError`] is encountered.
+    SchemeCantBeNone,
+    ///[`SetSchemeError`].
     #[error(transparent)]
     SetSchemeError(#[from] SetSchemeError),
+
+
+
+    /// Returned when attempting to set a URL's userinfo to [`None`].
+    #[error("Attempted to set a URL's userinfo to None.")]
+    UserinfoCantBeNone,
+    ///[`SetUserinfoError`].
+    #[error(transparent)]
+    SetUserinfoError(#[from] SetUserinfoError),
     /// Returned when attempting to set a URL's username to [`None`].
     #[error("Attempted to set a URL's username to None.")]
-    UsernameCannotBeNone,
-    /// Returned when a [`SetUsernameError`] is encountered.
+    UsernameCantBeNone,
+    ///[`SetUsernameError`].
     #[error(transparent)]
     SetUsernameError(#[from] SetUsernameError),
-    /// Returned when a [`SetPasswordError`] is encountered.
+    /// Returned when attempting to set a URL's password to [`None`].
+    #[error("Attempted to set a URL's password to None.")]
+    PasswordCantBeNone,
+    ///[`SetPasswordError`].
     #[error(transparent)]
     SetPasswordError(#[from] SetPasswordError),
 
-    // Host stuff.
 
-    /// Returned when a [`SetHostError`] is encountered.
-    #[error(transparent)] SetHostError(#[from] SetHostError),
-    /// Returned when a [`SetIpHostError`] is encountered.
-    #[error(transparent)] SetIpHostError(#[from] SetIpHostError),
-    /// Returned when a [`SetDomainError`] is encountered.
-    #[error(transparent)] SetDomainError(#[from] SetDomainError),
 
-    // Post-host stuff.
+    ///[`SetHostError`].
+    #[error(transparent)]
+    SetHostError(#[from] SetHostError),
+    ///[`SetDomainError`].
+    #[error(transparent)]
+    SetDomainError(#[from] SetDomainError),
+    /// Returned when attempting to set a [`UrlPart::DomainNormal`].
+    #[error("Attempted to set a UrlPart::DomainNormal.")]
+    CantSetDomainNormal,
+
+
 
     /// Returned when attempting to set a port to a value that isn't a number between 0 and 65535 (inclusive).
     #[error("Attempted to set a port to a value that isn't a number between 0 and 65535 (inclusive).")]
     InvalidPort,
-    /// Returned when a [`SetPortError`] is encountered.
+    ///[`SetPortError`].
     #[error(transparent)]
     SetPortError(#[from] SetPortError),
 
+
+
     /// Returned when attempting to set a URL's path to [`None`].
-    #[error("Attempted to set the URL's path to None.")]
-    PathCannotBeNone,
-    /// Returned when a [`OpaquePath`] is encountered.
+    #[error("Attempted to set a URL's path to None.")]
+    PathCantBeNone,
+    ///[`SetPathError`].
     #[error(transparent)]
-    OpaquePath(#[from] OpaquePath),
+    SetPathError(#[from] SetPathError),
+    /// Returned when attempting to set a [`UrlPart::RawPathSegment`].
+    #[error("Attempted to set a UrlPart::RawPathSegment.")]
+    CantSetRawPathSegment,
+    /// Returned when attempting to set a [`UrlPart::RawPathSegmentRange`].
+    #[error("Attempted to set a UrlPart::RawPathSegmentRange.")]
+    CantSetRawPathSegmentRange,
 
-    /// Returned when a [`SegmentNotFound`] is encountered.
-    #[error(transparent)]
-    SegmentNotFound(#[from] SegmentNotFound),
-    /// Returned when a [`RemoveRangeError`] is encountered.
-    #[error(transparent)]
-    RemoveRangeError(#[from] RemoveRangeError),
-    /// Returned when a [`InsertNotFound`] is encountered.
-    #[error(transparent)]
-    InsertNotFound(#[from] InsertNotFound),
-    /// Returned when a [`SetOrRemoveError`] is encountered.
-    #[error(transparent)]
-    SetOrRemoveError(#[from] SetOrRemoveError),
-    /// Returned when a [`RangeNotFound`] is encountered.
-    #[error(transparent)]
-    RangeNotFound(#[from] RangeNotFound),
-    /// Returned when a [`SetOrInsertOrRemoveMaybeError`] is encountered.
-    #[error(transparent)]
-    SetOrInsertOrRemoveMaybeError(#[from] SetOrInsertOrRemoveMaybeError),
 
-    /// Returned when a [`RemoveError`] is encountered.
+    ///[`SetQueryError`].
     #[error(transparent)]
-    RemoveError(#[from] RemoveError),
+    SetQueryError(#[from] SetQueryError),
+    /// Returned when attempting to set a [`UrlPart::RawQueryParam`].
+    #[error("Attempted to set a UrlPart::RawQueryParam.")]
+    CantSetRawQueryParam,
 
-    /// Returned when attempting to set a [`UrlPart::NormalHost`].
-    #[error("Attempted to set a UrlPart::NormalHost.")]
-    CannotSetNormalHost,
-    /// Currently cannot set a UrlPart::PositionRange because it's complicated.
-    #[error("Currently cannot set a UrlPart::PositionRange because it's complicated.")]
-    CannotSetPositionRange
+
+
+    ///[`SetFragmentError`].
+    #[error(transparent)]
+    SetFragmentError(#[from] SetFragmentError),
+    /// Returned when attempting to set a [`UrlPart::RawFragmentParam`].
+    #[error("Attempted to set a UrlPart::RawFragmentParam.")]
+    CantSetRawFragmentParam,
 }

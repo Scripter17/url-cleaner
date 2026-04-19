@@ -10,7 +10,7 @@
 				"keep_affiliate": "Don't remove affiliate info from affiliate links.",
 
 				"bypass_vip"                : "Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.",
-				"keep_http"                 : "Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.",
+				"keep_http"                 : "Disable upgrading `http` URLs to `https`. See the `dn_keep_http` set if you only want to not upgrade specific hosts.",
 				"no_network"                : "Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.",
 				"remove_unused_search_query": "Remove search queries from URLs that aren't search results (for example, posts).",
 				"tor2web2tor"               : "Change `**.onion.**` hosts to `**.onion`.",
@@ -150,22 +150,22 @@
 			"sets": {
 				"utps": "Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` list for a list of prefixes only used for universal tracking parameters.",
 
-				"nh_keep_http": "The `NormalHost`s to not upgrade from `http` to `https`."
+				"dn_keep_http": "The `DomainNormal`s to not upgrade from `http` to `https`."
 			},
 			"lists": {
 				"utp_prefixes": "Prefixes only used for universal tracking parameters. See the `utps` set for specific query params to always remove."
 			},
 			"partitionings": {
-				"nh_categories": "Categories of similar websites with shared cleaning methods.",
+				"dn_categories": "Categories of similar websites with shared cleaning methods.",
 
 				"do_www_prefix": "The `DomainOrigin`s to ensure/remove `www` `DomainPrefix`s.",
 				"dm_www_prefix": "The `DomainMiddle`s to ensure/remove `www` `DomainPrefix`s.",
 
-				"nh_expand_mode": "How to handle redirect `NormalHost`s.",
+				"dn_expand_mode": "How to handle redirect `DomainNormal`s.",
 				"do_expand_mode": "How to handle redirect `DomainOrigin`s,",
 				"dm_expand_mode": "How to handle redirect `DomainMiddle`s.",
 
-				"mobilizer": "Which part at which value makes a `NormalHost`/`DomainOrigin` a mobile URL."
+				"mobilizer": "Which part at which value makes a `DomainNormal`/`DomainOrigin` a mobile URL."
 			}
 		},
 		"task_context": {
@@ -191,7 +191,7 @@
 			"nitter_host"    : "nitter.net"
 		},
 		"sets": {
-			"nh_keep_http": ["cos.lv", "localhost", "orteil.dashnet.org", "smartytags.com", "lmqr.us"],
+			"dn_keep_http": ["cos.lv", "localhost", "orteil.dashnet.org", "lmqr.us"],
 
 			"utps": [
 				"", "ActionID", "AffiliateID", "NaPm", "OutLink", "Tcsack", "__hsfp", "__hssc", "__hstc", "__io_lv", "__s", "_bdadid", "_bhlid", "_branch_match_id",
@@ -233,7 +233,7 @@
 			]
 		},
 		"partitionings": {
-			"nh_categories": {
+			"dn_categories": {
 				"bluesky": ["bsky.app"],
 				"bluesky_embed_hosts": ["fxbsky.app"],
 
@@ -311,7 +311,7 @@
 					"ojrq.net", "onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "pxf.io", "razer.com", "reddit.com",
 					"reuters.com", "scan-safety.com", "sfchronicle.com", "shopyourlikes.com", "snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com",
 					"temu.com", "theguardian.com", "threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org",
-					"unlock.com", "walmart.com", "whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
+					"unlock.com", "walmart.com", "whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com", "smartytags.com"
 				],
 				"remove": [
 					"2kgam.es", "ab.co", "abcnews.link", "acer.com", "adfoc.us", "adguardteam.github.io", "admiregirls-byme.com", "adobe.ly", "aje.io", "all-fans.online",
@@ -348,7 +348,7 @@
 				"redirect": [],
 				"special": ["google"]
 			},
-			"nh_expand_mode": {
+			"dn_expand_mode": {
 				"bypass_vip": [
 					"adfoc.us", "admiregirls-byme.com", "all-fans.online", "badgirlsdrop.com", "bit.do", "booo.st", "boost.ink", "bst.gg", "cemendemons.com", "depravityweb.co",
 					"fansmega.com", "free-leaks.com", "goldmega.online", "hotstars-leaks.com", "leakutopia.site", "links-loot.com", "linksloot.net", "linkvertise.com",
@@ -359,7 +359,7 @@
 					"xprmpacks.com"
 				],
 				"redirect": [
-					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.news", "amn.st", "fn.gg",
+					"2kgam.es", "4.nbcla.com", "7ny.tv", "a.aliexpress.com", "a.co", "ab.co", "abc7.la", "abc7ne.ws", "abcnews.link", "adobe.ly", "aje.io", "aje.news", "amn.st", "fn.gg", "c.org",
 					"amzlink.to", "amzn.asia", "amzn.eu", "amzn.ew", "amzn.to", "anrdoezrs.net", "api.link.agorapulse.com", "apple.co", "b23.tv", "bbc.in", "bgfn.sh", "bit.ly",
 					"bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one", "chn.ge", "chng.it",
 					"clckhl.co", "click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly", "crnch.it", "cutt.ly", "dareqr.info", "db.tt",
@@ -377,7 +377,7 @@
 					"shorturl.at", "shrsl.com", "sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc",
 					"thecut.io", "thef.pub", "thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "trk.mail.ru", "u.jd.com", "unes.co", "unf.pa",
 					"uni.cf", "uniceflink.org", "ur0.link", "v.aa.com.tr", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wix-l.in", "wlgrn.com", "wn.nr",
-					"wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "zurl.co"
+					"wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "zurl.co", "smartytags.com"
 				],
 				"sometimes_redirect": [
 					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "facebook.com", "gumroad.com", "hisubway.com", "mydealz.de",
@@ -394,7 +394,7 @@
 					"lnk.bio", "lnkd.in", "media.igram.world", "mel.sc", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com",
 					"open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro",
 					"qrtiger.com", "r.amzlink.to", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "share.spotfund.com",
-					"shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "smartytags.com", "spot.fund", "spotify.link", "ss3.shipstation.com",
+					"shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "spot.fund", "spotify.link", "ss3.shipstation.com",
 					"star.aliexpress.com", "steamcommunity.com", "strms.net", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com",
 					"tmz.me", "toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "uqr.to", "urldefense.com", "v.redd.it", "wlo.link", "youtube.com"
 				]
@@ -481,7 +481,7 @@
 						{"SchemeIs": "http"},
 						{"FlagIsNotSet": "keep_http"},
 						{"Not": "HostIsIp"},
-						{"Not": {"NormalHostIsInSet": "nh_keep_http"}}
+						{"Not": {"DomainNormalIsInSet": "dn_keep_http"}}
 					]},
 					"then": {"SetScheme": "https"}
 				}},
@@ -526,7 +526,7 @@
 					"value": {"Var": "client_type"},
 					"map": {
 						"desktop": {"FirstMatchingPartPartitioning": {
-							"parts": ["NormalHost", "DomainOrigin"],
+							"parts": ["DomainNormal", "DomainOrigin"],
 							"partitioning": "mobilizer",
 							"map": {
 								"dp_m": {"If": {
@@ -568,7 +568,7 @@
 							}
 						}},
 						"mobile": {"FirstMatchingPartPartitioning": {
-							"parts": ["NormalHost", "DomainOrigin"],
+							"parts": ["DomainNormal", "DomainOrigin"],
 							"partitioning": "mobilizer",
 							"map": {
 								"dp_m": {"If": {
@@ -806,8 +806,8 @@
 		"if": {"SchemeIsOneOf": ["http", "https"]},
 		"then": {"All": [
 			{"StringPartitioning": {
-				"value": {"JobSourceHostPart": "NormalHost"},
-				"partitioning": "nh_categories",
+				"value": {"JobSourceHostPart": "DomainNormal"},
+				"partitioning": "dn_categories",
 				"map": {
 					"alibaba": {"RemoveQueryParams": ["spf", "file"]},
 					"furaffinity": {"If": {
@@ -1061,8 +1061,8 @@
 
 
 					{"PartPartitioning": {
-						"part": "NormalHost",
-						"partitioning": "nh_expand_mode",
+						"part": "DomainNormal",
+						"partitioning": "dn_expand_mode",
 						"map": {
 							"bypass_vip": {"If": {
 								"if": {"All": [
@@ -1098,7 +1098,7 @@
 							"redirect": {"Function": "expand_redirect"},
 							"sometimes_redirect": {"If": {
 								"if": {"PartMap": {
-									"part": "NormalHost",
+									"part": "DomainNormal",
 									"map": {
 										"abc.net.au"              : {"All": [{"PathStartsWith": "/news/"}, {"PathSegmentMatches": {"index": 1, "matcher": "AllAsciiDigit"}}]},
 										"allmylinks.com"          : {"PathIs": "/link/out"},
@@ -1124,12 +1124,12 @@
 										"teepublic.com"           : {"PathStartsWith": "/lic/"},
 										"thangs.com"              : {"PathStartsWith": "/m/"}
 									},
-									"else": {"Error": "Unhandled nh_expand_mode::sometimes_redirect element."}
+									"else": {"Error": "Unhandled dn_expand_mode::sometimes_redirect element."}
 								}},
 								"then": {"Function": "expand_redirect"}
 							}},
 							"special": {"PartMap": {
-								"part": "NormalHost",
+								"part": "DomainNormal",
 								"map": {
 									"1link.club": {"Function": {
 										"name": "extract_from_body",
@@ -1341,7 +1341,10 @@
 										{"If": {
 											"if": {"Any": [
 												{"PathSegmentIs": {"index": 0, "value": "s"}},
-												{"PartMatches": {"part": "PathSegments", "matcher": "IsNumber"}}
+												{"All": [
+													{"PartMatches": {"part": {"PathSegment": 0}, "matcher": "IsNumber"}},
+													{"PartIs": {"part": {"PathSegment": 1}, "value": null}}
+												]}
 											]},
 											"then": {"Function": {
 												"name": "expand_redirect",
@@ -1436,10 +1439,7 @@
 											}
 										}
 									}},
-									"href.li": {"SetWhole": {"Part": {"PositionRange": {
-										"start": "BeforeQuery",
-										"end": "AfterFragment"
-									}}}},
+									"href.li": {"SetWhole": {"Modified": {"value": {"Part": "Query"}, "modification": "PercentDecode"}}},
 									"instagr.am": {"SetHost": "www.instagram.com"},
 									"is.gd": {"If": {
 										"if": {"All": [
@@ -1640,17 +1640,10 @@
 									]},
 									"open.substack.com": {"If": {
 										"if": {"PathStartsWith": "/pub/"},
-										"then": {"SetWhole": {"Join": {
-											"values": [
-												"https://",
-												{"AssertMatches": {
-													"value": {"Part": {"PathSegment": 1}},
-													"matcher": "AllAsciiAlphanumeric"
-												}},
-												".substack.com/",
-												{"Part": {"RawPathSegmentRange": {"start": {"Included": 3}}}}
-											]
-										}}}
+										"then": {"All": [
+											{"SetDomainPrefix": {"Part": {"PathSegment": 1}}},
+											{"SetPath": {"Part": {"PathSegment": 3}}}
+										]}
 									}},
 									"out.reddit.com": {"GetUrlFromQueryParam": "url"},
 									"p.liadm.com": {"All": [
@@ -1797,23 +1790,7 @@
 											}
 										}
 									}},
-									"smartyt.ag": {"SetHost": "smartytags.com"},
-									"smartytags.com": {"All": [
-										{"SetScheme": "http"},
-										{"Function": {
-											"name": "extract_from_body",
-											"args": {
-												"string_sources": {
-													"prefix": "window.location.href = ",
-													"suffix": "\n"
-												},
-												"flags": ["strip_prefix"],
-												"string_modifications": {
-													"parser": "GetJsStringLiteralPrefix"
-												}
-											}
-										}}
-									]},
+									"smartyt.ag": {"SetHost": "www.smartytags.com"},
 									"spot.fund": {"SetHost": "link.spotfund.com"},
 									"spotify.link": {"SetHost": "spotify.app.link"},
 									"ss3.shipstation.com": {"SetWhole": {"Join": {
@@ -1955,7 +1932,7 @@
 										"then": {"GetUrlFromQueryParam": "q"}
 									}}
 								},
-								"else": {"Error": "Unhandled nh_expand_mode::special element."}
+								"else": {"Error": "Unhandled dn_expand_mode::special element."}
 							}}
 						}
 					}},
@@ -1975,8 +1952,8 @@
 
 
 			{"PartPartitioning": {
-				"part": "NormalHost",
-				"partitioning": "nh_categories",
+				"part": "DomainNormal",
+				"partitioning": "dn_categories",
 				"map": {
 					"alibaba": {"RemoveQueryParams": [
 						"callByHgJs", "cardType", "forcePC", "fsb", "ncms_spm", "path", "prefetchKey", "ptow", "__removesafearea__", "selectedCarrierCode", "spm", "src_cna",
@@ -1987,7 +1964,7 @@
 					"bluesky_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"PartMap": {
-							"part": "NormalHost",
+							"part": "DomainNormal",
 							"map": {
 								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
 							}
@@ -2071,7 +2048,7 @@
 					"pixiv_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"PartMap": {
-							"part": "NormalHost",
+							"part": "DomainNormal",
 							"map": {
 								"phixiv.net": {"SetWhole": "https://github.com/thelaao/phixiv"}
 							}
@@ -2114,7 +2091,7 @@
 					"twitter_embed_hosts": {"If": {
 						"if": {"PathIs": "/"},
 						"then": {"PartMap": {
-							"part": "NormalHost",
+							"part": "DomainNormal",
 							"map": {
 								"vxtwitter.com"   : {"SetWhole": "https://github.com/dylanpdx/BetterTwitFix"},
 								"fixupx.com"      : {"SetWhole": "https://github.com/FxEmbed/FxEmbed"       },
@@ -2490,7 +2467,7 @@
 				}
 			}},
 			{"PartMap": {
-				"part": "NormalHost",
+				"part": "DomainNormal",
 				"map": {
 					"abc.net.au": {"RemoveQueryParam": "future"},
 					"abc7ny.com": {"RemoveQueryParams": ["ex_cid", "taid"]},

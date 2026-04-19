@@ -236,9 +236,9 @@ pub enum HttpResponseHandlerError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to return [`Some`].
-    #[error("A StringSource was None where it has to be Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
@@ -291,7 +291,7 @@ impl HttpResponseHandler {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn handle<'j>(&'j self, response: &mut reqwest::blocking::Response, task_state: &TaskState<'j>) -> Result<Option<String>, HttpResponseHandlerError> {
         Ok(match self {
-            Self::String(string) => get_option_string!(string, task_state),
+            Self::String(string) => get_option_string!(string),
             Self::None => None,
             Self::Error(msg) => Err(HttpResponseHandlerError::ExplicitError(msg.clone()))?,
             Self::TryElse{r#try, r#else} => match r#try.handle(response, task_state) {
@@ -354,7 +354,7 @@ impl HttpResponseHandler {
                 response.read_to_string(&mut ret)?;
                 Some(ret)
             },
-            Self::Header(name) => match response.headers().get(get_str!(name, task_state, HttpResponseHandlerError)) {
+            Self::Header(name) => match response.headers().get(get_str!(name)) {
                 Some(value) => Some(str::from_utf8(value.as_bytes())?.into()),
                 None => None
             },
@@ -370,7 +370,7 @@ impl HttpResponseHandler {
                 let mut bytes = Read::bytes(response);
                 let mut total_read = 0;
 
-                let prefixes = extractors.iter().map(|x| x.prefix.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.ok_or(HttpResponseHandlerError::StringSourceIsNone)?;
+                let prefixes = extractors.iter().map(|x| x.prefix.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.ok_or(StringSourceIsNone)?;
 
                 let mut window = Vec::with_capacity(prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoExtractors)?);
 

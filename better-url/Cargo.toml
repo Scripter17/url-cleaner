@@ -12,9 +12,11 @@ rust-version = "1.88.0"
 
 [dependencies]
 url = "2.5.8"
-psl = "2.1.199"
+psl = "2.1.203"
 thiserror = "2.0.18"
-serde = { optional = true, version = "1.0.228", features = ["derive"] }
+serde = { optional = true, version = "1.0.228" }
+icu_normalizer = { version = "2.2.0", default-features = false }
+# icu_properties = "2.2.0"
 
 [lints]
 workspace = true

@@ -43,10 +43,10 @@ impl FlagSource {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'j>(&'j self, task_state: &TaskState<'j>) -> Result<bool, FlagSourceError> {
         Ok(match self {
-            Self::Params     (name) => task_state.job.cleaner.params.flags                                    .contains(get_str!(name, task_state, FlagSourceError)),
-            Self::TaskContext(name) => task_state.context.flags                                               .contains(get_str!(name, task_state, FlagSourceError)),
-            Self::JobContext (name) => task_state.job.context.flags                                           .contains(get_str!(name, task_state, FlagSourceError)),
-            Self::CallArg    (name) => task_state.call_args.get().ok_or(FlagSourceError::NotInFunction)?.flags.contains(get_str!(name, task_state, FlagSourceError)),
+            Self::Params     (name) => task_state.job.cleaner.params.flags                                    .contains(get_str!(name)),
+            Self::TaskContext(name) => task_state.context.flags                                               .contains(get_str!(name)),
+            Self::JobContext (name) => task_state.job.context.flags                                           .contains(get_str!(name)),
+            Self::CallArg    (name) => task_state.call_args.get().ok_or(FlagSourceError::NotInFunction)?.flags.contains(get_str!(name)),
             Self::Literal    (x   ) => *x
         })
     }
@@ -84,9 +84,9 @@ pub enum FlagSourceError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
 
     /// Returned when attempting to use [`CallArgs`] outside a function.
     #[error("Attempted to use CallArgs outside a function.")]

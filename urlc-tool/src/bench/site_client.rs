@@ -33,25 +33,7 @@ impl Args {
         write_stdin(&task, num);
         fresh_dir(&out_dir);
 
-        let mut cmd = Command::new("target/release/url-cleaner-site");
-
-        cmd.args(["--port", "9148"]);
-
-        if protocol.tls() {
-            cmd.args([
-                "--key", "urlc-tool/src/bench/urlcs-bench.key",
-                "--cert", "urlc-tool/src/bench/urlcs-bench.crt",
-            ]);
-        }
-
-        cmd.stdout(std::process::Stdio::null());
-        cmd.stderr(std::process::Stdio::null());
-
-        assert_no_site();
-
-        let mut site = TerminateOnDrop(cmd.spawn().unwrap());
-
-        await_site(&mut site.0);
+        let _site = start_site(protocol.tls());
 
         let mut cmd = match tool {
             ClientTool::Hyperfine => {

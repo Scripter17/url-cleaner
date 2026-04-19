@@ -67,8 +67,8 @@ impl HttpClient {
     #[doc = edoc!(geterr(Self), geterr(StringSource), getnone(StringSource, DoHttpRequestError, 3), geterr(MapSource), getnone(MapSource, DoHttpRequestError), callerr(HeaderName::try_from, 3), callerr(HeaderValue::try_from, 3), callerr(HttpBodyConfig::apply), callerr(reqwest::blocking::RequestBuilder::send))]
     pub fn get_response<'j>(&'j self, config: &'j HttpRequestConfig, task_state: &TaskState<'j>) -> Result<reqwest::blocking::Response, DoHttpRequestError> {
         let mut req = self.get()?.request(
-            get_str!(config.method, task_state, DoHttpRequestError).parse()?,
-            Url::parse(get_str!(config.url, task_state, DoHttpRequestError))?,
+            get_str!(config.method).parse()?,
+            Url::parse(get_str!(config.url))?,
         );
         if let Some(map) = config.const_headers.get(task_state)? {
             for (name, value) in map.map.iter() {
@@ -122,9 +122,9 @@ pub enum DoHttpRequestError {
     /// Returned when a [`ApplyHttpBodyError`] is encountered.
     #[error(transparent)]
     ApplyHttpBodyError(#[from] ApplyHttpBodyError),
-    /// Returned when a call to [`StringSource::get`] returns [`None`] where it has to return [`Some`].
-    #[error("A StringSource was None where it had to be Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),

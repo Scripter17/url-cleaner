@@ -25,7 +25,7 @@ pub enum HttpBodyConfig {
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`ApplyHttpBodyError::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringSourceIsNone`].
     Text(StringSource),
     /// Sends the HTML form.
     ///
@@ -45,9 +45,9 @@ pub enum ApplyHttpBodyError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(Box<StringSourceError>),
-    /// Returned when a call to [`StringSource::get`] returns [`None`] where it must return [`Some`].
-    #[error("A StringSource was None where it has to be Some.")]
-    StringSourceIsNone
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
 }
 
 impl From<StringSourceError> for ApplyHttpBodyError {
@@ -63,7 +63,7 @@ impl HttpBodyConfig {
     pub fn apply<'j>(&'j self, request: reqwest::blocking::RequestBuilder, task_state: &TaskState<'j>) -> Result<reqwest::blocking::RequestBuilder, ApplyHttpBodyError> {
         Ok(match self {
             Self::Text(StringSource::String(value)) => request.body(value.clone()),
-            Self::Text(value) => request.body(get_string!(value, task_state, ApplyHttpBodyError)),
+            Self::Text(value) => request.body(get_string!(value)),
             Self::Form(map) => {
                 let mut ret = HashMap::new();
                 for (k, v) in map.iter() {

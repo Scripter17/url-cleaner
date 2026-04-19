@@ -47,11 +47,11 @@ impl VarSource {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>) -> Result<Option<Cow<'t, str>>, VarSourceError> {
         Ok(match self {
-            Self::Params     (name) => task_state.job.cleaner.params.vars                                   .get(get_str!(name, task_state, VarSourceError)).map(|x| Cow::Borrowed(x.as_str())),
-            Self::TaskContext(name) => task_state.context.vars                                              .get(get_str!(name, task_state, VarSourceError)).map(|x| Cow::Borrowed(x.as_str())),
-            Self::JobContext (name) => task_state.job.context.vars                                          .get(get_str!(name, task_state, VarSourceError)).map(|x| Cow::Borrowed(x.as_str())),
-            Self::CallArg    (name) => task_state.call_args.get().ok_or(VarSourceError::NotInFunction)?.vars.get(get_str!(name, task_state, VarSourceError)).map(|x| Cow::Borrowed(x.as_str())),
-            Self::Env   (name) => match env::var(get_str!(name, task_state, VarSourceError)) {
+            Self::Params     (name) => task_state.job.cleaner.params.vars                                   .get(get_str!(name)).map(|x| Cow::Borrowed(x.as_str())),
+            Self::TaskContext(name) => task_state.context.vars                                              .get(get_str!(name)).map(|x| Cow::Borrowed(x.as_str())),
+            Self::JobContext (name) => task_state.job.context.vars                                          .get(get_str!(name)).map(|x| Cow::Borrowed(x.as_str())),
+            Self::CallArg    (name) => task_state.call_args.get().ok_or(VarSourceError::NotInFunction)?.vars.get(get_str!(name)).map(|x| Cow::Borrowed(x.as_str())),
+            Self::Env   (name) => match env::var(get_str!(name)) {
                 Ok(value) => Some(Cow::Owned(value)),
                 Err(env::VarError::NotPresent) => None,
                 Err(env::VarError::NotUnicode(_)) => Err(VarSourceError::EnvVarIsNotUtf8)?
@@ -105,9 +105,9 @@ pub enum VarSourceError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when the value of an environment variable isn't valid UTF-8.
     #[error("The value of the environment variable wasn't valid UTF-8")]
     EnvVarIsNotUtf8,

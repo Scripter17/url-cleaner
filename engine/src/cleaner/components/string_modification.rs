@@ -886,9 +886,9 @@ pub enum StringModificationError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    /// Returned when a [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("A StringSource returned None where it had to return Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
     StringMatcherError(#[from] Box<StringMatcherError>),
@@ -1055,14 +1055,14 @@ impl StringModification {
             } else if let Some(r#else) = r#else {
                 r#else.apply(to, task_state)?
             },
-            Self::IfContains {value, at, then, r#else} => if at.check(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringModificationError::StringSourceIsNone)?)? {
+            Self::IfContains {value, at, then, r#else} => if at.check(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringSourceIsNone)?)? {
                 then.apply(to, task_state)?;
             } else if let Some(r#else) = r#else {
                 r#else.apply(to, task_state)?;
             },
             Self::IfContainsAny {values, at, then, r#else} => {
                 for value in values {
-                    if at.check(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringModificationError::StringSourceIsNone)?)? {
+                    if at.check(to.as_deref().ok_or(StringModificationError::StringIsNone)?, &value.get(task_state)?.ok_or(StringSourceIsNone)?)? {
                         return then.apply(to, task_state);
                     }
                 }
@@ -1075,13 +1075,13 @@ impl StringModification {
 
 
             Self::Set(value)     => *to = value.get(task_state)?.map(|x| Cow::Owned(x.into_owned())),
-            Self::Append(value)  => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().push_str(get_str!(value, task_state, StringModificationError)),
-            Self::Prepend(value) => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().insert_str(0, get_str!(value, task_state, StringModificationError)),
+            Self::Append(value)  => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().push_str(get_str!(value)),
+            Self::Prepend(value) => to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut().insert_str(0, get_str!(value)),
             Self::Insert{index, value} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 let index = neg_index(*index, to.len()).ok_or(StringModificationError::InvalidIndex)?;
                 if to.is_char_boundary(index) {
-                    to.insert_str(index, get_str!(value, task_state, StringModificationError));
+                    to.insert_str(index, get_str!(value));
                 } else {
                     Err(StringModificationError::InvalidIndex)?;
                 }
@@ -1093,7 +1093,7 @@ impl StringModification {
 
             Self::StripPrefix(prefix) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let prefix = get_str!(prefix, task_state, StringModificationError);
+                let prefix = get_str!(prefix);
                 match to {
                     Cow::Owned(inner) => if inner.starts_with(prefix) {inner.drain(..prefix.len());} else {Err(StringModificationError::PrefixNotFound)?;},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_prefix(prefix).ok_or(StringModificationError::PrefixNotFound)?)
@@ -1101,7 +1101,7 @@ impl StringModification {
             },
             Self::StripMaybePrefix(prefix) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let prefix = get_str!(prefix, task_state, StringModificationError);
+                let prefix = get_str!(prefix);
                 match to {
                     Cow::Owned(inner) => if inner.starts_with(prefix) {inner.drain(..prefix.len());},
                     Cow::Borrowed(inner) => if let Some(x) = inner.strip_prefix(prefix) {*to = Cow::Borrowed(x);}
@@ -1109,7 +1109,7 @@ impl StringModification {
             },
             Self::StripSuffix(suffix) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let suffix = get_str!(suffix, task_state, StringModificationError);
+                let suffix = get_str!(suffix);
                 match to {
                     Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len()-suffix.len())} else {Err(StringModificationError::SuffixNotFound)?;},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(inner.strip_suffix(suffix).ok_or(StringModificationError::SuffixNotFound)?)
@@ -1117,7 +1117,7 @@ impl StringModification {
             },
             Self::StripMaybeSuffix(suffix) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let suffix = get_str!(suffix, task_state, StringModificationError);
+                let suffix = get_str!(suffix);
                 match to {
                     Cow::Owned(inner) => if inner.ends_with(suffix) {inner.truncate(inner.len() - suffix.len());},
                     Cow::Borrowed(inner) => if let Some(x) = inner.strip_suffix(suffix) {*to = Cow::Borrowed(x);}
@@ -1136,7 +1136,7 @@ impl StringModification {
 
             Self::KeepBefore(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 match to {
                     Cow::Owned(inner) => {inner.drain(inner.find(s).ok_or(StringModificationError::SubstringNotFound)?..);},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..inner.find(s).ok_or(StringModificationError::SubstringNotFound)?])
@@ -1144,7 +1144,7 @@ impl StringModification {
             },
             Self::StripBefore(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 match to {
                     Cow::Owned(inner) => {inner.drain(..inner.find(s).ok_or(StringModificationError::SubstringNotFound)?);},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[inner.find(s).ok_or(StringModificationError::SubstringNotFound)?..])
@@ -1154,19 +1154,19 @@ impl StringModification {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 *to = match to {
                     Cow::Borrowed(inner) => Cow::Borrowed(inner
-                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenStartNotFound)?.1
-                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenEndNotFound  )?.0
+                        .split_once(get_str!(start)).ok_or(StringModificationError::KeepBetweenStartNotFound)?.1
+                        .split_once(get_str!(end  )).ok_or(StringModificationError::KeepBetweenEndNotFound  )?.0
                     ),
                     Cow::Owned(inner) => Cow::Owned(inner
-                        .split_once(get_str!(start, task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenStartNotFound)?.1
-                        .split_once(get_str!(end  , task_state, StringSourceError)).ok_or(StringModificationError::KeepBetweenEndNotFound  )?.0
+                        .split_once(get_str!(start)).ok_or(StringModificationError::KeepBetweenStartNotFound)?.1
+                        .split_once(get_str!(end  )).ok_or(StringModificationError::KeepBetweenEndNotFound  )?.0
                         .to_string()
                     )
                 }
             },
             Self::StripAfter(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 match to {
                     Cow::Owned(inner) => {inner.drain((inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len())..);},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[..inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()])
@@ -1174,7 +1174,7 @@ impl StringModification {
             },
             Self::KeepAfter(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 match to {
                     Cow::Owned(inner) => {inner.drain(..(inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()));},
                     Cow::Borrowed(inner) => *to = Cow::Borrowed(&inner[inner.find(s).ok_or(StringModificationError::SubstringNotFound)? + s.len()..])
@@ -1185,7 +1185,7 @@ impl StringModification {
 
             Self::KeepMaybeBefore(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 if let Some(i) = to.find(s) {
                     match to {
                         Cow::Owned(inner) => {inner.drain(i..);},
@@ -1195,7 +1195,7 @@ impl StringModification {
             },
             Self::StripMaybeBefore(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 if let Some(i) = to.find(s) {
                     match to {
                         Cow::Owned(inner) => {inner.drain(..i);},
@@ -1208,21 +1208,21 @@ impl StringModification {
                 *to = match to {
                     Cow::Borrowed(inner) => {
                         let mut temp = &**inner;
-                        temp = temp.split_once(get_str!(start, task_state, StringSourceError)).map_or(temp, |(_, x)| x);
-                        temp = temp.split_once(get_str!(end  , task_state, StringSourceError)).map_or(temp, |(x, _)| x);
+                        temp = temp.split_once(get_str!(start)).map_or(temp, |(_, x)| x);
+                        temp = temp.split_once(get_str!(end  )).map_or(temp, |(x, _)| x);
                         Cow::Borrowed(temp)
                     },
                     Cow::Owned(inner) => {
                         let mut temp = &**inner;
-                        temp = temp.split_once(get_str!(start, task_state, StringSourceError)).map_or(temp, |(_, x)| x);
-                        temp = temp.split_once(get_str!(end  , task_state, StringSourceError)).map_or(temp, |(x, _)| x);
+                        temp = temp.split_once(get_str!(start)).map_or(temp, |(_, x)| x);
+                        temp = temp.split_once(get_str!(end  )).map_or(temp, |(x, _)| x);
                         Cow::Owned(temp.to_string())
                     }
                 }
             },
             Self::StripMaybeAfter(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 if let Some(i) = to.find(s) {
                     match to {
                         Cow::Owned(inner) => {inner.drain((i + s.len())..);},
@@ -1232,7 +1232,7 @@ impl StringModification {
             },
             Self::KeepMaybeAfter(s) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                let s = get_str!(s, task_state, StringModificationError);
+                let s = get_str!(s);
                 if let Some(i) = to.find(s) {
                     match to {
                         Cow::Owned(inner) => {inner.drain(..(i + s.len()));},
@@ -1243,8 +1243,8 @@ impl StringModification {
 
 
 
-            Self::Replacen{find, replace, count} => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replacen(get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError), *count))),
-            Self::ReplaceAll{find, replace}      => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replace (get_str!(find, task_state, StringModificationError), get_str!(replace, task_state, StringModificationError)))),
+            Self::Replacen{find, replace, count} => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replacen(get_str!(find), get_str!(replace), *count))),
+            Self::ReplaceAll{find, replace}      => *to=Some(Cow::Owned(to.as_ref().ok_or(StringModificationError::StringIsNone)?.replace (get_str!(find), get_str!(replace)))),
 
 
 
@@ -1252,7 +1252,7 @@ impl StringModification {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
                 let range=neg_range(*start, *end, to.len()).ok_or(StringModificationError::InvalidSlice)?;
                 if to.get(range).is_some() {
-                    to.replace_range(range, get_str!(replace, task_state, StringModificationError));
+                    to.replace_range(range, get_str!(replace));
                 } else {
                     Err(StringModificationError::InvalidSlice)?;
                 }
@@ -1268,9 +1268,9 @@ impl StringModification {
 
 
             Self::SetSegment {split, index, value, join} => {
-                let split = get_str!(split, task_state, StringModificationError);
+                let split = get_str!(split);
                 let join = match join {
-                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    Some(join) => get_str!(join),
                     None => split
                 };
                 let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
@@ -1282,9 +1282,9 @@ impl StringModification {
                 *to = Some(Cow::Owned(segments.join(join)));
             },
             Self::InsertSegment {split, index, value, join} => {
-                let split = get_str!(split, task_state, StringModificationError);
+                let split = get_str!(split);
                 let join = match join {
-                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    Some(join) => get_str!(join),
                     None => split
                 };
                 let mut segments = to.as_ref().ok_or(StringModificationError::StringIsNone)?.split(split).map(Cow::Borrowed).collect::<Vec<_>>();
@@ -1297,24 +1297,24 @@ impl StringModification {
             Self::KeepSegment {split, index} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
                 *to = match to {
-                    Cow::Owned(inner) => Cow::Owned(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string()),
-                    Cow::Borrowed(inner) => Cow::Borrowed(neg_nth(inner.split(get_str!(split, task_state, StringModificationError)), *index).ok_or(StringModificationError::SegmentNotFound)?),
+                    Cow::Owned(inner) => Cow::Owned(neg_nth(inner.split(get_str!(split)), *index).ok_or(StringModificationError::SegmentNotFound)?.to_string()),
+                    Cow::Borrowed(inner) => Cow::Borrowed(neg_nth(inner.split(get_str!(split)), *index).ok_or(StringModificationError::SegmentNotFound)?),
                 }
             },
             Self::KeepSegmentRange {split, start, end, join} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let split = get_str!(split, task_state, StringModificationError);
+                let split = get_str!(split);
                 let join = match join {
-                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    Some(join) => get_str!(join),
                     None => split
                 };
                 *to = neg_vec_keep(to.split(split), *start, *end).ok_or(StringModificationError::SegmentRangeNotFound)?.join(join);
             },
             Self::KeepSegments {split, indices, join} => {
                 let temp = to.as_ref().ok_or(StringModificationError::StringIsNone)?;
-                let split = get_str!(split, task_state, StringModificationError);
+                let split = get_str!(split);
                 let join = match join {
-                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    Some(join) => get_str!(join),
                     None => split
                 };
                 let segments = temp.split(split).collect::<Vec<_>>();
@@ -1336,9 +1336,9 @@ impl StringModification {
             },
             Self::KeepModifiedSegments {split, indices, modification, join} => {
                 let temp = to.as_ref().ok_or(StringModificationError::StringIsNone)?;
-                let split = get_str!(split, task_state, StringModificationError);
+                let split = get_str!(split);
                 let join = match join {
-                    Some(join) => get_str!(join, task_state, StringModificationError),
+                    Some(join) => get_str!(join),
                     None => split
                 };
                 let segments = temp.split(split).collect::<Vec<_>>();
@@ -1372,7 +1372,7 @@ impl StringModification {
             },
             Self::GetHtmlAttribute(name) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?;
-                *to = Cow::Owned(get_html_attribute(to, get_str!(name, task_state, StringModificationError))?.ok_or(StringModificationError::HtmlAttributeNotFound)?.ok_or(StringModificationError::HtmlAttributeHasNoValue)?);
+                *to = Cow::Owned(get_html_attribute(to, get_str!(name))?.ok_or(StringModificationError::HtmlAttributeNotFound)?.ok_or(StringModificationError::HtmlAttributeHasNoValue)?);
             },
 
 
@@ -1383,15 +1383,15 @@ impl StringModification {
             },
             Self::RegexSubstitute {regex, replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let replace = get_str!(replace, task_state, StringModificationError);
+                let replace = get_str!(replace);
                 let mut temp = "".to_string();
                 regex.get()?.captures(to).ok_or(StringModificationError::RegexMatchNotFound)?.expand(replace, &mut temp);
                 *to = temp;
             },
             Self::JoinAllRegexSubstitutions {regex, replace, join} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                let replace = get_str!(replace, task_state, StringModificationError);
-                let join = get_str!(join, task_state, StringModificationError);
+                let replace = get_str!(replace);
+                let join = get_str!(join);
                 let regex = regex.get()?;
                 let mut temp = "".to_string();
                 if join.is_empty() {
@@ -1409,22 +1409,22 @@ impl StringModification {
             },
             Self::RegexReplaceOne {regex,replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.replace(to,get_str!(replace, task_state, StringModificationError)).into_owned();
+                *to = regex.get()?.replace(to,get_str!(replace)).into_owned();
             },
             Self::RegexReplaceAll {regex,replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.replace_all(to,get_str!(replace, task_state, StringModificationError)).into_owned();
+                *to = regex.get()?.replace_all(to,get_str!(replace)).into_owned();
             },
             Self::RegexReplacen {regex, n, replace} => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                *to = regex.get()?.replacen(to, *n, get_str!(replace, task_state, StringModificationError)).into_owned();
+                *to = regex.get()?.replacen(to, *n, get_str!(replace)).into_owned();
             },
 
 
 
             Self::JsonPointer(pointer) => {
                 let to = to.as_mut().ok_or(StringModificationError::StringIsNone)?.to_mut();
-                match serde_json::from_str::<serde_json::Value>(to)?.pointer_mut(get_str!(pointer, task_state, StringModificationError)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
+                match serde_json::from_str::<serde_json::Value>(to)?.pointer_mut(get_str!(pointer)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
                     serde_json::Value::String(s) => *to = s,
                     _ => Err(StringModificationError::JsonPointeeIsNotAString)?
                 }
@@ -1466,7 +1466,7 @@ impl StringModification {
                 ret?
             },
             Self::CallArg(name) => task_state.call_args.get().ok_or(StringModificationError::NotInFunction)?
-                .string_modifications.get(get_str!(name, task_state, StringModificationError)).ok_or(StringModificationError::CallArgFunctionNotFound)?
+                .string_modifications.get(get_str!(name)).ok_or(StringModificationError::CallArgFunctionNotFound)?
                 .apply(to, task_state)?,
             Self::Custom(function) => function(to, task_state)?
         }))

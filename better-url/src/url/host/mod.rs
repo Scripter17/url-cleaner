@@ -1,94 +1,134 @@
 //! Host stuff.
 
-use std::net::IpAddr;
-
-#[expect(unused_imports, reason = "Used in a doc comment.")]
-use url::Url;
-
 use crate::prelude::*;
 
 mod domain;
 
 impl BetterUrl {
-    /// Get a borrowing [`BetterHost`].
-    pub fn host(&self) -> Option<BetterHost<'_>> {
-        self.ref_host().map(Into::into)
+    /// If it has a host.
+    pub fn has_host(&self) -> bool {
+        self.host_details.is_some()
     }
 
-    /// Get a borrowing [`BetterRefHost`].
-    pub fn ref_host(&self) -> Option<BetterRefHost<'_>> {
-        let host = self.host_str()?;
+    /// The host.
+    pub fn host_str(&self) -> Option<&str> {
+        self.url.host_str()
+    }
+
+    /// The [`Host`].
+    pub fn host(&self) -> Option<Host<'_>> {
+        let host = self.host_str()?.into();
 
         Some(match self.host_details? {
-            HostDetails::Domain(details) => BetterRefDomainHost {host, details}.into(),
-            HostDetails::Ipv4  (details) => BetterRefIpv4Host   {host, details}.into(),
-            HostDetails::Ipv6  (details) => BetterRefIpv6Host   {host, details}.into(),
+            HostDetails::Domain(details) => DomainHost {host, details}.into(),
+            HostDetails::Ipv4  (details) => Ipv4Host   {host, details}.into(),
+            HostDetails::Ipv6  (details) => Ipv6Host   {host, details}.into(),
+            HostDetails::Opaque(details) => OpaqueHost {host, details}.into(),
+            HostDetails::Empty (_) => EmptyHost::default().into(),
         })
     }
 
-    /// Get the [`HostDetails`].
+    /// The [`HostDetails`].
     pub fn host_details(&self) -> Option<HostDetails> {
         self.host_details
     }
 
-    /// Get the [`DomainDetails`].
+    /// The [`DomainDetails`].
     pub fn domain_details(&self) -> Option<DomainDetails> {
         self.host_details()?.domain()
     }
 
-    /// Get the [`Ipv4Details`].
+    /// The [`Ipv4Details`].
     pub fn ipv4_details(&self) -> Option<Ipv4Details> {
         self.host_details()?.ipv4()
     }
 
-    /// Get the [`Ipv6Details`].
+    /// The [`Ipv6Details`].
     pub fn ipv6_details(&self) -> Option<Ipv6Details> {
         self.host_details()?.ipv6()
     }
 
-    /// Get the [`IpDetails`].
+    /// The [`IpDetails`].
     pub fn ip_details(&self) -> Option<IpDetails> {
         self.host_details()?.ip()
     }
 
-    /// [`BetterRefHost::normal`].
-    pub fn normal_host(&self) -> Option<&str> {
-        Some(self.ref_host()?.normal())
+    /// The [`OpaqueHostDetails`].
+    pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {
+        self.host_details()?.opaque()
     }
 
-    /// [`Url::set_host`].
+    /// The [`EmptyHostDetails`].
+    pub fn empty_host_details(&self) -> Option<EmptyHostDetails> {
+        self.host_details()?.empty()
+    }
+
+    /// Set the host.
     /// # Errors
-    /// If the call to [`Url::set_host`] returns an error, the error is returned.
+    /// If the call to [`Host::new`] returns an error, that error is returned.
+    ///
+    /// If attempting to set a non-empty host to the empty host, reutrns the error [`CantBeEmpty`].
+    ///
+    /// If attempting to set a [`SchemeType::SpecialNotFile`] URL's host to [`None`], returns the error [`CantBeNone`].
+    ///
+    /// If setting the host would make the URL too long, returns the error [`TooLong`].
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// let mut url = BetterUrl::parse("https://example.com").unwrap();
+    ///
+    /// url.set_host(Some("example.co.uk")).unwrap    ();
+    /// url.set_host(Some("")             ).unwrap_err();
+    /// url.set_host(None::<&str>         ).unwrap_err();
+    ///
+    /// let mut url = BetterUrl::parse("file://example.com").unwrap();
+    ///
+    /// url.set_host(Some("example.co.uk")).unwrap    ();
+    /// url.set_host(Some("")             ).unwrap_err();
+    /// url.set_host(None::<&str>         ).unwrap    ();
+    ///
+    /// let mut url = BetterUrl::parse("file://example.com/a/b/c").unwrap();
+    ///
+    /// url.set_host(Some("example.co.uk")).unwrap    ();
+    /// url.set_host(Some("")             ).unwrap_err();
+    /// url.set_host(None::<&str>         ).unwrap    ();
+    ///
+    /// let mut url = BetterUrl::parse("other://example.com/a/b/c").unwrap();
+    ///
+    /// url.set_host(Some("example.co.uk")).unwrap    ();
+    /// url.set_host(Some("")             ).unwrap_err();
+    /// url.set_host(None::<&str>         ).unwrap    ();
+    /// ```
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_host(&mut self, host: Option<&str>) -> Result<(), SetHostError> {
-        if self.host_str() != host {
-            self.url.set_host(host)?;
-            self.host_details = HostDetails::from_url(self);
+    pub fn set_host<'a, T: TryInto<Host<'a>>>(&mut self, host: Option<T>) -> Result<(), SetHostError> where SetHostError: From<T::Error> {
+        let host = host.map(TryInto::try_into).transpose()?;
+
+        let new_len = match (self.host_str(), host.as_ref()) {
+            (None     , None     )                   => return Ok(()),
+            (Some(old), Some(new)) if old == new     => return Ok(()),
+
+            (Some(_  ), Some(new)) if new.is_empty() => Err(CantBeEmpty)?,
+
+            (Some(old), None) => match self.scheme_type() {
+                SchemeType::SpecialNotFile => Err(CantBeNone)?,
+                SchemeType::File           => self.len() - old.len(),
+                SchemeType::NonSpecial     => self.len() - old.len() - 2,
+            },
+
+            (None     , Some(new)) => self.len()             + new.len(),
+            (Some(old), Some(new)) => self.len() - old.len() + new.len(),
+        };
+
+        if new_len > u32::MAX as usize {
+            Err(TooLong)?;
         }
 
-        Ok(())
-    }
+        self.url.set_host(host.as_ref().map(Host::as_str)).expect("To always work.");
+        self.host_details = host.as_ref().map(Host::details);
 
-    /// [`Url::set_ip_host`].
-    /// # Errors
-    /// If the call to [`Url::set_ip_host`] returns an error, returns the error [`SetIpHostError`].
-    pub fn set_ip_host(&mut self, address: IpAddr) -> Result<(), SetIpHostError> {
-        self.url.set_ip_host(address).map_err(|()| SetIpHostError)?;
-        self.host_details = Some(address.into());
-
-        Ok(())
-    }
-
-    /// [`Url::set_host`] without recalculating the [`HostDetails`].
-    /// # Errors
-    /// If the call to [`Url::set_host`] returns an error, that error is returned.
-    pub fn set_better_host<'a, T: Into<BetterHost<'a>>>(&mut self, host: Option<T>) -> Result<(), SetHostError> {
-        let host = host.map(Into::into);
-
-        if host != self.host() {
-            self.url.set_host(host.as_ref().map(BetterHost::as_str))?;
-            self.host_details = host.as_ref().map(BetterHost::details);
-        }
+        debug_assert_eq!(self.len(), new_len);
+        debug_assert_eq!(self.host(), host);
 
         Ok(())
     }

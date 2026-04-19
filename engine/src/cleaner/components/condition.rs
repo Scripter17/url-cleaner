@@ -339,7 +339,7 @@ pub enum Condition {
 
     // Host is
 
-    /// Satisfied if the value of [`Url::host`] is equal to the specified string.
+    /// Satisfied if the [`BetterUrl::host_str`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -358,14 +358,14 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     HostIs(StringSource),
-    /// Satisfied if the [`BetterUrl::normal_host`] is equal to the specified string.
+    /// Satisfied if the [`BetterUrl::domain_normal`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
     /// ```
     /// use url_cleaner_engine::docs::*;
     ///
-    /// let condition = Condition::NormalHostIs("example.com".into());
+    /// let condition = Condition::DomainNormalIs("example.com".into());
     ///
     /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
     /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
@@ -376,27 +376,8 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
-    NormalHostIs(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_labels`] is equal to the specified string.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// let condition = Condition::DomainIs("example.com".into());
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
-    /// ```
-    DomainIs(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_origin`] is equal to the specified string.
+    DomainNormalIs(StringSource),
+    /// Satisfied if the [`BetterUrl::domain_origin`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -415,7 +396,7 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainOriginIs(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_prefix`] is equal to the specified string.
+    /// Satisfied if the [`BetterUrl::domain_prefix`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -434,7 +415,7 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainPrefixIs(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_middle`] is equal to the specified string.
+    /// Satisfied if the [`BetterUrl::domain_middle`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -453,7 +434,7 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainMiddleIs(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_suffix`] is equal to the specified string.
+    /// Satisfied if the [`BetterUrl::domain_suffix`] is equal to the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     /// # Examples
@@ -484,15 +465,6 @@ pub enum Condition {
         /// The value to compare it to.
         value: StringSource
     },
-    /// Satisfied if the [`BetterUrl::domain_origin_segment`] is the specified value.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    DomainOriginSegmentIs {
-        /// The segment to check.
-        index: isize,
-        /// The value to compare it to.
-        value: StringSource
-    },
     /// Satisfied if the [`BetterUrl::domain_prefix_segment`] is the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
@@ -511,34 +483,39 @@ pub enum Condition {
         /// The value to compare it to.
         value: StringSource
     },
+    /// Satisfied if the [`BetterUrl::domain_origin_segment`] is the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainOriginSegmentIs {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
 
     // Host starts with
 
-    /// Satisfied if the value of [`Url::host`] starts with the specified string.
+    /// Satisfied if the [`BetterUrl::host_str`] starts with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     HostStartsWith(StringSource),
-    /// Satisfied if the [`BetterUrl::normal_host`] starts with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_normal`] starts with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
-    NormalHostStartsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_labels`] starts with the specified string.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    DomainStartsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_origin`] starts with the specified string.
+    DomainNormalStartsWith(StringSource),
+    /// Satisfied if the [`BetterUrl::domain_origin`] starts with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainOriginStartsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_prefix`] starts with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_prefix`] starts with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainPrefixStartsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_middle`] starts with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_middle`] starts with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainMiddleStartsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_suffix`] starts with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_suffix`] starts with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainSuffixStartsWith(StringSource),
@@ -549,15 +526,6 @@ pub enum Condition {
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainSegmentStartsWith {
-        /// The segment to check.
-        index: isize,
-        /// The value to compare it to.
-        value: StringSource
-    },
-    /// Satisfied if the [`BetterUrl::domain_origin_segment`] starts with the specified value.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    DomainOriginSegmentStartsWith {
         /// The segment to check.
         index: isize,
         /// The value to compare it to.
@@ -581,34 +549,39 @@ pub enum Condition {
         /// The value to compare it to.
         value: StringSource
     },
+    /// Satisfied if the [`BetterUrl::domain_origin_segment`] starts with the specified value.
+    /// # Errors
+    #[doc = edoc!(geterr(StringSource))]
+    DomainOriginSegmentStartsWith {
+        /// The segment to check.
+        index: isize,
+        /// The value to compare it to.
+        value: StringSource
+    },
 
     // Host ends with
 
-    /// Satisfied if the value of [`Url::host`] ends with the specified string.
+    /// Satisfied if the [`Url::host`] ends with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     HostEndsWith(StringSource),
-    /// Satisfied if the [`BetterUrl::normal_host`] ends with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_normal`] ends with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
-    NormalHostEndsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_prefix`] ends with the specified string.
+    DomainNormalEndsWith(StringSource),
+    /// Satisfied if the [`BetterUrl::domain_prefix`] ends with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainPrefixEndsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_origin`] ends with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_origin`] ends with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainOriginEndsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_labels`] ends with the specified string.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    DomainEndsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_middle`] ends with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_middle`] ends with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainMiddleEndsWith(StringSource),
-    /// Satisfied if the value of [`BetterUrl::domain_suffix`] ends with the specified string.
+    /// Satisfied if the [`BetterUrl::domain_suffix`] ends with the specified string.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     DomainSuffixEndsWith(StringSource),
@@ -676,12 +649,12 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     HostIsOneOf(Set<String>),
-    /// Satisfied if the [`BetterUrl::normal_host`] is in the specified [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_normal`] is in the specified [`Set`].
     /// # Examples
     /// ```
     /// use url_cleaner_engine::docs::*;
     ///
-    /// let condition = Condition::NormalHostIsOneOf(
+    /// let condition = Condition::DomainNormalIsOneOf(
     ///     [
     ///         "example.com".to_string()
     ///     ].into()
@@ -696,7 +669,7 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
-    NormalHostIsOneOf(Set<String>),
+    DomainNormalIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::domain_prefix`] is contained in the specified [`Set`].
     /// # Examples
     /// ```
@@ -740,28 +713,6 @@ pub enum Condition {
     /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
     /// ```
     DomainOriginIsOneOf(Set<String>),
-    /// Satisfied if the [`BetterUrl::domain_labels`] is in the specified [`Set`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// let condition = Condition::DomainIsOneOf(
-    ///     [
-    ///         "example.com".to_string(),
-    ///         "abc.example.com".to_string()
-    ///     ].into()
-    /// );
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, condition, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, condition, &ts);
-    /// ```
-    DomainIsOneOf(Set<String>),
     /// Satisfied if the [`BetterUrl::domain_middle`] is in the specified [`Set`].
     /// # Examples
     /// ```
@@ -842,10 +793,10 @@ pub enum Condition {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     HostIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Satisfied if the [`BetterUrl::normal_host`] is in the specified [`Params::sets`] [`Set`].
+    /// Satisfied if the [`BetterUrl::domain_normal`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
-    NormalHostIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
+    DomainNormalIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Satisfied if the [`BetterUrl::domain_prefix`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
@@ -854,10 +805,6 @@ pub enum Condition {
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
     DomainOriginIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Satisfied if the [`BetterUrl::domain_labels`] is in the specified [`Params::sets`] [`Set`].
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
-    DomainIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
     /// Satisfied if the [`BetterUrl::domain_middle`] is in the specified [`Params::sets`] [`Set`].
     /// # Errors
     #[doc = edoc!(geterr(StringSource), getnone(StringSource, ConditionError), notfound(Set, Condition))]
@@ -912,96 +859,20 @@ pub enum Condition {
 
     // Misc. host
 
-    /// Satisfied if the [`Url::host`] is [`Some`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, true, Condition::UrlHasHost, &ts);
-    /// ```
+    /// [`BetterUrl::has_host`].
     UrlHasHost,
-    /// Satisfied if the URL's host is a fully qualified domain name.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, Condition::HostIsFqdn, &ts);
-    /// ```
-    HostIsFqdn,
-    /// Satisfied if the URL's host is a domain.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, true , Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, true , Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, true , Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, true , Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, true , Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, true , Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, Condition::HostIsDomain, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, Condition::HostIsDomain, &ts);
-    /// ```
+    /// [`HostDetails::is_domain`].
     HostIsDomain,
-    /// Satisfied if the URL's host is an IP address.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, true , Condition::HostIsIp, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, true , Condition::HostIsIp, &ts);
-    /// ```
+    /// [`HostDetails::is_ip`].
     HostIsIp,
-    /// Satisfied if the URL's host is an IPv4 address.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, true , Condition::HostIsIpv4, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, false, Condition::HostIsIpv4, &ts);
-    /// ```
+    /// [`HostDetails::is_ipv4`].
     HostIsIpv4,
-    /// Satisfied if the URL's host is an IPv6 address.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::docs::*;
-    ///
-    /// doc_test!(task_state, ts, task = "https://example.com"     ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://example.com."    ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com" ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://www.example.com."); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com" ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://abc.example.com."); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://127.0.0.1"       ); doc_test!(check, false, Condition::HostIsIpv6, &ts);
-    /// doc_test!(task_state, ts, task = "https://[::1]"           ); doc_test!(check, true , Condition::HostIsIpv6, &ts);
-    /// ```
+    /// [`HostDetails::is_ipv6`].
     HostIsIpv6,
+    /// [`HostDetails::is_opaque`].
+    HostIsOpaque,
+    /// [`HostDetails::is_empty`].
+    HostIsEmpty,
 
     /// [`IpDetails::is_loopback`].
     HostIsLoopbackIp,
@@ -1027,8 +898,12 @@ pub enum Condition {
 
     /// [`Ipv6Details::is_loopback`].
     HostIsLoopbackIpv6,
+    /// [`Ipv6Details::is_unicast_link_local`].
+    HostIsUnicastLinkLocalIpv6,
     /// [`Ipv6Details::is_multicast`].
     HostIsMulticastIpv6,
+    /// [`Ipv6Details::is_unique_local`].
+    HostIsUniqueLocalIpv6,
     /// [`Ipv6Details::is_unspecified`].
     HostIsUnspecifiedIpv6,
 
@@ -1038,71 +913,20 @@ pub enum Condition {
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     PathIs(StringSource),
-    /// Satisfied if the [`Self::PathSegmentIs::index`]th path segment is the specified value.
-    /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), geterr(StringSource))]
-    PathSegmentIs {
-        /// The path segment to get.
-        index: isize,
-        /// The value to check for.
-        value: StringSource
-    },
-
     /// Satisfied if [`Url::path`] starts with the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     PathStartsWith(StringSource),
-    /// Satisfied if the specified path segment starts with the specified value.
-    /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), callsomenone(BetterUrl::ref_path_segments, ConditionError::PathSegmentNotFound), geterr(StringSource))]
-    PathSegmentStartsWith {
-        /// The path segment to get.
-        index: isize,
-        /// The value to check for.
-        value: StringSource
-    },
-
     /// Satisfied if [`Url::path`] ends with the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource))]
     PathEndsWith(StringSource),
-    /// Satisfied if the specified path segment ends with the specified value.
-    /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), callsomenone(BetterUrl::ref_path_segments, ConditionError::PathSegmentNotFound), geterr(StringSource))]
-    PathSegmentEndsWith {
-        /// The path segment to get.
-        index: isize,
-        /// The value to check for.
-        value: StringSource
-    },
-
     /// Satisfied if [`Url::path`] is in the specified [`Set`].
     PathIsOneOf(Set<String>),
-    /// Satisfied if the specified path segment is in the specified [`Set`].
-    /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath))]
-    PathSegmentIsOneOf {
-        /// The path segment to get.
-        index: isize,
-        /// The set to check in.
-        values: Set<String>
-    },
-
     /// Satisfied if [`Url::path`] is in the named [`Set`].
     /// # Errors
     #[doc = edoc!(notfound(Set, Condition))]
     PathIsInSet(#[suitable(assert = "set_is_documented")] StringSource),
-    /// Satisfied if the specified path segment is in the named [`Set`].
-    /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), notfound(Set, Condition))]
-    PathSegmentIsInSet {
-        /// The path segment to get.
-        index: isize,
-        /// The set to check in.
-        #[suitable(assert = "set_is_documented")]
-        set: StringSource
-    },
-
     /// Satisfied if [`Url::path`] contains the specified value.
     /// # Errors
     #[doc = edoc!(geterr(StringSource), checkerr(StringLocation))]
@@ -1115,9 +939,62 @@ pub enum Condition {
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
+    /// Satisfied if [`Url::path`] satisfies the specified [`StringMatcher`].
+    /// # Errors
+    #[doc = edoc!(checkerr(StringMatcher))]
+    PathMatches(StringMatcher),
+
+    // Path segment
+
+    /// Satisfied if the [`Self::PathSegmentIs::index`]th path segment is the specified value.
+    /// # Errors
+    #[doc = edoc!(callnone(BetterUrl::path_segments, PathIsOpaque), geterr(StringSource))]
+    PathSegmentIs {
+        /// The path segment to get.
+        index: isize,
+        /// The value to check for.
+        value: StringSource
+    },
+    /// Satisfied if the specified path segment starts with the specified value.
+    /// # Errors
+    #[doc = edoc!(callnone(BetterUrl::path_segments, PathIsOpaque), callsomenone(BetterUrl::path_segments, ConditionError::PathSegmentNotFound), geterr(StringSource))]
+    PathSegmentStartsWith {
+        /// The path segment to get.
+        index: isize,
+        /// The value to check for.
+        value: StringSource
+    },
+    /// Satisfied if the specified path segment ends with the specified value.
+    /// # Errors
+    #[doc = edoc!(callnone(BetterUrl::path_segments, PathIsOpaque), callsomenone(BetterUrl::path_segments, ConditionError::PathSegmentNotFound), geterr(StringSource))]
+    PathSegmentEndsWith {
+        /// The path segment to get.
+        index: isize,
+        /// The value to check for.
+        value: StringSource
+    },
+    /// Satisfied if the specified path segment is in the specified [`Set`].
+    /// # Errors
+    #[doc = edoc!(callnone(BetterUrl::path_segments, PathIsOpaque))]
+    PathSegmentIsOneOf {
+        /// The path segment to get.
+        index: isize,
+        /// The set to check in.
+        values: Set<String>
+    },
+    /// Satisfied if the specified path segment is in the named [`Set`].
+    /// # Errors
+    #[doc = edoc!(callnone(BetterUrl::path_segments, PathIsOpaque), notfound(Set, Condition))]
+    PathSegmentIsInSet {
+        /// The path segment to get.
+        index: isize,
+        /// The set to check in.
+        #[suitable(assert = "set_is_documented")]
+        set: StringSource
+    },
     /// Satisfied if the specified path segment contains the specified value.
     /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), callsomenone(BetterUrl::ref_path_segments, ConditionError::PathSegmentNotFound), geterr(StringSource), checkerr(StringLocation))]
+    #[doc = edoc!(callnone(BetterUrl::path_segment, ConditionError::PathSegmentNotFound), geterr(StringSource), checkerr(StringLocation))]
     PathSegmentContains {
         /// The path segment to get.
         index: isize,
@@ -1129,14 +1006,9 @@ pub enum Condition {
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-
-    /// Satisfied if [`Url::path`] satisfies the specified [`StringMatcher`].
-    /// # Errors
-    #[doc = edoc!(checkerr(StringMatcher))]
-    PathMatches(StringMatcher),
     /// Satisfied if the specified path segment satisfies the specified [`StringMatcher`].
     /// # Errors
-    #[doc = edoc!(callnone(BetterUrl::ref_path_segments, OpaquePath), checkerr(StringMatcher))]
+    #[doc = edoc!(callnone(BetterUrl::path_segments, PathIsOpaque), checkerr(StringMatcher))]
     PathSegmentMatches {
         /// The path segment to get.
         index: isize,
@@ -1145,7 +1017,7 @@ pub enum Condition {
     },
 
     /// Satisfied if the [`Url::path`] has segments.
-    PathHasSegments,
+    PathIsSegmented,
     /// Satisfied if the URL has a path segment of the specified index.
     HasPathSegment(isize),
 
@@ -1369,9 +1241,9 @@ pub enum ConditionError {
         else_error: Box<Self>
     },
 
-    /// Returned when a [`StringSource`] returned [`None`] where it has to return [`Some`].
-    #[error("A StringSource returned None where it had to return Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
@@ -1382,12 +1254,9 @@ pub enum ConditionError {
     /// Returned when the Host is [`None`] where it has to be [`Some`].
     #[error("The Host was None where it had to be Some.")]
     HostIsNone,
-    /// Returned when the NormalHost is [`None`] where it has to be [`Some`].
-    #[error("The NormalHost was None where it had to be Some.")]
-    NormalHostIsNone,
-    /// Returned when the Domain is [`None`] where it has to be [`Some`].
-    #[error("The Domain was None where it had to be Some.")]
-    DomainIsNone,
+    /// Returned when the DomainNormal is [`None`] where it has to be [`Some`].
+    #[error("The DomainNormal was None where it had to be Some.")]
+    DomainNormalIsNone,
     /// Returned when the DomainOrigin is [`None`] where it has to be [`Some`].
     #[error("The DomainOrigin was None where it had to be Some.")]
     DomainOriginIsNone,
@@ -1419,9 +1288,9 @@ pub enum ConditionError {
     #[error("Attempted to get a path segment not in the URL.")]
     PathSegmentNotFound,
 
-    /// Returned when a [`OpaquePath`] is encountered.
+    /// Returned when a [`PathIsOpaque`] is encountered.
     #[error(transparent)]
-    OpaquePath(#[from] OpaquePath),
+    PathIsOpaque(#[from] PathIsOpaque),
 
     /// Returned when a [`StringMatcherError`] is encountered.
     #[error(transparent)]
@@ -1521,8 +1390,8 @@ impl Condition {
             Self::PartMap  {part , map} => if let Some(condition) = map.get(part .get(&task_state.url) ) {condition.check(task_state)?} else {false},
             Self::StringMap{value, map} => if let Some(condition) = map.get(value.get(task_state    )?) {condition.check(task_state)?} else {false},
 
-            Self::PartPartitioning   {partitioning, part , map} => if let Some(condition) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(part.get(&task_state.url).as_deref())) {condition.check(task_state)?} else {false},
-            Self::StringPartitioning {partitioning, value, map} => if let Some(condition) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning, task_state, ConditionError)).ok_or(ConditionError::PartitioningNotFound)?.get(get_option_str!(value, task_state)) ) {condition.check(task_state)?} else {false},
+            Self::PartPartitioning   {partitioning, part , map} => if let Some(condition) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning)).ok_or(ConditionError::PartitioningNotFound)?.get(part.get(&task_state.url).as_deref())) {condition.check(task_state)?} else {false},
+            Self::StringPartitioning {partitioning, value, map} => if let Some(condition) = map.get(task_state.job.cleaner.params.partitionings.get(get_str!(partitioning)).ok_or(ConditionError::PartitioningNotFound)?.get(get_option_str!(value)) ) {condition.check(task_state)?} else {false},
 
             // Params
 
@@ -1536,108 +1405,104 @@ impl Condition {
 
             // String source
 
-            Self::StringIs {left, right} => get_option_cow!(left, task_state) == get_option_cow!(right, task_state),
+            Self::StringIs {left, right} => get_option_cow!(left) == get_option_cow!(right),
             Self::StringIsSome(value) => value.get(task_state)?.is_some(),
-            Self::StringContains {value, substring, at} => at.check(get_str!(value, task_state, ConditionError), get_str!(substring, task_state, ConditionError))?,
-            Self::StringMatches {value, matcher} => matcher.check(get_option_str!(value, task_state), task_state)?,
+            Self::StringContains {value, substring, at} => at.check(get_str!(value), get_str!(substring))?,
+            Self::StringMatches {value, matcher} => matcher.check(get_option_str!(value), task_state)?,
 
             // Whole
 
-            Self::UrlIs(value) => task_state.url == *get_cow!(value, task_state, ConditionError),
+            Self::UrlIs(value) => task_state.url == *get_cow!(value),
 
             // Scheme
 
-            Self::SchemeIs(value) => task_state.url.scheme() == get_str!(value, task_state, ConditionError),
-            Self::SchemeIsOneOf(values) => values.contains_some(task_state.url.scheme()),
-            Self::SchemeIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.scheme()),
+            Self::SchemeIs(value) => task_state.url.scheme_str() == get_str!(value),
+            Self::SchemeIsOneOf(values) => values.contains_some(task_state.url.scheme_str()),
+            Self::SchemeIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.scheme_str()),
 
             // Host is
 
-            Self::HostIs        (x) => task_state.url.host_str     () == get_option_str!(x, task_state),
-            Self::NormalHostIs  (x) => task_state.url.normal_host  () == get_option_str!(x, task_state),
-            Self::DomainIs      (x) => task_state.url.domain_labels() == get_option_str!(x, task_state),
-            Self::DomainPrefixIs(x) => task_state.url.domain_prefix() == get_option_str!(x, task_state),
-            Self::DomainMiddleIs(x) => task_state.url.domain_middle() == get_option_str!(x, task_state),
-            Self::DomainSuffixIs(x) => task_state.url.domain_suffix() == get_option_str!(x, task_state),
-            Self::DomainOriginIs(x) => task_state.url.domain_origin() == get_option_str!(x, task_state),
+            Self::HostIs        (x) => task_state.url.host_str     () == get_option_str!(x),
+            Self::DomainPrefixIs(x) => task_state.url.domain_prefix() == get_option_str!(x),
+            Self::DomainMiddleIs(x) => task_state.url.domain_middle() == get_option_str!(x),
+            Self::DomainSuffixIs(x) => task_state.url.domain_suffix() == get_option_str!(x),
+            Self::DomainOriginIs(x) => task_state.url.domain_origin() == get_option_str!(x),
+            Self::DomainNormalIs(x) => task_state.url.domain_normal() == get_option_str!(x),
 
-            Self::DomainSegmentIs       {index, value} => task_state.url.domain_segment       (*index) == get_option_str!(value, task_state),
-            Self::DomainOriginSegmentIs {index, value} => task_state.url.domain_origin_segment(*index) == get_option_str!(value, task_state),
-            Self::DomainPrefixSegmentIs {index, value} => task_state.url.domain_prefix_segment(*index) == get_option_str!(value, task_state),
-            Self::DomainSuffixSegmentIs {index, value} => task_state.url.domain_suffix_segment(*index) == get_option_str!(value, task_state),
+            Self::DomainSegmentIs       {index, value} => task_state.url.domain_segment       (*index) == get_option_str!(value),
+            Self::DomainPrefixSegmentIs {index, value} => task_state.url.domain_prefix_segment(*index) == get_option_str!(value),
+            Self::DomainSuffixSegmentIs {index, value} => task_state.url.domain_suffix_segment(*index) == get_option_str!(value),
+            Self::DomainOriginSegmentIs {index, value} => task_state.url.domain_origin_segment(*index) == get_option_str!(value),
 
             // Host starts with
 
-            Self::HostStartsWith        (x) => task_state.url.host_str     ().ok_or(ConditionError::HostIsNone        )?.starts_with(get_str!(x, task_state, ConditionError)),
-            Self::NormalHostStartsWith  (x) => task_state.url.normal_host  ().ok_or(ConditionError::NormalHostIsNone  )?.starts_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainStartsWith      (x) => task_state.url.domain_labels().ok_or(ConditionError::DomainIsNone      )?.starts_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainPrefixStartsWith(x) => task_state.url.domain_prefix().ok_or(ConditionError::DomainPrefixIsNone)?.starts_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainMiddleStartsWith(x) => task_state.url.domain_middle().ok_or(ConditionError::DomainMiddleIsNone)?.starts_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainSuffixStartsWith(x) => task_state.url.domain_suffix().ok_or(ConditionError::DomainSuffixIsNone)?.starts_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainOriginStartsWith(x) => task_state.url.domain_origin().ok_or(ConditionError::DomainOriginIsNone)?.starts_with(get_str!(x, task_state, ConditionError)),
+            Self::HostStartsWith        (x) => task_state.url.host_str     ().ok_or(ConditionError::HostIsNone        )?.starts_with(get_str!(x)),
+            Self::DomainPrefixStartsWith(x) => task_state.url.domain_prefix().ok_or(ConditionError::DomainPrefixIsNone)?.starts_with(get_str!(x)),
+            Self::DomainMiddleStartsWith(x) => task_state.url.domain_middle().ok_or(ConditionError::DomainMiddleIsNone)?.starts_with(get_str!(x)),
+            Self::DomainSuffixStartsWith(x) => task_state.url.domain_suffix().ok_or(ConditionError::DomainSuffixIsNone)?.starts_with(get_str!(x)),
+            Self::DomainOriginStartsWith(x) => task_state.url.domain_origin().ok_or(ConditionError::DomainOriginIsNone)?.starts_with(get_str!(x)),
+            Self::DomainNormalStartsWith(x) => task_state.url.domain_normal().ok_or(ConditionError::DomainNormalIsNone)?.starts_with(get_str!(x)),
 
-            Self::DomainSegmentStartsWith       {index, value} => task_state.url.domain_segment       (*index).ok_or(ConditionError::DomainSegmentIsNone      )?.starts_with(get_str!(value, task_state, ConditionError)),
-            Self::DomainOriginSegmentStartsWith {index, value} => task_state.url.domain_origin_segment(*index).ok_or(ConditionError::DomainOriginSegmentIsNone)?.starts_with(get_str!(value, task_state, ConditionError)),
-            Self::DomainPrefixSegmentStartsWith {index, value} => task_state.url.domain_prefix_segment(*index).ok_or(ConditionError::DomainPrefixSegmentIsNone)?.starts_with(get_str!(value, task_state, ConditionError)),
-            Self::DomainSuffixSegmentStartsWith {index, value} => task_state.url.domain_suffix_segment(*index).ok_or(ConditionError::DomainSuffixSegmentIsNone)?.starts_with(get_str!(value, task_state, ConditionError)),
+            Self::DomainSegmentStartsWith       {index, value} => task_state.url.domain_segment       (*index).ok_or(ConditionError::DomainSegmentIsNone      )?.starts_with(get_str!(value)),
+            Self::DomainPrefixSegmentStartsWith {index, value} => task_state.url.domain_prefix_segment(*index).ok_or(ConditionError::DomainPrefixSegmentIsNone)?.starts_with(get_str!(value)),
+            Self::DomainSuffixSegmentStartsWith {index, value} => task_state.url.domain_suffix_segment(*index).ok_or(ConditionError::DomainSuffixSegmentIsNone)?.starts_with(get_str!(value)),
+            Self::DomainOriginSegmentStartsWith {index, value} => task_state.url.domain_origin_segment(*index).ok_or(ConditionError::DomainOriginSegmentIsNone)?.starts_with(get_str!(value)),
 
             // Host ends with
 
-            Self::HostEndsWith        (x) => task_state.url.host_str     ().ok_or(ConditionError::HostIsNone        )?.ends_with(get_str!(x, task_state, ConditionError)),
-            Self::NormalHostEndsWith  (x) => task_state.url.normal_host  ().ok_or(ConditionError::NormalHostIsNone  )?.ends_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainEndsWith      (x) => task_state.url.domain_labels().ok_or(ConditionError::DomainIsNone      )?.ends_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainPrefixEndsWith(x) => task_state.url.domain_prefix().ok_or(ConditionError::DomainPrefixIsNone)?.ends_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainMiddleEndsWith(x) => task_state.url.domain_middle().ok_or(ConditionError::DomainMiddleIsNone)?.ends_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainSuffixEndsWith(x) => task_state.url.domain_suffix().ok_or(ConditionError::DomainSuffixIsNone)?.ends_with(get_str!(x, task_state, ConditionError)),
-            Self::DomainOriginEndsWith(x) => task_state.url.domain_origin().ok_or(ConditionError::DomainOriginIsNone)?.ends_with(get_str!(x, task_state, ConditionError)),
+            Self::HostEndsWith        (x) => task_state.url.host_str     ().ok_or(ConditionError::HostIsNone        )?.ends_with(get_str!(x)),
+            Self::DomainPrefixEndsWith(x) => task_state.url.domain_prefix().ok_or(ConditionError::DomainPrefixIsNone)?.ends_with(get_str!(x)),
+            Self::DomainMiddleEndsWith(x) => task_state.url.domain_middle().ok_or(ConditionError::DomainMiddleIsNone)?.ends_with(get_str!(x)),
+            Self::DomainSuffixEndsWith(x) => task_state.url.domain_suffix().ok_or(ConditionError::DomainSuffixIsNone)?.ends_with(get_str!(x)),
+            Self::DomainOriginEndsWith(x) => task_state.url.domain_origin().ok_or(ConditionError::DomainOriginIsNone)?.ends_with(get_str!(x)),
+            Self::DomainNormalEndsWith(x) => task_state.url.domain_normal().ok_or(ConditionError::DomainNormalIsNone)?.ends_with(get_str!(x)),
 
-            Self::DomainSegmentEndsWith       {index, value} => task_state.url.domain_segment       (*index).ok_or(ConditionError::DomainSegmentIsNone      )?.ends_with(get_str!(value, task_state, ConditionError)),
-            Self::DomainOriginSegmentEndsWith {index, value} => task_state.url.domain_origin_segment(*index).ok_or(ConditionError::DomainOriginSegmentIsNone)?.ends_with(get_str!(value, task_state, ConditionError)),
-            Self::DomainPrefixSegmentEndsWith {index, value} => task_state.url.domain_prefix_segment(*index).ok_or(ConditionError::DomainPrefixSegmentIsNone)?.ends_with(get_str!(value, task_state, ConditionError)),
-            Self::DomainSuffixSegmentEndsWith {index, value} => task_state.url.domain_suffix_segment(*index).ok_or(ConditionError::DomainSuffixSegmentIsNone)?.ends_with(get_str!(value, task_state, ConditionError)),
+            Self::DomainSegmentEndsWith       {index, value} => task_state.url.domain_segment       (*index).ok_or(ConditionError::DomainSegmentIsNone      )?.ends_with(get_str!(value)),
+            Self::DomainPrefixSegmentEndsWith {index, value} => task_state.url.domain_prefix_segment(*index).ok_or(ConditionError::DomainPrefixSegmentIsNone)?.ends_with(get_str!(value)),
+            Self::DomainSuffixSegmentEndsWith {index, value} => task_state.url.domain_suffix_segment(*index).ok_or(ConditionError::DomainSuffixSegmentIsNone)?.ends_with(get_str!(value)),
+            Self::DomainOriginSegmentEndsWith {index, value} => task_state.url.domain_origin_segment(*index).ok_or(ConditionError::DomainOriginSegmentIsNone)?.ends_with(get_str!(value)),
 
             // Host is one of
 
-            Self::HostIsOneOf         (x) => x.contains(task_state.url.host_str     ()),
-            Self::NormalHostIsOneOf   (x) => x.contains(task_state.url.normal_host  ()),
-            Self::DomainIsOneOf       (x) => x.contains(task_state.url.domain_labels()),
-            Self::DomainPrefixIsOneOf (x) => x.contains(task_state.url.domain_prefix()),
-            Self::DomainMiddleIsOneOf (x) => x.contains(task_state.url.domain_middle()),
-            Self::DomainSuffixIsOneOf (x) => x.contains(task_state.url.domain_suffix()),
-            Self::DomainOriginIsOneOf (x) => x.contains(task_state.url.domain_origin()),
+            Self::HostIsOneOf        (x) => x.contains(task_state.url.host_str     ()),
+            Self::DomainPrefixIsOneOf(x) => x.contains(task_state.url.domain_prefix()),
+            Self::DomainMiddleIsOneOf(x) => x.contains(task_state.url.domain_middle()),
+            Self::DomainSuffixIsOneOf(x) => x.contains(task_state.url.domain_suffix()),
+            Self::DomainOriginIsOneOf(x) => x.contains(task_state.url.domain_origin()),
+            Self::DomainNormalIsOneOf(x) => x.contains(task_state.url.domain_normal()),
 
             Self::DomainSegmentIsOneOf       {index, values} => values.contains(task_state.url.domain_segment       (*index)),
-            Self::DomainOriginSegmentIsOneOf {index, values} => values.contains(task_state.url.domain_origin_segment(*index)),
             Self::DomainPrefixSegmentIsOneOf {index, values} => values.contains(task_state.url.domain_prefix_segment(*index)),
             Self::DomainSuffixSegmentIsOneOf {index, values} => values.contains(task_state.url.domain_suffix_segment(*index)),
+            Self::DomainOriginSegmentIsOneOf {index, values} => values.contains(task_state.url.domain_origin_segment(*index)),
 
             // Host is in set
 
-            Self::HostIsInSet        (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str     ()),
-            Self::NormalHostIsInSet  (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.normal_host  ()),
-            Self::DomainIsInSet      (set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_labels()),
-            Self::DomainPrefixIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_prefix()),
-            Self::DomainMiddleIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle()),
-            Self::DomainSuffixIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix()),
-            Self::DomainOriginIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_origin()),
+            Self::HostIsInSet        (set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.host_str     ()),
+            Self::DomainPrefixIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_prefix()),
+            Self::DomainMiddleIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_middle()),
+            Self::DomainSuffixIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix()),
+            Self::DomainOriginIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_origin()),
+            Self::DomainNormalIsInSet(set) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_normal()),
 
-            Self::DomainSegmentIsInSet       {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
-            Self::DomainOriginSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_origin_segment(*index)),
-            Self::DomainPrefixSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_prefix_segment(*index)),
-            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
+            Self::DomainSegmentIsInSet       {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_segment       (*index)),
+            Self::DomainPrefixSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_prefix_segment(*index)),
+            Self::DomainSuffixSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_suffix_segment(*index)),
+            Self::DomainOriginSegmentIsInSet {index, set} => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.domain_origin_segment(*index)),
 
             // Misc. host
 
-            Self::UrlHasHost   => task_state.url.host().is_some(),
-            Self::HostIsDomain => task_state.url.domain_details().is_some(),
-            Self::HostIsFqdn   => task_state.url.domain_details().is_some_and(DomainDetails::is_fqdn),
-            Self::HostIsIp     => task_state.url.ip_details    ().is_some(),
-            Self::HostIsIpv4   => task_state.url.ipv4_details  ().is_some(),
-            Self::HostIsIpv6   => task_state.url.ipv6_details  ().is_some(),
+            Self::UrlHasHost   => task_state.url.has_host(),
+            Self::HostIsDomain => task_state.url.host_details().is_some_and(HostDetails::is_domain),
+            Self::HostIsIp     => task_state.url.host_details().is_some_and(HostDetails::is_ip    ),
+            Self::HostIsIpv4   => task_state.url.host_details().is_some_and(HostDetails::is_ipv4  ),
+            Self::HostIsIpv6   => task_state.url.host_details().is_some_and(HostDetails::is_ipv6  ),
+            Self::HostIsOpaque => task_state.url.host_details().is_some_and(HostDetails::is_opaque),
+            Self::HostIsEmpty  => task_state.url.host_details().is_some_and(HostDetails::is_empty ),
 
-            Self::HostIsLoopbackIp        => task_state.url.ip_details  ().is_some_and(IpDetails::is_loopback   ),
-            Self::HostIsMulticastIp       => task_state.url.ip_details  ().is_some_and(IpDetails::is_multicast  ),
-            Self::HostIsUnspecifiedIp     => task_state.url.ip_details  ().is_some_and(IpDetails::is_unspecified),
+            Self::HostIsLoopbackIp    => task_state.url.ip_details().is_some_and(IpDetails::is_loopback   ),
+            Self::HostIsMulticastIp   => task_state.url.ip_details().is_some_and(IpDetails::is_multicast  ),
+            Self::HostIsUnspecifiedIp => task_state.url.ip_details().is_some_and(IpDetails::is_unspecified),
 
             Self::HostIsBroadcastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_broadcast    ),
             Self::HostIsDocumentationIpv4 => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_documentation),
@@ -1647,72 +1512,74 @@ impl Condition {
             Self::HostIsPrivateIpv4       => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_private      ),
             Self::HostIsUnspecifiedIpv4   => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_unspecified  ),
 
-            Self::HostIsLoopbackIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_loopback   ),
-            Self::HostIsMulticastIpv6     => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_multicast  ),
-            Self::HostIsUnspecifiedIpv6   => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unspecified),
+            Self::HostIsLoopbackIpv6         => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_loopback          ),
+            Self::HostIsUnicastLinkLocalIpv6 => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unicast_link_local),
+            Self::HostIsMulticastIpv6        => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_multicast         ),
+            Self::HostIsUniqueLocalIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unique_local      ),
+            Self::HostIsUnspecifiedIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unspecified       ),
 
             // Path
 
-            Self::PathIs        (value    ) => Some(task_state.url.path_str()) == get_option_str!(value, task_state),
-            Self::PathStartsWith(value    ) => task_state.url.path_str().starts_with(get_str!(value, task_state, ConditionError)),
-            Self::PathEndsWith  (value    ) => task_state.url.path_str().ends_with (get_str!(value, task_state, ConditionError)),
+            Self::PathIs        (value    ) => Some(task_state.url.path_str()) == get_option_str!(value),
+            Self::PathStartsWith(value    ) => task_state.url.path_str().starts_with(get_str!(value)),
+            Self::PathEndsWith  (value    ) => task_state.url.path_str().ends_with  (get_str!(value)),
             Self::PathIsOneOf   (values   ) => values.contains_some(task_state.url.path_str()),
-            Self::PathIsInSet   (set      ) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.path_str()),
-            Self::PathContains  {value, at} => at.check(task_state.url.path_str(), get_str!(value, task_state, ConditionError))?,
+            Self::PathIsInSet   (set      ) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains_some(task_state.url.path_str()),
+            Self::PathContains  {value, at} => at.check(task_state.url.path_str(), get_str!(value))?,
             Self::PathMatches   (matcher  ) => matcher.check(Some(task_state.url.path_str()), task_state)?,
 
-            Self::PathSegmentIs        {index, value    } => task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).map(|x| x.as_str()) == get_option_str!(value, task_state),
-            Self::PathSegmentStartsWith{index, value    } => task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).ok_or(ConditionError::PathSegmentNotFound)?.as_str().starts_with(get_str!(value, task_state, ConditionError)),
-            Self::PathSegmentEndsWith  {index, value    } => task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).ok_or(ConditionError::PathSegmentNotFound)?.as_str().ends_with(get_str!(value, task_state, ConditionError)),
-            Self::PathSegmentIsOneOf   {index, values   } => values.contains(task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).map(|x| x.as_str())),
-            Self::PathSegmentIsInSet   {index, set      } => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).map(|x| x.as_str())),
-            Self::PathSegmentContains  {index, value, at} => at.check(task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).ok_or(ConditionError::PathSegmentNotFound)?.as_str(), get_str!(value, task_state, ConditionError))?,
-            Self::PathSegmentMatches   {index, matcher  } => matcher.check(task_state.url.ref_path_segments().ok_or(OpaquePath)?.get(*index).map(|x| x.as_str()), task_state)?,
+            Self::PathSegmentIs        {index, value    } => task_state.url.path_segment(*index).map(PathSegment::decode) == get_option_cow!(value),
+            Self::PathSegmentStartsWith{index, value    } => task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?.decode().starts_with(get_str!(value)),
+            Self::PathSegmentEndsWith  {index, value    } => task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?.decode().ends_with  (get_str!(value)),
+            Self::PathSegmentIsOneOf   {index, values   } => values.contains(task_state.url.path_segment_str(*index)),
+            Self::PathSegmentIsInSet   {index, set      } => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.path_segment(*index).map(PathSegment::decode).as_deref()),
+            Self::PathSegmentContains  {index, value, at} => at.check(&task_state.url.path_segment(*index).ok_or(ConditionError::PathSegmentNotFound)?.decode(), get_str!(value))?,
+            Self::PathSegmentMatches   {index, matcher  } => matcher.check(task_state.url.path_segment(*index).map(PathSegment::decode).as_deref(), task_state)?,
 
-            Self::PathHasSegments => task_state.url.path_segments().is_some(),
-            Self::HasPathSegment(index) => task_state.url.path_segments().is_some_and(|path| path.get(*index).is_some()),
+            Self::PathIsSegmented       => task_state.url.path_is_segmented(),
+            Self::HasPathSegment(index) => task_state.url.path_segment(*index).is_some(),
 
             // Query
 
-            Self::QueryIs(value) => task_state.url.query_str() == get_option_str!(value, task_state),
+            Self::QueryIs(value) => task_state.url.query_str() == get_option_str!(value),
 
-            Self::HasQueryParam(QueryParamSelector {name, index}) => task_state.url.query().is_some_and(|query| query.find(name, *index).is_some()),
+            Self::HasQueryParam(QueryParamSelector {name, index}) => task_state.url.query_param(name, *index).is_some(),
 
             Self::QueryParamIs {param: QueryParamSelector {name, index}, value} => {
-                let value = get_option_cow!(value, task_state);
-                task_state.url.query().is_some_and(|query| query.find(name, *index).is_some_and(|p| p.value() == value))
+                let value = get_option_cow!(value);
+                task_state.url.query_param(name, *index).is_some_and(|p| p.value() == value)
             },
 
-            Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => task_state.url.query().is_some_and(|query| query.find(name, *index).is_some_and(|p| values.contains(p.value().as_deref()))),
+            Self::QueryParamIsOneOf {param: QueryParamSelector {name, index}, values} => task_state.url.query_param(name, *index).is_some_and(|p| values.contains(p.value().as_deref())),
             Self::QueryParamIsInSet {param: QueryParamSelector {name, index}, set   } => {
-                let set = task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?;
-                task_state.url.query().is_some_and(|query| query.find(name, *index).is_some_and(|p| set.contains(p.value().as_deref())))
+                let set = task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?;
+                task_state.url.query_param(name, *index).is_some_and(|p| set.contains(p.value().as_deref()))
             },
 
             // Fragment
 
-            Self::FragmentIs                 (value ) => task_state.url.fragment() == get_option_str!(value, task_state),
-            Self::FragmentIsOneOf            (values) => values.contains(task_state.url.fragment()),
-            Self::FragmentIsInSet            (set   ) => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment()),
-            Self::FragmentIsSomeAndStartsWith(value ) => match task_state.url.fragment() {
-                Some(fragment) => fragment.starts_with(get_str!(value, task_state, ConditionError)),
+            Self::FragmentIs                 (value ) => task_state.url.fragment_str() == get_option_str!(value),
+            Self::FragmentIsOneOf            (values) => values.contains(task_state.url.fragment_str()),
+            Self::FragmentIsInSet            (set   ) => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(task_state.url.fragment_str()),
+            Self::FragmentIsSomeAndStartsWith(value ) => match task_state.url.fragment_str() {
+                Some(fragment) => fragment.starts_with(get_str!(value)),
                 None => false
             },
 
             // General parts
 
-            Self::PartIs {part, value} => part.get(&task_state.url) == get_option_cow!(value, task_state),
+            Self::PartIs {part, value} => part.get(&task_state.url) == get_option_cow!(value),
 
-            Self::PartContains {part, value, at} => at.check(&part.get(&task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value, task_state, ConditionError))?,
+            Self::PartContains {part, value, at} => at.check(&part.get(&task_state.url).ok_or(ConditionError::UrlPartIsNone)?, get_str!(value))?,
             Self::PartIsSomeAndContains {part, value, at} => if let Some(x) = part.get(&task_state.url) {
-                at.check(&x, get_str!(value, task_state, ConditionError))?
+                at.check(&x, get_str!(value))?
             } else {
                 false
             },
 
             Self::PartMatches {part, matcher} => matcher.check   (part.get(&task_state.url).as_deref(), task_state)?,
             Self::PartIsOneOf {part, values } => values .contains(part.get(&task_state.url).as_deref()),
-            Self::PartIsInSet {part, set    } => task_state.job.cleaner.params.sets.get(get_str!(set, task_state, ConditionError)).ok_or(ConditionError::SetNotFound)?.contains(part.get(&task_state.url).as_deref()),
+            Self::PartIsInSet {part, set    } => task_state.job.cleaner.params.sets.get(get_str!(set)).ok_or(ConditionError::SetNotFound)?.contains(part.get(&task_state.url).as_deref()),
 
             // Misc
 
@@ -1724,7 +1591,7 @@ impl Condition {
                 ret?
             },
             Self::CallArg(name) => task_state.call_args.get().ok_or(ConditionError::NotInFunction)?
-                .conditions.get(get_str!(name, task_state, ConditionError)).ok_or(ConditionError::CallArgFunctionNotFound)?
+                .conditions.get(get_str!(name)).ok_or(ConditionError::CallArgFunctionNotFound)?
                 .check(task_state)?,
             Self::Custom(function) => function(task_state)?
         }))

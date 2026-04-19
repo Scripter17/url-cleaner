@@ -23,9 +23,11 @@ impl Args {
             None       => serde_json::from_str(BUNDLED_CLEANER_STR).unwrap()
         };
 
-        let mut parts = BTreeSet::new();
+        let mut hosts = BTreeSet::new();
 
-        get_parts(&cleaner, self.part, &mut parts);
+        get_parts(&cleaner, &mut hosts);
+
+        let parts = hosts.iter().filter_map(|host| self.part.get(host)).collect::<BTreeSet<_>>();
 
         for part in parts {
             println!("{part}");
@@ -34,24 +36,24 @@ impl Args {
 }
 
 /// Get parts.
-fn get_parts<'a>(layer: &'a serde_json::Value, part: HostPart, out: &mut BTreeSet<&'a str>) {
+fn get_parts<'a>(layer: &'a serde_json::Value, out: &mut BTreeSet<Host<'a>>) {
     match layer {
         serde_json::Value::Array(arr) => {
             for x in arr {
-                get_parts(x, part, out);
+                get_parts(x, out);
             }
         },
         serde_json::Value::Object(obj) => {
             for (k, v) in obj {
-                if !out.contains(&**k) && let Ok(x) = k.try_into() && let Some(part) = part.get(x) {
-                    out.insert(part);
+                if !out.contains(&**k) && let Ok(host) = (&**k).try_into() {
+                    out.insert(host);
                 }
-                get_parts(v, part, out);
+                get_parts(v, out);
             }
         },
         serde_json::Value::String(x) => {
-            if !out.contains(&**x) && let Ok(x) = x.try_into() && let Some(part) = part.get(x) {
-                out.insert(part);
+            if !out.contains(&**x) && let Ok(host) = (&**x).try_into() {
+                out.insert(host);
             }
         },
         _ => {}

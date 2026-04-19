@@ -1,6 +1,6 @@
 //! [`StrExt`].
 
-use std::ops::Range;
+use crate::prelude::*;
 
 /// Extension trait for [`str`].
 pub(crate) trait StrExt {

@@ -39,7 +39,7 @@
 					"expect": "https://www.facebook.com/TheLancetMedicalJournal"
 				},
 
-				{"task": "https://href.li/?https://example.com/?abc=123&def=456#1", "expect": "https://example.com/?abc=123&def=456#1"},
+				{"task": "https://href.li/?https://example.com/?abc=123&def=456#1", "expect": "https://example.com/?abc=123&def=456"},
 
 				{"task": "https://example.com/"   , "expect": "https://example.com/"},
 				{"task": "https://example.com./"  , "expect": "https://example.com/"},
@@ -484,7 +484,7 @@
     {
 			"name": "online",
       "tests": [
-      	{"task": "https://lk.cmte.fyi/nDtZ"                                 , "expect": "https://consult.nia-yourassembly.org.uk/education/call-for-evidence-general-teaching-council-bill/"                         },
+      	{"task": "https://lk.cmte.fyi/t23k"                                 , "expect": "https://aims.niassembly.gov.uk/committees/meetings.aspx?md=18/03/2026&mid=19161&bd=1"                                       },
       	{"task": "https://link.europa.eu/NtMX4K"                            , "expect": "https://ec.europa.eu/commission/presscorner/detail/en/statement_25_3160"                                                    },
 				{"task": "https://406q7-alternate.app.link/5uDpsIQcwUb"             , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
 				{"task": "https://406q7.app.link/e/5uDpsIQcwUb"                     , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },

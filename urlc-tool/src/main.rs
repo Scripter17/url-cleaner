@@ -4,6 +4,7 @@
 #![allow(clippy::indexing_slicing  , reason = "Internal tool. I can fix it when it breads.")]
 #![allow(clippy::missing_panics_doc, reason = "Internal tool. I can fix it when it breads.")]
 
+pub mod keygen;
 pub mod build;
 pub mod cleaner;
 pub mod tasks;
@@ -39,6 +40,7 @@ use prelude::*;
 #[allow(missing_docs, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
 pub enum Args {
+    Keygen(keygen::Args),
     Build(build::Args),
     #[command(subcommand)]
     Cleaner(cleaner::Args),
@@ -53,6 +55,7 @@ impl Args {
     /// Do the command.
     pub fn r#do(self) {
         match self {
+            Self::Keygen (args) => args.r#do(),
             Self::Build  (args) => args.r#do(),
             Self::Cleaner(args) => args.r#do(),
             Self::Tasks  (args) => args.r#do(),

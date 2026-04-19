@@ -12,8 +12,8 @@ pub fn start_site(tls: bool) -> TerminateOnDrop {
 
     if tls {
         cmd.args([
-            "--key", "urlc-tool/src/bench/urlcs-bench.key",
-            "--cert", "urlc-tool/src/bench/urlcs-bench.crt"
+            "--key", "keys/urlcs.key",
+            "--cert", "keys/urlcs.crt"
         ]);
     }
 

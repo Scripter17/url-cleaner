@@ -442,9 +442,9 @@ pub enum StringMatcherError {
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
-    /// Returned when a [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("A StringSource returned None where it had to return Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
@@ -542,22 +542,22 @@ impl StringMatcher {
 
             // Equality
 
-            Self::Is(value) => haystack == get_option_str!(value, task_state),
+            Self::Is(value) => haystack == get_option_str!(value),
             Self::IsOneOf(hash_set) => hash_set.contains(haystack),
-            Self::IsInSet(name) => task_state.job.cleaner.params.sets.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
+            Self::IsInSet(name) => task_state.job.cleaner.params.sets.get(get_str!(name)).ok_or(StringMatcherError::SetNotFound)?.contains(haystack),
 
             // Containment
 
-            Self::StartsWith(needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.starts_with(get_str!(needle, task_state, StringMatcherError)),
-            Self::EndsWith  (needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.ends_with  (get_str!(needle, task_state, StringMatcherError)),
-            Self::IsPrefixOf(needle) => get_str!(needle, task_state, StringMatcherError).starts_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
-            Self::IsSuffixOf(needle) => get_str!(needle, task_state, StringMatcherError).ends_with  (haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::StartsWith(needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.starts_with(get_str!(needle)),
+            Self::EndsWith  (needle) => haystack.ok_or(StringMatcherError::StringIsNone)?.ends_with  (get_str!(needle)),
+            Self::IsPrefixOf(needle) => get_str!(needle).starts_with(haystack.ok_or(StringMatcherError::StringIsNone)?),
+            Self::IsSuffixOf(needle) => get_str!(needle).ends_with  (haystack.ok_or(StringMatcherError::StringIsNone)?),
 
-            Self::Contains {at, value} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, get_str!(value, task_state, StringMatcherError))?,
+            Self::Contains {at, value} => at.check(haystack.ok_or(StringMatcherError::StringIsNone)?, get_str!(value))?,
             Self::ContainsAny {values, at} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
                 for value in values {
-                    if at.check(haystack, get_str!(value, task_state, StringModificationError))? {
+                    if at.check(haystack, get_str!(value))? {
                         return Ok(true)
                     }
                 }
@@ -565,7 +565,7 @@ impl StringMatcher {
             },
             Self::ContainsAnyInList {at, list} => {
                 let haystack = haystack.ok_or(StringMatcherError::StringIsNone)?;
-                for x in task_state.job.cleaner.params.lists.get(get_str!(list, task_state, StringMatcherError)).ok_or(StringMatcherError::ListNotFound)? {
+                for x in task_state.job.cleaner.params.lists.get(get_str!(list)).ok_or(StringMatcherError::ListNotFound)? {
                     if at.check(haystack, x)? {
                         return Ok(true);
                     }
@@ -630,10 +630,10 @@ impl StringMatcher {
 
             // Segments
 
-            Self::HasSegment {split, index} => neg_nth(haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)), *index).is_some(),
-            Self::SegmentMatches {index, split, matcher} => matcher.check(Some(neg_nth(haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)), *index).ok_or(StringMatcherError::SegmentNotFound)?), task_state)?,
+            Self::HasSegment {split, index} => neg_nth(haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split)), *index).is_some(),
+            Self::SegmentMatches {index, split, matcher} => matcher.check(Some(neg_nth(haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split)), *index).ok_or(StringMatcherError::SegmentNotFound)?), task_state)?,
             Self::AnySegmentMatches {split, matcher} => {
-                for segment in haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split, task_state, StringMatcherError)) {
+                for segment in haystack.ok_or(StringMatcherError::StringIsNone)?.split(get_str!(split)) {
                     if matcher.check(Some(segment), task_state)? {
                         return Ok(true);
                     }
@@ -641,14 +641,14 @@ impl StringMatcher {
                 return Ok(false);
             },
             Self::SegmentsEndWith { split, value } => {
-                let split = get_str!(split, task_state, StringMatcherError);
-                // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value, task_state, StringMatcherError).split(split)).all(|(x, y)| x==y)
-                haystack.ok_or(StringMatcherError::StringIsNone)?.strip_suffix(get_str!(value, task_state, StringMatcherError))
+                let split = get_str!(split);
+                // haystack.split(split).collect::<Vec<_>>().into_iter().rev().zip(get_str!(value).split(split)).all(|(x, y)| x==y)
+                haystack.ok_or(StringMatcherError::StringIsNone)?.strip_suffix(get_str!(value))
                     .is_some_and(|x| x.split(split).last()==Some(""))
             },
             Self::SegmentsStartWith { split, value } => {
-                let split = get_str!(split, task_state, StringMatcherError);
-                haystack.ok_or(StringMatcherError::StringIsNone)?.strip_prefix(get_str!(value, task_state, StringMatcherError))
+                let split = get_str!(split);
+                haystack.ok_or(StringMatcherError::StringIsNone)?.strip_prefix(get_str!(value))
                     .is_some_and(|x| x.strip_prefix(split).is_some())
             },
 
@@ -681,7 +681,7 @@ impl StringMatcher {
                 ret?
             },
             Self::CallArg(name) => task_state.call_args.get().ok_or(StringMatcherError::NotInFunction)?
-                .string_matchers.get(get_str!(name, task_state, StringMatcherError)).ok_or(StringMatcherError::CallArgFunctionNotFound)?
+                .string_matchers.get(get_str!(name)).ok_or(StringMatcherError::CallArgFunctionNotFound)?
                 .check(haystack, task_state)?,
             Self::Custom(function) => function(haystack, task_state)?,
         }))

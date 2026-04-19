@@ -23,7 +23,7 @@ pub enum JsonSource {
     /// # Errors
     /// If the call to [`StringSource::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringSourceError::StringSourceIsNone`].
+    /// If the call to [`StringSource::get`] returns [`None`], returns the error [`StringSourceIsNone`].
     String(StringSource),
     /// [`Value::Array`].
     /// # Errors
@@ -124,7 +124,7 @@ impl JsonSource {
             Self::Null      => Value::Null,
             Self::Bool  (x) => Value::Bool(*x),
             Self::Number(x) => Value::Number(x.clone()),
-            Self::String(x) => Value::String(get_string!(x, task_state, StringSourceError)),
+            Self::String(x) => Value::String(get_string!(x)),
             Self::Array (x) => Value::Array(x.iter().map(|x| x.make(task_state)).collect::<Result<_, _>>()?),
             Self::Object(x) => Value::Object(x.iter().map(|(k, v)| Ok::<_, StringSourceError>((k.clone(), v.make(task_state)?))).collect::<Result<_, _>>()?)
         })

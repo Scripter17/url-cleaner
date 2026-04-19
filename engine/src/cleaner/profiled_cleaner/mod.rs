@@ -44,7 +44,7 @@ pub mod prelude {
 ///     "action": {"If": {
 ///         "if": {"All": [
 ///             {"FlagIsSet": "embed_compatibility"},
-///             {"NormalHostIs": "x.com"}
+///             {"DomainNormalIs": "x.com"}
 ///         ]},
 ///         "then": {"SetHost": "vxtwitter.com"}
 ///     }}

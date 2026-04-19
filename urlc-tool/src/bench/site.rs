@@ -48,8 +48,8 @@ impl Args {
 
                 if protocol.tls() {
                     cmd.args([
-                        "--key", "urlc-tool/src/bench/urlcs-bench.key",
-                        "--cert", "urlc-tool/src/bench/urlcs-bench.crt",
+                        "--key", "keys/urlcs.key",
+                        "--cert", "keys/urlcs.crt",
                     ]);
                 }
 

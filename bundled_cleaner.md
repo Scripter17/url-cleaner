@@ -10,7 +10,7 @@ Licensed under the AGPL 3.0 or later.
 
 - `keep_affiliate`: Don't remove affiliate info from affiliate links.
 - `bypass_vip`: Use [bypass.vip](https://bypass.vip) to expand various complicated/otherwise unsupported redirect sites.
-- `keep_http`: Disable upgrading `http` URLs to `https`. See the `nh_keep_http` set if you only want to not upgrade specific hosts.
+- `keep_http`: Disable upgrading `http` URLs to `https`. See the `dn_keep_http` set if you only want to not upgrade specific hosts.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
@@ -96,7 +96,7 @@ Licensed under the AGPL 3.0 or later.
 ### Sets
 
 - `utps`: Universal tracking parameters to remove from all URLs without explicit allowances. See the `utp_prefixes` list for a list of prefixes only used for universal tracking parameters.
-- `nh_keep_http`: The `NormalHost`s to not upgrade from `http` to `https`.
+- `dn_keep_http`: The `DomainNormal`s to not upgrade from `http` to `https`.
 
 ### Lists
 
@@ -104,13 +104,13 @@ Licensed under the AGPL 3.0 or later.
 
 ### Partitionings
 
-- `nh_categories`: Categories of similar websites with shared cleaning methods.
+- `dn_categories`: Categories of similar websites with shared cleaning methods.
 - `do_www_prefix`: The `DomainOrigin`s to ensure/remove `www` `DomainPrefix`s.
 - `dm_www_prefix`: The `DomainMiddle`s to ensure/remove `www` `DomainPrefix`s.
-- `nh_expand_mode`: How to handle redirect `NormalHost`s.
+- `dn_expand_mode`: How to handle redirect `DomainNormal`s.
 - `do_expand_mode`: How to handle redirect `DomainOrigin`s,
 - `dm_expand_mode`: How to handle redirect `DomainMiddle`s.
-- `mobilizer`: Which part at which value makes a `NormalHost`/`DomainOrigin` a mobile URL.
+- `mobilizer`: Which part at which value makes a `DomainNormal`/`DomainOrigin` a mobile URL.
 
 ## Task context
 

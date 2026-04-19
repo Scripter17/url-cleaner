@@ -656,6 +656,11 @@ impl<'de> Deserialize<'de> for StringSource {
     }
 }
 
+/// Returned when a [`StringSource`] is [`None`] when it has to be [`Some`].
+#[derive(Debug, Error)]
+#[error("A StringSource was None when it had to be Some.")]
+pub struct StringSourceIsNone;
+
 /// The enum of errors [`StringSource::get`] can return.
 #[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
@@ -678,9 +683,9 @@ pub enum StringSourceError {
     #[error("All StringSources in a StringSource::FirstNotError errored.")]
     FirstNotErrorErrors(Vec<Self>),
 
-    /// Returned when the specified [`StringSource`] returns [`None`] where it has to return [`Some`].
-    #[error("The specified StringSource returned None where it had to be Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringModificationError`] is encountered.
     #[error(transparent)]
     StringModificationError(#[from] StringModificationError),
@@ -804,7 +809,7 @@ impl StringSource {
             },
             Self::NoneTo {value, if_none} => match value.get(task_state)? {
                 Some(x) => Some(x),
-                None    => get_option_cow!(&**if_none, task_state)
+                None    => get_option_cow!(if_none)
             },
             Self::EmptyToNone(value) => {
                 let x = value.get(task_state)?;
@@ -831,8 +836,8 @@ impl StringSource {
 
 
             Self::Part(part) => part.get(&task_state.url),
-            Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(&value.get(task_state)?.ok_or(StringSourceError::StringSourceIsNone)?)?).map(|x| Cow::Owned(x.into_owned())),
-            Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host.to_ref())).map(Cow::Borrowed),
+            Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(get_str!(value))?).map(|x| Cow::Owned(x.into_owned())),
+            Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host)).map(Cow::Borrowed),
 
 
 
@@ -844,9 +849,9 @@ impl StringSource {
 
 
             Self::Var(var_ref) => var_ref.get(task_state)?,
-            Self::ParamsMap {name, key} => task_state.job.cleaner.params.maps.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
+            Self::ParamsMap {name, key} => task_state.job.cleaner.params.maps.get(get_str!(name)).ok_or(StringSourceError::MapNotFound)?.get(key.get(task_state)?).map(|x| Cow::Borrowed(&**x)),
             Self::Partitioning {partitioning, element} => task_state.job.cleaner.params.partitionings
-                .get(get_str!(partitioning, task_state, StringSourceError)).ok_or(StringSourceError::PartitioningNotFound)?
+                .get(get_str!(partitioning)).ok_or(StringSourceError::PartitioningNotFound)?
                 .get(element.get(task_state)?.as_deref()).map(Cow::Borrowed),
 
 
@@ -870,8 +875,8 @@ impl StringSource {
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
                 let _unthreader_lock = task_state.job.unthreader.unthread();
-                let subject = get_cow!(subject, task_state, StringSourceError);
-                let key = get_cow!(key, task_state, StringSourceError);
+                let subject = get_cow!(subject);
+                let key = get_cow!(key);
                 if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
                     return Ok(entry.value.map(Cow::Owned));
                 }
@@ -894,7 +899,7 @@ impl StringSource {
                 ret?
             },
             Self::CallArg(name) => task_state.call_args.get().ok_or(StringSourceError::NotInFunction)?
-                .string_sources.get(get_str!(name, task_state, StringSourceError)).ok_or(StringSourceError::CallArgFunctionNotFound)?
+                .string_sources.get(get_str!(name)).ok_or(StringSourceError::CallArgFunctionNotFound)?
                 .get(task_state)?,
             Self::Custom(function) => function(task_state)?
         }))

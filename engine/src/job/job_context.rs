@@ -17,8 +17,8 @@ use crate::prelude::*;
 #[serde(deny_unknown_fields)]
 pub struct JobContext {
     /// The host of the page the tasks come from.
-    #[serde(default, skip_serializing_if = "is_default", deserialize_with = "deserialize_owned_better_host")]
-    pub source_host: Option<BetterHost<'static>>,
+    #[serde(default, skip_serializing_if = "is_default", deserialize_with = "deserialize_owned_url_host")]
+    pub source_host: Option<Host<'static>>,
     /// The flags to use.
     ///
     /// Defaults to an empty [`HashSet`].
@@ -31,9 +31,9 @@ pub struct JobContext {
     pub vars: HashMap<String, String>
 }
 
-/// Deserialize an owned [`BetterHost`].
-fn deserialize_owned_better_host<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<BetterHost<'static>>, D::Error> {
-    <Option<BetterHost>>::deserialize(deserializer).map(|x| x.map(BetterHost::into_owned))
+/// Deserialize an owned [`Host`].
+fn deserialize_owned_url_host<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Host<'static>>, D::Error> {
+    <Option<Host>>::deserialize(deserializer).map(|x| x.map(Host::into_owned))
 }
 
 impl JobContext {

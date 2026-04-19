@@ -33,12 +33,11 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
     type Rejection = GetJobConfigError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        Ok(match (BetterMaybeRefQuery::from(parts.uri.query()).find_value("config", 0), parts.headers.get("x-config")) {
-            (Some(Some(config)), None        ) => serde_json::from_str(&config)?,
-            (None              , Some(config)) => serde_json::from_slice(config.as_bytes())?,
-            (None              , None        ) => Default::default(),
-            (Some(None)        , _           ) => Err(GetJobConfigError::EmptyConfigParam)?,
-            (Some(_)           , Some(_)     ) => Err(GetJobConfigError::ConfigSetTwice)?,
+        Ok(match (MaybeQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-config")) {
+            (None        , None        ) => Default::default(),
+            (None        , Some(config)) => serde_json::from_slice(config.as_bytes())?,
+            (Some(config), None        ) => serde_json::from_str(&config.into_value().ok_or(GetJobConfigError::EmptyConfigParam)?)?,
+            (Some(_)     , Some(_)     ) => Err(GetJobConfigError::ConfigSetTwice)?,
         })
     }
 }

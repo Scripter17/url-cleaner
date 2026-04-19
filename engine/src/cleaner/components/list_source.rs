@@ -80,7 +80,7 @@ impl ListSource {
         Ok(match self {
             Self::None => None,
             Self::If {r#if, r#then, r#else} => if r#if.check(task_state)? {r#then} else {r#else}.get(task_state)?,
-            Self::StringMap {value, map} => match map.get(get_option_str!(value, task_state)) {
+            Self::StringMap {value, map} => match map.get(get_option_str!(value)) {
                 Some(source) => source.get(task_state)?,
                 None => None
             },
@@ -89,8 +89,8 @@ impl ListSource {
                 None => None
             },
             Self::Literal(x) => Some(x),
-            Self::Params(x) => task_state.job.cleaner.params.lists.get(get_str!(x, task_state, ListSourceError)),
-            Self::CallArg(name) => task_state.call_args.get().ok_or(ListSourceError::NotInFunction)?.lists.get(get_str!(name, task_state, ListSourceError)),
+            Self::Params(x) => task_state.job.cleaner.params.lists.get(get_str!(x)),
+            Self::CallArg(name) => task_state.call_args.get().ok_or(ListSourceError::NotInFunction)?.lists.get(get_str!(name)),
         })
     }
 }
@@ -98,9 +98,9 @@ impl ListSource {
 /// The enum of errors [`ListSource::get`] can return.
 #[derive(Debug, Error)]
 pub enum ListSourceError {
-    /// Returned when a [`StringSource`] returned [`None`] where it has to return [`Some`].
-    #[error("A StringSource returned None where it had to return Some.")]
-    StringSourceIsNone,
+    /// [`StringSourceIsNone`].
+    #[error(transparent)]
+    StringSourceIsNone(#[from] StringSourceIsNone),
     /// Returned when a [`StringSourceError`] is encountered.
     #[error(transparent)]
     StringSourceError(#[from] StringSourceError),
