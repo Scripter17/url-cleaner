@@ -1,13 +1,14 @@
 //! General utility functions.
 
+mod exts;
 mod macros;
-pub(crate) use macros::*;
 mod docs;
 mod suitability;
-pub(crate) use suitability::*;
 mod serde_helpers;
-pub(crate) use serde_helpers::*;
 mod indexing;
+
+pub(crate) use exts::*;
+pub(crate) use macros::*;
+pub(crate) use suitability::*;
+pub(crate) use serde_helpers::*;
 pub(crate) use indexing::*;
-mod segments;
-pub(crate) use segments::*;

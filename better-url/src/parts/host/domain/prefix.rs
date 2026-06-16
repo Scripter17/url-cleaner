@@ -3,94 +3,133 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// Returns [`true`] if the domain has a prefix.
+    /// [`DomainPartsDetails::has_prefix`].
     pub fn has_prefix(&self) -> bool {
-        self.details.has_prefix()
+        self.details.parts.has_prefix()
     }
 
-    /// Get the prefix.
-    pub fn prefix(&self) -> Option<&str> {
-        self.details.prefix_range().map(|r| &self.host[r])
+
+
+    /// The prefix as a [`str`].
+    pub fn prefix_str(&self) -> Option<&str> {
+        self.details.parts.prefix_range().map(|r| &self.host[r])
     }
 
-    /// Get the prefix segments.
-    pub fn prefix_segments(&self) -> impl DoubleEndedIterator<Item = &str> {
-        self.prefix().into_iter().flat_map(|x| x.split('.'))
+    /// The [`BidiDetailsIter`] for the prefix.
+    pub fn prefix_bidi_details(&self) -> Option<BidiDetailsIter<'_>> {
+        self.details.bidi.urange(self.details.prefix_segments_urange()?)
     }
 
-    /// Get the `index`th prefix segment.
-    pub fn prefix_segment(&self, index: isize) -> Option<&str> {
-        self.prefix_segments().neg_nth(index)
+    /// The prefix as a [`DomainSegments`].
+    pub fn prefix(&self) -> Option<DomainSegments<'_>> {
+        Some(DomainSegments {
+            segments    : self.prefix_str         ()?.into(),
+            bidi_details: self.prefix_bidi_details()?.into(),
+        })
     }
 
-    /// Get the `index`th prefix segment or how many short we are.
-    fn try_prefix_segment(&self, index: isize) -> Result<&str, usize> {
-        self.prefix_segments().try_neg_nth(index)
+
+
+    /// The prefix segments as [`str`]s.
+    pub fn prefix_segment_strs(&self) -> Option<std::str::Split<'_, char>> {
+        Some(self.prefix_str()?.split('.'))
     }
+
+    /// The prefix segments as [`DomainSegment`]s.
+    pub fn prefix_segments(&self) -> Option<DomainSegmentsIter<'_>> {
+        Some(DomainSegmentsIter {
+            segments    : self.prefix_segment_strs()?,
+            bidi_details: self.prefix_bidi_details()?,
+        })
+    }
+
+
+
+    /// The `index`th prefix segment as a [`str`].
+    pub fn prefix_segment_str(&self, index: isize) -> Option<&str> {
+        self.prefix_segment_strs()?.neg_nth(index)
+    }
+
+    /// The `index`th [`BidiDetail`] of the prefix.
+    pub fn prefix_segment_bidi_detail(&self, index: isize) -> Option<BidiDetail> {
+        self.prefix_bidi_details()?.neg_nth(index)
+    }
+
+    /// The `index`th prefix segment as a [`DomainSegment`].
+    pub fn prefix_segment(&self, index: isize) -> Option<DomainSegment<'_>> {
+        self.prefix_segments()?.neg_nth(index)
+    }
+
+
+
+    /// The range of prefix segments as a [`str`].
+    pub fn prefix_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
+        segments_range_thing(self.prefix_str()?, '.', range)
+    }
+
+    /// The [`BidiDetailsIter::subrange`] of the prefix.
+    pub fn prefix_range_bidi_details<B: RangeBounds<isize>>(&self, range: B) -> Option<BidiDetailsIter<'_>> {
+        self.prefix_bidi_details()?.subrange(range)
+    }
+
+    /// The range of prefix segments as a [`DomainSegments`].
+    pub fn prefix_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
+        let range = (range.start_bound().cloned(), range.end_bound().cloned());
+
+        Some(DomainSegments {
+            segments    : self.prefix_range_str         (range)?.into(),
+            bidi_details: self.prefix_range_bidi_details(range)?.into(),
+        })
+    }
+
+
+
+
 
     /// Set the prefix.
     /// # Errors
     /// See [`Self`]'s documentation.
-    pub fn set_prefix(&mut self, value: Option<&str>) -> Result<(), SetDomainError> {
-        match (self.prefix(), value.map(|x| encode_domain(x.into())).as_deref()) {
-            (None, None) => {},
+    pub fn set_prefix<'b, T: TryInto<DomainSegments<'b>>>(&mut self, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+        match (self.prefix_str(), value.map(TryInto::try_into).transpose()?) {
+            (None     , None     )               => return Ok(false),
+            (Some(old), Some(new)) if old == new => return Ok(false),
 
-            (None, Some(value)) => {
-                if !self.details.has_middle() {
-                    Err(InsertNotFound)?;
-                }
+            (None     , Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
+            (Some(old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
 
-                if self.len() + value.len() + 1 > u32::MAX as usize {
-                    Err(TooLong)?;
-                }
+            (None, Some(new)) => {
+                self.host.to_mut().insert_with(0, &[new.as_str(), "."]);
 
-                if value.bytes().any(invalid_domain_byte) {
-                    Err(InvalidDomainByte)?;
-                }
-
-                self.host.to_mut().insert_with(0, [value, "."]);
-
-                self.details.ms += value.len() as u32 + 1;
-                self.details.ss += value.len() as u32 + 1;
-                self.details.sa += value.len() as u32 + 1;
+                self.details.parts.ms += new.len() as u32 + 1;
+                self.details.parts.ss += new.len() as u32 + 1;
+                self.details.parts.sa += new.len() as u32 + 1;
+                self.details.parts.wp  = new == "www";
             },
 
-            (Some(prefix), None) => {
-                let pl = prefix.len();
+            (Some(old), None) => {
+                let ol = old.len();
 
-                self.host.replace_range(..=pl, "");
+                self.host.retain_range(ol + 1..);
 
-                self.details.ms -= pl as u32 + 1;
-                self.details.ss -= pl as u32 + 1;
-                self.details.sa -= pl as u32 + 1;
+                self.details.parts.ms -= ol as u32 + 1;
+                self.details.parts.ss -= ol as u32 + 1;
+                self.details.parts.sa -= ol as u32 + 1;
+                self.details.parts.wp  = false;
             },
 
-            (Some(prefix), Some(value)) => {
-                if prefix == value {
-                    return Ok(());
-                }
-                
-                if self.len() - prefix.len() + value.len() > u32::MAX as usize {
-                    Err(TooLong)?
-                }
+            (Some(old), Some(new)) => {
+                let ol = old.len();
 
-                if value.bytes().any(invalid_domain_byte) {
-                    Err(InvalidDomainByte)?;
-                }
+                self.host.replace_range(..ol, new.as_str());
 
-                let pl = prefix.len();
-
-                self.host.replace_substr(prefix, value);
-
-                self.details.ms = self.details.ms - pl as u32 + value.len() as u32;
-                self.details.ss = self.details.ss - pl as u32 + value.len() as u32;
-                self.details.sa = self.details.sa - pl as u32 + value.len() as u32;
+                self.details.parts.ms = self.details.parts.ms - ol as u32 + new.len() as u32;
+                self.details.parts.ss = self.details.parts.ss - ol as u32 + new.len() as u32;
+                self.details.parts.sa = self.details.parts.sa - ol as u32 + new.len() as u32;
+                self.details.parts.wp = new == "www";
             }
         }
 
-        self.details.www_prefix = &self.host[..self.details.ms as usize] == "www.";
-
-        Ok(())
+        Ok(true)
     }
 
     /// Set or insert the `index`th prefix segment.
@@ -102,146 +141,119 @@ impl DomainHost<'_> {
     ///
     /// let mut domain = DomainHost::try_from("example.com").unwrap();
     ///
-    /// domain.set_prefix_segment(0, Some("www")).unwrap();
-    /// assert_eq!(domain.prefix(), Some("www"));
-    ///
-    /// domain.set_prefix_segment(0, Some("abc")).unwrap();
-    /// assert_eq!(domain.prefix(), Some("abc"));
-    ///
-    /// domain.set_prefix_segment(1, Some("def")).unwrap();
-    /// assert_eq!(domain.prefix(), Some("abc.def"));
-    ///
-    /// domain.set_prefix_segment(-3, Some("123")).unwrap();
-    /// assert_eq!(domain.prefix(), Some("123.abc.def"));
-    ///
-    /// domain.set_prefix_segment(-3, None).unwrap();
-    /// assert_eq!(domain.prefix(), Some("abc.def"));
-    ///
-    /// domain.set_prefix_segment(-1, None).unwrap();
-    /// assert_eq!(domain.prefix(), Some("abc"));
-    ///
-    /// domain.set_prefix_segment(-1, None).unwrap();
-    /// assert_eq!(domain.prefix(), None);
+    /// domain.set_prefix_segment( 0, Some("www") ).unwrap(); assert_eq!(domain,         "www.example.com");
+    /// domain.set_prefix_segment( 0, Some("1bc") ).unwrap(); assert_eq!(domain,         "1bc.example.com");
+    /// domain.set_prefix_segment( 1, Some("def") ).unwrap(); assert_eq!(domain,     "1bc.def.example.com");
+    /// domain.set_prefix_segment(-3, Some("123") ).unwrap(); assert_eq!(domain, "123.1bc.def.example.com");
+    /// domain.set_prefix_segment(-3, None::<&str>).unwrap(); assert_eq!(domain,     "1bc.def.example.com");
+    /// domain.set_prefix_segment(-1, None::<&str>).unwrap(); assert_eq!(domain,         "1bc.example.com");
+    /// domain.set_prefix_segment(-1, None::<&str>).unwrap(); assert_eq!(domain,             "example.com");
     /// ```
-    pub fn set_prefix_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainError> {
-        match value.map(|x| encode_domain(x.into())).as_deref() {
-            Some(value) => match self.try_prefix_segment(index) {
-                Ok(segment) => {
-                    if segment == value {
-                        return Ok(());
-                    }
-                    
-                    if self.len() - segment.len() + value.len() > u32::MAX as usize {
-                        Err(TooLong)?;
-                    }
+    pub fn set_prefix_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+        let bidi_range = self.prefix_bidi_details().ok_or(InsertNotFound)?.set_urange(index).ok_or(RangeNotFound)?;
+        let old = self.prefix_segment_strs().into_iter().flatten().try_neg_nth(index);
+        let new = value.map(TryInto::try_into).transpose()?;
 
-                    if value.bytes().any(invalid_domain_byte) {
-                        Err(InvalidDomainByte)?
-                    }
+        match (old, new) {
+            (Ok (old), Some(new)) if old == new => return Ok(false),
+            (Err(0  ), None     )               => return Ok(false),
 
-                    let sl = segment.len();
+            (Ok (old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
+            (Err(0  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
 
-                    self.host.replace_substr(segment, value);
+            (Err(1..), Some(_)) => Err(InsertNotFound)?,
+            (Err(_  ), None   ) => Err(SegmentNotFound)?,
 
-                    self.details.ms = self.details.ms - sl as u32 + value.len() as u32;
-                    self.details.ss = self.details.ss - sl as u32 + value.len() as u32;
-                    self.details.sa = self.details.sa - sl as u32 + value.len() as u32;
-                },
+            (Ok(old), Some(new)) => {
+                let range = self.as_str().my_substr_range(old);
 
-                Err(0) => {
-                    let ms = self.details.middle_start().ok_or(InsertNotFound)?;
+                self.details.bidi.set_urange(bidi_range, &new.bidi_details)?;
 
-                    if self.len() + value.len() + 1 > u32::MAX as usize {
-                        Err(TooLong)?;
-                    }
+                self.host.replace_range(range.clone(), new.as_str());
 
-                    if value.bytes().any(invalid_domain_byte) {
-                        Err(InvalidDomainByte)?;
-                    }
-
-                    match index {
-                        0.. => self.host.to_mut().insert_with(ms, [value, "."]),
-                        ..0 => self.host.to_mut().insert_with(0 , [value, "."]),
-                    }
-
-                    self.details.ms = self.details.ms + value.len() as u32 + 1;
-                    self.details.ss = self.details.ss + value.len() as u32 + 1;
-                    self.details.sa = self.details.sa + value.len() as u32 + 1;
-                },
-
-                Err(_) => Err(InsertNotFound)?
+                self.details.parts.ms = self.details.parts.ms - range.len() as u32 + new.len() as u32;
+                self.details.parts.ss = self.details.parts.ss - range.len() as u32 + new.len() as u32;
+                self.details.parts.sa = self.details.parts.sa - range.len() as u32 + new.len() as u32;
             },
-            None => {
-                let Range {start, end} = self.host.my_substr_range(self.prefix_segment(index).ok_or(SegmentNotFound)?);
-                let sl = end - start;
 
-                self.host.replace_range(start ..= end, "");
+            (Ok(old), None) => {
+                let mut range = self.host.my_substr_range(old);
+                range.end += 1;
 
-                self.details.ms = self.details.ms - sl as u32 - 1;
-                self.details.ss = self.details.ss - sl as u32 - 1;
-                self.details.sa = self.details.sa - sl as u32 - 1;
-            }
+                self.details.bidi.set_urange(bidi_range, &Default::default())?;
+
+                self.host.replace_range(range.clone(), "");
+
+                self.details.parts.ms -= range.len() as u32;
+                self.details.parts.ss -= range.len() as u32;
+                self.details.parts.sa -= range.len() as u32;
+            },
+
+            (Err(0), Some(new)) => {
+                let ms = self.details.parts.middle_start().ok_or(InsertNotFound)?;
+
+                self.details.bidi.set_urange(bidi_range, &new.bidi_details)?;
+
+                match index {
+                    0.. => self.host.to_mut().insert_with(ms, &[new.as_str(), "."]),
+                    ..0 => self.host.to_mut().insert_with(0 , &[new.as_str(), "."]),
+                }
+
+                self.details.parts.ms = self.details.parts.ms + new.len() as u32 + 1;
+                self.details.parts.ss = self.details.parts.ss + new.len() as u32 + 1;
+                self.details.parts.sa = self.details.parts.sa + new.len() as u32 + 1;
+            },
         }
 
-        self.details.www_prefix = &self.host[..self.details.ms as usize] == "www.";
+        self.details.parts.wp = self.prefix_str() == Some("www");
 
-        Ok(())
+        Ok(true)
     }
 
-    /// Set the `index`th prefix segment without inserting a new one.
+    /// Set the `range` prefix segments.
     /// # Errors
     /// See [`Self`]'s documentation.
-    /// # Examples
-    /// ```
-    /// use better_url::prelude::*;
-    ///
-    /// let mut domain = DomainHost::try_from("www.example.com").unwrap();
-    ///
-    /// domain.replace_prefix_segment(0, Some("abc")).unwrap();
-    /// assert_eq!(domain.prefix(), Some("abc"));
-    ///
-    /// domain.replace_prefix_segment(0, None).unwrap();
-    /// assert_eq!(domain.prefix(), None);
-    ///
-    /// domain.replace_prefix_segment(0, Some("www")).unwrap_err();
-    /// ```
-    pub fn replace_prefix_segment(&mut self, index: isize, value: Option<&str>) -> Result<(), SetDomainError> {
-        let segment = self.prefix_segment(index).ok_or(SegmentNotFound)?;
-        let Range {start, end} = self.host.my_substr_range(segment);
-        let sl = end - start;
+    pub fn set_prefix_range<'b, T: TryInto<DomainSegments<'b>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+        let range = (range.start_bound().cloned(), range.end_bound().cloned());
 
-        match value.map(|x| encode_domain(x.into())).as_deref() {
-            Some(value) => {
-                if segment == value {
-                    return Ok(());
-                }
-                
-                if self.len() - sl + value.len() > u32::MAX as usize {
-                    Err(TooLong)?;
-                }
+        let old = self.prefix_range_str(range).ok_or(RangeNotFound)?;
+        let new = value.map(TryInto::try_into).transpose()?;
 
-                if value.bytes().any(invalid_domain_byte) {
-                    Err(InvalidDomainByte)?;
-                }
+        let bidi_range = self.prefix_bidi_details().ok_or(InsertNotFound)?.subrange(range).ok_or(InsertNotFound)?.range;
 
-                self.host.replace_range(start..end, value);
+        match new {
+            Some(new) if old == new => return Ok(false),
 
-                self.details.ms = self.details.ms - sl as u32 + value.len() as u32;
-                self.details.ss = self.details.ss - sl as u32 + value.len() as u32;
-                self.details.sa = self.details.sa - sl as u32 + value.len() as u32;
+            Some(new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
+
+            Some(new) => {
+                let range = self.as_str().my_substr_range(old);
+
+                self.details.bidi.set_urange(bidi_range, &new.bidi_details)?;
+
+                self.host.replace_range(range.clone(), new.as_str());
+
+                self.details.parts.ms = self.details.parts.ms - range.len() as u32 + new.len() as u32;
+                self.details.parts.ss = self.details.parts.ss - range.len() as u32 + new.len() as u32;
+                self.details.parts.sa = self.details.parts.sa - range.len() as u32 + new.len() as u32;
             },
             None => {
-                self.host.replace_range(start..=end, "");
+                let mut range = self.as_str().my_substr_range(old);
+                range.end += 1;
 
-                self.details.ms = self.details.ms - sl as u32 - 1;
-                self.details.ss = self.details.ss - sl as u32 - 1;
-                self.details.sa = self.details.sa - sl as u32 - 1;
+                self.details.bidi.set_urange(bidi_range, &Default::default())?;
+
+                self.host.replace_range(range.clone(), "");
+
+                self.details.parts.ms -= range.len() as u32;
+                self.details.parts.ss -= range.len() as u32;
+                self.details.parts.sa -= range.len() as u32;
             }
         }
 
-        self.details.www_prefix = &self.host[..self.details.ms as usize] == "www.";
+        self.details.parts.wp = self.prefix_str() == Some("www");
 
-        Ok(())
+        Ok(true)
     }
 
     /// Insert a new `index`th prefix segment.
@@ -253,44 +265,41 @@ impl DomainHost<'_> {
     ///
     /// let mut domain = DomainHost::try_from("example.com").unwrap();
     ///
-    /// domain.insert_prefix_segment(0, "www").unwrap();
-    /// assert_eq!(domain.as_str(), "www.example.com");
+    /// domain.insert_prefix_segment( 0, "www").unwrap(); assert_eq!(domain,                 "www.example.com");
+    /// domain.insert_prefix_segment( 0, "abc").unwrap(); assert_eq!(domain,             "abc.www.example.com");
+    /// domain.insert_prefix_segment( 2, "def").unwrap(); assert_eq!(domain,         "abc.www.def.example.com");
+    /// domain.insert_prefix_segment(-4, "ghi").unwrap(); assert_eq!(domain,     "ghi.abc.www.def.example.com");
+    /// domain.insert_prefix_segment(-4, "jkl").unwrap(); assert_eq!(domain, "ghi.jkl.abc.www.def.example.com");
     ///
-    /// domain.insert_prefix_segment(0, "abc").unwrap();
-    /// assert_eq!(domain.as_str(), "abc.www.example.com");
-    ///
-    /// domain.insert_prefix_segment(2, "def").unwrap();
-    /// assert_eq!(domain.as_str(), "abc.www.def.example.com");
-    ///
-    /// domain.insert_prefix_segment(-4, "ghi").unwrap();
-    /// assert_eq!(domain.as_str(), "ghi.abc.www.def.example.com");
+    /// assert_eq!(domain.bidi_details().iter().len(), 7);
     /// ```
-    pub fn insert_prefix_segment(&mut self, index: isize, value: &str) -> Result<(), SetDomainError> {
-        let value = &encode_domain(value.into());
+    pub fn insert_prefix_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+        let prefix_bidi = self.prefix_bidi_details().ok_or(InsertNotFound)?;
+        let thing = thing2(index, prefix_bidi.len()).ok_or(InsertNotFound)?;
 
-        if self.len() + value.len() + 1 > u32::MAX as usize {
+        let new = value.try_into()?;
+
+        if self.len() + new.len() + 1 > u32::MAX as usize {
             Err(TooLong)?;
         }
 
-        let ms = self.details.middle_start().ok_or(InsertNotFound)?;
+        let bidi_urange = prefix_bidi.insert_urange(index).ok_or(InsertNotFound)?;
 
-        if value.bytes().any(invalid_domain_byte) {
-            Err(InvalidDomainByte)?;
-        }
+        let i = match thing {
+            Thing2::New | Thing2::Prepend => 0,
+            Thing2::Append                => self.details.parts.ms as usize,
+            Thing2::Insert(i)             => self.prefix_segment_strs().expect("???").nth(i).expect("???").addr() - self.host.addr()
+        };
 
-        match (self.try_prefix_segment(index).map(|x| self.host.my_substr_range(x)), index) {
-            (Ok(Range {start, ..}), 0..) => self.host.to_mut().insert_with(start, [value, "."]),
-            (Ok(Range {end  , ..}), ..0) => self.host.to_mut().insert_with(end  , [value, "."]),
-            (Err(0)               , 0..) => self.host.to_mut().insert_with(ms   , [value, "."]),
-            (Err(0)               , ..0) => self.host.to_mut().insert_with(0    , [value, "."]),
-            _ => Err(InsertNotFound)?
-        }
+        self.details.bidi.set_urange(bidi_urange, &new.bidi_details)?;
 
-        self.details.ms += value.len() as u32 + 1;
-        self.details.ss += value.len() as u32 + 1;
-        self.details.sa += value.len() as u32 + 1;
+        self.host.to_mut().insert_with(i, &[new.as_str(), "."]);
 
-        self.details.www_prefix = &self.host[..self.details.ms as usize] == "www.";
+        self.details.parts.ms += new.len() as u32 + 1;
+        self.details.parts.ss += new.len() as u32 + 1;
+        self.details.parts.sa += new.len() as u32 + 1;
+
+        self.details.parts.wp = &self.host[..self.details.parts.ms as usize] == "www.";
 
         Ok(())
     }

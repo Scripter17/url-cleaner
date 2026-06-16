@@ -26,12 +26,8 @@ impl Args {
                 continue;
             }
 
-            match (&*buf).make_task() {
-                Ok(task) => if is_default(&task.context) {
-                    println!("{}", task.url);
-                } else {
-                    println!("{}", serde_json::to_string(&task).unwrap());
-                },
+            match Task::new(&*buf) {
+                Ok(task) => println!("{task}"),
                 Err(e) => println!("-{e:?}")
             }
 

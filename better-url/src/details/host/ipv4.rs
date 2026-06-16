@@ -12,15 +12,38 @@ pub struct Ipv4Details {
 }
 
 impl Ipv4Details {
+    /// Parse a raw IPv4 host.
+    /// # Errors
+    /// If the call to [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// Ipv4Details::from_raw("127.0.0.1").unwrap    ();
+    /// Ipv4Details::from_raw("0x12.034" ).unwrap_err();
+    /// ```
+    pub fn from_raw(s: &str) -> Result<Self, InvalidIpv4Host> {
+        Ok(Self {
+            parsed: s.parse().map_err(|_| InvalidIpv4Host)?
+        })
+    }
+
     /// Parse an IPv4 host.
     /// # Errors
     /// If the call to [`parse_ipv4_host`] returns an error, that error is returned.
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// Ipv4Details::parse("127.0.0.1").unwrap();
+    /// Ipv4Details::parse("0x12.034" ).unwrap();
+    /// ```
     pub fn parse(s: &str) -> Result<Self, InvalidIpv4Host> {
         Ok(Self {
             parsed: parse_ipv4_host(s).ok_or(InvalidIpv4Host)?
         })
     }
-    
+
     /// [`Ipv4Addr::is_broadcast`].
     pub fn is_broadcast(self) -> bool {
         self.parsed.is_broadcast()
@@ -60,6 +83,7 @@ impl Ipv4Details {
 impl FromStr for Ipv4Details {
     type Err = InvalidIpv4Host;
 
+    /// [`Self::parse`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }
@@ -68,6 +92,7 @@ impl FromStr for Ipv4Details {
 impl TryFrom<&str> for Ipv4Details {
     type Error = InvalidIpv4Host;
 
+    /// [`Self::parse`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
     }

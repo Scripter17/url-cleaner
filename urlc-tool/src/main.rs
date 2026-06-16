@@ -10,6 +10,7 @@ pub mod cleaner;
 pub mod tasks;
 pub mod bench;
 pub mod foldent;
+pub mod idna;
 
 pub mod util;
 
@@ -49,6 +50,7 @@ pub enum Args {
     #[command(subcommand)]
     Bench(bench::Args),
     Foldent(foldent::Args),
+    Idna(idna::Args),
 }
 
 impl Args {
@@ -61,6 +63,7 @@ impl Args {
             Self::Tasks  (args) => args.r#do(),
             Self::Bench  (args) => args.r#do(),
             Self::Foldent(args) => args.r#do(),
+            Self::Idna   (args) => args.r#do(),
         }
     }
 }

@@ -1,9 +1,5 @@
 //! [`TaskContext`].
 
-use std::collections::{HashSet, HashMap};
-
-use serde::{Serialize, Deserialize};
-
 use crate::prelude::*;
 
 /// The context of a [`Task`].
@@ -22,3 +18,9 @@ pub struct TaskContext {
     pub vars: HashMap<String, String>
 }
 
+impl TaskContext {
+    /// If [`Self::flags`] and [`Self::vars`] are empty.
+    pub fn is_empty(&self) -> bool {
+        self.flags.is_empty() && self.vars.is_empty()
+    }
+}

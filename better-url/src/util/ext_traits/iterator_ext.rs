@@ -10,9 +10,9 @@ pub(crate) trait IteratorExt: Iterator {
 
 impl<I: Iterator> IteratorExt for I {
     fn try_nth(&mut self, n: usize) -> Result<Self::Item, usize> {
-        for rem in (1..=n).rev() {
-            self.next().ok_or(rem)?;
+        match n - self.take(n).count() {
+            0 => self.next().ok_or(0),
+            x => Err(x)
         }
-        self.next().ok_or(0)
     }
 }

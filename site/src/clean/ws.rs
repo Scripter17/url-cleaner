@@ -3,14 +3,13 @@
 use std::sync::Arc;
 
 use axum::{
-    response::Response,
     extract::ws::{WebSocketUpgrade, Message},
     extract::State
 };
-use futures_util::StreamExt;
-use bytes::Bytes;
 
 use url_cleaner_engine::prelude::*;
+
+use crate::prelude::*;
 
 /// `/clean` WebSocket.
 pub async fn clean_ws(State(state): State<&'static crate::State>, job: Job<'static>, ws: WebSocketUpgrade) -> Response {

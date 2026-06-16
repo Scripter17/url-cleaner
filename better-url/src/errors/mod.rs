@@ -18,22 +18,48 @@ pub use path::*;
 pub use query::*;
 pub use fragment::*;
 
+/// Implement [`From`] of [`std::convert::Infallible`].
+macro_rules! from_infallible {
+    ($($t:ty),*) => {
+        $(
+            impl From<std::convert::Infallible> for $t {
+                fn from(value: std::convert::Infallible) -> Self {
+                    match value {}
+                }
+            }
+        )*
+    }
+}
+
+from_infallible!(
+    InvalidScheme, SetSchemeError,
+    InvalidEmptyPath,
+    InvalidHost, SetHostError,
+    InvalidDomainSegment, InvalidDomainSegments, SetDomainError,
+    SetBidiDetailsError
+);
+
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
 
+
+    macro_rules! assert_size_1 {
+        ($($t:ty),*) => {
+            $(assert_eq!(std::mem::size_of::<$t>(), 1, "{}", stringify!($t));)*
+        }
+    }
+
     #[test]
     fn sizes() {
-        assert_eq!(std::mem::size_of::<InvalidHost     >(), 1);
-        assert_eq!(std::mem::size_of::<InvalidIpHost   >(), 1);
+        // TODO: Make SetHostError 1 byte.
 
-        assert_eq!(std::mem::size_of::<SetSchemeError  >(), 1);
-        assert_eq!(std::mem::size_of::<SetUserinfoError>(), 1);
-        assert_eq!(std::mem::size_of::<SetUsernameError>(), 1);
-        assert_eq!(std::mem::size_of::<SetPasswordError>(), 1);
-        assert_eq!(std::mem::size_of::<SetHostError    >(), 1);
-        assert_eq!(std::mem::size_of::<SetDomainError  >(), 1);
-        assert_eq!(std::mem::size_of::<SetPathError    >(), 1);
-        assert_eq!(std::mem::size_of::<SetQueryError   >(), 1);
+        assert_size_1!(
+            InvalidHost, InvalidIpHost, SetDomainError,
+            SetSchemeError,
+            SetUserinfoError, SetUsernameError, SetPasswordError,
+            SetPathError,
+            SetQueryError
+        );
     }
 }

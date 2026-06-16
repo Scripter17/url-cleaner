@@ -1,70 +1,69 @@
 //! String getters.
 
 use proc_macro2::TokenStream;
-use syn::Expr;
+use syn::{Expr, parse::{Parse, ParseStream}, Result, Token};
 use quote::quote;
 
-/// `&str`.
-pub(crate) fn get_str(x: Expr) -> TokenStream {
-    quote!(&*get_cow!(#x))
+/// A call to the [`get`] macro.
+pub(crate) struct GetCall {
+    /// If it should keep the [`Option`] layer.
+    option: bool,
+    /// The [`CallMode`].
+    mode: CallMode,
+    /// If it should be made owned.
+    part: bool,
+    /// The expression to get from.
+    expr: Expr,
 }
 
-/// `String`.
-pub(crate) fn get_string(x: Expr) -> TokenStream {
-    quote!(get_cow!(#x).into_owned())
+/// The `get!` mode.
+enum CallMode {
+    /// `Cow<'_, str>`.
+    Normal,
+    /// `&str`.
+    Deref,
+    /// `String`.
+    Owned,
 }
 
-/// `Cow<'_, str>`.
-pub(crate) fn get_cow(x: Expr) -> TokenStream {
-    quote!(match #x.get_self() {
-        StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
-        value => value.get(task_state)?.ok_or(StringSourceIsNone)?
-    })
+impl Parse for CallMode {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(if input.parse::<Token![&]>().is_ok() {
+            Self::Deref
+        } else if input.parse::<Token![*]>().is_ok() {
+            Self::Owned
+        } else {
+            Self::Normal
+        })
+    }
 }
 
-
-
-/// `Option<&str>`.
-pub(crate) fn get_option_str(x: Expr) -> TokenStream {
-    quote!(get_option_cow!(#x).as_deref())
+impl Parse for GetCall {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Self {
+            option: input.parse::<Token![?]>().is_ok(),
+            mode: input.parse()?,
+            part: input.parse::<Token![!]>().is_ok(),
+            expr: input.parse()?,
+        })
+    }
 }
 
-/// `Option<String>`.
-pub(crate) fn get_option_string(x: Expr) -> TokenStream {
-    quote!(get_option_cow!(#x).map(|x| x.into_owned()))
-}
+/// Get strings (and other things) briefly.
+pub(crate) fn get(x: GetCall) -> TokenStream {
+    match x {
+        GetCall {option: false, mode: CallMode::Normal, part: false, expr} => quote!(  #expr.get_some     (task_state, args)??),
+        GetCall {option: false, mode: CallMode::Normal, part: true , expr} => quote!(  #expr.get_some_part(task_state, args)??),
+        GetCall {option: false, mode: CallMode::Deref , part: false, expr} => quote!(&*#expr.get_some     (task_state, args)??),
+        GetCall {option: false, mode: CallMode::Deref , part: true , expr} => quote!(&*#expr.get_some_part(task_state, args)??),
+        GetCall {option: false, mode: CallMode::Owned , part: false, expr} => quote!(  #expr.get_some     (task_state, args)??.into_owned()),
+        GetCall {option: false, mode: CallMode::Owned , part: true , expr} => quote!(  #expr.get_some_part(task_state, args)??.into_owned()),
 
-/// `Option<Cow<'_, str>>`.
-pub(crate) fn get_option_cow(x: Expr) -> TokenStream {
-    quote!(match #x.get_self() {
-        StringSource::None => None,
-        StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
-        value => value.get(task_state)?
-    })
-}
-
-
-
-/// `&'j str`.
-pub(crate) fn get_new_str(x: Expr) -> TokenStream {
-    quote!(&*match #x {
-        StringSource::String(value) => std::borrow::Cow::Borrowed(value.as_str()),
-        value => Cow::Owned(get_string!(value))
-    })
-}
-
-
-
-/// `Option<&'j str>`.
-pub(crate) fn get_new_option_str(x: Expr) -> TokenStream {
-    quote!(get_new_option_cow!(#x).as_deref())
-}
-
-/// `Option<Cow<'j, str>>`.
-pub(crate) fn get_new_option_cow(x: Expr) -> TokenStream {
-    quote!(match #x {
-        StringSource::String(value) => Some(std::borrow::Cow::Borrowed(value.as_str())),
-        StringSource::None => None,
-        value => get_option_string!(value).map(Cow::Owned)
-    })
+        GetCall {option: true , mode: CallMode::Normal, part: false, expr} => quote!(#expr.get     (task_state, args)?),
+        GetCall {option: true , mode: CallMode::Normal, part: true , expr} => quote!(#expr.get_part(task_state, args)?),
+        GetCall {option: true , mode: CallMode::Deref , part: false, expr} => quote!(#expr.get     (task_state, args)?.as_deref()),
+        GetCall {option: true , mode: CallMode::Deref , part: true , expr} => quote!(#expr.get_part(task_state, args)?.as_deref()),
+        GetCall {option: true , mode: CallMode::Owned , part: false, expr} => quote!(#expr.get     (task_state, args)?.map(Cow::into_owned)),
+        GetCall {option: true , mode: CallMode::Owned , part: true , expr} => quote!(#expr.get_part(task_state, args)?.map(Cow::into_owned)),
+    }
 }

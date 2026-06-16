@@ -1,6 +1,5 @@
 //! Path stuff.
 
-
 mod entire;
 mod segment;
 mod segments;

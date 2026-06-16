@@ -1,15 +1,8 @@
 //! [`Task`] and co.
 
-use std::str::FromStr;
-
-use serde::{Serialize, Deserialize};
-use url::Url;
-
 use crate::prelude::*;
 
 /// A task for a [`Job`] to [`Job::do`].
-///
-/// See [`TaskConfig`] for how to make these.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
@@ -25,42 +18,36 @@ pub struct Task {
 
 string_or_struct_magic!(Task);
 
-impl From<Url> for Task {
-    fn from(url: Url) -> Self {
-        BetterUrl::from(url).into()
+impl Task {
+    /// Make a new [`Self`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new<T: TryInto<Self>>(task: T) -> Result<Self, T::Error> {
+        task.try_into()
     }
 }
 
-impl From<BetterUrl> for Task {
-    fn from(url: BetterUrl) -> Self {
-        Self {
-            url,
-            context: Default::default()
-        }
-    }
-}
+impl From<BetterUrl> for Task {fn from(url: BetterUrl) -> Self {Self {url, context: Default::default()}}}
+impl From<url::Url > for Task {fn from(url: url::Url ) -> Self {BetterUrl::from(url).into()}}
 
 impl FromStr for Task {
     type Err = MakeTaskError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s.as_bytes().first() {
-            Some(b'{' | b'"'                  ) => serde_json::from_str(s)?,
-            Some(b'a' ..= b'z' | b'A' ..= b'Z') => Url::parse(s)?.into(),
-            None => Err(MakeTaskError::IgnoreLineNotIgnored)?,
-            _    => Err(MakeTaskError::OtherwiseInvalid)?
+        Ok(match s.as_bytes() {
+            [b'{' | b'"'                  , ..] => serde_json::from_str(s)?,
+            [b'a' ..= b'z' | b'A' ..= b'Z', ..] => BetterUrl::parse(s)?.into(),
+            [] => Err(MakeTaskError::IgnoreLineNotIgnored)?,
+            _  => Err(MakeTaskError::OtherwiseInvalid)?
         })
     }
 }
 
 impl TryFrom<&str> for Task {
-    type Error = <Self as FromStr>::Err;
+    type Error = MakeTaskError;
 
-    /// [`Self::from_str`].
-    /// # Errors
-    #[doc = edoc!(callerr(Self::from_str))]
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Self::from_str(value)
+        value.parse()
     }
 }
 
@@ -68,19 +55,42 @@ impl TryFrom<&[u8]> for Task {
     type Error = MakeTaskError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Ok(match value.first() {
-            Some(b'{' | b'"'                  ) => serde_json::from_slice(value)?,
-            Some(b'a' ..= b'z' | b'A' ..= b'Z') => Url::parse(str::from_utf8(value)?)?.into(),
-            None => Err(MakeTaskError::IgnoreLineNotIgnored)?,
-            _    => Err(MakeTaskError::OtherwiseInvalid)?
-        })
+        str::from_utf8(value)?.parse()
     }
 }
 
-impl TryFrom<serde_json::Value> for Task {
-    type Error = serde_json::Error;
+impl std::fmt::Display for Task {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.context.is_empty() {
+            true  => write!(formatter, "{}", self.url),
+            // TODO: This is dumb.
+            false => write!(formatter, "{}", serde_json::to_string(self).expect("To always work."))
+        }
+    }
+}
 
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        serde_json::from_value(value)
+/// The enum of errors that can happen when making a [`Task`].
+#[derive(Debug, Error)]
+pub enum MakeTaskError {
+    /// [`url::ParseError`].
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+    /// [`std::str::Utf8Error`].
+    #[error(transparent)]
+    Utf8Error(#[from] std::str::Utf8Error),
+    /// [`serde_json::Error`].
+    #[error(transparent)]
+    SerdeJsonError(#[from] serde_json::Error),
+    /// Returned when a line that was meant to be ignored is't.
+    #[error("A line that was meant to be ignored wasn't.")]
+    IgnoreLineNotIgnored,
+    /// Returned when a line is otherwise invalid.
+    #[error("A line was otherwise invalid.")]
+    OtherwiseInvalid,
+}
+
+impl From<std::convert::Infallible> for MakeTaskError {
+    fn from(value: std::convert::Infallible) -> Self {
+        match value {}
     }
 }

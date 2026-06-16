@@ -134,7 +134,7 @@ fn thing2(span: Span, name: &str, args: &[Arg]) -> Result<String> {
         ("callerrte"              , [pa, epa                                 ]) => format!("If both calls to [`{pa}`] return errors, both errors are returned in a [`{epa}Error::TryElseError`]."),
         ("callerrfne"             , [pa, epa                                 ]) => format!("If all calls to [`{pa}`] return errors, all errors are returned in a [`{epa}Error::FirstNotErrorErrors`]."),
 
-        ("notfound"               , [pa, epa                                 ]) => format!("If the [`{pa}`] isn't found, returns the error [`{epa}Error::{pa}NotFound`]."),
+        ("notfound"               , [pa                                      ]) => format!("If the [`{pa}`] isn't found, returns the error [`{pa}NotFound`]."),
         ("functionnotfound"       , [pa, epa                                 ]) => format!("If the function [`{pa}`] isn't found, returns the error [`{epa}Error::FunctionNotFound`]."),
         ("notinfunction"          , [    epa                                 ]) => format!("If the used outside a function, returns the error [`{epa}Error::CallArgFunctionNotFound`]."),
         ("callargfunctionnotfound", [pa, epa                                 ]) => format!("If the call arg function [`{pa}`] isn't found, returns the error [`{epa}Error::CallArgFunctionNotFound`]."),

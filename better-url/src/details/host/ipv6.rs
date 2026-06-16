@@ -53,6 +53,7 @@ impl Ipv6Details {
 impl FromStr for Ipv6Details {
     type Err = InvalidIpv6Host;
 
+    /// [`Self::parse`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }
@@ -61,6 +62,7 @@ impl FromStr for Ipv6Details {
 impl TryFrom<&str> for Ipv6Details {
     type Error = InvalidIpv6Host;
 
+    /// [`Self::parse`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
     }

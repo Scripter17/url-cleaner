@@ -66,27 +66,6 @@ pub(crate) fn set_is_documented(name: &StringSource, cleaner: &Cleaner) {
         assert!(cleaner.docs.params.sets.contains_key(name), "Undocumented Set: {name}");
     }
 }
-/// Suitability helper function to check that a map is documented.
-pub(crate) fn map_is_documented(name: &StringSource, cleaner: &Cleaner) {
-    if let StringSource::String(name) = name {
-        assert!(cleaner.params.maps.contains_key(name), "Unset Map: {name}");
-        assert!(cleaner.docs.params.maps.contains_key(name), "Undocumented Map: {name}");
-    }
-}
-/// Suitability helper function to check that a named partitioning is documented.
-pub(crate) fn partitioning_is_documented(name: &StringSource, cleaner: &Cleaner) {
-    if let StringSource::String(name) = name {
-        assert!(cleaner.params.partitionings.contains_key(name), "Unset Partitioning: {name}");
-        assert!(cleaner.docs.params.partitionings.contains_key(name), "Undocumented Partitioning: {name}");
-    }
-}
-
-/// For [`Condition::UrlIs`].
-pub(crate) fn string_source_string_literal_is_url_literal(value: &StringSource, _: &Cleaner) {
-    if let StringSource::String(value) = value {
-        assert_eq!(value, url::Url::parse(value).expect("Condition::UrlIs isn'tn even a valid URL").as_str(), "Condition::UrlIs will never be satisfied because its value changes when parsed.")
-    }
-}
 
 impl<K: Suitability, V: Suitability> Suitability for HashMap<K, V> {
     fn assert_suitability(&self, cleaner: &Cleaner) {

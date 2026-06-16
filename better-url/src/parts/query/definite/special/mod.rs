@@ -37,7 +37,7 @@ impl<'a> SpecialQuery<'a> {
 
 impl<'a> From<Cow<'a, str>> for SpecialQuery<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        Self(PartTranscoder::SpecialQuery.encode(value))
+        Self(encode_special_query(value).1)
     }
 }
 
@@ -47,12 +47,14 @@ impl<'a> From<Query<'a>> for SpecialQuery<'a> {
     fn from(value: Query<'a>) -> Self {
         match value {
             Query::Special   (x) => x,
-            Query::NonSpecial(x) => x.into()
+            Query::NonSpecial(x) => x.into(),
+            Query::Fragment  (x) => x.into(),
         }
     }
 }
 
-impl<'a> From<NonSpecialQuery<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self(specialize_query(value.0))}}
+impl<'a> From<NonSpecialQuery<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self(non_special_query_to_special_query(value.0).1)}}
+impl<'a> From<FragmentQuery  <'a>> for SpecialQuery<'a> {fn from(value: FragmentQuery  <'a>) -> Self {Self(fragment_to_special_query         (value.0).1)}}
 
 
 
@@ -61,13 +63,14 @@ impl<'a> From<QuerySegment<'a>> for SpecialQuery<'a> {
         match value {
             QuerySegment::Special   (x) => x.into(),
             QuerySegment::NonSpecial(x) => x.into(),
+            QuerySegment::Fragment  (x) => x.into(),
         }
     }
 }
 
-impl<'a> From<SpecialQuerySegment   <'a>> for SpecialQuery<'a> {fn from(value: SpecialQuerySegment   <'a>) -> Self {Self(                 value.into_inner() )}}
-impl<'a> From<NonSpecialQuerySegment<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuerySegment<'a>) -> Self {Self(specialize_query(value.into_inner()))}}
+impl<'a> From<SpecialQuerySegment   <'a>> for SpecialQuery<'a> {fn from(value: SpecialQuerySegment   <'a>) -> Self {Self(                                   value.into_inner()   )}}
+impl<'a> From<NonSpecialQuerySegment<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuerySegment<'a>) -> Self {Self(non_special_query_to_special_query(value.into_inner()).1)}}
+impl<'a> From<FragmentQuerySegment  <'a>> for SpecialQuery<'a> {fn from(value: FragmentQuerySegment  <'a>) -> Self {Self(fragment_to_special_query         (value.into_inner()).1)}}
 
 
-
-impl<'a> From<Fragment<'a>> for SpecialQuery<'a> {fn from(value: Fragment<'a>) -> Self {Self(specialize_query(value.into_inner()))}}
+impl<'a> From<Fragment<'a>> for SpecialQuery<'a> {fn from(value: Fragment<'a>) -> Self {value.query().into()}}

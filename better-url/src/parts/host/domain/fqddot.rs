@@ -3,35 +3,40 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainDetails::has_fqddot`].
+    /// [`DomainPartsDetails::has_fqddot`].
     pub fn has_fqddot(&self) -> bool {
-        self.details.has_fqddot()
+        self.details.parts.has_fqddot()
     }
 
-    /// [`DomainDetails::is_fqdn`].
+    /// [`DomainPartsDetails::is_fqdn`].
     pub fn is_fqdn(&self) -> bool {
-        self.details.is_fqdn()
+        self.details.parts.is_fqdn()
     }
 
-    /// Get the FQDN period.
-    pub fn fqddot(&self) -> Option<&str> {
-        self.details.fqddot_range().map(|r| &self.host[r])
+
+
+    /// The FQDN dot as a [`str`].
+    pub fn fqddot_str(&self) -> Option<&str> {
+        self.details.parts.fqddot_range().map(|r| &self.host[r])
     }
+
+
 
     /// Set the FQDN.
     /// # Errors
     /// If adding the FQDN would make it too long, returns the error [`TooLong`].
-    pub fn set_fqdn(&mut self, value: bool) -> Result<(), SetDomainError> {
+    pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetDomainError> {
         match (self.is_fqdn(), value) {
-            (false, false) => {},
             (false, true ) if self.len() + 1 > u32::MAX as usize => Err(TooLong)?,
+
+            (false, false) => return Ok(false),
             (false, true ) => self.host.to_mut().push('.'),
-            (true , false) => self.host.retain_range(..self.details.suffix_after()),
-            (true , true ) => {},
+            (true , false) => self.host.retain_range(..self.details.parts.suffix_after()),
+            (true , true ) => return Ok(false),
         }
 
-        self.details.fq = value;
+        self.details.parts.fq = value;
 
-        Ok(())
+        Ok(true)
     }
 }

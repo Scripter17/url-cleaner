@@ -1,41 +1,40 @@
-//! Username stuff.
+//! [`Username`].
 
 use crate::prelude::*;
 
-impl<'a> Userinfo<'a> {
-    /// The [`Range::start`] of the username.
-    pub(crate) fn username_start(&self) -> usize {
-        0
+/// A username.
+#[derive(Debug, Clone)]
+pub struct Username<'a>(pub(crate) Cow<'a, str>);
+
+impl<'a> Username<'a> {
+    /// Make a new [`Self`] without checking for validity.
+    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(username: T) -> Self {
+        Self(username.into())
     }
 
-    /// The [`Range::end`] of the username.
-    pub(crate) fn username_after(&self) -> usize {
-        self.ps - 1
+    /// Borrow as a [`str`].
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 
-    /// The [`Range`] of the username.
-    pub(crate) fn username_range(&self) -> Range<usize> {
-        self.username_start() .. self.username_after()
+    /// Turn into an owned [`Self`].
+    pub fn into_owned(self) -> Username<'static> {
+        Username(self.0.into_owned().into())
     }
 
-    /// Borrow the username as a [`str`].
-    pub fn username_str(&self) -> &str {
-        &self.raw[self.username_range()]
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> Username<'_> {
+        Username(Cow::Borrowed(&self.0))
     }
 
-    /// Make a [`Username`].
-    pub fn username(&self) -> Username<'_> {
-        Username(self.username_str().into())
+    /// Turn into the inner [`Cow`].
+    pub fn into_inner(self) -> Cow<'a, str> {
+        self.0
     }
+}
 
-    /// Set the username.
-    pub fn set_username<'b, T: Into<Username<'b>>>(&mut self, value: T) {
-        let value = value.into().into_inner();
-
-        self.raw.replace_substr(self.username_str(), &value);
-
-        if self.ps != 0 {
-            self.ps = value.len() + 1;
-        }
+impl<'a> From<Cow<'a, str>> for Username<'a> {
+    fn from(value: Cow<'a, str>) -> Self {
+        Self(encode_username(value).1)
     }
 }

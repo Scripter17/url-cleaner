@@ -1,0 +1,22 @@
+//! [`ProfileConfig`].
+
+use crate::prelude::*;
+
+/// Configuration for a [`Profile`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+pub struct ProfileConfig {
+    /// The [`ParamsDiff`].
+    ///
+    /// Defaults to the default [`ParamsDiff`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub params_diff: ParamsDiff
+}
+
+impl ProfileConfig {
+    /// Make a [`Profile`] with the provided [`Params`].
+    pub fn make<'a>(self, mut params: Params<'a>) -> Profile<'a> {
+        self.params_diff.apply(&mut params);
+        Profile {params}
+    }
+}

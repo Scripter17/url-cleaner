@@ -5,27 +5,21 @@ use crate::prelude::*;
 impl<'a> NonSpecialQuerySegment<'a> {
     /// If it has a value.
     pub fn has_value(&self) -> bool {
-        self.vs != 0
+        self.vs.is_some()
     }
     
     /// The [`Range::start`] of the value.
-    pub fn value_start(&self) -> Option<usize> {
-        match self.vs {
-            0 => None,
-            x => Some(x)
-        }
+    fn value_start(&self) -> Option<usize> {
+        self.vs.map(NonZero::get)
     }
 
     /// The [`Range::end`] of the value.
-    pub fn value_after(&self) -> Option<usize> {
-        match self.vs {
-            0 => None,
-            _ => Some(self.len())
-        }
+    fn value_after(&self) -> Option<usize> {
+        self.vs.map(|_| self.len())
     }
 
     /// The [`Range`] of the value.
-    pub fn value_range(&self) -> Option<Range<usize>> {
+    fn value_range(&self) -> Option<Range<usize>> {
         Some(self.value_start()? .. self.value_after()?)
     }
 
@@ -44,21 +38,21 @@ impl<'a> NonSpecialQuerySegment<'a> {
 
     /// The decoded value.
     pub fn value(&self) -> Option<Cow<'_, str>> {
-        Some(PartTranscoder::QueryPart.decode_lossy(self.raw_value()?.into()))
+        Some(lossy_decode_query_part(self.raw_value()?).1)
     }
 
     /// Consume and keep only the value.
     pub fn into_value(self) -> Option<Cow<'a, str>> {
-        Some(PartTranscoder::QueryPart.decode_lossy(self.into_raw_value()?))
+        Some(lossy_decode_query_part(self.into_raw_value()?).1)
     }
 
     /// Set the value.
     pub fn set_value(&mut self, value: &str) {
-        let value = PartTranscoder::QueryPart.encode(value.into());
+        let value = encode_query_part(value).1;
         match self.value_range() {
             Some(range) => self.raw.replace_range(range, &value),
             None => {
-                self.vs = self.len() + 1;
+                self.vs = NonZero::new(self.len() + 1);
                 self.raw.to_mut().extend(["=", &value]);
             }
         }

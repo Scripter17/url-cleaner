@@ -4,17 +4,15 @@ use crate::prelude::*;
 
 impl MaybeNonSpecialQuery<'_> {
     /// [`Self::filter`] but chainable.
-    pub fn filtered<F: FnMut(&NonSpecialQuerySegment<'_>) -> bool>(mut self, f: F) -> Self {
-        self.filter(f);
-        self
+    pub fn filtered<F: FnMut(&NonSpecialQuerySegment<'_>) -> bool>(mut self, f: F) -> (bool, Self) {
+        (self.filter(f), self)
     }
 
     /// [`Self::try_filter`] but chainable.
     /// # Errors
     /// If the call to [`Self::try_filter`] returns an error, that error is returned.
-    pub fn try_filtered<F: FnMut(&NonSpecialQuerySegment<'_>) -> Result<bool, E>, E>(mut self, f: F) -> Result<Self, E> {
-        self.try_filter(f)?;
-        Ok(self)
+    pub fn try_filtered<F: FnMut(&NonSpecialQuerySegment<'_>) -> Result<bool, E>, E>(mut self, f: F) -> Result<(bool, Self), E> {
+        Ok((self.try_filter(f)?, self))
     }
 
     /// Keeps only [`NonSpecialQuerySegment`]s matching the predicate `f`.

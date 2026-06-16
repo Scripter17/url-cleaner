@@ -48,15 +48,6 @@ impl<'a> Ipv6Host<'a> {
     }
 }
 
-impl From<Ipv6Addr> for Ipv6Host<'static> {
-    fn from(value: Ipv6Addr) -> Self {
-        Self {
-            host: format!("[{value}]").into(),
-            details: value.into()
-        }
-    }
-}
-
 impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
     type Error = InvalidIpv6Host;
 
@@ -68,17 +59,6 @@ impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
     }
 }
 
-impl<'a> TryFrom<IpHost<'a>> for Ipv6Host<'a> {
-    type Error = Ipv4Host<'a>;
-
-    fn try_from(value: IpHost<'a>) -> Result<Self, Self::Error> {
-        match value {
-            IpHost::V4(x) => Err(x),
-            IpHost::V6(x) => Ok(x),
-        }
-    }
-}
-
 impl<'a> TryFrom<Host<'a>> for Ipv6Host<'a> {
     type Error = Host<'a>;
 
@@ -86,6 +66,26 @@ impl<'a> TryFrom<Host<'a>> for Ipv6Host<'a> {
         match value {
             Host::Ipv6(x) => Ok(x),
             x => Err(x)
+        }
+    }
+}
+
+impl<'a> TryFrom<IpHost<'a>> for Ipv6Host<'a> {
+    type Error = Ipv4Host<'a>;
+
+    fn try_from(value: IpHost<'a>) -> Result<Self, Self::Error> {
+        match value {
+            IpHost::V4(x) => Err(x),
+            IpHost::V6(x) => Ok (x),
+        }
+    }
+}
+
+impl From<Ipv6Addr> for Ipv6Host<'static> {
+    fn from(value: Ipv6Addr) -> Self {
+        Self {
+            host: format!("[{value}]").into(),
+            details: value.into()
         }
     }
 }

@@ -17,7 +17,20 @@ use axum::{
 use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::prelude::*;
 
+mod prelude {
+    pub use serde::{Serialize, Deserialize};
+    pub use better_url::prelude::*;
+    pub use bytes::Bytes;
+    pub use async_stream::stream;
+    pub use futures_util::StreamExt;
+    pub use axum::{
+        response::{IntoResponse, Response},
+        body::Body
+    };
+}
+
 mod clean;
+mod userscript_bench;
 
 /// The verson.
 const VERSION   : &str = env!("CARGO_PKG_VERSION");
@@ -159,9 +172,10 @@ async fn main() {
             version    : env!("CARGO_PKG_VERSION"   ).into(),
             password_required: state.passwords.is_some()
         })))
-        .route("/cleaner" , get(async || &*state.cleaner_string))
-        .route("/profiles", get(async || &*state.profiles_string))
-        .route("/clean"   , any(clean::clean))
+        .route("/cleaner"         , get(async || &*state.cleaner_string))
+        .route("/profiles"        , get(async || &*state.profiles_string))
+        .route("/clean"           , any(clean::clean))
+        .route("/userscript-bench", get(userscript_bench::userscript_bench))
         .with_state(state);
 
     let addr = std::net::SocketAddr::new(args.ip, args.port);

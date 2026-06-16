@@ -32,8 +32,8 @@ impl CowStrExt for Cow<'_, str> {
                 }
                 match range.start_bound() {
                     Bound::Unbounded => {},
-                    Bound::Excluded(&y) => x.replace_range(..=y, ""),
-                    Bound::Included(&y) => x.replace_range(..y, "")
+                    Bound::Excluded(&y) => drop(x.drain(..=y)),
+                    Bound::Included(&y) => drop(x.drain(.. y)),
                 }
             },
             Cow::Borrowed(x) => *x = &x[(range.start_bound().cloned(), range.end_bound().cloned())]
@@ -42,10 +42,10 @@ impl CowStrExt for Cow<'_, str> {
 
     fn replace_range<B: RangeBounds<usize>>(&mut self, range: B, with: &str) {
         match (range.start_bound(), range.end_bound(), with) {
-            (Bound::Included(0) | Bound::Unbounded, Bound::Excluded(x), "") => self.retain_range((Bound::Included(x), Bound::Unbounded)),
-            (Bound::Included(0) | Bound::Unbounded, Bound::Included(x), "") => self.retain_range((Bound::Excluded(x), Bound::Unbounded)),
-            (Bound::Included(x)                   , Bound::Unbounded  , "") => self.retain_range((Bound::Unbounded, Bound::Excluded(x))),
-            (Bound::Excluded(x)                   , Bound::Unbounded  , "") => self.retain_range((Bound::Unbounded, Bound::Included(x))),
+            (Bound::Included(0) | Bound::Unbounded, Bound::Excluded(x), "") => self.retain_range((Bound::Included(x), Bound::Unbounded  )),
+            (Bound::Included(0) | Bound::Unbounded, Bound::Included(x), "") => self.retain_range((Bound::Excluded(x), Bound::Unbounded  )),
+            (Bound::Included(x)                   , Bound::Unbounded  , "") => self.retain_range((Bound::Unbounded  , Bound::Excluded(x))),
+            (Bound::Excluded(x)                   , Bound::Unbounded  , "") => self.retain_range((Bound::Unbounded  , Bound::Included(x))),
             _ => self.to_mut().replace_range(range, with)
         }
     }

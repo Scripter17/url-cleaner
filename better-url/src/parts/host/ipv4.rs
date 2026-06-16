@@ -14,6 +14,29 @@ pub struct Ipv4Host<'a> {
 }
 
 impl<'a> Ipv4Host<'a> {
+    /// Make a new [`Self`] from an already percent decoded input.
+    /// # Errors
+    /// If the call to [`Ipv4Details::parse`] returns an error, that error is returned.
+    pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
+        let value = value.into();
+        let details = value.parse()?;
+        Ok(Self {
+            details,
+            host: details.parsed.to_string().into(),
+        })
+    }
+
+    /// Make a new [`Self`] from a raw/literal input.
+    /// # Errors
+    /// If the call to [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
+    pub fn new_raw<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
+        let value = value.into();
+        Ok(Self {
+            details: Ipv4Addr::from_str(&value).map_err(|_| InvalidIpv4Host)?.into(),
+            host: value
+        })
+    }
+
     /// The host as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.host
@@ -48,42 +71,11 @@ impl<'a> Ipv4Host<'a> {
     }
 }
 
-impl From<Ipv4Addr> for Ipv4Host<'static> {
-    fn from(value: Ipv4Addr) -> Self {
-        Self {
-            host: value.to_string().into(),
-            details: value.into()
-        }
-    }
-}
-
 impl<'a> TryFrom<Cow<'a, str>> for Ipv4Host<'a> {
     type Error = InvalidIpv4Host;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        if let Ok(x) = value.parse::<Ipv4Addr>() {
-            Ok(Self {
-                details: x.into(),
-                host: value
-            })
-        } else {
-            let details = value.parse()?;
-            Ok(Self {
-                details,
-                host: details.parsed.to_string().into(),
-            })
-        }
-    }
-}
-
-impl<'a> TryFrom<IpHost<'a>> for Ipv4Host<'a> {
-    type Error = Ipv6Host<'a>;
-
-    fn try_from(value: IpHost<'a>) -> Result<Self, Self::Error> {
-        match value {
-            IpHost::V4(x) => Ok(x),
-            IpHost::V6(x) => Err(x),
-        }
+        Self::new_percent_decoded(lossy_percent_decode(value).1)
     }
 }
 
@@ -94,6 +86,26 @@ impl<'a> TryFrom<Host<'a>> for Ipv4Host<'a> {
         match value {
             Host::Ipv4(x) => Ok(x),
             x => Err(x)
+        }
+    }
+}
+
+impl<'a> TryFrom<IpHost<'a>> for Ipv4Host<'a> {
+    type Error = Ipv6Host<'a>;
+
+    fn try_from(value: IpHost<'a>) -> Result<Self, Self::Error> {
+        match value {
+            IpHost::V4(x) => Ok (x),
+            IpHost::V6(x) => Err(x),
+        }
+    }
+}
+
+impl From<Ipv4Addr> for Ipv4Host<'static> {
+    fn from(value: Ipv4Addr) -> Self {
+        Self {
+            host: value.to_string().into(),
+            details: value.into()
         }
     }
 }

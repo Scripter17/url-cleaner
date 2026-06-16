@@ -32,14 +32,19 @@ impl BetterUrl {
         Some(&self.as_str()[self.port_range()?])
     }
 
-    /// [`url::Url`] or [`Scheme::default_port`].
-    pub fn port_or_default(&self) -> Option<u16> {
-        self.port().or_else(|| self.scheme().default_port())
+    /// [`Self::port_str`] or [`SchemeDetails::default_port_str`].
+    pub fn port_str_or_known_default(&self) -> Option<&str> {
+        self.port_str().or_else(|| self.scheme_details().default_port_str())
     }
 
-    /// [`Self::port_str`] or [`Scheme::default_port_str`].
-    pub fn port_str_or_default(&self) -> Option<&str> {
-        self.port_str().or_else(|| self.scheme().default_port_str())
+    /// The port.
+    pub fn port(&self) -> Option<u16> {
+        self.url.port()
+    }
+
+    /// [`Self::port`] or [`SchemeDetails::default_port`].
+    pub fn port_or_known_default(&self) -> Option<u16> {
+        self.port().or_else(|| self.scheme_details().default_port())
     }
 
     /// Set the port.
@@ -50,7 +55,7 @@ impl BetterUrl {
     ///
     /// If the scheme is `file`, returns the error [`SetPortError::SchemeIsFile`].
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_port(&mut self, port: Option<u16>) -> Result<(), SetPortError> {
+    pub fn set_port(&mut self, port: Option<u16>) -> Result<bool, SetPortError> {
         if self.host().ok_or(NoHost)?.is_empty() {
             Err(SetPortError::EmptyHost)?;
         }
@@ -59,10 +64,11 @@ impl BetterUrl {
             Err(SetPortError::SchemeIsFile)?;
         }
 
-        if port != self.port_or_default() {
+        if port != self.port_or_known_default() {
             self.url.set_port(port).expect("To always work.");
+            Ok(true)
+        } else {
+            Ok(false)
         }
-
-        Ok(())
     }
 }

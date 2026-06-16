@@ -50,9 +50,9 @@ impl BetterUrl {
         }
     }
 
-    /// [`MaybeQuery::set`].
+    /// [`MaybeFragmentQuery::set`].
     /// # Errors
-    /// If the call to [`MaybeQuery::set`] returns an error, that error is returned.
+    /// If the call to [`MaybeFragmentQuery::set`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::set_fragment`] returns an error, that error is returned.
     pub fn set_fragment_query_param(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetFragmentError> {
@@ -66,10 +66,10 @@ impl BetterUrl {
         }
     }
 
-    /// [`MaybeQuery::filtered`].
+    /// [`MaybeFragmentQuery::filtered`].
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn filter_fragment_query<F: FnMut(&QuerySegment<'_>) -> bool>(&mut self, f: F) -> bool {
-        if let (true, fragment) = self.fragment_query().filtered(f) {
+        if let (true, fragment) = MaybeQuery::from(self.fragment_query()).filtered(f) {
             self.set_fragment(fragment.into_owned()).expect("To be at most u32::MAX.");
             true
         } else {
@@ -77,12 +77,12 @@ impl BetterUrl {
         }
     }
 
-    /// [`MaybeQuery::try_filtered`].
+    /// [`MaybeFragmentQuery::try_filtered`].
     /// # Errors
-    /// If the call to [`MaybeQuery::try_filtered`] returns an error, that error is returned.
+    /// If the call to [`MaybeFragmentQuery::try_filtered`] returns an error, that error is returned.
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn try_filter_fragment_query<F: FnMut(&QuerySegment<'_>) -> Result<bool, E>, E>(&mut self, f: F) -> Result<bool, E> {
-        if let (true, fragment) = self.fragment_query().try_filtered(f)? {
+        if let (true, fragment) = MaybeQuery::from(self.fragment_query()).try_filtered(f)? {
             self.set_fragment(fragment.into_owned()).expect("To be at most u32::MAX.");
             Ok(true)
         } else {

@@ -1,6 +1,6 @@
 //! Details.
 
-mod host;
+mod either;
 mod ip;
 mod ipv4;
 mod ipv6;
@@ -8,7 +8,7 @@ mod domain;
 mod opaque;
 mod empty;
 
-pub use host::*;
+pub use either::*;
 pub use ip::*;
 pub use ipv4::*;
 pub use ipv6::*;

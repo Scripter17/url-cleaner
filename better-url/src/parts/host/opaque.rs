@@ -4,10 +4,12 @@ use crate::prelude::*;
 
 /// An opauqe host.
 ///
-/// Please note that while the [official algorithm](https://url.spec.whatwg.org/#concept-opaque-host-parser) implicitly allows the empty string,
+/// Please note that while the [opaque host parser](https://url.spec.whatwg.org/#concept-opaque-host-parser) implicitly allows the empty string,
 /// the [opaque host type itself](https://url.spec.whatwg.org/#opaque-host) is specified to not be empty.
 ///
-/// Therefore, at least for now, I have chosen to have the empty string return an error.
+/// Therefore, empty opaque hosts are rejected.
+///
+/// See [servo/rust-url#1112](https://github.com/servo/rust-url/issues/1112) and [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
 #[derive(Debug, Clone)]
 pub struct OpaqueHost<'a> {
     /// The host.
@@ -27,7 +29,7 @@ impl<'a> OpaqueHost<'a> {
         self.details
     }
 
-    /// Unwrap into the host and details.
+    /// Turn into the inner [`Cow`] and [`OpaqueHostDetails`].
     pub fn into_parts(self) -> (Cow<'a, str>, OpaqueHostDetails) {
         (self.host, self.details)
     }
@@ -57,7 +59,7 @@ impl<'a> TryFrom<Cow<'a, str>> for OpaqueHost<'a> {
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Ok(Self {
             details: value.parse()?,
-            host: PartTranscoder::OpaqueHost.encode(value),
+            host: encode_opaque_host(value).1,
         })
     }
 }

@@ -3,21 +3,26 @@
 use crate::prelude::*;
 
 impl BetterUrl {
+    /// Make a new [`Query`] for this URL.
+    pub fn new_query<'a, T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(&self, query: T) -> MaybeQuery<'a> {
+        match self.is_special() {
+            true  => MaybeQuery::new_special    (query),
+            false => MaybeQuery::new_non_special(query),
+        }
+    }
+
     /// Set the query.
     /// # Errors
     /// If setting a query that's too long, returns the error [`TooLong`].
     pub fn set_query<'a, T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(&mut self, query: T) -> Result<bool, SetQueryError> {
-        let query = match self.is_special() {
-            true  => MaybeQuery::new_special    (query),
-            false => MaybeQuery::new_non_special(query),
-        };
+        let query = self.new_query(query);
 
         let new_len = match (self.query_str(), query.as_str()) {
-            (None     , None     ) => return Ok(false),
+            (None     , None     )               => return Ok(false),
             (Some(old), Some(new)) if old == new => return Ok(false),
 
-            (None     , Some(new)) => self.len() + new.len() + 1,
-            (Some(old), None     ) => self.len() - old.len() - 1,
+            (None     , Some(new)) => self.len()             + new.len() + 1,
+            (Some(old), None     ) => self.len() - old.len()             - 1,
             (Some(old), Some(new)) => self.len() - old.len() + new.len(),
         };
 

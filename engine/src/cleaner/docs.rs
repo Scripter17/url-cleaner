@@ -1,6 +1,5 @@
 //! [`Docs`].
 
-use serde::{Serialize, Deserialize};
 use serde_with::*;
 use indexmap::IndexMap;
 

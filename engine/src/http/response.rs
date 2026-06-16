@@ -1,263 +1,156 @@
 //! [`HttpResponseHandler`].
 
-#![allow(unused_assignments, reason = "False positive.")]
-
-use std::borrow::Cow;
 use std::io::Read;
 
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-#[expect(unused_imports, reason = "Used in doc comments.")]
-use reqwest::header::HeaderValue;
 use reqwest::StatusCode;
 
 use crate::prelude::*;
 
-/// What part of a response a [`HttpRequestConfig`] should return.
-///
-/// Defaults to [`Self::Body`].
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, Suitability)]
+/// How to turn an HTTP response into a string to use.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum HttpResponseHandler {
-    /// Always returns [`None`].
-    ///
-    /// Deserializes from and serializes to `null`.
-    None,
-    /// Return the value of a [`Self::String::0`].
+    /// If the status is 100-199, the inner [`Self`].
     /// # Errors
-    #[doc = edoc!(geterr(StringSource))]
-    String(StringSource),
-    /// Always returns [`HttpResponseHandlerError::ExplicitError`] with the included error.
+    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required1xx`].
+    Require1xx(Box<Self>),
+    /// If the status is 200-299, the inner [`Self`].
     /// # Errors
-    /// Always returns the error [`HttpResponseHandlerError::ExplicitError`].
-    Error(String),
-    /// If [`Self::TryElse::try`]'s call to [`Self::handle`] returns an error, instead return the value of [`Self::TryElse::else`].
+    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required2xx`].
+    Require2xx(Box<Self>),
+    /// If the status is 300-399, the inner [`Self`].
     /// # Errors
-    #[doc = edoc!(callerrte(Self::handle, HttpResponseHandler))]
+    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required3xx`].
+    Require3xx(Box<Self>),
+    /// If the status is 400-499, the inner [`Self`].
+    /// # Errors
+    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required4xx`].
+    Require4xx(Box<Self>),
+    /// If the status is 500-599, the inner [`Self`].
+    /// # Errors
+    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required5xx`].
+    Require5xx(Box<Self>),
+
+    /// [`Self::TryElse::try`], or [`Self::TryElse::else`] if it returns [`Err`].
     TryElse {
-        /// The hanlder to try to use.
-        ///
-        /// If it's an error, use [`Self::TryElse::else`].
+        /// The try.
         r#try: Box<Self>,
-        /// The handler to use if [`Self::TryElse::try`] is an error.
+        /// The else.
         r#else: Box<Self>
     },
-    /// [`Self::TryElse`] with a [`Self::Modified`] only if the first [`Self`] worked.
-    /// # Errors
-    #[doc = edoc!(applyerr(StringModification), callerrte(Self::handle, HttpResponseHandler))]
-    TryThenModifiedOrElse {
-        /// The [`Self`] to try.
-        r#try: Box<Self>,
-        /// The [`StringModification`] to apply if successful.
-        modification: StringModification,
-        /// The [`Self`] to use if [`Self::TryThenModifiedOrElse`] was unsuccessful.
-        r#else: Box<Self>
-    },
-    /// Calls [`Self::handle`] on each contained [`Self`] in order, returning the first to return [`Ok`].
-    /// # Errors
-    #[doc = edoc!(callerrfne(Self::handle, HttpResponseHandler))]
-    FirstNotError(Vec<Self>),
-    /// Print debug info about the contained [`Self`] and its call to [`Self::handle`].
-    ///
-    /// The exact info printed is unspecified and subject to change at any time for any reason.
-    /// # Suitability
-    /// Always unsuitable to be in the bundled cleaner.
-    #[suitable(never)]
-    Debug(Box<Self>),
-    /// If [`Self::NoneTo::handler`] is [`Some`], return it. Otherwise return [`Self::NoneTo::if_none`].
-    /// # Errors
-    #[doc = edoc!(callerr(Self::handle, 2))]
+    /// [`Self::NoneTo::handler`], or, if it's [`None`], [`Self::NoneTo::if_none`].
     NoneTo {
-        /// The handler to return if it's [`Some`].
+        /// The try.
         handler: Box<Self>,
-        /// The handler to return if [`Self::NoneTo::handler`] is [`None`].
-        if_none: Box<Self>
+        /// The else.
+        if_none: Box<Self>,
     },
-    /// If the handler of the contained [`Self`] is [`None`], return the empty string.
-    /// # Errors
-    #[doc = edoc!(callerr(Self::handle))]
-    NoneToEmpty(Box<Self>),
-    /// If the handler of the contained [`Self`] is the empty string, return [`None`].
-    /// # Errors
-    #[doc = edoc!(callerr(Self::handle))]
-    EmptyToNone(Box<Self>),
-    /// If [`Self::AssertMatches::handler`] satisfies [`Self::AssertMatches::matcher`], return it. Otherwise return the error [`StringSourceError::AssertMatchesFailed`].
-    /// # Errors
-    /// If [`Self::AssertMatches::handler`] doesn't satisfy [`Self::AssertMatches::matcher`], returns the error [`StringSourceError::AssertMatchesFailed`].
-    AssertMatches {
-        /// The [`Self`] to assert matches [`Self::AssertMatches::matcher`].
-        handler: Box<Self>,
-        /// The [`StringMatcher`] to match [`Self::AssertMatches::handler`].
-        matcher: StringMatcher,
-        /// The error message. Defaults to [`Self::None`].
-        #[serde(default, skip_serializing_if = "is_default")]
-        message: StringSource
-    },
-
-    /// Get the response body.
-    /// # Errors
-    /// If the call to [`reqwest::blocking::Response::text`] returns an error, that error is returned.
-    #[default]
-    Body,
-    /// Get the specified header.
-    /// # Errors
-    #[doc = edoc!(geterr(StringSource), getnone(StringSource, HttpResponseHandlerError), callerr(str::from_utf8))]
-    Header(StringSource),
-    /// Get the final URL.
-    Url,
-
-    /// Applies [`Self::Modified::modification`] to [`Self::Modified::handler`].
-    /// # Erorrs
-    #[doc = edoc!(callerr(Self::handle), applyerr(StringModification))]
+    /// [`Self::Modified::handler`] + [`Self::Modified::modification`].
     Modified {
-        /// The [`Self`] to use.
+        /// The [`Self`].
         handler: Box<Self>,
-        /// The [`StringModification`] to apply.
+        /// The [`StringModification`].
         modification: StringModification
     },
-    /// Searches the body until one of the [`HttpBodyExtractor::prefix`]es is found, then processes it and the remainder of the body per that [`HttpBodyExtractor`].
+
+    /// The body.
+    ///
+    /// The default.
+    #[default]
+    Body,
+    /// The specified header.
+    Header(StringSource),
+    /// The URL.
+    Url,
+
+    /// Everything between the first found [`BodyExtractor::prefix`] and its [`BodyExtractor::suffix`], optionally including the prefix and/or suffix.
     /// # Errors
-    #[doc = edoc!(geterr(StringSource, 3))]
+    /// If no prefix is found within [`Self::ExtractFromBody::limit`], returns the error [`HttpResponseHandlerError::PrefixNotFoundWithinLimit`].
     ///
-    /// If no extractors are given, returns the error [`HttpResponseHandlerError::NoExtractors`].
-    ///
-    #[doc = edoc!(callerr(std::io::Bytes::next, 3))]
-    ///
-    /// If no prefix is found, returns the error [`HttpResponseHandlerError::PrefixNotFound`].
-    ///
-    /// If the selected extractor's suffix isn't found, returns the error [`HttpResponseHandlerError::SuffixNotFound`].
-    ///
-    /// If [`Self::ExtractFromBody::limit`] bytes are read without finding a match, returns the error [`HttpResponseHandlerError::LimitReached`].
-    ///
-    #[doc = edoc!(callerr(String::try_from), applyerr(StringModification))]
+    /// If the suffix is found within [`Self::ExtractFromBody::limit`], returns the error [`HttpResponseHandlerError::SuffixNotFoundWithinLimit`].
     ExtractFromBody {
-        /// The extractors to use.
-        extractors: Vec<HttpBodyExtractor>,
-        /// The maximum number of bytes to search.
+        /// The [`BodyExtractors`].
+        extractors: Vec<BodyExtractor>,
+        /// The max amount of bytes to read.
         ///
         /// Defaults to 8MiB.
         #[serde(default = "default_limit", skip_serializing_if = "is_default_limit")]
         limit: usize
     },
-
-    /// If the response has a 1xx status code, use [`Self::Require1xx::0`].
-    /// # Errors
-    /// If the response has a non-1xx status code, returns the error [`HttpResponseHandlerError::Required1xx`].
-    Require1xx(Box<Self>),
-    /// If the response has a 2xx status code, use [`Self::Require2xx::0`].
-    /// # Errors
-    /// If the response has a non-2xx status code, returns the error [`HttpResponseHandlerError::Required2xx`].
-    Require2xx(Box<Self>),
-    /// If the response has a 3xx status code, use [`Self::Require3xx::0`].
-    /// # Errors
-    /// If the response has a non-3xx status code, returns the error [`HttpResponseHandlerError::Required3xx`].
-    Require3xx(Box<Self>),
-    /// If the response has a 4xx status code, use [`Self::Require4xx::0`].
-    /// # Errors
-    /// If the response has a non-4xx status code, returns the error [`HttpResponseHandlerError::Required4xx`].
-    Require4xx(Box<Self>),
-    /// If the response has a 5xx status code, use [`Self::Require5xx::0`].
-    /// # Errors
-    /// If the response has a non-5xx status code, returns the error [`HttpResponseHandlerError::Required5xx`].
-    Require5xx(Box<Self>),
 }
 
+/// Serde helper function.
+const fn default_limit() -> usize {8 * 1024 * 1024}
+/// Serde helper function.
+const fn is_default_limit(x: &usize) -> bool {*x == default_limit()}
+
 /// An HTTP body extractor.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Suitability)]
-pub struct HttpBodyExtractor {
-    /// The prefix to search for.
-    ///
-    /// If [`None`], none of the body is skipped.
-    pub prefix: StringSource,
-    /// The suffix to search for.
-    ///
-    /// If [`None`], the entire body is read.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+pub struct BodyExtractor {
+    /// The prefix to look for.
+    pub prefix      : StringSource,
+    /// The suffix to look for.
     ///
     /// Defaults to [`StringSource::None`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub suffix: StringSource,
-    /// If [`true`], remove the prefix from the result.
+    pub suffix      : StringSource,
+    /// If the prefix should be removed.
     ///
-    /// Defaults to [`false`].
+    /// Defaults to [`FlagSource::False`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub strip_prefix: FlagSource,
-    /// If [`true`], remove the suffix from the result.
+    /// If the suffix should be removed.
     ///
-    /// Defaults to [`false`].
+    /// Defaults to [`FlagSource::False`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub strip_suffix: FlagSource,
-    /// The [`StringModification`] to use to parse the extracted segment.
+    /// The [`StringModification`] to apply to the extracted value.
     ///
     /// Defaults to [`StringModification::None`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub parser: StringModification
+    pub parser      : StringModification,
 }
-
-/// Serder helper function.
-const fn default_limit() -> usize {8 * 1024 * 1024}
-/// Serder helper function.
-const fn is_default_limit(x: &usize) -> bool {*x == default_limit()}
 
 /// The enum of errors [`HttpResponseHandler::handle`] can return.
 #[derive(Debug, Error)]
 pub enum HttpResponseHandlerError {
-    /// Returned when a [`HttpResponseHandler::Error`] is used.
-    #[error("Explicit error: {0}")]
-    ExplicitError(String),
-    /// Returned when a [`HttpResponseHandler::AssertMatches`]'s assertion fails.
-    #[error("AssertMatches failed: {0}")]
-    AssertMatchesFailed(String),
-    /// Returned when both [`HttpResponseHandler`]s in a [`HttpResponseHandler::TryElse`] return errors.
-    #[error("Both HttpResponseHandlers in a HttpResponseHandler::TryElse returned errors.")]
-    TryElseError {
-        /// The error returned by [`HttpResponseHandler::TryElse::try`].
-        try_error: Box<Self>,
-        /// The error returned by [`HttpResponseHandler::TryElse::else`].
-        else_error: Box<Self>
-    },
-    /// Returned when all [`HttpResponseHandler`]s in a [`HttpResponseHandler::FirstNotError`] error.
-    #[error("All HttpResponseHandlers in a HttpResponseHandler::FirstNotError errored.")]
-    FirstNotErrorErrors(Vec<Self>),
+    /// [`TryElseError`].
+    #[error(transparent)]
+    TryElseError(#[from] Box<TryElseError<Self>>),
 
-    /// Returned when a [`std::string::FromUtf8Error`] is encountered.
+    /// [`std::string::FromUtf8Error`].
     #[error(transparent)]
     FromUtf8Error(#[from] std::string::FromUtf8Error),
-    /// Returned when a [`std::str::Utf8Error`] is encountered.
+    /// [`std::str::Utf8Error`].
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
-    /// Returned when a [`std::io::Error`] is encountered.
+    /// [`std::io::Error`].
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 
-    /// Returned when a [`reqwest::Error`] is encountered.
+    /// [`reqwest::Error`].
     #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
 
-    /// Returned when a [`StringSourceError`] is encountered.
+    /// [`StringSourceError`].
     #[error(transparent)]
     StringSourceError(#[from] Box<StringSourceError>),
-    /// [`StringSourceIsNone`].
+    /// [`StringNotFound`].
     #[error(transparent)]
-    StringSourceIsNone(#[from] StringSourceIsNone),
-    /// Returned when a [`StringModificationError`] is encountered.
-    #[error(transparent)]
-    StringModificationError(#[from] StringModificationError),
-    /// Returned when a [`StringMatcherError`] is encountered.
-    #[error(transparent)]
-    StringMatcherError(#[from] StringMatcherError),
-    /// Returnws when a [`FlagSourceError`] is encountered.
+    StringNotFound(#[from] StringNotFound),
+    /// [`FlagSourceError`].
     #[error(transparent)]
     FlagSourceError(#[from] FlagSourceError),
+    /// [`StringModificationError`].
+    #[error(transparent)]
+    StringModificationError(#[from] Box<StringModificationError>),
 
-    /// Returned whan the extracton prefix isn't found.
-    #[error("The extraction prefix wasn't found.")]
-    PrefixNotFound,
-    /// Returned whan the extracton suffix isn't found.
-    #[error("The extraction suffix wasn't found.")]
-    SuffixNotFound,
-    /// Returned when a limit of [`Self::LimitReached::0`] is reached.
-    #[error("The limit of {0} bytes was reached.")]
-    LimitReached(usize),
+    /// Returned when no [`BodyExtractor::prefix`] is found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
+    #[error("No BodyExtractor::prefix was found within HttpResponseHandler::ExtractFromBody::limit bytes.")]
+    PrefixNotFoundWithinLimit,
+    /// Returned when the [`BodyExtractor::suffix`] is found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
+    #[error("The BodyExtractor::suffix wasn't found within HttpResponseHandler::ExtractFromBody::limit bytes.")]
+    SuffixNotFoundWithinLimit,
     /// Returned when [`HttpResponseHandler::ExtractFromBody`] is used with zero extractors.
     #[error("ExtractFromBody was used with zero extractors.")]
     NoExtractors,
@@ -279,157 +172,87 @@ pub enum HttpResponseHandlerError {
     Required5xx(StatusCode)
 }
 
-impl From<StringSourceError> for HttpResponseHandlerError {
-    fn from(value: StringSourceError) -> Self {
-        Self::StringSourceError(Box::new(value))
-    }
-}
+impl From<StringModificationError> for HttpResponseHandlerError {fn from(value: StringModificationError) -> Self {Box::new(value).into()}}
+impl From<StringSourceError      > for HttpResponseHandlerError {fn from(value: StringSourceError      ) -> Self {Box::new(value).into()}}
+impl From<TryElseError<Self>     > for HttpResponseHandlerError {fn from(value: TryElseError<Self>     ) -> Self {Box::new(value).into()}}
 
 impl HttpResponseHandler {
-    /// Gets the specified part of a [`reqwest::blocking::Response`].
+    /// Handle the response.
     /// # Errors
-    /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn handle<'j>(&'j self, response: &mut reqwest::blocking::Response, task_state: &TaskState<'j>) -> Result<Option<String>, HttpResponseHandlerError> {
+    /// See each variant of [`Self`] for details.
+    pub fn handle<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, response: &mut reqwest::blocking::Response) -> Result<Option<Cow<'t, str>>, HttpResponseHandlerError> {
         Ok(match self {
-            Self::String(string) => get_option_string!(string),
-            Self::None => None,
-            Self::Error(msg) => Err(HttpResponseHandlerError::ExplicitError(msg.clone()))?,
-            Self::TryElse{r#try, r#else} => match r#try.handle(response, task_state) {
-                Ok(x) => x,
-                Err(e1) => match r#else.handle(response, task_state) {
-                    Ok(x) => x,
-                    Err(e2) => Err(HttpResponseHandlerError::TryElseError {try_error: Box::new(e1), else_error: Box::new(e2)})?
-                }
-            },
-            Self::TryThenModifiedOrElse {r#try, modification, r#else} => match r#try.handle(response, task_state) {
-                Ok(x) => {
-                    let mut ret = x.map(Cow::Owned);
-                    modification.apply(&mut ret, task_state)?;
-                    ret.map(Cow::into_owned)
-                },
-                Err(e1) => match r#else.handle(response, task_state) {
-                    Ok(x) => x,
-                    Err(e2) => Err(HttpResponseHandlerError::TryElseError {try_error: Box::new(e1), else_error: Box::new(e2)})?
-                }
-            },
-            Self::FirstNotError(sources) => {
-                let mut errors = Vec::new();
-                for source in sources {
-                    match source.handle(response, task_state) {
-                        Ok(x) => return Ok(x),
-                        Err(e) => errors.push(e)
-                    }
-                }
-                Err(HttpResponseHandlerError::FirstNotErrorErrors(errors))?
-            },
-            Self::Debug(handler) => {
-                let ret = handler.handle(response, task_state);
-                eprintln!("=== HttpResponseHandler::Debug ===\nHandler: {handler:?}\nret: {ret:?}");
-                ret?
-            },
-            Self::NoneTo {handler, if_none} => match handler.handle(response, task_state)? {
+            Self::NoneTo {handler, if_none} => match handler.handle(task_state, args, response)? {
                 Some(x) => Some(x),
-                None    => if_none.handle(response, task_state)?
+                None    => if_none.handle(task_state, args, response)?,
             },
-            Self::EmptyToNone(handler) => {
-                let x = handler.handle(response, task_state)?;
-                if x == Some("".into()) {
-                    None
-                } else {
-                    x
-                }
+            Self::Modified {handler, modification} => {
+                let mut temp = handler.handle(task_state, args, response)?;
+                modification.apply(task_state, args, &mut temp)?;
+                temp
             },
-            Self::NoneToEmpty(handler) => Some(handler.handle(response, task_state)?.unwrap_or("".into())),
-            Self::AssertMatches {handler, matcher, message} => {
-                let ret = handler.handle(response, task_state)?;
-                if matcher.check(ret.as_deref(), task_state)? {
-                    ret
-                } else {
-                    Err(HttpResponseHandlerError::AssertMatchesFailed(message.get(task_state)?.unwrap_or_default().into()))?
+            Self::TryElse {r#try, r#else} => match r#try.handle(task_state, args, response) {
+                Ok(x) => x,
+                Err(try_error) => match r#else.handle(task_state, args, response) {
+                    Ok(x) => x,
+                    Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
             },
 
-            Self::Body => {
-                let mut ret = String::new();
-                response.read_to_string(&mut ret)?;
-                Some(ret)
-            },
-            Self::Header(name) => match response.headers().get(get_str!(name)) {
-                Some(value) => Some(str::from_utf8(value.as_bytes())?.into()),
+            Self::Require1xx(handler) => if response.status().is_informational() {handler.handle(task_state, args, response)?} else {Err(HttpResponseHandlerError::Required1xx(response.status()))?},
+            Self::Require2xx(handler) => if response.status().is_success      () {handler.handle(task_state, args, response)?} else {Err(HttpResponseHandlerError::Required2xx(response.status()))?},
+            Self::Require3xx(handler) => if response.status().is_redirection  () {handler.handle(task_state, args, response)?} else {Err(HttpResponseHandlerError::Required3xx(response.status()))?},
+            Self::Require4xx(handler) => if response.status().is_client_error () {handler.handle(task_state, args, response)?} else {Err(HttpResponseHandlerError::Required4xx(response.status()))?},
+            Self::Require5xx(handler) => if response.status().is_server_error () {handler.handle(task_state, args, response)?} else {Err(HttpResponseHandlerError::Required5xx(response.status()))?},
+
+            Self::Body => Some(Cow::Owned(String::try_from(Read::bytes(response).collect::<Result<Vec<_>, _>>()?)?)),
+            Self::Header(name) => match response.headers().get(get!(&name)) {
+                Some(value) => Some(str::from_utf8(value.as_bytes())?.to_string().into()),
                 None => None
             },
-            Self::Url => Some(response.url().as_str().to_string()),
+            Self::Url => Some(response.url().to_string().into()),
 
-            Self::Modified {handler, modification} => {
-                let mut temp = handler.handle(response, task_state)?.map(Cow::Owned);
-                modification.apply(&mut temp, task_state)?;
-                temp.map(Cow::into_owned)
-            },
             Self::ExtractFromBody {extractors, limit} => {
-                let mut ret = Vec::new();
-                let mut bytes = Read::bytes(response);
-                let mut total_read = 0;
+                let mut bytes = Read::bytes(response).take(*limit);
 
-                let prefixes = extractors.iter().map(|x| x.prefix.get(task_state)).collect::<Result<Option<Vec<_>>, _>>()?.ok_or(StringSourceIsNone)?;
+                let prefixes = extractors.iter().map(|x| x.prefix.get_some(task_state, args)).collect::<Result<Result<Vec<_>, _>, _>>()??;
 
-                let mut window = Vec::with_capacity(prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoExtractors)?);
+                let mut buf = Vec::with_capacity(prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoExtractors)?);
 
                 loop {
                     for (prefix, extractor) in prefixes.iter().zip(extractors) {
-                        if window.ends_with(prefix.as_bytes()) {
-                            if !extractor.strip_prefix.get(task_state)? {
-                                ret = prefix.clone().into_owned().into();
+                        if buf.ends_with(prefix.as_bytes()) {
+                            match get!(?extractor.strip_prefix) {
+                                false => drop(buf.drain(..buf.len() - prefix.len())),
+                                true  => buf.clear()
                             }
 
-                            let suffix = extractor.suffix.get(task_state)?;
+                            let middle_start = buf.len();
 
-                            match suffix {
-                                None => for byte in bytes {
-                                    if total_read == *limit {
-                                        Err(HttpResponseHandlerError::LimitReached(total_read))?
-                                    }
-                                    ret.push(byte?);
-                                    total_read += 1;
-                                },
-                                Some(suffix) => {
-                                    let mut extend = Vec::new();
-                                    while !extend.ends_with(suffix.as_bytes()) {
-                                        if total_read == *limit {
-                                            Err(HttpResponseHandlerError::LimitReached(total_read))?
-                                        }
-                                        extend.push(bytes.next().ok_or(HttpResponseHandlerError::SuffixNotFound)??);
-                                        total_read += 1;
-                                    }
-                                    if extractor.strip_suffix.get(task_state)? {
-                                        extend.truncate(extend.len() - suffix.len());
-                                    }
-                                    ret.extend(extend);
-                                }
+                            let suffix = get!(extractor.suffix);
+
+                            while !buf[middle_start..].ends_with(suffix.as_bytes()) {
+                                buf.push(bytes.next().ok_or(HttpResponseHandlerError::SuffixNotFoundWithinLimit)??);
                             }
 
-                            let mut temp = Some(Cow::Owned(String::try_from(ret)?));
+                            if get!(?extractor.strip_suffix) {
+                                buf.truncate(buf.len() - suffix.len());
+                            }
 
-                            extractor.parser.apply(&mut temp, task_state)?;
+                            let mut ret = Some(String::try_from(buf)?.into());
 
-                            return Ok(temp.map(Cow::into_owned));
+                            extractor.parser.apply(task_state, args, &mut ret)?;
+
+                            return Ok(ret);
                         }
                     }
-                    if total_read == *limit {
-                        Err(HttpResponseHandlerError::LimitReached(total_read))?
+
+                    if buf.len() == buf.capacity() {
+                        buf.remove(0);
                     }
-                    if window.len() == window.capacity() {
-                        window.remove(0);
-                    }
-                    window.push(bytes.next().ok_or(HttpResponseHandlerError::PrefixNotFound)??);
-                    total_read += 1;
+                    buf.push(bytes.next().ok_or(HttpResponseHandlerError::PrefixNotFoundWithinLimit)??);
                 }
             },
-
-            Self::Require1xx(handler) => if response.status().is_informational() {handler.handle(response, task_state)?} else {Err(HttpResponseHandlerError::Required1xx(response.status()))?},
-            Self::Require2xx(handler) => if response.status().is_success()       {handler.handle(response, task_state)?} else {Err(HttpResponseHandlerError::Required2xx(response.status()))?},
-            Self::Require3xx(handler) => if response.status().is_redirection()   {handler.handle(response, task_state)?} else {Err(HttpResponseHandlerError::Required3xx(response.status()))?},
-            Self::Require4xx(handler) => if response.status().is_client_error()  {handler.handle(response, task_state)?} else {Err(HttpResponseHandlerError::Required4xx(response.status()))?},
-            Self::Require5xx(handler) => if response.status().is_server_error()  {handler.handle(response, task_state)?} else {Err(HttpResponseHandlerError::Required5xx(response.status()))?},
         })
     }
 }

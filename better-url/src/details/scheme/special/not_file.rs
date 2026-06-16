@@ -23,6 +23,41 @@ impl SpecialNotFileSchemeDetails {
         SchemeType::SpecialNotFile
     }
 
+    /// If it's [`Self::Http`].
+    pub fn is_http(self) -> bool {
+        matches!(self, Self::Http)
+    }
+
+    /// If it's [`Self::Https`].
+    pub fn is_https(self) -> bool {
+        matches!(self, Self::Https)
+    }
+
+    /// If it's [`Self::Http`] or [`Self::Https`].
+    pub fn is_http_or_https(self) -> bool {
+        matches!(self, Self::Http | Self::Https)
+    }
+
+    /// If it's [`Self::Ws`].
+    pub fn is_ws(self) -> bool {
+        matches!(self, Self::Ws)
+    }
+
+    /// If it's [`Self::Wss`].
+    pub fn is_wss(self) -> bool {
+        matches!(self, Self::Wss)
+    }
+
+    /// If it's [`Self::Ws`] or [`Self::Wss`].
+    pub fn is_ws_or_wss(self) -> bool {
+        matches!(self, Self::Ws | Self::Wss)
+    }
+
+    /// If it's [`Self::Ftp`].
+    pub fn is_ftp(self) -> bool {
+        matches!(self, Self::Ftp)
+    }
+
     /// The default port.
     pub fn default_port(self) -> u16 {
         match self {

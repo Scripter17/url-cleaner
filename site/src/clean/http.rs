@@ -2,16 +2,11 @@
 
 use std::sync::Arc;
 
-use axum::{
-    extract::State,
-    response::{Response, IntoResponse},
-    body::Body
-};
-use futures_util::StreamExt;
-use async_stream::stream;
-use bytes::Bytes;
+use axum::extract::State;
 
 use url_cleaner_engine::prelude::*;
+
+use crate::prelude::*;
 
 /// `/clean` HTTP.
 pub async fn clean_http(State(state): State<&'static crate::State>, job: Job<'static>, body: Body) -> Response {

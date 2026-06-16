@@ -47,8 +47,8 @@ impl SpecialQuery<'_> {
                 Ok(old) if old == new => return Ok(false),
                 Ok(old) => self.0.replace_substr(old.as_str(), new.as_str()),
                 Err(0) => match index {
-                    0.. => self.0.to_mut().extend     (   ["&", new.as_str()]),
-                    ..0 => self.0.to_mut().insert_with(0, [new.as_str(), "&"]),
+                    0.. => self.0.to_mut().extend     (    ["&", new.as_str()]),
+                    ..0 => self.0.to_mut().insert_with(0, &[new.as_str(), "&"]),
                 },
                 Err(_) => Err(InsertNotFound)?
             },

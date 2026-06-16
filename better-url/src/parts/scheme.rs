@@ -79,34 +79,11 @@ impl<'a> Scheme<'a> {
     }
 }
 
-as_str_impls!(Scheme);
-try_from_cow_impls!(Scheme);
-
 impl<'a> TryFrom<Cow<'a, str>> for Scheme<'a> {
     type Error = InvalidScheme;
 
-    fn try_from(mut value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let mut to_lowercase = false;
-
-        let mut bytes = value.bytes();
-
-        match bytes.next() {
-            Some(b'a'..=b'z') => {},
-            Some(b'A'..=b'Z') => to_lowercase = true,
-            _ => Err(InvalidScheme)?
-        }
-
-        for b in bytes {
-            match b {
-                b'+' | b'-' | b'.' | b'a'..=b'z' => {},
-                b'A'..=b'Z' => to_lowercase = true,
-                _ => Err(InvalidScheme)?
-            }
-        }
-
-        if to_lowercase {
-            value.to_mut().make_ascii_lowercase();
-        }
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        let value = encode_scheme(value)?.1;
 
         Ok(Self {
             details: SchemeDetails::new_unchecked(&value),

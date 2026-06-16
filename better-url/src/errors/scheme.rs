@@ -12,12 +12,9 @@ pub struct InvalidScheme;
 /// The errors that can happen when setting a scheme.
 #[derive(Debug, Error)]
 pub enum SetSchemeError {
-    /// [`InvalidScheme`].
-    #[error(transparent)]
-    InvalidScheme(#[from] InvalidScheme),
-    /// [`TooLong`].
-    #[error(transparent)]
-    TooLong(#[from] TooLong),
+    /** [`InvalidScheme`]. **/ #[error(transparent)] InvalidScheme(#[from] InvalidScheme),
+    /** [`TooLong`].       **/ #[error(transparent)] TooLong      (#[from] TooLong      ),
+
     /// Returned when attempting to set a cannot-be-a-base URL's scheme to a non-file spcial scheme.
     #[error("Attemppted to set a cannot-be-a-base URL's scheme to a non-file special scheme.")]
     CannotBeABaseToSpecialNotFile,
@@ -33,10 +30,4 @@ pub enum SetSchemeError {
     /// Returned when attemtping to set a URL without a host to a special scheme.
     #[error("Attemtpted to set a URL without a host to a special scheme.")]
     NoHostToSpecial,
-}
-
-impl From<std::convert::Infallible> for SetSchemeError {
-    fn from(value: std::convert::Infallible) -> Self {
-        match value {}
-    }
 }

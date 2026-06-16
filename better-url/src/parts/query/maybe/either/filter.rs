@@ -47,6 +47,7 @@ impl MaybeQuery<'_> {
                 [range] => match query {
                     Query::Special   (x) => x.0.retain_range(range.clone()),
                     Query::NonSpecial(x) => x.0.retain_range(range.clone()),
+                    Query::Fragment  (x) => x.0.retain_range(range.clone()),
                 },
                 [first, ranges @ ..] => {
                     let mut ret = query.as_str()[first.clone()].to_string();
@@ -56,7 +57,8 @@ impl MaybeQuery<'_> {
                     }
                     match query {
                         Query::Special   (x) => x.0 = ret.into(),
-                        Query::NonSpecial(x) => x.0 = ret.into()
+                        Query::NonSpecial(x) => x.0 = ret.into(),
+                        Query::Fragment  (x) => x.0 = ret.into(),
                     }
                 }
             }

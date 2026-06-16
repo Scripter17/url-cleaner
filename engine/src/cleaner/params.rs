@@ -1,10 +1,5 @@
 //! [`Params`].
 
-use std::collections::{HashMap, HashSet};
-use std::borrow::Cow;
-
-use serde::{Serialize, Deserialize};
-
 use crate::prelude::*;
 
 /// A data store to fine tune the behavior of [`Cleaner`]s.

@@ -2,41 +2,19 @@
 
 use std::fs::read_to_string;
 use std::path::Path;
-use std::borrow::Cow;
 use std::io;
 #[cfg(feature = "bundled-cleaner")]
 use std::sync::OnceLock;
 
-use serde::{Serialize, Deserialize};
-use thiserror::Error;
-
 use crate::prelude::*;
 
-pub mod profiled_cleaner;
-pub mod params;
-pub mod params_diff;
-pub mod docs;
-pub mod functions;
-pub mod function_call;
-pub mod call_args;
-pub mod components;
+mod params;
+mod params_diff;
+mod docs;
 
-/// Prelude module for importing everything here better.
-pub mod prelude {
-    pub use super::profiled_cleaner::prelude::*;
-    pub use super::params::*;
-    pub use super::params_diff::*;
-    pub use super::docs::*;
-    pub use super::functions::*;
-    pub use super::function_call::*;
-    pub use super::call_args::*;
-    pub use super::components::prelude::*;
-
-    pub use super::{Cleaner, GetCleanerError, ApplyCleanerError};
-
-    #[cfg(feature = "bundled-cleaner")]
-    pub use super::BUNDLED_CLEANER_STR;
-}
+pub use params::*;
+pub use params_diff::*;
+pub use docs::*;
 
 /// The main unit describing how to clean URLs.
 ///
@@ -217,7 +195,7 @@ impl<'j> Cleaner<'j> {
     /// # Errors
     #[doc = edoc!(applyerr(Action, 3))]
     pub fn apply(&'j self, task_state: &mut TaskState<'j>) -> Result<(), ApplyCleanerError> {
-        self.action.apply(task_state)?;
+        self.action.apply(task_state, None)?;
         Ok(())
     }
 }

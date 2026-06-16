@@ -1,54 +1,40 @@
-//! Password stuff.
+//! [`Password`].
 
 use crate::prelude::*;
 
-impl<'a> Userinfo<'a> {
-    /// The [`Range::start`] of the password.
-    pub(crate) fn password_start(&self) -> usize {
-        match self.ps {
-            0 => 0,
-            x => x
-        }
+/// A password.
+#[derive(Debug, Clone)]
+pub struct Password<'a>(pub(crate) Cow<'a, str>);
+
+impl<'a> Password<'a> {
+    /// Make a new [`Self`] without checking for validity.
+    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(username: T) -> Self {
+        Self(username.into())
     }
 
-    /// The [`Range::end`] of the password.
-    pub(crate) fn password_after(&self) -> usize {
-        match self.ps {
-            0 => 0,
-            _ => self.len()
-        }
+    /// Borrow as a [`str`].
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 
-    /// The [`Range`] of the password.
-    pub(crate) fn password_range(&self) -> Range<usize> {
-        self.password_start() .. self.password_after()
+    /// Turn into an owned [`Self`].
+    pub fn into_owned(self) -> Password<'static> {
+        Password(self.0.into_owned().into())
     }
 
-    /// Borrow the password as a [`str`].
-    pub fn password_str(&self) -> &str {
-        &self.raw[self.password_range()]
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> Password<'_> {
+        Password(Cow::Borrowed(&self.0))
     }
 
-    /// Make a [`Password`].
-    pub fn password(&self) -> Password<'_> {
-        Password(Cow::Borrowed(self.password_str()))
+    /// Turn into the inner [`Cow`].
+    pub fn into_inner(self) -> Cow<'a, str> {
+        self.0
     }
+}
 
-    /// Set the password.
-    pub fn set_password<'b, T: Into<Password<'b>>>(&mut self, value: T) {
-        match (self.password_start(), value.into().as_str()) {
-            (0, "" ) => {},
-            (0, new) => {
-                self.ps = self.raw.len() + 1;
-                self.raw.to_mut().extend([":", new]);
-            },
-            (x, "") => {
-                self.raw.retain_range(..x - 1);
-                self.ps = 0;
-            },
-            (x, new) => {
-                self.raw.to_mut().replace_range(x.., new);
-            }
-        }
+impl<'a> From<Cow<'a, str>> for Password<'a> {
+    fn from(value: Cow<'a, str>) -> Self {
+        Self(encode_password(value).1)
     }
 }

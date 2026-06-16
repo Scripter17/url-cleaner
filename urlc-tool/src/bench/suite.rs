@@ -99,6 +99,16 @@ impl Args {
         println!("# Benchmarks");
         println!();
 
+        println!("## Runner");
+        println!();
+
+        println!("```");
+        assert_eq!(Command::new("neofetch")
+            .args(["distro", "kernel", "model", "cpu", "memory"])
+            .spawn().unwrap().wait().unwrap().code(), Some(0));
+        println!("```");
+        println!();
+
         println!("## Tasks");
         println!();
 

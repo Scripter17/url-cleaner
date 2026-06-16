@@ -22,7 +22,7 @@ pub(crate) trait StrExt {
 
 impl StrExt for str {
     fn my_substr_range(&self, substr: *const str) -> Range<usize> {
-        let start = substr.addr() - (self as *const str).addr();
+        let start = substr.addr() - self.addr();
         let end   = start + (substr as *const [u8]).len(); // For some reason `*const str` doesn't have a `.len()`.
 
         start..end

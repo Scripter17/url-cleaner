@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["engine", "cli", "site-types", "site", "discord", "better-url", "urlc-tool", "site-client"]
+members = ["better-url", "engine", "cli", "site-types", "site", "site-client", "discord", "urlc-tool", "my-url-test"]
 
 [workspace.lints.rust]
 missing_docs = "warn"
@@ -19,7 +19,6 @@ enum_variant_names = "allow"
 missing_docs_in_private_items = "warn"
 allow_attributes_without_reason = "warn"
 dbg_macro = "warn"
-indexing_slicing = "deny"
 unit_arg = "allow"
 match_like_matches_macro = "allow"
 module_inception = "allow"

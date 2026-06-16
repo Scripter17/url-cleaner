@@ -53,9 +53,9 @@ pub struct TestJob {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Test {
     /// The task.
-    pub task: serde_json::Value,
+    pub task: Task,
     /// The expected result.
-    pub expect: String
+    pub expect: BetterUrl
 }
 
 impl Args {
@@ -122,10 +122,10 @@ impl Args {
                 println!("    {}", test.task);
 
                 let cleaned = job.r#do(test.task).unwrap();
-                assert_eq!(cleaned, test.expect, "Expectation failed.");
+                assert_eq!(cleaned.to_string(), test.expect.to_string(), "Expectation failed.");
 
                 let recleaned = job.r#do(cleaned.clone()).unwrap();
-                assert_eq!(recleaned, cleaned, "Idempotence failed.");
+                assert_eq!(recleaned.to_string(), cleaned.to_string(), "Idempotence failed.");
             }
 
             println!();

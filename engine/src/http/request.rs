@@ -1,8 +1,4 @@
-//! [`HttpRequestConfig`].
-
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
+//! [`HttpRequestSource`].
 
 use crate::prelude::*;
 
@@ -11,7 +7,7 @@ use crate::prelude::*;
 /// Currently only capable of making blocking requests.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 #[serde(deny_unknown_fields)]
-pub struct HttpRequestConfig {
+pub struct HttpRequestSource {
     /// The URL to send the request to.
     ///
     /// Defaults to [`StringSource::Part`]`(`[`UrlPart::Whole`]`)`.
@@ -45,24 +41,77 @@ pub struct HttpRequestConfig {
     pub body: Option<HttpBodyConfig>
 }
 
-impl Default for HttpRequestConfig {
+impl Default for HttpRequestSource {
     fn default() -> Self {
         Self {
-            url    : UrlPart::Whole.into(),
-            method : "GET".into(),
-            const_headers: Default::default(),
+            url            : UrlPart::Whole.into(),
+            method         : "GET".into(),
+            const_headers  : Default::default(),
             dynamic_headers: Default::default(),
-            body   : None
+            body           : None
         }
     }
 }
 
-/// Serde helper function for [`HttpRequestConfig::url`].
+/// The enum of errors [`HttpRequestSource::get`] can return.
+#[derive(Debug, Error)]
+pub enum HttpRequestSourceError {
+    /// [`reqwest::Error`].
+    #[error(transparent)]
+    RequestError(#[from] reqwest::Error),
+    /// [`StringSourceError`].
+    #[error(transparent)]
+    StringSourceError(#[from] StringSourceError),
+    /// [`StringNotFound`].
+    #[error(transparent)]
+    StringNotFound(#[from] StringNotFound),
+    /// [`MapSourceError`].
+    #[error(transparent)]
+    MapSourceError(#[from] MapSourceError),
+    /// [`http::method::InvalidMethod`].
+    #[error(transparent)]
+    HttpInvalidMethod(#[from] http::method::InvalidMethod),
+    /// [`HttpBodyConfigError`].
+    #[error(transparent)]
+    HttpBodyConfigError(#[from] HttpBodyConfigError),
+}
+
+impl HttpRequestSource {
+    /// Get a [`reqwest::blocking::RequestBuilder`].
+    pub fn get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::blocking::RequestBuilder, HttpRequestSourceError> {
+        debug!(HttpRequestSource::get, self; self._get(task_state, args))
+    }
+
+    /// [`Self::get`].
+    fn _get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::blocking::RequestBuilder, HttpRequestSourceError> {
+        let mut ret = task_state.job.http_client.get()?.request(get!(self.method).parse()?, get!(&self.url));
+
+        if let Some(map) = get!(?self.const_headers) {
+            for (key, value) in map.map.iter() {
+                ret = ret.header(key, value);
+            }
+        }
+
+        for (key, value) in self.dynamic_headers.iter() {
+            if let Some(value) = get!(?&value) {
+                ret = ret.header(key, value);
+            }
+        }
+
+        if let Some(body) = &self.body {
+            ret = body.apply(ret, task_state, args)?;
+        }
+
+        Ok(ret)
+    }
+}
+
+/// Serde helper function for [`HttpRequestSource::url`].
 fn get_string_source_part_whole() -> StringSource {StringSource::Part(UrlPart::Whole)}
-/// Serde helper function for [`HttpRequestConfig::url`].
+/// Serde helper function for [`HttpRequestSource::url`].
 fn is_string_source_part_whole(value: &StringSource) -> bool {value == &get_string_source_part_whole()}
 
-/// Serde helper function for [`HttpRequestConfig::method`].
+/// Serde helper function for [`HttpRequestSource::method`].
 fn get_string_source_get() -> StringSource {"GET".into()}
-/// Serde helper function for [`HttpRequestConfig::method`].
+/// Serde helper function for [`HttpRequestSource::method`].
 fn is_string_source_get(value: &StringSource) -> bool {value == &get_string_source_get()}

@@ -14,7 +14,7 @@ impl<'a> FilePathSegment<'a> {
 
     /// The decoded value.
     pub fn decode(self) -> Cow<'a, str> {
-        PartTranscoder::SpecialPathSegment.decode_lossy(self.0)
+        lossy_percent_decode(self.0).1
     }
 
 
@@ -66,7 +66,7 @@ impl<'a> FilePathSegment<'a> {
 
 impl<'a> From<Cow<'a, str>> for FilePathSegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        Self(PartTranscoder::SpecialPathSegment.encode(value))
+        Self(encode_special_path_segment(value).1)
     }
 }
 
@@ -82,5 +82,5 @@ impl<'a> From<PathSegment<'a>> for FilePathSegment<'a> {
     }
 }
 
-impl<'a> From<SpecialNotFilePathSegment<'a>> for FilePathSegment<'a> {fn from(value: SpecialNotFilePathSegment<'a>) -> Self {Self(path_segment_snf_2_f(value.into_inner()))}}
-impl<'a> From<NonSpecialPathSegment    <'a>> for FilePathSegment<'a> {fn from(value: NonSpecialPathSegment    <'a>) -> Self {Self(path_segment_ns_2_f (value.into_inner()))}}
+impl<'a> From<SpecialNotFilePathSegment<'a>> for FilePathSegment<'a> {fn from(value: SpecialNotFilePathSegment<'a>) -> Self {Self(special_not_file_path_segment_to_file_path_segment(value.into_inner()).1)}}
+impl<'a> From<NonSpecialPathSegment    <'a>> for FilePathSegment<'a> {fn from(value: NonSpecialPathSegment    <'a>) -> Self {Self(non_special_path_segment_to_file_path_segment     (value.into_inner()).1)}}

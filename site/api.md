@@ -46,12 +46,24 @@ Either a WebSocket or HTTP POST/PUT duplex.
 
 - There are no empty result messages.
 
-- Each `\n` is preceeded and proceeded by a result line.
+- Result messages contain only result lines.
+
+- Every result line, except the last, is succeeded by a `\n`.
+
+- Every `\n` is preceeded by a result line.
+
+- Consequently, result messages have no empty lines.
+
+- Providing a task line, waiting for its result line, then providing another task line will never deadlock.
 
 ### HTTP
+
+- HTTP frames may or may not split lines arbitrarily.
 
 - Each result line is succeeded by a `\n`.
 
 - Each `\n` is preceeded by a result line.
+
+- Consequently, the result stream has no empty lines.
 
 - Providing a task line, waiting for its result line, then providing another task line will never deadlock.

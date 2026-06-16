@@ -7,7 +7,7 @@ mod domain;
 impl BetterUrl {
     /// If it has a host.
     pub fn has_host(&self) -> bool {
-        self.host_details.is_some()
+        self.host_details().is_some()
     }
 
     /// The host.
@@ -19,48 +19,13 @@ impl BetterUrl {
     pub fn host(&self) -> Option<Host<'_>> {
         let host = self.host_str()?.into();
 
-        Some(match self.host_details? {
-            HostDetails::Domain(details) => DomainHost {host, details}.into(),
-            HostDetails::Ipv4  (details) => Ipv4Host   {host, details}.into(),
-            HostDetails::Ipv6  (details) => Ipv6Host   {host, details}.into(),
-            HostDetails::Opaque(details) => OpaqueHost {host, details}.into(),
-            HostDetails::Empty (_) => EmptyHost::default().into(),
+        Some(match self.host_details()? {
+             HostDetails::Domain(details) => DomainHost {host, details: details.clone()}.into(),
+            &HostDetails::Ipv4  (details) => Ipv4Host   {host, details                 }.into(),
+            &HostDetails::Ipv6  (details) => Ipv6Host   {host, details                 }.into(),
+            &HostDetails::Opaque(details) => OpaqueHost {host, details                 }.into(),
+            &HostDetails::Empty (_      ) => EmptyHost::default()                       .into(),
         })
-    }
-
-    /// The [`HostDetails`].
-    pub fn host_details(&self) -> Option<HostDetails> {
-        self.host_details
-    }
-
-    /// The [`DomainDetails`].
-    pub fn domain_details(&self) -> Option<DomainDetails> {
-        self.host_details()?.domain()
-    }
-
-    /// The [`Ipv4Details`].
-    pub fn ipv4_details(&self) -> Option<Ipv4Details> {
-        self.host_details()?.ipv4()
-    }
-
-    /// The [`Ipv6Details`].
-    pub fn ipv6_details(&self) -> Option<Ipv6Details> {
-        self.host_details()?.ipv6()
-    }
-
-    /// The [`IpDetails`].
-    pub fn ip_details(&self) -> Option<IpDetails> {
-        self.host_details()?.ip()
-    }
-
-    /// The [`OpaqueHostDetails`].
-    pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {
-        self.host_details()?.opaque()
-    }
-
-    /// The [`EmptyHostDetails`].
-    pub fn empty_host_details(&self) -> Option<EmptyHostDetails> {
-        self.host_details()?.empty()
     }
 
     /// Set the host.
@@ -101,12 +66,12 @@ impl BetterUrl {
     /// url.set_host(None::<&str>         ).unwrap    ();
     /// ```
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_host<'a, T: TryInto<Host<'a>>>(&mut self, host: Option<T>) -> Result<(), SetHostError> where SetHostError: From<T::Error> {
+    pub fn set_host<'a, T: TryInto<Host<'a>>>(&mut self, host: Option<T>) -> Result<bool, SetHostError> where SetHostError: From<T::Error> {
         let host = host.map(TryInto::try_into).transpose()?;
 
         let new_len = match (self.host_str(), host.as_ref()) {
-            (None     , None     )                   => return Ok(()),
-            (Some(old), Some(new)) if old == new     => return Ok(()),
+            (None     , None     )                   => return Ok(false),
+            (Some(old), Some(new)) if old == new     => return Ok(false),
 
             (Some(_  ), Some(new)) if new.is_empty() => Err(CantBeEmpty)?,
 
@@ -125,11 +90,90 @@ impl BetterUrl {
         }
 
         self.url.set_host(host.as_ref().map(Host::as_str)).expect("To always work.");
-        self.host_details = host.as_ref().map(Host::details);
+        self.details.host = host.as_ref().map(Host::details);
 
         debug_assert_eq!(self.len(), new_len);
         debug_assert_eq!(self.host(), host);
 
-        Ok(())
+        Ok(true)
+    }
+
+
+
+    /// The [`HostDetails`].
+    pub fn host_details(&self) -> Option<&HostDetails> {
+        self.details.host.as_ref()
+    }
+
+    /// The [`DomainDetails`].
+    pub fn domain_details(&self) -> Option<&DomainDetails> {
+        self.host_details()?.as_domain()
+    }
+
+    /// The [`DomainPartsDetails`].
+    pub fn domain_parts_details(&self) -> Option<DomainPartsDetails> {
+        Some(self.domain_details()?.parts)
+    }
+
+    /// The domain's [`BidiDetails`].
+    pub fn domain_bidi_details(&self) -> Option<&BidiDetails> {
+        Some(&self.domain_details()?.bidi)
+    }
+
+    /// The [`Ipv4Details`].
+    pub fn ipv4_details(&self) -> Option<Ipv4Details> {
+        self.host_details()?.ipv4()
+    }
+
+    /// The [`Ipv6Details`].
+    pub fn ipv6_details(&self) -> Option<Ipv6Details> {
+        self.host_details()?.ipv6()
+    }
+
+    /// The [`IpDetails`].
+    pub fn ip_details(&self) -> Option<IpDetails> {
+        self.host_details()?.ip()
+    }
+
+    /// The [`OpaqueHostDetails`].
+    pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {
+        self.host_details()?.opaque()
+    }
+
+    /// The [`EmptyHostDetails`].
+    pub fn empty_host_details(&self) -> Option<EmptyHostDetails> {
+        self.host_details()?.empty()
+    }
+
+
+
+    /// If [`Self::host`] is [`Host::Domain`].
+    pub fn host_is_domain(&self) -> bool {
+        matches!(self.host_details(), Some(HostDetails::Domain(_)))
+    }
+
+    /// If [`Self::host`] is [`Host::Ipv4`].
+    pub fn host_is_ipv4(&self) -> bool {
+        matches!(self.host_details(), Some(HostDetails::Ipv4(_)))
+    }
+
+    /// If [`Self::host`] is [`Host::Ipv6`].
+    pub fn host_is_ipv6(&self) -> bool {
+        matches!(self.host_details(), Some(HostDetails::Ipv6(_)))
+    }
+
+    /// If [`Self::host`] is [`Host::Ipv4`] or [`Host::ipv6`].
+    pub fn host_is_ip(&self) -> bool {
+        matches!(self.host_details(), Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_)))
+    }
+
+    /// If [`Self::host`] is [`Host::Opaque`].
+    pub fn host_is_opaque(&self) -> bool {
+        matches!(self.host_details(), Some(HostDetails::Opaque(_)))
+    }
+
+    /// If [`Self::host`] is [`Host::Empty`].
+    pub fn host_is_empty(&self) -> bool {
+        matches!(self.host_details(), Some(HostDetails::Empty(_)))
     }
 }

@@ -1,25 +1,19 @@
 //! [`Job`] and co.
 
-pub mod job_context;
-pub mod task;
-pub mod task_context;
-pub mod task_config;
-pub mod task_state;
-pub mod unthreader;
-
-/// Prelude module for importing everything here better.
-pub mod prelude {
-    pub use super::job_context::*;
-    pub use super::task::*;
-    pub use super::task_context::*;
-    pub use super::task_config::*;
-    pub use super::task_state::*;
-    pub use super::unthreader::*;
-
-    pub use super::Job;
-}
-
+use thiserror::Error;
 use crate::prelude::*;
+
+mod job_context;
+mod task;
+mod task_context;
+mod task_state;
+mod unthreader;
+
+pub use job_context::*;
+pub use task::*;
+pub use task_context::*;
+pub use task_state::*;
+pub use unthreader::*;
 
 /// Configuration for a job.
 #[derive(Debug, Clone)]
@@ -38,17 +32,27 @@ pub struct Job<'j> {
     pub http_client: &'j HttpClient
 }
 
+/// The enums of errors that [`Job::do`] can return.
+#[derive(Debug, Error)]
+pub enum DoTaskError {
+    /// [`MakeTaskError`].
+    #[error(transparent)]
+    MakeTaskError(#[from] MakeTaskError),
+    /// [`ApplyCleanerError`].
+    #[error(transparent)]
+    ApplyCleanerError(#[from] ApplyCleanerError)
+}
+
 impl<'j> Job<'j> {
     /// Do a task.
     /// # Errors
     #[doc = edoc!(callerr(TaskConfig::make_task), callerr(Cleaner::apply))]
-    pub fn r#do<T: TaskConfig>(&self, task: T) -> Result<BetterUrl, DoTaskError> {
-        let Task {url, context} = task.make_task()?;
+    pub fn r#do<T: TryInto<Task>>(&self, task: T) -> Result<BetterUrl, DoTaskError> where MakeTaskError: From<T::Error> {
+        let Task {url, context} = task.try_into().map_err(MakeTaskError::from)?;
 
         let mut task_state = TaskState {
             url,
-            context: &context,
-            call_args: Default::default(),
+            context,
             job: self
         };
 

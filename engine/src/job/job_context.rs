@@ -1,18 +1,12 @@
 //! [`JobContext`].
 
-use std::collections::{HashSet, HashMap};
 use std::io;
 use std::path::Path;
 use std::fs::read_to_string;
 
-use serde::{Serialize, Deserialize, de::Deserializer};
-use thiserror::Error;
-
 use crate::prelude::*;
 
 /// The context of a [`Job`].
-///
-/// Sometimes websites have speicifc behavior that applies to all links on them, such as adding their own tracking parameters.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobContext {
@@ -33,7 +27,7 @@ pub struct JobContext {
 
 /// Deserialize an owned [`Host`].
 fn deserialize_owned_url_host<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Host<'static>>, D::Error> {
-    <Option<Host>>::deserialize(deserializer).map(|x| x.map(Host::into_owned))
+    Ok(<Option<Host>>::deserialize(deserializer)?.map(Host::into_owned))
 }
 
 impl JobContext {

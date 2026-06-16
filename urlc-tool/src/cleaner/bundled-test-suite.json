@@ -81,7 +81,12 @@
 					"expect": "https://www.hotdogbills.com/hamburger-molds/burger-dog-mold"
 				},
 
-				{"task":"https://www.washingtonpost.com/local/?itid=hp_top_nav_d.c.,%20md.%20&%20va.", "expect": "https://www.washingtonpost.com/local/"}
+				{"task":"https://www.washingtonpost.com/local/?itid=hp_top_nav_d.c.,%20md.%20&%20va.", "expect": "https://www.washingtonpost.com/local/"},
+
+				{
+					"task": "https://e.newsletters.cnn.com/click?EcmgzMjUyNzA1LmFkZGFAYmxvZ2dlci5jb20/CeyJtaWQiOiIxNzQ5OTkyNTE0NTA4OTEwYTZmOGM4OTljIiwiY3QiOiJjbm4tNmQwZWU3ZmNmNjRkZjIxY2VkZTg1OWJmMDhmYjA2NmMtMSIsInJkIjoiYmxvZ2dlci5jb20ifQ/VaHR0cHM6Ly93d3cuY25uLmNvbS8yMDI0LzA2LzE0L2hlYWx0aC9mYXRoZXJob29kLWdvb2QtZm9yLWRhZHMtd2VsbG5lc3M/SWkhfQ05OX2lfTmV3c19OREJBTjA2MTUyMDI1YzE2OTQwMDBiMQ/LY24x/qP3V0bV9zb3VyY2U9Y25uX0ZpdmUrVGhpbmdzK2ZvcitTdW5kYXklMkMrSnVuZSsxNSUyQysyMDI1JnV0bV9tZWRpdW09ZW1haWwmYnRfZWU9Mm5lSjJLZU9KZWllQ0JRVnBoTSUyRlBNQmp4S3FYeUc4aUhlY0NVNHljRiUyQiUyRm5YSEJkRSUyRiUyQmVhVnRJa2ZScnJESmMmYnRfdHM9MTc0OTk5MjUxNDUxMA/gaE7EWw/JMDYxNTIwMjVDMTY5NDAwMEIx/sdo767ff5f7",
+					"expect": "https://www.cnn.com/2024/06/14/health/fatherhood-good-for-dads-wellness"
+				}
 			]
 		},
 
@@ -484,41 +489,62 @@
     {
 			"name": "online",
       "tests": [
-      	{"task": "https://lk.cmte.fyi/t23k"                                 , "expect": "https://aims.niassembly.gov.uk/committees/meetings.aspx?md=18/03/2026&mid=19161&bd=1"                                       },
-      	{"task": "https://link.europa.eu/NtMX4K"                            , "expect": "https://ec.europa.eu/commission/presscorner/detail/en/statement_25_3160"                                                    },
-				{"task": "https://406q7-alternate.app.link/5uDpsIQcwUb"             , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
-				{"task": "https://406q7.app.link/e/5uDpsIQcwUb"                     , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
-				{"task": "https://a.co/dNfiRDX"                                     , "expect": "https://www.amazon.com/hz/wishlist/ls/2RBVWN4SJEAJ4"                                                                        },
-				{"task": "https://bfy.tw/9ZSk"                                      , "expect": "https://www.google.com/search?q=How+does+the+US+government+work"                                                            },
-				{"task": "https://bit.ly"                                           , "expect": "https://bitly.com/"                                                                                                         },
-				{"task": "https://bit.ly/minecraft"                                 , "expect": "https://i34.photobucket.com/albums/d119/ndsemp/mc_custom.png"                                                               },
-				{"task": "https://bitly.com"                                        , "expect": "https://bitly.com/"                                                                                                         },
-				{"task": "https://bitly.com/minecraft"                              , "expect": "https://i34.photobucket.com/albums/d119/ndsemp/mc_custom.png"                                                               },
-				{"task": "https://fireship.page.link/slack"                         , "expect": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"                                 },
-				{"task": "https://gprivate.com/6bi5b"                               , "expect": "https://www.google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"  },
-				{"task": "https://is.gd/29igH"                                      , "expect": "https://chuckontherightside.blogspot.com/2008/11/audacity-of-hype.html"                                                     },
-				{"task": "https://is.gd/AYle"                                       , "expect": "https://timesofindia.indiatimes.com/Sensex-soars-investors-make-Rs-65-lakh-cr-in-60-sec/articleshow/4547162.cms"            },
-				{"task": "https://is.gd/INmH"                                       , "expect": "https://snardfarker.ning.com/video/jesse-ventura-on-olbermann-may"                                                          },
-				{"task": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"       , "expect": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"                                                                         },
-				{"task": "https://qr.link/txPhRA"                                   , "expect": "https://qr.link/txPhRA"                                                                                                     },
-				{"task": "https://qr1.be/60AI"                                      , "expect": "https://qr1.be/60AI"                                                                                                        },
-				{"task": "https://qr1.be/L7WG"                                      , "expect": "https://app.bridgecard.app/?m=V3Pa&s=webd"                                                                                  },
-				{"task": "https://qrcc.me/t1z23aii4l9b"                             , "expect": "https://www.bell.ca/Bell-Promotions/Promo-code"                                                                             },
-				{"task": "https://scanqr.to/65d381ec"                               , "expect": "https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative/canada-greener-homes-loan/24286"},
-				{"task": "https://smarturl.it/irl_s05e04?IQid=eg"                   , "expect": "https://irlpodcast.org/season5/episode4/"                                                                                   },
-				{"task": "https://smartyt.ag/d5e7e8"                                , "expect": "https://www.instagram.com/rwgarciasnacks/"                                                                                  },
-				{"task": "https://than.gs/m/1382126"                                , "expect": "https://thangs.com/designer/LeHa%20Design/3d-model/Stanley%20the%20Drink%E2%80%91Snapping%20Shark-1382126"                  },
-				{"task": "https://tinyurl.com/preview/wp-tinyurl"                   , "expect": "https://en.wikipedia.org/wiki/TinyURL"                                                                                      },
-				{"task": "https://tinyurl.com/wp-tinyurl"                           , "expect": "https://en.wikipedia.org/wiki/TinyURL"                                                                                      },
-				{"task": "https://u.afp.com/SdEU"                                   , "expect": "https://www.yahoo.com/news/articles/south-korean-women-sue-us-062831445.html"                                               },
-				{"task": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre", "expect": "https://open.spotify.com/album/76qQt7n5SKtIa38BmZxvl4"                                                                      },
-        {"task": "https://qrcodes.pro/L1izR3"                               , "expect": "https://deckstore.ca/retail/"                                                                                               },
+      	{"task": "https://lk.cmte.fyi/t23k"                                      , "expect": "https://aims.niassembly.gov.uk/committees/meetings.aspx?md=18/03/2026&mid=19161&bd=1"                                       },
+      	{"task": "https://link.europa.eu/NtMX4K"                                 , "expect": "https://ec.europa.eu/commission/presscorner/detail/en/statement_25_3160"                                                    },
+				{"task": "https://406q7-alternate.app.link/5uDpsIQcwUb"                  , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
+				{"task": "https://406q7.app.link/e/5uDpsIQcwUb"                          , "expect": "https://www.checkout51.com/pc-optimum-landing-page"                                                                         },
+				{"task": "https://a.co/dNfiRDX"                                          , "expect": "https://www.amazon.com/hz/wishlist/ls/2RBVWN4SJEAJ4"                                                                        },
+				{"task": "https://bfy.tw/9ZSk"                                           , "expect": "https://www.google.com/search?q=How+does+the+US+government+work"                                                            },
+				{"task": "https://bit.ly"                                                , "expect": "https://bitly.com/"                                                                                                         },
+				{"task": "https://bit.ly/minecraft"                                      , "expect": "https://i34.photobucket.com/albums/d119/ndsemp/mc_custom.png"                                                               },
+				{"task": "https://bitly.com"                                             , "expect": "https://bitly.com/"                                                                                                         },
+				{"task": "https://bitly.com/minecraft"                                   , "expect": "https://i34.photobucket.com/albums/d119/ndsemp/mc_custom.png"                                                               },
+				{"task": "https://fireship.page.link/slack"                              , "expect": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"                                 },
+				{"task": "https://gprivate.com/6bi5b"                                    , "expect": "https://www.google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"  },
+				{"task": "https://is.gd/29igH"                                           , "expect": "https://chuckontherightside.blogspot.com/2008/11/audacity-of-hype.html"                                                     },
+				{"task": "https://is.gd/AYle"                                            , "expect": "https://timesofindia.indiatimes.com/Sensex-soars-investors-make-Rs-65-lakh-cr-in-60-sec/articleshow/4547162.cms"            },
+				{"task": "https://is.gd/INmH"                                            , "expect": "https://snardfarker.ning.com/video/jesse-ventura-on-olbermann-may"                                                          },
+				{"task": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"            , "expect": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"                                                                         },
+				{"task": "https://ayrastarr.lnk.to/WDGVideo"                             , "expect": "https://www.youtube.com/watch?v=GodmYPfMaio"                                                                                },
+				{"task": "https://qr.link/txPhRA"                                        , "expect": "https://qr.link/txPhRA"                                                                                                     },
+				{"task": "https://qr1.be/60AI"                                           , "expect": "https://qr1.be/60AI"                                                                                                        },
+				{"task": "https://qr1.be/L7WG"                                           , "expect": "https://app.bridgecard.app/?m=V3Pa&s=webd"                                                                                  },
+				{"task": "https://qrcc.me/t1z23aii4l9b"                                  , "expect": "https://www.bell.ca/Bell-Promotions/Promo-code"                                                                             },
+				{"task": "https://scanqr.to/65d381ec"                                    , "expect": "https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative/canada-greener-homes-loan/24286"},
+				{"task": "https://smarturl.it/irl_s05e04?IQid=eg"                        , "expect": "https://irlpodcast.org/season5/episode4/"                                                                                   },
+				{"task": "https://smartyt.ag/d5e7e8"                                     , "expect": "https://www.instagram.com/rwgarciasnacks/"                                                                                  },
+				{"task": "https://than.gs/m/1382126"                                     , "expect": "https://thangs.com/designer/LeHa%20Design/3d-model/Stanley%20the%20Drink%E2%80%91Snapping%20Shark-1382126"                  },
+				{"task": "https://tinyurl.com/preview/wp-tinyurl"                        , "expect": "https://en.wikipedia.org/wiki/TinyURL"                                                                                      },
+				{"task": "https://tinyurl.com/wp-tinyurl"                                , "expect": "https://en.wikipedia.org/wiki/TinyURL"                                                                                      },
+				{"task": "https://u.afp.com/SdEU"                                        , "expect": "https://www.yahoo.com/news/articles/south-korean-women-sue-us-062831445.html"                                               },
+				{"task": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre"     , "expect": "https://worldmusic.lnk.to/deanblunt_eliasronnenfelt_lucre"                                                                  },
+        {"task": "https://qrcodes.pro/L1izR3"                                    , "expect": "https://deckstore.ca/retail/"                                                                                               },
+        {"task": "https://www.messagenes.com/nfc/5617&psw=7f82d38168&action=scan", "expect": "https://shop.messagenes.com/products/youtube-sticker-with-qr-code"                                                          },
+        {"task": "https://netflix.com/a/t?i=07OG0EH490&tp=qr"                    , "expect": "https://cologuard.com/"                                                                                                     },
+        {"task": "https://ifcj.flow2.it/exS9uvyGwe"                              , "expect": "https://help.ifcj.org/donate/392"                                                                                           },
+        {"task": "https://www.launchgood.com/TDRPalestine"                       , "expect": "https://www.launchgood.com/v4/campaign/save_a_child_in_palestine_now"                                                       },
 
 				{
 					"task": "https://get-bandlab.app.link/invite-link?$canonical_url=https://www.bandlab.com/join/s1vcb9n&$fallback_url=https://www.bandlab.com/join/s1vcb9n",
 					"expect": "https://www.bandlab.com/join/s1vcb9n"
 				},
-        {"task": "https://upside.app.link/EL6543", "expect": "https://www.getupside.com/"}
+        {"task": "https://upside.app.link/EL6543", "expect": "https://upside.app.link/e/EL6543"},
+        {
+        	"task": "https://www.tkqlhce.com/click-101024240-13527013?url=https%3A%2F%2Fwww.woot.com%2Foffers%2Fhakol-outdoor-solar-garden-light-black-square-2&sid=%7B%22s%22%3A%22clphirxsupxhk08613r9gsoig%22%2C%22o%22%3A%22%22%2C%22meta%22%3A%7B%22linkId%22%3A%22yfeuoomyr6a1rx0g4ds4qn1h%22%2C%22brandId%22%3A%22cld36fgps4eos0897gy25eyn4%22%2C%22userId%22%3A%22clphirxsupxhk08613r9gsoig%22%2C%22affiliateId%22%3A%22ckzyl7eka001l0934l",
+        	"expect": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2"
+        },
+        {
+        	"task": "https://cj.dotomi.com/gc66shqp7/hot/68A7C568/656579795/5/5/5?f=j8yt%3D%25NR%25II8%25II%25JQ%25IIs15xy7D8A5Dx0GOMHJ7Pw84yw%25II%25IS%25II4%25II%25JQ%25II%25II%25IS%25II2u9q%25II%25JQ%25NR%25II1y30Yt%25II%25JQ%25IIEvuA442E7MqH7DGwKt8K63Hx%25II%25IS%25IIr7q3tYt%25II%25JQ%25IIs1tJMvw58Ku48GOPNwEILuE3K%25II%25IS%25IIA8u7Yt%25II%25JQ%25IIs15xy7D8A5Dx0GOMHJ7Pw84yw%25II%25IS%25IIqvvy1yq9uYt%25II%25JQ%25IIs0FE1Nu0qGGH1GPJK1%26A71%3Dx9958%25JQ%25IV%25IVCCC.C449.s42%25IV4vvu78%25IVxq041-4A9t447-841q7-wq7tu3-1ywx9-r1qs0-86Aq7u-I%3c%3cx9958%3A%2F%2FCCC.9061xsu.s42%2Fs1ys0-HGHGIKIKG-HJLINGHJ%3c%3cW%3c%3c%3cH%3cH%3cG%3cG%3cNLIvOGIO-OqLO-KJHr-quNG-tNqGMrNrKMuP%3c",
+        	"expect": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2"
+        },
+        {
+        	"task": "https://www.emjcd.com/so83js0-K/sz3/HJLINGHJ/HGHGIKIKG/G/OGGIGMNKKOLJINIGKK:gJiwxH4SXKC-/PJvJHGuKKIsPHHvHOHtOGGMPGqOIrOIK?s=kzpk%3D%25EI%2599z%2599%25AH%2599jswopy4z1w4or7FD8AyGnzvpn%2599%259J%2599v%2599%25AH%2599%2599%259J%2599tl0h%2599%25AH%25EI%2599spurPk%2599%25AH%25995ml1vvt5yDh8y47nBkzBxu8o%2599%259J%2599iyhukPk%2599%25AH%2599jskADmnwzBlvz7FGEn59Cl5uB%2599%259J%25991zlyPk%2599%25AH%2599jswopy4z1w4or7FD8AyGnzvpn%2599%259J%2599hmmpsph0lPk%2599%25AH%2599jr65sElrh778s7GABs%261ys%3Do00wz%25AH%259M%259M333.3vv0.jvt%259Mvmmlyz%259Mohrvs-v10kvvy-zvshy-nhyklu-spno0-ishjr-zx1hyl-9%3cjqv!491m-8hnkE1G%3co00wz%3A%2F%2F333.0rxsojl.jvt%2Fjspjr-87879B9B7-8AC9E78A%3c%3cN%3c%3cEEE7miii-878h-B9Dl-FijA-CkmlDC9FDAGB%3c8%3c8%3c7%3c7%3cEC9mF79F-FhCF-BA8i-hlE7-kEh7DiEiBDlG%3c",
+        	"expect": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2"
+        },
+        {
+        	"task": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2?cjdata=MXxOfDB8WXww&utm_medium=affiliate&utm_campaign=CJ&cjevent=93f310e442c911f181d800690a82b824&utm_source=Mavely&utm_term=93f310e442c911f181d800690a82b824",
+        	"expect": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2"
+        }
       ]
     }
   ]

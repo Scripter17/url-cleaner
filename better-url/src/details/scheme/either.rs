@@ -27,7 +27,7 @@ impl SchemeDetails {
         else if value.eq_ignore_ascii_case("ws"   ) {Ok(SpecialNotFileSchemeDetails::Ws   .into())}
         else if value.eq_ignore_ascii_case("wss"  ) {Ok(SpecialNotFileSchemeDetails::Wss  .into())}
         else if value.eq_ignore_ascii_case("ftp"  ) {Ok(SpecialNotFileSchemeDetails::Ftp  .into())}
-        else if value.eq_ignore_ascii_case("ftp"  ) {Ok(FileSchemeDetails                 .into())}
+        else if value.eq_ignore_ascii_case("file" ) {Ok(FileSchemeDetails                 .into())}
         else if is_valid_scheme(value)              {Ok(NonSpecialSchemeDetails           .into())}
         else {Err(InvalidScheme)}
     }
@@ -77,6 +77,66 @@ impl SchemeDetails {
     pub fn is_non_special(self) -> bool {
         self.r#type().is_non_special()
     }
+
+
+
+    /// [`SpecialSchemeDetails::is_http`].
+    pub fn is_http(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_http(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::is_https`].
+    pub fn is_https(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_https(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::is_http_or_https`].
+    pub fn is_http_or_https(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_http_or_https(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::is_ws`].
+    pub fn is_ws(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_ws(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::is_wss`].
+    pub fn is_wss(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_wss(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::is_ws_or_wss`].
+    pub fn is_ws_or_wss(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_ws_or_wss(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::is_ftp`].
+    pub fn is_ftp(self) -> bool {
+        match self {
+            Self::Special   (x) => x.is_ftp(),
+            Self::NonSpecial(_) => false,
+        }
+    }
+
+
 
     /// [`SpecialSchemeDetails::default_port`].
     pub fn default_port(self) -> Option<u16> {

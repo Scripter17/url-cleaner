@@ -11,7 +11,7 @@ pub struct NonSpecialQuerySegment<'a> {
     /// The raw segment.
     pub(crate) raw: Cow<'a, str>,
     /// If non-zero, the start of the value.
-    pub(crate) vs: usize,
+    pub(crate) vs: Option<NonZero<usize>>,
 }
 
 impl<'a> NonSpecialQuerySegment<'a> {
@@ -20,28 +20,27 @@ impl<'a> NonSpecialQuerySegment<'a> {
         let raw = segment.into();
 
         Self {
-            vs: raw.find("=").map_or(0, |x| x + 1),
+            vs: raw.find("=").and_then(|x| NonZero::new(x + 1)),
             raw
         }
     }
-    
+
     /// Make a new [`Self`] from a pair.
-    pub fn from_pair<T: Into<Cow<'a, str>>>(name: T, value: Option<&str>) -> Self {
+    pub fn from_pair<'b, T: Into<Cow<'a, str>>, U: Into<Cow<'b, str>>>(name: T, value: Option<U>) -> Self {
         let mut ret = name.into();
 
         if let Some(value) = value {
-            ret.to_mut().extend(["=", value]);
+            ret.to_mut().extend(["=".into(), value.into()]);
         }
 
-        ret = PartTranscoder::QueryPart.encode(ret);
+        let mut raw = encode_query_part(ret).1;
 
-        match ret.find("%3D") {
+        match raw.find("%3D") {
             Some(x) => {
-                let vs = x + 1;
-                ret.replace_range(x..=x+2, "=");
-                Self {raw: ret, vs}
+                raw.replace_range(x..=x+2, "=");
+                Self {raw, vs: NonZero::new(x + 1)}
             },
-            None => Self {raw: ret, vs: 0}
+            None => Self {raw, vs: None}
         }
     }
 
@@ -74,12 +73,9 @@ impl<'a> NonSpecialQuerySegment<'a> {
 
 impl<'a> From<Cow<'a, str>> for NonSpecialQuerySegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        let value = PartTranscoder::SpecialQuery.encode(value);
+        let (_, raw, vs) = encode_non_special_query_segment(value);
 
-        Self {
-            vs: value.split_once('=').map_or(0, |(x, _)| x.len() + 1),
-            raw: value
-        }
+        Self {raw, vs}
     }
 }
 
@@ -88,6 +84,7 @@ impl<'a> From<QuerySegment<'a>> for NonSpecialQuerySegment<'a> {
         match value {
             QuerySegment::Special   (x) => x.into(),
             QuerySegment::NonSpecial(x) => x,
+            QuerySegment::Fragment  (x) => x.into(),
         }
     }
 }
@@ -100,3 +97,16 @@ impl<'a> From<SpecialQuerySegment<'a>> for NonSpecialQuerySegment<'a> {
         }
     }
 }
+
+impl<'a> From<FragmentQuerySegment<'a>> for NonSpecialQuerySegment<'a> {
+    fn from(value: FragmentQuerySegment<'a>) -> Self {
+        let old_vs = value.vs;
+
+        match fragment_to_non_special_query(value.into_inner()) {
+            (true , raw) => Self {vs: raw.find('=').and_then(|x| NonZero::new(x + 1)), raw},
+            (false, raw) => Self {vs: old_vs, raw}
+        }
+    }
+}
+
+impl<'a, 'b, T: Into<Cow<'a, str>>, U: Into<Cow<'b, str>>> From<(T, Option<U>)> for NonSpecialQuerySegment<'a> {fn from(value: (T, Option<U>)) -> Self {Self::from_pair(value.0, value.1)}}

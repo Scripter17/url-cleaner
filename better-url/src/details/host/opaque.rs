@@ -12,27 +12,23 @@ use crate::prelude::*;
 pub struct OpaqueHostDetails;
 
 impl OpaqueHostDetails {
-    /// Parse an opaque host.
+    /// Parse a raw opaque host.
     /// # Errors
     /// If the host is an invalid opaque host, returns the error [`InvalidOpaqueHost`].
     ///
-    /// Please note that while the [official algorithm](https://url.spec.whatwg.org/#concept-opaque-host-parser) implicitly allows the empty string,
+    /// Please note that while the [opaque host parser](https://url.spec.whatwg.org/#concept-opaque-host-parser) implicitly allows the empty string,
     /// the [opaque host type itself](https://url.spec.whatwg.org/#opaque-host) is specified to not be empty.
     ///
-    /// Therefore, at least for now, I have chosen to have the empty string return an error.
-    pub fn parse(s: &str) -> Result<Self, InvalidOpaqueHost> {
+    /// Therefore, empty opaque hosts are rejected.
+    ///
+    /// See [servo/rust-url#1112](https://github.com/servo/rust-url/issues/1112) and [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
+    pub fn from_raw(s: &str) -> Result<Self, InvalidOpaqueHost> {
         if s.is_empty() {
             Err(InvalidOpaqueHost)?;
         }
 
-        let mut bytes = s.bytes();
-
-        while let Some(b) = bytes.next() {
-            match b {
-                b if invalid_host_byte(b) => Err(InvalidOpaqueHost)?,
-                b'%' => {decode_hex_byte(bytes.next().ok_or(InvalidOpaqueHost)?, bytes.next().ok_or(InvalidOpaqueHost)?).ok_or(InvalidOpaqueHost)?;},
-                _ => {}
-            }
+        if s.bytes().any(|b| b.is_ascii() && FORBIDDEN_HOST.contains(b)) {
+            Err(InvalidOpaqueHost)?;
         }
 
         Ok(Self)
@@ -42,16 +38,18 @@ impl OpaqueHostDetails {
 impl FromStr for OpaqueHostDetails {
     type Err = InvalidOpaqueHost;
 
+    /// [`Self::from_raw`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::parse(s)
+        Self::from_raw(s)
     }
 }
 
 impl TryFrom<&str> for OpaqueHostDetails {
     type Error = InvalidOpaqueHost;
 
+    /// [`Self::from_raw`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Self::parse(value)
+        Self::from_raw(value)
     }
 }
 

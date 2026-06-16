@@ -14,7 +14,7 @@ impl<'a> NonSpecialPathSegment<'a> {
 
     /// The decoded value.
     pub fn decode(self) -> Cow<'a, str> {
-        PartTranscoder::NonSpecialPathSegment.decode_lossy(self.0)
+        lossy_percent_decode(self.0).1
     }
 
 
@@ -66,7 +66,7 @@ impl<'a> NonSpecialPathSegment<'a> {
 
 impl<'a> From<Cow<'a, str>> for NonSpecialPathSegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        Self(PartTranscoder::NonSpecialPathSegment.encode(value))
+        Self(encode_non_special_path_segment(value).1)
     }
 }
 
