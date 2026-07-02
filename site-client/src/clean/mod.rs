@@ -20,6 +20,12 @@ pub struct Args {
     /// The password.
     #[arg(long, help_heading = "JobConfig args")]
     pub password: Option<String>,
+    /// Enable brief unchanged.
+    #[arg(long, help_heading = "JobConfig args")]
+    pub brief_unchanged: bool,
+    /// Enable brief error.
+    #[arg(long, help_heading = "JobConfig args")]
+    pub brief_error: bool,
     /// The JobContext.
     #[arg(long, help_heading = "JobConfig args")]
     pub context: Option<String>,
@@ -58,10 +64,12 @@ impl Args {
         if let Some(params_diff) = self.params_diff {config.insert("params_diff", serde_json::from_str(&params_diff).unwrap());}
         if let Some(context    ) = self.context     {config.insert("context"    , serde_json::from_str(&context    ).unwrap());}
 
-        if self.no_read_cache  {config.insert("read_cache" , false.into());}
-        if self.no_write_cache {config.insert("write_cache", false.into());}
-        if self.cache_delay    {config.insert("cache_delay", true .into());}
-        if self.unthread       {config.insert("unthread"   , true .into());}
+        if self.no_read_cache   {config.insert("read_cache"     , false.into());}
+        if self.no_write_cache  {config.insert("write_cache"    , false.into());}
+        if self.cache_delay     {config.insert("cache_delay"    , true .into());}
+        if self.unthread        {config.insert("unthread"       , true .into());}
+        if self.brief_unchanged {config.insert("brief_unchanged", true .into());}
+        if self.brief_error     {config.insert("brief_error"    , true .into());}
 
         instance.query_pairs_mut().append_pair("config", &serde_json::to_string(&config).unwrap());
 

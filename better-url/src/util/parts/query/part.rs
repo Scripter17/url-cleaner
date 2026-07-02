@@ -36,7 +36,8 @@ pub fn decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 /// use better_url::util::*;
 ///
 /// assert_eq!(decode_query_part_bytes(b"abc"     ), (false, b"abc" .into()));
-/// assert_eq!(decode_query_part_bytes(b"%20"     ), (true , b" "   .into()));
+/// assert_eq!(decode_query_part_bytes(b"a%20b"   ), (true , b"a b" .into()));
+/// assert_eq!(decode_query_part_bytes(b"a+b"     ), (true , b"a b" .into()));
 /// assert_eq!(decode_query_part_bytes(b"%41=%61" ), (true , b"A=a" .into()));
 /// assert_eq!(decode_query_part_bytes(b"%41=%61+"), (true , b"A=a ".into()));
 /// ```
@@ -60,16 +61,14 @@ pub fn decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, C
                 x[i] = b;
                 j += 2;
             },
-            [b'+'] => x[i] = b' ',
-            _      => x[i] = x[j],
+            [b'+', ..] => x[i] = b' ',
+            _          => x[i] = x[j],
         }
         i += 1;
         j += 1;
     }
 
-    let changed = i != x.len();
-
     x.truncate(i);
 
-    (changed, value)
+    (true, value)
 }

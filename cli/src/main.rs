@@ -148,14 +148,20 @@ async fn main() -> Result<(), CliError> {
 
     let secrets = Secrets::load_or_default(args.secrets)?;
 
-    if let Some((path, name)) = args.profiles.zip(args.profile) {
-        let (_, mut profiles) = ProfilesConfig::load(path)?;
-        let diff = profiles.named.remove(&name).ok_or(CliError::ProfileNotFound)?;
-        diff.apply(&mut cleaner.params);
+    if let Some(profiles) = args.profiles {
+        let (_, mut profiles_config) = ProfilesConfig::load(profiles)?;
+
+        profiles_config.base.apply(&mut cleaner.params);
+
+        if let Some(profile) = args.profile {
+            let diff = profiles_config.named.remove(&profile).ok_or(CliError::ProfileNotFound)?;
+            diff.apply(&mut cleaner.params);
+        }
     }
 
     if let Some(path) = args.params_diff {
-        ParamsDiff::load(path)?.1.apply(&mut cleaner.params);
+        let (_, params_diff) = ParamsDiff::load(path)?;
+        params_diff.apply(&mut cleaner.params);
     }
 
     if !args.flag.is_empty() {
@@ -167,7 +173,7 @@ async fn main() -> Result<(), CliError> {
 
     let (_, context) = JobContext::load_or_default(args.job_context)?; 
 
-    let job: &_ = JOB.get_or_init(|| Job {
+    let job = JOB.get_or_init(|| Job {
         context,
         cleaner,
         unthreader: UNTHREADER.get_or_init(|| Unthreader::r#if(args.unthread)),

@@ -70,15 +70,15 @@ jobs:
             echo 'https://youtube.com/shorts/abc'   | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "youtube unshort"
             echo 'https://youtube.com/shorts/abc'   | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "youtube unshort" --params-diff "$PARAMS_DIFF2"
           ) <(
-            echo 'https://www.youtube.com/shorts/abc'
-            echo 'https://m.youtube.com/shorts/abc'
+            echo  'https://www.youtube.com/shorts/abc'
+            echo    'https://m.youtube.com/shorts/abc'
             echo 'https://www.youtube.com/watch?v=abc'
-            echo 'https://m.youtube.com/watch?v=abc'
+            echo   'https://m.youtube.com/watch?v=abc'
 
-            echo 'https://www.youtube.com/shorts/abc'
-            echo 'https://m.youtube.com/shorts/abc'
+            echo  'https://www.youtube.com/shorts/abc'
+            echo    'https://m.youtube.com/shorts/abc'
             echo 'https://www.youtube.com/watch?v=abc'
-            echo 'https://m.youtube.com/watch?v=abc'
+            echo   'https://m.youtube.com/watch?v=abc'
           )
 
           ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "Unknown"
@@ -88,9 +88,9 @@ jobs:
 
     - name: 'Passwords'
       run: |
-        PASSWORDS='test'
+        SECRETS='{"auth_info":{"Password":["test"]}}'
 
-        ./urlcs --passwords <(echo "$PASSWORDS") &
+        ./urlcs --secrets <(echo "$SECRETS") &
         sleep 1
 
         for scheme in http ws; do

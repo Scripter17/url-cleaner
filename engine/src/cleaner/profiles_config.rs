@@ -54,7 +54,7 @@ impl ProfilesConfig {
         self.base.apply(&mut base.params);
 
         for (name, diff) in self.named {
-            let mut params = cleaner.params.clone();
+            let mut params = base.params.clone();
             diff.apply(&mut params);
             named.insert(name, params);
         }
